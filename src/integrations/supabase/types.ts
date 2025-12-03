@@ -14,16 +14,290 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      appointments: {
+        Row: {
+          created_at: string
+          date: string
+          duration: number | null
+          horse_id: string
+          id: string
+          location: string | null
+          notes: string | null
+          price: number | null
+          provider_id: string | null
+          service_type: string | null
+          status: string | null
+          time: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          duration?: number | null
+          horse_id: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          price?: number | null
+          provider_id?: string | null
+          service_type?: string | null
+          status?: string | null
+          time?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          duration?: number | null
+          horse_id?: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          price?: number | null
+          provider_id?: string | null
+          service_type?: string | null
+          status?: string | null
+          time?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hoof_photos: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          hoof_position: string | null
+          horse_id: string
+          id: string
+          notes: string | null
+          photo_url: string
+          taken_at: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          hoof_position?: string | null
+          horse_id: string
+          id?: string
+          notes?: string | null
+          photo_url: string
+          taken_at?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          hoof_position?: string | null
+          horse_id?: string
+          id?: string
+          notes?: string | null
+          photo_url?: string
+          taken_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hoof_photos_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hoof_photos_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      horses: {
+        Row: {
+          birth_year: number | null
+          breed: string | null
+          color: string | null
+          created_at: string
+          discipline: string | null
+          eqid: string | null
+          gender: string | null
+          height: string | null
+          hoof_type: string | null
+          id: string
+          name: string
+          owner_id: string
+          photo_url: string | null
+          shoeing_interval: number | null
+          special_notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          birth_year?: number | null
+          breed?: string | null
+          color?: string | null
+          created_at?: string
+          discipline?: string | null
+          eqid?: string | null
+          gender?: string | null
+          height?: string | null
+          hoof_type?: string | null
+          id?: string
+          name: string
+          owner_id: string
+          photo_url?: string | null
+          shoeing_interval?: number | null
+          special_notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          birth_year?: number | null
+          breed?: string | null
+          color?: string | null
+          created_at?: string
+          discipline?: string | null
+          eqid?: string | null
+          gender?: string | null
+          height?: string | null
+          hoof_type?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+          photo_url?: string | null
+          shoeing_interval?: number | null
+          special_notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      invoices: {
+        Row: {
+          client_id: string
+          created_at: string
+          due_date: string | null
+          horse_id: string | null
+          id: string
+          invoice_number: string | null
+          issue_date: string
+          notes: string | null
+          pdf_url: string | null
+          status: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          due_date?: string | null
+          horse_id?: string | null
+          id?: string
+          invoice_number?: string | null
+          issue_date?: string
+          notes?: string | null
+          pdf_url?: string | null
+          status?: string | null
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          due_date?: string | null
+          horse_id?: string | null
+          id?: string
+          invoice_number?: string | null
+          issue_date?: string
+          notes?: string | null
+          pdf_url?: string | null
+          status?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "provider" | "client"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +424,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["provider", "client"],
+    },
   },
 } as const
