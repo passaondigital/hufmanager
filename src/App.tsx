@@ -2,7 +2,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Dashboard from "@/pages/Dashboard";
 import Anfragen from "@/pages/Anfragen";
@@ -14,6 +16,10 @@ import Kalender from "@/pages/Kalender";
 import Kunden from "@/pages/Kunden";
 import Services from "@/pages/Services";
 import Management from "@/pages/Management";
+import Auth from "@/pages/Auth";
+import ClientHome from "@/pages/ClientHome";
+import ClientHorseDetail from "@/pages/ClientHorseDetail";
+import ClientInvoices from "@/pages/ClientInvoices";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,21 +30,50 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/anfragen" element={<Anfragen />} />
-            <Route path="/angebote" element={<Angebote />} />
-            <Route path="/aufnahme" element={<Aufnahme />} />
-            <Route path="/auffassen" element={<Auffassen />} />
-            <Route path="/analyse" element={<Analyse />} />
-            <Route path="/kalender" element={<Kalender />} />
-            <Route path="/kunden" element={<Kunden />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/management" element={<Management />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            {/* Public route */}
+            <Route path="/auth" element={<Auth />} />
+            
+            {/* Provider (Admin) routes */}
+            <Route element={
+              <ProtectedRoute allowedRoles={["provider"]}>
+                <AppLayout />
+              </ProtectedRoute>
+            }>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/anfragen" element={<Anfragen />} />
+              <Route path="/angebote" element={<Angebote />} />
+              <Route path="/aufnahme" element={<Aufnahme />} />
+              <Route path="/auffassen" element={<Auffassen />} />
+              <Route path="/analyse" element={<Analyse />} />
+              <Route path="/kalender" element={<Kalender />} />
+              <Route path="/kunden" element={<Kunden />} />
+              <Route path="/services" element={<Services />} />
+              <Route path="/management" element={<Management />} />
+            </Route>
+            
+            {/* Client routes */}
+            <Route path="/client-home" element={
+              <ProtectedRoute allowedRoles={["client"]}>
+                <ClientHome />
+              </ProtectedRoute>
+            } />
+            <Route path="/client-horse/:id" element={
+              <ProtectedRoute allowedRoles={["client"]}>
+                <ClientHorseDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="/client-invoices" element={
+              <ProtectedRoute allowedRoles={["client"]}>
+                <ClientInvoices />
+              </ProtectedRoute>
+            } />
+            
+            {/* Fallback */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
