@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  GraduationCap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -36,6 +37,7 @@ const mainItems = [
 ];
 
 const bottomItems = [
+  { title: "Academy", url: "/academy", icon: GraduationCap },
   { title: "Management", url: "/management", icon: Settings },
 ];
 

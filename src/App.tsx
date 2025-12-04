@@ -16,6 +16,7 @@ import Kalender from "@/pages/Kalender";
 import Kunden from "@/pages/Kunden";
 import Services from "@/pages/Services";
 import Management from "@/pages/Management";
+import Academy from "@/pages/Academy";
 import Auth from "@/pages/Auth";
 import ClientHome from "@/pages/ClientHome";
 import ClientHorseDetail from "@/pages/ClientHorseDetail";
@@ -51,6 +52,7 @@ const App = () => (
               <Route path="/kunden" element={<Kunden />} />
               <Route path="/services" element={<Services />} />
               <Route path="/management" element={<Management />} />
+              <Route path="/academy" element={<Academy />} />
             </Route>
             
             {/* Client routes */}
