@@ -15,8 +15,9 @@
     --popover: 40 25% 99%;
     --popover-foreground: 30 10% 15%;
 
-    --primary: 25 80% 50%;
-    --primary-foreground: 40 30% 98%;
+    /* HufManager Orange #F47B20 = HSL(26, 90%, 54%) */
+    --primary: 26 90% 54%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 40 20% 94%;
     --secondary-foreground: 30 10% 25%;
@@ -24,76 +25,91 @@
     --muted: 40 15% 92%;
     --muted-foreground: 30 10% 45%;
 
-    --accent: 150 35% 35%;
-    --accent-foreground: 40 30% 98%;
+    --accent: 26 90% 54%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
-    --destructive-foreground: 40 30% 98%;
+    --destructive-foreground: 0 0% 100%;
 
     --border: 40 20% 88%;
     --input: 40 20% 88%;
-    --ring: 25 80% 50%;
+    --ring: 26 90% 54%;
 
     --radius: 0.75rem;
 
     /* Custom tokens */
-    --copper: 25 80% 50%;
-    --copper-light: 25 75% 60%;
-    --copper-dark: 25 85% 40%;
+    --copper: 26 90% 54%;
+    --copper-light: 26 85% 64%;
+    --copper-dark: 26 95% 44%;
     --forest: 150 35% 35%;
     --forest-light: 150 30% 45%;
     --cream: 40 30% 98%;
     --warm-gray: 30 10% 45%;
     
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(25 80% 50%), hsl(25 75% 60%));
-    --gradient-accent: linear-gradient(135deg, hsl(150 35% 35%), hsl(150 30% 45%));
+    --gradient-primary: linear-gradient(135deg, hsl(26 90% 54%), hsl(26 85% 64%));
+    --gradient-accent: linear-gradient(135deg, hsl(26 90% 54%), hsl(30 85% 50%));
     --gradient-warm: linear-gradient(180deg, hsl(40 30% 98%), hsl(40 25% 95%));
     
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 hsl(30 10% 15% / 0.05);
     --shadow-md: 0 4px 6px -1px hsl(30 10% 15% / 0.08), 0 2px 4px -2px hsl(30 10% 15% / 0.05);
     --shadow-lg: 0 10px 15px -3px hsl(30 10% 15% / 0.1), 0 4px 6px -4px hsl(30 10% 15% / 0.05);
-    --shadow-glow: 0 0 20px hsl(25 80% 50% / 0.15);
+    --shadow-glow: 0 0 20px hsl(26 90% 54% / 0.25);
 
-    --sidebar-background: 30 15% 12%;
-    --sidebar-foreground: 40 20% 90%;
-    --sidebar-primary: 25 80% 55%;
-    --sidebar-primary-foreground: 40 30% 98%;
-    --sidebar-accent: 30 15% 18%;
-    --sidebar-accent-foreground: 40 20% 90%;
-    --sidebar-border: 30 15% 20%;
-    --sidebar-ring: 25 80% 50%;
+    --sidebar-background: 0 0% 7%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 26 90% 54%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 0 0% 18%;
+    --sidebar-ring: 26 90% 54%;
   }
 
   .dark {
-    --background: 30 15% 10%;
-    --foreground: 40 20% 95%;
+    /* Deep Black/Grey Background #121212 = HSL(0, 0%, 7%) */
+    --background: 0 0% 7%;
+    --foreground: 0 0% 95%;
 
-    --card: 30 15% 12%;
-    --card-foreground: 40 20% 95%;
+    /* Cards/Container #1E1E1E = HSL(0, 0%, 12%) */
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 30 15% 12%;
-    --popover-foreground: 40 20% 95%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 25 75% 55%;
-    --primary-foreground: 30 15% 10%;
+    /* HufManager Orange */
+    --primary: 26 90% 54%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 30 15% 18%;
-    --secondary-foreground: 40 20% 90%;
+    --secondary: 0 0% 16%;
+    --secondary-foreground: 0 0% 90%;
 
-    --muted: 30 15% 18%;
-    --muted-foreground: 40 15% 60%;
+    --muted: 0 0% 16%;
+    --muted-foreground: 0 0% 60%;
 
-    --accent: 150 30% 45%;
-    --accent-foreground: 30 15% 10%;
+    --accent: 26 90% 54%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62% 50%;
-    --destructive-foreground: 40 30% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 30 15% 20%;
-    --input: 30 15% 20%;
-    --ring: 25 75% 55%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 26 90% 54%;
+
+    /* Dark mode shadows with orange glow */
+    --shadow-glow: 0 0 25px hsl(26 90% 54% / 0.3);
+
+    --sidebar-background: 0 0% 5%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 26 90% 54%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 10%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 26 90% 54%;
   }
 }
 
@@ -135,6 +151,11 @@
   
   .animate-slide-in-left {
     animation: slideInLeft 0.3s ease-out;
+  }
+
+  /* Logo glow for dark backgrounds */
+  .logo-glow {
+    filter: drop-shadow(0 0 8px hsl(0 0% 100% / 0.3));
   }
 }
 

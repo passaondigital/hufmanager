@@ -51,18 +51,22 @@ export function AppSidebar() {
     <NavLink
       to={item.url}
       className={cn(
-        "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
+        "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group min-h-[48px]",
         isActive(item.url)
-          ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
+          ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/30"
           : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
       )}
     >
-      <item.icon className={cn("h-5 w-5 flex-shrink-0", collapsed && "mx-auto")} />
+      <item.icon className={cn(
+        "h-5 w-5 flex-shrink-0 transition-colors", 
+        collapsed && "mx-auto",
+        isActive(item.url) && "text-sidebar-primary-foreground"
+      )} />
       {!collapsed && (
         <>
-          <span className="font-medium">{item.title}</span>
+          <span className="font-medium text-[15px]">{item.title}</span>
           {showBadge && 'badge' in item && item.badge && (
-            <span className="ml-auto bg-primary/20 text-sidebar-primary text-xs font-semibold px-2 py-0.5 rounded-full">
+            <span className="ml-auto bg-sidebar-primary-foreground/20 text-sidebar-primary-foreground text-xs font-bold px-2.5 py-1 rounded-full">
               {item.badge}
             </span>
           )}
