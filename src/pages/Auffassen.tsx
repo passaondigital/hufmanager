@@ -1,17 +1,14 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Star,
   Plus,
-  Image as ImageIcon,
-  ExternalLink,
   Quote,
-  Search,
+  Download,
 } from "lucide-react";
 import {
   Select,
@@ -21,36 +18,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-
-const feedbacks = [
-  {
-    id: 1,
-    customerName: "Anna Schmidt",
-    rating: 5,
-    text: "Herr Hufeisen ist ein absoluter Profi! Meine Pferde sind immer bestens versorgt und die Terminvereinbarung läuft reibungslos.",
-    source: "intern",
-    isFeatured: true,
-    date: "28.11.2024",
-  },
-  {
-    id: 2,
-    customerName: "Thomas Müller",
-    rating: 5,
-    text: "Kompetent, pünktlich und sehr einfühlsam mit den Pferden. Kann ich nur weiterempfehlen!",
-    source: "google",
-    isFeatured: true,
-    date: "15.11.2024",
-  },
-  {
-    id: 3,
-    customerName: "Maria Weber",
-    rating: 4,
-    text: "Gute Arbeit, faire Preise. Einziger Nachteil: manchmal schwer einen Termin zu bekommen.",
-    source: "intern",
-    isFeatured: false,
-    date: "02.11.2024",
-  },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const sourceLabels: Record<string, string> = {
   intern: "Intern",
@@ -58,9 +28,117 @@ const sourceLabels: Record<string, string> = {
   screenshot: "Screenshot",
 };
 
+interface Feedback {
+  id: string;
+  customer_name: string;
+  rating: number;
+  text: string | null;
+  source: string | null;
+  is_featured: boolean | null;
+  created_at: string;
+}
+
 const Auffassen = () => {
   const [showForm, setShowForm] = useState(false);
   const [newRating, setNewRating] = useState(5);
+  const [formData, setFormData] = useState({
+    customerName: "",
+    source: "intern",
+    text: "",
+  });
+  const queryClient = useQueryClient();
+
+  const { data: feedbacks = [] } = useQuery({
+    queryKey: ["feedbacks"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("feedbacks")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as Feedback[];
+    },
+  });
+
+  // Fetch clients for dropdown
+  const { data: clients = [] } = useQuery({
+    queryKey: ["clients"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("*");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const createFeedback = useMutation({
+    mutationFn: async (data: { customer_name: string; rating: number; text: string; source: string }) => {
+      const { error } = await supabase.from("feedbacks").insert({
+        ...data,
+        is_featured: false,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["feedbacks"] });
+      toast({ title: "Erfolg", description: "Feedback wurde gespeichert." });
+      setShowForm(false);
+      setFormData({ customerName: "", source: "intern", text: "" });
+      setNewRating(5);
+    },
+    onError: () => {
+      toast({ title: "Fehler", description: "Feedback konnte nicht gespeichert werden.", variant: "destructive" });
+    },
+  });
+
+  const toggleFeatured = useMutation({
+    mutationFn: async ({ id, is_featured }: { id: string; is_featured: boolean }) => {
+      const { error } = await supabase.from("feedbacks").update({ is_featured }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["feedbacks"] });
+    },
+  });
+
+  const handleSubmit = () => {
+    if (!formData.customerName || !formData.text) {
+      toast({ title: "Fehler", description: "Bitte füllen Sie alle Felder aus.", variant: "destructive" });
+      return;
+    }
+    createFeedback.mutate({
+      customer_name: formData.customerName,
+      rating: newRating,
+      text: formData.text,
+      source: formData.source,
+    });
+  };
+
+  const handleExportCSV = () => {
+    const csvContent = [
+      ["Kunde", "Bewertung", "Quelle", "Text", "Datum"].join(","),
+      ...feedbacks.map((f) =>
+        [
+          `"${f.customer_name}"`,
+          f.rating,
+          f.source,
+          `"${f.text?.replace(/"/g, '""') || ""}"`,
+          new Date(f.created_at).toLocaleDateString("de-DE"),
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `feedbacks_${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+
+    toast({ title: "Export", description: "CSV wurde heruntergeladen." });
+  };
+
+  const avgRating = feedbacks.length
+    ? (feedbacks.reduce((sum, f) => sum + f.rating, 0) / feedbacks.length).toFixed(1)
+    : "0.0";
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -71,10 +149,16 @@ const Auffassen = () => {
             Sammeln und verwalten Sie Kundenfeedback und Bewertungen
           </p>
         </div>
-        <Button className="gap-2" onClick={() => setShowForm(!showForm)}>
-          <Plus className="h-4 w-4" />
-          Feedback hinzufügen
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={handleExportCSV}>
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
+          <Button className="gap-2" onClick={() => setShowForm(!showForm)}>
+            <Plus className="h-4 w-4" />
+            Feedback hinzufügen
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -85,7 +169,7 @@ const Auffassen = () => {
               <Star className="h-6 w-6 text-amber-500 fill-amber-500" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">4.8</p>
+              <p className="text-2xl font-bold text-foreground">{avgRating}</p>
               <p className="text-sm text-muted-foreground">Durchschnitt</p>
             </div>
           </CardContent>
@@ -108,7 +192,7 @@ const Auffassen = () => {
             </div>
             <div>
               <p className="text-2xl font-bold text-foreground">
-                {feedbacks.filter((f) => f.isFeatured).length}
+                {feedbacks.filter((f) => f.is_featured).length}
               </p>
               <p className="text-sm text-muted-foreground">Auf Landingpage</p>
             </div>
@@ -126,20 +210,28 @@ const Auffassen = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Kunde</Label>
-                <Select>
+                <Select
+                  value={formData.customerName}
+                  onValueChange={(value) => setFormData({ ...formData, customerName: value })}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Kunde auswählen..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="kid1">Anna Schmidt</SelectItem>
-                    <SelectItem value="kid2">Thomas Müller</SelectItem>
-                    <SelectItem value="kid3">Maria Weber</SelectItem>
+                    {clients.map((client) => (
+                      <SelectItem key={client.id} value={client.full_name || client.email || "Unbekannt"}>
+                        {client.full_name || client.email || "Unbekannt"}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Quelle</Label>
-                <Select>
+                <Select
+                  value={formData.source}
+                  onValueChange={(value) => setFormData({ ...formData, source: value })}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Quelle auswählen..." />
                   </SelectTrigger>
@@ -176,14 +268,21 @@ const Auffassen = () => {
 
             <div className="space-y-2">
               <Label>Feedback-Text</Label>
-              <Textarea placeholder="Das Feedback des Kunden..." rows={4} />
+              <Textarea
+                placeholder="Das Feedback des Kunden..."
+                rows={4}
+                value={formData.text}
+                onChange={(e) => setFormData({ ...formData, text: e.target.value })}
+              />
             </div>
 
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={() => setShowForm(false)}>
                 Abbrechen
               </Button>
-              <Button>Speichern</Button>
+              <Button onClick={handleSubmit} disabled={createFeedback.isPending}>
+                {createFeedback.isPending ? "Speichern..." : "Speichern"}
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -201,7 +300,7 @@ const Auffassen = () => {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-semibold text-foreground">{feedback.customerName}</h3>
+                    <h3 className="font-semibold text-foreground">{feedback.customer_name}</h3>
                     <div className="flex">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <Star
@@ -215,17 +314,25 @@ const Auffassen = () => {
                         />
                       ))}
                     </div>
-                    <Badge variant="outline">{sourceLabels[feedback.source]}</Badge>
-                    {feedback.isFeatured && (
+                    <Badge variant="outline">{sourceLabels[feedback.source || "intern"]}</Badge>
+                    {feedback.is_featured && (
                       <Badge className="bg-accent/10 text-accent">Auf Landingpage</Badge>
                     )}
                   </div>
                   <p className="text-muted-foreground italic">"{feedback.text}"</p>
-                  <p className="text-sm text-muted-foreground mt-2">{feedback.date}</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {new Date(feedback.created_at).toLocaleDateString("de-DE")}
+                  </p>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="sm">
-                    {feedback.isFeatured ? "Entfernen" : "Hervorheben"}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      toggleFeatured.mutate({ id: feedback.id, is_featured: !feedback.is_featured })
+                    }
+                  >
+                    {feedback.is_featured ? "Entfernen" : "Hervorheben"}
                   </Button>
                 </div>
               </div>

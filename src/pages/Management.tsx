@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,9 +13,154 @@ import {
   CreditCard,
   Upload,
   Save,
+  Calendar,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+
+interface BusinessSettings {
+  id: string;
+  user_id: string;
+  business_name: string | null;
+  owner_name: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  tax_number: string | null;
+  logo_url: string | null;
+  subdomain: string | null;
+  custom_domain: string | null;
+  hero_headline: string | null;
+  about_text: string | null;
+  accept_new_customers: boolean | null;
+  primary_color: string | null;
+  stripe_public_key: string | null;
+  copecart_vendor_id: string | null;
+  paypal_link: string | null;
+}
 
 const Management = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [formData, setFormData] = useState({
+    business_name: "",
+    owner_name: "",
+    email: "",
+    phone: "",
+    address: "",
+    tax_number: "",
+    subdomain: "",
+    custom_domain: "",
+    hero_headline: "",
+    about_text: "",
+    accept_new_customers: true,
+    primary_color: "#d97706",
+    stripe_public_key: "",
+    copecart_vendor_id: "",
+    paypal_link: "",
+  });
+
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ["business-settings", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from("business_settings")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as BusinessSettings | null;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Populate form when settings are loaded
+  useEffect(() => {
+    if (settings) {
+      setFormData({
+        business_name: settings.business_name || "",
+        owner_name: settings.owner_name || "",
+        email: settings.email || "",
+        phone: settings.phone || "",
+        address: settings.address || "",
+        tax_number: settings.tax_number || "",
+        subdomain: settings.subdomain || "",
+        custom_domain: settings.custom_domain || "",
+        hero_headline: settings.hero_headline || "",
+        about_text: settings.about_text || "",
+        accept_new_customers: settings.accept_new_customers ?? true,
+        primary_color: settings.primary_color || "#d97706",
+        stripe_public_key: settings.stripe_public_key || "",
+        copecart_vendor_id: settings.copecart_vendor_id || "",
+        paypal_link: settings.paypal_link || "",
+      });
+    }
+  }, [settings]);
+
+  const saveMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      if (!user?.id) throw new Error("Not authenticated");
+
+      if (settings) {
+        // Update existing
+        const { error } = await supabase
+          .from("business_settings")
+          .update({ ...data })
+          .eq("id", settings.id);
+        if (error) throw error;
+      } else {
+        // Create new
+        const { error } = await supabase.from("business_settings").insert({
+          user_id: user.id,
+          ...data,
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["business-settings"] });
+      toast({ title: "Gespeichert", description: "Einstellungen wurden gespeichert." });
+    },
+    onError: () => {
+      toast({ title: "Fehler", description: "Einstellungen konnten nicht gespeichert werden.", variant: "destructive" });
+    },
+  });
+
+  const handleSave = () => {
+    saveMutation.mutate(formData);
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "Fehler", description: "Datei ist zu groß (max. 2MB)", variant: "destructive" });
+      return;
+    }
+
+    toast({ title: "Info", description: "Logo-Upload wird vorbereitet... (Storage-Bucket erforderlich)" });
+    // Note: Actual upload requires storage bucket setup
+  };
+
+  const handleColorChange = (color: string) => {
+    setFormData({ ...formData, primary_color: color });
+    // Apply color to CSS custom property for live preview
+    document.documentElement.style.setProperty("--primary", color);
+  };
+
+  const handleGoogleCalendarConnect = () => {
+    toast({
+      title: "Google Kalender",
+      description: "Diese Funktion wird in einer zukünftigen Version verfügbar sein.",
+    });
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -59,7 +205,16 @@ const Management = () => {
                   <Upload className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <div>
-                  <Button variant="outline" className="mb-2">Logo hochladen</Button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/png,image/jpeg"
+                    onChange={handleLogoUpload}
+                  />
+                  <Button variant="outline" className="mb-2" onClick={() => fileInputRef.current?.click()}>
+                    Logo hochladen
+                  </Button>
                   <p className="text-sm text-muted-foreground">PNG oder JPG, max. 2MB</p>
                 </div>
               </div>
@@ -67,41 +222,79 @@ const Management = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Geschäftsname</Label>
-                  <Input defaultValue="Hufeisen Hufpflege" />
+                  <Input
+                    value={formData.business_name}
+                    onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Inhaber</Label>
-                  <Input defaultValue="Max Hufeisen" />
+                  <Input
+                    value={formData.owner_name}
+                    onChange={(e) => setFormData({ ...formData, owner_name: e.target.value })}
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>E-Mail</Label>
-                  <Input type="email" defaultValue="info@hufeisen-hufpflege.de" />
+                  <Input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Telefon</Label>
-                  <Input type="tel" defaultValue="+49 171 1234567" />
+                  <Input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label>Adresse</Label>
-                <Input defaultValue="Hufweg 12, 85221 Dachau" />
+                <Input
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                />
               </div>
 
               <div className="space-y-2">
                 <Label>Steuernummer</Label>
-                <Input defaultValue="123/456/78901" />
+                <Input
+                  value={formData.tax_number}
+                  onChange={(e) => setFormData({ ...formData, tax_number: e.target.value })}
+                />
               </div>
 
               <div className="flex justify-end">
-                <Button className="gap-2">
+                <Button className="gap-2" onClick={handleSave} disabled={saveMutation.isPending}>
                   <Save className="h-4 w-4" />
-                  Speichern
+                  {saveMutation.isPending ? "Speichern..." : "Speichern"}
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Google Calendar Integration */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Kalender-Integration
+              </CardTitle>
+              <CardDescription>
+                Verbinden Sie Ihren Google Kalender für die Terminsynchonisierung
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" onClick={handleGoogleCalendarConnect}>
+                Google Kalender verbinden
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -120,7 +313,11 @@ const Management = () => {
                 <div className="space-y-2">
                   <Label>Subdomain</Label>
                   <div className="flex">
-                    <Input defaultValue="hufeisen" className="rounded-r-none" />
+                    <Input
+                      value={formData.subdomain}
+                      onChange={(e) => setFormData({ ...formData, subdomain: e.target.value })}
+                      className="rounded-r-none"
+                    />
                     <span className="px-3 py-2 bg-muted border border-l-0 border-border rounded-r-lg text-muted-foreground">
                       .hufmanager.de
                     </span>
@@ -128,20 +325,28 @@ const Management = () => {
                 </div>
                 <div className="space-y-2">
                   <Label>Eigene Domain (optional)</Label>
-                  <Input placeholder="www.ihre-domain.de" />
+                  <Input
+                    placeholder="www.ihre-domain.de"
+                    value={formData.custom_domain}
+                    onChange={(e) => setFormData({ ...formData, custom_domain: e.target.value })}
+                  />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label>Hero-Überschrift</Label>
-                <Input defaultValue="Professionelle Hufpflege im Raum München" />
+                <Input
+                  value={formData.hero_headline}
+                  onChange={(e) => setFormData({ ...formData, hero_headline: e.target.value })}
+                />
               </div>
 
               <div className="space-y-2">
                 <Label>Über mich</Label>
                 <Textarea
                   rows={4}
-                  defaultValue="Mit über 15 Jahren Erfahrung in der Hufbearbeitung sorge ich für gesunde und glückliche Pferdehufe. Meine Philosophie: Jedes Pferd verdient individuelle Betreuung."
+                  value={formData.about_text}
+                  onChange={(e) => setFormData({ ...formData, about_text: e.target.value })}
                 />
               </div>
 
@@ -150,13 +355,16 @@ const Management = () => {
                   <p className="font-medium text-foreground">Neue Kunden akzeptieren</p>
                   <p className="text-sm text-muted-foreground">Kontaktformular auf der Landingpage anzeigen</p>
                 </div>
-                <Switch defaultChecked />
+                <Switch
+                  checked={formData.accept_new_customers}
+                  onCheckedChange={(checked) => setFormData({ ...formData, accept_new_customers: checked })}
+                />
               </div>
 
               <div className="flex justify-end">
-                <Button className="gap-2">
+                <Button className="gap-2" onClick={handleSave} disabled={saveMutation.isPending}>
                   <Save className="h-4 w-4" />
-                  Speichern
+                  {saveMutation.isPending ? "Speichern..." : "Speichern"}
                 </Button>
               </div>
             </CardContent>
@@ -179,18 +387,29 @@ const Management = () => {
                   {["#d97706", "#059669", "#2563eb", "#7c3aed", "#dc2626"].map((color) => (
                     <button
                       key={color}
-                      className="w-10 h-10 rounded-lg border-2 border-transparent hover:border-foreground/50 transition-colors"
+                      onClick={() => handleColorChange(color)}
+                      className={`w-10 h-10 rounded-lg border-2 transition-colors ${
+                        formData.primary_color === color ? "border-foreground" : "border-transparent hover:border-foreground/50"
+                      }`}
                       style={{ backgroundColor: color }}
                     />
                   ))}
-                  <Input type="color" className="w-10 h-10 p-1 cursor-pointer" defaultValue="#d97706" />
+                  <Input
+                    type="color"
+                    className="w-10 h-10 p-1 cursor-pointer"
+                    value={formData.primary_color}
+                    onChange={(e) => handleColorChange(e.target.value)}
+                  />
                 </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Aktuell: <code className="bg-muted px-1 rounded">{formData.primary_color}</code>
+                </p>
               </div>
 
               <div className="flex justify-end">
-                <Button className="gap-2">
+                <Button className="gap-2" onClick={handleSave} disabled={saveMutation.isPending}>
                   <Save className="h-4 w-4" />
-                  Speichern
+                  {saveMutation.isPending ? "Speichern..." : "Speichern"}
                 </Button>
               </div>
             </CardContent>
@@ -209,23 +428,36 @@ const Management = () => {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label>Stripe Public Key</Label>
-                <Input placeholder="pk_live_..." type="password" />
+                <Input
+                  placeholder="pk_live_..."
+                  type="password"
+                  value={formData.stripe_public_key}
+                  onChange={(e) => setFormData({ ...formData, stripe_public_key: e.target.value })}
+                />
               </div>
 
               <div className="space-y-2">
                 <Label>CopeCart Vendor ID</Label>
-                <Input placeholder="Ihre Vendor ID" />
+                <Input
+                  placeholder="Ihre Vendor ID"
+                  value={formData.copecart_vendor_id}
+                  onChange={(e) => setFormData({ ...formData, copecart_vendor_id: e.target.value })}
+                />
               </div>
 
               <div className="space-y-2">
                 <Label>PayPal.me Link</Label>
-                <Input placeholder="paypal.me/IhrName" />
+                <Input
+                  placeholder="paypal.me/IhrName"
+                  value={formData.paypal_link}
+                  onChange={(e) => setFormData({ ...formData, paypal_link: e.target.value })}
+                />
               </div>
 
               <div className="flex justify-end">
-                <Button className="gap-2">
+                <Button className="gap-2" onClick={handleSave} disabled={saveMutation.isPending}>
                   <Save className="h-4 w-4" />
-                  Speichern
+                  {saveMutation.isPending ? "Speichern..." : "Speichern"}
                 </Button>
               </div>
             </CardContent>

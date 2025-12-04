@@ -106,6 +106,108 @@ export type Database = {
           },
         ]
       }
+      business_settings: {
+        Row: {
+          about_text: string | null
+          accept_new_customers: boolean | null
+          address: string | null
+          business_name: string | null
+          copecart_vendor_id: string | null
+          created_at: string
+          custom_domain: string | null
+          email: string | null
+          hero_headline: string | null
+          id: string
+          logo_url: string | null
+          owner_name: string | null
+          paypal_link: string | null
+          phone: string | null
+          primary_color: string | null
+          stripe_public_key: string | null
+          subdomain: string | null
+          tax_number: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          about_text?: string | null
+          accept_new_customers?: boolean | null
+          address?: string | null
+          business_name?: string | null
+          copecart_vendor_id?: string | null
+          created_at?: string
+          custom_domain?: string | null
+          email?: string | null
+          hero_headline?: string | null
+          id?: string
+          logo_url?: string | null
+          owner_name?: string | null
+          paypal_link?: string | null
+          phone?: string | null
+          primary_color?: string | null
+          stripe_public_key?: string | null
+          subdomain?: string | null
+          tax_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          about_text?: string | null
+          accept_new_customers?: boolean | null
+          address?: string | null
+          business_name?: string | null
+          copecart_vendor_id?: string | null
+          created_at?: string
+          custom_domain?: string | null
+          email?: string | null
+          hero_headline?: string | null
+          id?: string
+          logo_url?: string | null
+          owner_name?: string | null
+          paypal_link?: string | null
+          phone?: string | null
+          primary_color?: string | null
+          stripe_public_key?: string | null
+          subdomain?: string | null
+          tax_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      feedbacks: {
+        Row: {
+          created_at: string
+          customer_name: string
+          id: string
+          is_featured: boolean | null
+          provider_id: string | null
+          rating: number
+          source: string | null
+          text: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_name: string
+          id?: string
+          is_featured?: boolean | null
+          provider_id?: string | null
+          rating: number
+          source?: string | null
+          text?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string
+          id?: string
+          is_featured?: boolean | null
+          provider_id?: string | null
+          rating?: number
+          source?: string | null
+          text?: string | null
+        }
+        Relationships: []
+      }
       hoof_photos: {
         Row: {
           appointment_id: string | null
@@ -264,6 +366,81 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string | null
+          title: string
+          type: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          title: string
+          type?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          title?: string
+          type?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      offers: {
+        Row: {
+          created_at: string
+          description: string | null
+          features: string[] | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          price: number | null
+          price_type: string | null
+          provider_id: string | null
+          sort_order: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          features?: string[] | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          price?: number | null
+          price_type?: string | null
+          provider_id?: string | null
+          sort_order?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          features?: string[] | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          price?: number | null
+          price_type?: string | null
+          provider_id?: string | null
+          sort_order?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -290,6 +467,45 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          base_price: number
+          category: string
+          created_at: string
+          description: string | null
+          duration: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          provider_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          base_price?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          duration?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          provider_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          base_price?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          duration?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          provider_id?: string | null
           updated_at?: string
         }
         Relationships: []
