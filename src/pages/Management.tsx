@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Building,
   Globe,
@@ -14,6 +15,8 @@ import {
   Upload,
   Save,
   Calendar,
+  Loader2,
+  X,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -135,17 +138,107 @@ const Management = () => {
     saveMutation.mutate(formData);
   };
 
+  const [isUploading, setIsUploading] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+
+  // Set logo URL when settings load
+  useEffect(() => {
+    if (settings?.logo_url) {
+      setLogoUrl(settings.logo_url);
+    }
+  }, [settings?.logo_url]);
+
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !user?.id) return;
 
     if (file.size > 2 * 1024 * 1024) {
       toast({ title: "Fehler", description: "Datei ist zu groß (max. 2MB)", variant: "destructive" });
       return;
     }
 
-    toast({ title: "Info", description: "Logo-Upload wird vorbereitet... (Storage-Bucket erforderlich)" });
-    // Note: Actual upload requires storage bucket setup
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({ title: "Fehler", description: "Nur PNG, JPG oder WebP erlaubt", variant: "destructive" });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      // Create file path with user ID for RLS
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/logo.${fileExt}`;
+
+      // Delete old logo if exists
+      if (logoUrl) {
+        const oldPath = logoUrl.split('/logos/')[1];
+        if (oldPath) {
+          await supabase.storage.from('logos').remove([oldPath]);
+        }
+      }
+
+      // Upload new logo
+      const { error: uploadError } = await supabase.storage
+        .from('logos')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('logos')
+        .getPublicUrl(fileName);
+
+      setLogoUrl(publicUrl);
+
+      // Save URL to business settings
+      if (settings) {
+        await supabase
+          .from('business_settings')
+          .update({ logo_url: publicUrl })
+          .eq('id', settings.id);
+      } else {
+        await supabase.from('business_settings').insert({
+          user_id: user.id,
+          logo_url: publicUrl,
+        });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['business-settings'] });
+      toast({ title: "Erfolg", description: "Logo wurde hochgeladen." });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({ title: "Fehler", description: "Logo konnte nicht hochgeladen werden.", variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    if (!logoUrl || !user?.id) return;
+
+    try {
+      const filePath = logoUrl.split('/logos/')[1];
+      if (filePath) {
+        await supabase.storage.from('logos').remove([filePath]);
+      }
+
+      if (settings) {
+        await supabase
+          .from('business_settings')
+          .update({ logo_url: null })
+          .eq('id', settings.id);
+      }
+
+      setLogoUrl(null);
+      queryClient.invalidateQueries({ queryKey: ['business-settings'] });
+      toast({ title: "Erfolg", description: "Logo wurde entfernt." });
+    } catch (error) {
+      toast({ title: "Fehler", description: "Logo konnte nicht entfernt werden.", variant: "destructive" });
+    }
   };
 
   const handleColorChange = (color: string) => {
@@ -201,21 +294,58 @@ const Management = () => {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center gap-6">
-                <div className="w-24 h-24 rounded-xl bg-muted flex items-center justify-center border-2 border-dashed border-border">
-                  <Upload className="h-8 w-8 text-muted-foreground" />
+                <div className="relative">
+                  {logoUrl ? (
+                    <div className="relative">
+                      <Avatar className="w-24 h-24 rounded-xl">
+                        <AvatarImage src={logoUrl} alt="Logo" className="object-cover" />
+                        <AvatarFallback className="rounded-xl">
+                          <Upload className="h-8 w-8 text-muted-foreground" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                        onClick={handleRemoveLogo}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="w-24 h-24 rounded-xl bg-muted flex items-center justify-center border-2 border-dashed border-border">
+                      {isUploading ? (
+                        <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
+                      ) : (
+                        <Upload className="h-8 w-8 text-muted-foreground" />
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <input
                     type="file"
                     ref={fileInputRef}
                     className="hidden"
-                    accept="image/png,image/jpeg"
+                    accept="image/png,image/jpeg,image/webp"
                     onChange={handleLogoUpload}
                   />
-                  <Button variant="outline" className="mb-2" onClick={() => fileInputRef.current?.click()}>
-                    Logo hochladen
+                  <Button 
+                    variant="outline" 
+                    className="mb-2" 
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                  >
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Wird hochgeladen...
+                      </>
+                    ) : (
+                      "Logo hochladen"
+                    )}
                   </Button>
-                  <p className="text-sm text-muted-foreground">PNG oder JPG, max. 2MB</p>
+                  <p className="text-sm text-muted-foreground">PNG, JPG oder WebP, max. 2MB</p>
                 </div>
               </div>
 
