@@ -2,13 +2,17 @@ import { Users, Calendar, TrendingUp, MessageSquare } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentCustomers } from "@/components/dashboard/RecentCustomers";
 import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointments";
+import { useAuth } from "@/hooks/useAuth";
 
 const Dashboard = () => {
+  const { user } = useAuth();
+  const displayName = user?.email?.split("@")[0] || "Max";
+
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
       <div className="animate-fade-in">
-        <h1 className="text-2xl font-bold text-foreground">Willkommen zurück, Max!</h1>
+        <h1 className="text-2xl font-bold text-foreground">Willkommen zurück, {displayName}!</h1>
         <p className="text-muted-foreground mt-1">
           Hier ist ein Überblick über Ihr Geschäft heute.
         </p>
@@ -23,6 +27,7 @@ const Dashboard = () => {
           changeType="positive"
           icon={Users}
           iconColor="primary"
+          navigateTo="/customers"
         />
         <StatCard
           title="Termine diese Woche"
@@ -31,6 +36,7 @@ const Dashboard = () => {
           changeType="neutral"
           icon={Calendar}
           iconColor="accent"
+          navigateTo="/calendar"
         />
         <StatCard
           title="Neue Anfragen"
@@ -39,6 +45,7 @@ const Dashboard = () => {
           changeType="positive"
           icon={MessageSquare}
           iconColor="primary"
+          navigateTo="/anfragen"
         />
         <StatCard
           title="Umsatz (Monat)"
@@ -47,6 +54,7 @@ const Dashboard = () => {
           changeType="positive"
           icon={TrendingUp}
           iconColor="accent"
+          navigateTo="/analyse"
         />
       </div>
 
