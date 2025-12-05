@@ -20,6 +20,7 @@ import Services from "@/pages/Services";
 import Management from "@/pages/Management";
 import Academy from "@/pages/Academy";
 import Chat from "@/pages/Chat";
+import GeldVerdienen from "@/pages/GeldVerdienen";
 import Auth from "@/pages/Auth";
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
 import ClientHome from "@/pages/ClientHome";
@@ -63,6 +64,7 @@ function App() {
                   <Route path="/management" element={<Management />} />
                   <Route path="/academy" element={<Academy />} />
                   <Route path="/chat" element={<Chat />} />
+                  <Route path="/partner" element={<GeldVerdienen />} />
                 </Route>
                 
                 {/* Client routes */}
