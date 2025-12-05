@@ -616,6 +616,51 @@ export type Database = {
           },
         ]
       }
+      leads: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          lead_type: string
+          message: string | null
+          name: string | null
+          phone: string | null
+          postal_code: string | null
+          provider_id: string
+          source: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          lead_type?: string
+          message?: string | null
+          name?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          provider_id: string
+          source?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          lead_type?: string
+          message?: string | null
+          name?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          provider_id?: string
+          source?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       legal_agreements: {
         Row: {
           accepted_at: string | null
