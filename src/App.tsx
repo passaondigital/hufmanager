@@ -31,6 +31,7 @@ import ClientHorseDetail from "@/pages/ClientHorseDetail";
 import ClientInvoices from "@/pages/ClientInvoices";
 import ClientPermissions from "@/pages/ClientPermissions";
 import NotFound from "@/pages/NotFound";
+import ProviderLanding from "@/pages/ProviderLanding";
 
 function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -49,6 +50,8 @@ function App() {
                   {/* Public routes */}
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/update-password" element={<UpdatePassword />} />
+                  <Route path="/p/:slug" element={<ProviderLanding />} />
                   <Route path="/update-password" element={<UpdatePassword />} />
                 
                 {/* Provider (Admin) routes */}

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,44 +11,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MessageSquare, Phone, Mail, MapPin, Search, Filter } from "lucide-react";
+import { MessageSquare, Phone, MapPin, Search, Filter, Calendar, AlertTriangle, HelpCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { de } from "date-fns/locale";
 
-const leads = [
-  {
-    id: 1,
-    name: "Julia Hoffmann",
-    email: "julia.h@email.de",
-    phone: "+49 171 1234567",
-    message: "Hallo, ich suche einen Hufbearbeiter für meine zwei Pferde. Wann hätten Sie Zeit?",
-    horses: 2,
-    location: "München Nord",
-    status: "neu",
-    date: "vor 2 Stunden",
-  },
-  {
-    id: 2,
-    name: "Peter Wagner",
-    email: "p.wagner@mail.com",
-    phone: "+49 172 9876543",
-    message: "Mein Pferd braucht dringend eine Korrektur. Können Sie zeitnah kommen?",
-    horses: 1,
-    location: "Freising",
-    status: "kontaktiert",
-    date: "vor 1 Tag",
-  },
-  {
-    id: 3,
-    name: "Sandra Klein",
-    email: "sandra.klein@web.de",
-    phone: "+49 173 5555555",
-    message: "Ich interessiere mich für regelmäßige Hufpflege für drei Ponys.",
-    horses: 3,
-    location: "Dachau",
-    status: "angebot_gesendet",
-    date: "vor 3 Tagen",
-  },
-];
+interface Lead {
+  id: string;
+  provider_id: string;
+  lead_type: string;
+  postal_code: string | null;
+  phone: string | null;
+  email: string | null;
+  name: string | null;
+  message: string | null;
+  status: string;
+  source: string | null;
+  created_at: string;
+}
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   neu: { label: "Neu", className: "bg-primary/10 text-primary" },
@@ -57,8 +40,69 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   verloren: { label: "Verloren", className: "bg-muted text-muted-foreground" },
 };
 
+const typeConfig: Record<string, { label: string; icon: React.ReactNode; className: string }> = {
+  termin: { label: "Termin", icon: <Calendar className="h-4 w-4" />, className: "bg-blue-500/10 text-blue-600" },
+  notfall: { label: "Notfall", icon: <AlertTriangle className="h-4 w-4" />, className: "bg-red-500/10 text-red-600" },
+  frage: { label: "Frage", icon: <HelpCircle className="h-4 w-4" />, className: "bg-purple-500/10 text-purple-600" },
+};
+
 const Anfragen = () => {
   const [filter, setFilter] = useState("alle");
+  const [search, setSearch] = useState("");
+  const queryClient = useQueryClient();
+
+  const { data: leads = [], isLoading } = useQuery({
+    queryKey: ['leads'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('leads')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as Lead[];
+    },
+  });
+
+  const updateStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase
+        .from('leads')
+        .update({ status })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      toast({ title: "Status aktualisiert" });
+    },
+  });
+
+  const filteredLeads = leads.filter(lead => {
+    if (filter !== 'alle' && lead.status !== filter) return false;
+    if (search) {
+      const searchLower = search.toLowerCase();
+      return (
+        lead.postal_code?.toLowerCase().includes(searchLower) ||
+        lead.phone?.toLowerCase().includes(searchLower) ||
+        lead.name?.toLowerCase().includes(searchLower)
+      );
+    }
+    return true;
+  });
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffHours < 1) return 'vor wenigen Minuten';
+    if (diffHours < 24) return `vor ${diffHours} Stunde${diffHours > 1 ? 'n' : ''}`;
+    if (diffDays < 7) return `vor ${diffDays} Tag${diffDays > 1 ? 'en' : ''}`;
+    return format(date, 'dd.MM.yyyy', { locale: de });
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -66,7 +110,7 @@ const Anfragen = () => {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Anfragen</h1>
           <p className="text-muted-foreground mt-1">
-            Verwalten Sie neue Kundenanfragen und Leads
+            Neue Kundenanfragen über deine Webseite
           </p>
         </div>
         <Badge variant="secondary" className="text-lg px-4 py-2">
@@ -78,7 +122,12 @@ const Anfragen = () => {
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Suchen..." className="pl-10" />
+          <Input 
+            placeholder="Suchen (PLZ, Telefon)..." 
+            className="pl-10" 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
         <Select value={filter} onValueChange={setFilter}>
           <SelectTrigger className="w-[180px]">
@@ -90,61 +139,117 @@ const Anfragen = () => {
             <SelectItem value="neu">Neu</SelectItem>
             <SelectItem value="kontaktiert">Kontaktiert</SelectItem>
             <SelectItem value="angebot_gesendet">Angebot gesendet</SelectItem>
+            <SelectItem value="gewonnen">Gewonnen</SelectItem>
+            <SelectItem value="verloren">Verloren</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
+      {/* Loading State */}
+      {isLoading && (
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!isLoading && filteredLeads.length === 0 && (
+        <Card className="py-12">
+          <CardContent className="text-center">
+            <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              {leads.length === 0 ? "Noch keine Anfragen" : "Keine Treffer"}
+            </h3>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              {leads.length === 0 
+                ? "Sobald potenzielle Kunden über deine Webseite anfragen, erscheinen sie hier."
+                : "Versuche einen anderen Suchbegriff oder Filter."}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Leads List */}
       <div className="space-y-4">
-        {leads.map((lead, index) => (
-          <Card
-            key={lead.id}
-            className="hover:shadow-lg transition-shadow cursor-pointer animate-slide-up"
-            style={{ animationDelay: `${index * 50}ms` }}
-          >
-            <CardContent className="p-6">
-              <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                <div className="flex-1 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-semibold text-foreground">{lead.name}</h3>
-                    <Badge className={cn("font-medium", statusConfig[lead.status].className)}>
-                      {statusConfig[lead.status].label}
-                    </Badge>
-                    <span className="text-sm text-muted-foreground">{lead.date}</span>
+        {filteredLeads.map((lead, index) => {
+          const typeInfo = typeConfig[lead.lead_type] || typeConfig.frage;
+          const statusInfo = statusConfig[lead.status] || statusConfig.neu;
+          
+          return (
+            <Card
+              key={lead.id}
+              className="hover:shadow-lg transition-shadow animate-slide-up"
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <CardContent className="p-6">
+                <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <Badge className={cn("font-medium gap-1", typeInfo.className)}>
+                        {typeInfo.icon}
+                        {typeInfo.label}
+                      </Badge>
+                      <Badge className={cn("font-medium", statusInfo.className)}>
+                        {statusInfo.label}
+                      </Badge>
+                      <span className="text-sm text-muted-foreground">{formatDate(lead.created_at)}</span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                      {lead.phone && (
+                        <a 
+                          href={`tel:${lead.phone}`}
+                          className="flex items-center gap-1 hover:text-foreground transition-colors"
+                        >
+                          <Phone className="h-4 w-4" />
+                          {lead.phone}
+                        </a>
+                      )}
+                      {lead.postal_code && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-4 w-4" />
+                          PLZ {lead.postal_code}
+                        </span>
+                      )}
+                      {lead.source && (
+                        <Badge variant="outline" className="text-xs">
+                          via {lead.source}
+                        </Badge>
+                      )}
+                    </div>
+
+                    {lead.message && (
+                      <p className="text-muted-foreground flex items-start gap-2">
+                        <MessageSquare className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        {lead.message}
+                      </p>
+                    )}
                   </div>
 
-                  <p className="text-muted-foreground flex items-start gap-2">
-                    <MessageSquare className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                    {lead.message}
-                  </p>
-
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Mail className="h-4 w-4" />
-                      {lead.email}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Phone className="h-4 w-4" />
-                      {lead.phone}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4" />
-                      {lead.location}
-                    </span>
-                    <Badge variant="outline">{lead.horses} Pferd{lead.horses > 1 ? "e" : ""}</Badge>
+                  <div className="flex gap-2">
+                    {lead.status === 'neu' && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => updateStatus.mutate({ id: lead.id, status: 'kontaktiert' })}
+                      >
+                        Als kontaktiert markieren
+                      </Button>
+                    )}
+                    {lead.phone && (
+                      <Button size="sm" asChild>
+                        <a href={`tel:${lead.phone}`}>
+                          <Phone className="h-4 w-4 mr-1" />
+                          Anrufen
+                        </a>
+                      </Button>
+                    )}
                   </div>
                 </div>
-
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    Kontaktieren
-                  </Button>
-                  <Button size="sm">Angebot erstellen</Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
