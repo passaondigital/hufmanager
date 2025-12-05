@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { PasswordRecoveryRedirect } from "@/components/auth/PasswordRecoveryRedirect";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Dashboard from "@/pages/Dashboard";
 import Anfragen from "@/pages/Anfragen";
@@ -23,6 +24,7 @@ import Chat from "@/pages/Chat";
 import GeldVerdienen from "@/pages/GeldVerdienen";
 import Auth from "@/pages/Auth";
 import ResetPassword from "@/pages/ResetPassword";
+import UpdatePassword from "@/pages/UpdatePassword";
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
 import ClientHome from "@/pages/ClientHome";
 import ClientHorseDetail from "@/pages/ClientHorseDetail";
@@ -41,10 +43,12 @@ function App() {
               <Toaster />
               <Sonner />
               <AIChatWidget />
-              <Routes>
-                {/* Public routes */}
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
+              <PasswordRecoveryRedirect>
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/update-password" element={<UpdatePassword />} />
                 
                 {/* Provider (Admin) routes */}
                 <Route element={
@@ -86,9 +90,10 @@ function App() {
                   </ProtectedRoute>
                 } />
                 
-                {/* Fallback */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+                  {/* Fallback */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </PasswordRecoveryRedirect>
             </TooltipProvider>
           </AuthProvider>
         </BrowserRouter>
