@@ -83,6 +83,8 @@ export default function ClientHorseDetail() {
       contacts: horseData.contacts as HorseContacts | null,
       photo_url: horseData.photo_url,
       owner_id: horseData.owner_id,
+      last_anamnesis_date: horseData.last_anamnesis_date,
+      anamnesis_interval_months: horseData.anamnesis_interval_months || 12,
     };
     setHorse(mappedHorse);
 

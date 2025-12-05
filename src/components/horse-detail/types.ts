@@ -21,6 +21,8 @@ export interface Horse {
   contacts: HorseContacts | null;
   photo_url: string | null;
   owner_id: string;
+  last_anamnesis_date: string | null;
+  anamnesis_interval_months: number;
 }
 
 export interface HoofMeasurements {

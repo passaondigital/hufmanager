@@ -469,6 +469,7 @@ export type Database = {
       }
       horses: {
         Row: {
+          anamnesis_interval_months: number | null
           birth_year: number | null
           breed: string | null
           color: string | null
@@ -486,6 +487,7 @@ export type Database = {
           hoof_type: string | null
           housing: string | null
           id: string
+          last_anamnesis_date: string | null
           latitude: number | null
           location_name: string | null
           longitude: number | null
@@ -500,6 +502,7 @@ export type Database = {
           usage: string | null
         }
         Insert: {
+          anamnesis_interval_months?: number | null
           birth_year?: number | null
           breed?: string | null
           color?: string | null
@@ -517,6 +520,7 @@ export type Database = {
           hoof_type?: string | null
           housing?: string | null
           id?: string
+          last_anamnesis_date?: string | null
           latitude?: number | null
           location_name?: string | null
           longitude?: number | null
@@ -531,6 +535,7 @@ export type Database = {
           usage?: string | null
         }
         Update: {
+          anamnesis_interval_months?: number | null
           birth_year?: number | null
           breed?: string | null
           color?: string | null
@@ -548,6 +553,7 @@ export type Database = {
           hoof_type?: string | null
           housing?: string | null
           id?: string
+          last_anamnesis_date?: string | null
           latitude?: number | null
           location_name?: string | null
           longitude?: number | null

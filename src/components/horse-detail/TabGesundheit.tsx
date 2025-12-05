@@ -3,6 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Pencil, Heart, Shield, Ruler } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AnamnesisStatusCard } from "./AnamnesisStatusCard";
+import { AnamnesisComparisonView } from "./AnamnesisComparisonView";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface TabGesundheitProps {
   horse: Horse;
@@ -10,6 +16,7 @@ interface TabGesundheitProps {
 }
 
 export function TabGesundheit({ horse, onEdit }: TabGesundheitProps) {
+  const queryClient = useQueryClient();
   const healthStatus = HEALTH_STATUS_OPTIONS.find(s => s.value === horse.health_status) 
     || HEALTH_STATUS_OPTIONS[0];
   const hoofProtection = HOOF_PROTECTION_OPTIONS.find(p => p.value === horse.hoof_protection)
@@ -17,8 +24,48 @@ export function TabGesundheit({ horse, onEdit }: TabGesundheitProps) {
   
   const measurements = (horse.hoof_measurements || {}) as HoofMeasurements;
 
+  const handleStartAnamnesis = async () => {
+    // Update the last_anamnesis_date when starting a new anamnesis
+    const { error } = await supabase
+      .from("horses")
+      .update({ last_anamnesis_date: new Date().toISOString() })
+      .eq("id", horse.id);
+
+    if (error) {
+      toast({
+        title: "Fehler",
+        description: "Konnte die Aufnahme nicht starten.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    queryClient.invalidateQueries({ queryKey: ["horse"] });
+    queryClient.invalidateQueries({ queryKey: ["overdue-assessments"] });
+    
+    toast({
+      title: "Aufnahme gestartet",
+      description: "Die Bestandsaufnahme wurde gestartet. Dokumentiere jetzt den aktuellen Zustand.",
+    });
+    
+    // Switch to edit mode
+    onEdit();
+  };
+
   return (
     <div className="space-y-4">
+      {/* Anamnesis Status Card */}
+      <AnamnesisStatusCard
+        horseId={horse.id}
+        horseName={horse.name}
+        lastAnamnesisDate={horse.last_anamnesis_date}
+        intervalMonths={horse.anamnesis_interval_months}
+        onStartAnamnesis={handleStartAnamnesis}
+      />
+
+      {/* Comparison View */}
+      <AnamnesisComparisonView horseId={horse.id} />
+
       {/* Health Status */}
       <Card>
         <CardHeader className="pb-2 flex flex-row items-center justify-between">

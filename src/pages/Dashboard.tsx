@@ -2,6 +2,7 @@ import { Users, Calendar, TrendingUp, MessageSquare } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentCustomers } from "@/components/dashboard/RecentCustomers";
 import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointments";
+import { OverdueAssessmentsWidget } from "@/components/dashboard/OverdueAssessmentsWidget";
 import { useAuth } from "@/hooks/useAuth";
 
 const Dashboard = () => {
@@ -57,6 +58,9 @@ const Dashboard = () => {
           navigateTo="/analyse"
         />
       </div>
+
+      {/* Smart Suggestions - Overdue Assessments */}
+      <OverdueAssessmentsWidget />
 
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
