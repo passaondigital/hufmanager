@@ -594,10 +594,13 @@ export type Database = {
           avatar_url: string | null
           business_hours: Json | null
           created_at: string
+          created_by_provider_id: string | null
           display_id: string | null
           email: string | null
           full_name: string | null
+          has_logged_in: boolean | null
           id: string
+          invited_at: string | null
           phone: string | null
           updated_at: string
         }
@@ -605,10 +608,13 @@ export type Database = {
           avatar_url?: string | null
           business_hours?: Json | null
           created_at?: string
+          created_by_provider_id?: string | null
           display_id?: string | null
           email?: string | null
           full_name?: string | null
+          has_logged_in?: boolean | null
           id: string
+          invited_at?: string | null
           phone?: string | null
           updated_at?: string
         }
@@ -616,10 +622,13 @@ export type Database = {
           avatar_url?: string | null
           business_hours?: Json | null
           created_at?: string
+          created_by_provider_id?: string | null
           display_id?: string | null
           email?: string | null
           full_name?: string | null
+          has_logged_in?: boolean | null
           id?: string
+          invited_at?: string | null
           phone?: string | null
           updated_at?: string
         }
