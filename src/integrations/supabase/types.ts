@@ -74,13 +74,48 @@ export type Database = {
         }
         Relationships: []
       }
+      appointment_reminders: {
+        Row: {
+          appointment_id: string
+          channel: string
+          id: string
+          reminder_type: string
+          sent_at: string
+        }
+        Insert: {
+          appointment_id: string
+          channel?: string
+          id?: string
+          reminder_type: string
+          sent_at?: string
+        }
+        Update: {
+          appointment_id?: string
+          channel?: string
+          id?: string
+          reminder_type?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_reminders_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
+          confirmation_token: string | null
+          confirmed_at: string | null
           created_at: string
           date: string
           duration: number | null
           horse_id: string
           id: string
+          is_confirmed_by_client: boolean | null
           location: string | null
           notes: string | null
           price: number | null
@@ -91,11 +126,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          confirmation_token?: string | null
+          confirmed_at?: string | null
           created_at?: string
           date: string
           duration?: number | null
           horse_id: string
           id?: string
+          is_confirmed_by_client?: boolean | null
           location?: string | null
           notes?: string | null
           price?: number | null
@@ -106,11 +144,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          confirmation_token?: string | null
+          confirmed_at?: string | null
           created_at?: string
           date?: string
           duration?: number | null
           horse_id?: string
           id?: string
+          is_confirmed_by_client?: boolean | null
           location?: string | null
           notes?: string | null
           price?: number | null
@@ -147,6 +188,8 @@ export type Database = {
           paypal_link: string | null
           phone: string | null
           primary_color: string | null
+          reminder_custom_text: string | null
+          reminder_intervals: Json | null
           stripe_public_key: string | null
           subdomain: string | null
           tax_number: string | null
@@ -169,6 +212,8 @@ export type Database = {
           paypal_link?: string | null
           phone?: string | null
           primary_color?: string | null
+          reminder_custom_text?: string | null
+          reminder_intervals?: Json | null
           stripe_public_key?: string | null
           subdomain?: string | null
           tax_number?: string | null
@@ -191,6 +236,8 @@ export type Database = {
           paypal_link?: string | null
           phone?: string | null
           primary_color?: string | null
+          reminder_custom_text?: string | null
+          reminder_intervals?: Json | null
           stripe_public_key?: string | null
           subdomain?: string | null
           tax_number?: string | null
