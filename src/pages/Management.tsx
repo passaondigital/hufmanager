@@ -17,7 +17,9 @@ import {
   Calendar,
   Loader2,
   X,
+  Clock,
 } from "lucide-react";
+import { BusinessHoursEditor, defaultHours, type BusinessHours } from "@/components/BusinessHoursEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -254,6 +256,51 @@ const Management = () => {
     });
   };
 
+  // Business hours state
+  const [businessHours, setBusinessHours] = useState<BusinessHours>(defaultHours);
+  const [savingHours, setSavingHours] = useState(false);
+
+  // Fetch profile with business hours
+  const { data: profile } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Load business hours from profile
+  useEffect(() => {
+    if (profile?.business_hours) {
+      setBusinessHours(profile.business_hours as unknown as BusinessHours);
+    }
+  }, [profile]);
+
+  const handleSaveBusinessHours = async () => {
+    if (!user?.id) return;
+    setSavingHours(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ business_hours: JSON.parse(JSON.stringify(businessHours)) })
+        .eq("id", user.id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      toast({ title: "Gespeichert", description: "Arbeitszeiten wurden aktualisiert." });
+    } catch (error) {
+      toast({ title: "Fehler", description: "Arbeitszeiten konnten nicht gespeichert werden.", variant: "destructive" });
+    } finally {
+      setSavingHours(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -264,10 +311,14 @@ const Management = () => {
       </div>
 
       <Tabs defaultValue="business" className="w-full">
-        <TabsList className="grid w-full max-w-lg grid-cols-4">
+        <TabsList className="grid w-full max-w-2xl grid-cols-5">
           <TabsTrigger value="business" className="gap-2">
             <Building className="h-4 w-4" />
             <span className="hidden sm:inline">Geschäft</span>
+          </TabsTrigger>
+          <TabsTrigger value="hours" className="gap-2">
+            <Clock className="h-4 w-4" />
+            <span className="hidden sm:inline">Arbeitszeiten</span>
           </TabsTrigger>
           <TabsTrigger value="landing" className="gap-2">
             <Globe className="h-4 w-4" />
@@ -425,6 +476,35 @@ const Management = () => {
               <Button variant="outline" onClick={handleGoogleCalendarConnect}>
                 Google Kalender verbinden
               </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Arbeitszeiten / Business Hours */}
+        <TabsContent value="hours" className="mt-6 space-y-6">
+          <Card className="animate-slide-up">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Meine Arbeitszeiten
+              </CardTitle>
+              <CardDescription>
+                Definieren Sie Ihre Verfügbarkeit. Außerhalb dieser Zeiten werden Kundenanfragen 
+                zurückgehalten und Sie erhalten keine Benachrichtigungen (Feierabend-Modus).
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <BusinessHoursEditor
+                value={businessHours}
+                onChange={setBusinessHours}
+              />
+
+              <div className="flex justify-end">
+                <Button className="gap-2" onClick={handleSaveBusinessHours} disabled={savingHours}>
+                  <Save className="h-4 w-4" />
+                  {savingHours ? "Speichern..." : "Arbeitszeiten speichern"}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

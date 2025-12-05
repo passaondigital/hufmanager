@@ -22,6 +22,7 @@ import {
   MapPin,
   ChevronRight,
   Filter,
+  Navigation,
 } from "lucide-react";
 import {
   Select,
@@ -168,6 +169,11 @@ const Kunden = () => {
                         <h3 className="text-lg font-semibold text-foreground">
                           {client.full_name || "Unbekannt"}
                         </h3>
+                        {client.display_id && (
+                          <span className="text-xs text-muted-foreground font-mono">
+                            #{client.display_id}
+                          </span>
+                        )}
                         <Badge className="bg-accent/10 text-accent">aktiv</Badge>
                       </div>
 
@@ -188,17 +194,43 @@ const Kunden = () => {
 
                       {/* Horses */}
                       <div className="flex flex-wrap gap-2">
-                        {clientHorses.map((horse) => (
-                          <div
-                            key={horse.id}
-                            className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-1.5"
-                          >
-                            <span className="font-medium text-foreground">{horse.name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              ({horse.breed || "Unbekannt"})
-                            </span>
-                          </div>
-                        ))}
+                        {clientHorses.map((horse) => {
+                          const hasGps = horse.latitude && horse.longitude;
+                          return (
+                            <div
+                              key={horse.id}
+                              className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-1.5"
+                            >
+                              <span className="font-medium text-foreground">{horse.name}</span>
+                              {horse.display_id && (
+                                <span className="text-xs text-muted-foreground font-mono">
+                                  #{horse.display_id}
+                                </span>
+                              )}
+                              {hasGps && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                                    const url = isIOS
+                                      ? `maps://maps.apple.com/?daddr=${horse.latitude},${horse.longitude}`
+                                      : `https://www.google.com/maps/dir/?api=1&destination=${horse.latitude},${horse.longitude}`;
+                                    window.open(url, "_blank");
+                                  }}
+                                  className="text-accent hover:text-accent/80"
+                                  title="Route starten"
+                                >
+                                  <Navigation className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                              {!hasGps && horse.breed && (
+                                <span className="text-xs text-muted-foreground">
+                                  ({horse.breed})
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
                         {clientHorses.length === 0 && (
                           <span className="text-sm text-muted-foreground">Keine Pferde zugewiesen</span>
                         )}
