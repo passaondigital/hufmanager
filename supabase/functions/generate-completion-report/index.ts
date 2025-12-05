@@ -9,6 +9,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// HTML escaping to prevent XSS attacks in emails
+function escapeHtml(str: string | null | undefined): string {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -17,18 +28,69 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    
+    // Create service role client for data access
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Create anon client to verify the user's JWT
+    const authClient = createClient(supabaseUrl, supabaseAnonKey);
+
+    // ==========================================
+    // SECURITY: Verify the calling user is authorized
+    // ==========================================
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      console.error("No authorization header provided");
+      return new Response(JSON.stringify({ error: "Unauthorized - No auth header" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+    
+    if (authError || !user) {
+      console.error("Auth error:", authError?.message);
+      return new Response(JSON.stringify({ error: "Unauthorized - Invalid token" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    console.log("Authenticated user:", user.id);
 
     const { appointmentId } = await req.json();
     console.log("Generating report for appointment:", appointmentId);
 
+    // First, verify the user is the provider of this appointment
     const { data: appointment, error: aptError } = await supabase
       .from("appointments")
       .select("*, horses!inner(name, breed, owner_id)")
       .eq("id", appointmentId)
       .single();
 
-    if (aptError || !appointment) throw new Error("Termin nicht gefunden");
+    if (aptError || !appointment) {
+      console.error("Appointment not found:", aptError?.message);
+      return new Response(JSON.stringify({ error: "Termin nicht gefunden" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // ==========================================
+    // SECURITY: Verify the user is the provider of this appointment
+    // ==========================================
+    if (appointment.provider_id !== user.id) {
+      console.error("Unauthorized: User", user.id, "is not the provider of appointment", appointmentId);
+      return new Response(JSON.stringify({ error: "Nicht autorisiert - Sie sind nicht der Provider dieses Termins" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    console.log("Authorization verified - user is the provider of this appointment");
 
     const { data: client } = await supabase
       .from("profiles")
@@ -39,12 +101,18 @@ const handler = async (req: Request): Promise<Response> => {
     const appointmentDate = new Date(appointment.date).toLocaleDateString("de-DE");
 
     if (client?.email) {
+      // Use HTML escaping to prevent XSS attacks
+      const safeHorseName = escapeHtml(appointment.horses.name);
+      const safeDate = escapeHtml(appointmentDate);
+      
       await resend.emails.send({
         from: "HufManager <noreply@resend.dev>",
         to: [client.email],
-        subject: `Behandlungsbericht: ${appointment.horses.name} - ${appointmentDate}`,
-        html: `<p>Die Hufbearbeitung für <strong>${appointment.horses.name}</strong> am ${appointmentDate} wurde abgeschlossen.</p>`,
+        subject: `Behandlungsbericht: ${safeHorseName} - ${safeDate}`,
+        html: `<p>Die Hufbearbeitung für <strong>${safeHorseName}</strong> am ${safeDate} wurde abgeschlossen.</p>`,
       });
+      
+      console.log("Email sent successfully to:", client.email);
     }
 
     return new Response(JSON.stringify({ success: true }), {
