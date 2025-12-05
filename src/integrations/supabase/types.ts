@@ -263,11 +263,15 @@ export type Database = {
           color: string | null
           created_at: string
           discipline: string | null
+          display_id: string | null
           eqid: string | null
           gender: string | null
           height: string | null
           hoof_type: string | null
           id: string
+          latitude: number | null
+          location_name: string | null
+          longitude: number | null
           name: string
           owner_id: string
           photo_url: string | null
@@ -281,11 +285,15 @@ export type Database = {
           color?: string | null
           created_at?: string
           discipline?: string | null
+          display_id?: string | null
           eqid?: string | null
           gender?: string | null
           height?: string | null
           hoof_type?: string | null
           id?: string
+          latitude?: number | null
+          location_name?: string | null
+          longitude?: number | null
           name: string
           owner_id: string
           photo_url?: string | null
@@ -299,11 +307,15 @@ export type Database = {
           color?: string | null
           created_at?: string
           discipline?: string | null
+          display_id?: string | null
           eqid?: string | null
           gender?: string | null
           height?: string | null
           hoof_type?: string | null
           id?: string
+          latitude?: number | null
+          location_name?: string | null
+          longitude?: number | null
           name?: string
           owner_id?: string
           photo_url?: string | null
@@ -444,7 +456,9 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          business_hours: Json | null
           created_at: string
+          display_id: string | null
           email: string | null
           full_name: string | null
           id: string
@@ -453,7 +467,9 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          business_hours?: Json | null
           created_at?: string
+          display_id?: string | null
           email?: string | null
           full_name?: string | null
           id: string
@@ -462,7 +478,9 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          business_hours?: Json | null
           created_at?: string
+          display_id?: string | null
           email?: string | null
           full_name?: string | null
           id?: string

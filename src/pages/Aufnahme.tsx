@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { LocationPicker } from "@/components/LocationPicker";
 
 const intervalOptions = [2, 4, 6, 8, 10, 12];
 
@@ -45,6 +46,9 @@ const Aufnahme = () => {
     hoofType: "",
     interval: "6",
     notes: "",
+    latitude: null as number | null,
+    longitude: null as number | null,
+    locationName: "",
   });
 
   // Invitation form state
@@ -75,6 +79,9 @@ const Aufnahme = () => {
       hoof_type?: string;
       shoeing_interval?: number;
       special_notes?: string;
+      latitude?: number;
+      longitude?: number;
+      location_name?: string;
     }) => {
       const { error } = await supabase.from("horses").insert(data);
       if (error) throw error;
@@ -95,6 +102,9 @@ const Aufnahme = () => {
         hoofType: "",
         interval: "6",
         notes: "",
+        latitude: null,
+        longitude: null,
+        locationName: "",
       });
     },
     onError: () => {
@@ -144,6 +154,9 @@ const Aufnahme = () => {
       hoof_type: horseForm.hoofType || undefined,
       shoeing_interval: Number(horseForm.interval),
       special_notes: horseForm.notes || undefined,
+      latitude: horseForm.latitude || undefined,
+      longitude: horseForm.longitude || undefined,
+      location_name: horseForm.locationName || undefined,
     });
   };
 
@@ -416,6 +429,24 @@ const Aufnahme = () => {
                 />
               </div>
 
+              {/* GPS Location */}
+              <div className="space-y-2">
+                <Label>Standort der Koppel (GPS)</Label>
+                <LocationPicker
+                  latitude={horseForm.latitude}
+                  longitude={horseForm.longitude}
+                  locationName={horseForm.locationName}
+                  onChange={(lat, lng, name) => 
+                    setHorseForm({ 
+                      ...horseForm, 
+                      latitude: lat, 
+                      longitude: lng, 
+                      locationName: name || "" 
+                    })
+                  }
+                />
+              </div>
+
               <div className="flex justify-end gap-3">
                 <Button
                   variant="outline"
@@ -430,6 +461,9 @@ const Aufnahme = () => {
                       hoofType: "",
                       interval: "6",
                       notes: "",
+                      latitude: null,
+                      longitude: null,
+                      locationName: "",
                     })
                   }
                 >
