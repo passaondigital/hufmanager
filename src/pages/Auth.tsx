@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Hammer, Heart } from "lucide-react";
 import { z } from "zod";
+import { cn } from "@/lib/utils";
 
 const loginSchema = z.object({
   email: z.string().email("Ungültige E-Mail-Adresse"),
@@ -20,6 +21,8 @@ const signupSchema = z.object({
   email: z.string().email("Ungültige E-Mail-Adresse"),
   password: z.string().min(6, "Passwort muss mindestens 6 Zeichen lang sein"),
 });
+
+type RoleOption = "provider" | "client";
 
 export default function Auth() {
   const { user, role, loading: authLoading, signIn, signUp } = useAuth();
@@ -33,6 +36,7 @@ export default function Auth() {
   const [signupName, setSignupName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
+  const [selectedRole, setSelectedRole] = useState<RoleOption>("provider");
 
   // Redirect if already logged in
   if (!authLoading && user && role) {
@@ -78,7 +82,7 @@ export default function Auth() {
     }
 
     setLoading(true);
-    const { error } = await signUp(signupEmail, signupPassword, signupName, "client");
+    const { error } = await signUp(signupEmail, signupPassword, signupName, selectedRole);
     setLoading(false);
 
     if (error) {
@@ -150,6 +154,70 @@ export default function Auth() {
             
             <TabsContent value="signup" className="mt-6">
               <form onSubmit={handleSignup} className="space-y-5">
+                {/* Role Selection */}
+                <div className="space-y-3">
+                  <Label className="text-foreground font-medium">Ich bin...</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRole("provider")}
+                      className={cn(
+                        "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
+                        selectedRole === "provider"
+                          ? "border-primary bg-primary/10 shadow-md shadow-primary/20"
+                          : "border-border bg-card hover:border-primary/50 hover:bg-muted/50"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-12 h-12 rounded-full flex items-center justify-center transition-colors",
+                        selectedRole === "provider"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
+                      )}>
+                        <Hammer className="h-6 w-6" />
+                      </div>
+                      <span className={cn(
+                        "font-semibold text-sm",
+                        selectedRole === "provider" ? "text-primary" : "text-foreground"
+                      )}>
+                        Hufbearbeiter
+                      </span>
+                      <span className="text-xs text-muted-foreground text-center">
+                        Verwalte Termine & Kunden
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRole("client")}
+                      className={cn(
+                        "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
+                        selectedRole === "client"
+                          ? "border-primary bg-primary/10 shadow-md shadow-primary/20"
+                          : "border-border bg-card hover:border-primary/50 hover:bg-muted/50"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-12 h-12 rounded-full flex items-center justify-center transition-colors",
+                        selectedRole === "client"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
+                      )}>
+                        <Heart className="h-6 w-6" />
+                      </div>
+                      <span className={cn(
+                        "font-semibold text-sm",
+                        selectedRole === "client" ? "text-primary" : "text-foreground"
+                      )}>
+                        Pferdebesitzer
+                      </span>
+                      <span className="text-xs text-muted-foreground text-center">
+                        Behalte Termine im Blick
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="signup-name" className="text-foreground font-medium">Vollständiger Name</Label>
                   <Input
@@ -185,7 +253,7 @@ export default function Auth() {
                 </div>
                 <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-                  Registrieren
+                  {selectedRole === "provider" ? "Als Hufbearbeiter registrieren" : "Als Pferdebesitzer registrieren"}
                 </Button>
               </form>
             </TabsContent>
