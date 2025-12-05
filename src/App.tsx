@@ -22,6 +22,7 @@ import Academy from "@/pages/Academy";
 import Chat from "@/pages/Chat";
 import GeldVerdienen from "@/pages/GeldVerdienen";
 import Auth from "@/pages/Auth";
+import ResetPassword from "@/pages/ResetPassword";
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
 import ClientHome from "@/pages/ClientHome";
 import ClientHorseDetail from "@/pages/ClientHorseDetail";
@@ -41,8 +42,9 @@ function App() {
               <Sonner />
               <AIChatWidget />
               <Routes>
-                {/* Public route */}
+                {/* Public routes */}
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 
                 {/* Provider (Admin) routes */}
                 <Route element={
