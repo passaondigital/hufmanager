@@ -357,72 +357,143 @@ export type Database = {
           },
         ]
       }
+      horse_documents: {
+        Row: {
+          category: string | null
+          created_at: string
+          file_name: string
+          file_type: string | null
+          file_url: string
+          horse_id: string
+          id: string
+          notes: string | null
+          uploaded_by: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          file_name: string
+          file_type?: string | null
+          file_url: string
+          horse_id: string
+          id?: string
+          notes?: string | null
+          uploaded_by: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          file_name?: string
+          file_type?: string | null
+          file_url?: string
+          horse_id?: string
+          id?: string
+          notes?: string | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horse_documents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       horses: {
         Row: {
           birth_year: number | null
           breed: string | null
           color: string | null
+          contacts: Json | null
           created_at: string
           discipline: string | null
           display_id: string | null
           eqid: string | null
+          feeding_notes: string | null
           gender: string | null
+          health_status: string | null
           height: string | null
+          hoof_measurements: Json | null
+          hoof_protection: string | null
           hoof_type: string | null
+          housing: string | null
           id: string
           latitude: number | null
           location_name: string | null
           longitude: number | null
+          medical_history: string | null
           name: string
+          nickname: string | null
           owner_id: string
           photo_url: string | null
           shoeing_interval: number | null
           special_notes: string | null
           updated_at: string
+          usage: string | null
         }
         Insert: {
           birth_year?: number | null
           breed?: string | null
           color?: string | null
+          contacts?: Json | null
           created_at?: string
           discipline?: string | null
           display_id?: string | null
           eqid?: string | null
+          feeding_notes?: string | null
           gender?: string | null
+          health_status?: string | null
           height?: string | null
+          hoof_measurements?: Json | null
+          hoof_protection?: string | null
           hoof_type?: string | null
+          housing?: string | null
           id?: string
           latitude?: number | null
           location_name?: string | null
           longitude?: number | null
+          medical_history?: string | null
           name: string
+          nickname?: string | null
           owner_id: string
           photo_url?: string | null
           shoeing_interval?: number | null
           special_notes?: string | null
           updated_at?: string
+          usage?: string | null
         }
         Update: {
           birth_year?: number | null
           breed?: string | null
           color?: string | null
+          contacts?: Json | null
           created_at?: string
           discipline?: string | null
           display_id?: string | null
           eqid?: string | null
+          feeding_notes?: string | null
           gender?: string | null
+          health_status?: string | null
           height?: string | null
+          hoof_measurements?: Json | null
+          hoof_protection?: string | null
           hoof_type?: string | null
+          housing?: string | null
           id?: string
           latitude?: number | null
           location_name?: string | null
           longitude?: number | null
+          medical_history?: string | null
           name?: string
+          nickname?: string | null
           owner_id?: string
           photo_url?: string | null
           shoeing_interval?: number | null
           special_notes?: string | null
           updated_at?: string
+          usage?: string | null
         }
         Relationships: []
       }

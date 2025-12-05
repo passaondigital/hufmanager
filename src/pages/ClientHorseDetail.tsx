@@ -3,42 +3,29 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Calendar, Camera, Clock } from "lucide-react";
-import { format } from "date-fns";
-import { de } from "date-fns/locale";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Trash2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-interface Horse {
-  id: string;
-  name: string;
-  breed: string | null;
-  birth_year: number | null;
-  gender: string | null;
-  color: string | null;
-  height: string | null;
-  discipline: string | null;
-  hoof_type: string | null;
-  shoeing_interval: number | null;
-  special_notes: string | null;
-  photo_url: string | null;
-}
-
-interface Appointment {
-  id: string;
-  date: string;
-  time: string | null;
-  service_type: string | null;
-  status: string | null;
-  notes: string | null;
-}
-
-interface HoofPhoto {
-  id: string;
-  photo_url: string;
-  hoof_position: string | null;
-  taken_at: string | null;
-}
+import { Horse, Appointment, HoofPhoto, HorseDocument, HoofMeasurements, HorseContacts } from "@/components/horse-detail/types";
+import { TabSteckbrief } from "@/components/horse-detail/TabSteckbrief";
+import { TabGesundheit } from "@/components/horse-detail/TabGesundheit";
+import { TabNetzwerk } from "@/components/horse-detail/TabNetzwerk";
+import { TabDokumente } from "@/components/horse-detail/TabDokumente";
+import { TabHistorie } from "@/components/horse-detail/TabHistorie";
+import { EditHorseModal } from "@/components/horse-detail/EditHorseModal";
+import { FeedbackFAB } from "@/components/horse-detail/FeedbackFAB";
 
 export default function ClientHorseDetail() {
   const { id } = useParams<{ id: string }>();
@@ -46,71 +33,115 @@ export default function ClientHorseDetail() {
   const { user, loading: authLoading } = useAuth();
   
   const [horse, setHorse] = useState<Horse | null>(null);
-  const [lastAppointment, setLastAppointment] = useState<Appointment | null>(null);
-  const [nextAppointment, setNextAppointment] = useState<Appointment | null>(null);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [hoofPhotos, setHoofPhotos] = useState<HoofPhoto[]>([]);
+  const [documents, setDocuments] = useState<HorseDocument[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const fetchData = async () => {
+    if (!user || !id) return;
+    
+    setLoading(true);
+
+    // Fetch horse details
+    const { data: horseData } = await supabase
+      .from("horses")
+      .select("*")
+      .eq("id", id)
+      .eq("owner_id", user.id)
+      .maybeSingle();
+
+    if (!horseData) {
+      navigate("/client-home");
+      return;
+    }
+    
+    // Map database fields to our interface
+    const mappedHorse: Horse = {
+      id: horseData.id,
+      name: horseData.name,
+      nickname: horseData.nickname,
+      breed: horseData.breed,
+      birth_year: horseData.birth_year,
+      gender: horseData.gender,
+      color: horseData.color,
+      height: horseData.height,
+      discipline: horseData.discipline,
+      usage: horseData.usage,
+      housing: horseData.housing,
+      feeding_notes: horseData.feeding_notes,
+      health_status: horseData.health_status,
+      medical_history: horseData.medical_history,
+      hoof_type: horseData.hoof_type,
+      hoof_protection: horseData.hoof_protection,
+      hoof_measurements: horseData.hoof_measurements as HoofMeasurements | null,
+      shoeing_interval: horseData.shoeing_interval,
+      special_notes: horseData.special_notes,
+      contacts: horseData.contacts as HorseContacts | null,
+      photo_url: horseData.photo_url,
+      owner_id: horseData.owner_id,
+    };
+    setHorse(mappedHorse);
+
+    // Fetch all appointments for history
+    const { data: aptData } = await supabase
+      .from("appointments")
+      .select("*")
+      .eq("horse_id", id)
+      .order("date", { ascending: false });
+    setAppointments(aptData || []);
+
+    // Fetch hoof photos
+    const { data: photos } = await supabase
+      .from("hoof_photos")
+      .select("*")
+      .eq("horse_id", id)
+      .order("taken_at", { ascending: false });
+    setHoofPhotos(photos || []);
+
+    // Fetch documents
+    const { data: docs } = await supabase
+      .from("horse_documents")
+      .select("*")
+      .eq("horse_id", id)
+      .order("created_at", { ascending: false });
+    setDocuments(docs || []);
+
+    setLoading(false);
+  };
 
   useEffect(() => {
-    if (!user || !id) return;
-
-    const fetchData = async () => {
-      setLoading(true);
-
-      // Fetch horse details
-      const { data: horseData } = await supabase
-        .from("horses")
-        .select("*")
-        .eq("id", id)
-        .eq("owner_id", user.id)
-        .maybeSingle();
-
-      if (!horseData) {
-        navigate("/client-home");
-        return;
-      }
-      setHorse(horseData);
-
-      // Fetch appointments
-      const today = new Date().toISOString().split("T")[0];
-      
-      // Last appointment
-      const { data: lastApt } = await supabase
-        .from("appointments")
-        .select("*")
-        .eq("horse_id", id)
-        .lt("date", today)
-        .order("date", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      setLastAppointment(lastApt);
-
-      // Next appointment
-      const { data: nextApt } = await supabase
-        .from("appointments")
-        .select("*")
-        .eq("horse_id", id)
-        .gte("date", today)
-        .eq("status", "scheduled")
-        .order("date", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      setNextAppointment(nextApt);
-
-      // Fetch hoof photos
-      const { data: photos } = await supabase
-        .from("hoof_photos")
-        .select("*")
-        .eq("horse_id", id)
-        .order("taken_at", { ascending: false })
-        .limit(8);
-      setHoofPhotos(photos || []);
-
-      setLoading(false);
-    };
-
     fetchData();
   }, [user, id, navigate]);
+
+  const handleDelete = async () => {
+    if (!horse) return;
+    
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('horses')
+        .delete()
+        .eq('id', horse.id);
+
+      if (error) throw error;
+
+      toast({ title: "Pferd wurde gelöscht" });
+      navigate('/client-home');
+    } catch (error: any) {
+      toast({
+        title: "Fehler beim Löschen",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
 
   if (authLoading || loading) {
     return (
@@ -125,8 +156,8 @@ export default function ClientHorseDetail() {
         </header>
         <main className="px-4 py-6 max-w-lg mx-auto space-y-6">
           <Skeleton className="h-48 w-full rounded-xl" />
-          <Skeleton className="h-24 w-full rounded-xl" />
-          <Skeleton className="h-24 w-full rounded-xl" />
+          <Skeleton className="h-12 w-full rounded-xl" />
+          <Skeleton className="h-64 w-full rounded-xl" />
         </main>
       </div>
     );
@@ -134,186 +165,127 @@ export default function ClientHorseDetail() {
 
   if (!horse) return null;
 
-  const formatDate = (dateStr: string) => {
-    return format(new Date(dateStr), "dd. MMMM yyyy", { locale: de });
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 pb-24">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/client-home")}>
-            <ArrowLeft className="h-5 w-5" />
+        <div className="px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/client-home")}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="font-semibold text-foreground">{horse.name}</h1>
+              {horse.nickname && (
+                <p className="text-xs text-muted-foreground">„{horse.nickname}"</p>
+              )}
+            </div>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setShowDeleteDialog(true)}
+          >
+            <Trash2 className="h-5 w-5 text-destructive" />
           </Button>
-          <h1 className="font-semibold text-foreground">{horse.name}</h1>
         </div>
       </header>
 
-      <main className="px-4 py-6 max-w-lg mx-auto space-y-6">
-        {/* Horse Info Card */}
-        <Card className="overflow-hidden">
-          <div className="h-48 bg-muted flex items-center justify-center">
-            {horse.photo_url ? (
-              <img 
-                src={horse.photo_url} 
-                alt={horse.name}
-                className="h-full w-full object-cover"
+      {/* Horse Photo */}
+      <div className="h-48 bg-muted flex items-center justify-center">
+        {horse.photo_url ? (
+          <img 
+            src={horse.photo_url} 
+            alt={horse.name}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <span className="text-6xl">🐴</span>
+        )}
+      </div>
+
+      {/* Tab Navigation */}
+      <main className="px-4 py-4 max-w-lg mx-auto">
+        <Tabs defaultValue="steckbrief" className="w-full">
+          <TabsList className="w-full grid grid-cols-5 h-auto">
+            <TabsTrigger value="steckbrief" className="text-xs py-2">Steckbrief</TabsTrigger>
+            <TabsTrigger value="gesundheit" className="text-xs py-2">Gesundheit</TabsTrigger>
+            <TabsTrigger value="netzwerk" className="text-xs py-2">Netzwerk</TabsTrigger>
+            <TabsTrigger value="dokumente" className="text-xs py-2">Dokumente</TabsTrigger>
+            <TabsTrigger value="historie" className="text-xs py-2">Historie</TabsTrigger>
+          </TabsList>
+          
+          <div className="mt-4">
+            <TabsContent value="steckbrief">
+              <TabSteckbrief 
+                horse={horse} 
+                onEdit={() => setShowEditModal(true)} 
               />
-            ) : (
-              <span className="text-6xl">🐴</span>
-            )}
+            </TabsContent>
+            
+            <TabsContent value="gesundheit">
+              <TabGesundheit 
+                horse={horse} 
+                onEdit={() => setShowEditModal(true)} 
+              />
+            </TabsContent>
+            
+            <TabsContent value="netzwerk">
+              <TabNetzwerk 
+                horse={horse} 
+                onEdit={() => setShowEditModal(true)} 
+              />
+            </TabsContent>
+            
+            <TabsContent value="dokumente">
+              <TabDokumente 
+                horseId={horse.id}
+                hoofPhotos={hoofPhotos}
+                documents={documents}
+                onRefresh={fetchData}
+              />
+            </TabsContent>
+            
+            <TabsContent value="historie">
+              <TabHistorie appointments={appointments} />
+            </TabsContent>
           </div>
-          <CardContent className="p-4 space-y-3">
-            <h2 className="text-xl font-bold text-foreground">{horse.name}</h2>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              {horse.breed && (
-                <div>
-                  <span className="text-muted-foreground">Rasse:</span>
-                  <p className="font-medium text-foreground">{horse.breed}</p>
-                </div>
-              )}
-              {horse.birth_year && (
-                <div>
-                  <span className="text-muted-foreground">Geburtsjahr:</span>
-                  <p className="font-medium text-foreground">{horse.birth_year}</p>
-                </div>
-              )}
-              {horse.color && (
-                <div>
-                  <span className="text-muted-foreground">Farbe:</span>
-                  <p className="font-medium text-foreground">{horse.color}</p>
-                </div>
-              )}
-              {horse.height && (
-                <div>
-                  <span className="text-muted-foreground">Stockmaß:</span>
-                  <p className="font-medium text-foreground">{horse.height}</p>
-                </div>
-              )}
-              {horse.shoeing_interval && (
-                <div>
-                  <span className="text-muted-foreground">Beschlagsintervall:</span>
-                  <p className="font-medium text-foreground">{horse.shoeing_interval} Wochen</p>
-                </div>
-              )}
-            </div>
-            {horse.special_notes && (
-              <div className="pt-2 border-t border-border">
-                <span className="text-sm text-muted-foreground">Notizen:</span>
-                <p className="text-sm text-foreground mt-1">{horse.special_notes}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Appointments */}
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" />
-            Termine
-          </h3>
-          
-          {/* Next Appointment */}
-          <Card className={nextAppointment ? "border-primary/50 bg-primary/5" : ""}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Nächster Termin
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {nextAppointment ? (
-                <div className="space-y-1">
-                  <p className="font-semibold text-foreground">
-                    {formatDate(nextAppointment.date)}
-                  </p>
-                  {nextAppointment.time && (
-                    <p className="text-sm text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {nextAppointment.time.slice(0, 5)} Uhr
-                    </p>
-                  )}
-                  {nextAppointment.service_type && (
-                    <p className="text-sm text-muted-foreground">
-                      {nextAppointment.service_type}
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <p className="text-muted-foreground">Kein Termin geplant</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Last Appointment */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Letzter Termin
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {lastAppointment ? (
-                <div className="space-y-1">
-                  <p className="font-semibold text-foreground">
-                    {formatDate(lastAppointment.date)}
-                  </p>
-                  {lastAppointment.service_type && (
-                    <p className="text-sm text-muted-foreground">
-                      {lastAppointment.service_type}
-                    </p>
-                  )}
-                  {lastAppointment.notes && (
-                    <p className="text-sm text-muted-foreground mt-2 border-t border-border pt-2">
-                      {lastAppointment.notes}
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <p className="text-muted-foreground">Noch kein Termin durchgeführt</p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Hoof Photos */}
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <Camera className="h-5 w-5 text-primary" />
-            Huf-Fotos
-          </h3>
-          
-          {hoofPhotos.length > 0 ? (
-            <div className="grid grid-cols-2 gap-2">
-              {hoofPhotos.map((photo) => (
-                <Card key={photo.id} className="overflow-hidden">
-                  <div className="aspect-square bg-muted">
-                    <img 
-                      src={photo.photo_url} 
-                      alt={photo.hoof_position || "Huf-Foto"}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  {photo.hoof_position && (
-                    <CardContent className="p-2">
-                      <p className="text-xs text-muted-foreground text-center">
-                        {photo.hoof_position}
-                      </p>
-                    </CardContent>
-                  )}
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <Camera className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-muted-foreground">Noch keine Fotos vorhanden</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        </Tabs>
       </main>
+
+      {/* Floating Action Button */}
+      <FeedbackFAB horseName={horse.name} />
+
+      {/* Edit Modal */}
+      <EditHorseModal 
+        horse={horse}
+        open={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSaved={fetchData}
+      />
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Pferd löschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bist du sicher, dass du <strong>{horse.name}</strong> löschen möchtest? 
+              Alle Daten, Dokumente und die Terminhistorie werden unwiderruflich gelöscht.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete} 
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Wird gelöscht..." : "Ja, löschen"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

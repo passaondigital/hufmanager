@@ -5,10 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LogOut, FileText, ChevronRight } from "lucide-react";
-import { format } from "date-fns";
-import { de } from "date-fns/locale";
+import { LogOut, FileText, ChevronRight, Plus } from "lucide-react";
 import { UnconfirmedAppointmentsBanner } from "@/components/UnconfirmedAppointmentsBanner";
+import { CreateHorseModal } from "@/components/horse-detail/CreateHorseModal";
 
 interface Horse {
   id: string;
@@ -16,6 +15,7 @@ interface Horse {
   breed: string | null;
   photo_url: string | null;
   color: string | null;
+  nickname: string | null;
 }
 
 interface Profile {
@@ -28,42 +28,48 @@ export default function ClientHome() {
   const [horses, setHorses] = useState<Horse[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const fetchData = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    
+    // Fetch profile
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .maybeSingle();
+    
+    setProfile(profileData);
+
+    // Fetch horses
+    const { data: horsesData, error } = await supabase
+      .from("horses")
+      .select("id, name, breed, photo_url, color, nickname")
+      .eq("owner_id", user.id)
+      .order("name");
+
+    if (!error && horsesData) {
+      setHorses(horsesData);
+    }
+    
+    setLoading(false);
+  };
 
   useEffect(() => {
-    if (!user) return;
-
-    const fetchData = async () => {
-      setLoading(true);
-      
-      // Fetch profile
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", user.id)
-        .maybeSingle();
-      
-      setProfile(profileData);
-
-      // Fetch horses
-      const { data: horsesData, error } = await supabase
-        .from("horses")
-        .select("id, name, breed, photo_url, color")
-        .eq("owner_id", user.id)
-        .order("name");
-
-      if (!error && horsesData) {
-        setHorses(horsesData);
-      }
-      
-      setLoading(false);
-    };
-
     fetchData();
   }, [user]);
 
   const handleLogout = async () => {
     await signOut();
     navigate("/auth");
+  };
+
+  const handleHorseCreated = (horseId: string) => {
+    fetchData();
+    navigate(`/client-horse/${horseId}`);
   };
 
   if (authLoading) {
@@ -129,9 +135,19 @@ export default function ClientHome() {
 
         {/* Horses List */}
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-foreground">
-            Meine Pferde ({horses.length})
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">
+              Meine Pferde ({horses.length})
+            </h2>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowCreateModal(true)}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Neues Pferd
+            </Button>
+          </div>
           
           {loading ? (
             <div className="space-y-3">
@@ -154,9 +170,13 @@ export default function ClientHome() {
                 <p className="text-muted-foreground">
                   Noch keine Pferde vorhanden
                 </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Ihr Hufbearbeiter wird Ihre Pferde hier hinzufügen
-                </p>
+                <Button 
+                  className="mt-4"
+                  onClick={() => setShowCreateModal(true)}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Erstes Pferd anlegen
+                </Button>
               </CardContent>
             </Card>
           ) : (
@@ -182,6 +202,9 @@ export default function ClientHome() {
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-foreground truncate">
                         {horse.name}
+                        {horse.nickname && (
+                          <span className="text-muted-foreground font-normal"> „{horse.nickname}"</span>
+                        )}
                       </h3>
                       <p className="text-sm text-muted-foreground truncate">
                         {[horse.breed, horse.color].filter(Boolean).join(" • ") || "Keine Details"}
@@ -195,6 +218,13 @@ export default function ClientHome() {
           )}
         </div>
       </main>
+
+      {/* Create Horse Modal */}
+      <CreateHorseModal 
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreated={handleHorseCreated}
+      />
     </div>
   );
 }
