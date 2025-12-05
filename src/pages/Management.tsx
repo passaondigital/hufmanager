@@ -18,8 +18,10 @@ import {
   Loader2,
   X,
   Clock,
+  Bell,
 } from "lucide-react";
 import { BusinessHoursEditor, defaultHours, type BusinessHours } from "@/components/BusinessHoursEditor";
+import { ReminderSettingsCard } from "@/components/ReminderSettingsCard";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -311,7 +313,7 @@ const Management = () => {
       </div>
 
       <Tabs defaultValue="business" className="w-full">
-        <TabsList className="grid w-full max-w-2xl grid-cols-5">
+        <TabsList className="grid w-full max-w-3xl grid-cols-6">
           <TabsTrigger value="business" className="gap-2">
             <Building className="h-4 w-4" />
             <span className="hidden sm:inline">Geschäft</span>
@@ -319,6 +321,10 @@ const Management = () => {
           <TabsTrigger value="hours" className="gap-2">
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">Arbeitszeiten</span>
+          </TabsTrigger>
+          <TabsTrigger value="reminders" className="gap-2">
+            <Bell className="h-4 w-4" />
+            <span className="hidden sm:inline">Erinnerungen</span>
           </TabsTrigger>
           <TabsTrigger value="landing" className="gap-2">
             <Globe className="h-4 w-4" />
@@ -507,6 +513,11 @@ const Management = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Reminders / Termin-Kommunikation */}
+        <TabsContent value="reminders" className="mt-6 space-y-6">
+          <ReminderSettingsCard />
         </TabsContent>
 
         {/* Landingpage */}

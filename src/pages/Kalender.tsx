@@ -28,6 +28,7 @@ import {
   User,
   Mail,
   Loader2,
+  CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -99,7 +100,7 @@ const Kalender = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments")
-        .select("*, horses(name, owner_id)")
+        .select("*, horses(name, owner_id), is_confirmed_by_client")
         .order("date", { ascending: true });
       if (error) throw error;
       return data;
@@ -296,11 +297,14 @@ const Kalender = () => {
                       <div
                         key={apt.id}
                         className={cn(
-                          "text-xs p-1.5 rounded-md truncate",
+                          "text-xs p-1.5 rounded-md truncate flex items-center gap-1",
                           typeColors[apt.service_type || "Barhuf"]
                         )}
                       >
-                        {apt.time} {apt.horses?.name}
+                        {apt.is_confirmed_by_client && (
+                          <CheckCircle2 className="h-3 w-3 flex-shrink-0" />
+                        )}
+                        <span className="truncate">{apt.time} {apt.horses?.name}</span>
                       </div>
                     ))}
                     {dayAppointments.length > 2 && (
@@ -342,6 +346,16 @@ const Kalender = () => {
                         <Badge className={cn("text-xs", typeColors[apt.service_type || "Barhuf"])}>
                           {apt.service_type}
                         </Badge>
+                        {apt.is_confirmed_by_client ? (
+                          <Badge variant="outline" className="text-xs bg-green-500/10 text-green-500 border-green-500/30">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            Bestätigt
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-500 border-amber-500/30">
+                            Ausstehend
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
                         <User className="h-3.5 w-3.5" />

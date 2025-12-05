@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { LogOut, FileText, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { UnconfirmedAppointmentsBanner } from "@/components/UnconfirmedAppointmentsBanner";
 
 interface Horse {
   id: string;
@@ -93,6 +94,9 @@ export default function ClientHome() {
       </header>
 
       <main className="px-4 py-6 max-w-lg mx-auto space-y-6">
+        {/* Unconfirmed Appointments Banner */}
+        <UnconfirmedAppointmentsBanner />
+
         {/* Greeting */}
         <div className="space-y-1">
           <h1 className="text-2xl font-bold text-foreground">
