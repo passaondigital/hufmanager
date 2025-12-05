@@ -1,11 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Camera, Check, AlertTriangle, XCircle } from "lucide-react";
+import { Loader2, Camera, Check, AlertTriangle, XCircle, Mic, Square, Play, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AppointmentCompletionDialogProps {
@@ -61,7 +61,130 @@ export function AppointmentCompletionDialog({
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [uploadingAudio, setUploadingAudio] = useState(false);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current = null;
+      }
+    };
+  }, []);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(track => track.stop());
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        setAudioBlob(blob);
+        
+        // Upload audio to storage
+        await uploadAudio(blob);
+      };
+
+      mediaRecorder.start(1000);
+      setIsRecording(true);
+      setRecordingTime(0);
+      
+      timerRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } catch (error: any) {
+      toast({ 
+        title: "Mikrofon-Zugriff verweigert", 
+        description: "Bitte erlaube den Mikrofon-Zugriff für Sprachnotizen.",
+        variant: "destructive" 
+      });
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+  };
+
+  const uploadAudio = async (blob: Blob) => {
+    setUploadingAudio(true);
+    try {
+      const fileName = `${appointmentId}/audio_${Date.now()}.webm`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('hoof_photos')
+        .upload(fileName, blob, { contentType: 'audio/webm' });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('hoof_photos')
+        .getPublicUrl(fileName);
+
+      setAudioUrl(urlData.publicUrl);
+      toast({ title: "Sprachnotiz gespeichert 🎙️" });
+    } catch (error: any) {
+      toast({ title: "Fehler beim Speichern", description: error.message, variant: "destructive" });
+    } finally {
+      setUploadingAudio(false);
+    }
+  };
+
+  const playAudio = () => {
+    if (audioBlob && !isPlaying) {
+      const url = URL.createObjectURL(audioBlob);
+      const audio = new Audio(url);
+      audioPlayerRef.current = audio;
+      
+      audio.onended = () => {
+        setIsPlaying(false);
+        URL.revokeObjectURL(url);
+      };
+      
+      audio.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const deleteAudio = () => {
+    setAudioBlob(null);
+    setAudioUrl(null);
+    setRecordingTime(0);
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const handlePhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -256,7 +379,7 @@ export function AppointmentCompletionDialog({
           </div>
         )}
 
-        {/* Quick Photo */}
+        {/* Quick Photo & Audio */}
         <div className="flex gap-2">
           <input
             type="file"
@@ -280,7 +403,61 @@ export function AppointmentCompletionDialog({
             )}
             {photoUrl ? "Foto ✓" : "Schnell-Foto"}
           </Button>
+          
+          {/* Audio Recording Button */}
+          {!audioUrl ? (
+            <Button
+              variant={isRecording ? "destructive" : "outline"}
+              size="sm"
+              onClick={isRecording ? stopRecording : startRecording}
+              disabled={uploadingAudio}
+              className="flex-1"
+            >
+              {uploadingAudio ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : isRecording ? (
+                <>
+                  <Square className="h-4 w-4 mr-1 fill-current" />
+                  {formatTime(recordingTime)}
+                </>
+              ) : (
+                <>
+                  <Mic className="h-4 w-4 mr-1" />
+                  Diktieren
+                </>
+              )}
+            </Button>
+          ) : (
+            <div className="flex-1 flex gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={playAudio}
+                disabled={isPlaying}
+                className="flex-1"
+              >
+                <Play className="h-4 w-4 mr-1" />
+                {formatTime(recordingTime)}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={deleteAudio}
+                className="px-2"
+              >
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          )}
         </div>
+        
+        {/* Recording indicator */}
+        {isRecording && (
+          <div className="flex items-center justify-center gap-2 p-2 bg-red-500/10 rounded-lg border border-red-500/20">
+            <div className="h-2 w-2 bg-red-500 rounded-full animate-pulse" />
+            <span className="text-xs text-red-600 font-medium">Aufnahme läuft...</span>
+          </div>
+        )}
 
         {/* Client Presence */}
         <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
