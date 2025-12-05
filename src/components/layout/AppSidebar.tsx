@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   MessageSquare,
+  MessagesSquare,
   FileText,
   UserPlus,
   Star,
@@ -34,6 +35,7 @@ const mainItems = [
   { title: "Kalender", url: "/kalender", icon: Calendar },
   { title: "Kunden", url: "/kunden", icon: Users },
   { title: "Services", url: "/services", icon: Scissors },
+  { title: "Chat", url: "/chat", icon: MessagesSquare },
 ];
 
 const bottomItems = [
