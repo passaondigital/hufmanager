@@ -53,7 +53,9 @@ function App() {
                   <Route path="/auffassen" element={<Auffassen />} />
                   <Route path="/analyse" element={<Analyse />} />
                   <Route path="/calendar" element={<Kalender />} />
+                  <Route path="/kalender" element={<Kalender />} />
                   <Route path="/customers" element={<Kunden />} />
+                  <Route path="/kunden" element={<Kunden />} />
                   <Route path="/services" element={<Services />} />
                   <Route path="/management" element={<Management />} />
                   <Route path="/academy" element={<Academy />} />
