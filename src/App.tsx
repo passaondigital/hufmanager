@@ -19,7 +19,9 @@ import Kunden from "@/pages/Kunden";
 import Services from "@/pages/Services";
 import Management from "@/pages/Management";
 import Academy from "@/pages/Academy";
+import Chat from "@/pages/Chat";
 import Auth from "@/pages/Auth";
+import { AIChatWidget } from "@/components/chat/AIChatWidget";
 import ClientHome from "@/pages/ClientHome";
 import ClientHorseDetail from "@/pages/ClientHorseDetail";
 import ClientInvoices from "@/pages/ClientInvoices";
@@ -36,6 +38,7 @@ function App() {
             <TooltipProvider>
               <Toaster />
               <Sonner />
+              <AIChatWidget />
               <Routes>
                 {/* Public route */}
                 <Route path="/auth" element={<Auth />} />
@@ -59,6 +62,7 @@ function App() {
                   <Route path="/services" element={<Services />} />
                   <Route path="/management" element={<Management />} />
                   <Route path="/academy" element={<Academy />} />
+                  <Route path="/chat" element={<Chat />} />
                 </Route>
                 
                 {/* Client routes */}
