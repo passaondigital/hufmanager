@@ -26,6 +26,8 @@ import {
   Plus,
   Clock,
   User,
+  Mail,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,7 +47,32 @@ const Kalender = () => {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [isSendingReminders, setIsSendingReminders] = useState(false);
   const queryClient = useQueryClient();
+
+  // Send appointment reminders
+  const handleSendReminders = async () => {
+    setIsSendingReminders(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-appointment-reminders");
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Erinnerungen versendet",
+        description: `${data.sent} Erinnerung(en) für morgige Termine wurden erfolgreich versendet.`,
+      });
+    } catch (error: any) {
+      console.error("Error sending reminders:", error);
+      toast({
+        title: "Fehler",
+        description: error.message || "Erinnerungen konnten nicht versendet werden.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingReminders(false);
+    }
+  };
 
   // Form state
   const [formData, setFormData] = useState({
@@ -191,10 +218,25 @@ const Kalender = () => {
             Verwalten Sie Ihre Termine und Besuche
           </p>
         </div>
-        <Button className="gap-2" onClick={handleOpenNewAppointment}>
-          <Plus className="h-4 w-4" />
-          Neuer Termin
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            className="gap-2" 
+            onClick={handleSendReminders}
+            disabled={isSendingReminders}
+          >
+            {isSendingReminders ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Mail className="h-4 w-4" />
+            )}
+            Erinnerungen senden
+          </Button>
+          <Button className="gap-2" onClick={handleOpenNewAppointment}>
+            <Plus className="h-4 w-4" />
+            Neuer Termin
+          </Button>
+        </div>
       </div>
 
       {/* Week Navigation */}
