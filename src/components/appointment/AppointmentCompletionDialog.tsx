@@ -1,504 +1,340 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Camera, Video, ChevronRight, ChevronLeft, Check, AlertTriangle } from "lucide-react";
+import { Loader2, Camera, Check, AlertTriangle, XCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface AppointmentCompletionDialogProps {
   open: boolean;
   onClose: () => void;
   appointmentId: string;
   horseName: string;
-  clientName: string;
   onCompleted: () => void;
 }
 
-type Step = 'documentation' | 'acceptance' | 'signature';
+type StatusLevel = 'green' | 'yellow' | 'red';
+
+const YELLOW_OPTIONS = [
+  { 
+    id: 'bad_ground', 
+    label: 'Bodenverhältnisse schlecht',
+    legalText: 'Eine fachgerechte Ganganalyse war aufgrund der Bodenverhältnisse vor Ort nicht möglich. Haftung für Boden-bedingte Beurteilungsfehler ausgeschlossen.'
+  },
+  { 
+    id: 'uncooperative', 
+    label: 'Pferd unkooperativ',
+    legalText: 'Das Pferd zeigte sich während der Bearbeitung unkooperativ. Durchführung unter erschwerten Bedingungen.'
+  },
+  { 
+    id: 'bad_lighting', 
+    label: 'Beleuchtung mangelhaft',
+    legalText: 'Aufgrund mangelhafter Lichtverhältnisse war eine vollständige visuelle Beurteilung eingeschränkt.'
+  },
+  { 
+    id: 'known_issue', 
+    label: 'Vorerkrankung/Lahmheit bekannt',
+    legalText: 'Bearbeitung erfolgte palliativ unter Berücksichtigung der bekannten Bestands-Problematik. Keine Gewährleistung für Verbesserung des Gangbildes.'
+  },
+  { 
+    id: 'weather', 
+    label: 'Witterung erschwert',
+    legalText: 'Witterungsbedingt erschwerte Arbeitsbedingungen. Bearbeitung nach bestem fachlichen Ermessen durchgeführt.'
+  },
+];
 
 export function AppointmentCompletionDialog({
   open,
   onClose,
   appointmentId,
   horseName,
-  clientName,
   onCompleted,
 }: AppointmentCompletionDialogProps) {
-  const [step, setStep] = useState<Step>('documentation');
+  const [status, setStatus] = useState<StatusLevel>('green');
+  const [selectedIssues, setSelectedIssues] = useState<string[]>([]);
+  const [problemReason, setProblemReason] = useState('');
+  const [clientPresent, setClientPresent] = useState(true);
+  const [photoSent, setPhotoSent] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  
-  // Documentation
-  const [completionNotes, setCompletionNotes] = useState('');
-  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
-  
-  // Acceptance
-  const [gaitAnalysisDone, setGaitAnalysisDone] = useState(false);
-  const [gaitAnalysisOk, setGaitAnalysisOk] = useState(false);
-  const [gaitVideoUrl, setGaitVideoUrl] = useState('');
-  
-  // Signature
-  const [signedByName, setSignedByName] = useState(clientName);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [hasSignature, setHasSignature] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Reset when dialog opens
-  useEffect(() => {
-    if (open) {
-      setStep('documentation');
-      setCompletionNotes('');
-      setPhotoUrls([]);
-      setGaitAnalysisDone(false);
-      setGaitAnalysisOk(false);
-      setGaitVideoUrl('');
-      setSignedByName(clientName);
-      setHasSignature(false);
-    }
-  }, [open, clientName]);
-
-  // Initialize canvas
-  useEffect(() => {
-    if (step === 'signature' && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-      }
-    }
-  }, [step]);
-
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
+  const handlePhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
     setUploading(true);
     try {
-      for (const file of Array.from(files)) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${appointmentId}/${Date.now()}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('hoof_photos')
-          .upload(fileName, file);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${appointmentId}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('hoof_photos')
+        .upload(fileName, file);
 
-        if (uploadError) throw uploadError;
+      if (uploadError) throw uploadError;
 
-        const { data: urlData } = supabase.storage
-          .from('hoof_photos')
-          .getPublicUrl(fileName);
+      const { data: urlData } = supabase.storage
+        .from('hoof_photos')
+        .getPublicUrl(fileName);
 
-        setPhotoUrls(prev => [...prev, urlData.publicUrl]);
-      }
+      setPhotoUrl(urlData.publicUrl);
+      toast({ title: "Foto gespeichert" });
     } catch (error: any) {
-      toast({
-        title: "Fehler beim Hochladen",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Fehler", description: error.message, variant: "destructive" });
     } finally {
       setUploading(false);
     }
   };
 
-  // Canvas drawing handlers
-  const getCoordinates = (e: React.TouchEvent | React.MouseEvent) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return { x: 0, y: 0 };
-    
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    
-    if ('touches' in e) {
-      return {
-        x: (e.touches[0].clientX - rect.left) * scaleX,
-        y: (e.touches[0].clientY - rect.top) * scaleY,
-      };
-    } else {
-      return {
-        x: (e.clientX - rect.left) * scaleX,
-        y: (e.clientY - rect.top) * scaleY,
-      };
-    }
-  };
-
-  const startDrawing = (e: React.TouchEvent | React.MouseEvent) => {
-    e.preventDefault();
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!ctx) return;
-    
-    setIsDrawing(true);
-    const { x, y } = getCoordinates(e);
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-  };
-
-  const draw = (e: React.TouchEvent | React.MouseEvent) => {
-    if (!isDrawing) return;
-    e.preventDefault();
-    
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!ctx) return;
-    
-    const { x, y } = getCoordinates(e);
-    ctx.lineTo(x, y);
-    ctx.stroke();
-    setHasSignature(true);
-  };
-
-  const stopDrawing = () => {
-    setIsDrawing(false);
-  };
-
-  const clearSignature = () => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!ctx || !canvas) return;
-    
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    setHasSignature(false);
+  const toggleIssue = (id: string) => {
+    setSelectedIssues(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
   };
 
   const handleComplete = async () => {
-    if (!hasSignature || !signedByName.trim()) {
-      toast({
-        title: "Unterschrift erforderlich",
-        description: "Bitte Name eingeben und unterschreiben lassen.",
-        variant: "destructive",
-      });
+    if (status === 'red' && !problemReason.trim()) {
+      toast({ title: "Bitte Grund angeben", variant: "destructive" });
       return;
     }
 
     setSaving(true);
     try {
-      // Upload signature
-      const canvas = canvasRef.current;
-      if (!canvas) throw new Error("Canvas nicht gefunden");
-      
-      const signatureBlob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob(blob => {
-          if (blob) resolve(blob);
-          else reject(new Error("Signatur konnte nicht erstellt werden"));
-        }, 'image/png');
-      });
+      // Build legal disclaimer text
+      let legalNotes = '';
+      if (status === 'green') {
+        legalNotes = 'Bearbeitung abgeschlossen. Pferd zeigte sich unauffällig, Gangbild nach Bearbeitung kontrolliert und für gut befunden.';
+      } else if (status === 'yellow') {
+        const selectedTexts = YELLOW_OPTIONS
+          .filter(opt => selectedIssues.includes(opt.id))
+          .map(opt => opt.legalText);
+        legalNotes = selectedTexts.join(' ');
+      } else {
+        legalNotes = `Termin abgebrochen/Problem: ${problemReason}`;
+      }
 
-      const signatureFileName = `${appointmentId}_${Date.now()}.png`;
-      const { error: uploadError } = await supabase.storage
-        .from('signatures')
-        .upload(signatureFileName, signatureBlob);
+      // Add client presence info
+      if (!clientPresent) {
+        legalNotes += ' Kunde war bei Abschluss nicht anwesend - Foto-Dokumentation wurde übermittelt.';
+      }
 
-      if (uploadError) throw uploadError;
-
-      const { data: signatureUrlData } = supabase.storage
-        .from('signatures')
-        .getPublicUrl(signatureFileName);
-
-      // Update appointment
-      const { error: updateError } = await supabase
+      const { error } = await supabase
         .from('appointments')
         .update({
-          status: 'completed',
-          completion_notes: completionNotes,
-          gait_analysis_done: gaitAnalysisDone,
-          gait_analysis_ok: gaitAnalysisOk,
-          gait_video_url: gaitVideoUrl || null,
-          signature_url: signatureUrlData.publicUrl,
-          signed_at: new Date().toISOString(),
-          signed_by_name: signedByName.trim(),
+          status: status === 'red' ? 'cancelled' : 'completed',
+          completion_notes: legalNotes,
+          gait_analysis_done: status === 'green',
+          gait_analysis_ok: status === 'green',
           completed_at: new Date().toISOString(),
+          signed_by_name: clientPresent ? 'Kunde anwesend' : 'Foto-Dokumentation',
+          signed_at: new Date().toISOString(),
         })
         .eq('id', appointmentId);
 
-      if (updateError) throw updateError;
+      if (error) throw error;
 
-      // Generate PDF report
+      // Try to send report email (non-blocking)
       try {
         await supabase.functions.invoke('generate-completion-report', {
           body: { appointmentId },
         });
-      } catch (pdfError) {
-        console.error('PDF generation failed:', pdfError);
-        // Don't block completion if PDF fails
+      } catch (e) {
+        console.log('Report generation skipped');
       }
 
-      toast({ title: "Termin erfolgreich abgeschlossen" });
+      toast({ 
+        title: status === 'red' ? "Termin abgebrochen" : "Termin abgeschlossen",
+        description: status === 'green' ? "In 2 Sekunden erledigt! 🚀" : undefined
+      });
       onCompleted();
       onClose();
     } catch (error: any) {
-      toast({
-        title: "Fehler beim Abschließen",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Fehler", description: error.message, variant: "destructive" });
     } finally {
       setSaving(false);
     }
   };
 
-  const steps: { key: Step; label: string }[] = [
-    { key: 'documentation', label: 'Dokumentation' },
-    { key: 'acceptance', label: 'Abnahme' },
-    { key: 'signature', label: 'Unterschrift' },
-  ];
-
-  const currentStepIndex = steps.findIndex(s => s.key === step);
-
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Termin abschließen</DialogTitle>
-          <DialogDescription>
-            {horseName} • Werkvertrag-Abnahme
-          </DialogDescription>
+          <DialogTitle>Termin beenden</DialogTitle>
+          <DialogDescription>{horseName}</DialogDescription>
         </DialogHeader>
 
-        {/* Progress Steps */}
-        <div className="flex items-center justify-between px-2 py-3 border-b">
-          {steps.map((s, i) => (
-            <div key={s.key} className="flex items-center">
-              <div className={`
-                w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
-                ${i < currentStepIndex ? 'bg-primary text-primary-foreground' : ''}
-                ${i === currentStepIndex ? 'bg-primary text-primary-foreground ring-2 ring-primary/30' : ''}
-                ${i > currentStepIndex ? 'bg-muted text-muted-foreground' : ''}
-              `}>
-                {i < currentStepIndex ? <Check className="h-4 w-4" /> : i + 1}
-              </div>
-              {i < steps.length - 1 && (
-                <div className={`w-12 h-0.5 mx-1 ${i < currentStepIndex ? 'bg-primary' : 'bg-muted'}`} />
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Step Content */}
-        <div className="flex-1 overflow-y-auto py-4 space-y-4">
-          {step === 'documentation' && (
-            <>
-              <div>
-                <Label>Was wurde gemacht?</Label>
-                <Textarea
-                  value={completionNotes}
-                  onChange={(e) => setCompletionNotes(e.target.value)}
-                  placeholder="Beschreibung der durchgeführten Arbeiten..."
-                  rows={4}
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <Label className="flex items-center gap-2">
-                  <Camera className="h-4 w-4" />
-                  Fotos hochladen
-                </Label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handlePhotoUpload}
-                  className="hidden"
-                  id="photo-upload"
-                />
-                <label htmlFor="photo-upload">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full mt-1"
-                    disabled={uploading}
-                    asChild
-                  >
-                    <span>
-                      {uploading ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Camera className="h-4 w-4 mr-2" />
-                      )}
-                      Fotos auswählen
-                    </span>
-                  </Button>
-                </label>
-                {photoUrls.length > 0 && (
-                  <div className="flex gap-2 mt-2 flex-wrap">
-                    {photoUrls.map((url, i) => (
-                      <img 
-                        key={i} 
-                        src={url} 
-                        alt={`Foto ${i + 1}`}
-                        className="w-16 h-16 object-cover rounded"
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-
-          {step === 'acceptance' && (
-            <>
-              <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                <div className="flex gap-2">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
-                  <div className="text-sm">
-                    <p className="font-medium text-amber-800">Werkvertragliche Abnahme</p>
-                    <p className="text-amber-700 mt-1">
-                      Die Ganganalyse nach der Bearbeitung ist rechtlich wichtig. 
-                      Sie dokumentiert, dass das Pferd mangelfrei läuft.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <Checkbox
-                  id="gait-done"
-                  checked={gaitAnalysisDone}
-                  onCheckedChange={(checked) => setGaitAnalysisDone(checked as boolean)}
-                />
-                <div>
-                  <Label htmlFor="gait-done" className="cursor-pointer">
-                    Ganganalyse nach Bearbeitung durchgeführt
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Das Pferd wurde im Schritt und/oder Trab vorgeführt
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <Checkbox
-                  id="gait-ok"
-                  checked={gaitAnalysisOk}
-                  onCheckedChange={(checked) => setGaitAnalysisOk(checked as boolean)}
-                  disabled={!gaitAnalysisDone}
-                />
-                <div>
-                  <Label htmlFor="gait-ok" className={`cursor-pointer ${!gaitAnalysisDone ? 'opacity-50' : ''}`}>
-                    Pferd läuft mangelfrei / unverändert gut
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Keine Taktunreinheiten oder Auffälligkeiten beobachtet
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <Label className="flex items-center gap-2">
-                  <Video className="h-4 w-4" />
-                  Laufbild-Video (optional)
-                </Label>
-                <Input
-                  value={gaitVideoUrl}
-                  onChange={(e) => setGaitVideoUrl(e.target.value)}
-                  placeholder="YouTube/Vimeo Link oder Dateipfad"
-                  className="mt-1"
-                />
-              </div>
-            </>
-          )}
-
-          {step === 'signature' && (
-            <>
-              <div>
-                <Label>Name des Unterzeichners</Label>
-                <Input
-                  value={signedByName}
-                  onChange={(e) => setSignedByName(e.target.value)}
-                  placeholder="Vor- und Nachname"
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <Label>Unterschrift</Label>
-                <div className="mt-1 border rounded-lg overflow-hidden bg-white">
-                  <canvas
-                    ref={canvasRef}
-                    width={350}
-                    height={150}
-                    className="w-full touch-none"
-                    onMouseDown={startDrawing}
-                    onMouseMove={draw}
-                    onMouseUp={stopDrawing}
-                    onMouseLeave={stopDrawing}
-                    onTouchStart={startDrawing}
-                    onTouchMove={draw}
-                    onTouchEnd={stopDrawing}
-                  />
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={clearSignature}
-                  className="mt-1"
-                >
-                  Löschen & neu unterschreiben
-                </Button>
-              </div>
-
-              <div className="p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground">
-                <p className="font-medium text-foreground mb-1">Rechtlicher Hinweis</p>
-                <p>
-                  Mit meiner Unterschrift nehme ich die durchgeführte Hufbearbeitung 
-                  als vertragsgemäß ab (§ 640 BGB - Werkvertrag). Das Pferd wurde mir 
-                  nach der Bearbeitung vorgeführt und ich bestätige den mangelfreien Zustand.
-                </p>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Navigation */}
-        <div className="flex justify-between pt-4 border-t">
-          <Button
-            variant="outline"
-            onClick={() => {
-              if (step === 'documentation') {
-                onClose();
-              } else if (step === 'acceptance') {
-                setStep('documentation');
-              } else {
-                setStep('acceptance');
-              }
-            }}
-            disabled={saving}
+        {/* Status Ampel */}
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            onClick={() => { setStatus('green'); setSelectedIssues([]); }}
+            className={cn(
+              "p-4 rounded-xl border-2 transition-all text-center",
+              status === 'green' 
+                ? "border-green-500 bg-green-500/10" 
+                : "border-muted hover:border-green-500/50"
+            )}
           >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            {step === 'documentation' ? 'Abbrechen' : 'Zurück'}
-          </Button>
+            <div className="text-3xl mb-1">🟢</div>
+            <div className="text-xs font-medium">Alles gut</div>
+          </button>
+          
+          <button
+            onClick={() => setStatus('yellow')}
+            className={cn(
+              "p-4 rounded-xl border-2 transition-all text-center",
+              status === 'yellow' 
+                ? "border-amber-500 bg-amber-500/10" 
+                : "border-muted hover:border-amber-500/50"
+            )}
+          >
+            <div className="text-3xl mb-1">🟡</div>
+            <div className="text-xs font-medium">Auffälligkeiten</div>
+          </button>
+          
+          <button
+            onClick={() => setStatus('red')}
+            className={cn(
+              "p-4 rounded-xl border-2 transition-all text-center",
+              status === 'red' 
+                ? "border-red-500 bg-red-500/10" 
+                : "border-muted hover:border-red-500/50"
+            )}
+          >
+            <div className="text-3xl mb-1">🔴</div>
+            <div className="text-xs font-medium">Problem</div>
+          </button>
+        </div>
 
-          {step !== 'signature' ? (
-            <Button
-              onClick={() => {
-                if (step === 'documentation') {
-                  setStep('acceptance');
-                } else {
-                  setStep('signature');
-                }
-              }}
-            >
-              Weiter
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
-          ) : (
-            <Button onClick={handleComplete} disabled={saving || !hasSignature}>
-              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Abschließen & Senden
-            </Button>
+        {/* Yellow Options */}
+        {status === 'yellow' && (
+          <div className="space-y-2 p-3 bg-amber-500/5 rounded-lg border border-amber-500/20">
+            <p className="text-xs font-medium text-amber-700 mb-2">
+              Was war los? (Mehrfachauswahl)
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {YELLOW_OPTIONS.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => toggleIssue(opt.id)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                    selectedIssues.includes(opt.id)
+                      ? "bg-amber-500 text-white"
+                      : "bg-muted hover:bg-muted/80 text-foreground"
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            {selectedIssues.includes('bad_ground') && (
+              <p className="text-xs text-amber-600 mt-2 p-2 bg-amber-500/10 rounded">
+                ✓ Haftungsausschluss für Ganganalyse wird automatisch dokumentiert
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Red - Problem Reason */}
+        {status === 'red' && (
+          <div className="space-y-2 p-3 bg-red-500/5 rounded-lg border border-red-500/20">
+            <p className="text-xs font-medium text-red-700">
+              Was ist passiert? (Pflichtfeld)
+            </p>
+            <Textarea
+              value={problemReason}
+              onChange={(e) => setProblemReason(e.target.value)}
+              placeholder="Kurze Beschreibung..."
+              rows={2}
+              className="text-sm"
+            />
+          </div>
+        )}
+
+        {/* Quick Photo */}
+        <div className="flex gap-2">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handlePhotoCapture}
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+          />
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="flex-1"
+          >
+            {uploading ? (
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <Camera className="h-4 w-4 mr-1" />
+            )}
+            {photoUrl ? "Foto ✓" : "Schnell-Foto"}
+          </Button>
+        </div>
+
+        {/* Client Presence */}
+        <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
+          <div className="flex items-center gap-3">
+            <Checkbox
+              id="client-present"
+              checked={clientPresent}
+              onCheckedChange={(c) => setClientPresent(c as boolean)}
+            />
+            <label htmlFor="client-present" className="text-sm cursor-pointer">
+              Kunde war anwesend & zufrieden
+            </label>
+          </div>
+          
+          {!clientPresent && (
+            <div className="flex items-center gap-3 pl-6">
+              <Checkbox
+                id="photo-sent"
+                checked={photoSent}
+                onCheckedChange={(c) => setPhotoSent(c as boolean)}
+              />
+              <label htmlFor="photo-sent" className="text-xs text-muted-foreground cursor-pointer">
+                Foto-Dokumentation wurde gesendet
+              </label>
+            </div>
           )}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2 pt-2">
+          <Button variant="outline" onClick={onClose} disabled={saving} className="flex-1">
+            Abbrechen
+          </Button>
+          <Button 
+            onClick={handleComplete} 
+            disabled={saving || (status === 'red' && !problemReason.trim())}
+            className={cn(
+              "flex-1",
+              status === 'green' && "bg-green-600 hover:bg-green-700",
+              status === 'yellow' && "bg-amber-600 hover:bg-amber-700",
+              status === 'red' && "bg-red-600 hover:bg-red-700"
+            )}
+          >
+            {saving ? (
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+            ) : status === 'green' ? (
+              <Check className="h-4 w-4 mr-1" />
+            ) : status === 'yellow' ? (
+              <AlertTriangle className="h-4 w-4 mr-1" />
+            ) : (
+              <XCircle className="h-4 w-4 mr-1" />
+            )}
+            {status === 'red' ? 'Abbrechen' : 'Fertig'}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
