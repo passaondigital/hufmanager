@@ -8,3 +8,6 @@ verify_jwt = true
 
 [functions.confirm-appointment]
 verify_jwt = false
+
+[functions.send-client-invitation]
+verify_jwt = true

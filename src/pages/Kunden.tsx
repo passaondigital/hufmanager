@@ -23,6 +23,8 @@ import {
   ChevronRight,
   Filter,
   Navigation,
+  CheckCircle,
+  Clock,
 } from "lucide-react";
 import {
   Select,
@@ -36,8 +38,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 const Kunden = () => {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("alle");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -49,17 +53,20 @@ const Kunden = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  // Fetch profiles (clients)
+  // Fetch profiles (clients) created by this provider
   const { data: clients = [] } = useQuery({
-    queryKey: ["clients"],
+    queryKey: ["provider-clients", user?.id],
     queryFn: async () => {
+      if (!user?.id) return [];
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
+        .eq("created_by_provider_id", user.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+      return data || [];
     },
+    enabled: !!user?.id,
   });
 
   // Fetch horses
@@ -169,6 +176,21 @@ const Kunden = () => {
                         <h3 className="text-lg font-semibold text-foreground">
                           {client.full_name || "Unbekannt"}
                         </h3>
+                        {client.has_logged_in ? (
+                          <Badge className="bg-green-500/10 text-green-600 gap-1">
+                            <CheckCircle className="h-3 w-3" />
+                            registriert
+                          </Badge>
+                        ) : client.invited_at ? (
+                          <Badge variant="secondary" className="gap-1">
+                            <Clock className="h-3 w-3" />
+                            eingeladen
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            ausstehend
+                          </Badge>
+                        )}
                         {client.display_id && (
                           <span className="text-xs text-muted-foreground font-mono">
                             #{client.display_id}

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserPlus, PlusCircle, Send } from "lucide-react";
+import { UserPlus, PlusCircle, Send, Mail } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -33,6 +34,7 @@ const Aufnahme = () => {
     phone: "",
     address: "",
     notes: "",
+    sendInvitation: true,
   });
 
   // Horse form state
@@ -54,16 +56,109 @@ const Aufnahme = () => {
   // Invitation form state
   const [inviteForm, setInviteForm] = useState({
     customerId: "",
-    method: "",
   });
 
-  // Fetch profiles (clients) for selection
+  // Fetch profiles (clients) created by this provider
   const { data: clients = [] } = useQuery({
-    queryKey: ["clients"],
+    queryKey: ["provider-clients", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("*");
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("created_by_provider_id", user.id);
       if (error) throw error;
-      return data;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Filter clients that haven't logged in yet (for invitation dropdown)
+  const uninvitedClients = clients.filter(
+    (c) => !c.has_logged_in && c.email
+  );
+
+  // Create customer mutation
+  const createCustomer = useMutation({
+    mutationFn: async (data: {
+      full_name: string;
+      email: string;
+      phone: string;
+      created_by_provider_id: string;
+    }) => {
+      // Generate a UUID for the new profile
+      const newId = crypto.randomUUID();
+      
+      const { error } = await supabase.from("profiles").insert({
+        id: newId,
+        full_name: data.full_name,
+        email: data.email || null,
+        phone: data.phone || null,
+        created_by_provider_id: data.created_by_provider_id,
+        has_logged_in: false,
+      });
+      if (error) throw error;
+      return { id: newId, email: data.email, full_name: data.full_name };
+    },
+    onSuccess: async (result) => {
+      queryClient.invalidateQueries({ queryKey: ["provider-clients"] });
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      
+      const fullName = customerForm.firstName + " " + customerForm.lastName;
+      
+      // Send invitation email if checkbox is checked and email exists
+      if (customerForm.sendInvitation && result.email) {
+        try {
+          await sendInvitation.mutateAsync({
+            profileId: result.id,
+            email: result.email,
+            fullName: result.full_name,
+          });
+          toast({
+            title: "Kunde angelegt & eingeladen",
+            description: `${fullName} wurde erstellt und hat eine Einladungs-E-Mail erhalten.`,
+          });
+        } catch {
+          toast({
+            title: "Kunde angelegt",
+            description: `${fullName} wurde erstellt, aber die E-Mail konnte nicht gesendet werden.`,
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "Kunde angelegt",
+          description: `${fullName} wurde erfolgreich erstellt.`,
+        });
+      }
+      
+      resetCustomerForm();
+    },
+    onError: (error: any) => {
+      console.error("Error creating customer:", error);
+      toast({
+        title: "Fehler",
+        description: error.message || "Der Kunde konnte nicht erstellt werden.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Send invitation mutation
+  const sendInvitation = useMutation({
+    mutationFn: async (data: { profileId: string; email: string; fullName: string }) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Nicht angemeldet");
+
+      const response = await supabase.functions.invoke("send-client-invitation", {
+        body: data,
+      });
+
+      if (response.error) throw response.error;
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["provider-clients"] });
     },
   });
 
@@ -126,11 +221,29 @@ const Aufnahme = () => {
       return;
     }
 
-    // Note: Creating users requires auth.signUp or admin access
-    // For now, show info toast
-    toast({
-      title: "Info",
-      description: "Neue Kunden werden über die Einladungsfunktion angelegt. Der Kunde erhält einen Zugang per E-Mail.",
+    if (!user?.id) {
+      toast({
+        title: "Fehler",
+        description: "Sie müssen angemeldet sein.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (customerForm.sendInvitation && !customerForm.email) {
+      toast({
+        title: "Fehler",
+        description: "Für die Einladung wird eine E-Mail-Adresse benötigt.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createCustomer.mutate({
+      full_name: `${customerForm.firstName} ${customerForm.lastName}`.trim(),
+      email: customerForm.email,
+      phone: customerForm.phone,
+      created_by_provider_id: user.id,
     });
   };
 
@@ -160,23 +273,46 @@ const Aufnahme = () => {
     });
   };
 
-  const handleSendInvitation = () => {
-    if (!inviteForm.customerId || !inviteForm.method) {
+  const handleSendInvitation = async () => {
+    if (!inviteForm.customerId) {
       toast({
         title: "Fehler",
-        description: "Bitte wählen Sie einen Kunden und eine Versandmethode.",
+        description: "Bitte wählen Sie einen Kunden aus.",
         variant: "destructive",
       });
       return;
     }
 
-    // Simulate sending invitation
-    toast({
-      title: "Einladung gesendet",
-      description: `Die Einladung wurde per ${inviteForm.method === "email" ? "E-Mail" : inviteForm.method === "sms" ? "SMS" : "QR-Code"} versendet.`,
-    });
+    const selectedClient = clients.find((c) => c.id === inviteForm.customerId);
+    if (!selectedClient?.email) {
+      toast({
+        title: "Fehler",
+        description: "Dieser Kunde hat keine E-Mail-Adresse.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    setInviteForm({ customerId: "", method: "" });
+    try {
+      await sendInvitation.mutateAsync({
+        profileId: selectedClient.id,
+        email: selectedClient.email,
+        fullName: selectedClient.full_name || "Kunde",
+      });
+      
+      toast({
+        title: "Einladung gesendet",
+        description: `Die Einladung wurde an ${selectedClient.email} gesendet.`,
+      });
+      
+      setInviteForm({ customerId: "" });
+    } catch (error: any) {
+      toast({
+        title: "Fehler",
+        description: error.message || "Die Einladung konnte nicht gesendet werden.",
+        variant: "destructive",
+      });
+    }
   };
 
   const resetCustomerForm = () => {
@@ -187,6 +323,7 @@ const Aufnahme = () => {
       phone: "",
       address: "",
       notes: "",
+      sendInvitation: true,
     });
   };
 
@@ -245,7 +382,9 @@ const Aufnahme = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">E-Mail</Label>
+                  <Label htmlFor="email">
+                    E-Mail {customerForm.sendInvitation && "*"}
+                  </Label>
                   <Input
                     id="email"
                     type="email"
@@ -255,7 +394,7 @@ const Aufnahme = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Telefon *</Label>
+                  <Label htmlFor="phone">Telefon</Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -287,11 +426,36 @@ const Aufnahme = () => {
                 />
               </div>
 
+              {/* Invitation Checkbox */}
+              <div className="flex items-center space-x-3 p-4 bg-muted/50 rounded-lg border">
+                <Checkbox
+                  id="sendInvitation"
+                  checked={customerForm.sendInvitation}
+                  onCheckedChange={(checked) =>
+                    setCustomerForm({ ...customerForm, sendInvitation: checked as boolean })
+                  }
+                />
+                <div className="flex-1">
+                  <Label htmlFor="sendInvitation" className="flex items-center gap-2 cursor-pointer">
+                    <Mail className="h-4 w-4 text-primary" />
+                    Sofort Einladungs-E-Mail senden
+                  </Label>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Der Kunde erhält eine E-Mail mit Link zur KundenApp-Registrierung.
+                  </p>
+                </div>
+              </div>
+
               <div className="flex justify-end gap-3">
                 <Button variant="outline" onClick={resetCustomerForm}>
                   Abbrechen
                 </Button>
-                <Button onClick={handleCreateCustomer}>Kunde anlegen</Button>
+                <Button 
+                  onClick={handleCreateCustomer} 
+                  disabled={createCustomer.isPending || sendInvitation.isPending}
+                >
+                  {createCustomer.isPending || sendInvitation.isPending ? "Wird angelegt..." : "Kunde anlegen"}
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -314,11 +478,17 @@ const Aufnahme = () => {
                     <SelectValue placeholder="Kunde auswählen..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.full_name || client.email || "Unbekannt"}
-                      </SelectItem>
-                    ))}
+                    {clients.length === 0 ? (
+                      <div className="p-2 text-sm text-muted-foreground text-center">
+                        Keine Kunden vorhanden. Bitte legen Sie zuerst einen Kunden an.
+                      </div>
+                    ) : (
+                      clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.full_name || client.email || "Unbekannt"}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -494,46 +664,49 @@ const Aufnahme = () => {
                     <SelectValue placeholder="Kunde auswählen..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.full_name || client.email || "Unbekannt"}
-                      </SelectItem>
-                    ))}
+                    {uninvitedClients.length === 0 ? (
+                      <div className="p-2 text-sm text-muted-foreground text-center">
+                        Keine Kunden ohne Einladung vorhanden.
+                      </div>
+                    ) : (
+                      uninvitedClients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          <div className="flex flex-col">
+                            <span>{client.full_name || "Unbekannt"}</span>
+                            <span className="text-xs text-muted-foreground">{client.email}</span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="inviteMethod">Versandmethode *</Label>
-                <Select
-                  value={inviteForm.method}
-                  onValueChange={(value) => setInviteForm({ ...inviteForm, method: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Methode auswählen..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="email">E-Mail</SelectItem>
-                    <SelectItem value="sms">SMS</SelectItem>
-                    <SelectItem value="qr">QR-Code generieren</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm text-muted-foreground">
-                  Der Kunde erhält eine Einladung mit seinen Zugangsdaten (KID + PIN) zur KundenApp.
-                  Dort kann er seine Pferdedaten, Termine und Rechnungen einsehen.
+                  Hier werden nur Kunden angezeigt, die noch keinen Login haben.
                 </p>
               </div>
 
+              <div className="bg-muted/50 rounded-lg p-4 border">
+                <h4 className="font-medium mb-2">Die Einladung enthält:</h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• Link zur Registrierung in der KundenApp</li>
+                  <li>• Ihre Geschäftsinformationen</li>
+                  <li>• Übersicht der Vorteile der KundenApp</li>
+                </ul>
+              </div>
+
               <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setInviteForm({ customerId: "", method: "" })}>
+                <Button
+                  variant="outline"
+                  onClick={() => setInviteForm({ customerId: "" })}
+                >
                   Abbrechen
                 </Button>
-                <Button className="gap-2" onClick={handleSendInvitation}>
-                  <Send className="h-4 w-4" />
-                  Einladung senden
+                <Button
+                  onClick={handleSendInvitation}
+                  disabled={sendInvitation.isPending || !inviteForm.customerId}
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  {sendInvitation.isPending ? "Wird gesendet..." : "Einladung senden"}
                 </Button>
               </div>
             </CardContent>
