@@ -9,6 +9,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// HTML escape helper to prevent XSS
+function escapeHtml(str: string | null | undefined): string {
+  if (!str) return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 type ReminderType = "evening_before" | "6_hours" | "1_hour";
 
 interface ReminderInterval {
@@ -282,6 +293,19 @@ async function sendReminderEmail(
     month: "long",
     year: "numeric",
   });
+  
+  // Escape all user-controlled data to prevent XSS
+  const safeOwnerName = escapeHtml(owner.full_name) || "Pferdebesitzer/in";
+  const safeHorseName = escapeHtml(horse.name);
+  const safeDateStr = escapeHtml(dateStr);
+  const safeTimeStr = escapeHtml(timeStr);
+  const safeServiceStr = escapeHtml(serviceStr);
+  const safeLocationStr = escapeHtml(locationStr);
+  const safeCustomText = escapeHtml(customText);
+  const safeIntervalLabel = escapeHtml(intervalLabel);
+  const safeBusinessName = escapeHtml(businessName);
+  const safeBusinessPhone = escapeHtml(businessPhone);
+  const safeBusinessEmail = escapeHtml(businessEmail);
 
   // Generate confirmation URL
   const confirmUrl = `${supabaseUrl}/functions/v1/confirm-appointment?token=${appointment.confirmation_token}`;
@@ -332,28 +356,28 @@ async function sendReminderEmail(
         <div class="header">
           <div class="horse-icon">🐴</div>
           <h1 style="margin: 0;">Terminerinnerung</h1>
-          <p style="margin: 10px 0 0 0;"><span class="interval-badge">${intervalLabel}</span></p>
+          <p style="margin: 10px 0 0 0;"><span class="interval-badge">${safeIntervalLabel}</span></p>
         </div>
         <div class="content">
-          <p>Hallo ${owner.full_name || "Pferdebesitzer/in"},</p>
-          <p>wir möchten Sie an Ihren bevorstehenden Termin für <strong>${horse.name}</strong> erinnern:</p>
+          <p>Hallo ${safeOwnerName},</p>
+          <p>wir möchten Sie an Ihren bevorstehenden Termin für <strong>${safeHorseName}</strong> erinnern:</p>
           
           <div class="appointment-box">
             <div class="detail">
               <span class="label">📅 Datum:</span> 
-              <span class="value">${dateStr}</span>
+              <span class="value">${safeDateStr}</span>
             </div>
             <div class="detail">
               <span class="label">🕐 Uhrzeit:</span> 
-              <span class="value">${timeStr}</span>
+              <span class="value">${safeTimeStr}</span>
             </div>
             <div class="detail">
               <span class="label">🔧 Leistung:</span> 
-              <span class="value">${serviceStr}</span>
+              <span class="value">${safeServiceStr}</span>
             </div>
             <div class="detail">
               <span class="label">📍 Ort:</span> 
-              <span class="value">${locationStr}</span>
+              <span class="value">${safeLocationStr}</span>
             </div>
           </div>
           
@@ -368,20 +392,20 @@ async function sendReminderEmail(
             </div>
           `}
           
-          ${customText ? `
+          ${safeCustomText ? `
             <div class="custom-notice">
               <strong>⚠️ Wichtiger Hinweis:</strong><br>
-              ${customText}
+              ${safeCustomText}
             </div>
           ` : ""}
           
-          <p>Bitte stellen Sie sicher, dass ${horse.name} zum vereinbarten Zeitpunkt bereitsteht.</p>
+          <p>Bitte stellen Sie sicher, dass ${safeHorseName} zum vereinbarten Zeitpunkt bereitsteht.</p>
           
-          <p>Mit freundlichen Grüßen,<br><strong>${businessName}</strong></p>
+          <p>Mit freundlichen Grüßen,<br><strong>${safeBusinessName}</strong></p>
         </div>
         <div class="footer">
-          ${businessPhone ? `📞 ${businessPhone}<br>` : ""}
-          ${businessEmail ? `✉️ ${businessEmail}` : ""}
+          ${safeBusinessPhone ? `📞 ${safeBusinessPhone}<br>` : ""}
+          ${safeBusinessEmail ? `✉️ ${safeBusinessEmail}` : ""}
         </div>
       </div>
     </body>
@@ -389,9 +413,9 @@ async function sendReminderEmail(
   `;
 
   return resend.emails.send({
-    from: `${businessName} <onboarding@resend.dev>`,
+    from: `${safeBusinessName} <onboarding@resend.dev>`,
     to: [owner.email],
-    subject: `🐴 ${intervalLabel}: Termin für ${horse.name} am ${dateStr}`,
+    subject: `🐴 ${safeIntervalLabel}: Termin für ${safeHorseName} am ${safeDateStr}`,
     html: emailHtml,
   });
 }

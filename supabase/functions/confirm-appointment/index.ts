@@ -6,6 +6,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// HTML escape helper to prevent XSS
+function escapeHtml(str: string | null | undefined): string {
+  if (!str) return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 serve(async (req: Request): Promise<Response> => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -124,6 +135,12 @@ function generateHtmlPage(status: string, appointment: any, alreadyConfirmed: bo
     year: "numeric",
   });
   const timeStr = appointment.time ? appointment.time.substring(0, 5) + " Uhr" : "";
+  
+  // Escape user-controlled data to prevent XSS
+  const safeHorseName = escapeHtml(horse.name);
+  const safeDateStr = escapeHtml(dateStr);
+  const safeTimeStr = escapeHtml(timeStr);
+  const safeStatus = escapeHtml(status);
 
   return `
     <!DOCTYPE html>
@@ -204,29 +221,29 @@ function generateHtmlPage(status: string, appointment: any, alreadyConfirmed: bo
     <body>
       <div class="container">
         <div class="icon">${alreadyConfirmed ? "ℹ️" : "✅"}</div>
-        <h1>Termin ${status}!</h1>
+        <h1>Termin ${safeStatus}!</h1>
         <p class="subtitle">${alreadyConfirmed ? "Dieser Termin wurde bereits bestätigt." : "Vielen Dank für Ihre Bestätigung."}</p>
         
         <div class="details">
           <div class="detail-row">
             <span class="detail-icon">🐴</span>
             <div class="detail-text">
-              <strong>${horse.name}</strong>
+              <strong>${safeHorseName}</strong>
               Pferd
             </div>
           </div>
           <div class="detail-row">
             <span class="detail-icon">📅</span>
             <div class="detail-text">
-              <strong>${dateStr}</strong>
+              <strong>${safeDateStr}</strong>
               Datum
             </div>
           </div>
-          ${timeStr ? `
+          ${safeTimeStr ? `
           <div class="detail-row">
             <span class="detail-icon">🕐</span>
             <div class="detail-text">
-              <strong>${timeStr}</strong>
+              <strong>${safeTimeStr}</strong>
               Uhrzeit
             </div>
           </div>
