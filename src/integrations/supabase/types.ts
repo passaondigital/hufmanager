@@ -50,6 +50,45 @@ export type Database = {
         }
         Relationships: []
       }
+      access_grants: {
+        Row: {
+          can_create_appointments: boolean | null
+          can_view_basic: boolean | null
+          can_view_medical: boolean | null
+          client_id: string
+          granted_at: string
+          id: string
+          is_active: boolean | null
+          provider_id: string
+          revoked_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          can_create_appointments?: boolean | null
+          can_view_basic?: boolean | null
+          can_view_medical?: boolean | null
+          client_id: string
+          granted_at?: string
+          id?: string
+          is_active?: boolean | null
+          provider_id: string
+          revoked_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          can_create_appointments?: boolean | null
+          can_view_basic?: boolean | null
+          can_view_medical?: boolean | null
+          client_id?: string
+          granted_at?: string
+          id?: string
+          is_active?: boolean | null
+          provider_id?: string
+          revoked_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ai_chat_messages: {
         Row: {
           content: string
@@ -108,11 +147,17 @@ export type Database = {
       }
       appointments: {
         Row: {
+          completed_at: string | null
+          completion_notes: string | null
+          completion_pdf_url: string | null
           confirmation_token: string | null
           confirmed_at: string | null
           created_at: string
           date: string
           duration: number | null
+          gait_analysis_done: boolean | null
+          gait_analysis_ok: boolean | null
+          gait_video_url: string | null
           horse_id: string
           id: string
           is_confirmed_by_client: boolean | null
@@ -121,16 +166,25 @@ export type Database = {
           price: number | null
           provider_id: string | null
           service_type: string | null
+          signature_url: string | null
+          signed_at: string | null
+          signed_by_name: string | null
           status: string | null
           time: string | null
           updated_at: string
         }
         Insert: {
+          completed_at?: string | null
+          completion_notes?: string | null
+          completion_pdf_url?: string | null
           confirmation_token?: string | null
           confirmed_at?: string | null
           created_at?: string
           date: string
           duration?: number | null
+          gait_analysis_done?: boolean | null
+          gait_analysis_ok?: boolean | null
+          gait_video_url?: string | null
           horse_id: string
           id?: string
           is_confirmed_by_client?: boolean | null
@@ -139,16 +193,25 @@ export type Database = {
           price?: number | null
           provider_id?: string | null
           service_type?: string | null
+          signature_url?: string | null
+          signed_at?: string | null
+          signed_by_name?: string | null
           status?: string | null
           time?: string | null
           updated_at?: string
         }
         Update: {
+          completed_at?: string | null
+          completion_notes?: string | null
+          completion_pdf_url?: string | null
           confirmation_token?: string | null
           confirmed_at?: string | null
           created_at?: string
           date?: string
           duration?: number | null
+          gait_analysis_done?: boolean | null
+          gait_analysis_ok?: boolean | null
+          gait_video_url?: string | null
           horse_id?: string
           id?: string
           is_confirmed_by_client?: boolean | null
@@ -157,6 +220,9 @@ export type Database = {
           price?: number | null
           provider_id?: string | null
           service_type?: string | null
+          signature_url?: string | null
+          signed_at?: string | null
+          signed_by_name?: string | null
           status?: string | null
           time?: string | null
           updated_at?: string
@@ -549,6 +615,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      legal_agreements: {
+        Row: {
+          accepted_at: string | null
+          agreement_type: string
+          created_at: string
+          document_url: string | null
+          id: string
+          provider_id: string
+          updated_at: string
+          version: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          agreement_type: string
+          created_at?: string
+          document_url?: string | null
+          id?: string
+          provider_id: string
+          updated_at?: string
+          version?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          agreement_type?: string
+          created_at?: string
+          document_url?: string | null
+          id?: string
+          provider_id?: string
+          updated_at?: string
+          version?: string | null
+        }
+        Relationships: []
       }
       messages: {
         Row: {

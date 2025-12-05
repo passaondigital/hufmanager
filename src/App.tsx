@@ -29,6 +29,7 @@ import { AIChatWidget } from "@/components/chat/AIChatWidget";
 import ClientHome from "@/pages/ClientHome";
 import ClientHorseDetail from "@/pages/ClientHorseDetail";
 import ClientInvoices from "@/pages/ClientInvoices";
+import ClientPermissions from "@/pages/ClientPermissions";
 import NotFound from "@/pages/NotFound";
 
 function App() {
@@ -87,6 +88,11 @@ function App() {
                 <Route path="/client-invoices" element={
                   <ProtectedRoute allowedRoles={["client"]}>
                     <ClientInvoices />
+                  </ProtectedRoute>
+                } />
+                <Route path="/client-permissions" element={
+                  <ProtectedRoute allowedRoles={["client"]}>
+                    <ClientPermissions />
                   </ProtectedRoute>
                 } />
                 

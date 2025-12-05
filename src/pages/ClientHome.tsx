@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LogOut, FileText, ChevronRight, Plus } from "lucide-react";
+import { LogOut, FileText, ChevronRight, Plus, Shield } from "lucide-react";
 import { UnconfirmedAppointmentsBanner } from "@/components/UnconfirmedAppointmentsBanner";
 import { CreateHorseModal } from "@/components/horse-detail/CreateHorseModal";
 
@@ -114,14 +114,22 @@ export default function ClientHome() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <Button 
             variant="outline" 
             className="h-16 flex-col gap-1"
             onClick={() => navigate("/client-invoices")}
           >
             <FileText className="h-5 w-5 text-primary" />
-            <span className="text-sm">Rechnungen</span>
+            <span className="text-xs">Rechnungen</span>
+          </Button>
+          <Button 
+            variant="outline" 
+            className="h-16 flex-col gap-1"
+            onClick={() => navigate("/client-permissions")}
+          >
+            <Shield className="h-5 w-5 text-primary" />
+            <span className="text-xs">Datenfreigabe</span>
           </Button>
           <Button 
             variant="outline" 
@@ -129,7 +137,7 @@ export default function ClientHome() {
             disabled
           >
             <span className="text-lg">📅</span>
-            <span className="text-sm">Termine</span>
+            <span className="text-xs">Termine</span>
           </Button>
         </div>
 
