@@ -32,6 +32,30 @@ export default function UpdatePassword() {
     }
   }, [isPasswordRecovery, user, navigate]);
 
+  const sendPasswordChangedEmail = async () => {
+    if (!user?.email) return;
+
+    try {
+      // Fetch user profile for name
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      await supabase.functions.invoke("send-password-changed-email", {
+        body: {
+          email: user.email,
+          userName: profile?.full_name || undefined,
+        },
+      });
+      console.log("Password changed confirmation email sent");
+    } catch (error) {
+      console.error("Failed to send password changed email:", error);
+      // Don't show error to user - email is just a confirmation
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -43,11 +67,15 @@ export default function UpdatePassword() {
 
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
-    setLoading(false);
 
     if (error) {
+      setLoading(false);
       toast.error(error.message);
     } else {
+      // Send confirmation email in background
+      sendPasswordChangedEmail();
+      
+      setLoading(false);
       toast.success("Passwort erfolgreich geändert!");
       clearPasswordRecovery();
       
