@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, Send, X, Loader2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -23,11 +24,15 @@ export function AIChatWidget() {
   }, [messages]);
 
   const streamChat = async (userMessages: Message[]) => {
+    // Get the user's actual JWT token for authenticated requests
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    
     const resp = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ messages: userMessages }),
     });
