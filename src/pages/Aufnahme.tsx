@@ -19,6 +19,23 @@ import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { LocationPicker } from "@/components/LocationPicker";
+import { z } from "zod";
+
+// Validation schemas
+const customerSchema = z.object({
+  firstName: z.string().trim().min(1, "Vorname ist erforderlich").max(100, "Vorname darf maximal 100 Zeichen haben"),
+  lastName: z.string().trim().min(1, "Nachname ist erforderlich").max(100, "Nachname darf maximal 100 Zeichen haben"),
+  email: z.string().trim().email("Ungültige E-Mail-Adresse").max(255, "E-Mail darf maximal 255 Zeichen haben").or(z.literal("")),
+  phone: z.string().trim().max(50, "Telefonnummer darf maximal 50 Zeichen haben").regex(/^[+\d\s()-]*$/, "Ungültiges Telefonnummernformat").or(z.literal("")),
+});
+
+const horseSchema = z.object({
+  ownerId: z.string().uuid("Ungültige Kunden-ID"),
+  name: z.string().trim().min(1, "Pferdename ist erforderlich").max(100, "Pferdename darf maximal 100 Zeichen haben"),
+  breed: z.string().trim().max(100, "Rasse darf maximal 100 Zeichen haben").optional(),
+  birthYear: z.string().regex(/^(\d{4})?$/, "Ungültiges Geburtsjahr").optional(),
+  notes: z.string().trim().max(2000, "Notizen dürfen maximal 2000 Zeichen haben").optional(),
+});
 
 const intervalOptions = [2, 4, 6, 8, 10, 12];
 
@@ -212,10 +229,19 @@ const Aufnahme = () => {
   });
 
   const handleCreateCustomer = () => {
-    if (!customerForm.firstName || !customerForm.lastName) {
+    // Validate with zod schema
+    const validationResult = customerSchema.safeParse({
+      firstName: customerForm.firstName,
+      lastName: customerForm.lastName,
+      email: customerForm.email || "",
+      phone: customerForm.phone || "",
+    });
+
+    if (!validationResult.success) {
+      const firstError = validationResult.error.errors[0];
       toast({
-        title: "Fehler",
-        description: "Bitte geben Sie Vor- und Nachnamen ein.",
+        title: "Validierungsfehler",
+        description: firstError.message,
         variant: "destructive",
       });
       return;
@@ -239,34 +265,46 @@ const Aufnahme = () => {
       return;
     }
 
+    const validated = validationResult.data;
     createCustomer.mutate({
-      full_name: `${customerForm.firstName} ${customerForm.lastName}`.trim(),
-      email: customerForm.email,
-      phone: customerForm.phone,
+      full_name: `${validated.firstName} ${validated.lastName}`.trim(),
+      email: validated.email || "",
+      phone: validated.phone || "",
       created_by_provider_id: user.id,
     });
   };
 
   const handleCreateHorse = () => {
-    if (!horseForm.ownerId || !horseForm.name) {
+    // Validate with zod schema
+    const validationResult = horseSchema.safeParse({
+      ownerId: horseForm.ownerId,
+      name: horseForm.name,
+      breed: horseForm.breed || undefined,
+      birthYear: horseForm.birthYear || undefined,
+      notes: horseForm.notes || undefined,
+    });
+
+    if (!validationResult.success) {
+      const firstError = validationResult.error.errors[0];
       toast({
-        title: "Fehler",
-        description: "Bitte wählen Sie einen Kunden und geben Sie einen Namen ein.",
+        title: "Validierungsfehler",
+        description: firstError.message,
         variant: "destructive",
       });
       return;
     }
 
+    const validated = validationResult.data;
     createHorse.mutate({
-      owner_id: horseForm.ownerId,
-      name: horseForm.name,
-      breed: horseForm.breed || undefined,
-      birth_year: horseForm.birthYear ? Number(horseForm.birthYear) : undefined,
+      owner_id: validated.ownerId,
+      name: validated.name,
+      breed: validated.breed || undefined,
+      birth_year: validated.birthYear ? Number(validated.birthYear) : undefined,
       gender: horseForm.gender || undefined,
       color: horseForm.color || undefined,
       hoof_type: horseForm.hoofType || undefined,
       shoeing_interval: Number(horseForm.interval),
-      special_notes: horseForm.notes || undefined,
+      special_notes: validated.notes || undefined,
       latitude: horseForm.latitude || undefined,
       longitude: horseForm.longitude || undefined,
       location_name: horseForm.locationName || undefined,
