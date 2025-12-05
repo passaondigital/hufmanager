@@ -1,1 +1,7 @@
 project_id = "vnschgjxkzzwzefqlrji"
+
+[functions.ai-chat]
+verify_jwt = true
+
+[functions.send-appointment-reminders]
+verify_jwt = true
