@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -24,8 +24,10 @@ import { TabGesundheit } from "@/components/horse-detail/TabGesundheit";
 import { TabNetzwerk } from "@/components/horse-detail/TabNetzwerk";
 import { TabDokumente } from "@/components/horse-detail/TabDokumente";
 import { TabHistorie } from "@/components/horse-detail/TabHistorie";
+import { TabEntwicklung } from "@/components/horse-detail/TabEntwicklung";
 import { EditHorseModal } from "@/components/horse-detail/EditHorseModal";
-import { FeedbackFAB } from "@/components/horse-detail/FeedbackFAB";
+import { ServiceRequestDialog } from "@/components/horse-detail/ServiceRequestDialog";
+import { ClientHealthStatusCard } from "@/components/horse-detail/ClientHealthStatusCard";
 
 export default function ClientHorseDetail() {
   const { id } = useParams<{ id: string }>();
@@ -39,7 +41,9 @@ export default function ClientHorseDetail() {
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showServiceRequest, setShowServiceRequest] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const fetchData = async () => {
     if (!user || !id) return;
@@ -157,7 +161,7 @@ export default function ClientHorseDetail() {
           </div>
         </header>
         <main className="px-4 py-6 max-w-lg mx-auto space-y-6">
-          <Skeleton className="h-48 w-full rounded-xl" />
+          <Skeleton className="h-56 w-full rounded-xl" />
           <Skeleton className="h-12 w-full rounded-xl" />
           <Skeleton className="h-64 w-full rounded-xl" />
         </main>
@@ -193,31 +197,71 @@ export default function ClientHorseDetail() {
         </div>
       </header>
 
-      {/* Horse Photo */}
-      <div className="h-48 bg-muted flex items-center justify-center">
+      {/* Horse Photo - Large emotional hero */}
+      <div className="relative h-56 bg-muted flex items-center justify-center overflow-hidden">
         {horse.photo_url ? (
-          <img 
-            src={horse.photo_url} 
-            alt={horse.name}
-            className="h-full w-full object-cover"
-          />
+          <>
+            {!imageLoaded && (
+              <Skeleton className="absolute inset-0" />
+            )}
+            <img 
+              src={horse.photo_url} 
+              alt={horse.name}
+              className={`h-full w-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+              onLoad={() => setImageLoaded(true)}
+            />
+            {/* Gradient overlay for text */}
+            <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+            {/* Horse name overlay */}
+            <div className="absolute bottom-4 left-4 right-4">
+              <h2 className="text-2xl font-bold text-foreground">{horse.name}</h2>
+              <p className="text-sm text-muted-foreground">
+                {[horse.breed, horse.color].filter(Boolean).join(" • ")}
+              </p>
+            </div>
+          </>
         ) : (
-          <span className="text-6xl">🐴</span>
+          <div className="text-center">
+            <span className="text-7xl block mb-2">🐴</span>
+            <p className="text-muted-foreground text-sm">Kein Foto vorhanden</p>
+          </div>
         )}
+      </div>
+
+      {/* Quick Actions - Emergency Button */}
+      <div className="px-4 -mt-4 relative z-10">
+        <Button
+          variant="destructive"
+          className="w-full shadow-lg h-12"
+          onClick={() => setShowServiceRequest(true)}
+        >
+          <AlertTriangle className="h-5 w-5 mr-2" />
+          Problem melden
+        </Button>
+      </div>
+
+      {/* Health Status Card */}
+      <div className="px-4 mt-4">
+        <ClientHealthStatusCard horseId={horse.id} horseName={horse.name} />
       </div>
 
       {/* Tab Navigation */}
       <main className="px-4 py-4 max-w-lg mx-auto">
-        <Tabs defaultValue="steckbrief" className="w-full">
-          <TabsList className="w-full grid grid-cols-5 h-auto">
-            <TabsTrigger value="steckbrief" className="text-xs py-2">Steckbrief</TabsTrigger>
-            <TabsTrigger value="gesundheit" className="text-xs py-2">Gesundheit</TabsTrigger>
-            <TabsTrigger value="netzwerk" className="text-xs py-2">Netzwerk</TabsTrigger>
-            <TabsTrigger value="dokumente" className="text-xs py-2">Dokumente</TabsTrigger>
-            <TabsTrigger value="historie" className="text-xs py-2">Historie</TabsTrigger>
+        <Tabs defaultValue="entwicklung" className="w-full">
+          <TabsList className="w-full grid grid-cols-6 h-auto">
+            <TabsTrigger value="entwicklung" className="text-xs py-2">📈</TabsTrigger>
+            <TabsTrigger value="steckbrief" className="text-xs py-2">Info</TabsTrigger>
+            <TabsTrigger value="gesundheit" className="text-xs py-2">Hufe</TabsTrigger>
+            <TabsTrigger value="netzwerk" className="text-xs py-2">Team</TabsTrigger>
+            <TabsTrigger value="dokumente" className="text-xs py-2">Docs</TabsTrigger>
+            <TabsTrigger value="historie" className="text-xs py-2">📅</TabsTrigger>
           </TabsList>
           
           <div className="mt-4">
+            <TabsContent value="entwicklung">
+              <TabEntwicklung horseId={horse.id} />
+            </TabsContent>
+
             <TabsContent value="steckbrief">
               <TabSteckbrief 
                 horse={horse} 
@@ -255,8 +299,13 @@ export default function ClientHorseDetail() {
         </Tabs>
       </main>
 
-      {/* Floating Action Button */}
-      <FeedbackFAB horseName={horse.name} />
+      {/* Service Request Dialog */}
+      <ServiceRequestDialog
+        open={showServiceRequest}
+        onClose={() => setShowServiceRequest(false)}
+        horseId={horse.id}
+        horseName={horse.name}
+      />
 
       {/* Edit Modal */}
       <EditHorseModal 
