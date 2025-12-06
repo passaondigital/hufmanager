@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Search, User, LogOut, Settings, Sun, Moon } from "lucide-react";
+import { Bell, Search, User, LogOut, Settings, Sun, Moon, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/components/ThemeProvider";
 import { toast } from "@/hooks/use-toast";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
 
 const mockNotifications = [
   { id: 1, title: "Neuer Termin", message: "Anna Schmidt hat einen Termin angefragt", time: "vor 5 Min." },
@@ -31,6 +32,7 @@ export function AppHeader() {
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { canInstall, isInstalled, promptInstall } = usePWAInstall();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -65,6 +67,19 @@ export function AppHeader() {
       </div>
 
       <div className="flex items-center gap-2">
+        {/* PWA Install Button (Desktop) */}
+        {canInstall && !isInstalled && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={promptInstall}
+            className="hidden lg:flex items-center gap-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+          >
+            <Download className="h-4 w-4" />
+            <span>Installieren</span>
+          </Button>
+        )}
+
         {/* Theme Toggle */}
         <Button
           variant="ghost"

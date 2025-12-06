@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
 
 const funnelItems = [
   { title: "Anfragen", url: "/anfragen", icon: MessageSquare, badge: "3" },
@@ -144,6 +145,7 @@ export function AppSidebar() {
         {bottomItems.map((item) => (
           <NavItem key={item.title} item={item} showBadge={false} />
         ))}
+        <PWAInstallButton collapsed={collapsed} />
         <button
           className={cn(
             "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",

@@ -26,6 +26,7 @@ import Auth from "@/pages/Auth";
 import ResetPassword from "@/pages/ResetPassword";
 import UpdatePassword from "@/pages/UpdatePassword";
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
+import { PWAInstallPrompt } from "@/components/pwa/PWAInstallPrompt";
 import ClientHome from "@/pages/ClientHome";
 import ClientHorseDetail from "@/pages/ClientHorseDetail";
 import ClientInvoices from "@/pages/ClientInvoices";
@@ -45,6 +46,7 @@ function App() {
               <Toaster />
               <Sonner />
               <AIChatWidget />
+              <PWAInstallPrompt />
               <PasswordRecoveryRedirect>
                 <Routes>
                   {/* Public routes */}
