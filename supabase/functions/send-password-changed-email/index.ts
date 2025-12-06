@@ -14,6 +14,17 @@ interface PasswordChangedEmailRequest {
   userName?: string;
 }
 
+// HTML escape helper to prevent XSS in email clients
+function escapeHtml(str: string | null | undefined): string {
+  if (!str) return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("send-password-changed-email function called");
 
@@ -60,7 +71,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Sending password changed confirmation to: ${email}`);
 
-    const displayName = userName || "Nutzer";
+    const displayName = escapeHtml(userName) || "Nutzer";
     const currentDate = new Date().toLocaleDateString("de-DE", {
       day: "2-digit",
       month: "2-digit",
