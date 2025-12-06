@@ -193,7 +193,7 @@ serve(async (req) => {
 
     // Send email
     const emailResponse = await resend.emails.send({
-      from: `${businessName} <onboarding@resend.dev>`,
+      from: `${businessName} <noreply@hufmanager.de>`,
       to: [ownerProfile.email],
       subject: `📅 Terminänderung für ${horseName}`,
       html: emailHtml,
