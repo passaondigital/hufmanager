@@ -88,13 +88,18 @@ export function AppSidebar() {
     >
       {/* Logo */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
-        {!collapsed && (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">HM</span>
-            </div>
-            <span className="text-sidebar-foreground font-semibold text-lg">HufManager</span>
-          </div>
+        {!collapsed ? (
+          <img 
+            src="/hufmanager-logo.png" 
+            alt="HufManager" 
+            className="h-10 w-auto"
+          />
+        ) : (
+          <img 
+            src="/hufmanager-logo.png" 
+            alt="HM" 
+            className="h-8 w-auto"
+          />
         )}
         <Button
           variant="ghost"
