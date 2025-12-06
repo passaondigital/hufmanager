@@ -154,18 +154,47 @@ const Kalender = () => {
 
   // Update appointment mutation (for drag & drop)
   const updateAppointment = useMutation({
-    mutationFn: async ({ id, date, time }: { id: string; date: string; time: string }) => {
+    mutationFn: async ({ 
+      id, 
+      date, 
+      time, 
+      oldDate, 
+      oldTime 
+    }: { 
+      id: string; 
+      date: string; 
+      time: string; 
+      oldDate: string; 
+      oldTime: string;
+    }) => {
       const { error } = await supabase
         .from("appointments")
         .update({ date, time })
         .eq("id", id);
       if (error) throw error;
+      
+      // Send notification in background (don't await)
+      supabase.functions.invoke("send-reschedule-notification", {
+        body: {
+          appointmentId: id,
+          oldDate,
+          oldTime,
+          newDate: date,
+          newTime: time,
+        },
+      }).then(({ error: notifyError }) => {
+        if (notifyError) {
+          console.error("Failed to send reschedule notification:", notifyError);
+        } else {
+          console.log("Reschedule notification sent");
+        }
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       toast({
         title: "Termin verschoben",
-        description: "Der Termin wurde erfolgreich aktualisiert.",
+        description: "Der Termin wurde aktualisiert. Der Kunde wird benachrichtigt.",
       });
     },
     onError: (error: Error) => {
@@ -180,9 +209,17 @@ const Kalender = () => {
   // Handle event drop (drag & drop)
   const handleEventDrop = useCallback(
     ({ event, start }: EventInteractionArgs<CalendarEvent>) => {
+      const oldDate = format(event.start, "yyyy-MM-dd");
+      const oldTime = format(event.start, "HH:mm");
       const newDate = format(start as Date, "yyyy-MM-dd");
       const newTime = format(start as Date, "HH:mm");
-      updateAppointment.mutate({ id: event.id, date: newDate, time: newTime });
+      updateAppointment.mutate({ 
+        id: event.id, 
+        date: newDate, 
+        time: newTime,
+        oldDate,
+        oldTime,
+      });
     },
     [updateAppointment]
   );
@@ -190,9 +227,17 @@ const Kalender = () => {
   // Handle event resize
   const handleEventResize = useCallback(
     ({ event, start }: EventInteractionArgs<CalendarEvent>) => {
+      const oldDate = format(event.start, "yyyy-MM-dd");
+      const oldTime = format(event.start, "HH:mm");
       const newDate = format(start as Date, "yyyy-MM-dd");
       const newTime = format(start as Date, "HH:mm");
-      updateAppointment.mutate({ id: event.id, date: newDate, time: newTime });
+      updateAppointment.mutate({ 
+        id: event.id, 
+        date: newDate, 
+        time: newTime,
+        oldDate,
+        oldTime,
+      });
     },
     [updateAppointment]
   );
