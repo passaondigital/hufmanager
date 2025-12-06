@@ -40,6 +40,7 @@ interface LTZPdfExportProps {
   horseName: string;
   ownerName?: string;
   providerName?: string;
+  variant?: "icon" | "button";
 }
 
 function getLabel(options: readonly { value: string; label: string }[], value?: string): string {
@@ -51,7 +52,7 @@ function getStatusColor(value: string | undefined, goodValue: string): string {
   return value === goodValue ? '#22c55e' : '#f59e0b';
 }
 
-export function LTZPdfExport({ analysis, horseName, ownerName, providerName }: LTZPdfExportProps) {
+export function LTZPdfExport({ analysis, horseName, ownerName, providerName, variant = "icon" }: LTZPdfExportProps) {
   const handleExport = () => {
     const hoofData = {
       vl: (analysis.hoof_data_vl || {}) as LTZHoofData,
@@ -459,6 +460,19 @@ export function LTZPdfExport({ analysis, horseName, ownerName, providerName }: L
       }, 500);
     }
   };
+
+  if (variant === "button") {
+    return (
+      <Button
+        variant="outline"
+        onClick={handleExport}
+        className="w-full gap-2"
+      >
+        <FileDown className="h-4 w-4" />
+        Letzten Analyse-Bericht laden
+      </Button>
+    );
+  }
 
   return (
     <Button
