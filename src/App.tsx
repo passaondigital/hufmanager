@@ -23,6 +23,8 @@ import Management from "@/pages/Management";
 import Academy from "@/pages/Academy";
 import Chat from "@/pages/Chat";
 import GeldVerdienen from "@/pages/GeldVerdienen";
+import Hufanalyse from "@/pages/Hufanalyse";
+import Support from "@/pages/Support";
 import Auth from "@/pages/Auth";
 import ResetPassword from "@/pages/ResetPassword";
 import UpdatePassword from "@/pages/UpdatePassword";
@@ -79,6 +81,8 @@ function App() {
                   <Route path="/academy" element={<Academy />} />
                   <Route path="/chat" element={<Chat />} />
                   <Route path="/partner" element={<GeldVerdienen />} />
+                  <Route path="/hufanalyse" element={<Hufanalyse />} />
+                  <Route path="/support" element={<Support />} />
                 </Route>
                 
                 {/* Client routes */}

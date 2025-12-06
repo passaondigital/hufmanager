@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -20,11 +20,14 @@ import {
   Gift,
   LifeBuoy,
   ExternalLink,
+  ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const funnelItems = [
   { title: "Anfragen", url: "/anfragen", icon: MessageSquare, badge: "3" },
@@ -39,6 +42,7 @@ const mainItems = [
   { title: "Kalender", url: "/kalender", icon: Calendar },
   { title: "Kunden", url: "/kunden", icon: Users },
   { title: "Services", url: "/services", icon: Scissors },
+  { title: "Hufanalyse", url: "/hufanalyse", icon: ClipboardList },
   { title: "Chat", url: "/chat", icon: MessagesSquare },
 ];
 
@@ -55,8 +59,19 @@ interface AppSidebarProps {
 export function AppSidebar({ onNavigate }: AppSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({ title: "Abgemeldet", description: "Bis bald!" });
+      navigate("/auth");
+    } catch (error) {
+      toast({ title: "Fehler", description: "Abmeldung fehlgeschlagen.", variant: "destructive" });
+    }
+  };
 
   const NavItem = ({ item, showBadge = true }: { item: typeof funnelItems[0]; showBadge?: boolean }) => (
     <NavLink
@@ -154,20 +169,24 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         ))}
         
         {/* Support Button */}
-        <a
-          href="mailto:support@hufmanager.de"
+        <NavLink
+          to="/support"
+          onClick={onNavigate}
           className={cn(
             "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group min-h-[48px]",
-            "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            isActive("/support")
+              ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/30"
+              : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
           )}
         >
           <LifeBuoy className={cn("h-5 w-5 flex-shrink-0", collapsed && "mx-auto")} />
           {!collapsed && <span className="font-medium text-[15px]">Hilfe & Support</span>}
-        </a>
+        </NavLink>
 
         <PWAInstallButton collapsed={collapsed} />
         
         <button
+          onClick={handleLogout}
           className={cn(
             "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 min-h-[48px]",
             "text-sidebar-foreground/50 hover:bg-destructive/10 hover:text-destructive"
