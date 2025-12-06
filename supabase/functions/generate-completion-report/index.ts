@@ -98,18 +98,43 @@ const handler = async (req: Request): Promise<Response> => {
       .eq("id", appointment.horses.owner_id)
       .single();
 
+    // Fetch provider's business settings for logo
+    const { data: businessSettings } = await supabase
+      .from("business_settings")
+      .select("logo_url, business_name, owner_name")
+      .eq("user_id", user.id)
+      .single();
+
     const appointmentDate = new Date(appointment.date).toLocaleDateString("de-DE");
 
     if (client?.email) {
       // Use HTML escaping to prevent XSS attacks
       const safeHorseName = escapeHtml(appointment.horses.name);
       const safeDate = escapeHtml(appointmentDate);
+      const safeBusinessName = escapeHtml(businessSettings?.business_name || businessSettings?.owner_name || "Ihr Hufbearbeiter");
+      
+      // Use provider's logo if available, otherwise no logo
+      const logoHtml = businessSettings?.logo_url 
+        ? `<img src="${escapeHtml(businessSettings.logo_url)}" alt="${safeBusinessName}" style="max-height: 80px; max-width: 200px; margin-bottom: 20px;" />`
+        : '';
       
       await resend.emails.send({
         from: "HufManager <noreply@resend.dev>",
         to: [client.email],
         subject: `Behandlungsbericht: ${safeHorseName} - ${safeDate}`,
-        html: `<p>Die Hufbearbeitung für <strong>${safeHorseName}</strong> am ${safeDate} wurde abgeschlossen.</p>`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            ${logoHtml}
+            <h2 style="color: #333;">Behandlungsbericht</h2>
+            <p>Sehr geehrte/r Pferdebesitzer/in,</p>
+            <p>Die Hufbearbeitung für <strong>${safeHorseName}</strong> am <strong>${safeDate}</strong> wurde erfolgreich abgeschlossen.</p>
+            ${appointment.completion_notes ? `<p><strong>Notizen:</strong> ${escapeHtml(appointment.completion_notes)}</p>` : ''}
+            <br/>
+            <p>Mit freundlichen Grüßen,<br/>${safeBusinessName}</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+            <p style="font-size: 12px; color: #666;">Diese E-Mail wurde automatisch über HufManager versendet.</p>
+          </div>
+        `,
       });
       
       console.log("Email sent successfully to:", client.email);

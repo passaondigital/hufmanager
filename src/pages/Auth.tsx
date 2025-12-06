@@ -152,7 +152,7 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md border-border bg-card shadow-xl">
         <CardHeader className="text-center pb-2">
           <img 
@@ -321,6 +321,36 @@ export default function Auth() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Legal Links */}
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">
+        <a 
+          href="https://hufmanager.de/impressum" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="hover:text-primary transition-colors"
+        >
+          Impressum
+        </a>
+        <span className="text-border">•</span>
+        <a 
+          href="https://hufmanager.de/datenschutz" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="hover:text-primary transition-colors"
+        >
+          Datenschutz
+        </a>
+        <span className="text-border">•</span>
+        <a 
+          href="https://hufmanager.de/agb" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="hover:text-primary transition-colors"
+        >
+          AGB
+        </a>
+      </div>
 
       {/* Password Reset Dialog */}
       <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>

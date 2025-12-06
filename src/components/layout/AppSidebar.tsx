@@ -18,6 +18,8 @@ import {
   LogOut,
   GraduationCap,
   Gift,
+  LifeBuoy,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -145,7 +147,21 @@ export function AppSidebar() {
         {bottomItems.map((item) => (
           <NavItem key={item.title} item={item} showBadge={false} />
         ))}
+        
+        {/* Support Button */}
+        <a
+          href="mailto:support@hufmanager.de"
+          className={cn(
+            "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group min-h-[48px]",
+            "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          )}
+        >
+          <LifeBuoy className={cn("h-5 w-5 flex-shrink-0", collapsed && "mx-auto")} />
+          {!collapsed && <span className="font-medium text-[15px]">Hilfe & Support</span>}
+        </a>
+
         <PWAInstallButton collapsed={collapsed} />
+        
         <button
           className={cn(
             "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
@@ -155,6 +171,53 @@ export function AppSidebar() {
           <LogOut className={cn("h-5 w-5 flex-shrink-0", collapsed && "mx-auto")} />
           {!collapsed && <span className="font-medium">Abmelden</span>}
         </button>
+
+        <Separator className="my-2 bg-sidebar-border" />
+
+        {/* Legal Links */}
+        {!collapsed ? (
+          <div className="flex flex-wrap items-center justify-center gap-2 px-2 py-1 text-xs text-sidebar-foreground/50">
+            <a 
+              href="https://hufmanager.de/impressum" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:text-primary transition-colors"
+            >
+              Impressum
+            </a>
+            <span>•</span>
+            <a 
+              href="https://hufmanager.de/datenschutz" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:text-primary transition-colors"
+            >
+              Datenschutz
+            </a>
+            <span>•</span>
+            <a 
+              href="https://hufmanager.de/agb" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:text-primary transition-colors"
+            >
+              AGB
+            </a>
+          </div>
+        ) : (
+          <a
+            href="https://hufmanager.de/impressum"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              "flex items-center justify-center px-3 py-2 rounded-lg transition-all duration-200",
+              "text-sidebar-foreground/50 hover:text-primary"
+            )}
+            title="Rechtliches"
+          >
+            <ExternalLink className="h-4 w-4" />
+          </a>
+        )}
       </div>
     </aside>
   );
