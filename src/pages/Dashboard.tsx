@@ -4,13 +4,25 @@ import { RecentCustomers } from "@/components/dashboard/RecentCustomers";
 import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointments";
 import { OverdueAssessmentsWidget } from "@/components/dashboard/OverdueAssessmentsWidget";
 import { useAuth } from "@/hooks/useAuth";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { showOnboarding, completeOnboarding } = useOnboarding();
   const displayName = user?.email?.split("@")[0] || "Max";
 
   return (
-    <div className="space-y-6">
+    <>
+      {/* Onboarding Wizard */}
+      {showOnboarding && (
+        <OnboardingWizard 
+          onComplete={completeOnboarding}
+          onSkip={completeOnboarding}
+        />
+      )}
+
+      <div className="space-y-6">
       {/* Welcome Section */}
       <div className="animate-fade-in">
         <h1 className="text-2xl font-bold text-foreground">Willkommen zurück, {displayName}!</h1>
@@ -67,7 +79,8 @@ const Dashboard = () => {
         <UpcomingAppointments />
         <RecentCustomers />
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 
