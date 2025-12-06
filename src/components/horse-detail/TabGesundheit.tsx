@@ -96,7 +96,7 @@ export function TabGesundheit({ horse, onEdit }: TabGesundheitProps) {
       </div>
 
       {/* LTZ Analysis History */}
-      <LTZAnalysisHistory horseId={horse.id} />
+      <LTZAnalysisHistory horseId={horse.id} horseName={horse.name} />
 
       {/* Comparison View */}
       <AnamnesisComparisonView horseId={horse.id} />

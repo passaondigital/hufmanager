@@ -15,9 +15,12 @@ import {
   HOOF_POSITIONS,
   LTZHoofData
 } from "./ltz-constants";
+import { LTZPdfExport } from "./LTZPdfExport";
 
 interface LTZAnalysisHistoryProps {
   horseId: string;
+  horseName: string;
+  ownerName?: string;
 }
 
 interface HoofAnalysis {
@@ -42,7 +45,7 @@ function getLabel(options: readonly { value: string; label: string }[], value?: 
   return options.find(o => o.value === value)?.label || '—';
 }
 
-export function LTZAnalysisHistory({ horseId }: LTZAnalysisHistoryProps) {
+export function LTZAnalysisHistory({ horseId, horseName, ownerName }: LTZAnalysisHistoryProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const { data: analyses = [], isLoading } = useQuery({
@@ -117,7 +120,14 @@ export function LTZAnalysisHistory({ horseId }: LTZAnalysisHistoryProps) {
                       )}
                     </span>
                   </div>
-                  <ChevronDown className={`h-4 w-4 transition-transform ${expandedId === analysis.id ? 'rotate-180' : ''}`} />
+                  <div className="flex items-center gap-2">
+                    <LTZPdfExport 
+                      analysis={analysis} 
+                      horseName={horseName}
+                      ownerName={ownerName}
+                    />
+                    <ChevronDown className={`h-4 w-4 transition-transform ${expandedId === analysis.id ? 'rotate-180' : ''}`} />
+                  </div>
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="px-3 pb-3">
