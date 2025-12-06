@@ -14,10 +14,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, Hammer, Heart } from "lucide-react";
+import { Loader2, Hammer, Heart, Package } from "lucide-react";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { PricingModal } from "@/components/subscription/PricingModal";
 
 const loginSchema = z.object({
   email: z.string().email("Ungültige E-Mail-Adresse"),
@@ -31,10 +32,14 @@ const signupSchema = z.object({
 });
 
 type RoleOption = "provider" | "client";
+type LoginMode = "provider" | "client";
 
 export default function Auth() {
   const { user, role, loading: authLoading, signIn, signUp } = useAuth();
   const [loading, setLoading] = useState(false);
+  
+  // Login mode (provider vs client)
+  const [loginMode, setLoginMode] = useState<LoginMode>("provider");
   
   // Login form
   const [loginEmail, setLoginEmail] = useState("");
@@ -51,6 +56,11 @@ export default function Auth() {
   const [resetEmail, setResetEmail] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
 
+  // Pricing modal
+  const [pricingModalOpen, setPricingModalOpen] = useState(false);
+  const [pricingModalTitle, setPricingModalTitle] = useState("");
+  const [pricingModalDescription, setPricingModalDescription] = useState("");
+
   // Redirect if already logged in
   if (!authLoading && user && role) {
     if (role === "provider") {
@@ -58,6 +68,12 @@ export default function Auth() {
     }
     return <Navigate to="/client-home" replace />;
   }
+
+  const openPricingModal = (title: string, description: string) => {
+    setPricingModalTitle(title);
+    setPricingModalDescription(description);
+    setPricingModalOpen(true);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +89,15 @@ export default function Auth() {
     setLoading(false);
 
     if (error) {
-      if (error.message.includes("Invalid login credentials")) {
+      // Check if user doesn't exist (for provider mode, offer to show pricing)
+      if (loginMode === "provider" && 
+          (error.message.includes("Invalid login credentials") || 
+           error.message.includes("User not found"))) {
+        openPricingModal(
+          "Noch kein Account?",
+          "Wähle jetzt dein Paket und starte mit HufManager."
+        );
+      } else if (error.message.includes("Invalid login credentials")) {
         toast.error("Ungültige Anmeldedaten");
       } else {
         toast.error(error.message);
@@ -171,6 +195,38 @@ export default function Auth() {
             </TabsList>
             
             <TabsContent value="login" className="mt-6">
+              {/* Login Mode Toggle */}
+              <div className="mb-6">
+                <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setLoginMode("provider")}
+                    className={cn(
+                      "flex items-center justify-center gap-2 px-3 py-2.5 rounded-md text-sm font-medium transition-all",
+                      loginMode === "provider"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <Hammer className="h-4 w-4" />
+                    Als Profi
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLoginMode("client")}
+                    className={cn(
+                      "flex items-center justify-center gap-2 px-3 py-2.5 rounded-md text-sm font-medium transition-all",
+                      loginMode === "client"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <Heart className="h-4 w-4" />
+                    Als Kunde
+                  </button>
+                </div>
+              </div>
+
               <form onSubmit={handleLogin} className="space-y-5">
                 <div className="space-y-2">
                   <Label htmlFor="login-email" className="text-foreground font-medium">E-Mail</Label>
@@ -214,6 +270,39 @@ export default function Auth() {
             </TabsContent>
             
             <TabsContent value="signup" className="mt-6">
+              {/* Package Selection Prompt for Providers */}
+              {selectedRole === "provider" && (
+                <div className="mb-6 p-4 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                        <Package className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground text-sm">
+                          Schon ein Paket gewählt?
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Du brauchst zuerst ein Abo.
+                        </p>
+                      </div>
+                    </div>
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                      onClick={() => openPricingModal(
+                        "Wähle dein Paket",
+                        "Starte jetzt mit HufManager und digitalisiere dein Business."
+                      )}
+                    >
+                      Pakete anzeigen
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <form onSubmit={handleSignup} className="space-y-5">
                 {/* Role Selection */}
                 <div className="space-y-3">
@@ -385,6 +474,14 @@ export default function Auth() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Pricing Modal */}
+      <PricingModal
+        open={pricingModalOpen}
+        onOpenChange={setPricingModalOpen}
+        title={pricingModalTitle}
+        description={pricingModalDescription}
+      />
     </div>
   );
 }
