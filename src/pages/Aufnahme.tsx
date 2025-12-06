@@ -30,10 +30,18 @@ const customerSchema = z.object({
 });
 
 const horseSchema = z.object({
-  ownerId: z.string().uuid("Ungültige Kunden-ID"),
+  ownerId: z.string().min(1, "Bitte wählen Sie einen Kunden aus").uuid("Ungültige Kunden-ID"),
   name: z.string().trim().min(1, "Pferdename ist erforderlich").max(100, "Pferdename darf maximal 100 Zeichen haben"),
   breed: z.string().trim().max(100, "Rasse darf maximal 100 Zeichen haben").optional(),
-  birthYear: z.string().regex(/^(\d{4})?$/, "Ungültiges Geburtsjahr").optional(),
+  birthYear: z.string()
+    .refine((val) => !val || /^\d{4}$/.test(val), "Geburtsjahr muss 4 Ziffern haben")
+    .refine((val) => {
+      if (!val) return true;
+      const year = parseInt(val);
+      const currentYear = new Date().getFullYear();
+      return year >= 1970 && year <= currentYear;
+    }, "Geburtsjahr muss zwischen 1970 und heute liegen")
+    .optional(),
   notes: z.string().trim().max(2000, "Notizen dürfen maximal 2000 Zeichen haben").optional(),
 });
 

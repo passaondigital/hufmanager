@@ -8,6 +8,27 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter, SheetDescrip
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { z } from "zod";
+
+// Validation schema
+const horseFormSchema = z.object({
+  name: z.string().trim().min(1, "Name ist erforderlich").max(100, "Name darf maximal 100 Zeichen haben"),
+  nickname: z.string().trim().max(50, "Rufname darf maximal 50 Zeichen haben").optional(),
+  breed: z.string().trim().max(100, "Rasse darf maximal 100 Zeichen haben").optional(),
+  birth_year: z.string()
+    .refine((val) => !val || /^\d{4}$/.test(val), "Geburtsjahr muss 4 Ziffern haben")
+    .refine((val) => {
+      if (!val) return true;
+      const year = parseInt(val);
+      const currentYear = new Date().getFullYear();
+      return year >= 1970 && year <= currentYear;
+    }, "Geburtsjahr muss zwischen 1970 und heute liegen")
+    .optional(),
+  gender: z.string().optional(),
+  color: z.string().trim().max(50, "Farbe darf maximal 50 Zeichen haben").optional(),
+  usage: z.string().optional(),
+  housing: z.string().optional(),
+});
 
 interface CreateHorseModalProps {
   open: boolean;
@@ -29,27 +50,37 @@ export function CreateHorseModal({ open, onClose, onCreated }: CreateHorseModalP
   });
 
   const handleCreate = async () => {
-    if (!form.name.trim()) {
-      toast({ title: "Name ist erforderlich", variant: "destructive" });
+    // Validate with zod schema
+    const validationResult = horseFormSchema.safeParse(form);
+
+    if (!validationResult.success) {
+      const firstError = validationResult.error.errors[0];
+      toast({
+        title: "Validierungsfehler",
+        description: firstError.message,
+        variant: "destructive",
+      });
       return;
     }
 
     setSaving(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error("Not authenticated");
+      if (!userData.user) throw new Error("Nicht angemeldet");
+
+      const validated = validationResult.data;
 
       const { data, error } = await supabase
         .from('horses')
         .insert({
-          name: form.name.trim(),
-          nickname: form.nickname.trim() || null,
-          breed: form.breed.trim() || null,
-          birth_year: form.birth_year ? parseInt(form.birth_year) : null,
-          gender: form.gender || null,
-          color: form.color.trim() || null,
-          usage: form.usage || null,
-          housing: form.housing || null,
+          name: validated.name,
+          nickname: validated.nickname || null,
+          breed: validated.breed || null,
+          birth_year: validated.birth_year ? parseInt(validated.birth_year) : null,
+          gender: validated.gender || null,
+          color: validated.color || null,
+          usage: validated.usage || null,
+          housing: validated.housing || null,
           owner_id: userData.user.id,
         })
         .select('id')
@@ -101,6 +132,7 @@ export function CreateHorseModal({ open, onClose, onCreated }: CreateHorseModalP
                 value={form.name}
                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                 placeholder="z.B. Sunny"
+                maxLength={100}
               />
             </div>
             <div>
@@ -109,6 +141,7 @@ export function CreateHorseModal({ open, onClose, onCreated }: CreateHorseModalP
                 value={form.nickname}
                 onChange={e => setForm(f => ({ ...f, nickname: e.target.value }))}
                 placeholder="z.B. Sunni"
+                maxLength={50}
               />
             </div>
           </div>
@@ -120,6 +153,7 @@ export function CreateHorseModal({ open, onClose, onCreated }: CreateHorseModalP
                 value={form.breed}
                 onChange={e => setForm(f => ({ ...f, breed: e.target.value }))}
                 placeholder="z.B. Haflinger"
+                maxLength={100}
               />
             </div>
             <div>
@@ -129,6 +163,8 @@ export function CreateHorseModal({ open, onClose, onCreated }: CreateHorseModalP
                 value={form.birth_year}
                 onChange={e => setForm(f => ({ ...f, birth_year: e.target.value }))}
                 placeholder="z.B. 2018"
+                min={1970}
+                max={new Date().getFullYear()}
               />
             </div>
           </div>
@@ -151,6 +187,7 @@ export function CreateHorseModal({ open, onClose, onCreated }: CreateHorseModalP
                 value={form.color}
                 onChange={e => setForm(f => ({ ...f, color: e.target.value }))}
                 placeholder="z.B. Fuchs"
+                maxLength={50}
               />
             </div>
           </div>
