@@ -168,7 +168,7 @@ export function LTZAnalysisWizard({
             <LTZStepGait data={data} onChange={updateData} />
           )}
           {currentStep === 2 && (
-            <LTZStepHoofForm data={data} onChange={updateData} />
+            <LTZStepHoofForm data={data} onChange={updateData} horseId={horseId} />
           )}
           {currentStep === 3 && (
             <LTZStepSummary data={data} onChange={updateData} />

@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Horse, HEALTH_STATUS_OPTIONS, HOOF_PROTECTION_OPTIONS, HoofMeasurements } from "./types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Pencil, Heart, Shield, Ruler, ClipboardCheck } from "lucide-react";
+import { Pencil, Heart, Shield, Ruler, ClipboardCheck, GitCompare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AnamnesisStatusCard } from "./AnamnesisStatusCard";
 import { AnamnesisComparisonView } from "./AnamnesisComparisonView";
-import { LTZAnalysisWizard, LTZAnalysisHistory } from "@/components/hoof-analysis";
+import { LTZAnalysisWizard, LTZAnalysisHistory, LTZComparisonView } from "@/components/hoof-analysis";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -19,6 +19,7 @@ interface TabGesundheitProps {
 export function TabGesundheit({ horse, onEdit }: TabGesundheitProps) {
   const queryClient = useQueryClient();
   const [showLTZWizard, setShowLTZWizard] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
   
   const healthStatus = HEALTH_STATUS_OPTIONS.find(s => s.value === horse.health_status) 
     || HEALTH_STATUS_OPTIONS[0];
@@ -65,6 +66,14 @@ export function TabGesundheit({ horse, onEdit }: TabGesundheitProps) {
         horseName={horse.name}
       />
 
+      {/* LTZ Comparison View */}
+      <LTZComparisonView
+        isOpen={showComparison}
+        onClose={() => setShowComparison(false)}
+        horseId={horse.id}
+        horseName={horse.name}
+      />
+
       {/* Anamnesis Status Card */}
       <AnamnesisStatusCard
         horseId={horse.id}
@@ -73,6 +82,18 @@ export function TabGesundheit({ horse, onEdit }: TabGesundheitProps) {
         intervalMonths={horse.anamnesis_interval_months}
         onStartAnamnesis={() => setShowLTZWizard(true)}
       />
+
+      {/* LTZ Actions */}
+      <div className="flex gap-2">
+        <Button 
+          variant="outline" 
+          className="flex-1"
+          onClick={() => setShowComparison(true)}
+        >
+          <GitCompare className="h-4 w-4 mr-2" />
+          Analysen vergleichen
+        </Button>
+      </div>
 
       {/* LTZ Analysis History */}
       <LTZAnalysisHistory horseId={horse.id} />
