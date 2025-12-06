@@ -3,15 +3,26 @@ import { Calendar, dateFnsLocalizer, Views, SlotInfo } from "react-big-calendar"
 import withDragAndDrop, { EventInteractionArgs } from "react-big-calendar/lib/addons/dragAndDrop";
 import { format, parse, startOfWeek, getDay, addMinutes } from "date-fns";
 import { de } from "date-fns/locale";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Plus,
   Mail,
   Loader2,
   Smartphone,
   CheckCircle2,
+  CalendarClock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -94,6 +105,16 @@ const Kalender = () => {
   const [isSendingReminders, setIsSendingReminders] = useState(false);
   const [currentView, setCurrentView] = useState<typeof Views[keyof typeof Views]>(Views.WEEK);
   const [currentDate, setCurrentDate] = useState(new Date());
+  
+  // State for reschedule confirmation dialog
+  const [pendingReschedule, setPendingReschedule] = useState<{
+    id: string;
+    oldDate: string;
+    oldTime: string;
+    newDate: string;
+    newTime: string;
+    horseName: string;
+  } | null>(null);
 
   // Fetch user profile for ical_token
   const { data: profile } = useQuery({
@@ -206,41 +227,68 @@ const Kalender = () => {
     },
   });
 
-  // Handle event drop (drag & drop)
+  // Handle event drop (drag & drop) - show confirmation first
   const handleEventDrop = useCallback(
     ({ event, start }: EventInteractionArgs<CalendarEvent>) => {
       const oldDate = format(event.start, "yyyy-MM-dd");
       const oldTime = format(event.start, "HH:mm");
       const newDate = format(start as Date, "yyyy-MM-dd");
       const newTime = format(start as Date, "HH:mm");
-      updateAppointment.mutate({ 
-        id: event.id, 
-        date: newDate, 
-        time: newTime,
+      
+      // Show confirmation dialog
+      setPendingReschedule({
+        id: event.id,
         oldDate,
         oldTime,
+        newDate,
+        newTime,
+        horseName: event.resource.horses?.name || "Unbekannt",
       });
     },
-    [updateAppointment]
+    []
   );
 
-  // Handle event resize
+  // Handle event resize - show confirmation first
   const handleEventResize = useCallback(
     ({ event, start }: EventInteractionArgs<CalendarEvent>) => {
       const oldDate = format(event.start, "yyyy-MM-dd");
       const oldTime = format(event.start, "HH:mm");
       const newDate = format(start as Date, "yyyy-MM-dd");
       const newTime = format(start as Date, "HH:mm");
-      updateAppointment.mutate({ 
-        id: event.id, 
-        date: newDate, 
-        time: newTime,
+      
+      // Show confirmation dialog
+      setPendingReschedule({
+        id: event.id,
         oldDate,
         oldTime,
+        newDate,
+        newTime,
+        horseName: event.resource.horses?.name || "Unbekannt",
       });
     },
-    [updateAppointment]
+    []
   );
+
+  // Confirm reschedule
+  const confirmReschedule = useCallback(() => {
+    if (pendingReschedule) {
+      updateAppointment.mutate({
+        id: pendingReschedule.id,
+        date: pendingReschedule.newDate,
+        time: pendingReschedule.newTime,
+        oldDate: pendingReschedule.oldDate,
+        oldTime: pendingReschedule.oldTime,
+      });
+      setPendingReschedule(null);
+    }
+  }, [pendingReschedule, updateAppointment]);
+
+  // Cancel reschedule
+  const cancelReschedule = useCallback(() => {
+    setPendingReschedule(null);
+    // Invalidate to reset the calendar visual state
+    queryClient.invalidateQueries({ queryKey: ["appointments"] });
+  }, [queryClient]);
 
   // Handle slot selection (create new appointment)
   const handleSelectSlot = useCallback((slotInfo: SlotInfo) => {
@@ -416,6 +464,46 @@ const Kalender = () => {
         onClose={() => setIsSyncModalOpen(false)}
         icalToken={profile?.ical_token || null}
       />
+
+      {/* Reschedule Confirmation Dialog */}
+      <AlertDialog open={!!pendingReschedule} onOpenChange={(open) => !open && cancelReschedule()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <CalendarClock className="h-5 w-5 text-primary" />
+              Termin verschieben?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  Möchten Sie den Termin für <strong>🐴 {pendingReschedule?.horseName}</strong> wirklich verschieben?
+                </p>
+                {pendingReschedule && (
+                  <div className="p-3 rounded-lg bg-muted/50 border border-border space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-muted-foreground line-through">
+                        {format(new Date(pendingReschedule.oldDate), "dd.MM.yyyy", { locale: de })} um {pendingReschedule.oldTime} Uhr
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                      → {format(new Date(pendingReschedule.newDate), "dd.MM.yyyy", { locale: de })} um {pendingReschedule.newTime} Uhr
+                    </div>
+                  </div>
+                )}
+                <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
+                  ⚠️ Der Kunde wird automatisch per E-Mail benachrichtigt.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelReschedule}>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmReschedule}>
+              Ja, verschieben
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
