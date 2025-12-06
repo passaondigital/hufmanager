@@ -140,7 +140,12 @@ export default function Auth() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
+        <img 
+          src="/hufmanager-logo.png" 
+          alt="HufManager" 
+          className="h-24 w-auto animate-pulse"
+        />
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -150,10 +155,12 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md border-border bg-card shadow-xl">
         <CardHeader className="text-center pb-2">
-          <div className="mx-auto w-14 h-14 rounded-xl bg-primary shadow-lg shadow-primary/30 flex items-center justify-center mb-4">
-            <span className="text-primary-foreground font-bold text-xl">HM</span>
-          </div>
-          <CardTitle className="text-2xl font-bold text-foreground">HufManager</CardTitle>
+          <img 
+            src="/hufmanager-logo.png" 
+            alt="HufManager Logo" 
+            className="mx-auto h-24 w-auto mb-4"
+          />
+          <CardTitle className="text-2xl font-bold text-foreground sr-only">HufManager</CardTitle>
           <CardDescription className="text-muted-foreground">Melden Sie sich an oder erstellen Sie ein Konto</CardDescription>
         </CardHeader>
         <CardContent>

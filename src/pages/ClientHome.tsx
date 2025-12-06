@@ -74,7 +74,12 @@ export default function ClientHome() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
+        <img 
+          src="/hufmanager-logo.png" 
+          alt="HufManager" 
+          className="h-24 w-auto animate-pulse"
+        />
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
@@ -87,12 +92,11 @@ export default function ClientHome() {
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-xs">HM</span>
-            </div>
-            <span className="font-semibold text-foreground">HufManager</span>
-          </div>
+          <img 
+            src="/hufmanager-logo.png" 
+            alt="HufManager" 
+            className="h-8 w-auto"
+          />
           <Button variant="ghost" size="icon" onClick={handleLogout}>
             <LogOut className="h-5 w-5" />
           </Button>
