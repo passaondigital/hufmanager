@@ -21,6 +21,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Alert,
+  AlertDescription,
+} from "@/components/ui/alert";
+import {
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -29,11 +33,23 @@ import {
   Mail,
   Loader2,
   CheckCircle2,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import { z } from "zod";
+
+// Validation schema
+const appointmentSchema = z.object({
+  horseId: z.string().min(1, "Bitte wählen Sie ein Pferd aus"),
+  time: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Ungültiges Zeitformat"),
+  serviceType: z.string().min(1, "Bitte wählen Sie einen Service-Typ"),
+  notes: z.string().max(2000, "Notizen dürfen maximal 2000 Zeichen haben").optional(),
+  location: z.string().max(255, "Ort darf maximal 255 Zeichen haben").optional(),
+});
 
 const daysOfWeek = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
@@ -44,11 +60,13 @@ const typeColors: Record<string, string> = {
 };
 
 const Kalender = () => {
+  const { user } = useAuth();
   const [currentWeek, setCurrentWeek] = useState(0);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isSendingReminders, setIsSendingReminders] = useState(false);
+  const [conflictWarning, setConflictWarning] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   // Send appointment reminders
@@ -116,6 +134,7 @@ const Kalender = () => {
       service_type: string;
       notes: string;
       location: string;
+      provider_id: string;
     }) => {
       const { error } = await supabase.from("appointments").insert(data);
       if (error) throw error;
@@ -127,16 +146,34 @@ const Kalender = () => {
         description: "Der Termin wurde erfolgreich gespeichert.",
       });
       setIsDialogOpen(false);
+      setConflictWarning(null);
       resetForm();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Fehler",
-        description: "Der Termin konnte nicht erstellt werden.",
+        description: error.message || "Der Termin konnte nicht erstellt werden.",
         variant: "destructive",
       });
     },
   });
+
+  // Check for conflicts when time or date changes
+  const checkForConflicts = (date: Date, time: string) => {
+    const dateStr = date.toISOString().split("T")[0];
+    const existingAppointments = appointments.filter(
+      (apt) => apt.date === dateStr && apt.time === time
+    );
+    
+    if (existingAppointments.length > 0) {
+      const horseNames = existingAppointments
+        .map((apt) => apt.horses?.name || "Unbekannt")
+        .join(", ");
+      setConflictWarning(`Zur gleichen Zeit ist bereits ein Termin geplant: ${horseNames}`);
+    } else {
+      setConflictWarning(null);
+    }
+  };
 
   const resetForm = () => {
     setFormData({
@@ -191,22 +228,55 @@ const Kalender = () => {
   };
 
   const handleSubmit = () => {
-    if (!formData.horseId || !selectedDate) {
+    if (!selectedDate || !user?.id) {
       toast({
         title: "Fehler",
-        description: "Bitte wählen Sie ein Pferd aus.",
+        description: "Bitte melden Sie sich erneut an.",
         variant: "destructive",
       });
       return;
     }
 
-    createAppointment.mutate({
-      horse_id: formData.horseId,
-      date: selectedDate.toISOString().split("T")[0],
+    // Validate with zod schema
+    const validationResult = appointmentSchema.safeParse({
+      horseId: formData.horseId,
       time: formData.time,
-      service_type: formData.serviceType,
-      notes: formData.notes,
-      location: formData.location,
+      serviceType: formData.serviceType,
+      notes: formData.notes || undefined,
+      location: formData.location || undefined,
+    });
+
+    if (!validationResult.success) {
+      const firstError = validationResult.error.errors[0];
+      toast({
+        title: "Validierungsfehler",
+        description: firstError.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if date is in the past
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (selectedDate < today) {
+      toast({
+        title: "Ungültiges Datum",
+        description: "Termine können nicht in der Vergangenheit erstellt werden.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const validated = validationResult.data;
+    createAppointment.mutate({
+      horse_id: validated.horseId,
+      date: selectedDate.toISOString().split("T")[0],
+      time: validated.time,
+      service_type: validated.serviceType,
+      notes: validated.notes || "",
+      location: validated.location || "",
+      provider_id: user.id,
     });
   };
 
@@ -417,11 +487,16 @@ const Kalender = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Uhrzeit</Label>
+                <Label>Uhrzeit *</Label>
                 <Input
                   type="time"
                   value={formData.time}
-                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, time: e.target.value });
+                    if (selectedDate) {
+                      checkForConflicts(selectedDate, e.target.value);
+                    }
+                  }}
                 />
               </div>
               <div className="space-y-2">
@@ -448,6 +523,7 @@ const Kalender = () => {
                 placeholder="Adresse oder Stallname"
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                maxLength={255}
               />
             </div>
 
@@ -457,12 +533,26 @@ const Kalender = () => {
                 placeholder="Zusätzliche Hinweise..."
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                maxLength={2000}
               />
             </div>
+
+            {/* Conflict Warning */}
+            {conflictWarning && (
+              <Alert variant="destructive" className="bg-amber-500/10 border-amber-500/30">
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                <AlertDescription className="text-amber-500">
+                  {conflictWarning}
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="outline" onClick={() => {
+              setIsDialogOpen(false);
+              setConflictWarning(null);
+            }}>
               Abbrechen
             </Button>
             <Button onClick={handleSubmit} disabled={createAppointment.isPending}>
