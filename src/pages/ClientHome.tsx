@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useOnboarding } from "@/hooks/useOnboarding";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { LogOut, FileText, ChevronRight, Plus, Shield } from "lucide-react";
 import { UnconfirmedAppointmentsBanner } from "@/components/UnconfirmedAppointmentsBanner";
 import { CreateHorseModal } from "@/components/horse-detail/CreateHorseModal";
+import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 
 interface Horse {
   id: string;
@@ -24,6 +26,7 @@ interface Profile {
 
 export default function ClientHome() {
   const { user, signOut, loading: authLoading } = useAuth();
+  const { showOnboarding, completeOnboarding } = useOnboarding();
   const navigate = useNavigate();
   const [horses, setHorses] = useState<Horse[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -88,7 +91,16 @@ export default function ClientHome() {
   const firstName = profile?.full_name?.split(" ")[0] || "Kunde";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+    <>
+      {/* Onboarding Wizard */}
+      {showOnboarding && (
+        <OnboardingWizard 
+          onComplete={completeOnboarding}
+          onSkip={completeOnboarding}
+        />
+      )}
+
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="px-4 py-3 flex items-center justify-between">
@@ -237,6 +249,7 @@ export default function ClientHome() {
         onClose={() => setShowCreateModal(false)}
         onCreated={handleHorseCreated}
       />
-    </div>
+      </div>
+    </>
   );
 }

@@ -822,6 +822,7 @@ export type Database = {
           has_logged_in: boolean | null
           id: string
           invited_at: string | null
+          onboarding_completed: boolean | null
           phone: string | null
           updated_at: string
         }
@@ -836,6 +837,7 @@ export type Database = {
           has_logged_in?: boolean | null
           id: string
           invited_at?: string | null
+          onboarding_completed?: boolean | null
           phone?: string | null
           updated_at?: string
         }
@@ -850,6 +852,7 @@ export type Database = {
           has_logged_in?: boolean | null
           id?: string
           invited_at?: string | null
+          onboarding_completed?: boolean | null
           phone?: string | null
           updated_at?: string
         }
