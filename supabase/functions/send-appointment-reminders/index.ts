@@ -413,7 +413,7 @@ async function sendReminderEmail(
   `;
 
   return resend.emails.send({
-    from: `${safeBusinessName} <onboarding@resend.dev>`,
+    from: `${safeBusinessName} <noreply@hufmanager.de>`,
     to: [owner.email],
     subject: `🐴 ${safeIntervalLabel}: Termin für ${safeHorseName} am ${safeDateStr}`,
     html: emailHtml,
