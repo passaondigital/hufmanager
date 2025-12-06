@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.serve-ical-feed]
 verify_jwt = false
+
+[functions.send-reschedule-notification]
+verify_jwt = true
