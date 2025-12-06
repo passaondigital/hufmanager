@@ -52,14 +52,17 @@ export const LocationPicker = ({
         let message = "Standort konnte nicht ermittelt werden.";
         if (error.code === error.PERMISSION_DENIED) {
           message = "Bitte erlauben Sie den Zugriff auf Ihren Standort.";
+        } else if (error.code === error.TIMEOUT) {
+          message = "GPS-Abfrage dauerte zu lange. Bitte erneut versuchen.";
         }
         toast({
-          title: "Fehler",
-          description: message,
-          variant: "destructive",
+          title: "GPS fehlgeschlagen",
+          description: `${message} Sie können ohne Standort fortfahren.`,
+          variant: "default",
         });
+        // Allow saving without GPS - don't block the user
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
   };
 

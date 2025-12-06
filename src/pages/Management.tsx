@@ -10,7 +10,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Building,
   Globe,
-  Palette,
   CreditCard,
   Upload,
   Save,
@@ -315,7 +314,7 @@ const Management = () => {
       </div>
 
       <Tabs defaultValue="business" className="w-full">
-        <TabsList className="grid w-full max-w-4xl grid-cols-7">
+        <TabsList className="grid w-full max-w-4xl grid-cols-6">
           <TabsTrigger value="business" className="gap-2">
             <Building className="h-4 w-4" />
             <span className="hidden sm:inline">Geschäft</span>
@@ -335,10 +334,6 @@ const Management = () => {
           <TabsTrigger value="landing" className="gap-2">
             <Globe className="h-4 w-4" />
             <span className="hidden sm:inline">Landingpage</span>
-          </TabsTrigger>
-          <TabsTrigger value="theme" className="gap-2">
-            <Palette className="h-4 w-4" />
-            <span className="hidden sm:inline">Design</span>
           </TabsTrigger>
           <TabsTrigger value="payment" className="gap-2">
             <CreditCard className="h-4 w-4" />
@@ -591,51 +586,6 @@ const Management = () => {
                   checked={formData.accept_new_customers}
                   onCheckedChange={(checked) => setFormData({ ...formData, accept_new_customers: checked })}
                 />
-              </div>
-
-              <div className="flex justify-end">
-                <Button className="gap-2" onClick={handleSave} disabled={saveMutation.isPending}>
-                  <Save className="h-4 w-4" />
-                  {saveMutation.isPending ? "Speichern..." : "Speichern"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Theme */}
-        <TabsContent value="theme" className="mt-6 space-y-6">
-          <Card className="animate-slide-up">
-            <CardHeader>
-              <CardTitle>Design-Einstellungen</CardTitle>
-              <CardDescription>
-                Passen Sie das Erscheinungsbild Ihrer Landingpage an
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label>Primärfarbe</Label>
-                <div className="flex gap-3">
-                  {["#d97706", "#059669", "#2563eb", "#7c3aed", "#dc2626"].map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => handleColorChange(color)}
-                      className={`w-10 h-10 rounded-lg border-2 transition-colors ${
-                        formData.primary_color === color ? "border-foreground" : "border-transparent hover:border-foreground/50"
-                      }`}
-                      style={{ backgroundColor: color }}
-                    />
-                  ))}
-                  <Input
-                    type="color"
-                    className="w-10 h-10 p-1 cursor-pointer"
-                    value={formData.primary_color}
-                    onChange={(e) => handleColorChange(e.target.value)}
-                  />
-                </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Aktuell: <code className="bg-muted px-1 rounded">{formData.primary_color}</code>
-                </p>
               </div>
 
               <div className="flex justify-end">
