@@ -48,7 +48,11 @@ const bottomItems = [
   { title: "Management", url: "/management", icon: Settings },
 ];
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  onNavigate?: () => void;
+}
+
+export function AppSidebar({ onNavigate }: AppSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
 
@@ -57,6 +61,7 @@ export function AppSidebar() {
   const NavItem = ({ item, showBadge = true }: { item: typeof funnelItems[0]; showBadge?: boolean }) => (
     <NavLink
       to={item.url}
+      onClick={onNavigate}
       className={cn(
         "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group min-h-[48px]",
         isActive(item.url)
@@ -164,12 +169,12 @@ export function AppSidebar() {
         
         <button
           className={cn(
-            "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
+            "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 min-h-[48px]",
             "text-sidebar-foreground/50 hover:bg-destructive/10 hover:text-destructive"
           )}
         >
           <LogOut className={cn("h-5 w-5 flex-shrink-0", collapsed && "mx-auto")} />
-          {!collapsed && <span className="font-medium">Abmelden</span>}
+          {!collapsed && <span className="font-medium text-[15px]">Abmelden</span>}
         </button>
 
         <Separator className="my-2 bg-sidebar-border" />
@@ -210,12 +215,12 @@ export function AppSidebar() {
             target="_blank"
             rel="noopener noreferrer"
             className={cn(
-              "flex items-center justify-center px-3 py-2 rounded-lg transition-all duration-200",
+              "flex items-center justify-center px-3 py-3 rounded-lg transition-all duration-200 min-h-[48px]",
               "text-sidebar-foreground/50 hover:text-primary"
             )}
             title="Rechtliches"
           >
-            <ExternalLink className="h-4 w-4" />
+            <ExternalLink className="h-5 w-5" />
           </a>
         )}
       </div>
