@@ -95,10 +95,12 @@ export function LeadChatBot({ providerId, providerName, providerLogo, primaryCol
   };
 
   const handlePostalSubmit = () => {
-    if (!inputValue.trim() || inputValue.length < 4) return;
+    const trimmed = inputValue.trim();
+    // Validate: min 4, max 10 characters (matches DB constraint)
+    if (!trimmed || trimmed.length < 4 || trimmed.length > 10) return;
     
-    setPostalCode(inputValue);
-    addUserMessage(inputValue);
+    setPostalCode(trimmed);
+    addUserMessage(trimmed);
     setInputValue('');
     
     setTimeout(() => {
@@ -108,7 +110,9 @@ export function LeadChatBot({ providerId, providerName, providerLogo, primaryCol
   };
 
   const handlePhoneSubmit = async () => {
-    if (!inputValue.trim() || inputValue.length < 6) return;
+    const trimmed = inputValue.trim();
+    // Validate: min 6, max 50 characters (matches DB constraint)
+    if (!trimmed || trimmed.length < 6 || trimmed.length > 50) return;
     
     setPhone(inputValue);
     addUserMessage(inputValue);
