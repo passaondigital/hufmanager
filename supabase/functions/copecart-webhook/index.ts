@@ -28,15 +28,37 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Parse the webhook payload
+    const payload = await req.json();
+    console.log("Webhook payload received");
+
+    // Verify IPN password
+    const expectedPassword = Deno.env.get("COPECART_IPN_PASSWORD");
+    const receivedPassword = payload.password || payload.ipn_password || payload.secret;
+    
+    if (!expectedPassword) {
+      console.error("COPECART_IPN_PASSWORD not configured");
+      return new Response(JSON.stringify({ error: "Server configuration error" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    if (receivedPassword !== expectedPassword) {
+      console.error("Invalid IPN password received");
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    console.log("IPN password verified successfully");
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     
     // Create service role client for data access
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Parse the webhook payload
-    const payload = await req.json();
-    console.log("Webhook payload:", JSON.stringify(payload, null, 2));
 
     // Copecart IPN fields (adjust based on actual Copecart IPN structure)
     const eventType = payload.event || payload.type;
