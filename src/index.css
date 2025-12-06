@@ -198,3 +198,88 @@
 .animate-pulse-slow {
   animation: pulseSlow 2s ease-in-out infinite;
 }
+
+/* React Big Calendar Custom Styles */
+.calendar-container .rbc-calendar {
+  @apply bg-card rounded-lg;
+}
+
+.calendar-container .rbc-toolbar {
+  @apply flex flex-wrap gap-2 p-4 border-b border-border;
+}
+
+.calendar-container .rbc-toolbar button {
+  @apply px-3 py-1.5 text-sm font-medium rounded-md transition-colors;
+  @apply bg-muted text-muted-foreground hover:bg-muted/80 border border-border;
+}
+
+.calendar-container .rbc-toolbar button.rbc-active {
+  @apply bg-primary text-primary-foreground border-primary;
+}
+
+.calendar-container .rbc-toolbar-label {
+  @apply text-lg font-semibold text-foreground flex-grow text-center;
+}
+
+.calendar-container .rbc-header {
+  @apply py-3 text-sm font-medium text-muted-foreground border-b border-border bg-muted/30;
+}
+
+.calendar-container .rbc-time-view,
+.calendar-container .rbc-month-view {
+  @apply border-none;
+}
+
+.calendar-container .rbc-month-row,
+.calendar-container .rbc-day-bg {
+  @apply border-border;
+}
+
+.calendar-container .rbc-off-range-bg {
+  @apply bg-muted/20;
+}
+
+.calendar-container .rbc-today {
+  @apply bg-primary/5;
+}
+
+.calendar-container .rbc-current-time-indicator {
+  @apply bg-destructive h-0.5;
+}
+
+.calendar-container .rbc-time-slot {
+  @apply border-border/50;
+}
+
+.calendar-container .rbc-time-header-content,
+.calendar-container .rbc-time-content {
+  @apply border-border;
+}
+
+.calendar-container .rbc-time-gutter {
+  @apply text-xs text-muted-foreground;
+}
+
+.calendar-container .rbc-event {
+  @apply border-none shadow-sm cursor-move;
+}
+
+.calendar-container .rbc-event:focus {
+  @apply outline-none ring-2 ring-ring ring-offset-2;
+}
+
+.calendar-container .rbc-show-more {
+  @apply text-xs text-primary font-medium hover:underline;
+}
+
+.calendar-container .rbc-agenda-view {
+  @apply p-4;
+}
+
+.dark .calendar-container .rbc-off-range-bg {
+  @apply bg-muted/10;
+}
+
+.dark .calendar-container .rbc-today {
+  @apply bg-primary/10;
+}

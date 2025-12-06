@@ -1,115 +1,114 @@
-import { useState, useEffect } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { Calendar, dateFnsLocalizer, Views, SlotInfo } from "react-big-calendar";
+import withDragAndDrop, { EventInteractionArgs } from "react-big-calendar/lib/addons/dragAndDrop";
+import { format, parse, startOfWeek, getDay, addMinutes } from "date-fns";
+import { de } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Alert,
-  AlertDescription,
-} from "@/components/ui/alert";
-import {
-  ChevronLeft,
-  ChevronRight,
   Plus,
-  Clock,
-  User,
   Mail,
   Loader2,
+  Smartphone,
   CheckCircle2,
-  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { z } from "zod";
+import { AppointmentFormModal } from "@/components/calendar/AppointmentFormModal";
+import { CalendarSyncModal } from "@/components/calendar/CalendarSyncModal";
+import { AppointmentTooltip } from "@/components/calendar/AppointmentTooltip";
 
-// Validation schema
-const appointmentSchema = z.object({
-  horseId: z.string().min(1, "Bitte wählen Sie ein Pferd aus"),
-  time: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Ungültiges Zeitformat"),
-  serviceType: z.string().min(1, "Bitte wählen Sie einen Service-Typ"),
-  notes: z.string().max(2000, "Notizen dürfen maximal 2000 Zeichen haben").optional(),
-  location: z.string().max(255, "Ort darf maximal 255 Zeichen haben").optional(),
+// Import CSS for react-big-calendar
+import "react-big-calendar/lib/css/react-big-calendar.css";
+import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
+
+// Setup date-fns localizer
+const locales = { de };
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: 1 }),
+  getDay,
+  locales,
 });
 
-const daysOfWeek = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+// Drag and drop calendar
+const DnDCalendar = withDragAndDrop(Calendar);
 
-const typeColors: Record<string, string> = {
-  Barhuf: "bg-accent text-accent-foreground",
-  Beschlag: "bg-primary text-primary-foreground",
-  Korrektur: "bg-amber-500 text-white",
+// Color mapping for service types
+const SERVICE_COLORS: Record<string, { bg: string; border: string }> = {
+  Barhuf: { bg: "hsl(142, 76%, 36%)", border: "hsl(142, 76%, 26%)" },
+  Beschlag: { bg: "hsl(25, 95%, 53%)", border: "hsl(25, 95%, 43%)" },
+  Korrektur: { bg: "hsl(45, 93%, 47%)", border: "hsl(45, 93%, 37%)" },
+  Notfall: { bg: "hsl(0, 84%, 60%)", border: "hsl(0, 84%, 50%)" },
+  Kontrolle: { bg: "hsl(217, 91%, 60%)", border: "hsl(217, 91%, 50%)" },
+};
+
+// Define event type
+interface CalendarEvent {
+  id: string;
+  title: string;
+  start: Date;
+  end: Date;
+  resource: {
+    id: string;
+    time: string | null;
+    duration: number | null;
+    service_type: string | null;
+    location: string | null;
+    status: string | null;
+    is_confirmed_by_client: boolean | null;
+    notes: string | null;
+    horses?: { name: string; breed: string | null } | null;
+  };
+}
+
+// German messages for calendar
+const messages = {
+  allDay: "Ganztägig",
+  previous: "Zurück",
+  next: "Weiter",
+  today: "Heute",
+  month: "Monat",
+  week: "Woche",
+  day: "Tag",
+  agenda: "Agenda",
+  date: "Datum",
+  time: "Zeit",
+  event: "Termin",
+  noEventsInRange: "Keine Termine in diesem Zeitraum.",
+  showMore: (total: number) => `+${total} weitere`,
 };
 
 const Kalender = () => {
   const { user } = useAuth();
-  const [currentWeek, setCurrentWeek] = useState(0);
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [isSendingReminders, setIsSendingReminders] = useState(false);
-  const [conflictWarning, setConflictWarning] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [isSendingReminders, setIsSendingReminders] = useState(false);
+  const [currentView, setCurrentView] = useState<typeof Views[keyof typeof Views]>(Views.WEEK);
+  const [currentDate, setCurrentDate] = useState(new Date());
 
-  // Send appointment reminders
-  const handleSendReminders = async () => {
-    setIsSendingReminders(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("send-appointment-reminders");
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Erinnerungen versendet",
-        description: `${data.sent} Erinnerung(en) für morgige Termine wurden erfolgreich versendet.`,
-      });
-    } catch (error: any) {
-      console.error("Error sending reminders:", error);
-      toast({
-        title: "Fehler",
-        description: error.message || "Erinnerungen konnten nicht versendet werden.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSendingReminders(false);
-    }
-  };
-
-  // Form state
-  const [formData, setFormData] = useState({
-    horseId: "",
-    time: "09:00",
-    serviceType: "Barhuf",
-    notes: "",
-    location: "",
-  });
-
-  // Fetch horses for the dropdown
-  const { data: horses = [] } = useQuery({
-    queryKey: ["horses"],
+  // Fetch user profile for ical_token
+  const { data: profile } = useQuery({
+    queryKey: ["profile", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("horses").select("*");
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("ical_token")
+        .eq("id", user.id)
+        .single();
       if (error) throw error;
       return data;
     },
+    enabled: !!user?.id,
   });
 
   // Fetch appointments
@@ -118,181 +117,171 @@ const Kalender = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments")
-        .select("*, horses(name, owner_id), is_confirmed_by_client")
+        .select("*, horses(name, breed)")
         .order("date", { ascending: true });
       if (error) throw error;
       return data;
     },
   });
 
-  // Create appointment mutation
-  const createAppointment = useMutation({
-    mutationFn: async (data: {
-      horse_id: string;
-      date: string;
-      time: string;
-      service_type: string;
-      notes: string;
-      location: string;
-      provider_id: string;
-    }) => {
-      const { error } = await supabase.from("appointments").insert(data);
+  // Convert appointments to calendar events
+  const events: CalendarEvent[] = useMemo(() => {
+    return appointments.map((apt) => {
+      const [hours, minutes] = (apt.time || "09:00").split(":").map(Number);
+      const start = new Date(apt.date);
+      start.setHours(hours, minutes, 0);
+      const end = addMinutes(start, apt.duration || 60);
+
+      return {
+        id: apt.id,
+        title: `${apt.horses?.name || "Unbekannt"} - ${apt.service_type || "Termin"}`,
+        start,
+        end,
+        resource: {
+          id: apt.id,
+          time: apt.time,
+          duration: apt.duration,
+          service_type: apt.service_type,
+          location: apt.location,
+          status: apt.status,
+          is_confirmed_by_client: apt.is_confirmed_by_client,
+          notes: apt.notes,
+          horses: apt.horses,
+        },
+      };
+    });
+  }, [appointments]);
+
+  // Update appointment mutation (for drag & drop)
+  const updateAppointment = useMutation({
+    mutationFn: async ({ id, date, time }: { id: string; date: string; time: string }) => {
+      const { error } = await supabase
+        .from("appointments")
+        .update({ date, time })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       toast({
-        title: "Termin erstellt",
-        description: "Der Termin wurde erfolgreich gespeichert.",
+        title: "Termin verschoben",
+        description: "Der Termin wurde erfolgreich aktualisiert.",
       });
-      setIsDialogOpen(false);
-      setConflictWarning(null);
-      resetForm();
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Fehler",
-        description: error.message || "Der Termin konnte nicht erstellt werden.",
+        description: error.message || "Der Termin konnte nicht verschoben werden.",
         variant: "destructive",
       });
     },
   });
 
-  // Check for conflicts when time or date changes
-  const checkForConflicts = (date: Date, time: string) => {
-    const dateStr = date.toISOString().split("T")[0];
-    const existingAppointments = appointments.filter(
-      (apt) => apt.date === dateStr && apt.time === time
-    );
-    
-    if (existingAppointments.length > 0) {
-      const horseNames = existingAppointments
-        .map((apt) => apt.horses?.name || "Unbekannt")
-        .join(", ");
-      setConflictWarning(`Zur gleichen Zeit ist bereits ein Termin geplant: ${horseNames}`);
-    } else {
-      setConflictWarning(null);
-    }
-  };
+  // Handle event drop (drag & drop)
+  const handleEventDrop = useCallback(
+    ({ event, start }: EventInteractionArgs<CalendarEvent>) => {
+      const newDate = format(start as Date, "yyyy-MM-dd");
+      const newTime = format(start as Date, "HH:mm");
+      updateAppointment.mutate({ id: event.id, date: newDate, time: newTime });
+    },
+    [updateAppointment]
+  );
 
-  const resetForm = () => {
-    setFormData({
-      horseId: "",
-      time: "09:00",
-      serviceType: "Barhuf",
-      notes: "",
-      location: "",
-    });
-  };
+  // Handle event resize
+  const handleEventResize = useCallback(
+    ({ event, start }: EventInteractionArgs<CalendarEvent>) => {
+      const newDate = format(start as Date, "yyyy-MM-dd");
+      const newTime = format(start as Date, "HH:mm");
+      updateAppointment.mutate({ id: event.id, date: newDate, time: newTime });
+    },
+    [updateAppointment]
+  );
 
-  // Generate week days
-  const getWeekDays = () => {
-    const today = new Date();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay() + 1 + currentWeek * 7);
+  // Handle slot selection (create new appointment)
+  const handleSelectSlot = useCallback((slotInfo: SlotInfo) => {
+    setSelectedDate(slotInfo.start);
+    setIsFormOpen(true);
+  }, []);
 
-    return Array.from({ length: 7 }, (_, i) => {
-      const date = new Date(startOfWeek);
-      date.setDate(startOfWeek.getDate() + i);
-      return {
-        dayName: daysOfWeek[i],
-        dayNumber: date.getDate(),
-        month: date.toLocaleDateString("de-DE", { month: "short" }),
-        isToday: date.toDateString() === today.toDateString(),
-        dayIndex: i + 1,
-        fullDate: date,
-      };
-    });
-  };
-
-  const weekDays = getWeekDays();
-
-  const getAppointmentsForDay = (date: Date) => {
-    const dateStr = date.toISOString().split("T")[0];
-    return appointments.filter((apt) => apt.date === dateStr);
-  };
-
-  const handleDayClick = (day: (typeof weekDays)[0]) => {
-    setSelectedDay(day.dayIndex);
-    setSelectedDate(day.fullDate);
-  };
-
-  const handleOpenNewAppointment = () => {
-    if (selectedDate) {
-      setIsDialogOpen(true);
-    } else {
-      // Use today if no date selected
-      setSelectedDate(new Date());
-      setIsDialogOpen(true);
-    }
-  };
-
-  const handleSubmit = () => {
-    if (!selectedDate || !user?.id) {
+  // Send reminders
+  const handleSendReminders = async () => {
+    setIsSendingReminders(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-appointment-reminders");
+      if (error) throw error;
+      toast({
+        title: "Erinnerungen versendet",
+        description: `${data?.sent || 0} Erinnerung(en) wurden erfolgreich versendet.`,
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unbekannter Fehler";
       toast({
         title: "Fehler",
-        description: "Bitte melden Sie sich erneut an.",
+        description: message,
         variant: "destructive",
       });
-      return;
+    } finally {
+      setIsSendingReminders(false);
     }
-
-    // Validate with zod schema
-    const validationResult = appointmentSchema.safeParse({
-      horseId: formData.horseId,
-      time: formData.time,
-      serviceType: formData.serviceType,
-      notes: formData.notes || undefined,
-      location: formData.location || undefined,
-    });
-
-    if (!validationResult.success) {
-      const firstError = validationResult.error.errors[0];
-      toast({
-        title: "Validierungsfehler",
-        description: firstError.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check if date is in the past
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (selectedDate < today) {
-      toast({
-        title: "Ungültiges Datum",
-        description: "Termine können nicht in der Vergangenheit erstellt werden.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const validated = validationResult.data;
-    createAppointment.mutate({
-      horse_id: validated.horseId,
-      date: selectedDate.toISOString().split("T")[0],
-      time: validated.time,
-      service_type: validated.serviceType,
-      notes: validated.notes || "",
-      location: validated.location || "",
-      provider_id: user.id,
-    });
   };
 
+  // Custom event styling
+  const eventStyleGetter = useCallback((event: CalendarEvent) => {
+    const serviceType = event.resource.service_type || "Barhuf";
+    const colors = SERVICE_COLORS[serviceType] || SERVICE_COLORS.Barhuf;
+    
+    return {
+      style: {
+        backgroundColor: colors.bg,
+        borderColor: colors.border,
+        borderWidth: "2px",
+        borderRadius: "6px",
+        color: "white",
+        fontSize: "0.75rem",
+        fontWeight: 500,
+      },
+    };
+  }, []);
+
+  // Custom event component with tooltip
+  const EventComponent = useCallback(
+    ({ event }: { event: CalendarEvent }) => (
+      <AppointmentTooltip appointment={event.resource}>
+        <div className="flex items-center gap-1 truncate px-1">
+          {event.resource.is_confirmed_by_client && (
+            <CheckCircle2 className="h-3 w-3 flex-shrink-0" />
+          )}
+          <span className="truncate">{event.title}</span>
+        </div>
+      </AppointmentTooltip>
+    ),
+    []
+  );
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 animate-fade-in">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Kalender</h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground text-sm">
             Verwalten Sie Ihre Termine und Besuche
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            className="gap-2" 
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => setIsSyncModalOpen(true)}
+          >
+            <Smartphone className="h-4 w-4" />
+            Mit Handy synchronisieren
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
             onClick={handleSendReminders}
             disabled={isSendingReminders}
           >
@@ -301,271 +290,92 @@ const Kalender = () => {
             ) : (
               <Mail className="h-4 w-4" />
             )}
-            Erinnerungen senden
+            Erinnerungen
           </Button>
-          <Button className="gap-2" onClick={handleOpenNewAppointment}>
+          <Button
+            size="sm"
+            className="gap-2"
+            onClick={() => {
+              setSelectedDate(new Date());
+              setIsFormOpen(true);
+            }}
+          >
             <Plus className="h-4 w-4" />
             Neuer Termin
           </Button>
         </div>
       </div>
 
-      {/* Week Navigation */}
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <Button variant="ghost" size="icon" onClick={() => setCurrentWeek((w) => w - 1)}>
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
-            <CardTitle className="text-lg">
-              {currentWeek === 0
-                ? "Diese Woche"
-                : currentWeek === 1
-                ? "Nächste Woche"
-                : currentWeek === -1
-                ? "Letzte Woche"
-                : `KW ${new Date().getWeek() + currentWeek}`}
-            </CardTitle>
-            <Button variant="ghost" size="icon" onClick={() => setCurrentWeek((w) => w + 1)}>
-              <ChevronRight className="h-5 w-5" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {/* Week Grid */}
-          <div className="grid grid-cols-7 gap-2">
-            {weekDays.map((day) => {
-              const dayAppointments = getAppointmentsForDay(day.fullDate);
-              const isSelected = selectedDay === day.dayIndex;
+      {/* Legend */}
+      <div className="flex flex-wrap gap-2">
+        {Object.entries(SERVICE_COLORS).map(([type, colors]) => (
+          <Badge
+            key={type}
+            className="text-xs"
+            style={{ backgroundColor: colors.bg, color: "white" }}
+          >
+            {type}
+          </Badge>
+        ))}
+      </div>
 
-              return (
-                <div
-                  key={day.dayIndex}
-                  onClick={() => handleDayClick(day)}
-                  className={cn(
-                    "p-3 rounded-xl cursor-pointer transition-all min-h-[120px]",
-                    day.isToday && "ring-2 ring-primary",
-                    isSelected
-                      ? "bg-primary/10 border-primary"
-                      : "bg-muted/30 hover:bg-muted/50",
-                    "border border-transparent"
-                  )}
-                >
-                  <div className="text-center mb-2">
-                    <p className="text-xs text-muted-foreground font-medium">{day.dayName}</p>
-                    <p
-                      className={cn(
-                        "text-lg font-bold",
-                        day.isToday ? "text-primary" : "text-foreground"
-                      )}
-                    >
-                      {day.dayNumber}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    {dayAppointments.slice(0, 2).map((apt) => (
-                      <div
-                        key={apt.id}
-                        className={cn(
-                          "text-xs p-1.5 rounded-md truncate flex items-center gap-1",
-                          typeColors[apt.service_type || "Barhuf"]
-                        )}
-                      >
-                        {apt.is_confirmed_by_client && (
-                          <CheckCircle2 className="h-3 w-3 flex-shrink-0" />
-                        )}
-                        <span className="truncate">{apt.time} {apt.horses?.name}</span>
-                      </div>
-                    ))}
-                    {dayAppointments.length > 2 && (
-                      <p className="text-xs text-muted-foreground text-center">
-                        +{dayAppointments.length - 2} mehr
-                      </p>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+      {/* Calendar */}
+      <Card className="overflow-hidden">
+        <CardContent className="p-0">
+          <div className="h-[700px] calendar-container">
+            <DnDCalendar
+              localizer={localizer}
+              events={events}
+              view={currentView}
+              onView={(view) => setCurrentView(view)}
+              date={currentDate}
+              onNavigate={setCurrentDate}
+              onEventDrop={handleEventDrop}
+              onEventResize={handleEventResize}
+              onSelectSlot={handleSelectSlot}
+              selectable
+              resizable
+              eventPropGetter={eventStyleGetter}
+              components={{
+                event: EventComponent,
+              }}
+              messages={messages}
+              culture="de"
+              step={30}
+              timeslots={2}
+              min={new Date(0, 0, 0, 6, 0)} // 6 AM
+              max={new Date(0, 0, 0, 21, 0)} // 9 PM
+              defaultView={Views.WEEK}
+              views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
+              popup
+              tooltipAccessor={() => ""} // Disable default tooltip (we use custom)
+              className="rbc-calendar-custom"
+            />
           </div>
         </CardContent>
       </Card>
 
-      {/* Day Detail */}
-      {selectedDay && selectedDate && (
-        <Card className="animate-slide-up">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">
-              Termine am {weekDays[selectedDay - 1]?.dayNumber}. {weekDays[selectedDay - 1]?.month}
-            </CardTitle>
-            <Button size="sm" onClick={() => setIsDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-1" />
-              Termin hinzufügen
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {getAppointmentsForDay(selectedDate).length > 0 ? (
-              getAppointmentsForDay(selectedDate).map((apt) => (
-                <div
-                  key={apt.id}
-                  className="p-4 rounded-lg border border-border hover:border-primary/30 transition-colors"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold text-foreground">{apt.horses?.name}</h4>
-                        <Badge className={cn("text-xs", typeColors[apt.service_type || "Barhuf"])}>
-                          {apt.service_type}
-                        </Badge>
-                        {apt.is_confirmed_by_client ? (
-                          <Badge variant="outline" className="text-xs bg-green-500/10 text-green-500 border-green-500/30">
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                            Bestätigt
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-500 border-amber-500/30">
-                            Ausstehend
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <User className="h-3.5 w-3.5" />
-                        {apt.location || "Keine Ortsangabe"}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium text-foreground flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {apt.time}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-muted-foreground text-center py-8">
-                Keine Termine an diesem Tag
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      )}
+      {/* Modals */}
+      <AppointmentFormModal
+        isOpen={isFormOpen}
+        onClose={() => {
+          setIsFormOpen(false);
+          setSelectedDate(null);
+        }}
+        selectedDate={selectedDate}
+        existingAppointments={appointments}
+      />
 
-      {/* New Appointment Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Neuer Termin</DialogTitle>
-            <DialogDescription>
-              Erstellen Sie einen neuen Termin für{" "}
-              {selectedDate?.toLocaleDateString("de-DE", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-              })}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Pferd auswählen *</Label>
-              <Select
-                value={formData.horseId}
-                onValueChange={(value) => setFormData({ ...formData, horseId: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Pferd auswählen..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {horses.map((horse) => (
-                    <SelectItem key={horse.id} value={horse.id}>
-                      {horse.name} ({horse.breed || "Unbekannt"})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Uhrzeit *</Label>
-                <Input
-                  type="time"
-                  value={formData.time}
-                  onChange={(e) => {
-                    setFormData({ ...formData, time: e.target.value });
-                    if (selectedDate) {
-                      checkForConflicts(selectedDate, e.target.value);
-                    }
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Service-Typ</Label>
-                <Select
-                  value={formData.serviceType}
-                  onValueChange={(value) => setFormData({ ...formData, serviceType: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Barhuf">Barhuf</SelectItem>
-                    <SelectItem value="Beschlag">Beschlag</SelectItem>
-                    <SelectItem value="Korrektur">Korrektur</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Ort</Label>
-              <Input
-                placeholder="Adresse oder Stallname"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                maxLength={255}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Notizen</Label>
-              <Textarea
-                placeholder="Zusätzliche Hinweise..."
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                maxLength={2000}
-              />
-            </div>
-
-            {/* Conflict Warning */}
-            {conflictWarning && (
-              <Alert variant="destructive" className="bg-amber-500/10 border-amber-500/30">
-                <AlertTriangle className="h-4 w-4 text-amber-500" />
-                <AlertDescription className="text-amber-500">
-                  {conflictWarning}
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setIsDialogOpen(false);
-              setConflictWarning(null);
-            }}>
-              Abbrechen
-            </Button>
-            <Button onClick={handleSubmit} disabled={createAppointment.isPending}>
-              {createAppointment.isPending ? "Speichern..." : "Termin erstellen"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CalendarSyncModal
+        isOpen={isSyncModalOpen}
+        onClose={() => setIsSyncModalOpen(false)}
+        icalToken={profile?.ical_token || null}
+      />
     </div>
   );
 };
 
-// Helper to get week number
+// Add getWeek function for ISO week numbers
 declare global {
   interface Date {
     getWeek(): number;

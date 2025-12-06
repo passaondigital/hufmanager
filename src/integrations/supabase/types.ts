@@ -165,6 +165,7 @@ export type Database = {
           notes: string | null
           price: number | null
           provider_id: string | null
+          recurring_group_id: string | null
           service_type: string | null
           signature_url: string | null
           signed_at: string | null
@@ -192,6 +193,7 @@ export type Database = {
           notes?: string | null
           price?: number | null
           provider_id?: string | null
+          recurring_group_id?: string | null
           service_type?: string | null
           signature_url?: string | null
           signed_at?: string | null
@@ -219,6 +221,7 @@ export type Database = {
           notes?: string | null
           price?: number | null
           provider_id?: string | null
+          recurring_group_id?: string | null
           service_type?: string | null
           signature_url?: string | null
           signed_at?: string | null
@@ -824,6 +827,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           has_logged_in: boolean | null
+          ical_token: string | null
           id: string
           invited_at: string | null
           onboarding_completed: boolean | null
@@ -842,6 +846,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           has_logged_in?: boolean | null
+          ical_token?: string | null
           id: string
           invited_at?: string | null
           onboarding_completed?: boolean | null
@@ -860,6 +865,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           has_logged_in?: boolean | null
+          ical_token?: string | null
           id?: string
           invited_at?: string | null
           onboarding_completed?: boolean | null

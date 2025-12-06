@@ -20,3 +20,6 @@ verify_jwt = true
 
 [functions.copecart-webhook]
 verify_jwt = false
+
+[functions.serve-ical-feed]
+verify_jwt = false
