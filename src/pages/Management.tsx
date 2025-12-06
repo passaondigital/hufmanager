@@ -19,9 +19,11 @@ import {
   X,
   Clock,
   Bell,
+  Crown,
 } from "lucide-react";
 import { BusinessHoursEditor, defaultHours, type BusinessHours } from "@/components/BusinessHoursEditor";
 import { ReminderSettingsCard } from "@/components/ReminderSettingsCard";
+import { SubscriptionCard } from "@/components/subscription/SubscriptionCard";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -313,10 +315,14 @@ const Management = () => {
       </div>
 
       <Tabs defaultValue="business" className="w-full">
-        <TabsList className="grid w-full max-w-3xl grid-cols-6">
+        <TabsList className="grid w-full max-w-4xl grid-cols-7">
           <TabsTrigger value="business" className="gap-2">
             <Building className="h-4 w-4" />
             <span className="hidden sm:inline">Geschäft</span>
+          </TabsTrigger>
+          <TabsTrigger value="subscription" className="gap-2">
+            <Crown className="h-4 w-4" />
+            <span className="hidden sm:inline">Mein Abo</span>
           </TabsTrigger>
           <TabsTrigger value="hours" className="gap-2">
             <Clock className="h-4 w-4" />
@@ -484,6 +490,11 @@ const Management = () => {
               </Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Subscription / Mein Abo */}
+        <TabsContent value="subscription" className="mt-6">
+          <SubscriptionCard />
         </TabsContent>
 
         {/* Arbeitszeiten / Business Hours */}

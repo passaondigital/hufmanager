@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { SubscriptionProvider } from "@/hooks/useSubscription";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PasswordRecoveryRedirect } from "@/components/auth/PasswordRecoveryRedirect";
@@ -42,7 +43,8 @@ function App() {
       <ThemeProvider defaultTheme="dark">
         <BrowserRouter>
           <AuthProvider>
-            <TooltipProvider>
+            <SubscriptionProvider>
+              <TooltipProvider>
               <Toaster />
               <Sonner />
               <AIChatWidget />
@@ -105,7 +107,8 @@ function App() {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </PasswordRecoveryRedirect>
-            </TooltipProvider>
+              </TooltipProvider>
+            </SubscriptionProvider>
           </AuthProvider>
         </BrowserRouter>
       </ThemeProvider>
