@@ -9,6 +9,7 @@ import { LTZHoofDetailForm } from "./LTZHoofDetailForm";
 interface LTZStepHoofFormProps {
   data: LTZAnalysisData;
   onChange: (data: Partial<LTZAnalysisData>) => void;
+  horseId: string;
 }
 
 function isHoofComplete(hoofData: LTZHoofData): boolean {
@@ -22,7 +23,7 @@ function isHoofComplete(hoofData: LTZHoofData): boolean {
   );
 }
 
-export function LTZStepHoofForm({ data, onChange }: LTZStepHoofFormProps) {
+export function LTZStepHoofForm({ data, onChange, horseId }: LTZStepHoofFormProps) {
   const [activeHoof, setActiveHoof] = useState('vl');
 
   const hoofDataMap: Record<string, { data: LTZHoofData; key: keyof LTZAnalysisData }> = {
@@ -95,6 +96,7 @@ export function LTZStepHoofForm({ data, onChange }: LTZStepHoofFormProps) {
                   hoofLabel={hoof.fullLabel}
                   data={hoofDataMap[hoof.key].data}
                   onChange={(newData) => handleHoofChange(hoof.key, newData)}
+                  horseId={horseId}
                 />
               </TabsContent>
             ))}

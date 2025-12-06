@@ -11,21 +11,32 @@ import {
   TOE_AXIS_OPTIONS,
   LTZHoofData 
 } from "./ltz-constants";
+import { LTZHoofPhotoCapture } from "./LTZHoofPhotoCapture";
 
 interface LTZHoofDetailFormProps {
   hoofKey: string;
   hoofLabel: string;
   data: LTZHoofData;
   onChange: (data: LTZHoofData) => void;
+  horseId: string;
 }
 
-export function LTZHoofDetailForm({ hoofKey, hoofLabel, data, onChange }: LTZHoofDetailFormProps) {
-  const updateField = (field: keyof LTZHoofData, value: string) => {
+export function LTZHoofDetailForm({ hoofKey, hoofLabel, data, onChange, horseId }: LTZHoofDetailFormProps) {
+  const updateField = (field: keyof LTZHoofData, value: string | undefined) => {
     onChange({ ...data, [field]: value });
   };
 
   return (
     <div className="space-y-4">
+      {/* Photo Capture */}
+      <LTZHoofPhotoCapture
+        hoofKey={hoofKey}
+        hoofLabel={hoofLabel}
+        photoUrl={data.photoUrl}
+        onPhotoChange={(url) => updateField('photoUrl', url)}
+        horseId={horseId}
+      />
+
       {/* Zehenachse - Most important */}
       <Card className="border-primary/20">
         <CardHeader className="pb-2">

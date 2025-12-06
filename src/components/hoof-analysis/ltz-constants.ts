@@ -78,6 +78,7 @@ export interface LTZHoofData {
   hornQuality?: string; // Hornqualität
   toeAxis?: string; // Zehenachse
   notes?: string; // Zusätzliche Notizen pro Huf
+  photoUrl?: string; // Foto des Hufs
 }
 
 export interface LTZAnalysisData {
