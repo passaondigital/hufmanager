@@ -381,6 +381,87 @@ export type Database = {
         }
         Relationships: []
       }
+      hoof_analyses: {
+        Row: {
+          appointment_id: string | null
+          belly_swing: string | null
+          created_at: string
+          croup_movement: string | null
+          footfall_left: string | null
+          footfall_right: string | null
+          hoof_data_hl: Json | null
+          hoof_data_hr: Json | null
+          hoof_data_vl: Json | null
+          hoof_data_vr: Json | null
+          horse_id: string
+          id: string
+          notes: string | null
+          provider_id: string
+          recommendations: string[] | null
+          stance_front: string | null
+          stance_rear: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          belly_swing?: string | null
+          created_at?: string
+          croup_movement?: string | null
+          footfall_left?: string | null
+          footfall_right?: string | null
+          hoof_data_hl?: Json | null
+          hoof_data_hr?: Json | null
+          hoof_data_vl?: Json | null
+          hoof_data_vr?: Json | null
+          horse_id: string
+          id?: string
+          notes?: string | null
+          provider_id: string
+          recommendations?: string[] | null
+          stance_front?: string | null
+          stance_rear?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string | null
+          belly_swing?: string | null
+          created_at?: string
+          croup_movement?: string | null
+          footfall_left?: string | null
+          footfall_right?: string | null
+          hoof_data_hl?: Json | null
+          hoof_data_hr?: Json | null
+          hoof_data_vl?: Json | null
+          hoof_data_vr?: Json | null
+          horse_id?: string
+          id?: string
+          notes?: string | null
+          provider_id?: string
+          recommendations?: string[] | null
+          stance_front?: string | null
+          stance_rear?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hoof_analyses_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hoof_analyses_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hoof_photos: {
         Row: {
           appointment_id: string | null
