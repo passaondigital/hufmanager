@@ -17,3 +17,6 @@ verify_jwt = true
 
 [functions.generate-completion-report]
 verify_jwt = true
+
+[functions.copecart-webhook]
+verify_jwt = false

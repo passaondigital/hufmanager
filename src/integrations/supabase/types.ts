@@ -243,6 +243,7 @@ export type Database = {
           accept_new_customers: boolean | null
           address: string | null
           business_name: string | null
+          copecart_customer_portal_url: string | null
           copecart_vendor_id: string | null
           created_at: string
           custom_domain: string | null
@@ -267,6 +268,7 @@ export type Database = {
           accept_new_customers?: boolean | null
           address?: string | null
           business_name?: string | null
+          copecart_customer_portal_url?: string | null
           copecart_vendor_id?: string | null
           created_at?: string
           custom_domain?: string | null
@@ -291,6 +293,7 @@ export type Database = {
           accept_new_customers?: boolean | null
           address?: string | null
           business_name?: string | null
+          copecart_customer_portal_url?: string | null
           copecart_vendor_id?: string | null
           created_at?: string
           custom_domain?: string | null
@@ -814,6 +817,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           business_hours: Json | null
+          copecart_subscription_id: string | null
           created_at: string
           created_by_provider_id: string | null
           display_id: string | null
@@ -824,11 +828,14 @@ export type Database = {
           invited_at: string | null
           onboarding_completed: boolean | null
           phone: string | null
+          subscription_plan: string | null
+          subscription_status: string | null
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
           business_hours?: Json | null
+          copecart_subscription_id?: string | null
           created_at?: string
           created_by_provider_id?: string | null
           display_id?: string | null
@@ -839,11 +846,14 @@ export type Database = {
           invited_at?: string | null
           onboarding_completed?: boolean | null
           phone?: string | null
+          subscription_plan?: string | null
+          subscription_status?: string | null
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
           business_hours?: Json | null
+          copecart_subscription_id?: string | null
           created_at?: string
           created_by_provider_id?: string | null
           display_id?: string | null
@@ -854,6 +864,8 @@ export type Database = {
           invited_at?: string | null
           onboarding_completed?: boolean | null
           phone?: string | null
+          subscription_plan?: string | null
+          subscription_status?: string | null
           updated_at?: string
         }
         Relationships: []
