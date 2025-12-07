@@ -72,10 +72,14 @@ const Angebote = () => {
       price_type: string;
       features: string[];
     }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Nicht angemeldet");
+      
       const { error } = await supabase.from("offers").insert({
         ...data,
         is_active: false,
         sort_order: offers.length + 1,
+        provider_id: user.id,
       });
       if (error) throw error;
     },

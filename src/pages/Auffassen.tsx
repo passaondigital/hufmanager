@@ -72,9 +72,13 @@ const Auffassen = () => {
 
   const createFeedback = useMutation({
     mutationFn: async (data: { customer_name: string; rating: number; text: string; source: string }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Nicht angemeldet");
+      
       const { error } = await supabase.from("feedbacks").insert({
         ...data,
         is_featured: false,
+        provider_id: user.id,
       });
       if (error) throw error;
     },
