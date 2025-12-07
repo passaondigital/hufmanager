@@ -588,7 +588,17 @@ const Management = () => {
                 />
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-3">
+                {formData.subdomain && (
+                  <Button 
+                    variant="outline" 
+                    className="gap-2" 
+                    onClick={() => window.open(`/p/${formData.subdomain}`, '_blank')}
+                  >
+                    <Globe className="h-4 w-4" />
+                    Vorschau ansehen
+                  </Button>
+                )}
                 <Button className="gap-2" onClick={handleSave} disabled={saveMutation.isPending}>
                   <Save className="h-4 w-4" />
                   {saveMutation.isPending ? "Speichern..." : "Speichern"}

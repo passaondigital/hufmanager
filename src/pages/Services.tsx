@@ -67,9 +67,13 @@ const Services = () => {
 
   const createService = useMutation({
     mutationFn: async (data: typeof formData) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Nicht angemeldet");
+      
       const { error } = await supabase.from("services").insert({
         ...data,
         is_active: true,
+        provider_id: user.id,
       });
       if (error) throw error;
     },
