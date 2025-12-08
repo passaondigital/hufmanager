@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, FileText, Download, ExternalLink } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, FileText, ExternalLink, Search } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 
@@ -27,8 +28,10 @@ export default function ClientInvoices() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<{ full_name: string | null; readable_id: string | null } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -65,12 +68,32 @@ export default function ClientInvoices() {
 
       if (!error && data) {
         setInvoices(data as Invoice[]);
+        setFilteredInvoices(data as Invoice[]);
       }
       setLoading(false);
     };
 
     fetchData();
   }, [user]);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredInvoices(invoices);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase();
+    const filtered = invoices.filter(invoice => {
+      const invoiceNumber = invoice.invoice_number?.toLowerCase() || "";
+      const horseName = invoice.horse?.name?.toLowerCase() || "";
+      const clientId = userProfile?.readable_id?.toLowerCase() || "";
+      
+      return invoiceNumber.includes(query) || 
+             horseName.includes(query) ||
+             clientId.includes(query);
+    });
+    setFilteredInvoices(filtered);
+  }, [searchQuery, invoices, userProfile]);
 
   const getStatusBadge = (status: string | null) => {
     switch (status) {
@@ -112,6 +135,19 @@ export default function ClientInvoices() {
       </header>
 
       <main className="px-4 py-6 max-w-lg mx-auto space-y-4">
+        {/* Search */}
+        {invoices.length > 0 && (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Suche nach Rechnung, Pferd..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        )}
+
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
@@ -124,16 +160,18 @@ export default function ClientInvoices() {
               </Card>
             ))}
           </div>
-        ) : invoices.length === 0 ? (
+        ) : filteredInvoices.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center">
               <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">Keine Rechnungen vorhanden</p>
+              <p className="text-muted-foreground">
+                {searchQuery ? "Keine Rechnungen gefunden" : "Keine Rechnungen vorhanden"}
+              </p>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-3">
-            {invoices.map((invoice) => (
+            {filteredInvoices.map((invoice) => (
               <Card key={invoice.id} className="overflow-hidden">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-3">

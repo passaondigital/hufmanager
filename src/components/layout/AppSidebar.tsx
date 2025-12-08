@@ -44,6 +44,7 @@ const mainItems = [
   { title: "Kunden", url: "/kunden", icon: Users },
   { title: "Netzwerk", url: "/netzwerk", icon: Briefcase },
   { title: "Services", url: "/services", icon: Scissors },
+  { title: "Rechnungen", url: "/rechnungen", icon: FileText },
   { title: "Hufanalyse", url: "/hufanalyse", icon: ClipboardList },
   { title: "Chat", url: "/chat", icon: MessagesSquare },
 ];
