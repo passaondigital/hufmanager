@@ -321,6 +321,7 @@ export type Database = {
       contacts: {
         Row: {
           category: Database["public"]["Enums"]["contact_category"]
+          city: string | null
           company_name: string | null
           created_at: string
           deleted_at: string | null
@@ -331,11 +332,14 @@ export type Database = {
           phone: string | null
           profile_id: string | null
           provider_id: string
+          readable_id: string | null
           source: string | null
           updated_at: string
+          zip_code: string | null
         }
         Insert: {
           category?: Database["public"]["Enums"]["contact_category"]
+          city?: string | null
           company_name?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -346,11 +350,14 @@ export type Database = {
           phone?: string | null
           profile_id?: string | null
           provider_id: string
+          readable_id?: string | null
           source?: string | null
           updated_at?: string
+          zip_code?: string | null
         }
         Update: {
           category?: Database["public"]["Enums"]["contact_category"]
+          city?: string | null
           company_name?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -361,8 +368,10 @@ export type Database = {
           phone?: string | null
           profile_id?: string | null
           provider_id?: string
+          readable_id?: string | null
           source?: string | null
           updated_at?: string
+          zip_code?: string | null
         }
         Relationships: [
           {
@@ -620,7 +629,6 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           discipline: string | null
-          display_id: string | null
           eqid: string | null
           equine_type: string | null
           feeding_notes: string | null
@@ -641,6 +649,7 @@ export type Database = {
           nickname: string | null
           owner_id: string
           photo_url: string | null
+          readable_id: string | null
           shoeing_interval: number | null
           special_notes: string | null
           updated_at: string
@@ -655,7 +664,6 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           discipline?: string | null
-          display_id?: string | null
           eqid?: string | null
           equine_type?: string | null
           feeding_notes?: string | null
@@ -676,6 +684,7 @@ export type Database = {
           nickname?: string | null
           owner_id: string
           photo_url?: string | null
+          readable_id?: string | null
           shoeing_interval?: number | null
           special_notes?: string | null
           updated_at?: string
@@ -690,7 +699,6 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           discipline?: string | null
-          display_id?: string | null
           eqid?: string | null
           equine_type?: string | null
           feeding_notes?: string | null
@@ -711,6 +719,7 @@ export type Database = {
           nickname?: string | null
           owner_id?: string
           photo_url?: string | null
+          readable_id?: string | null
           shoeing_interval?: number | null
           special_notes?: string | null
           updated_at?: string
@@ -990,11 +999,11 @@ export type Database = {
         Row: {
           avatar_url: string | null
           business_hours: Json | null
+          city: string | null
           copecart_subscription_id: string | null
           created_at: string
           created_by_provider_id: string | null
           deleted_at: string | null
-          display_id: string | null
           email: string | null
           full_name: string | null
           has_logged_in: boolean | null
@@ -1003,18 +1012,20 @@ export type Database = {
           invited_at: string | null
           onboarding_completed: boolean | null
           phone: string | null
+          readable_id: string | null
           subscription_plan: string | null
           subscription_status: string | null
           updated_at: string
+          zip_code: string | null
         }
         Insert: {
           avatar_url?: string | null
           business_hours?: Json | null
+          city?: string | null
           copecart_subscription_id?: string | null
           created_at?: string
           created_by_provider_id?: string | null
           deleted_at?: string | null
-          display_id?: string | null
           email?: string | null
           full_name?: string | null
           has_logged_in?: boolean | null
@@ -1023,18 +1034,20 @@ export type Database = {
           invited_at?: string | null
           onboarding_completed?: boolean | null
           phone?: string | null
+          readable_id?: string | null
           subscription_plan?: string | null
           subscription_status?: string | null
           updated_at?: string
+          zip_code?: string | null
         }
         Update: {
           avatar_url?: string | null
           business_hours?: Json | null
+          city?: string | null
           copecart_subscription_id?: string | null
           created_at?: string
           created_by_provider_id?: string | null
           deleted_at?: string | null
-          display_id?: string | null
           email?: string | null
           full_name?: string | null
           has_logged_in?: boolean | null
@@ -1043,9 +1056,11 @@ export type Database = {
           invited_at?: string | null
           onboarding_completed?: boolean | null
           phone?: string | null
+          readable_id?: string | null
           subscription_plan?: string | null
           subscription_status?: string | null
           updated_at?: string
+          zip_code?: string | null
         }
         Relationships: []
       }
@@ -1111,6 +1126,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_random_id: { Args: { prefix: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]

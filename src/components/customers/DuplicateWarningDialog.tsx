@@ -12,7 +12,7 @@ import { AlertTriangle } from "lucide-react";
 
 interface DuplicateCustomer {
   id: string;
-  display_id?: string;
+  readable_id?: string;
   full_name?: string;
   email?: string;
   phone?: string;
@@ -45,9 +45,9 @@ export function DuplicateWarningDialog({ open, duplicates, onCancel, onViewExist
                 >
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{dup.full_name}</span>
-                    {dup.display_id && (
+                    {dup.readable_id && (
                       <span className="text-xs font-mono text-muted-foreground">
-                        #{dup.display_id}
+                        #{dup.readable_id}
                       </span>
                     )}
                   </div>

@@ -47,7 +47,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 interface Horse {
   id: string;
   name: string;
-  display_id?: string;
+  readable_id?: string;
   breed?: string;
   equine_type?: string;
   latitude?: number;
@@ -56,7 +56,7 @@ interface Horse {
 
 interface Customer {
   id: string;
-  display_id?: string;
+  readable_id?: string;
   full_name?: string;
   email?: string;
   phone?: string;
@@ -180,9 +180,9 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
               <DialogTitle className="text-xl">
                 {customer.full_name || "Kunde"}
               </DialogTitle>
-              {customer.display_id && (
+              {customer.readable_id && (
                 <Badge variant="outline" className="font-mono text-xs">
-                  #{customer.display_id}
+                  #{customer.readable_id}
                 </Badge>
               )}
             </div>
@@ -265,9 +265,8 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                 </div>
               )}
 
-              {/* ID Notice */}
               <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-                Die Kunden-ID <strong className="font-mono">#{customer.display_id}</strong> ist unveränderbar und eindeutig.
+                Die Kunden-ID <strong className="font-mono">#{customer.readable_id}</strong> ist unveränderbar und eindeutig.
               </p>
             </div>
 
@@ -301,9 +300,9 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                                 <span className="font-medium text-foreground">
                                   {horse.name}
                                 </span>
-                                {horse.display_id && (
+                                {horse.readable_id && (
                                   <Badge variant="outline" className="font-mono text-xs">
-                                    #{horse.display_id}
+                                    #{horse.readable_id}
                                   </Badge>
                                 )}
                               </div>
@@ -364,7 +363,7 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                 Der Kunde <strong>{customer.full_name}</strong> wird gelöscht.
               </p>
               <p className="text-destructive font-medium">
-                Die ID #{customer.display_id} wird für 30 Tage gesperrt und kann nicht wiederverwendet werden.
+                Die ID #{customer.readable_id} wird für 30 Tage gesperrt und kann nicht wiederverwendet werden.
               </p>
             </AlertDialogDescription>
           </AlertDialogHeader>

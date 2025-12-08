@@ -73,12 +73,11 @@ const Kunden = () => {
     enabled: !!user?.id,
   });
 
-  // Filter clients
   const filteredClients = clients.filter((c) => {
     const matchesSearch =
       c.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.display_id?.toLowerCase().includes(searchTerm.toLowerCase());
+      c.readable_id?.toLowerCase().includes(searchTerm.toLowerCase());
 
     if (statusFilter === "alle") return matchesSearch;
     if (statusFilter === "aktiv") return matchesSearch && c.has_logged_in;
@@ -185,9 +184,9 @@ const Kunden = () => {
                         <h3 className="text-lg font-semibold text-foreground">
                           {client.full_name || "Unbekannt"}
                         </h3>
-                        {client.display_id && (
+                        {client.readable_id && (
                           <Badge variant="outline" className="font-mono text-xs">
-                            #{client.display_id}
+                            #{client.readable_id}
                           </Badge>
                         )}
                         {client.has_logged_in ? (
@@ -236,9 +235,9 @@ const Kunden = () => {
                               onClick={(e) => e.stopPropagation()}
                             >
                               <span className="font-medium text-foreground">{horse.name}</span>
-                              {horse.display_id && (
+                              {horse.readable_id && (
                                 <span className="text-xs text-muted-foreground font-mono">
-                                  #{horse.display_id}
+                                  #{horse.readable_id}
                                 </span>
                               )}
                               {hasGps && (
