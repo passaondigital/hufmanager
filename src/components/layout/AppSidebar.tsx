@@ -21,6 +21,7 @@ import {
   LifeBuoy,
   ExternalLink,
   ClipboardList,
+  Briefcase,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -41,6 +42,7 @@ const mainItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Kalender", url: "/kalender", icon: Calendar },
   { title: "Kunden", url: "/kunden", icon: Users },
+  { title: "Netzwerk", url: "/netzwerk", icon: Briefcase },
   { title: "Services", url: "/services", icon: Scissors },
   { title: "Hufanalyse", url: "/hufanalyse", icon: ClipboardList },
   { title: "Chat", url: "/chat", icon: MessagesSquare },
