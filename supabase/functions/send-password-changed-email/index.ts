@@ -81,7 +81,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     const emailResponse = await resend.emails.send({
-      from: "HufManager <noreply@hufmanager.de>",
+      from: "HufManager <info@hufmanager.de>",
       to: [email],
       subject: "Passwort erfolgreich geändert - HufManager",
       html: `
