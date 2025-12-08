@@ -1005,6 +1005,7 @@ export type Database = {
           created_by_provider_id: string | null
           deleted_at: string | null
           email: string | null
+          emergency_contacts: Json | null
           full_name: string | null
           has_logged_in: boolean | null
           ical_token: string | null
@@ -1013,6 +1014,11 @@ export type Database = {
           onboarding_completed: boolean | null
           phone: string | null
           readable_id: string | null
+          stable_city: string | null
+          stable_latitude: number | null
+          stable_longitude: number | null
+          stable_street: string | null
+          stable_zip: string | null
           subscription_plan: string | null
           subscription_status: string | null
           updated_at: string
@@ -1027,6 +1033,7 @@ export type Database = {
           created_by_provider_id?: string | null
           deleted_at?: string | null
           email?: string | null
+          emergency_contacts?: Json | null
           full_name?: string | null
           has_logged_in?: boolean | null
           ical_token?: string | null
@@ -1035,6 +1042,11 @@ export type Database = {
           onboarding_completed?: boolean | null
           phone?: string | null
           readable_id?: string | null
+          stable_city?: string | null
+          stable_latitude?: number | null
+          stable_longitude?: number | null
+          stable_street?: string | null
+          stable_zip?: string | null
           subscription_plan?: string | null
           subscription_status?: string | null
           updated_at?: string
@@ -1049,6 +1061,7 @@ export type Database = {
           created_by_provider_id?: string | null
           deleted_at?: string | null
           email?: string | null
+          emergency_contacts?: Json | null
           full_name?: string | null
           has_logged_in?: boolean | null
           ical_token?: string | null
@@ -1057,6 +1070,11 @@ export type Database = {
           onboarding_completed?: boolean | null
           phone?: string | null
           readable_id?: string | null
+          stable_city?: string | null
+          stable_latitude?: number | null
+          stable_longitude?: number | null
+          stable_street?: string | null
+          stable_zip?: string | null
           subscription_plan?: string | null
           subscription_status?: string | null
           updated_at?: string
