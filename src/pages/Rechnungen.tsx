@@ -6,9 +6,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { FileText, ExternalLink, Search } from "lucide-react";
+import { FileText, ExternalLink, Search, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { CreateInvoiceModal } from "@/components/invoices/CreateInvoiceModal";
 
 interface Invoice {
   id: string;
@@ -34,48 +35,48 @@ export default function Rechnungen() {
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const fetchInvoices = async () => {
+    if (!user) return;
+    setLoading(true);
+    
+    const { data, error } = await supabase
+      .from("invoices")
+      .select(`
+        id,
+        invoice_number,
+        issue_date,
+        due_date,
+        total_amount,
+        status,
+        pdf_url,
+        client_id,
+        horse:horses(name)
+      `)
+      .order("issue_date", { ascending: false });
+
+    if (!error && data) {
+      const clientIds = [...new Set(data.map(inv => inv.client_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, readable_id")
+        .in("id", clientIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      
+      const invoicesWithClients = data.map(inv => ({
+        ...inv,
+        clientProfile: profileMap.get(inv.client_id) || null
+      })) as Invoice[];
+
+      setInvoices(invoicesWithClients);
+      setFilteredInvoices(invoicesWithClients);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    if (!user) return;
-
-    const fetchInvoices = async () => {
-      setLoading(true);
-      
-      const { data, error } = await supabase
-        .from("invoices")
-        .select(`
-          id,
-          invoice_number,
-          issue_date,
-          due_date,
-          total_amount,
-          status,
-          pdf_url,
-          client_id,
-          horse:horses(name)
-        `)
-        .order("issue_date", { ascending: false });
-
-      if (!error && data) {
-        const clientIds = [...new Set(data.map(inv => inv.client_id))];
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, full_name, readable_id")
-          .in("id", clientIds);
-
-        const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
-        
-        const invoicesWithClients = data.map(inv => ({
-          ...inv,
-          clientProfile: profileMap.get(inv.client_id) || null
-        })) as Invoice[];
-
-        setInvoices(invoicesWithClients);
-        setFilteredInvoices(invoicesWithClients);
-      }
-      setLoading(false);
-    };
-
     fetchInvoices();
   }, [user]);
 
@@ -129,7 +130,17 @@ export default function Rechnungen() {
           <h1 className="text-2xl font-bold text-foreground">Rechnungen</h1>
           <p className="text-muted-foreground">Übersicht aller Kundenrechnungen</p>
         </div>
+        <Button onClick={() => setShowCreateModal(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Rechnung erstellen
+        </Button>
       </div>
+
+      <CreateInvoiceModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={fetchInvoices}
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
