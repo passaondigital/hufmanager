@@ -36,6 +36,9 @@ import ClientInvoices from "@/pages/ClientInvoices";
 import ClientPermissions from "@/pages/ClientPermissions";
 import NotFound from "@/pages/NotFound";
 import ProviderLanding from "@/pages/ProviderLanding";
+import ImportCenter from "@/pages/ImportCenter";
+import ConnectForm from "@/pages/ConnectForm";
+import Netzwerk from "@/pages/Netzwerk";
 
 function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -58,7 +61,7 @@ function App() {
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/update-password" element={<UpdatePassword />} />
                   <Route path="/p/:slug" element={<ProviderLanding />} />
-                  <Route path="/update-password" element={<UpdatePassword />} />
+                  <Route path="/connect/:slug" element={<ConnectForm />} />
                 
                 {/* Provider (Admin) routes */}
                 <Route element={
@@ -76,8 +79,10 @@ function App() {
                   <Route path="/kalender" element={<Kalender />} />
                   <Route path="/customers" element={<Kunden />} />
                   <Route path="/kunden" element={<Kunden />} />
+                  <Route path="/netzwerk" element={<Netzwerk />} />
                   <Route path="/services" element={<Services />} />
                   <Route path="/management" element={<Management />} />
+                  <Route path="/management/import" element={<ImportCenter />} />
                   <Route path="/academy" element={<Academy />} />
                   <Route path="/chat" element={<Chat />} />
                   <Route path="/partner" element={<GeldVerdienen />} />

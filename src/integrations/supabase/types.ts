@@ -318,6 +318,59 @@ export type Database = {
         }
         Relationships: []
       }
+      contacts: {
+        Row: {
+          category: Database["public"]["Enums"]["contact_category"]
+          company_name: string | null
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          notes: string | null
+          phone: string | null
+          profile_id: string | null
+          provider_id: string
+          source: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["contact_category"]
+          company_name?: string | null
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          profile_id?: string | null
+          provider_id: string
+          source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["contact_category"]
+          company_name?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          profile_id?: string | null
+          provider_id?: string
+          source?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contacts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           client_id: string
@@ -787,6 +840,33 @@ export type Database = {
         }
         Relationships: []
       }
+      magic_links: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          provider_id: string
+          slug: string
+          uses_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          provider_id: string
+          slug: string
+          uses_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          provider_id?: string
+          slug?: string
+          uses_count?: number | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -1033,6 +1113,7 @@ export type Database = {
     }
     Enums: {
       app_role: "provider" | "client"
+      contact_category: "client" | "partner" | "supplier" | "lead"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1161,6 +1242,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["provider", "client"],
+      contact_category: ["client", "partner", "supplier", "lead"],
     },
   },
 } as const
