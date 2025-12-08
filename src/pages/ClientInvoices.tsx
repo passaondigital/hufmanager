@@ -28,11 +28,24 @@ export default function ClientInvoices() {
   const { user, loading: authLoading } = useAuth();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<{ full_name: string | null; readable_id: string | null } | null>(null);
 
   useEffect(() => {
     if (!user) return;
 
-    const fetchInvoices = async () => {
+    const fetchData = async () => {
+      setLoading(true);
+      
+      // Fetch user profile
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("full_name, readable_id")
+        .eq("id", user.id)
+        .single();
+      
+      if (profileData) {
+        setUserProfile(profileData);
+      }
       setLoading(true);
       
       const { data, error } = await supabase
@@ -56,7 +69,7 @@ export default function ClientInvoices() {
       setLoading(false);
     };
 
-    fetchInvoices();
+    fetchData();
   }, [user]);
 
   const getStatusBadge = (status: string | null) => {
@@ -134,6 +147,12 @@ export default function ClientInvoices() {
                       <p className="text-sm text-muted-foreground">
                         {format(new Date(invoice.issue_date), "dd. MMMM yyyy", { locale: de })}
                       </p>
+                      {userProfile && (
+                        <p className="text-sm text-muted-foreground">
+                          Kunde: {userProfile.full_name || "Unbekannt"}
+                          {userProfile.readable_id && ` (${userProfile.readable_id})`}
+                        </p>
+                      )}
                       {invoice.horse && (
                         <p className="text-sm text-muted-foreground">
                           🐴 {invoice.horse.name}
