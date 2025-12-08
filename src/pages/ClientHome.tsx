@@ -6,13 +6,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LogOut, FileText, ChevronRight, Plus, Shield, Scissors } from "lucide-react";
+import { LogOut, FileText, ChevronRight, Plus, Shield, Scissors, User } from "lucide-react";
 import { UnconfirmedAppointmentsBanner } from "@/components/UnconfirmedAppointmentsBanner";
 import { CreateHorseModal } from "@/components/horse-detail/CreateHorseModal";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { NextAppointmentWidget } from "@/components/client/NextAppointmentWidget";
 import { LastVisitWidget } from "@/components/client/LastVisitWidget";
 import { WhatsAppFAB } from "@/components/client/WhatsAppFAB";
+import { EmergencyVetWidget } from "@/components/client/EmergencyVetWidget";
 
 interface Horse {
   id: string;
@@ -23,8 +24,15 @@ interface Horse {
   nickname: string | null;
 }
 
+interface EmergencyContact {
+  role: string;
+  name: string;
+  phone: string;
+}
+
 interface Profile {
   full_name: string | null;
+  emergency_contacts: EmergencyContact[];
 }
 
 export default function ClientHome() {
@@ -41,14 +49,23 @@ export default function ClientHome() {
     
     setLoading(true);
     
-    // Fetch profile
+    // Fetch profile with emergency contacts
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("full_name")
+      .select("full_name, emergency_contacts")
       .eq("id", user.id)
       .maybeSingle();
     
-    setProfile(profileData);
+    if (profileData) {
+      let parsedContacts: EmergencyContact[] = [];
+      if (profileData.emergency_contacts && Array.isArray(profileData.emergency_contacts)) {
+        parsedContacts = (profileData.emergency_contacts as unknown as EmergencyContact[]);
+      }
+      setProfile({
+        full_name: profileData.full_name,
+        emergency_contacts: parsedContacts,
+      });
+    }
 
     // Fetch horses
     const { data: horsesData, error } = await supabase
@@ -132,6 +149,11 @@ export default function ClientHome() {
           </p>
         </div>
 
+        {/* Emergency Vet Widget */}
+        {profile?.emergency_contacts && profile.emergency_contacts.length > 0 && (
+          <EmergencyVetWidget contacts={profile.emergency_contacts} />
+        )}
+
         {/* Next Appointment Widget */}
         {user && <NextAppointmentWidget userId={user.id} />}
 
@@ -139,7 +161,7 @@ export default function ClientHome() {
         {user && <LastVisitWidget userId={user.id} />}
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Button 
             variant="outline" 
             className="h-16 flex-col gap-1"
@@ -163,6 +185,14 @@ export default function ClientHome() {
           >
             <Shield className="h-5 w-5 text-primary" />
             <span className="text-xs">Datenfreigabe</span>
+          </Button>
+          <Button 
+            variant="outline" 
+            className="h-16 flex-col gap-1"
+            onClick={() => navigate("/client-profile")}
+          >
+            <User className="h-5 w-5 text-primary" />
+            <span className="text-xs">Mein Profil</span>
           </Button>
         </div>
 
