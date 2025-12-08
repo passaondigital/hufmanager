@@ -21,6 +21,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { LocationPicker } from "@/components/LocationPicker";
 import { z } from "zod";
 
+import { DuplicateWarningDialog } from "@/components/customers/DuplicateWarningDialog";
+
 // Validation schemas
 const customerSchema = z.object({
   firstName: z.string().trim().min(1, "Vorname ist erforderlich").max(100, "Vorname darf maximal 100 Zeichen haben"),
@@ -32,6 +34,7 @@ const customerSchema = z.object({
 const horseSchema = z.object({
   ownerId: z.string().min(1, "Bitte wählen Sie einen Kunden aus").uuid("Ungültige Kunden-ID"),
   name: z.string().trim().min(1, "Pferdename ist erforderlich").max(100, "Pferdename darf maximal 100 Zeichen haben"),
+  equineType: z.string().default("horse"),
   breed: z.string().trim().max(100, "Rasse darf maximal 100 Zeichen haben").optional(),
   birthYear: z.string()
     .refine((val) => !val || /^\d{4}$/.test(val), "Geburtsjahr muss 4 Ziffern haben")
@@ -44,6 +47,14 @@ const horseSchema = z.object({
     .optional(),
   notes: z.string().trim().max(2000, "Notizen dürfen maximal 2000 Zeichen haben").optional(),
 });
+
+const EQUINE_TYPES = [
+  { value: "horse", label: "Pferd" },
+  { value: "pony", label: "Pony" },
+  { value: "donkey", label: "Esel" },
+  { value: "mule", label: "Maultier" },
+  { value: "zebra", label: "Zebra" },
+];
 
 const intervalOptions = [2, 4, 6, 8, 10, 12];
 
@@ -66,6 +77,7 @@ const Aufnahme = () => {
   const [horseForm, setHorseForm] = useState({
     ownerId: "",
     name: "",
+    equineType: "horse",
     breed: "",
     birthYear: "",
     gender: "",
@@ -77,6 +89,12 @@ const Aufnahme = () => {
     longitude: null as number | null,
     locationName: "",
   });
+
+  // Duplicate check state
+  const [duplicateWarning, setDuplicateWarning] = useState<{
+    show: boolean;
+    duplicates: any[];
+  }>({ show: false, duplicates: [] });
 
   // Invitation form state
   const [inviteForm, setInviteForm] = useState({
@@ -192,6 +210,7 @@ const Aufnahme = () => {
     mutationFn: async (data: {
       owner_id: string;
       name: string;
+      equine_type?: string;
       breed?: string;
       birth_year?: number;
       gender?: string;
@@ -215,6 +234,7 @@ const Aufnahme = () => {
       setHorseForm({
         ownerId: "",
         name: "",
+        equineType: "horse",
         breed: "",
         birthYear: "",
         gender: "",
@@ -236,7 +256,7 @@ const Aufnahme = () => {
     },
   });
 
-  const handleCreateCustomer = () => {
+  const handleCreateCustomer = async () => {
     // Validate with zod schema
     const validationResult = customerSchema.safeParse({
       firstName: customerForm.firstName,
@@ -273,6 +293,20 @@ const Aufnahme = () => {
       return;
     }
 
+    // Duplicate check
+    const fullName = `${customerForm.firstName} ${customerForm.lastName}`.trim().toLowerCase();
+    const duplicates = clients.filter((c) => {
+      const nameMatch = c.full_name?.toLowerCase() === fullName;
+      const emailMatch = customerForm.email && c.email?.toLowerCase() === customerForm.email.toLowerCase();
+      const phoneMatch = customerForm.phone && c.phone === customerForm.phone;
+      return nameMatch && (emailMatch || phoneMatch);
+    });
+
+    if (duplicates.length > 0) {
+      setDuplicateWarning({ show: true, duplicates });
+      return;
+    }
+
     const validated = validationResult.data;
     createCustomer.mutate({
       full_name: `${validated.firstName} ${validated.lastName}`.trim(),
@@ -306,6 +340,7 @@ const Aufnahme = () => {
     createHorse.mutate({
       owner_id: validated.ownerId,
       name: validated.name,
+      equine_type: horseForm.equineType,
       breed: validated.breed || undefined,
       birth_year: validated.birthYear ? Number(validated.birthYear) : undefined,
       gender: horseForm.gender || undefined,
@@ -539,7 +574,7 @@ const Aufnahme = () => {
                 </Select>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="horseName">Name des Pferdes *</Label>
                   <Input
@@ -548,6 +583,24 @@ const Aufnahme = () => {
                     value={horseForm.name}
                     onChange={(e) => setHorseForm({ ...horseForm, name: e.target.value })}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="equineType">Art *</Label>
+                  <Select
+                    value={horseForm.equineType}
+                    onValueChange={(value) => setHorseForm({ ...horseForm, equineType: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {EQUINE_TYPES.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="breed">Rasse</Label>
@@ -670,6 +723,7 @@ const Aufnahme = () => {
                     setHorseForm({
                       ownerId: "",
                       name: "",
+                      equineType: "horse",
                       breed: "",
                       birthYear: "",
                       gender: "",
@@ -759,6 +813,17 @@ const Aufnahme = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Duplicate Warning Dialog */}
+      <DuplicateWarningDialog
+        open={duplicateWarning.show}
+        duplicates={duplicateWarning.duplicates}
+        onCancel={() => setDuplicateWarning({ show: false, duplicates: [] })}
+        onViewExisting={(id) => {
+          setDuplicateWarning({ show: false, duplicates: [] });
+          toast({ title: "Kunde existiert bereits", description: "Bitte prüfen Sie den bestehenden Eintrag." });
+        }}
+      />
     </div>
   );
 };
