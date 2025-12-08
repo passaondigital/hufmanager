@@ -185,7 +185,7 @@ serve(async (req: Request): Promise<Response> => {
 
     // Send invitation email
     const emailResponse = await resend.emails.send({
-      from: `${safeBusinessName} <noreply@hufmanager.de>`,
+      from: `HufManager <info@hufmanager.de>`,
       to: [email],
       subject: `🐴 ${safeBusinessName} lädt Sie zur HufManager KundenApp ein`,
       html: emailHtml,
