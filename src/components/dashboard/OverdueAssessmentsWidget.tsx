@@ -12,7 +12,7 @@ import { de } from "date-fns/locale";
 interface OverdueHorse {
   id: string;
   name: string;
-  display_id: string | null;
+  readable_id: string | null;
   owner_id: string;
   last_anamnesis_date: string | null;
   anamnesis_interval_months: number;
@@ -33,7 +33,7 @@ export function OverdueAssessmentsWidget() {
       // Fetch all horses
       const { data: horses, error: horsesError } = await supabase
         .from("horses")
-        .select("id, name, display_id, owner_id, last_anamnesis_date, anamnesis_interval_months");
+        .select("id, name, readable_id, owner_id, last_anamnesis_date, anamnesis_interval_months");
       
       if (horsesError) throw horsesError;
 
