@@ -323,6 +323,7 @@ export type Database = {
           category: Database["public"]["Enums"]["contact_category"]
           company_name: string | null
           created_at: string
+          deleted_at: string | null
           email: string | null
           full_name: string
           id: string
@@ -337,6 +338,7 @@ export type Database = {
           category?: Database["public"]["Enums"]["contact_category"]
           company_name?: string | null
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           full_name: string
           id?: string
@@ -351,6 +353,7 @@ export type Database = {
           category?: Database["public"]["Enums"]["contact_category"]
           company_name?: string | null
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           full_name?: string
           id?: string
@@ -615,9 +618,11 @@ export type Database = {
           color: string | null
           contacts: Json | null
           created_at: string
+          deleted_at: string | null
           discipline: string | null
           display_id: string | null
           eqid: string | null
+          equine_type: string | null
           feeding_notes: string | null
           gender: string | null
           health_status: string | null
@@ -648,9 +653,11 @@ export type Database = {
           color?: string | null
           contacts?: Json | null
           created_at?: string
+          deleted_at?: string | null
           discipline?: string | null
           display_id?: string | null
           eqid?: string | null
+          equine_type?: string | null
           feeding_notes?: string | null
           gender?: string | null
           health_status?: string | null
@@ -681,9 +688,11 @@ export type Database = {
           color?: string | null
           contacts?: Json | null
           created_at?: string
+          deleted_at?: string | null
           discipline?: string | null
           display_id?: string | null
           eqid?: string | null
+          equine_type?: string | null
           feeding_notes?: string | null
           gender?: string | null
           health_status?: string | null
@@ -984,6 +993,7 @@ export type Database = {
           copecart_subscription_id: string | null
           created_at: string
           created_by_provider_id: string | null
+          deleted_at: string | null
           display_id: string | null
           email: string | null
           full_name: string | null
@@ -1003,6 +1013,7 @@ export type Database = {
           copecart_subscription_id?: string | null
           created_at?: string
           created_by_provider_id?: string | null
+          deleted_at?: string | null
           display_id?: string | null
           email?: string | null
           full_name?: string | null
@@ -1022,6 +1033,7 @@ export type Database = {
           copecart_subscription_id?: string | null
           created_at?: string
           created_by_provider_id?: string | null
+          deleted_at?: string | null
           display_id?: string | null
           email?: string | null
           full_name?: string | null
@@ -1114,6 +1126,7 @@ export type Database = {
     Enums: {
       app_role: "provider" | "client"
       contact_category: "client" | "partner" | "supplier" | "lead"
+      equine_type: "horse" | "pony" | "donkey" | "mule" | "zebra"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1243,6 +1256,7 @@ export const Constants = {
     Enums: {
       app_role: ["provider", "client"],
       contact_category: ["client", "partner", "supplier", "lead"],
+      equine_type: ["horse", "pony", "donkey", "mule", "zebra"],
     },
   },
 } as const

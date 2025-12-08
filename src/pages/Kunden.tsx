@@ -4,27 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import {
   Search,
   Plus,
   Phone,
   Mail,
-  MapPin,
   ChevronRight,
   Filter,
   Navigation,
   CheckCircle,
   Clock,
+  Users,
 } from "lucide-react";
 import {
   Select,
@@ -33,25 +23,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { CustomerDetailModal } from "@/components/customers/CustomerDetailModal";
+import { AddHorseModal } from "@/components/customers/AddHorseModal";
 
 const Kunden = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("alle");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    full_name: "",
-    email: "",
-    phone: "",
-  });
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showAddHorseModal, setShowAddHorseModal] = useState(false);
+  const [addHorseForCustomerId, setAddHorseForCustomerId] = useState<string | null>(null);
 
   // Fetch profiles (clients) created by this provider
   const { data: clients = [] } = useQuery({
@@ -62,6 +50,7 @@ const Kunden = () => {
         .from("profiles")
         .select("*")
         .eq("created_by_provider_id", user.id)
+        .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
@@ -71,19 +60,30 @@ const Kunden = () => {
 
   // Fetch horses
   const { data: horses = [] } = useQuery({
-    queryKey: ["horses"],
+    queryKey: ["provider-horses", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("horses").select("*");
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from("horses")
+        .select("*")
+        .is("deleted_at", null);
       if (error) throw error;
-      return data;
+      return data || [];
     },
+    enabled: !!user?.id,
   });
 
   // Filter clients
   const filteredClients = clients.filter((c) => {
     const matchesSearch =
       c.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.email?.toLowerCase().includes(searchTerm.toLowerCase());
+      c.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.display_id?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    if (statusFilter === "alle") return matchesSearch;
+    if (statusFilter === "aktiv") return matchesSearch && c.has_logged_in;
+    if (statusFilter === "eingeladen") return matchesSearch && c.invited_at && !c.has_logged_in;
+    if (statusFilter === "ausstehend") return matchesSearch && !c.invited_at && !c.has_logged_in;
     return matchesSearch;
   });
 
@@ -92,13 +92,20 @@ const Kunden = () => {
     return horses.filter((h) => h.owner_id === clientId);
   };
 
-  const handleClientClick = (clientId: string) => {
-    // Navigate to client detail or show info
-    toast({
-      title: "Kunde auswählen",
-      description: "Kundendetails werden angezeigt...",
-    });
+  const handleClientClick = (client: any) => {
+    setSelectedCustomer(client);
+    setShowDetailModal(true);
   };
+
+  const handleAddHorse = (customerId: string) => {
+    setAddHorseForCustomerId(customerId);
+    setShowAddHorseModal(true);
+    setShowDetailModal(false);
+  };
+
+  const totalHorses = horses.filter((h) =>
+    clients.some((c) => c.id === h.owner_id)
+  ).length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -106,7 +113,7 @@ const Kunden = () => {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Kunden</h1>
           <p className="text-muted-foreground mt-1">
-            {clients.length} Kunden • {horses.length} Pferde
+            {clients.length} Kunden • {totalHorses} Pferde
           </p>
         </div>
         <Button className="gap-2" onClick={() => navigate("/aufnahme")}>
@@ -120,7 +127,7 @@ const Kunden = () => {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Kunde suchen..."
+            placeholder="Kunde suchen (Name, E-Mail, ID)..."
             className="pl-10"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -134,7 +141,8 @@ const Kunden = () => {
           <SelectContent>
             <SelectItem value="alle">Alle Status</SelectItem>
             <SelectItem value="aktiv">Aktiv</SelectItem>
-            <SelectItem value="überfällig">Überfällig</SelectItem>
+            <SelectItem value="eingeladen">Eingeladen</SelectItem>
+            <SelectItem value="ausstehend">Ausstehend</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -144,6 +152,7 @@ const Kunden = () => {
         {filteredClients.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center">
+              <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">Keine Kunden gefunden.</p>
               <Button className="mt-4" onClick={() => navigate("/aufnahme")}>
                 Ersten Kunden anlegen
@@ -158,7 +167,7 @@ const Kunden = () => {
                 key={client.id}
                 className="hover:shadow-lg transition-all cursor-pointer group animate-slide-up"
                 style={{ animationDelay: `${index * 50}ms` }}
-                onClick={() => handleClientClick(client.id)}
+                onClick={() => handleClientClick(client)}
               >
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
@@ -166,20 +175,25 @@ const Kunden = () => {
                       <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
                         {client.full_name
                           ?.split(" ")
-                          .map((n) => n[0])
+                          .map((n: string) => n[0])
                           .join("") || "?"}
                       </AvatarFallback>
                     </Avatar>
 
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-1">
+                      <div className="flex items-center gap-3 mb-1 flex-wrap">
                         <h3 className="text-lg font-semibold text-foreground">
                           {client.full_name || "Unbekannt"}
                         </h3>
+                        {client.display_id && (
+                          <Badge variant="outline" className="font-mono text-xs">
+                            #{client.display_id}
+                          </Badge>
+                        )}
                         {client.has_logged_in ? (
                           <Badge className="bg-green-500/10 text-green-600 gap-1">
                             <CheckCircle className="h-3 w-3" />
-                            registriert
+                            aktiv
                           </Badge>
                         ) : client.invited_at ? (
                           <Badge variant="secondary" className="gap-1">
@@ -191,12 +205,6 @@ const Kunden = () => {
                             ausstehend
                           </Badge>
                         )}
-                        {client.display_id && (
-                          <span className="text-xs text-muted-foreground font-mono">
-                            #{client.display_id}
-                          </span>
-                        )}
-                        <Badge className="bg-accent/10 text-accent">aktiv</Badge>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-3">
@@ -214,14 +222,18 @@ const Kunden = () => {
                         )}
                       </div>
 
-                      {/* Horses */}
+                      {/* Horses Count & Preview */}
                       <div className="flex flex-wrap gap-2">
-                        {clientHorses.map((horse) => {
+                        <Badge variant="secondary" className="gap-1">
+                          {clientHorses.length} {clientHorses.length === 1 ? "Pferd" : "Pferde"}
+                        </Badge>
+                        {clientHorses.slice(0, 3).map((horse) => {
                           const hasGps = horse.latitude && horse.longitude;
                           return (
                             <div
                               key={horse.id}
                               className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-1.5"
+                              onClick={(e) => e.stopPropagation()}
                             >
                               <span className="font-medium text-foreground">{horse.name}</span>
                               {horse.display_id && (
@@ -239,22 +251,19 @@ const Kunden = () => {
                                       : `https://www.google.com/maps/dir/?api=1&destination=${horse.latitude},${horse.longitude}`;
                                     window.open(url, "_blank");
                                   }}
-                                  className="text-accent hover:text-accent/80"
+                                  className="text-primary hover:text-primary/80"
                                   title="Route starten"
                                 >
                                   <Navigation className="h-3.5 w-3.5" />
                                 </button>
                               )}
-                              {!hasGps && horse.breed && (
-                                <span className="text-xs text-muted-foreground">
-                                  ({horse.breed})
-                                </span>
-                              )}
                             </div>
                           );
                         })}
-                        {clientHorses.length === 0 && (
-                          <span className="text-sm text-muted-foreground">Keine Pferde zugewiesen</span>
+                        {clientHorses.length > 3 && (
+                          <span className="text-sm text-muted-foreground px-2 py-1">
+                            +{clientHorses.length - 3} weitere
+                          </span>
                         )}
                       </div>
                     </div>
@@ -269,6 +278,33 @@ const Kunden = () => {
           })
         )}
       </div>
+
+      {/* Detail Modal */}
+      <CustomerDetailModal
+        customer={selectedCustomer}
+        horses={selectedCustomer ? getHorsesForClient(selectedCustomer.id) : []}
+        open={showDetailModal}
+        onClose={() => {
+          setShowDetailModal(false);
+          setSelectedCustomer(null);
+        }}
+        onAddHorse={handleAddHorse}
+      />
+
+      {/* Add Horse Modal */}
+      <AddHorseModal
+        customerId={addHorseForCustomerId}
+        customerName={
+          addHorseForCustomerId
+            ? clients.find((c) => c.id === addHorseForCustomerId)?.full_name
+            : undefined
+        }
+        open={showAddHorseModal}
+        onClose={() => {
+          setShowAddHorseModal(false);
+          setAddHorseForCustomerId(null);
+        }}
+      />
     </div>
   );
 };
