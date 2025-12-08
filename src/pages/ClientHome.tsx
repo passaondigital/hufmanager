@@ -6,10 +6,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LogOut, FileText, ChevronRight, Plus, Shield } from "lucide-react";
+import { LogOut, FileText, ChevronRight, Plus, Shield, Scissors } from "lucide-react";
 import { UnconfirmedAppointmentsBanner } from "@/components/UnconfirmedAppointmentsBanner";
 import { CreateHorseModal } from "@/components/horse-detail/CreateHorseModal";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
+import { NextAppointmentWidget } from "@/components/client/NextAppointmentWidget";
+import { LastVisitWidget } from "@/components/client/LastVisitWidget";
+import { WhatsAppFAB } from "@/components/client/WhatsAppFAB";
 
 interface Horse {
   id: string;
@@ -129,8 +132,22 @@ export default function ClientHome() {
           </p>
         </div>
 
+        {/* Next Appointment Widget */}
+        {user && <NextAppointmentWidget userId={user.id} />}
+
+        {/* Last Visit Widget */}
+        {user && <LastVisitWidget userId={user.id} />}
+
         {/* Quick Actions */}
         <div className="grid grid-cols-3 gap-3">
+          <Button 
+            variant="outline" 
+            className="h-16 flex-col gap-1"
+            onClick={() => navigate("/client-booking")}
+          >
+            <Scissors className="h-5 w-5 text-primary" />
+            <span className="text-xs">Buchen</span>
+          </Button>
           <Button 
             variant="outline" 
             className="h-16 flex-col gap-1"
@@ -146,14 +163,6 @@ export default function ClientHome() {
           >
             <Shield className="h-5 w-5 text-primary" />
             <span className="text-xs">Datenfreigabe</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-16 flex-col gap-1 opacity-50"
-            disabled
-          >
-            <span className="text-lg">📅</span>
-            <span className="text-xs">Termine</span>
           </Button>
         </div>
 
@@ -249,6 +258,9 @@ export default function ClientHome() {
         onClose={() => setShowCreateModal(false)}
         onCreated={handleHorseCreated}
       />
+
+      {/* WhatsApp FAB */}
+      {user && <WhatsAppFAB userId={user.id} />}
       </div>
     </>
   );
