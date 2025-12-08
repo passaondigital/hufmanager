@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Horse, HEALTH_STATUS_OPTIONS, HOOF_PROTECTION_OPTIONS, USAGE_OPTIONS, HOUSING_OPTIONS, HoofMeasurements, HorseContacts } from "./types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Camera, Upload } from "lucide-react";
 import { Json } from "@/integrations/supabase/types";
 
 interface EditHorseModalProps {
@@ -21,6 +21,9 @@ interface EditHorseModalProps {
 
 export function EditHorseModal({ horse, open, onClose, onSaved }: EditHorseModalProps) {
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState(horse.photo_url || '');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     name: horse.name,
     nickname: horse.nickname || '',
@@ -51,6 +54,58 @@ export function EditHorseModal({ horse, open, onClose, onSaved }: EditHorseModal
     contact_caretaker: (horse.contacts as HorseContacts)?.caretaker || '',
     contact_caretaker_phone: (horse.contacts as HorseContacts)?.caretaker_phone || '',
   });
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Ungültiges Format",
+        description: "Bitte wähle ein Bild aus.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Datei zu groß",
+        description: "Das Bild darf maximal 5MB groß sein.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${horse.id}/profile.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('horse-documents')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('horse-documents')
+        .getPublicUrl(filePath);
+
+      setPhotoUrl(urlData.publicUrl);
+      toast({ title: "Foto hochgeladen" });
+    } catch (error: any) {
+      toast({
+        title: "Fehler beim Upload",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!form.name.trim()) {
@@ -99,6 +154,7 @@ export function EditHorseModal({ horse, open, onClose, onSaved }: EditHorseModal
           special_notes: form.special_notes.trim() || null,
           hoof_measurements: hoofMeasurements,
           contacts: contacts,
+          photo_url: photoUrl || null,
         })
         .eq('id', horse.id);
 
@@ -134,6 +190,40 @@ export function EditHorseModal({ horse, open, onClose, onSaved }: EditHorseModal
           
           <div className="flex-1 overflow-y-auto py-4">
             <TabsContent value="basic" className="mt-0 space-y-4">
+              {/* Photo Upload */}
+              <div className="flex items-center gap-4">
+                <div className="h-20 w-20 rounded-xl bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {photoUrl ? (
+                    <img src={photoUrl} alt="Pferd" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-3xl">🐴</span>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingPhoto}
+                  >
+                    {uploadingPhoto ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Camera className="h-4 w-4 mr-2" />
+                    )}
+                    Foto ändern
+                  </Button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Name *</Label>

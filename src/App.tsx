@@ -35,6 +35,7 @@ import ClientHome from "@/pages/ClientHome";
 import ClientHorseDetail from "@/pages/ClientHorseDetail";
 import ClientInvoices from "@/pages/ClientInvoices";
 import ClientPermissions from "@/pages/ClientPermissions";
+import ClientBooking from "@/pages/ClientBooking";
 import NotFound from "@/pages/NotFound";
 import ProviderLanding from "@/pages/ProviderLanding";
 import ImportCenter from "@/pages/ImportCenter";
@@ -111,6 +112,11 @@ function App() {
                 <Route path="/client-permissions" element={
                   <ProtectedRoute allowedRoles={["client"]}>
                     <ClientPermissions />
+                  </ProtectedRoute>
+                } />
+                <Route path="/client-booking" element={
+                  <ProtectedRoute allowedRoles={["client"]}>
+                    <ClientBooking />
                   </ProtectedRoute>
                 } />
                 

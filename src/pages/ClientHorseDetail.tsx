@@ -28,6 +28,7 @@ import { TabEntwicklung } from "@/components/horse-detail/TabEntwicklung";
 import { EditHorseModal } from "@/components/horse-detail/EditHorseModal";
 import { ServiceRequestDialog } from "@/components/horse-detail/ServiceRequestDialog";
 import { ClientHealthStatusCard } from "@/components/horse-detail/ClientHealthStatusCard";
+import { HoofMeasurementsCard } from "@/components/client/HoofMeasurementsCard";
 
 export default function ClientHorseDetail() {
   const { id } = useParams<{ id: string }>();
@@ -243,6 +244,11 @@ export default function ClientHorseDetail() {
       {/* Health Status Card */}
       <div className="px-4 mt-4">
         <ClientHealthStatusCard horseId={horse.id} horseName={horse.name} />
+      </div>
+
+      {/* Hoof Measurements Card */}
+      <div className="px-4 mt-4">
+        <HoofMeasurementsCard horseId={horse.id} />
       </div>
 
       {/* Tab Navigation */}
