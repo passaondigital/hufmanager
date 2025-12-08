@@ -24,6 +24,7 @@ import Academy from "@/pages/Academy";
 import Chat from "@/pages/Chat";
 import GeldVerdienen from "@/pages/GeldVerdienen";
 import Hufanalyse from "@/pages/Hufanalyse";
+import Rechnungen from "@/pages/Rechnungen";
 import Support from "@/pages/Support";
 import Auth from "@/pages/Auth";
 import ResetPassword from "@/pages/ResetPassword";
@@ -87,6 +88,7 @@ function App() {
                   <Route path="/chat" element={<Chat />} />
                   <Route path="/partner" element={<GeldVerdienen />} />
                   <Route path="/hufanalyse" element={<Hufanalyse />} />
+                  <Route path="/rechnungen" element={<Rechnungen />} />
                   <Route path="/support" element={<Support />} />
                 </Route>
                 
