@@ -148,8 +148,13 @@ export default function Auth() {
     }
 
     setResetLoading(true);
+    
+    // WICHTIG: Hier wird die korrekte URL dynamisch gebaut
+    const redirectUrl = `${window.location.origin}/reset-password`;
+    console.log("Sende Passwort-Reset Link an:", redirectUrl); // Debugging
+
     const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: redirectUrl,
     });
     setResetLoading(false);
 
@@ -422,66 +427,4 @@ export default function Auth() {
           Impressum
         </a>
         <span className="text-border">•</span>
-        <a 
-          href="https://hufmanager.de/datenschutz" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="hover:text-primary transition-colors"
-        >
-          Datenschutz
-        </a>
-        <span className="text-border">•</span>
-        <a 
-          href="https://hufmanager.de/agb" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="hover:text-primary transition-colors"
-        >
-          AGB
-        </a>
-      </div>
-
-      {/* Password Reset Dialog */}
-      <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Passwort zurücksetzen</DialogTitle>
-            <DialogDescription>
-              Geben Sie Ihre E-Mail-Adresse ein. Sie erhalten einen Link zum Zurücksetzen Ihres Passworts.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handlePasswordReset} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="reset-email">E-Mail</Label>
-              <Input
-                id="reset-email"
-                type="email"
-                placeholder="ihre@email.de"
-                value={resetEmail}
-                onChange={(e) => setResetEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="flex gap-3 justify-end">
-              <Button type="button" variant="outline" onClick={() => setResetDialogOpen(false)}>
-                Abbrechen
-              </Button>
-              <Button type="submit" disabled={resetLoading}>
-                {resetLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Link senden
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Pricing Modal */}
-      <PricingModal
-        open={pricingModalOpen}
-        onOpenChange={setPricingModalOpen}
-        title={pricingModalTitle}
-        description={pricingModalDescription}
-      />
-    </div>
-  );
-}
+        <a

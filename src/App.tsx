@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -14,6 +14,8 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { OfflineIndicator } from "@/components/offline/OfflineIndicator";
 import { createIDBPersister } from "@/lib/offline/persister";
 import { initSyncManager } from "@/lib/offline/syncManager";
+
+// Pages
 import Dashboard from "@/pages/Dashboard";
 import Anfragen from "@/pages/Anfragen";
 import Angebote from "@/pages/Angebote";
@@ -33,8 +35,6 @@ import Support from "@/pages/Support";
 import Auth from "@/pages/Auth";
 import ResetPassword from "@/pages/ResetPassword";
 import UpdatePassword from "@/pages/UpdatePassword";
-import { AIChatWidget } from "@/components/chat/AIChatWidget";
-import { PWAInstallPrompt } from "@/components/pwa/PWAInstallPrompt";
 import ClientHome from "@/pages/ClientHome";
 import ClientHorseDetail from "@/pages/ClientHorseDetail";
 import ClientInvoices from "@/pages/ClientInvoices";
@@ -47,6 +47,10 @@ import ImportCenter from "@/pages/ImportCenter";
 import ConnectForm from "@/pages/ConnectForm";
 import Netzwerk from "@/pages/Netzwerk";
 
+// Components
+import { AIChatWidget } from "@/components/chat/AIChatWidget";
+import { PWAInstallPrompt } from "@/components/pwa/PWAInstallPrompt";
+
 // Create persister for IndexedDB storage
 const persister = createIDBPersister();
 
@@ -56,18 +60,13 @@ function App() {
       new QueryClient({
         defaultOptions: {
           queries: {
-            // Cache data for 24 hours
-            gcTime: 1000 * 60 * 60 * 24,
-            // Keep stale data while revalidating
+            gcTime: 1000 * 60 * 60 * 24, // 24 hours
             staleTime: 1000 * 60 * 5, // 5 minutes
-            // Retry failed queries
             retry: 3,
             retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-            // Use cached data when offline
             networkMode: "offlineFirst",
           },
           mutations: {
-            // Retry mutations when network is available
             networkMode: "offlineFirst",
             retry: 3,
           },
@@ -75,7 +74,6 @@ function App() {
       })
   );
 
-  // Initialize sync manager on mount
   useEffect(() => {
     const cleanup = initSyncManager();
     return cleanup;
@@ -86,8 +84,8 @@ function App() {
       client={queryClient}
       persistOptions={{
         persister,
-        maxAge: 1000 * 60 * 60 * 24, // 24 hours
-        buster: "v1", // Cache version - increment to invalidate
+        maxAge: 1000 * 60 * 60 * 24,
+        buster: "v1",
       }}
     >
       <ThemeProvider defaultTheme="dark">
@@ -107,14 +105,19 @@ function App() {
                 
                 <PasswordRecoveryRedirect>
                   <Routes>
-                    {/* Public routes */}
+                    {/* --- 1. ÖFFENTLICHE ROUTES (Kein Login nötig) --- */}
+                    {/* WICHTIG: Diese müssen VOR den Protected Routes stehen */}
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/update-password" element={<UpdatePassword />} />
+                    
+                    {/* Landingpages für Hufbearbeiter (z.B. hufmanager.de/p/max-mustermann) */}
                     <Route path="/p/:slug" element={<ProviderLanding />} />
+                    
+                    {/* Einladungs-Links für Kunden */}
                     <Route path="/connect/:slug" element={<ConnectForm />} />
 
-                    {/* Provider (Admin) routes */}
+                    {/* --- 2. PROVIDER (PROFI) ROUTES --- */}
                     <Route
                       element={
                         <ProtectedRoute allowedRoles={["provider"]}>
@@ -128,10 +131,13 @@ function App() {
                       <Route path="/aufnahme" element={<Aufnahme />} />
                       <Route path="/auffassen" element={<Auffassen />} />
                       <Route path="/analyse" element={<Analyse />} />
+                      {/* Beide Schreibweisen für Kalender abfangen */}
                       <Route path="/calendar" element={<Kalender />} />
                       <Route path="/kalender" element={<Kalender />} />
+                      {/* Beide Schreibweisen für Kunden abfangen */}
                       <Route path="/customers" element={<Kunden />} />
                       <Route path="/kunden" element={<Kunden />} />
+                      
                       <Route path="/netzwerk" element={<Netzwerk />} />
                       <Route path="/services" element={<Services />} />
                       <Route path="/management" element={<Management />} />
@@ -144,57 +150,38 @@ function App() {
                       <Route path="/support" element={<Support />} />
                     </Route>
 
-                    {/* Client routes */}
+                    {/* --- 3. CLIENT (PFERDEBESITZER) ROUTES --- */}
                     <Route
-                      path="/client-home"
                       element={
                         <ProtectedRoute allowedRoles={["client"]}>
-                          <ClientHome />
+                           {/* Hier könnte man auch ein ClientLayout nutzen */}
+                           <div className="min-h-screen bg-background">
+                              {/* Client Routes direct mapping */}
+                              <Routes>
+                                <Route path="/client-home" element={<ClientHome />} />
+                                <Route path="/client-horse/:id" element={<ClientHorseDetail />} />
+                                <Route path="/client-invoices" element={<ClientInvoices />} />
+                                <Route path="/client-permissions" element={<ClientPermissions />} />
+                                <Route path="/client-booking" element={<ClientBooking />} />
+                                <Route path="/client-profile" element={<ClientProfile />} />
+                              </Routes>
+                           </div>
                         </ProtectedRoute>
                       }
-                    />
-                    <Route
-                      path="/client-horse/:id"
-                      element={
-                        <ProtectedRoute allowedRoles={["client"]}>
-                          <ClientHorseDetail />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/client-invoices"
-                      element={
-                        <ProtectedRoute allowedRoles={["client"]}>
-                          <ClientInvoices />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/client-permissions"
-                      element={
-                        <ProtectedRoute allowedRoles={["client"]}>
-                          <ClientPermissions />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/client-booking"
-                      element={
-                        <ProtectedRoute allowedRoles={["client"]}>
-                          <ClientBooking />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/client-profile"
-                      element={
-                        <ProtectedRoute allowedRoles={["client"]}>
-                          <ClientProfile />
-                        </ProtectedRoute>
-                      }
-                    />
+                    >
+                        {/* ACHTUNG: React Router 6 Nested Routes Workaround.
+                           Da oben schon Routes definiert sind, fangen wir hier die Pfade ab.
+                           Wir duplizieren sie hier explizit für die Struktur.
+                        */}
+                        <Route path="/client-home" element={<ClientHome />} />
+                        <Route path="/client-horse/:id" element={<ClientHorseDetail />} />
+                        <Route path="/client-invoices" element={<ClientInvoices />} />
+                        <Route path="/client-permissions" element={<ClientPermissions />} />
+                        <Route path="/client-booking" element={<ClientBooking />} />
+                        <Route path="/client-profile" element={<ClientProfile />} />
+                    </Route>
 
-                    {/* Fallback */}
+                    {/* Fallback für alles andere */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </PasswordRecoveryRedirect>
