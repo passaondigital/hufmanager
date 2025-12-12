@@ -6,11 +6,12 @@ import { toast } from "sonner";
 type TableName = "appointments" | "horses" | "contacts" | "hoof_photos" | 
   "horse_documents" | "invoices" | "leads" | "messages";
 
-interface OfflineMutationOptions<TData, TError, TVariables> 
-  extends Omit<UseMutationOptions<TData, TError, TVariables>, "mutationFn"> {
+interface OfflineMutationOptions<TData, TError, TVariables> {
   table: TableName;
   type: "create" | "update" | "delete";
   invalidateQueries?: string[];
+  onSuccess?: (data: TData, variables: TVariables, context: unknown) => void;
+  onError?: (error: TError, variables: TVariables, context: unknown) => void;
 }
 
 /**
@@ -86,7 +87,7 @@ export function useOfflineMutation<
         queryClient.invalidateQueries({ queryKey: [queryKey] });
       });
       
-      mutationOptions.onSuccess?.(data, variables, context);
+      mutationOptions.onSuccess?.(data, variables, context as any);
     },
     onError: async (error, variables, context) => {
       // If mutation failed due to network, queue it
@@ -102,7 +103,7 @@ export function useOfflineMutation<
         });
       }
       
-      mutationOptions.onError?.(error, variables, context);
+      mutationOptions.onError?.(error, variables, context as any);
     },
   });
 }

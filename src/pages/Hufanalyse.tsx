@@ -12,15 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, ClipboardList, Eye, FileText, Calendar } from "lucide-react";
+import { Plus, ClipboardList, Eye, FileText } from "lucide-react";
 import { LTZAnalysisWizard, LTZAnalysisHistory, LTZComparisonView } from "@/components/hoof-analysis";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { useNavigate } from "react-router-dom";
 
 const Hufanalyse = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [selectedHorseId, setSelectedHorseId] = useState<string | null>(null);
   const [showWizard, setShowWizard] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
@@ -68,7 +66,6 @@ const Hufanalyse = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        {/* HIER WURDE (LTZ) ENTFERNT */}
         <h1 className="text-2xl font-bold text-foreground">Hufanalyse</h1>
         <p className="text-muted-foreground mt-1">
           Professionelle Bearbeitungsbögen nach dem Leipziger Modell
@@ -83,7 +80,6 @@ const Hufanalyse = () => {
             Neue Analyse starten
           </CardTitle>
           <CardDescription>
-            {/* HIER WURDE LTZ ENTFERNT */}
             Wählen Sie ein Pferd aus, um einen neuen Bearbeitungsbogen zu erstellen.
           </CardDescription>
         </CardHeader>
@@ -105,7 +101,7 @@ const Hufanalyse = () => {
               <Plus className="h-4 w-4" />
               Analyse starten
             </Button>
-            {selectedHorseId && (
+            {selectedHorseId && selectedHorse && (
               <Button variant="outline" onClick={() => setShowComparison(true)} className="gap-2">
                 <Eye className="h-4 w-4" />
                 Vergleich
@@ -116,8 +112,8 @@ const Hufanalyse = () => {
       </Card>
 
       {/* Analysis History */}
-      {selectedHorseId && (
-        <LTZAnalysisHistory horseId={selectedHorseId} onViewAnalysis={() => {}} />
+      {selectedHorseId && selectedHorse && (
+        <LTZAnalysisHistory horseId={selectedHorseId} horseName={selectedHorse.name} />
       )}
 
       {/* Recent Analyses Overview */}
@@ -159,18 +155,21 @@ const Hufanalyse = () => {
       )}
 
       {/* Wizard Modal */}
-      {showWizard && selectedHorse && (
+      {selectedHorse && (
         <LTZAnalysisWizard
-          horse={selectedHorse}
+          isOpen={showWizard}
+          horseId={selectedHorse.id}
+          horseName={selectedHorse.name}
           onClose={handleWizardClose}
-          onComplete={handleWizardClose}
         />
       )}
 
       {/* Comparison View */}
-      {showComparison && selectedHorseId && (
+      {selectedHorseId && selectedHorse && (
         <LTZComparisonView
+          isOpen={showComparison}
           horseId={selectedHorseId}
+          horseName={selectedHorse.name}
           onClose={() => setShowComparison(false)}
         />
       )}
