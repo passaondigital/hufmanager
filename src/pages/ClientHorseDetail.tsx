@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Trash2, AlertTriangle } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { ArrowLeft, User, Loader2, Save, Trash2, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
+import { StableLocationCard } from "@/components/client/StableLocationCard";
+import { EmergencyContactsCard } from "@/components/client/EmergencyContactsCard";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,333 +20,284 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-import { Horse, Appointment, HoofPhoto, HorseDocument, HoofMeasurements, HorseContacts } from "@/components/horse-detail/types";
-import { TabSteckbrief } from "@/components/horse-detail/TabSteckbrief";
-import { TabGesundheit } from "@/components/horse-detail/TabGesundheit";
-import { TabNetzwerk } from "@/components/horse-detail/TabNetzwerk";
-import { TabDokumente } from "@/components/horse-detail/TabDokumente";
-import { TabHistorie } from "@/components/horse-detail/TabHistorie";
-import { TabEntwicklung } from "@/components/horse-detail/TabEntwicklung";
-import { EditHorseModal } from "@/components/horse-detail/EditHorseModal";
-import { ServiceRequestDialog } from "@/components/horse-detail/ServiceRequestDialog";
-import { ClientHealthStatusCard } from "@/components/horse-detail/ClientHealthStatusCard";
-import { HoofMeasurementsCard } from "@/components/client/HoofMeasurementsCard";
+interface Profile {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  stable_street: string | null;
+  stable_zip: string | null;
+  stable_city: string | null;
+  stable_latitude: number | null;
+  stable_longitude: number | null;
+  emergency_contacts: Array<{ role: string; name: string; phone: string }>;
+}
 
-export default function ClientHorseDetail() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+interface Horse {
+  id: string;
+  name: string;
+  breed: string | null;
+  image_url: string | null;
+}
+
+export default function ClientProfile() {
   const { user, loading: authLoading } = useAuth();
-  
-  const [horse, setHorse] = useState<Horse | null>(null);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [hoofPhotos, setHoofPhotos] = useState<HoofPhoto[]>([]);
-  const [documents, setDocuments] = useState<HorseDocument[]>([]);
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [horses, setHorses] = useState<Horse[]>([]); // Hier speichern wir die Pferde
   const [loading, setLoading] = useState(true);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showServiceRequest, setShowServiceRequest] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    full_name: "",
+    phone: "",
+  });
 
+  // Daten laden (Profil UND Pferde)
   const fetchData = async () => {
-    if (!user || !id) return;
-    
+    if (!user) return;
     setLoading(true);
 
-    // Fetch horse details
-    const { data: horseData } = await supabase
-      .from("horses")
+    // 1. Profil laden
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
       .select("*")
-      .eq("id", id)
-      .eq("owner_id", user.id)
+      .eq("id", user.id)
       .maybeSingle();
 
-    if (!horseData) {
-      navigate("/client-home");
-      return;
+    if (!profileError && profileData) {
+      let parsedContacts = [];
+      if (profileData.emergency_contacts && Array.isArray(profileData.emergency_contacts)) {
+        parsedContacts = profileData.emergency_contacts;
+      }
+      setProfile({ ...profileData, emergency_contacts: parsedContacts } as Profile);
+      setFormData({
+        full_name: profileData.full_name || "",
+        phone: profileData.phone || "",
+      });
     }
-    
-    // Map database fields to our interface
-    const mappedHorse: Horse = {
-      id: horseData.id,
-      name: horseData.name,
-      nickname: horseData.nickname,
-      breed: horseData.breed,
-      birth_year: horseData.birth_year,
-      gender: horseData.gender,
-      color: horseData.color,
-      height: horseData.height,
-      discipline: horseData.discipline,
-      usage: horseData.usage,
-      housing: horseData.housing,
-      feeding_notes: horseData.feeding_notes,
-      health_status: horseData.health_status,
-      medical_history: horseData.medical_history,
-      hoof_type: horseData.hoof_type,
-      hoof_protection: horseData.hoof_protection,
-      hoof_measurements: horseData.hoof_measurements as HoofMeasurements | null,
-      shoeing_interval: horseData.shoeing_interval,
-      special_notes: horseData.special_notes,
-      contacts: horseData.contacts as HorseContacts | null,
-      photo_url: horseData.photo_url,
-      owner_id: horseData.owner_id,
-      last_anamnesis_date: horseData.last_anamnesis_date,
-      anamnesis_interval_months: horseData.anamnesis_interval_months || 12,
-    };
-    setHorse(mappedHorse);
 
-    // Fetch all appointments for history
-    const { data: aptData } = await supabase
-      .from("appointments")
-      .select("*")
-      .eq("horse_id", id)
-      .order("date", { ascending: false });
-    setAppointments(aptData || []);
+    // 2. Pferde laden (NEU!)
+    const { data: horsesData, error: horsesError } = await supabase
+      .from("horses")
+      .select("id, name, breed, image_url")
+      .eq("owner_id", user.id)
+      .is("deleted_at", null); // Nur nicht-gelöschte Pferde
 
-    // Fetch hoof photos
-    const { data: photos } = await supabase
-      .from("hoof_photos")
-      .select("*")
-      .eq("horse_id", id)
-      .order("taken_at", { ascending: false });
-    setHoofPhotos(photos || []);
-
-    // Fetch documents
-    const { data: docs } = await supabase
-      .from("horse_documents")
-      .select("*")
-      .eq("horse_id", id)
-      .order("created_at", { ascending: false });
-    setDocuments(docs || []);
+    if (!horsesError && horsesData) {
+      setHorses(horsesData);
+    }
 
     setLoading(false);
   };
 
   useEffect(() => {
     fetchData();
-  }, [user, id, navigate]);
+  }, [user]);
 
-  const handleDelete = async () => {
-    if (!horse) return;
-    
-    setDeleting(true);
-    try {
-      const { error } = await supabase
-        .from('horses')
-        .delete()
-        .eq('id', horse.id);
+  const handleSaveBasicInfo = async () => {
+    if (!user) return;
+    setIsSaving(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: formData.full_name || null,
+        phone: formData.phone || null,
+      })
+      .eq("id", user.id);
 
-      if (error) throw error;
+    setIsSaving(false);
+    if (error) {
+      toast.error("Fehler beim Speichern");
+    } else {
+      toast.success("Profil gespeichert!");
+      fetchData();
+    }
+  };
 
-      toast({ title: "Pferd wurde gelöscht" });
-      navigate('/client-home');
-    } catch (error: any) {
-      toast({
-        title: "Fehler beim Löschen",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setDeleting(false);
-      setShowDeleteDialog(false);
+  const handleDeleteHorse = async (horseId: string) => {
+    // Wir löschen das Pferd physisch (oder man könnte soft-delete nutzen)
+    const { error } = await supabase
+      .from('horses')
+      .delete()
+      .eq('id', horseId);
+
+    if (error) {
+      toast.error("Konnte Pferd nicht löschen.");
+    } else {
+      toast.success("Pferd entfernt.");
+      fetchData(); // Liste neu laden
     }
   };
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
-          <div className="px-4 py-3 flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/client-home")}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <Skeleton className="h-6 w-32" />
-          </div>
-        </header>
-        <main className="px-4 py-6 max-w-lg mx-auto space-y-6">
-          <Skeleton className="h-56 w-full rounded-xl" />
-          <Skeleton className="h-12 w-full rounded-xl" />
-          <Skeleton className="h-64 w-full rounded-xl" />
-        </main>
+      <div className="p-8 space-y-4">
+        <Skeleton className="h-8 w-32" />
+        <Skeleton className="h-48 w-full" />
       </div>
     );
   }
 
-  if (!horse) return null;
+  if (!profile) {
+    return <div className="p-8 text-center">Profil nicht gefunden</div>;
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 pb-24">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 pb-20">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/client-home")}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="font-semibold text-foreground">{horse.name}</h1>
-              {horse.nickname && (
-                <p className="text-xs text-muted-foreground">„{horse.nickname}"</p>
-              )}
-            </div>
-          </div>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => setShowDeleteDialog(true)}
-          >
-            <Trash2 className="h-5 w-5 text-destructive" />
+        <div className="px-4 py-3 flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/client-home")}>
+            <ArrowLeft className="h-5 w-5" />
           </Button>
+          <h1 className="font-semibold text-lg">Mein Profil</h1>
         </div>
       </header>
 
-      {/* Horse Photo - Large emotional hero */}
-      <div className="relative h-56 bg-muted flex items-center justify-center overflow-hidden">
-        {horse.photo_url ? (
-          <>
-            {!imageLoaded && (
-              <Skeleton className="absolute inset-0" />
-            )}
-            <img 
-              src={horse.photo_url} 
-              alt={horse.name}
-              className={`h-full w-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-              onLoad={() => setImageLoaded(true)}
-            />
-            {/* Gradient overlay for text */}
-            <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
-            {/* Horse name overlay */}
-            <div className="absolute bottom-4 left-4 right-4">
-              <h2 className="text-2xl font-bold text-foreground">{horse.name}</h2>
-              <p className="text-sm text-muted-foreground">
-                {[horse.breed, horse.color].filter(Boolean).join(" • ")}
-              </p>
+      <main className="px-4 py-6 max-w-lg mx-auto space-y-6">
+        
+        {/* --- NEUE SEKTION: MEINE PFERDE --- */}
+        <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+                <h2 className="text-lg font-semibold">Meine Pferde</h2>
             </div>
-          </>
-        ) : (
-          <div className="text-center">
-            <span className="text-7xl block mb-2">🐴</span>
-            <p className="text-muted-foreground text-sm">Kein Foto vorhanden</p>
-          </div>
-        )}
-      </div>
-
-      {/* Quick Actions - Emergency Button */}
-      <div className="px-4 -mt-4 relative z-10">
-        <Button
-          variant="destructive"
-          className="w-full shadow-lg h-12"
-          onClick={() => setShowServiceRequest(true)}
-        >
-          <AlertTriangle className="h-5 w-5 mr-2" />
-          Problem melden
-        </Button>
-      </div>
-
-      {/* Health Status Card */}
-      <div className="px-4 mt-4">
-        <ClientHealthStatusCard horseId={horse.id} horseName={horse.name} />
-      </div>
-
-      {/* Hoof Measurements Card */}
-      <div className="px-4 mt-4">
-        <HoofMeasurementsCard horseId={horse.id} />
-      </div>
-
-      {/* Tab Navigation */}
-      <main className="px-4 py-4 max-w-lg mx-auto">
-        <Tabs defaultValue="entwicklung" className="w-full">
-          <TabsList className="w-full grid grid-cols-6 h-auto">
-            <TabsTrigger value="entwicklung" className="text-xs py-2">📈</TabsTrigger>
-            <TabsTrigger value="steckbrief" className="text-xs py-2">Info</TabsTrigger>
-            <TabsTrigger value="gesundheit" className="text-xs py-2">Hufe</TabsTrigger>
-            <TabsTrigger value="netzwerk" className="text-xs py-2">Team</TabsTrigger>
-            <TabsTrigger value="dokumente" className="text-xs py-2">Docs</TabsTrigger>
-            <TabsTrigger value="historie" className="text-xs py-2">📅</TabsTrigger>
-          </TabsList>
-          
-          <div className="mt-4">
-            <TabsContent value="entwicklung">
-              <TabEntwicklung horseId={horse.id} />
-            </TabsContent>
-
-            <TabsContent value="steckbrief">
-              <TabSteckbrief 
-                horse={horse} 
-                onEdit={() => setShowEditModal(true)} 
-              />
-            </TabsContent>
             
-            <TabsContent value="gesundheit">
-              <TabGesundheit 
-                horse={horse} 
-                onEdit={() => setShowEditModal(true)} 
+            {horses.length === 0 ? (
+                <Card className="border-dashed bg-muted/20">
+                    <CardContent className="p-6 text-center text-muted-foreground">
+                        Noch keine Pferde angelegt.
+                    </CardContent>
+                </Card>
+            ) : (
+                <div className="space-y-3">
+                    {horses.map(horse => (
+                        <Card key={horse.id} className="overflow-hidden">
+                            <div className="flex items-center p-3 gap-3">
+                                {/* Bild / Avatar */}
+                                <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center overflow-hidden border shrink-0">
+                                    {horse.image_url ? (
+                                        <img src={horse.image_url} alt={horse.name} className="h-full w-full object-cover" />
+                                    ) : (
+                                        <span className="text-xl">🐴</span>
+                                    )}
+                                </div>
+                                
+                                {/* Klickbarer Bereich -> führt zur Detailseite */}
+                                <div 
+                                    className="flex-1 cursor-pointer min-w-0" 
+                                    onClick={() => navigate(`/client-horse/${horse.id}`)}
+                                >
+                                    <h3 className="font-medium truncate">{horse.name}</h3>
+                                    <p className="text-sm text-muted-foreground truncate">{horse.breed || "Pferd"}</p>
+                                </div>
+
+                                {/* Bearbeiten Button (Pfeil) */}
+                                <Button variant="ghost" size="icon" onClick={() => navigate(`/client-horse/${horse.id}`)}>
+                                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+
+                                {/* Löschen Button */}
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10">
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Pferd löschen?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Möchtest du "{horse.name}" wirklich löschen? Alle Daten dazu gehen verloren.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDeleteHorse(horse.id)} className="bg-destructive">
+                                                Löschen
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
+            )}
+        </div>
+
+        {/* --- PERSÖNLICHE DATEN (Alter Code) --- */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <User className="h-4 w-4 text-primary" />
+              Persönliche Daten
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="full_name">Name</Label>
+              <Input
+                id="full_name"
+                value={formData.full_name}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, full_name: e.target.value }))
+                }
+                placeholder="Dein Name"
               />
-            </TabsContent>
-            
-            <TabsContent value="netzwerk">
-              <TabNetzwerk 
-                horse={horse} 
-                onEdit={() => setShowEditModal(true)} 
+            </div>
+            <div>
+              <Label htmlFor="email">E-Mail</Label>
+              <Input
+                id="email"
+                value={profile.email || ""}
+                disabled
+                className="bg-muted"
               />
-            </TabsContent>
-            
-            <TabsContent value="dokumente">
-              <TabDokumente 
-                horseId={horse.id}
-                hoofPhotos={hoofPhotos}
-                documents={documents}
-                onRefresh={fetchData}
+            </div>
+            <div>
+              <Label htmlFor="phone">Telefon</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, phone: e.target.value }))
+                }
+                placeholder="+49 123 456789"
               />
-            </TabsContent>
-            
-            <TabsContent value="historie">
-              <TabHistorie appointments={appointments} />
-            </TabsContent>
-          </div>
-        </Tabs>
+            </div>
+            <Button onClick={handleSaveBasicInfo} disabled={isSaving} className="w-full">
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              Speichern
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Stable Location */}
+        <StableLocationCard
+          userId={profile.id}
+          stableStreet={profile.stable_street}
+          stableZip={profile.stable_zip}
+          stableCity={profile.stable_city}
+          stableLatitude={profile.stable_latitude}
+          stableLongitude={profile.stable_longitude}
+          onUpdate={fetchData}
+        />
+
+        {/* Emergency Contacts */}
+        <EmergencyContactsCard
+          userId={profile.id}
+          contacts={profile.emergency_contacts}
+          onUpdate={fetchData}
+        />
       </main>
-
-      {/* Service Request Dialog */}
-      <ServiceRequestDialog
-        open={showServiceRequest}
-        onClose={() => setShowServiceRequest(false)}
-        horseId={horse.id}
-        horseName={horse.name}
-      />
-
-      {/* Edit Modal */}
-      <EditHorseModal 
-        horse={horse}
-        open={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        onSaved={fetchData}
-      />
-
-      {/* Delete Confirmation */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Pferd löschen?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bist du sicher, dass du <strong>{horse.name}</strong> löschen möchtest? 
-              Alle Daten, Dokumente und die Terminhistorie werden unwiderruflich gelöscht.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDelete} 
-              disabled={deleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleting ? "Wird gelöscht..." : "Ja, löschen"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
