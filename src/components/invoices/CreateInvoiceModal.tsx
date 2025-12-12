@@ -75,24 +75,41 @@ export function CreateInvoiceModal({ open, onClose, onSuccess }: CreateInvoiceMo
     if (!open || !user) return;
 
     const fetchData = async () => {
-      // Fetch clients with active access grants
+      // FIX: Wir laden ALLE Kunden, die DU erstellt hast (oder die dir gehören)
+      // statt nur die mit "access_grants".
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, readable_id")
+        .eq("created_by_provider_id", user.id); // WICHTIG: Deine Kunden laden
+
+      // Optional: Zusätzlich noch Kunden laden, die dir Zugriff gegeben haben (Access Grants)
       const { data: grants } = await supabase
         .from("access_grants")
         .select("client_id")
         .eq("provider_id", user.id)
         .eq("is_active", true);
 
+      let allClients = profiles || [];
+
+      // Wenn es Grants gibt, lade diese Kunden auch dazu
       if (grants && grants.length > 0) {
-        const clientIds = grants.map(g => g.client_id);
-        const { data: profiles } = await supabase
+        const grantClientIds = grants.map(g => g.client_id);
+        const { data: grantProfiles } = await supabase
           .from("profiles")
           .select("id, full_name, readable_id")
-          .in("id", clientIds);
-
-        setClients(profiles || []);
+          .in("id", grantClientIds);
+        
+        if (grantProfiles) {
+           // Zusammenfügen und Duplikate vermeiden
+           const existingIds = new Set(allClients.map(c => c.id));
+           const newClients = grantProfiles.filter(c => !existingIds.has(c.id));
+           allClients = [...allClients, ...newClients];
+        }
       }
 
-      // Fetch all accessible horses
+      setClients(allClients);
+
+      // Pferde laden
       const { data: horsesData } = await supabase
         .from("horses")
         .select("id, name, owner_id")
@@ -110,7 +127,8 @@ export function CreateInvoiceModal({ open, onClose, onSuccess }: CreateInvoiceMo
     } else {
       setFilteredHorses([]);
     }
-    setFormData(prev => ({ ...prev, horse_id: "" }));
+    // Reset horse selection when client changes
+    // setFormData(prev => ({ ...prev, horse_id: "" })); // Optional: Kann man machen, muss man aber nicht zwingend
   }, [formData.client_id, horses]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -160,7 +178,7 @@ export function CreateInvoiceModal({ open, onClose, onSuccess }: CreateInvoiceMo
     if (error) {
       toast({
         title: "Fehler",
-        description: "Rechnung konnte nicht erstellt werden.",
+        description: "Rechnung konnte nicht erstellt werden. " + error.message,
         variant: "destructive",
       });
       return;
@@ -204,18 +222,23 @@ export function CreateInvoiceModal({ open, onClose, onSuccess }: CreateInvoiceMo
                 <SelectValue placeholder="Kunde auswählen..." />
               </SelectTrigger>
               <SelectContent>
-                {clients.map(client => (
-                  <SelectItem key={client.id} value={client.id}>
-                    {client.full_name || "Unbekannt"}
-                    {client.readable_id && ` (${client.readable_id})`}
-                  </SelectItem>
-                ))}
+                {clients.length === 0 ? (
+                    <div className="p-2 text-sm text-muted-foreground">Keine Kunden gefunden</div>
+                ) : (
+                    clients.map(client => (
+                    <SelectItem key={client.id} value={client.id}>
+                        {client.full_name || "Unbekannt"}
+                        {client.readable_id && ` (${client.readable_id})`}
+                    </SelectItem>
+                    ))
+                )}
               </SelectContent>
             </Select>
             {errors.client_id && <p className="text-sm text-destructive">{errors.client_id}</p>}
           </div>
 
-          {filteredHorses.length > 0 && (
+          {/* Pferd Auswahl nur anzeigen, wenn Kunde gewählt */}
+          {formData.client_id && (
             <div className="space-y-2">
               <Label htmlFor="horse_id">Pferd (optional)</Label>
               <Select
@@ -226,11 +249,15 @@ export function CreateInvoiceModal({ open, onClose, onSuccess }: CreateInvoiceMo
                   <SelectValue placeholder="Pferd auswählen..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {filteredHorses.map(horse => (
-                    <SelectItem key={horse.id} value={horse.id}>
-                      {horse.name}
-                    </SelectItem>
-                  ))}
+                  {filteredHorses.length === 0 ? (
+                     <div className="p-2 text-sm text-muted-foreground">Keine Pferde für diesen Kunden</div>
+                  ) : (
+                    filteredHorses.map(horse => (
+                        <SelectItem key={horse.id} value={horse.id}>
+                        {horse.name}
+                        </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
