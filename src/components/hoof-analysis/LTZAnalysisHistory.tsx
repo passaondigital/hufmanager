@@ -16,6 +16,7 @@ import {
   LTZHoofData
 } from "./ltz-constants";
 import { LTZPdfExport } from "./LTZPdfExport";
+import { LTZPdfSaveButton } from "./LTZPdfSaveButton";
 
 interface LTZAnalysisHistoryProps {
   horseId: string;
@@ -26,6 +27,7 @@ interface LTZAnalysisHistoryProps {
 interface HoofAnalysis {
   id: string;
   created_at: string;
+  horse_id: string;
   stance_front: string | null;
   stance_rear: string | null;
   croup_movement: string | null;
@@ -121,6 +123,12 @@ export function LTZAnalysisHistory({ horseId, horseName, ownerName }: LTZAnalysi
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
+                    <LTZPdfSaveButton
+                      analysis={{ ...analysis, horse_id: horseId }}
+                      horseId={horseId}
+                      horseName={horseName}
+                      ownerName={ownerName}
+                    />
                     <LTZPdfExport 
                       analysis={analysis} 
                       horseName={horseName}
