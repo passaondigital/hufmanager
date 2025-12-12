@@ -255,10 +255,153 @@ export default function Chat() {
         <CardContent className="flex-1 overflow-hidden p-0">
           <ScrollArea className="h-full">
             {isNewChatMode ? (
-                // ANSICHT: KUNDENLISTE
-                <div className="divide-y">
-                    {filteredContacts.map(c => (
-                        <button key={c.id} onClick={() => startChatWithContact(c)} className="w-full p-3 text-left hover:bg-muted/50 flex gap-3 items-center transition-colors">
-                            <Avatar className="h-8 w-8"><AvatarFallback><User className="h-4 w-4"/></AvatarFallback></Avatar>
-                            <div>
-                                <p className="font-medium text-sm">{c.first_name} {c.last
+              // ANSICHT: KUNDENLISTE
+              <div className="divide-y">
+                {filteredContacts.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => startChatWithContact(c)}
+                    className="w-full p-3 text-left hover:bg-muted/50 flex gap-3 items-center transition-colors"
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback>
+                        <User className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium text-sm">
+                        {c.first_name} {c.last_name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{c.email}</p>
+                    </div>
+                  </button>
+                ))}
+                {filteredContacts.length === 0 && (
+                  <p className="p-4 text-center text-muted-foreground text-sm">
+                    Keine Kunden gefunden
+                  </p>
+                )}
+              </div>
+            ) : (
+              // ANSICHT: KONVERSATIONSLISTE
+              <div className="divide-y">
+                {filteredConversations.map((conv) => (
+                  <button
+                    key={conv.id}
+                    onClick={() => setSelectedConversation(conv)}
+                    className={cn(
+                      "w-full p-3 text-left hover:bg-muted/50 flex gap-3 items-center transition-colors",
+                      selectedConversation?.id === conv.id && "bg-muted"
+                    )}
+                  >
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback>
+                        <User className="h-5 w-5" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">
+                        {conv.other_user?.full_name || "Unbekannt"}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {conv.subject || "Keine Betreff"}
+                      </p>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {format(new Date(conv.last_message_at), "dd.MM", { locale: de })}
+                    </span>
+                  </button>
+                ))}
+                {filteredConversations.length === 0 && !loading && (
+                  <p className="p-4 text-center text-muted-foreground text-sm">
+                    Keine Konversationen
+                  </p>
+                )}
+              </div>
+            )}
+          </ScrollArea>
+        </CardContent>
+      </Card>
+
+      {/* --- CHAT BEREICH --- */}
+      <Card className="flex-1 flex flex-col">
+        {selectedConversation ? (
+          <>
+            <CardHeader className="pb-3 border-b">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarFallback>
+                    <User className="h-5 w-5" />
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <CardTitle className="text-base">
+                    {selectedConversation.other_user?.full_name || "Unbekannt"}
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedConversation.other_user?.email}
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-hidden p-0">
+              <ScrollArea className="h-full p-4" ref={scrollRef}>
+                <div className="space-y-4">
+                  {messages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={cn(
+                        "flex",
+                        msg.sender_id === user?.id ? "justify-end" : "justify-start"
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "max-w-[70%] rounded-lg px-4 py-2",
+                          msg.sender_id === user?.id
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted"
+                        )}
+                      >
+                        <p className="text-sm">{msg.content}</p>
+                        <p className="text-xs opacity-70 mt-1">
+                          {format(new Date(msg.created_at), "HH:mm", { locale: de })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </CardContent>
+            <div className="p-4 border-t">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  sendMessage();
+                }}
+                className="flex gap-2"
+              >
+                <Input
+                  placeholder="Nachricht schreiben..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  className="flex-1"
+                />
+                <Button type="submit" size="icon" disabled={!newMessage.trim()}>
+                  <Send className="h-4 w-4" />
+                </Button>
+              </form>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-muted-foreground">
+            <div className="text-center">
+              <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Wählen Sie eine Konversation aus</p>
+            </div>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
