@@ -23,6 +23,7 @@ import {
 import { BusinessHoursEditor, defaultHours, type BusinessHours } from "@/components/BusinessHoursEditor";
 import { ReminderSettingsCard } from "@/components/ReminderSettingsCard";
 import { SubscriptionCard } from "@/components/subscription/SubscriptionCard";
+import { LandingServicesEditor } from "@/components/landing/LandingServicesEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -606,6 +607,9 @@ const Management = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Services Editor */}
+          <LandingServicesEditor />
         </TabsContent>
 
         {/* Payment */}
