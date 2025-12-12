@@ -68,7 +68,8 @@ const Hufanalyse = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Hufanalyse (LTZ)</h1>
+        {/* HIER WURDE (LTZ) ENTFERNT */}
+        <h1 className="text-2xl font-bold text-foreground">Hufanalyse</h1>
         <p className="text-muted-foreground mt-1">
           Professionelle Bearbeitungsbögen nach dem Leipziger Modell
         </p>
@@ -82,7 +83,8 @@ const Hufanalyse = () => {
             Neue Analyse starten
           </CardTitle>
           <CardDescription>
-            Wählen Sie ein Pferd aus, um einen neuen LTZ-Bearbeitungsbogen zu erstellen.
+            {/* HIER WURDE LTZ ENTFERNT */}
+            Wählen Sie ein Pferd aus, um einen neuen Bearbeitungsbogen zu erstellen.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -100,97 +102,4 @@ const Hufanalyse = () => {
               </SelectContent>
             </Select>
             <Button onClick={handleStartAnalysis} disabled={!selectedHorseId} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Analyse starten
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Analyses */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Letzte Analysen
-          </CardTitle>
-          <CardDescription>
-            Übersicht aller erstellten Bearbeitungsbögen
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {analyses.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              Noch keine Analysen erstellt. Starten Sie oben eine neue Analyse.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {analyses.slice(0, 10).map((analysis) => {
-                const horseData = analysis.horses as { name: string; breed: string | null } | null;
-                return (
-                  <div
-                    key={analysis.id}
-                    className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <ClipboardList className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">
-                          {horseData?.name || "Unbekannt"}
-                        </p>
-                        <p className="text-sm text-muted-foreground flex items-center gap-2">
-                          <Calendar className="h-3 w-3" />
-                          {format(new Date(analysis.created_at), "dd. MMMM yyyy", { locale: de })}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={analysis.status === "completed" ? "default" : "secondary"}>
-                        {analysis.status === "completed" ? "Abgeschlossen" : "Entwurf"}
-                      </Badge>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedHorseId(analysis.horse_id);
-                          setShowComparison(true);
-                        }}
-                        title="Vergleich anzeigen"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Wizard Modal */}
-      {selectedHorse && (
-        <LTZAnalysisWizard
-          isOpen={showWizard}
-          horseId={selectedHorse.id}
-          horseName={selectedHorse.name}
-          onClose={handleWizardClose}
-        />
-      )}
-
-      {/* Comparison View */}
-      {selectedHorseId && (
-        <LTZComparisonView
-          isOpen={showComparison}
-          horseId={selectedHorseId}
-          horseName={horses.find(h => h.id === selectedHorseId)?.name || ""}
-          onClose={() => setShowComparison(false)}
-        />
-      )}
-    </div>
-  );
-};
-
-export default Hufanalyse;
+              <Plus className
