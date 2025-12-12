@@ -17,6 +17,9 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "robots.txt", "hufmanager-logo.png"],
       workbox: {
+        // 👇 HIER IST DER FIX: Limit auf 6 MB erhöht
+        maximumFileSizeToCacheInBytes: 6000000,
+        
         // Cache all static assets aggressively
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff,woff2}"],
         // Cache-first strategy for all assets
@@ -64,55 +67,4 @@ export default defineConfig(({ mode }) => ({
           {
             // Network first for API calls, fallback to cache
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "supabase-api-cache",
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24, // 1 day
-              },
-              networkTimeoutSeconds: 10,
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-        ],
-      },
-      manifest: {
-        name: "HufManager",
-        short_name: "HufManager",
-        description: "Professionelle Hufpflege-Verwaltung",
-        theme_color: "#F47B20",
-        background_color: "#121212",
-        display: "standalone",
-        orientation: "portrait",
-        scope: "/",
-        start_url: "/",
-        icons: [
-          {
-            src: "/hufmanager-logo.png",
-            sizes: "192x192",
-            type: "image/png",
-          },
-          {
-            src: "/hufmanager-logo.png",
-            sizes: "512x512",
-            type: "image/png",
-          },
-          {
-            src: "/hufmanager-logo.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "maskable",
-          },
-        ],
-      },
-    }),
-  ].filter(Boolean),
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
-  },
-}));
+            handler: "Network
