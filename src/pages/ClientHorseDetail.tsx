@@ -40,7 +40,7 @@ interface Horse {
   id: string;
   name: string;
   breed: string | null;
-  image_url: string | null;
+  photo_url: string | null;
 }
 
 export default function ClientProfile() {
@@ -82,7 +82,7 @@ export default function ClientProfile() {
     // 2. Pferde laden (NEU!)
     const { data: horsesData, error: horsesError } = await supabase
       .from("horses")
-      .select("id, name, breed, image_url")
+      .select("id, name, breed, photo_url")
       .eq("owner_id", user.id)
       .is("deleted_at", null); // Nur nicht-gelöschte Pferde
 
@@ -178,8 +178,8 @@ export default function ClientProfile() {
                             <div className="flex items-center p-3 gap-3">
                                 {/* Bild / Avatar */}
                                 <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center overflow-hidden border shrink-0">
-                                    {horse.image_url ? (
-                                        <img src={horse.image_url} alt={horse.name} className="h-full w-full object-cover" />
+                                    {horse.photo_url ? (
+                                        <img src={horse.photo_url} alt={horse.name} className="h-full w-full object-cover" />
                                     ) : (
                                         <span className="text-xl">🐴</span>
                                     )}

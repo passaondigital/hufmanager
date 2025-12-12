@@ -37,10 +37,9 @@ interface Message {
 
 interface Contact {
   id: string;
-  first_name: string | null;
-  last_name: string | null;
+  full_name: string;
   email: string | null;
-  user_id: string | null;
+  profile_id: string | null;
 }
 
 export default function Chat() {
@@ -100,8 +99,8 @@ export default function Chat() {
     
     const { data } = await supabase
       .from('contacts')
-      .select('id, first_name, last_name, email, user_id')
-      .not('user_id', 'is', null); 
+      .select('id, full_name, email, profile_id')
+      .not('profile_id', 'is', null); 
     
     if (data) {
         setAvailableContacts(data as Contact[]);
@@ -114,10 +113,10 @@ export default function Chat() {
   };
 
   const startChatWithContact = async (contact: Contact) => {
-    if (!user || !contact.user_id) return;
+    if (!user || !contact.profile_id) return;
     
     // 1. Prüfen, ob Chat schon existiert
-    const existing = conversations.find(c => c.client_id === contact.user_id);
+    const existing = conversations.find(c => c.client_id === contact.profile_id);
     if (existing) {
         setSelectedConversation(existing);
         setIsNewChatMode(false);
@@ -129,7 +128,7 @@ export default function Chat() {
         .from('conversations')
         .insert({
             provider_id: user.id,
-            client_id: contact.user_id,
+            client_id: contact.profile_id,
             subject: 'Chat',
             last_message_at: new Date().toISOString()
         })
@@ -141,7 +140,7 @@ export default function Chat() {
         // Manuelles Zusammenbauen für sofortige Anzeige
         const newConv = { 
             ...data, 
-            other_user: { full_name: `${contact.first_name} ${contact.last_name}`, email: contact.email } 
+            other_user: { full_name: contact.full_name, email: contact.email } 
         };
         setSelectedConversation(newConv);
         setIsNewChatMode(false);
@@ -207,7 +206,7 @@ export default function Chat() {
   );
   
   const filteredContacts = availableContacts.filter((c) => 
-    `${c.first_name} ${c.last_name}`.toLowerCase().includes(searchQuery.toLowerCase())
+    c.full_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -270,7 +269,7 @@ export default function Chat() {
                     </Avatar>
                     <div>
                       <p className="font-medium text-sm">
-                        {c.first_name} {c.last_name}
+                        {c.full_name}
                       </p>
                       <p className="text-xs text-muted-foreground">{c.email}</p>
                     </div>
