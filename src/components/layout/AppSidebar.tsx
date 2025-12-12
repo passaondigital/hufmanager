@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -29,14 +29,24 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 
-const funnelItems = [
-  { title: "Anfragen", url: "/anfragen", icon: MessageSquare, badge: "3" },
-  { title: "Angebote", url: "/angebote", icon: FileText },
-  { title: "Aufnahme", url: "/aufnahme", icon: UserPlus },
-  { title: "Auffassen", url: "/auffassen", icon: Star },
-  { title: "Analyse", url: "/analyse", icon: BarChart3 },
-];
+// Hook to get count of new leads
+function useNewLeadsCount() {
+  return useQuery({
+    queryKey: ["new-leads-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("leads")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "neu");
+      
+      if (error) throw error;
+      return count || 0;
+    },
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+}
 
 const mainItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -59,10 +69,27 @@ interface AppSidebarProps {
   onNavigate?: () => void;
 }
 
+interface NavItemType {
+  title: string;
+  url: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: string | number;
+}
+
 export function AppSidebar({ onNavigate }: AppSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { data: newLeadsCount = 0 } = useNewLeadsCount();
+
+  // Dynamic funnel items with real badge count
+  const funnelItems: NavItemType[] = [
+    { title: "Anfragen", url: "/anfragen", icon: MessageSquare, badge: newLeadsCount > 0 ? newLeadsCount : undefined },
+    { title: "Angebote", url: "/angebote", icon: FileText },
+    { title: "Aufnahme", url: "/aufnahme", icon: UserPlus },
+    { title: "Auffassen", url: "/auffassen", icon: Star },
+    { title: "Analyse", url: "/analyse", icon: BarChart3 },
+  ];
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -76,7 +103,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
     }
   };
 
-  const NavItem = ({ item, showBadge = true }: { item: typeof funnelItems[0]; showBadge?: boolean }) => (
+  const NavItem = ({ item, showBadge = true }: { item: NavItemType; showBadge?: boolean }) => (
     <NavLink
       to={item.url}
       onClick={onNavigate}
@@ -95,8 +122,8 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       {!collapsed && (
         <>
           <span className="font-medium text-[15px]">{item.title}</span>
-          {showBadge && 'badge' in item && item.badge && (
-            <span className="ml-auto bg-sidebar-primary-foreground/20 text-sidebar-primary-foreground text-xs font-bold px-2.5 py-1 rounded-full">
+          {showBadge && item.badge !== undefined && Number(item.badge) > 0 && (
+            <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
               {item.badge}
             </span>
           )}

@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, MapPin, Phone, Mail, Star, Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { LeadChatBot } from "@/components/landing/LeadChatBot";
+import { LandingContactForm } from "@/components/landing/LandingContactForm";
+import { ServiceCard } from "@/components/landing/ServiceCard";
 
 interface BusinessSettings {
   id: string;
@@ -19,6 +19,7 @@ interface BusinessSettings {
   email: string | null;
   address: string | null;
   primary_color: string | null;
+  accept_new_customers: boolean | null;
 }
 
 interface Offer {
@@ -29,6 +30,7 @@ interface Offer {
   price_type: string | null;
   features: string[] | null;
   is_active: boolean;
+  image_url: string | null;
 }
 
 interface Feedback {
@@ -183,43 +185,25 @@ const ProviderLanding = () => {
         </section>
       )}
 
-      {/* Offers Section */}
+      {/* Services Section */}
       {offers.length > 0 && (
         <section className="py-16 px-4 bg-muted/30">
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-2xl font-bold text-foreground mb-8 text-center">Leistungen</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-4 text-center">Leistungen</h2>
+            <p className="text-muted-foreground text-center mb-8 max-w-2xl mx-auto">
+              Professionelle Hufbearbeitung für jede Anforderung
+            </p>
             <div className="grid md:grid-cols-3 gap-6">
               {offers.map((offer) => (
-                <Card key={offer.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <CardTitle className="text-lg">{offer.title}</CardTitle>
-                    {offer.price && (
-                      <div className="text-2xl font-bold" style={{ color: primaryColor }}>
-                        {offer.price}€
-                        {offer.price_type && (
-                          <span className="text-sm font-normal text-muted-foreground ml-1">
-                            / {offer.price_type}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    {offer.description && (
-                      <p className="text-muted-foreground text-sm mb-4">{offer.description}</p>
-                    )}
-                    {offer.features && offer.features.length > 0 && (
-                      <ul className="space-y-2">
-                        {offer.features.map((feature, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm">
-                            <Check className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: primaryColor }} />
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </CardContent>
-                </Card>
+                <ServiceCard
+                  key={offer.id}
+                  title={offer.title}
+                  description={offer.description}
+                  price={offer.price}
+                  priceType={offer.price_type}
+                  features={offer.features}
+                  primaryColor={primaryColor}
+                />
               ))}
             </div>
           </div>
@@ -253,6 +237,19 @@ const ProviderLanding = () => {
                 </Card>
               ))}
             </div>
+          </div>
+        </section>
+      )}
+
+      {/* Contact Form Section */}
+      {settings.accept_new_customers !== false && (
+        <section id="kontakt" className="py-16 px-4 bg-muted/30">
+          <div className="max-w-5xl mx-auto">
+            <LandingContactForm
+              providerId={settings.user_id}
+              providerName={settings.owner_name || settings.business_name || 'Hufbearbeiter'}
+              primaryColor={primaryColor}
+            />
           </div>
         </section>
       )}
