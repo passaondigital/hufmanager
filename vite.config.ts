@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "robots.txt", "hufmanager-logo.png"],
       workbox: {
-        // 👇 HIER IST DER FIX: Limit auf 6 MB erhöht
+        // Limit auf 6 MB erhöht für große Bundles
         maximumFileSizeToCacheInBytes: 6000000,
         
         // Cache all static assets aggressively
@@ -67,4 +67,44 @@ export default defineConfig(({ mode }) => ({
           {
             // Network first for API calls, fallback to cache
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-            handler: "Network
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "supabase-cache",
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24, // 1 day
+              },
+              networkTimeoutSeconds: 10,
+            },
+          },
+        ],
+      },
+      manifest: {
+        name: "HufManager",
+        short_name: "HufManager",
+        description: "Professionelle Hufpflege-Verwaltung",
+        theme_color: "#F47B20",
+        background_color: "#121212",
+        display: "standalone",
+        orientation: "portrait",
+        icons: [
+          {
+            src: "/hufmanager-logo.png",
+            sizes: "192x192",
+            type: "image/png",
+          },
+          {
+            src: "/hufmanager-logo.png",
+            sizes: "512x512",
+            type: "image/png",
+          },
+        ],
+      },
+    }),
+  ].filter(Boolean),
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
+}));
