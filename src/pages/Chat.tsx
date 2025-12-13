@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { Send, MessageSquare, User, Search, Plus, ArrowLeft } from "lucide-react
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { toast } from "@/hooks/use-toast";
 
 interface Conversation {
   id: string;
@@ -44,6 +46,7 @@ interface Contact {
 
 export default function Chat() {
   const { user, role } = useAuth();
+  const location = useLocation();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -56,6 +59,27 @@ export default function Chat() {
   const [availableContacts, setAvailableContacts] = useState<Contact[]>([]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Handle navigation state (from Anfragen -> Chat starten)
+  useEffect(() => {
+    const state = location.state as { startChatWith?: { name?: string; phone?: string; email?: string } } | null;
+    if (state?.startChatWith && role === 'provider') {
+      setIsNewChatMode(true);
+      loadContacts();
+      // Pre-fill search with name if provided
+      if (state.startChatWith.name) {
+        setSearchQuery(state.startChatWith.name);
+      }
+      toast({
+        title: "Neuer Chat",
+        description: state.startChatWith.name 
+          ? `Wähle einen Kunden für den Chat mit "${state.startChatWith.name}"` 
+          : "Wähle einen Kunden aus der Liste",
+      });
+      // Clear the state to avoid re-triggering
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, role]);
 
   useEffect(() => {
     if (!user) return;
@@ -93,18 +117,74 @@ export default function Chat() {
     setLoading(false);
   };
 
-  // NEU: Kontakte laden (Nur Kunden, die sich schon mal eingeloggt haben = user_id vorhanden)
+  // Kontakte laden: Suche in profiles über access_grants UND contacts mit profile_id
   const loadContacts = async () => {
-    if (role !== 'provider') return;
+    if (role !== 'provider' || !user?.id) return;
     
-    const { data } = await supabase
+    const contacts: Contact[] = [];
+    
+    // 1. Profiles über access_grants (aktive Verbindungen)
+    const { data: accessData } = await supabase
+      .from('access_grants')
+      .select('client_id, profiles:client_id(id, full_name, email)')
+      .eq('provider_id', user.id)
+      .eq('is_active', true);
+    
+    if (accessData) {
+      accessData.forEach((ag: any) => {
+        if (ag.profiles && ag.profiles.id) {
+          contacts.push({
+            id: ag.profiles.id,
+            full_name: ag.profiles.full_name || 'Unbekannt',
+            email: ag.profiles.email,
+            profile_id: ag.profiles.id,
+          });
+        }
+      });
+    }
+    
+    // 2. Profiles created by this provider
+    const { data: createdProfiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, email')
+      .eq('created_by_provider_id', user.id)
+      .is('deleted_at', null);
+    
+    if (createdProfiles) {
+      createdProfiles.forEach((p) => {
+        // Vermeiden von Duplikaten
+        if (!contacts.find(c => c.profile_id === p.id)) {
+          contacts.push({
+            id: p.id,
+            full_name: p.full_name || 'Unbekannt',
+            email: p.email,
+            profile_id: p.id,
+          });
+        }
+      });
+    }
+    
+    // 3. Contacts mit profile_id (Legacy)
+    const { data: contactsData } = await supabase
       .from('contacts')
       .select('id, full_name, email, profile_id')
-      .not('profile_id', 'is', null); 
+      .eq('provider_id', user.id)
+      .not('profile_id', 'is', null);
     
-    if (data) {
-        setAvailableContacts(data as Contact[]);
+    if (contactsData) {
+      contactsData.forEach((c) => {
+        if (c.profile_id && !contacts.find(ct => ct.profile_id === c.profile_id)) {
+          contacts.push({
+            id: c.id,
+            full_name: c.full_name,
+            email: c.email,
+            profile_id: c.profile_id,
+          });
+        }
+      });
     }
+    
+    setAvailableContacts(contacts);
   };
 
   const handleStartNewChat = () => {
@@ -200,14 +280,24 @@ export default function Chat() {
     setNewMessage("");
   };
 
-  // Suchfilter
-  const filteredConversations = conversations.filter((c) => 
-    c.other_user?.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Suchfilter (case-insensitive)
+  const filteredConversations = conversations.filter((c) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      c.other_user?.full_name?.toLowerCase().includes(query) ||
+      c.other_user?.email?.toLowerCase().includes(query)
+    );
+  });
   
-  const filteredContacts = availableContacts.filter((c) => 
-    c.full_name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredContacts = availableContacts.filter((c) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      c.full_name?.toLowerCase().includes(query) ||
+      c.email?.toLowerCase().includes(query)
+    );
+  });
 
   return (
     <div className="h-[calc(100vh-8rem)] flex gap-4">
