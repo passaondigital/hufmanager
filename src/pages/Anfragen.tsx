@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { MessageSquare, Phone, MapPin, Search, Filter, Calendar, AlertTriangle, 
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 
@@ -47,6 +49,8 @@ const typeConfig: Record<string, { label: string; icon: React.ReactNode; classNa
 };
 
 const Anfragen = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [filter, setFilter] = useState("alle");
   const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
@@ -226,7 +230,7 @@ const Anfragen = () => {
                     )}
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     {lead.status === 'neu' && (
                       <Button 
                         variant="outline" 
@@ -244,6 +248,14 @@ const Anfragen = () => {
                         </a>
                       </Button>
                     )}
+                    <Button 
+                      variant="secondary" 
+                      size="sm"
+                      onClick={() => navigate('/chat', { state: { startChatWith: { name: lead.name, phone: lead.phone, email: lead.email } } })}
+                    >
+                      <MessageSquare className="h-4 w-4 mr-1" />
+                      Chat starten
+                    </Button>
                   </div>
                 </div>
               </CardContent>

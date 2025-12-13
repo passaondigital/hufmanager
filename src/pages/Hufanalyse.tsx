@@ -23,14 +23,19 @@ const Hufanalyse = () => {
   const [showWizard, setShowWizard] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
 
-  // Fetch horses the provider has access to
+  // Fetch horses the provider has access to (via access_grants)
   const { data: horses = [] } = useQuery({
-    queryKey: ["horses"],
+    queryKey: ["provider-horses-analysis", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("horses").select("*");
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from("horses")
+        .select("*")
+        .is("deleted_at", null);
       if (error) throw error;
-      return data;
+      return data || [];
     },
+    enabled: !!user?.id,
   });
 
   // Fetch existing analyses
