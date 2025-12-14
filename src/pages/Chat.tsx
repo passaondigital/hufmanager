@@ -402,9 +402,18 @@ export default function Chat() {
                   </button>
                 ))}
                 {filteredConversations.length === 0 && !loading && (
-                  <p className="p-4 text-center text-muted-foreground text-sm">
-                    Keine Konversationen
-                  </p>
+                  <div className="p-6 text-center">
+                    <MessageSquare className="h-10 w-10 mx-auto mb-3 text-muted-foreground opacity-40" />
+                    <p className="text-muted-foreground text-sm mb-4">
+                      Keine Konversationen vorhanden
+                    </p>
+                    {role === 'provider' && (
+                      <Button onClick={handleStartNewChat} size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Neuen Chat starten
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
             )}
