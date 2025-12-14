@@ -19,6 +19,24 @@ function getPlanFromProductId(productId: string): string {
   return PRODUCT_PLAN_MAP[productId] || 'pro';
 }
 
+// Constant-time string comparison to prevent timing attacks
+function constantTimeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    // Still compare to maintain constant time even for length mismatch
+    let dummy = 0;
+    for (let i = 0; i < a.length; i++) {
+      dummy |= a.charCodeAt(i) ^ a.charCodeAt(i);
+    }
+    return false;
+  }
+  
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("Copecart webhook received");
 
@@ -44,7 +62,7 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    if (receivedPassword !== expectedPassword) {
+    if (!constantTimeCompare(receivedPassword || '', expectedPassword)) {
       console.error("Invalid IPN password received");
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
