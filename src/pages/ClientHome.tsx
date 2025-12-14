@@ -68,12 +68,15 @@ export default function ClientHome() {
       });
     }
 
-    // Fetch horses
+    // Fetch horses - explicitly filter deleted_at for RLS compatibility
     const { data: horsesData, error } = await supabase
       .from("horses")
       .select("id, name, breed, photo_url, color, nickname")
       .eq("owner_id", user.id)
+      .is("deleted_at", null)
       .order("name");
+    
+    console.log("Horses query for user", user.id, "result:", horsesData, "error:", error);
 
     if (!error && horsesData) {
       setHorses(horsesData);
