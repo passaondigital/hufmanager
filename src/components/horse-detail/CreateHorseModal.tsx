@@ -34,9 +34,11 @@ interface CreateHorseModalProps {
   open: boolean;
   onClose: () => void;
   onCreated: (horseId: string) => void;
+  /** Optional: Override owner_id (for providers creating horses for clients) */
+  ownerId?: string;
 }
 
-export function CreateHorseModal({ open, onClose, onCreated }: CreateHorseModalProps) {
+export function CreateHorseModal({ open, onClose, onCreated, ownerId }: CreateHorseModalProps) {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: '',
@@ -69,6 +71,9 @@ export function CreateHorseModal({ open, onClose, onCreated }: CreateHorseModalP
       if (!userData.user) throw new Error("Nicht angemeldet");
 
       const validated = validationResult.data;
+      
+      // Use provided ownerId or fall back to current user (for clients creating their own horses)
+      const targetOwnerId = ownerId || userData.user.id;
 
       const { data, error } = await supabase
         .from('horses')
@@ -81,7 +86,7 @@ export function CreateHorseModal({ open, onClose, onCreated }: CreateHorseModalP
           color: validated.color || null,
           usage: validated.usage || null,
           housing: validated.housing || null,
-          owner_id: userData.user.id,
+          owner_id: targetOwnerId,
         })
         .select('id')
         .single();
