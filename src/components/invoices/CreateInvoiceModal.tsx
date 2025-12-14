@@ -75,36 +75,42 @@ export function CreateInvoiceModal({ open, onClose, onSuccess }: CreateInvoiceMo
     if (!open || !user) return;
 
     const fetchData = async () => {
-      // FIX: Wir laden ALLE Kunden, die DU erstellt hast (oder die dir gehören)
-      // statt nur die mit "access_grants".
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, full_name, readable_id")
-        .eq("created_by_provider_id", user.id); // WICHTIG: Deine Kunden laden
+      // Lade ALLE Kunden (Profile mit Rolle 'client') aus der Datenbank
+      const { data: clientRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "client");
 
-      // Optional: Zusätzlich noch Kunden laden, die dir Zugriff gegeben haben (Access Grants)
-      const { data: grants } = await supabase
-        .from("access_grants")
-        .select("client_id")
-        .eq("provider_id", user.id)
-        .eq("is_active", true);
+      let allClients: Client[] = [];
 
-      let allClients = profiles || [];
-
-      // Wenn es Grants gibt, lade diese Kunden auch dazu
-      if (grants && grants.length > 0) {
-        const grantClientIds = grants.map(g => g.client_id);
-        const { data: grantProfiles } = await supabase
+      if (clientRoles && clientRoles.length > 0) {
+        const clientIds = clientRoles.map(r => r.user_id);
+        const { data: profiles } = await supabase
           .from("profiles")
           .select("id, full_name, readable_id")
-          .in("id", grantClientIds);
-        
-        if (grantProfiles) {
-           // Zusammenfügen und Duplikate vermeiden
-           const existingIds = new Set(allClients.map(c => c.id));
-           const newClients = grantProfiles.filter(c => !existingIds.has(c.id));
-           allClients = [...allClients, ...newClients];
+          .in("id", clientIds)
+          .is("deleted_at", null)
+          .order("full_name");
+
+        if (profiles) {
+          allClients = profiles.filter(p => p.full_name); // Nur mit Namen
         }
+      }
+
+      // Fallback: Auch Profile laden, die vom Provider erstellt wurden (falls sie keine Rolle haben)
+      const { data: createdProfiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, readable_id")
+        .eq("created_by_provider_id", user.id)
+        .is("deleted_at", null);
+
+      if (createdProfiles) {
+        const existingIds = new Set(allClients.map(c => c.id));
+        createdProfiles.forEach(p => {
+          if (!existingIds.has(p.id) && p.full_name) {
+            allClients.push(p);
+          }
+        });
       }
 
       setClients(allClients);
