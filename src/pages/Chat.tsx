@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,6 +47,7 @@ interface Contact {
 export default function Chat() {
   const { user, role } = useAuth();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -57,29 +58,89 @@ export default function Chat() {
   // NEU: Modus für "Neuer Chat"
   const [isNewChatMode, setIsNewChatMode] = useState(false);
   const [availableContacts, setAvailableContacts] = useState<Contact[]>([]);
+  const [startWithProcessed, setStartWithProcessed] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Handle navigation state (from Anfragen -> Chat starten)
+  // Handle URL parameters (from Anfragen -> Chat starten or notification click)
   useEffect(() => {
-    const state = location.state as { startChatWith?: { name?: string; phone?: string; email?: string } } | null;
-    if (state?.startChatWith && role === 'provider') {
+    const startWith = searchParams.get('startWith');
+    const name = searchParams.get('name');
+    
+    if (startWith && user && !startWithProcessed) {
+      // Direct user ID provided - find or create conversation
+      setStartWithProcessed(true);
+      handleStartWithUser(startWith);
+      // Clear URL params
+      setSearchParams({});
+    } else if (name && role === 'provider' && !startWithProcessed) {
+      // Name/contact info provided from Anfragen
+      setStartWithProcessed(true);
       setIsNewChatMode(true);
       loadContacts();
-      // Pre-fill search with name if provided
-      if (state.startChatWith.name) {
-        setSearchQuery(state.startChatWith.name);
-      }
+      setSearchQuery(name);
       toast({
         title: "Neuer Chat",
-        description: state.startChatWith.name 
-          ? `Wähle einen Kunden für den Chat mit "${state.startChatWith.name}"` 
-          : "Wähle einen Kunden aus der Liste",
+        description: `Wähle einen Kunden für den Chat mit "${name}"`,
       });
-      // Clear the state to avoid re-triggering
-      window.history.replaceState({}, document.title);
+      // Clear URL params
+      setSearchParams({});
     }
-  }, [location.state, role]);
+  }, [searchParams, user, role, startWithProcessed]);
+
+  // Function to handle startWith parameter (direct user ID)
+  const handleStartWithUser = async (userId: string) => {
+    if (!user) return;
+    
+    // Check if conversation already exists
+    const { data: existingConv } = await supabase
+      .from('conversations')
+      .select('*')
+      .or(`and(provider_id.eq.${user.id},client_id.eq.${userId}),and(provider_id.eq.${userId},client_id.eq.${user.id})`)
+      .maybeSingle();
+    
+    if (existingConv) {
+      // Load profile for display
+      const otherUserId = existingConv.provider_id === user.id ? existingConv.client_id : existingConv.provider_id;
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, email')
+        .eq('id', otherUserId)
+        .maybeSingle();
+      
+      setSelectedConversation({
+        ...existingConv,
+        other_user: profile || { full_name: 'Unbekannt', email: null }
+      });
+    } else {
+      // Create new conversation
+      const isProvider = role === 'provider';
+      const { data: newConv, error } = await supabase
+        .from('conversations')
+        .insert({
+          provider_id: isProvider ? user.id : userId,
+          client_id: isProvider ? userId : user.id,
+          subject: 'Chat',
+          last_message_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+      
+      if (!error && newConv) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, email')
+          .eq('id', userId)
+          .maybeSingle();
+        
+        setSelectedConversation({
+          ...newConv,
+          other_user: profile || { full_name: 'Unbekannt', email: null }
+        });
+        loadConversations();
+      }
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
