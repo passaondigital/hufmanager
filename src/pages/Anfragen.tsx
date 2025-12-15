@@ -251,7 +251,14 @@ const Anfragen = () => {
                     <Button 
                       variant="secondary" 
                       size="sm"
-                      onClick={() => navigate('/chat', { state: { startChatWith: { name: lead.name, phone: lead.phone, email: lead.email } } })}
+                      onClick={() => {
+                        // Navigate with URL parameter for better routing
+                        const params = new URLSearchParams();
+                        if (lead.name) params.set('name', lead.name);
+                        if (lead.phone) params.set('phone', lead.phone);
+                        if (lead.email) params.set('email', lead.email);
+                        navigate(`/chat?${params.toString()}`);
+                      }}
                     >
                       <MessageSquare className="h-4 w-4 mr-1" />
                       Chat starten
