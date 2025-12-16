@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LogOut, FileText, ChevronRight, Plus, Shield, Scissors, User } from "lucide-react";
+import { LogOut, FileText, ChevronRight, Plus, Shield, Scissors, User, MessageSquare } from "lucide-react";
 import { UnconfirmedAppointmentsBanner } from "@/components/UnconfirmedAppointmentsBanner";
 import { CreateHorseModal } from "@/components/horse-detail/CreateHorseModal";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
@@ -165,7 +165,15 @@ export default function ClientHome() {
         {user && <LastVisitWidget userId={user.id} />}
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+          <Button 
+            variant="outline" 
+            className="h-16 flex-col gap-1"
+            onClick={() => navigate("/client-chat")}
+          >
+            <MessageSquare className="h-5 w-5 text-primary" />
+            <span className="text-xs">Chat</span>
+          </Button>
           <Button 
             variant="outline" 
             className="h-16 flex-col gap-1"
