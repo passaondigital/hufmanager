@@ -41,6 +41,7 @@ import ClientInvoices from "@/pages/ClientInvoices";
 import ClientPermissions from "@/pages/ClientPermissions";
 import ClientBooking from "@/pages/ClientBooking";
 import ClientProfile from "@/pages/ClientProfile";
+import ClientChat from "@/pages/ClientChat";
 import NotFound from "@/pages/NotFound";
 import ProviderLanding from "@/pages/ProviderLanding";
 import ImportCenter from "@/pages/ImportCenter";
@@ -179,6 +180,7 @@ function App() {
                         <Route path="/client-permissions" element={<ClientPermissions />} />
                         <Route path="/client-booking" element={<ClientBooking />} />
                         <Route path="/client-profile" element={<ClientProfile />} />
+                        <Route path="/client-chat" element={<ClientChat />} />
                     </Route>
 
                     {/* Fallback für alles andere */}
