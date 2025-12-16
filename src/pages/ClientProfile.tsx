@@ -7,10 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, User, Loader2, Save } from "lucide-react";
+import { ArrowLeft, User, Loader2, Save, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { StableLocationCard } from "@/components/client/StableLocationCard";
 import { EmergencyContactsCard } from "@/components/client/EmergencyContactsCard";
+import { PushNotificationToggle } from "@/components/notifications/PushNotificationToggle";
 
 interface Profile {
   id: string;
@@ -205,6 +206,22 @@ export default function ClientProfile() {
           contacts={profile.emergency_contacts}
           onUpdate={fetchProfile}
         />
+
+        {/* Push Notifications */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Bell className="h-4 w-4 text-primary" />
+              Benachrichtigungen
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Erhalte Push-Benachrichtigungen auch wenn die App geschlossen ist.
+            </p>
+            <PushNotificationToggle />
+          </CardContent>
+        </Card>
       </main>
     </div>
   );
