@@ -52,6 +52,7 @@ interface Horse {
   equine_type?: string;
   latitude?: number;
   longitude?: number;
+  owner_id?: string;
 }
 
 interface Customer {
@@ -85,6 +86,7 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [horseToDelete, setHorseToDelete] = useState<Horse | null>(null);
   const [editForm, setEditForm] = useState({
     full_name: "",
     email: "",
@@ -141,6 +143,26 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
         description: "Die ID bleibt für 30 Tage reserviert." 
       });
       onClose();
+    },
+    onError: () => {
+      toast({ title: "Fehler beim Löschen", variant: "destructive" });
+    },
+  });
+
+  // Soft delete horse mutation
+  const deleteHorse = useMutation({
+    mutationFn: async (horseId: string) => {
+      const { error } = await supabase
+        .from("horses")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", horseId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["provider-horses"] });
+      queryClient.invalidateQueries({ queryKey: ["horses"] });
+      toast({ title: "Pferd gelöscht" });
+      setHorseToDelete(null);
     },
     onError: () => {
       toast({ title: "Fehler beim Löschen", variant: "destructive" });
@@ -315,17 +337,27 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                             </div>
                           </div>
 
-                          {horse.latitude && horse.longitude && (
+                          <div className="flex items-center gap-2">
+                            {horse.latitude && horse.longitude && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openNavigation(horse.latitude!, horse.longitude!)}
+                                className="text-primary"
+                              >
+                                <Navigation className="h-4 w-4 mr-1" />
+                                Route
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => openNavigation(horse.latitude!, horse.longitude!)}
-                              className="text-primary"
+                              onClick={() => setHorseToDelete(horse)}
+                              className="text-destructive hover:text-destructive"
                             >
-                              <Navigation className="h-4 w-4 mr-1" />
-                              Route
+                              <Trash2 className="h-4 w-4" />
                             </Button>
-                          )}
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -371,6 +403,35 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
             <AlertDialogCancel>Abbrechen</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Ja, löschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Horse Confirmation Dialog */}
+      <AlertDialog open={!!horseToDelete} onOpenChange={() => setHorseToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Pferd löschen?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Das Pferd <strong>{horseToDelete?.name}</strong> wird gelöscht.
+              </p>
+              <p className="text-destructive font-medium">
+                Die ID #{horseToDelete?.readable_id} wird für 90 Tage gesperrt.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => horseToDelete && deleteHorse.mutate(horseToDelete.id)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Ja, löschen
