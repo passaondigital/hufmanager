@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,6 +40,7 @@ import {
   AlertTriangle,
   Navigation,
 } from "lucide-react";
+import { ProviderHorseEditSheet } from "@/components/customers/ProviderHorseEditSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -87,6 +88,7 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [horseToDelete, setHorseToDelete] = useState<Horse | null>(null);
+  const [horseToEditId, setHorseToEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
     full_name: "",
     email: "",
@@ -164,8 +166,12 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
       toast({ title: "Pferd gelöscht" });
       setHorseToDelete(null);
     },
-    onError: () => {
-      toast({ title: "Fehler beim Löschen", variant: "destructive" });
+    onError: (err: any) => {
+      toast({
+        title: "Fehler beim Löschen",
+        description: err?.message || "Unbekannter Fehler",
+        variant: "destructive",
+      });
     },
   });
 
@@ -313,15 +319,17 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
               ) : (
                 <div className="grid gap-3">
                   {horses.map((horse) => (
-                    <Card key={horse.id} className="hover:shadow-md transition-shadow">
+                    <Card
+                      key={horse.id}
+                      className="hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => setHorseToEditId(horse.id)}
+                    >
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div>
                               <div className="flex items-center gap-2">
-                                <span className="font-medium text-foreground">
-                                  {horse.name}
-                                </span>
+                                <span className="font-medium text-foreground">{horse.name}</span>
                                 {horse.readable_id && (
                                   <Badge variant="outline" className="font-mono text-xs">
                                     #{horse.readable_id}
@@ -342,7 +350,10 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => openNavigation(horse.latitude!, horse.longitude!)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openNavigation(horse.latitude!, horse.longitude!);
+                                }}
                                 className="text-primary"
                               >
                                 <Navigation className="h-4 w-4 mr-1" />
@@ -352,7 +363,10 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => setHorseToDelete(horse)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setHorseToDelete(horse);
+                              }}
                               className="text-destructive hover:text-destructive"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -439,6 +453,16 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ProviderHorseEditSheet
+        open={!!horseToEditId}
+        horseId={horseToEditId}
+        onClose={() => setHorseToEditId(null)}
+        onSaved={() => {
+          queryClient.invalidateQueries({ queryKey: ["provider-horses"] });
+          queryClient.invalidateQueries({ queryKey: ["horses"] });
+        }}
+      />
     </>
   );
 }
