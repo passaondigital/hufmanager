@@ -23,10 +23,9 @@ export function ProviderHorseEditSheet({ horseId, open, onClose, onSaved }: Prov
 
       const { data, error } = await supabase
         .from("horses")
-        .select(
-          "id, name, nickname, breed, birth_year, gender, color, height, discipline, usage, housing, feeding_notes, health_status, medical_history, hoof_type, hoof_protection, hoof_measurements, shoeing_interval, special_notes, contacts, photo_url, owner_id, last_anamnesis_date, anamnesis_interval_months"
-        )
+        .select("*")
         .eq("id", horseId)
+        .is("deleted_at", null)
         .maybeSingle();
 
       if (error) throw error;
@@ -39,6 +38,7 @@ export function ProviderHorseEditSheet({ horseId, open, onClose, onSaved }: Prov
   useEffect(() => {
     if (!open) return;
     if (error) {
+      console.error("Horse load error:", error);
       toast({
         title: "Fehler",
         description: (error as any)?.message || "Pferd konnte nicht geladen werden.",
@@ -50,7 +50,7 @@ export function ProviderHorseEditSheet({ horseId, open, onClose, onSaved }: Prov
 
   if (!open) return null;
 
-  if (isLoading || !horse) {
+  if (isLoading) {
     return (
       <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
         <SheetContent side="bottom" className="h-[40vh] flex flex-col">
@@ -59,6 +59,21 @@ export function ProviderHorseEditSheet({ horseId, open, onClose, onSaved }: Prov
           </SheetHeader>
           <div className="flex-1 flex items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  if (!horse) {
+    return (
+      <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
+        <SheetContent side="bottom" className="h-[40vh] flex flex-col">
+          <SheetHeader>
+            <SheetTitle>Pferd nicht gefunden</SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 flex items-center justify-center text-muted-foreground">
+            Das Pferd konnte nicht geladen werden.
           </div>
         </SheetContent>
       </Sheet>
