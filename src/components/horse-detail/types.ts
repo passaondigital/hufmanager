@@ -23,6 +23,11 @@ export interface Horse {
   owner_id: string;
   last_anamnesis_date: string | null;
   anamnesis_interval_months: number;
+  readable_id?: string | null;
+  equine_type?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  location_name?: string | null;
 }
 
 export interface HoofMeasurements {
