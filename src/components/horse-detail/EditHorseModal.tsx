@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Horse, HEALTH_STATUS_OPTIONS, HOOF_PROTECTION_OPTIONS, USAGE_OPTIONS, HOUSING_OPTIONS, HoofMeasurements, HorseContacts } from "./types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Camera, Upload } from "lucide-react";
+import { Loader2, Camera } from "lucide-react";
 import { Json } from "@/integrations/supabase/types";
 
 interface EditHorseModalProps {
@@ -19,41 +19,49 @@ interface EditHorseModalProps {
   onSaved: () => void;
 }
 
+const buildInitialForm = (h: Horse) => ({
+  name: h.name,
+  nickname: h.nickname || "",
+  breed: h.breed || "",
+  birth_year: h.birth_year?.toString() || "",
+  gender: h.gender || "",
+  color: h.color || "",
+  height: h.height || "",
+  discipline: h.discipline || "",
+  usage: h.usage || "",
+  housing: h.housing || "",
+  feeding_notes: h.feeding_notes || "",
+  health_status: h.health_status || "healthy",
+  medical_history: h.medical_history || "",
+  hoof_protection: h.hoof_protection || "barefoot",
+  shoeing_interval: h.shoeing_interval?.toString() || "6",
+  special_notes: h.special_notes || "",
+  hoof_vl: (h.hoof_measurements as HoofMeasurements)?.vl || "",
+  hoof_vr: (h.hoof_measurements as HoofMeasurements)?.vr || "",
+  hoof_hl: (h.hoof_measurements as HoofMeasurements)?.hl || "",
+  hoof_hr: (h.hoof_measurements as HoofMeasurements)?.hr || "",
+  contact_vet: (h.contacts as HorseContacts)?.vet || "",
+  contact_vet_phone: (h.contacts as HorseContacts)?.vet_phone || "",
+  contact_trainer: (h.contacts as HorseContacts)?.trainer || "",
+  contact_trainer_phone: (h.contacts as HorseContacts)?.trainer_phone || "",
+  contact_stable: (h.contacts as HorseContacts)?.stable || "",
+  contact_stable_phone: (h.contacts as HorseContacts)?.stable_phone || "",
+  contact_caretaker: (h.contacts as HorseContacts)?.caretaker || "",
+  contact_caretaker_phone: (h.contacts as HorseContacts)?.caretaker_phone || "",
+});
+
 export function EditHorseModal({ horse, open, onClose, onSaved }: EditHorseModalProps) {
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [photoUrl, setPhotoUrl] = useState(horse.photo_url || '');
+  const [photoUrl, setPhotoUrl] = useState(horse.photo_url || "");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [form, setForm] = useState({
-    name: horse.name,
-    nickname: horse.nickname || '',
-    breed: horse.breed || '',
-    birth_year: horse.birth_year?.toString() || '',
-    gender: horse.gender || '',
-    color: horse.color || '',
-    height: horse.height || '',
-    discipline: horse.discipline || '',
-    usage: horse.usage || '',
-    housing: horse.housing || '',
-    feeding_notes: horse.feeding_notes || '',
-    health_status: horse.health_status || 'healthy',
-    medical_history: horse.medical_history || '',
-    hoof_protection: horse.hoof_protection || 'barefoot',
-    shoeing_interval: horse.shoeing_interval?.toString() || '6',
-    special_notes: horse.special_notes || '',
-    hoof_vl: (horse.hoof_measurements as HoofMeasurements)?.vl || '',
-    hoof_vr: (horse.hoof_measurements as HoofMeasurements)?.vr || '',
-    hoof_hl: (horse.hoof_measurements as HoofMeasurements)?.hl || '',
-    hoof_hr: (horse.hoof_measurements as HoofMeasurements)?.hr || '',
-    contact_vet: (horse.contacts as HorseContacts)?.vet || '',
-    contact_vet_phone: (horse.contacts as HorseContacts)?.vet_phone || '',
-    contact_trainer: (horse.contacts as HorseContacts)?.trainer || '',
-    contact_trainer_phone: (horse.contacts as HorseContacts)?.trainer_phone || '',
-    contact_stable: (horse.contacts as HorseContacts)?.stable || '',
-    contact_stable_phone: (horse.contacts as HorseContacts)?.stable_phone || '',
-    contact_caretaker: (horse.contacts as HorseContacts)?.caretaker || '',
-    contact_caretaker_phone: (horse.contacts as HorseContacts)?.caretaker_phone || '',
-  });
+  const [form, setForm] = useState(() => buildInitialForm(horse));
+
+  // Pre-fill / refresh when a new horse is opened in the same modal instance
+  useEffect(() => {
+    setPhotoUrl(horse.photo_url || "");
+    setForm(buildInitialForm(horse));
+  }, [horse.id]);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
