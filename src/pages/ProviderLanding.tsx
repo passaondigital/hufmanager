@@ -54,10 +54,11 @@ const ProviderLanding = () => {
       if (!slug) return;
 
       try {
-        // Find provider by subdomain
+        // Find provider by subdomain - only select PUBLIC SAFE fields to prevent data leakage
+        // SECURITY: Do NOT use select('*') - sensitive fields like tax_number, stripe keys, paypal_link must not be exposed
         const { data: businessData, error: businessError } = await supabase
           .from('business_settings')
-          .select('*')
+          .select('id, user_id, business_name, owner_name, hero_headline, about_text, logo_url, phone, email, address, primary_color, accept_new_customers, subdomain')
           .eq('subdomain', slug)
           .maybeSingle();
 
