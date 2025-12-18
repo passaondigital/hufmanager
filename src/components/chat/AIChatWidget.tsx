@@ -24,9 +24,12 @@ export function AIChatWidget() {
   }, [messages]);
 
   const streamChat = async (userMessages: Message[]) => {
-    // Get the user's actual JWT token for authenticated requests
+    // Get the user's actual JWT token - authentication is required
     const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    if (!session?.access_token) {
+      throw new Error("Authentifizierung erforderlich");
+    }
+    const token = session.access_token;
     
     const resp = await fetch(CHAT_URL, {
       method: "POST",
