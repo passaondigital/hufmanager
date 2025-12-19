@@ -170,6 +170,7 @@ export function CreateInvoiceModal({ open, onClose, onSuccess }: CreateInvoiceMo
 
     const { error } = await supabase.from("invoices").insert({
       client_id: formData.client_id,
+      provider_id: user?.id,
       horse_id: formData.horse_id || null,
       invoice_number: formData.invoice_number || null,
       issue_date: formData.issue_date,
