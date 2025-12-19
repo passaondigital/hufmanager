@@ -87,7 +87,22 @@ export type Database = {
           revoked_at?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "access_grants_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_grants_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ai_chat_messages: {
         Row: {
@@ -411,7 +426,22 @@ export type Database = {
           subject?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "conversations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       feedbacks: {
         Row: {
@@ -725,7 +755,15 @@ export type Database = {
           updated_at?: string
           usage?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "horses_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invoices: {
         Row: {
@@ -738,6 +776,7 @@ export type Database = {
           issue_date: string
           notes: string | null
           pdf_url: string | null
+          provider_id: string | null
           status: string | null
           total_amount: number
           updated_at: string
@@ -752,6 +791,7 @@ export type Database = {
           issue_date?: string
           notes?: string | null
           pdf_url?: string | null
+          provider_id?: string | null
           status?: string | null
           total_amount: number
           updated_at?: string
@@ -766,16 +806,31 @@ export type Database = {
           issue_date?: string
           notes?: string | null
           pdf_url?: string | null
+          provider_id?: string | null
           status?: string | null
           total_amount?: number
           updated_at?: string
         }
         Relationships: [
           {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "invoices_horse_id_fkey"
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

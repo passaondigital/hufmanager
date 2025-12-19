@@ -20,6 +20,7 @@ interface Invoice {
   status: string | null;
   pdf_url: string | null;
   client_id: string;
+  provider_id: string | null;
   horse: {
     name: string;
   } | null;
@@ -52,8 +53,10 @@ export default function Rechnungen() {
         status,
         pdf_url,
         client_id,
+        provider_id,
         horse:horses(name)
       `)
+      .eq("provider_id", user.id)
       .order("issue_date", { ascending: false });
 
     if (!error && data) {
