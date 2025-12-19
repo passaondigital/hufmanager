@@ -826,13 +826,6 @@ export type Database = {
             referencedRelation: "horses"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "invoices_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
       leads: {
