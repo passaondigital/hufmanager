@@ -1237,6 +1237,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_magic_link_uses: {
+        Args: { link_id: string }
+        Returns: undefined
+      }
       provider_can_manage_client_horses: {
         Args: { _client_id: string; _provider_id: string }
         Returns: boolean
