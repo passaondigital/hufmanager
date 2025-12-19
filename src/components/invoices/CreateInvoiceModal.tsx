@@ -38,6 +38,8 @@ interface CreateInvoiceModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  preSelectedClientId?: string | null;
+  preSelectedHorseId?: string | null;
 }
 
 const invoiceSchema = z.object({
@@ -51,7 +53,13 @@ const invoiceSchema = z.object({
   notes: z.string().max(1000, "Notizen zu lang").optional(),
 });
 
-export function CreateInvoiceModal({ open, onClose, onSuccess }: CreateInvoiceModalProps) {
+export function CreateInvoiceModal({ 
+  open, 
+  onClose, 
+  onSuccess, 
+  preSelectedClientId,
+  preSelectedHorseId 
+}: CreateInvoiceModalProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
@@ -59,8 +67,8 @@ export function CreateInvoiceModal({ open, onClose, onSuccess }: CreateInvoiceMo
   const [filteredHorses, setFilteredHorses] = useState<Horse[]>([]);
 
   const [formData, setFormData] = useState({
-    client_id: "",
-    horse_id: "",
+    client_id: preSelectedClientId || "",
+    horse_id: preSelectedHorseId || "",
     invoice_number: "",
     issue_date: new Date().toISOString().split("T")[0],
     due_date: "",
@@ -68,6 +76,17 @@ export function CreateInvoiceModal({ open, onClose, onSuccess }: CreateInvoiceMo
     status: "pending" as "pending" | "paid" | "overdue",
     notes: "",
   });
+
+  // Update form when preSelected values change
+  useEffect(() => {
+    if (open) {
+      setFormData(prev => ({
+        ...prev,
+        client_id: preSelectedClientId || prev.client_id,
+        horse_id: preSelectedHorseId || "",
+      }));
+    }
+  }, [open, preSelectedClientId, preSelectedHorseId]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 

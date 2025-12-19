@@ -6,10 +6,27 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { FileText, ExternalLink, Search, Plus } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { FileText, Search, Plus, Eye, Download, Trash2, MoreVertical } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { CreateInvoiceModal } from "@/components/invoices/CreateInvoiceModal";
+import { toast } from "@/hooks/use-toast";
 
 interface Invoice {
   id: string;
@@ -37,6 +54,7 @@ export default function Rechnungen() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
 
   const fetchInvoices = async () => {
     if (!user) return;
@@ -125,6 +143,61 @@ export default function Rechnungen() {
 
   const totalOpen = invoices.filter(i => i.status === "pending").reduce((sum, i) => sum + i.total_amount, 0);
   const totalOverdue = invoices.filter(i => i.status === "overdue").reduce((sum, i) => sum + i.total_amount, 0);
+
+  const handleView = (invoice: Invoice) => {
+    if (invoice.pdf_url) {
+      window.open(invoice.pdf_url, "_blank");
+    } else {
+      toast({
+        title: "Keine PDF verfügbar",
+        description: "Für diese Rechnung wurde noch kein PDF erstellt.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownload = async (invoice: Invoice) => {
+    if (!invoice.pdf_url) {
+      toast({
+        title: "Keine PDF verfügbar",
+        description: "Für diese Rechnung wurde noch kein PDF erstellt.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(invoice.pdf_url);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Rechnung_${invoice.invoice_number || invoice.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch {
+      window.open(invoice.pdf_url, "_blank");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!invoiceToDelete) return;
+    
+    const { error } = await supabase
+      .from("invoices")
+      .delete()
+      .eq("id", invoiceToDelete.id);
+
+    if (error) {
+      toast({ title: "Fehler beim Löschen", variant: "destructive" });
+    } else {
+      toast({ title: "Rechnung gelöscht" });
+      fetchInvoices();
+    }
+    setInvoiceToDelete(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -244,22 +317,58 @@ export default function Rechnungen() {
                       {formatCurrency(invoice.total_amount)}
                     </p>
                   </div>
-                  {invoice.pdf_url && (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="flex-shrink-0"
-                      onClick={() => window.open(invoice.pdf_url!, "_blank")}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
-                  )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleView(invoice)}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        Ansehen
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDownload(invoice)}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Herunterladen
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setInvoiceToDelete(invoice)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Löschen
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!invoiceToDelete} onOpenChange={() => setInvoiceToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Rechnung löschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Die Rechnung <strong>{invoiceToDelete?.invoice_number || "ohne Nummer"}</strong> wird 
+              unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Löschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
