@@ -30,6 +30,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
   Mail,
   Phone,
   MapPin,
@@ -39,8 +45,10 @@ import {
   Edit,
   AlertTriangle,
   Navigation,
+  FileText,
 } from "lucide-react";
 import { ProviderHorseEditSheet } from "@/components/customers/ProviderHorseEditSheet";
+import { ClientInvoicesSection } from "@/components/invoices/ClientInvoicesSection";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -298,87 +306,107 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
               </p>
             </div>
 
-            {/* Horses Section */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-foreground">
-                  Zugeordnete Pferde ({horses.length})
-                </h3>
-                <Button size="sm" onClick={() => onAddHorse(customer.id)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Pferd hinzufügen
-                </Button>
-              </div>
+            {/* Tabs for Horses and Invoices */}
+            <Tabs defaultValue="horses" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="horses">
+                  🐴 Pferde ({horses.length})
+                </TabsTrigger>
+                <TabsTrigger value="invoices">
+                  <FileText className="h-4 w-4 mr-1" />
+                  Rechnungen
+                </TabsTrigger>
+              </TabsList>
 
-              {horses.length === 0 ? (
-                <Card>
-                  <CardContent className="p-6 text-center text-muted-foreground">
-                    Diesem Kunden sind noch keine Pferde zugeordnet.
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid gap-3">
-                  {horses.map((horse) => (
-                    <Card
-                      key={horse.id}
-                      className="hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => setHorseToEditId(horse.id)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-foreground">{horse.name}</span>
-                                {horse.readable_id && (
-                                  <Badge variant="outline" className="font-mono text-xs">
-                                    #{horse.readable_id}
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                {horse.equine_type && (
-                                  <span>{EQUINE_TYPE_LABELS[horse.equine_type] || horse.equine_type}</span>
-                                )}
-                                {horse.breed && <span>• {horse.breed}</span>}
+              <TabsContent value="horses" className="space-y-4 mt-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-foreground">
+                    Zugeordnete Pferde
+                  </h3>
+                  <Button size="sm" onClick={() => onAddHorse(customer.id)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Pferd hinzufügen
+                  </Button>
+                </div>
+
+                {horses.length === 0 ? (
+                  <Card>
+                    <CardContent className="p-6 text-center text-muted-foreground">
+                      Diesem Kunden sind noch keine Pferde zugeordnet.
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid gap-3">
+                    {horses.map((horse) => (
+                      <Card
+                        key={horse.id}
+                        className="hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => setHorseToEditId(horse.id)}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-foreground">{horse.name}</span>
+                                  {horse.readable_id && (
+                                    <Badge variant="outline" className="font-mono text-xs">
+                                      #{horse.readable_id}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  {horse.equine_type && (
+                                    <span>{EQUINE_TYPE_LABELS[horse.equine_type] || horse.equine_type}</span>
+                                  )}
+                                  {horse.breed && <span>• {horse.breed}</span>}
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          <div className="flex items-center gap-2">
-                            {horse.latitude && horse.longitude && (
+                            <div className="flex items-center gap-2">
+                              {horse.latitude && horse.longitude && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openNavigation(horse.latitude!, horse.longitude!);
+                                  }}
+                                  className="text-primary"
+                                >
+                                  <Navigation className="h-4 w-4 mr-1" />
+                                  Route
+                                </Button>
+                              )}
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  openNavigation(horse.latitude!, horse.longitude!);
+                                  setHorseToDelete(horse);
                                 }}
-                                className="text-primary"
+                                className="text-destructive hover:text-destructive"
                               >
-                                <Navigation className="h-4 w-4 mr-1" />
-                                Route
+                                <Trash2 className="h-4 w-4" />
                               </Button>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setHorseToDelete(horse);
-                              }}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="invoices" className="mt-4">
+                <ClientInvoicesSection 
+                  clientId={customer.id}
+                  clientName={customer.full_name}
+                  horses={horses.map(h => ({ id: h.id, name: h.name }))}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
 
           <DialogFooter className="flex justify-between">
