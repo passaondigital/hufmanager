@@ -77,11 +77,8 @@ const ConnectForm = () => {
 
       if (contactError) throw contactError;
 
-      // Update usage count
-      await supabase
-        .from("magic_links")
-        .update({ uses_count: (magicLink.uses_count || 0) + 1 })
-        .eq("id", magicLink.id);
+      // Update usage count atomically
+      await supabase.rpc("increment_magic_link_uses", { link_id: magicLink.id });
 
       return true;
     },
