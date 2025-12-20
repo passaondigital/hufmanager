@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
 import { CreateInvoiceModal } from "./CreateInvoiceModal";
+import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
 
 interface Invoice {
   id: string;
@@ -35,7 +37,19 @@ interface Invoice {
   status: string | null;
   pdf_url: string | null;
   horse_id: string | null;
+  notes: string | null;
   horse?: { name: string } | null;
+}
+
+interface ClientProfile {
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  city: string | null;
+  zip_code: string | null;
+  stable_street: string | null;
+  stable_city: string | null;
+  stable_zip: string | null;
 }
 
 interface ClientInvoicesSectionProps {
@@ -45,14 +59,19 @@ interface ClientInvoicesSectionProps {
 }
 
 export function ClientInvoicesSection({ clientId, clientName, horses = [] }: ClientInvoicesSectionProps) {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [preSelectedHorseId, setPreSelectedHorseId] = useState<string | null>(null);
+  const [generatingPdfFor, setGeneratingPdfFor] = useState<string | null>(null);
+  const [clientProfile, setClientProfile] = useState<ClientProfile | null>(null);
 
+  // Fetch client profile for PDF generation
   const { data: invoices = [], isLoading } = useQuery({
     queryKey: ["client-invoices", clientId],
     queryFn: async () => {
+      // Fetch invoices
       const { data, error } = await supabase
         .from("invoices")
         .select(`
@@ -64,12 +83,23 @@ export function ClientInvoicesSection({ clientId, clientName, horses = [] }: Cli
           status,
           pdf_url,
           horse_id,
+          notes,
           horse:horses(name)
         `)
         .eq("client_id", clientId)
         .order("issue_date", { ascending: false });
 
       if (error) throw error;
+
+      // Fetch client profile for PDF branding
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, email, phone, city, zip_code, stable_street, stable_city, stable_zip")
+        .eq("id", clientId)
+        .single();
+
+      setClientProfile(profile);
+
       return data as Invoice[];
     },
   });
@@ -112,42 +142,45 @@ export function ClientInvoicesSection({ clientId, clientName, horses = [] }: Cli
     }
   };
 
-  const handleView = (invoice: Invoice) => {
-    if (invoice.pdf_url) {
-      window.open(invoice.pdf_url, "_blank");
-    } else {
+  const handleGeneratePdf = async (invoice: Invoice): Promise<Blob | null> => {
+    if (!user) return null;
+    setGeneratingPdfFor(invoice.id);
+    try {
+      const blob = await generateInvoicePdf(invoice, clientProfile, user.id);
+      return blob;
+    } catch (error) {
+      console.error("PDF generation failed:", error);
       toast({
-        title: "Keine PDF verfügbar",
-        description: "Für diese Rechnung wurde noch kein PDF erstellt.",
+        title: "PDF-Generierung fehlgeschlagen",
+        description: "Bitte versuchen Sie es erneut.",
         variant: "destructive",
       });
+      return null;
+    } finally {
+      setGeneratingPdfFor(null);
+    }
+  };
+
+  const handleView = async (invoice: Invoice) => {
+    const blob = await handleGeneratePdf(invoice);
+    if (blob) {
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, "_blank");
     }
   };
 
   const handleDownload = async (invoice: Invoice) => {
-    if (!invoice.pdf_url) {
-      toast({
-        title: "Keine PDF verfügbar",
-        description: "Für diese Rechnung wurde noch kein PDF erstellt.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const response = await fetch(invoice.pdf_url);
-      const blob = await response.blob();
+    const blob = await handleGeneratePdf(invoice);
+    if (blob) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Rechnung_${invoice.invoice_number || invoice.id}.pdf`;
+      a.download = `Rechnung_${invoice.invoice_number || invoice.id.slice(0, 8)}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-    } catch {
-      // Fallback: open in new tab
-      window.open(invoice.pdf_url, "_blank");
+      toast({ title: "PDF heruntergeladen" });
     }
   };
 
@@ -230,30 +263,34 @@ export function ClientInvoicesSection({ clientId, clientName, horses = [] }: Cli
                     </div>
                   </div>
 
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleView(invoice)}>
-                        <Eye className="h-4 w-4 mr-2" />
-                        Ansehen
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDownload(invoice)}>
-                        <Download className="h-4 w-4 mr-2" />
-                        Herunterladen
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setInvoiceToDelete(invoice)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Löschen
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {generatingPdfFor === invoice.id ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  ) : (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-popover">
+                        <DropdownMenuItem onClick={() => handleView(invoice)}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          Ansehen
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDownload(invoice)}>
+                          <Download className="h-4 w-4 mr-2" />
+                          Herunterladen
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setInvoiceToDelete(invoice)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Löschen
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
               </CardContent>
             </Card>
