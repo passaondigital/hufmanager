@@ -65,6 +65,7 @@ export function CreateInvoiceModal({
   const [clients, setClients] = useState<Client[]>([]);
   const [horses, setHorses] = useState<Horse[]>([]);
   const [filteredHorses, setFilteredHorses] = useState<Horse[]>([]);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   const [formData, setFormData] = useState({
     client_id: preSelectedClientId || "",
@@ -77,21 +78,22 @@ export function CreateInvoiceModal({
     notes: "",
   });
 
-  // Update form when preSelected values change
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Reset form when modal opens with new preselected values
   useEffect(() => {
     if (open) {
       setFormData(prev => ({
         ...prev,
-        client_id: preSelectedClientId || prev.client_id,
+        client_id: preSelectedClientId || "",
         horse_id: preSelectedHorseId || "",
       }));
     }
   }, [open, preSelectedClientId, preSelectedHorseId]);
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
+  // Load data only once when modal first opens
   useEffect(() => {
-    if (!open || !user) return;
+    if (!open || !user || dataLoaded) return;
 
     const fetchData = async () => {
       // Lade ALLE Kunden (Profile mit Rolle 'client') aus der Datenbank
@@ -112,11 +114,11 @@ export function CreateInvoiceModal({
           .order("full_name");
 
         if (profiles) {
-          allClients = profiles.filter(p => p.full_name); // Nur mit Namen
+          allClients = profiles.filter(p => p.full_name);
         }
       }
 
-      // Fallback: Auch Profile laden, die vom Provider erstellt wurden (falls sie keine Rolle haben)
+      // Fallback: Auch Profile laden, die vom Provider erstellt wurden
       const { data: createdProfiles } = await supabase
         .from("profiles")
         .select("id, full_name, readable_id")
@@ -141,19 +143,28 @@ export function CreateInvoiceModal({
         .is("deleted_at", null);
 
       setHorses(horsesData || []);
+      setDataLoaded(true);
     };
 
     fetchData();
-  }, [open, user]);
+  }, [open, user, dataLoaded]);
 
+  // Reset dataLoaded when modal closes
   useEffect(() => {
-    if (formData.client_id) {
+    if (!open) {
+      // Delay reset to avoid flash on next open
+      const timer = setTimeout(() => setDataLoaded(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
+
+  // Filter horses when client changes
+  useEffect(() => {
+    if (formData.client_id && horses.length > 0) {
       setFilteredHorses(horses.filter(h => h.owner_id === formData.client_id));
     } else {
       setFilteredHorses([]);
     }
-    // Reset horse selection when client changes
-    // setFormData(prev => ({ ...prev, horse_id: "" })); // Optional: Kann man machen, muss man aber nicht zwingend
   }, [formData.client_id, horses]);
 
   const handleSubmit = async (e: React.FormEvent) => {

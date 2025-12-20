@@ -22,11 +22,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { FileText, Search, Plus, Eye, Download, Trash2, MoreVertical } from "lucide-react";
+import { FileText, Search, Plus, Eye, Download, Trash2, MoreVertical, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { CreateInvoiceModal } from "@/components/invoices/CreateInvoiceModal";
 import { toast } from "@/hooks/use-toast";
+import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
 
 interface Invoice {
   id: string;
@@ -38,12 +39,20 @@ interface Invoice {
   pdf_url: string | null;
   client_id: string;
   provider_id: string | null;
+  notes: string | null;
   horse: {
     name: string;
   } | null;
   clientProfile: {
     full_name: string | null;
     readable_id: string | null;
+    email: string | null;
+    phone: string | null;
+    city: string | null;
+    zip_code: string | null;
+    stable_street: string | null;
+    stable_city: string | null;
+    stable_zip: string | null;
   } | null;
 }
 
@@ -55,6 +64,7 @@ export default function Rechnungen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
+  const [generatingPdfFor, setGeneratingPdfFor] = useState<string | null>(null);
 
   const fetchInvoices = async () => {
     if (!user) return;
@@ -72,6 +82,7 @@ export default function Rechnungen() {
         pdf_url,
         client_id,
         provider_id,
+        notes,
         horse:horses(name)
       `)
       .eq("provider_id", user.id)
@@ -81,7 +92,7 @@ export default function Rechnungen() {
       const clientIds = [...new Set(data.map(inv => inv.client_id))];
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, full_name, readable_id")
+        .select("id, full_name, readable_id, email, phone, city, zip_code, stable_street, stable_city, stable_zip")
         .in("id", clientIds);
 
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
@@ -144,41 +155,45 @@ export default function Rechnungen() {
   const totalOpen = invoices.filter(i => i.status === "pending").reduce((sum, i) => sum + i.total_amount, 0);
   const totalOverdue = invoices.filter(i => i.status === "overdue").reduce((sum, i) => sum + i.total_amount, 0);
 
-  const handleView = (invoice: Invoice) => {
-    if (invoice.pdf_url) {
-      window.open(invoice.pdf_url, "_blank");
-    } else {
+  const handleGeneratePdf = async (invoice: Invoice): Promise<Blob | null> => {
+    if (!user) return null;
+    setGeneratingPdfFor(invoice.id);
+    try {
+      const blob = await generateInvoicePdf(invoice, invoice.clientProfile, user.id);
+      return blob;
+    } catch (error) {
+      console.error("PDF generation failed:", error);
       toast({
-        title: "Keine PDF verfügbar",
-        description: "Für diese Rechnung wurde noch kein PDF erstellt.",
+        title: "PDF-Generierung fehlgeschlagen",
+        description: "Bitte versuchen Sie es erneut.",
         variant: "destructive",
       });
+      return null;
+    } finally {
+      setGeneratingPdfFor(null);
+    }
+  };
+
+  const handleView = async (invoice: Invoice) => {
+    const blob = await handleGeneratePdf(invoice);
+    if (blob) {
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, "_blank");
     }
   };
 
   const handleDownload = async (invoice: Invoice) => {
-    if (!invoice.pdf_url) {
-      toast({
-        title: "Keine PDF verfügbar",
-        description: "Für diese Rechnung wurde noch kein PDF erstellt.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const response = await fetch(invoice.pdf_url);
-      const blob = await response.blob();
+    const blob = await handleGeneratePdf(invoice);
+    if (blob) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Rechnung_${invoice.invoice_number || invoice.id}.pdf`;
+      a.download = `Rechnung_${invoice.invoice_number || invoice.id.slice(0, 8)}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-    } catch {
-      window.open(invoice.pdf_url, "_blank");
+      toast({ title: "PDF heruntergeladen" });
     }
   };
 
@@ -317,30 +332,34 @@ export default function Rechnungen() {
                       {formatCurrency(invoice.total_amount)}
                     </p>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleView(invoice)}>
-                        <Eye className="h-4 w-4 mr-2" />
-                        Ansehen
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDownload(invoice)}>
-                        <Download className="h-4 w-4 mr-2" />
-                        Herunterladen
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setInvoiceToDelete(invoice)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Löschen
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {generatingPdfFor === invoice.id ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  ) : (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-popover">
+                        <DropdownMenuItem onClick={() => handleView(invoice)}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          Ansehen
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDownload(invoice)}>
+                          <Download className="h-4 w-4 mr-2" />
+                          Herunterladen
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setInvoiceToDelete(invoice)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Löschen
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
               </CardContent>
             </Card>
