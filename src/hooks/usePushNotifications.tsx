@@ -3,6 +3,22 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
+// VAPID public key - must match the one in Supabase secrets
+const VAPID_PUBLIC_KEY = 'BN0wPMr6jY7gLNJJhK-VHfY_hNhMJuJLdTw3KE9x5Ks3c8L_5kFr8wNNyLMz0Yt7O8M_QJo5xQVdLx4rKf3nMqA';
+
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, '+')
+    .replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 export function usePushNotifications() {
   const { user } = useAuth();
   const [isSupported, setIsSupported] = useState(false);
@@ -71,7 +87,7 @@ export function usePushNotifications() {
         await navigator.serviceWorker.ready;
       }
 
-      // Subscribe to push - using a simple subscription without applicationServerKey for now
+      // Subscribe to push without VAPID key (simpler setup)
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
       });
