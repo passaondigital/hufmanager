@@ -41,19 +41,59 @@ const Kunden = () => {
   const [showAddHorseModal, setShowAddHorseModal] = useState(false);
   const [addHorseForCustomerId, setAddHorseForCustomerId] = useState<string | null>(null);
 
-  // Fetch profiles (clients) created by this provider
+  // Fetch profiles (clients) - both created by provider AND connected via access_grants
   const { data: clients = [] } = useQuery({
     queryKey: ["provider-clients", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data, error } = await supabase
+      
+      // First get clients created by provider
+      const { data: createdClients, error: createdError } = await supabase
         .from("profiles")
         .select("*")
         .eq("created_by_provider_id", user.id)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data || [];
+        .is("deleted_at", null);
+      
+      if (createdError) throw createdError;
+      
+      // Then get clients connected via access_grants
+      const { data: accessGrants, error: grantsError } = await supabase
+        .from("access_grants")
+        .select("client_id")
+        .eq("provider_id", user.id)
+        .eq("is_active", true);
+      
+      if (grantsError) throw grantsError;
+      
+      const grantedClientIds = accessGrants?.map(g => g.client_id) || [];
+      
+      // Fetch granted client profiles if any exist
+      let grantedClients: any[] = [];
+      if (grantedClientIds.length > 0) {
+        const { data: grantedData, error: grantedError } = await supabase
+          .from("profiles")
+          .select("*")
+          .in("id", grantedClientIds)
+          .is("deleted_at", null);
+        
+        if (grantedError) throw grantedError;
+        grantedClients = grantedData || [];
+      }
+      
+      // Combine and deduplicate
+      const allClients = [...(createdClients || [])];
+      const existingIds = new Set(allClients.map(c => c.id));
+      
+      for (const client of grantedClients) {
+        if (!existingIds.has(client.id)) {
+          allClients.push(client);
+        }
+      }
+      
+      // Sort by created_at descending
+      return allClients.sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
     },
     enabled: !!user?.id,
   });
