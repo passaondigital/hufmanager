@@ -54,6 +54,22 @@ function escapeHtml(str: string | null | undefined): string {
     .replace(/'/g, '&#039;');
 }
 
+// Escape URL for safe inclusion in HTML attributes
+function escapeUrl(url: string | null | undefined): string {
+  if (!url) return '';
+  // Basic URL validation and escaping
+  try {
+    const parsed = new URL(url);
+    // Only allow http, https protocols
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      return '';
+    }
+    return escapeHtml(url);
+  } catch {
+    return '';
+  }
+}
+
 function getLabel(options: readonly { value: string; label: string }[], value?: string): string {
   return options.find(o => o.value === value)?.label || '—';
 }
@@ -423,13 +439,14 @@ export function LTZPdfExport({ analysis, horseName, ownerName, providerName, var
       <div class="hoof-photos">
         ${HOOF_POSITIONS.map(h => {
           const data = hoofData[h.key as keyof typeof hoofData];
+          const safePhotoUrl = escapeUrl(data.photoUrl);
           return `
             <div class="hoof-photo">
-              ${data.photoUrl 
-                ? `<img src="${data.photoUrl}" alt="${h.fullLabel}" />`
+              ${safePhotoUrl 
+                ? `<img src="${safePhotoUrl}" alt="${escapeHtml(h.fullLabel)}" />`
                 : `<div class="no-photo">Kein Foto</div>`
               }
-              <p>${h.fullLabel}</p>
+              <p>${escapeHtml(h.fullLabel)}</p>
             </div>
           `;
         }).join('')}
