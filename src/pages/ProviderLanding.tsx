@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, MapPin, Phone, Mail, Star, Check } from "lucide-react";
+import { Loader2, MapPin, Phone, Mail, Star, Check, Camera } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { LeadChatBot } from "@/components/landing/LeadChatBot";
 import { LandingContactForm } from "@/components/landing/LandingContactForm";
 import { ServiceCard } from "@/components/landing/ServiceCard";
+import { BeforeAfterGallery } from "@/components/landing/BeforeAfterGallery";
 import { toast } from "@/hooks/use-toast";
 
 interface BusinessSettings {
@@ -51,6 +52,14 @@ interface Feedback {
   is_featured: boolean;
 }
 
+interface GalleryImage {
+  id: string;
+  before_url: string;
+  after_url: string;
+  title?: string;
+  description?: string;
+}
+
 const ProviderLanding = () => {
   const { slug } = useParams<{ slug: string }>();
   const [loading, setLoading] = useState(true);
@@ -58,6 +67,7 @@ const ProviderLanding = () => {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -104,15 +114,45 @@ const ProviderLanding = () => {
 
         if (servicesData) setServices(servicesData as Service[]);
 
-        // Fetch featured feedbacks
+        // Fetch featured feedbacks - only from THIS provider
         const { data: feedbackData } = await supabase
           .from('feedbacks')
-          .select('*')
+          .select('id, customer_name, rating, text, is_featured')
           .eq('provider_id', businessData.user_id)
           .eq('is_featured', true)
           .limit(5);
 
         if (feedbackData) setFeedbacks(feedbackData);
+
+        // Fetch hoof photos for gallery (group by horse to create before/after pairs)
+        const { data: hoofPhotos } = await supabase
+          .from('hoof_photos')
+          .select(`
+            id, 
+            photo_url, 
+            hoof_position, 
+            notes,
+            horse_id,
+            horses!inner(name, owner_id)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        // Create before/after pairs from hoof photos (for demo, use consecutive photos)
+        if (hoofPhotos && hoofPhotos.length >= 2) {
+          const pairs: GalleryImage[] = [];
+          for (let i = 0; i < hoofPhotos.length - 1; i += 2) {
+            const horse = hoofPhotos[i].horses as any;
+            pairs.push({
+              id: hoofPhotos[i].id,
+              before_url: hoofPhotos[i + 1].photo_url,
+              after_url: hoofPhotos[i].photo_url,
+              title: horse?.name || "Hufbearbeitung",
+              description: hoofPhotos[i].hoof_position || undefined,
+            });
+          }
+          setGalleryImages(pairs.slice(0, 6));
+        }
 
       } catch (err: any) {
         setError(err.message);
@@ -275,6 +315,25 @@ const ProviderLanding = () => {
                 />
               ))}
             </div>
+          </div>
+        </section>
+      )}
+
+      {/* Before/After Gallery Section */}
+      {galleryImages.length > 0 && (
+        <section className="py-16 px-4">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                <Camera className="h-4 w-4" />
+                Bildergalerie
+              </div>
+              <h2 className="text-2xl font-bold text-foreground mb-2">Vorher & Nachher</h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Überzeugen Sie sich selbst von den Ergebnissen meiner Arbeit
+              </p>
+            </div>
+            <BeforeAfterGallery images={galleryImages} primaryColor={primaryColor} />
           </div>
         </section>
       )}
