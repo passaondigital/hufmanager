@@ -26,7 +26,8 @@ import {
   Loader2,
   Search,
   RefreshCw,
-  AlertTriangle
+  AlertTriangle,
+  KeyRound
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -85,6 +86,11 @@ export default function MissionControl() {
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserFirstName, setNewUserFirstName] = useState("");
   const [newUserLastName, setNewUserLastName] = useState("");
+
+  // Password setup form
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
 
   // Edit form state
   const [editPlanOverride, setEditPlanOverride] = useState<string>("standard");
@@ -295,6 +301,39 @@ export default function MissionControl() {
     }
   };
 
+  const handleSetPassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      toast.error("Bitte beide Passwort-Felder ausfüllen");
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error("Das Passwort muss mindestens 6 Zeichen haben");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Die Passwörter stimmen nicht überein");
+      return;
+    }
+
+    setPasswordSaving(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) throw error;
+
+      toast.success("Dein Passwort wurde erfolgreich gesetzt!");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error: any) {
+      console.error("Error setting password:", error);
+      toast.error(error.message || "Fehler beim Setzen des Passworts");
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
   const filteredUsers = users.filter((u) => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -380,6 +419,51 @@ export default function MissionControl() {
             Zurück
           </Button>
         </div>
+
+        {/* Password Setup Card */}
+        <Card className="mb-6 border-primary/30 bg-primary/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <KeyRound className="w-5 h-5 text-primary" />
+              Permanentes Passwort setzen
+            </CardTitle>
+            <CardDescription>
+              Setze ein permanentes Passwort für deinen Admin-Account, damit du dich ohne Magic Link einloggen kannst.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-4 items-end">
+              <div className="flex-1 space-y-2">
+                <Label htmlFor="newPassword">Neues Passwort</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  placeholder="Mindestens 6 Zeichen"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+              </div>
+              <div className="flex-1 space-y-2">
+                <Label htmlFor="confirmPassword">Passwort bestätigen</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="Passwort wiederholen"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </div>
+              <Button 
+                onClick={handleSetPassword} 
+                disabled={passwordSaving || !newPassword || !confirmPassword}
+                className="sm:w-auto w-full"
+              >
+                {passwordSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Passwort speichern
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         <Tabs defaultValue="users" className="space-y-6">
           <TabsList>
