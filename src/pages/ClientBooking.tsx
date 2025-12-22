@@ -55,7 +55,9 @@ export default function ClientBooking() {
     const fetchData = async () => {
       setLoading(true);
 
-      // Get provider ID from access grants
+      let foundProviderId: string | null = null;
+
+      // Try to get provider ID from access grants first
       const { data: grant } = await supabase
         .from("access_grants")
         .select("provider_id")
@@ -65,13 +67,28 @@ export default function ClientBooking() {
         .maybeSingle();
 
       if (grant) {
-        setProviderId(grant.provider_id);
+        foundProviderId = grant.provider_id;
+      } else {
+        // Fallback: Get provider from created_by_provider_id in profile
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("created_by_provider_id")
+          .eq("id", user.id)
+          .maybeSingle();
+        
+        if (profileData?.created_by_provider_id) {
+          foundProviderId = profileData.created_by_provider_id;
+        }
+      }
+
+      if (foundProviderId) {
+        setProviderId(foundProviderId);
 
         // Fetch provider's active services
         const { data: servicesData } = await supabase
           .from("services")
           .select("id, name, description, base_price, duration, provider_id, booking_action")
-          .eq("provider_id", grant.provider_id)
+          .eq("provider_id", foundProviderId)
           .eq("is_active", true)
           .order("name");
 
