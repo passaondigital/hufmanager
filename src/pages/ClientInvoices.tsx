@@ -7,9 +7,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, FileText, ExternalLink, Search } from "lucide-react";
+import { ArrowLeft, FileText, Eye, Download, Search, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { toast } from "@/hooks/use-toast";
+import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
+import { PdfPreviewDialog } from "@/components/invoices/PdfPreviewDialog";
 
 interface Invoice {
   id: string;
@@ -19,9 +22,23 @@ interface Invoice {
   total_amount: number;
   status: string | null;
   pdf_url: string | null;
+  provider_id: string | null;
+  notes: string | null;
   horse: {
     name: string;
   } | null;
+}
+
+interface ClientProfile {
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  city: string | null;
+  zip_code: string | null;
+  stable_street: string | null;
+  stable_city: string | null;
+  stable_zip: string | null;
+  readable_id: string | null;
 }
 
 export default function ClientInvoices() {
@@ -30,8 +47,15 @@ export default function ClientInvoices() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userProfile, setUserProfile] = useState<{ full_name: string | null; readable_id: string | null } | null>(null);
+  const [userProfile, setUserProfile] = useState<ClientProfile | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // PDF Preview state
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+  const [pdfTitle, setPdfTitle] = useState("");
+  const [pdfFileName, setPdfFileName] = useState("");
+  const [generatingPdfFor, setGeneratingPdfFor] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -42,14 +66,13 @@ export default function ClientInvoices() {
       // Fetch user profile
       const { data: profileData } = await supabase
         .from("profiles")
-        .select("full_name, readable_id")
+        .select("full_name, readable_id, email, phone, city, zip_code, stable_street, stable_city, stable_zip")
         .eq("id", user.id)
         .single();
       
       if (profileData) {
         setUserProfile(profileData);
       }
-      setLoading(true);
       
       const { data, error } = await supabase
         .from("invoices")
@@ -61,6 +84,8 @@ export default function ClientInvoices() {
           total_amount,
           status,
           pdf_url,
+          provider_id,
+          notes,
           horse:horses(name)
         `)
         .eq("client_id", user.id)
@@ -112,6 +137,55 @@ export default function ClientInvoices() {
       style: "currency",
       currency: "EUR",
     }).format(amount);
+  };
+
+  const handleGeneratePdf = async (invoice: Invoice): Promise<Blob | null> => {
+    if (!user) return null;
+    setGeneratingPdfFor(invoice.id);
+    try {
+      const blob = await generateInvoicePdf(invoice, userProfile, invoice.provider_id || user.id);
+      return blob;
+    } catch (error) {
+      console.error("PDF generation failed:", error);
+      toast({
+        title: "PDF-Generierung fehlgeschlagen",
+        description: "Bitte versuchen Sie es erneut.",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setGeneratingPdfFor(null);
+    }
+  };
+
+  const handleViewPdf = async (invoice: Invoice) => {
+    const blob = await handleGeneratePdf(invoice);
+    if (blob) {
+      setPdfBlob(blob);
+      setPdfTitle(`Rechnung ${invoice.invoice_number || ""}`);
+      setPdfFileName(`Rechnung_${invoice.invoice_number || invoice.id.slice(0, 8)}.pdf`);
+      setPdfPreviewOpen(true);
+    }
+  };
+
+  const handleDownloadPdf = async (invoice: Invoice) => {
+    const blob = await handleGeneratePdf(invoice);
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Rechnung_${invoice.invoice_number || invoice.id.slice(0, 8)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: "PDF heruntergeladen" });
+    }
+  };
+
+  const closePdfPreview = () => {
+    setPdfPreviewOpen(false);
+    setPdfBlob(null);
   };
 
   if (authLoading) {
@@ -203,16 +277,32 @@ export default function ClientInvoices() {
                         {getStatusBadge(invoice.status)}
                       </div>
                     </div>
-                    {invoice.pdf_url && (
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="flex-shrink-0"
-                        onClick={() => window.open(invoice.pdf_url!, "_blank")}
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                    )}
+                    <div className="flex flex-col gap-2">
+                      {generatingPdfFor === invoice.id ? (
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      ) : (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleViewPdf(invoice)}
+                            title="Vorschau"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleDownloadPdf(invoice)}
+                            title="Herunterladen"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -220,6 +310,15 @@ export default function ClientInvoices() {
           </div>
         )}
       </main>
+
+      {/* PDF Preview Dialog */}
+      <PdfPreviewDialog
+        open={pdfPreviewOpen}
+        onClose={closePdfPreview}
+        pdfBlob={pdfBlob}
+        title={pdfTitle}
+        fileName={pdfFileName}
+      />
     </div>
   );
 }
