@@ -98,19 +98,27 @@ const Kunden = () => {
     enabled: !!user?.id,
   });
 
-  // Fetch horses
+  // Fetch horses for all clients (by owner_id, regardless of who created them)
   const { data: horses = [] } = useQuery({
-    queryKey: ["provider-horses", user?.id],
+    queryKey: ["provider-horses", user?.id, clients],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id || clients.length === 0) return [];
+      
+      // Get all client IDs
+      const clientIds = clients.map(c => c.id);
+      
+      // Fetch all horses where owner_id matches any of the client IDs
+      // This ensures we see ALL horses belonging to clients, regardless of who created them
       const { data, error } = await supabase
         .from("horses")
         .select("*")
+        .in("owner_id", clientIds)
         .is("deleted_at", null);
+        
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && clients.length > 0,
   });
 
   const filteredClients = clients.filter((c) => {

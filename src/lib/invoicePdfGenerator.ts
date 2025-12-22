@@ -49,18 +49,53 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
     : { r: 217, g: 119, b: 6 }; // Default amber color
 }
 
-// Fetch and convert image to base64
+// Fetch and convert image to base64 with robust error handling
 async function getImageBase64(url: string): Promise<string | null> {
+  if (!url) return null;
+  
   try {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
-    });
-  } catch {
+    // Use no-cors mode to avoid CORS issues, but this means we can't read the response
+    // Instead, we'll try a regular fetch first, then fall back to creating an image element
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
+    try {
+      const response = await fetch(url, { 
+        signal: controller.signal,
+        mode: 'cors',
+        credentials: 'omit'
+      });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        console.warn('Logo fetch failed with status:', response.status);
+        return null;
+      }
+      
+      const blob = await response.blob();
+      
+      // Verify it's actually an image
+      if (!blob.type.startsWith('image/')) {
+        console.warn('Logo URL did not return an image:', blob.type);
+        return null;
+      }
+      
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => {
+          console.warn('FileReader error for logo');
+          resolve(null);
+        };
+        reader.readAsDataURL(blob);
+      });
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      console.warn('Logo fetch error:', fetchError);
+      return null;
+    }
+  } catch (error) {
+    console.warn('Unexpected error loading logo, continuing without it:', error);
     return null;
   }
 }
@@ -97,18 +132,29 @@ export async function generateInvoicePdf(
   let yPos = margin;
 
   // ============ HEADER SECTION ============
-  // Logo (left side)
+  // Logo (left side) - wrapped in try/catch to prevent PDF generation failure
   let logoHeight = 0;
   if (settings.logo_url) {
-    const logoBase64 = await getImageBase64(settings.logo_url);
-    if (logoBase64) {
-      try {
-        const logoWidth = 40;
-        logoHeight = 20;
-        doc.addImage(logoBase64, "PNG", margin, yPos, logoWidth, logoHeight);
-      } catch {
-        // Logo couldn't be added, continue without it
+    try {
+      const logoBase64 = await getImageBase64(settings.logo_url);
+      if (logoBase64) {
+        try {
+          const logoWidth = 40;
+          logoHeight = 20;
+          // Detect image format from base64 header
+          let imageFormat: "PNG" | "JPEG" = "PNG";
+          if (logoBase64.includes("data:image/jpeg") || logoBase64.includes("data:image/jpg")) {
+            imageFormat = "JPEG";
+          }
+          doc.addImage(logoBase64, imageFormat, margin, yPos, logoWidth, logoHeight);
+        } catch (addImageError) {
+          console.warn('Could not add logo to PDF, continuing without it:', addImageError);
+          logoHeight = 0; // Reset since logo wasn't added
+        }
       }
+    } catch (logoError) {
+      console.warn('Error processing logo, generating PDF without it:', logoError);
+      logoHeight = 0;
     }
   }
 
