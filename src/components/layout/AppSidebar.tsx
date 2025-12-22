@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -22,6 +22,7 @@ import {
   ExternalLink,
   ClipboardList,
   Briefcase,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -32,6 +33,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/hooks/useAuth";
 
 // Hook to get count of new leads
 function useNewLeadsCount() {
@@ -84,6 +86,9 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
   const navigate = useNavigate();
   const { data: newLeadsCount = 0 } = useNewLeadsCount();
   const { hasModuleAccess } = useSubscription();
+  const { role } = useAuth();
+  
+  const isAdmin = role === "admin";
 
   // Filter main items based on feature flags
   const mainItems = baseMainItems.filter(item => 
@@ -205,6 +210,23 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 
       {/* Bottom Section */}
       <div className="p-3 border-t border-sidebar-border space-y-1">
+        {/* Admin Link - only visible for admins */}
+        {isAdmin && (
+          <NavLink
+            to="/admin/mission-control"
+            onClick={onNavigate}
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group min-h-[48px]",
+              isActive("/admin/mission-control")
+                ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/30"
+                : "text-amber-500 hover:bg-sidebar-accent hover:text-amber-400"
+            )}
+          >
+            <Shield className={cn("h-5 w-5 flex-shrink-0", collapsed && "mx-auto")} />
+            {!collapsed && <span className="font-medium text-[15px]">Mission Control</span>}
+          </NavLink>
+        )}
+        
         {bottomItems.map((item) => (
           <NavItem key={item.title} item={item} showBadge={false} />
         ))}
