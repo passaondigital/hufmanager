@@ -119,8 +119,12 @@ function App() {
                     {/* Einladungs-Links für Kunden */}
                     <Route path="/connect/:slug" element={<ConnectForm />} />
                     
-                    {/* Admin Mission Control */}
-                    <Route path="/admin/mission-control" element={<MissionControl />} />
+                    {/* Admin Mission Control - nur für Admins */}
+                    <Route path="/admin/mission-control" element={
+                      <ProtectedRoute allowedRoles={["admin"]}>
+                        <MissionControl />
+                      </ProtectedRoute>
+                    } />
 
                     {/* --- 2. PROVIDER (PROFI) ROUTES --- */}
                     <Route
