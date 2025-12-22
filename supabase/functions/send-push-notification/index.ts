@@ -62,6 +62,25 @@ serve(async (req) => {
     const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY') || '';
     const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY') || '';
 
+    // Verify this is a service role request (not anon key)
+    // This function should only be called from server-side (database triggers, other edge functions)
+    const authHeader = req.headers.get('authorization');
+    const isServiceRole = authHeader?.includes(supabaseServiceKey);
+    const isInternalCall = req.headers.get('x-internal-call') === 'true';
+    
+    // Allow calls from database triggers (no auth header but internal) or with service role key
+    if (!isServiceRole && !isInternalCall) {
+      // Check if caller has valid anon key - if so, reject (only service role allowed)
+      const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+      if (authHeader?.includes(supabaseAnonKey || '')) {
+        console.error('Unauthorized: anon key not allowed for this function');
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized - Service role required' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     console.log('VAPID Public Key present:', !!vapidPublicKey);
     console.log('VAPID Private Key present:', !!vapidPrivateKey);
 
