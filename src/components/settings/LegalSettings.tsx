@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { uploadFile, getStorageUrl } from "@/lib/storage";
 
 interface LegalAgreement {
   id: string;
@@ -29,6 +30,7 @@ interface LegalAgreement {
 export function LegalSettings() {
   const [avvAgreement, setAvvAgreement] = useState<LegalAgreement | null>(null);
   const [agbAgreement, setAgbAgreement] = useState<LegalAgreement | null>(null);
+  const [agbSignedUrl, setAgbSignedUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -49,8 +51,16 @@ export function LegalSettings() {
       .eq('provider_id', userData.user.id);
 
     if (data) {
-      setAvvAgreement(data.find(a => a.agreement_type === 'avv') || null);
-      setAgbAgreement(data.find(a => a.agreement_type === 'agb') || null);
+      const avv = data.find(a => a.agreement_type === 'avv') || null;
+      const agb = data.find(a => a.agreement_type === 'agb') || null;
+      setAvvAgreement(avv);
+      setAgbAgreement(agb);
+      
+      // Get signed URL for AGB if exists
+      if (agb?.document_url) {
+        const signedUrl = await getStorageUrl('legal-documents', agb.document_url);
+        setAgbSignedUrl(signedUrl);
+      }
     }
     setLoading(false);
   };
@@ -117,22 +127,16 @@ export function LegalSettings() {
     if (!userData.user) return;
 
     try {
-      const fileName = `${userData.user.id}/agb_${Date.now()}.pdf`;
+      // Use UUID for unpredictable file names
+      const fileName = `${userData.user.id}/agb_${crypto.randomUUID()}.pdf`;
       
-      const { error: uploadError } = await supabase.storage
-        .from('legal-documents')
-        .upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from('legal-documents')
-        .getPublicUrl(fileName);
+      const { path, error: uploadError } = await uploadFile('legal-documents', fileName, file);
+      if (uploadError || !path) throw uploadError || new Error("Upload failed");
 
       if (agbAgreement) {
         await supabase
           .from('legal_agreements')
-          .update({ document_url: urlData.publicUrl })
+          .update({ document_url: path }) // Store path, not URL
           .eq('id', agbAgreement.id);
       } else {
         await supabase
@@ -140,7 +144,7 @@ export function LegalSettings() {
           .insert({
             provider_id: userData.user.id,
             agreement_type: 'agb',
-            document_url: urlData.publicUrl,
+            document_url: path, // Store path, not URL
             version: '1.0',
           });
       }
@@ -256,15 +260,17 @@ export function LegalSettings() {
                 <FileText className="h-8 w-8 text-primary" />
                 <div className="flex-1">
                   <p className="font-medium">AGB hochgeladen</p>
-                  <a 
-                    href={agbAgreement.document_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-sm text-primary hover:underline flex items-center gap-1"
-                  >
-                    PDF anzeigen
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
+                  {agbSignedUrl && (
+                    <a 
+                      href={agbSignedUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline flex items-center gap-1"
+                    >
+                      PDF anzeigen
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
                 </div>
               </div>
               

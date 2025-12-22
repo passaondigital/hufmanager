@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { HoofPhoto, HorseDocument } from "./types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { getStorageUrl, uploadFile } from "@/lib/storage";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +31,36 @@ export function TabDokumente({ horseId, hoofPhotos, documents, onRefresh }: TabD
   const [deleteDoc, setDeleteDoc] = useState<HorseDocument | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Cache for signed URLs
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  
+  // Load signed URLs for documents and photos
+  useEffect(() => {
+    const loadSignedUrls = async () => {
+      const urls: Record<string, string> = {};
+      
+      // Load document URLs
+      for (const doc of documents) {
+        const signedUrl = await getStorageUrl('horse-documents', doc.file_url);
+        if (signedUrl) {
+          urls[doc.id] = signedUrl;
+        }
+      }
+      
+      // Load hoof photo URLs
+      for (const photo of hoofPhotos) {
+        const signedUrl = await getStorageUrl('horse-documents', photo.photo_url);
+        if (signedUrl) {
+          urls[photo.id] = signedUrl;
+        }
+      }
+      
+      setSignedUrls(urls);
+    };
+    
+    loadSignedUrls();
+  }, [documents, hoofPhotos]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -41,28 +72,21 @@ export function TabDokumente({ horseId, hoofPhotos, documents, onRefresh }: TabD
       if (!userData.user) throw new Error("Not authenticated");
 
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
+      // Use UUID for unpredictable file names
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `${horseId}/${fileName}`;
 
       // Upload to storage
-      const { error: uploadError } = await supabase.storage
-        .from('horse-documents')
-        .upload(filePath, file);
+      const { path, error: uploadError } = await uploadFile('horse-documents', filePath, file);
+      if (uploadError || !path) throw uploadError || new Error("Upload failed");
 
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('horse-documents')
-        .getPublicUrl(filePath);
-
-      // Save to database
+      // Save file path to database (not full URL)
       const { error: dbError } = await supabase
         .from('horse_documents')
         .insert({
           horse_id: horseId,
           file_name: file.name,
-          file_url: urlData.publicUrl,
+          file_url: filePath, // Store path, not full URL
           file_type: file.type,
           category: file.type.startsWith('image/') ? 'image' : 'document',
           uploaded_by: userData.user.id,
@@ -159,10 +183,10 @@ export function TabDokumente({ horseId, hoofPhotos, documents, onRefresh }: TabD
                 <div 
                   key={photo.id} 
                   className="aspect-square rounded-lg overflow-hidden bg-muted cursor-pointer hover:opacity-90 transition-opacity"
-                  onClick={() => setSelectedPhoto(photo.photo_url)}
+                  onClick={() => setSelectedPhoto(signedUrls[photo.id] || photo.photo_url)}
                 >
                   <img 
-                    src={photo.photo_url} 
+                    src={signedUrls[photo.id] || photo.photo_url} 
                     alt={photo.hoof_position || "Huf-Foto"}
                     className="h-full w-full object-cover"
                   />
@@ -192,10 +216,10 @@ export function TabDokumente({ horseId, hoofPhotos, documents, onRefresh }: TabD
                   {doc.file_type?.startsWith('image/') ? (
                     <div 
                       className="w-12 h-12 rounded bg-muted overflow-hidden cursor-pointer"
-                      onClick={() => setSelectedPhoto(doc.file_url)}
+                      onClick={() => setSelectedPhoto(signedUrls[doc.id] || doc.file_url)}
                     >
                       <img 
-                        src={doc.file_url} 
+                        src={signedUrls[doc.id] || doc.file_url} 
                         alt={doc.file_name}
                         className="h-full w-full object-cover"
                       />
