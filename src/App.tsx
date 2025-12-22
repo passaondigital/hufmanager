@@ -129,7 +129,7 @@ function App() {
                     {/* --- 2. PROVIDER (PROFI) ROUTES --- */}
                     <Route
                       element={
-                        <ProtectedRoute allowedRoles={["provider"]}>
+                        <ProtectedRoute allowedRoles={["provider", "admin"]}>
                           <AppLayout />
                         </ProtectedRoute>
                       }
