@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,6 +13,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { 
   Shield, 
@@ -27,15 +29,37 @@ import {
   Search,
   RefreshCw,
   AlertTriangle,
-  KeyRound
+  KeyRound,
+  MapPin,
+  FileText,
+  MessageSquare,
+  Map as MapIcon,
+  Sparkles,
+  ArrowUpDown,
+  ChevronUp,
+  ChevronDown,
+  Euro
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 
-interface UserProfile {
+// Horse icon fallback since lucide doesn't have it
+const Horse = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 11a2 2 0 1 0 4 0 2 2 0 1 0-4 0"/>
+    <path d="M13 3.5c3-2 6.5 0 8.5 3s2 8-1.5 11.5"/>
+    <path d="m5 19 2-2"/>
+    <path d="m18 11-3.5 4"/>
+    <path d="M6.5 19.5 3 16l5-5"/>
+    <path d="M7.5 7.5 8 4l4 .5"/>
+  </svg>
+);
+
+interface ProviderData {
   id: string;
   email: string | null;
   full_name: string | null;
+  readable_id: string | null;
   subscription_status: string | null;
   subscription_plan: string | null;
   is_manually_managed: boolean | null;
@@ -51,7 +75,16 @@ interface UserProfile {
   suspended_at: string | null;
   suspended_reason: string | null;
   created_at: string;
-  role?: string;
+  // Business settings data
+  zip_code: string | null;
+  city: string | null;
+  business_name: string | null;
+  phone: string | null;
+  address: string | null;
+  // Computed data
+  base_price: number | null;
+  client_count: number;
+  horse_count: number;
 }
 
 const PLAN_OVERRIDE_OPTIONS = [
@@ -69,18 +102,26 @@ const DEFAULT_FEATURE_FLAGS = {
   beta_features: false,
 };
 
+type SortField = "zip" | "clients" | "horses" | "price" | "name";
+type SortDirection = "asc" | "desc";
+
 export default function MissionControl() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [providers, setProviders] = useState<ProviderData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<ProviderData | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [quickViewOpen, setQuickViewOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Sorting
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   // New user form
   const [newUserEmail, setNewUserEmail] = useState("");
@@ -104,13 +145,12 @@ export default function MissionControl() {
 
   useEffect(() => {
     if (isAdmin) {
-      fetchUsers();
+      fetchProviders();
     }
   }, [isAdmin]);
 
   const checkAdminAccess = async () => {
     if (!user) {
-      // Redirect to auth with redirect parameter to come back here after login
       navigate("/auth?redirect=/admin/mission-control");
       return;
     }
@@ -131,42 +171,238 @@ export default function MissionControl() {
     setIsAdmin(!!data);
   };
 
-  const fetchUsers = async () => {
+  const fetchProviders = async () => {
     setLoading(true);
     try {
-      // Fetch all profiles (admin RLS allows this)
+      // 1. Fetch provider user IDs from user_roles
+      const { data: providerRoles, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "provider");
+
+      if (rolesError) throw rolesError;
+
+      const providerIds = providerRoles?.map(r => r.user_id) || [];
+
+      if (providerIds.length === 0) {
+        setProviders([]);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Fetch profiles for providers only
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("*")
+        .in("id", providerIds)
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
 
       if (profilesError) throw profilesError;
 
-      // Fetch all roles
-      const { data: roles, error: rolesError } = await supabase
-        .from("user_roles")
-        .select("user_id, role");
+      // 3. Fetch business_settings for all providers
+      const { data: businessSettings, error: bsError } = await supabase
+        .from("business_settings")
+        .select("user_id, address, phone, business_name");
 
-      if (rolesError) throw rolesError;
+      if (bsError) console.warn("Could not fetch business_settings:", bsError);
 
-      // Merge roles with profiles
-      const usersWithRoles = (profiles || []).map((profile) => {
-        const userRole = roles?.find((r) => r.user_id === profile.id);
+      // 4. Fetch services for base price (Barhufbearbeitung or cheapest)
+      const { data: allServices, error: servicesError } = await supabase
+        .from("services")
+        .select("provider_id, name, base_price, billing_type")
+        .eq("is_active", true);
+
+      if (servicesError) console.warn("Could not fetch services:", servicesError);
+
+      // 5. Fetch client counts per provider (via access_grants)
+      const { data: accessGrants, error: agError } = await supabase
+        .from("access_grants")
+        .select("provider_id, client_id")
+        .eq("is_active", true);
+
+      if (agError) console.warn("Could not fetch access_grants:", agError);
+
+      // Also count clients created by provider
+      const { data: createdClients, error: ccError } = await supabase
+        .from("profiles")
+        .select("id, created_by_provider_id")
+        .in("created_by_provider_id", providerIds)
+        .is("deleted_at", null);
+
+      if (ccError) console.warn("Could not fetch created clients:", ccError);
+
+      // 6. Fetch horse counts per provider
+      const { data: horses, error: horsesError } = await supabase
+        .from("horses")
+        .select("id, owner_id")
+        .is("deleted_at", null);
+
+      if (horsesError) console.warn("Could not fetch horses:", horsesError);
+
+      // Build lookup maps
+      const bsMap = new globalThis.Map(businessSettings?.map(bs => [bs.user_id, bs]) || []);
+      
+      // Services map: provider_id -> base_price
+      const servicesByProvider = new globalThis.Map<string, number>();
+      allServices?.forEach(service => {
+        if (!service.provider_id) return;
+        
+        const existing = servicesByProvider.get(service.provider_id);
+        const serviceName = service.name?.toLowerCase() || "";
+        
+        // Prefer "Barhufbearbeitung" or similar
+        if (serviceName.includes("barhuf") || serviceName.includes("barefoot")) {
+          servicesByProvider.set(service.provider_id, service.base_price);
+        } else if (service.billing_type === "standard" && (!existing || service.base_price < existing)) {
+          servicesByProvider.set(service.provider_id, service.base_price);
+        }
+      });
+
+      // Client counts per provider
+      const clientCountMap = new globalThis.Map<string, Set<string>>();
+      accessGrants?.forEach(ag => {
+        if (!clientCountMap.has(ag.provider_id)) {
+          clientCountMap.set(ag.provider_id, new Set());
+        }
+        clientCountMap.get(ag.provider_id)!.add(ag.client_id);
+      });
+      createdClients?.forEach(cc => {
+        if (!cc.created_by_provider_id) return;
+        if (!clientCountMap.has(cc.created_by_provider_id)) {
+          clientCountMap.set(cc.created_by_provider_id, new Set());
+        }
+        clientCountMap.get(cc.created_by_provider_id)!.add(cc.id);
+      });
+
+      // Horse counts: need to count horses owned by clients of each provider
+      const horseCountMap = new globalThis.Map<string, number>();
+      providerIds.forEach(pid => {
+        const providerClients = clientCountMap.get(pid) || new Set();
+        const horseCount = horses?.filter(h => providerClients.has(h.owner_id)).length || 0;
+        horseCountMap.set(pid, horseCount);
+      });
+
+      // Merge all data
+      const providersWithData: ProviderData[] = (profiles || []).map(profile => {
+        const bs = bsMap.get(profile.id);
+        
+        // Extract zip and city from address or profile
+        let zipCode = profile.zip_code;
+        let city = profile.city;
+        
+        // Try to parse from business address if not in profile
+        if (!zipCode && bs?.address) {
+          const zipMatch = bs.address.match(/\b(\d{5})\b/);
+          if (zipMatch) zipCode = zipMatch[1];
+        }
+
         return {
-          ...profile,
-          role: userRole?.role || "unknown",
-          feature_flags: profile.feature_flags as UserProfile["feature_flags"],
+          id: profile.id,
+          email: profile.email,
+          full_name: profile.full_name,
+          readable_id: profile.readable_id,
+          subscription_status: profile.subscription_status,
+          subscription_plan: profile.subscription_plan,
+          is_manually_managed: profile.is_manually_managed,
+          plan_override: profile.plan_override,
+          access_valid_until: profile.access_valid_until,
+          feature_flags: profile.feature_flags as ProviderData["feature_flags"],
+          is_suspended: profile.is_suspended,
+          suspended_at: profile.suspended_at,
+          suspended_reason: profile.suspended_reason,
+          created_at: profile.created_at,
+          zip_code: zipCode,
+          city: city,
+          business_name: bs?.business_name || null,
+          phone: bs?.phone || profile.phone,
+          address: bs?.address || null,
+          base_price: servicesByProvider.get(profile.id) || null,
+          client_count: clientCountMap.get(profile.id)?.size || 0,
+          horse_count: horseCountMap.get(profile.id) || 0,
         };
       });
 
-      setUsers(usersWithRoles);
+      setProviders(providersWithData);
     } catch (error) {
-      console.error("Error fetching users:", error);
-      toast.error("Fehler beim Laden der Benutzer");
+      console.error("Error fetching providers:", error);
+      toast.error("Fehler beim Laden der Provider");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="w-4 h-4 text-muted-foreground/50" />;
+    return sortDirection === "asc" 
+      ? <ChevronUp className="w-4 h-4 text-primary" />
+      : <ChevronDown className="w-4 h-4 text-primary" />;
+  };
+
+  const sortedAndFilteredProviders = useMemo(() => {
+    let filtered = providers.filter((p) => {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        p.email?.toLowerCase().includes(searchLower) ||
+        p.full_name?.toLowerCase().includes(searchLower) ||
+        p.readable_id?.toLowerCase().includes(searchLower) ||
+        p.zip_code?.includes(searchLower) ||
+        p.city?.toLowerCase().includes(searchLower) ||
+        p.business_name?.toLowerCase().includes(searchLower)
+      );
+    });
+
+    // Sort
+    filtered.sort((a, b) => {
+      let aVal: number | string;
+      let bVal: number | string;
+
+      switch (sortField) {
+        case "zip":
+          aVal = a.zip_code || "99999";
+          bVal = b.zip_code || "99999";
+          break;
+        case "clients":
+          aVal = a.client_count;
+          bVal = b.client_count;
+          break;
+        case "horses":
+          aVal = a.horse_count;
+          bVal = b.horse_count;
+          break;
+        case "price":
+          aVal = a.base_price || 0;
+          bVal = b.base_price || 0;
+          break;
+        case "name":
+        default:
+          aVal = a.full_name?.toLowerCase() || "";
+          bVal = b.full_name?.toLowerCase() || "";
+      }
+
+      if (typeof aVal === "string") {
+        return sortDirection === "asc" 
+          ? aVal.localeCompare(bVal as string)
+          : (bVal as string).localeCompare(aVal);
+      }
+      return sortDirection === "asc" ? aVal - (bVal as number) : (bVal as number) - aVal;
+    });
+
+    return filtered;
+  }, [providers, searchTerm, sortField, sortDirection]);
+
+  const handleRowClick = (provider: ProviderData) => {
+    setSelectedProvider(provider);
+    setQuickViewOpen(true);
   };
 
   const handleCreateUser = async () => {
@@ -188,12 +424,12 @@ export default function MissionControl() {
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
-      toast.success(`Benutzer ${newUserEmail} wurde erstellt. Eine Einladungs-E-Mail wurde gesendet.`);
+      toast.success(`Benutzer ${newUserEmail} wurde erstellt.`);
       setCreateDialogOpen(false);
       setNewUserEmail("");
       setNewUserFirstName("");
       setNewUserLastName("");
-      fetchUsers();
+      fetchProviders();
     } catch (error: any) {
       console.error("Error creating user:", error);
       toast.error(error.message || "Fehler beim Erstellen des Benutzers");
@@ -202,24 +438,24 @@ export default function MissionControl() {
     }
   };
 
-  const openEditDialog = (userProfile: UserProfile) => {
-    setSelectedUser(userProfile);
-    setEditPlanOverride(userProfile.plan_override || "standard");
+  const openEditDialog = (provider: ProviderData) => {
+    setSelectedProvider(provider);
+    setEditPlanOverride(provider.plan_override || "standard");
     setEditAccessValidUntil(
-      userProfile.access_valid_until
-        ? format(new Date(userProfile.access_valid_until), "yyyy-MM-dd")
+      provider.access_valid_until
+        ? format(new Date(provider.access_valid_until), "yyyy-MM-dd")
         : ""
     );
     setEditFeatureFlags({
       ...DEFAULT_FEATURE_FLAGS,
-      ...(userProfile.feature_flags || {}),
+      ...(provider.feature_flags || {}),
     });
-    setSuspendReason(userProfile.suspended_reason || "");
+    setSuspendReason(provider.suspended_reason || "");
     setEditDialogOpen(true);
   };
 
   const handleSaveUser = async () => {
-    if (!selectedUser) return;
+    if (!selectedProvider) return;
 
     setSaving(true);
     try {
@@ -232,13 +468,13 @@ export default function MissionControl() {
       const { error } = await supabase
         .from("profiles")
         .update(updateData)
-        .eq("id", selectedUser.id);
+        .eq("id", selectedProvider.id);
 
       if (error) throw error;
 
-      toast.success("Benutzer wurde aktualisiert");
+      toast.success("Provider wurde aktualisiert");
       setEditDialogOpen(false);
-      fetchUsers();
+      fetchProviders();
     } catch (error: any) {
       console.error("Error saving user:", error);
       toast.error(error.message || "Fehler beim Speichern");
@@ -248,7 +484,7 @@ export default function MissionControl() {
   };
 
   const handleSuspendUser = async () => {
-    if (!selectedUser) return;
+    if (!selectedProvider) return;
 
     setSaving(true);
     try {
@@ -259,13 +495,13 @@ export default function MissionControl() {
           suspended_at: new Date().toISOString(),
           suspended_reason: suspendReason || "Manuell gesperrt",
         })
-        .eq("id", selectedUser.id);
+        .eq("id", selectedProvider.id);
 
       if (error) throw error;
 
       toast.success("Account wurde gesperrt");
       setEditDialogOpen(false);
-      fetchUsers();
+      fetchProviders();
     } catch (error: any) {
       console.error("Error suspending user:", error);
       toast.error(error.message || "Fehler beim Sperren");
@@ -275,7 +511,7 @@ export default function MissionControl() {
   };
 
   const handleUnsuspendUser = async () => {
-    if (!selectedUser) return;
+    if (!selectedProvider) return;
 
     setSaving(true);
     try {
@@ -286,13 +522,13 @@ export default function MissionControl() {
           suspended_at: null,
           suspended_reason: null,
         })
-        .eq("id", selectedUser.id);
+        .eq("id", selectedProvider.id);
 
       if (error) throw error;
 
       toast.success("Account wurde entsperrt");
       setEditDialogOpen(false);
-      fetchUsers();
+      fetchProviders();
     } catch (error: any) {
       console.error("Error unsuspending user:", error);
       toast.error(error.message || "Fehler beim Entsperren");
@@ -334,27 +570,18 @@ export default function MissionControl() {
     }
   };
 
-  const filteredUsers = users.filter((u) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      u.email?.toLowerCase().includes(searchLower) ||
-      u.full_name?.toLowerCase().includes(searchLower) ||
-      u.id.toLowerCase().includes(searchLower)
-    );
-  });
-
-  const getStatusBadge = (userProfile: UserProfile) => {
-    if (userProfile.is_suspended) {
+  const getStatusBadge = (provider: ProviderData) => {
+    if (provider.is_suspended) {
       return <Badge variant="destructive"><Ban className="w-3 h-3 mr-1" />Gesperrt</Badge>;
     }
-    if (userProfile.plan_override === "lifetime_grant") {
+    if (provider.plan_override === "lifetime_grant") {
       return <Badge className="bg-gradient-to-r from-amber-500 to-yellow-400 text-black"><Crown className="w-3 h-3 mr-1" />Lifetime</Badge>;
     }
-    if (userProfile.plan_override === "employee") {
+    if (provider.plan_override === "employee") {
       return <Badge variant="secondary"><Shield className="w-3 h-3 mr-1" />Employee</Badge>;
     }
-    if (userProfile.access_valid_until) {
-      const validUntil = new Date(userProfile.access_valid_until);
+    if (provider.access_valid_until) {
+      const validUntil = new Date(provider.access_valid_until);
       const isExpired = validUntil < new Date();
       return (
         <Badge variant={isExpired ? "destructive" : "default"}>
@@ -363,10 +590,51 @@ export default function MissionControl() {
         </Badge>
       );
     }
-    if (userProfile.subscription_status === "active") {
+    if (provider.subscription_status === "active") {
       return <Badge variant="default"><CheckCircle className="w-3 h-3 mr-1" />Aktiv</Badge>;
     }
-    return <Badge variant="outline">{userProfile.subscription_status || "Kein Abo"}</Badge>;
+    return <Badge variant="outline">{provider.subscription_status || "Kein Abo"}</Badge>;
+  };
+
+  const getPlanBadge = (provider: ProviderData) => {
+    const plan = provider.plan_override || provider.subscription_plan || "starter";
+    const planLabels: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
+      pro: { label: "Pro", variant: "default" },
+      starter: { label: "Starter", variant: "outline" },
+      lifetime_grant: { label: "Lifetime", variant: "default" },
+      beta_tester: { label: "Beta", variant: "secondary" },
+      employee: { label: "Team", variant: "secondary" },
+    };
+    const config = planLabels[plan] || { label: plan, variant: "outline" as const };
+    return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
+
+  const getModuleIcons = (provider: ProviderData) => {
+    const flags = provider.feature_flags || DEFAULT_FEATURE_FLAGS;
+    return (
+      <div className="flex gap-1">
+        {flags.module_invoicing && (
+          <div className="p-1 rounded bg-primary/10" title="Rechnungen">
+            <FileText className="w-3 h-3 text-primary" />
+          </div>
+        )}
+        {flags.module_chat && (
+          <div className="p-1 rounded bg-primary/10" title="Chat">
+            <MessageSquare className="w-3 h-3 text-primary" />
+          </div>
+        )}
+        {flags.module_maps && (
+          <div className="p-1 rounded bg-primary/10" title="Maps">
+            <MapIcon className="w-3 h-3 text-primary" />
+          </div>
+        )}
+        {flags.beta_features && (
+          <div className="p-1 rounded bg-amber-500/20" title="Beta">
+            <Sparkles className="w-3 h-3 text-amber-500" />
+          </div>
+        )}
+      </div>
+    );
   };
 
   // Access denied screen
@@ -412,7 +680,7 @@ export default function MissionControl() {
               Mission Control
             </h1>
             <p className="text-muted-foreground mt-1">
-              Admin-Dashboard für User-Management
+              Provider-Management & Marktforschung
             </p>
           </div>
           <Button variant="outline" onClick={() => navigate("/dashboard")}>
@@ -428,7 +696,7 @@ export default function MissionControl() {
               Permanentes Passwort setzen
             </CardTitle>
             <CardDescription>
-              Setze ein permanentes Passwort für deinen Admin-Account, damit du dich ohne Magic Link einloggen kannst.
+              Setze ein permanentes Passwort für deinen Admin-Account.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -459,17 +727,17 @@ export default function MissionControl() {
                 className="sm:w-auto w-full"
               >
                 {passwordSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Passwort speichern
+                Speichern
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="users" className="space-y-6">
+        <Tabs defaultValue="providers" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="users" className="gap-2">
+            <TabsTrigger value="providers" className="gap-2">
               <Users className="w-4 h-4" />
-              Benutzer
+              Provider ({providers.length})
             </TabsTrigger>
             <TabsTrigger value="stats" className="gap-2">
               <Settings className="w-4 h-4" />
@@ -477,34 +745,34 @@ export default function MissionControl() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="users" className="space-y-4">
+          <TabsContent value="providers" className="space-y-4">
             {/* Action Bar */}
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Suchen nach Name, E-Mail oder ID..."
+                  placeholder="Suchen nach Name, PID, PLZ, Ort..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={fetchUsers} size="icon">
+                <Button variant="outline" onClick={fetchProviders} size="icon">
                   <RefreshCw className="w-4 h-4" />
                 </Button>
                 <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                   <DialogTrigger asChild>
                     <Button className="gap-2">
                       <UserPlus className="w-4 h-4" />
-                      Neuen Provider anlegen
+                      Neuen Provider
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Neuen Provider anlegen</DialogTitle>
                       <DialogDescription>
-                        Erstelle manuell einen neuen Provider-Account. Der Benutzer erhält eine Einladungs-E-Mail.
+                        Erstelle manuell einen neuen Provider-Account.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
@@ -538,9 +806,6 @@ export default function MissionControl() {
                           />
                         </div>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        Der Account wird mit <code>is_manually_managed = true</code> markiert.
-                      </p>
                     </div>
                     <DialogFooter>
                       <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
@@ -548,7 +813,7 @@ export default function MissionControl() {
                       </Button>
                       <Button onClick={handleCreateUser} disabled={creating}>
                         {creating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        Provider erstellen
+                        Erstellen
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -556,68 +821,133 @@ export default function MissionControl() {
               </div>
             </div>
 
-            {/* User Table */}
+            {/* Provider Table */}
             <Card>
               <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Benutzer</TableHead>
-                      <TableHead>Rolle</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Plan</TableHead>
-                      <TableHead>Erstellt</TableHead>
-                      <TableHead className="text-right">Aktionen</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredUsers.map((userProfile) => (
-                      <TableRow key={userProfile.id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{userProfile.full_name || "—"}</p>
-                            <p className="text-sm text-muted-foreground">{userProfile.email}</p>
-                            {userProfile.is_manually_managed && (
-                              <Badge variant="outline" className="mt-1 text-xs">
-                                Manuell verwaltet
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={userProfile.role === "admin" ? "default" : "secondary"}>
-                            {userProfile.role}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(userProfile)}</TableCell>
-                        <TableCell>
-                          <span className="capitalize">
-                            {userProfile.plan_override || userProfile.subscription_plan || "—"}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(userProfile.created_at), "dd.MM.yyyy", { locale: de })}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openEditDialog(userProfile)}
-                          >
-                            Bearbeiten
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {filteredUsers.length === 0 && (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                          Keine Benutzer gefunden
-                        </TableCell>
+                        <TableHead className="w-[100px]">PID</TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleSort("name")}
+                        >
+                          <div className="flex items-center gap-2">
+                            Provider
+                            {getSortIcon("name")}
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleSort("zip")}
+                        >
+                          <div className="flex items-center gap-2">
+                            Region
+                            {getSortIcon("zip")}
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50 text-right"
+                          onClick={() => handleSort("price")}
+                        >
+                          <div className="flex items-center justify-end gap-2">
+                            Basis-Preis
+                            {getSortIcon("price")}
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50 text-center"
+                          onClick={() => handleSort("clients")}
+                        >
+                          <div className="flex items-center justify-center gap-2">
+                            Kunden
+                            {getSortIcon("clients")}
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50 text-center"
+                          onClick={() => handleSort("horses")}
+                        >
+                          <div className="flex items-center justify-center gap-2">
+                            Pferde
+                            {getSortIcon("horses")}
+                          </div>
+                        </TableHead>
+                        <TableHead>Plan</TableHead>
+                        <TableHead>Module</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Aktionen</TableHead>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {sortedAndFilteredProviders.map((provider) => (
+                        <TableRow 
+                          key={provider.id} 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleRowClick(provider)}
+                        >
+                          <TableCell>
+                            <code className="text-xs font-mono bg-muted px-2 py-1 rounded">
+                              #{provider.readable_id || provider.id.slice(0, 8)}
+                            </code>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{provider.full_name || "—"}</p>
+                              <p className="text-xs text-muted-foreground">{provider.email}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {provider.zip_code || provider.city ? (
+                              <div className="flex items-center gap-1 text-sm">
+                                <MapPin className="w-3 h-3 text-muted-foreground" />
+                                <span>{provider.zip_code || ""} {provider.city || ""}</span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {provider.base_price ? (
+                              <span className="font-medium">{provider.base_price.toFixed(0)} €</span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className="font-medium">{provider.client_count}</span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className="font-medium">{provider.horse_count}</span>
+                          </TableCell>
+                          <TableCell>{getPlanBadge(provider)}</TableCell>
+                          <TableCell>{getModuleIcons(provider)}</TableCell>
+                          <TableCell>{getStatusBadge(provider)}</TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditDialog(provider);
+                              }}
+                            >
+                              Bearbeiten
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {sortedAndFilteredProviders.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                            Keine Provider gefunden
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -627,46 +957,51 @@ export default function MissionControl() {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Gesamt Benutzer
+                    Gesamt Provider
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-3xl font-bold">{users.length}</p>
+                  <p className="text-3xl font-bold">{providers.length}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Provider
+                    Gesamt Kunden
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-3xl font-bold">
-                    {users.filter((u) => u.role === "provider").length}
+                    {providers.reduce((sum, p) => sum + p.client_count, 0)}
                   </p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Manuell verwaltet
+                    Gesamt Pferde
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-3xl font-bold">
-                    {users.filter((u) => u.is_manually_managed).length}
+                    {providers.reduce((sum, p) => sum + p.horse_count, 0)}
                   </p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Gesperrt
+                    Ø Basis-Preis
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-3xl font-bold text-destructive">
-                    {users.filter((u) => u.is_suspended).length}
+                  <p className="text-3xl font-bold">
+                    {(() => {
+                      const withPrice = providers.filter(p => p.base_price);
+                      if (withPrice.length === 0) return "—";
+                      const avg = withPrice.reduce((sum, p) => sum + (p.base_price || 0), 0) / withPrice.length;
+                      return `${avg.toFixed(0)} €`;
+                    })()}
                   </p>
                 </CardContent>
               </Card>
@@ -674,17 +1009,166 @@ export default function MissionControl() {
           </TabsContent>
         </Tabs>
 
+        {/* Quick-View Drawer */}
+        <Sheet open={quickViewOpen} onOpenChange={setQuickViewOpen}>
+          <SheetContent className="sm:max-w-lg overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle className="flex items-center gap-2">
+                <code className="text-sm bg-muted px-2 py-1 rounded">
+                  #{selectedProvider?.readable_id || selectedProvider?.id.slice(0, 8)}
+                </code>
+              </SheetTitle>
+              <SheetDescription>
+                Provider Details & Marktdaten
+              </SheetDescription>
+            </SheetHeader>
+
+            {selectedProvider && (
+              <div className="mt-6 space-y-6">
+                {/* Basic Info */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold">{selectedProvider.full_name || "Unbekannt"}</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">E-Mail</span>
+                      <span>{selectedProvider.email || "—"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Telefon</span>
+                      <span>{selectedProvider.phone || "—"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Firma</span>
+                      <span>{selectedProvider.business_name || "—"}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Location */}
+                <div className="space-y-3">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    Standort
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">PLZ</span>
+                      <span>{selectedProvider.zip_code || "—"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Ort</span>
+                      <span>{selectedProvider.city || "—"}</span>
+                    </div>
+                    {selectedProvider.address && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Adresse</span>
+                        <span className="text-right max-w-[200px]">{selectedProvider.address}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Volume */}
+                <div className="space-y-3">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Volumen
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-muted/50 rounded-lg text-center">
+                      <p className="text-2xl font-bold">{selectedProvider.client_count}</p>
+                      <p className="text-sm text-muted-foreground">Kunden</p>
+                    </div>
+                    <div className="p-4 bg-muted/50 rounded-lg text-center">
+                      <p className="text-2xl font-bold">{selectedProvider.horse_count}</p>
+                      <p className="text-sm text-muted-foreground">Pferde</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Pricing */}
+                <div className="space-y-3">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <Euro className="w-4 h-4" />
+                    Preise
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Basis-Preis</span>
+                      <span className="font-medium">
+                        {selectedProvider.base_price ? `${selectedProvider.base_price.toFixed(2)} €` : "—"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Subscription */}
+                <div className="space-y-3">
+                  <h4 className="font-medium">Abonnement</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Plan</span>
+                      {getPlanBadge(selectedProvider)}
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Status</span>
+                      {getStatusBadge(selectedProvider)}
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Module</span>
+                      {getModuleIcons(selectedProvider)}
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Meta */}
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <div className="flex justify-between">
+                    <span>Erstellt am</span>
+                    <span>{format(new Date(selectedProvider.created_at), "dd.MM.yyyy", { locale: de })}</span>
+                  </div>
+                  {selectedProvider.is_manually_managed && (
+                    <Badge variant="outline" className="mt-2">Manuell verwaltet</Badge>
+                  )}
+                </div>
+
+                <div className="pt-4">
+                  <Button 
+                    className="w-full" 
+                    onClick={() => {
+                      setQuickViewOpen(false);
+                      openEditDialog(selectedProvider);
+                    }}
+                  >
+                    Bearbeiten
+                  </Button>
+                </div>
+              </div>
+            )}
+          </SheetContent>
+        </Sheet>
+
         {/* Edit User Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Benutzer bearbeiten</DialogTitle>
+              <DialogTitle>Provider bearbeiten</DialogTitle>
               <DialogDescription>
-                {selectedUser?.full_name} ({selectedUser?.email})
+                {selectedProvider?.full_name} ({selectedProvider?.email})
               </DialogDescription>
             </DialogHeader>
 
-            {selectedUser && (
+            {selectedProvider && (
               <Tabs defaultValue="subscription" className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="subscription">Abo & Plan</TabsTrigger>
@@ -727,7 +1211,7 @@ export default function MissionControl() {
 
                 <TabsContent value="features" className="space-y-4 mt-4">
                   <p className="text-sm text-muted-foreground mb-4">
-                    Steuere, welche Module dieser Benutzer sieht und nutzen kann.
+                    Steuere, welche Module dieser Provider sieht und nutzen kann.
                   </p>
 
                   <div className="space-y-4">
@@ -794,7 +1278,7 @@ export default function MissionControl() {
                 </TabsContent>
 
                 <TabsContent value="danger" className="space-y-4 mt-4">
-                  {selectedUser.is_suspended ? (
+                  {selectedProvider.is_suspended ? (
                     <div className="space-y-4">
                       <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
                         <div className="flex items-center gap-2 text-destructive mb-2">
@@ -803,14 +1287,14 @@ export default function MissionControl() {
                         </div>
                         <p className="text-sm text-muted-foreground">
                           Gesperrt am:{" "}
-                          {selectedUser.suspended_at
-                            ? format(new Date(selectedUser.suspended_at), "dd.MM.yyyy HH:mm", {
+                          {selectedProvider.suspended_at
+                            ? format(new Date(selectedProvider.suspended_at), "dd.MM.yyyy HH:mm", {
                                 locale: de,
                               })
                             : "Unbekannt"}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          Grund: {selectedUser.suspended_reason || "Kein Grund angegeben"}
+                          Grund: {selectedProvider.suspended_reason || "Kein Grund angegeben"}
                         </p>
                       </div>
 
@@ -832,8 +1316,7 @@ export default function MissionControl() {
                           <span className="font-semibold">Vorsicht!</span>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Ein gesperrter Account kann sich nicht mehr einloggen und hat keinen
-                          Zugriff auf die App.
+                          Ein gesperrter Account kann sich nicht mehr einloggen.
                         </p>
                       </div>
 
@@ -857,8 +1340,7 @@ export default function MissionControl() {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Account wirklich sperren?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              {selectedUser.full_name} ({selectedUser.email}) wird sofort gesperrt
-                              und kann sich nicht mehr einloggen.
+                              {selectedProvider.full_name} ({selectedProvider.email}) wird sofort gesperrt.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
