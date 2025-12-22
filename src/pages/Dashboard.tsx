@@ -6,6 +6,7 @@ import { OverdueAssessmentsWidget } from "@/components/dashboard/OverdueAssessme
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
+import { PushNotificationBanner } from "@/components/notifications/PushNotificationBanner";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -23,6 +24,9 @@ const Dashboard = () => {
       )}
 
       <div className="space-y-6">
+      {/* Push Notification Banner */}
+      <PushNotificationBanner />
+
       {/* Welcome Section */}
       <div className="animate-fade-in">
         <h1 className="text-2xl font-bold text-foreground">Willkommen zurück, {displayName}!</h1>
