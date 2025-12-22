@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Navigate, useSearchParams, Link } from "react-router-dom";
+import { Navigate, useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,11 +14,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, Hammer, Heart, Package } from "lucide-react";
+import { Loader2, Hammer, Heart, Package, Rocket, KeyRound } from "lucide-react";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { PricingModal } from "@/components/subscription/PricingModal";
+
+// Allowed admin emails
+const ADMIN_EMAILS = [
+  "passaondigital@gmail.com",
+  "teamhufmanager@gmail.com"
+];
 
 const loginSchema = z.object({
   email: z.string().email("Ungültige E-Mail-Adresse"),
@@ -37,6 +43,7 @@ type LoginMode = "provider" | "client";
 export default function Auth() {
   const { user, role, loading: authLoading, signIn, signUp } = useAuth();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   
   // Login mode (provider vs client)
@@ -61,6 +68,13 @@ export default function Auth() {
   const [pricingModalOpen, setPricingModalOpen] = useState(false);
   const [pricingModalTitle, setPricingModalTitle] = useState("");
   const [pricingModalDescription, setPricingModalDescription] = useState("");
+
+  // Admin login modal
+  const [adminDialogOpen, setAdminDialogOpen] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminMode, setAdminMode] = useState<"login" | "set-password">("login");
 
   // Check for admin redirect parameter
   const redirectTo = searchParams.get("redirect");
@@ -458,12 +472,138 @@ export default function Auth() {
       </div>
 
       {/* Hidden Admin Shortcut */}
-      <Link
-        to="/admin/mission-control"
+      <button
+        type="button"
+        onClick={() => setAdminDialogOpen(true)}
         className="mt-4 text-xs text-muted-foreground/40 hover:text-muted-foreground/80 transition-opacity"
       >
         🚀
-      </Link>
+      </button>
+
+      {/* Admin Login Dialog */}
+      <Dialog open={adminDialogOpen} onOpenChange={setAdminDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Rocket className="h-5 w-5 text-primary" />
+              Mission Control
+            </DialogTitle>
+            <DialogDescription>
+              {adminMode === "login" 
+                ? "Admin-Zugang für autorisierte Benutzer."
+                : "Setze dein Admin-Passwort für den ersten Login."}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            
+            // Validate email is allowed
+            if (!ADMIN_EMAILS.includes(adminEmail.toLowerCase())) {
+              toast.error("Diese E-Mail ist nicht für den Admin-Zugang autorisiert.");
+              return;
+            }
+
+            setAdminLoading(true);
+
+            if (adminMode === "set-password") {
+              // Send password reset email for first-time setup
+              const { error } = await supabase.auth.resetPasswordForEmail(adminEmail, {
+                redirectTo: `${window.location.origin}/reset-password?admin=true`,
+              });
+              
+              setAdminLoading(false);
+              
+              if (error) {
+                toast.error(error.message);
+              } else {
+                toast.success("Ein Link zum Setzen deines Passworts wurde gesendet!");
+                setAdminDialogOpen(false);
+                setAdminEmail("");
+              }
+            } else {
+              // Normal login
+              const { error } = await signIn(adminEmail, adminPassword);
+              setAdminLoading(false);
+
+              if (error) {
+                if (error.message.includes("Invalid login credentials")) {
+                  toast.error("Ungültige Anmeldedaten. Falls du noch kein Passwort hast, nutze 'Erstes Login'.");
+                } else {
+                  toast.error(error.message);
+                }
+              } else {
+                setAdminDialogOpen(false);
+                navigate("/admin/mission-control");
+              }
+            }
+          }} className="space-y-4">
+            
+            {/* Mode Toggle */}
+            <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg">
+              <button
+                type="button"
+                onClick={() => setAdminMode("login")}
+                className={cn(
+                  "flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all",
+                  adminMode === "login"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Login
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdminMode("set-password")}
+                className={cn(
+                  "flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all",
+                  adminMode === "set-password"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <KeyRound className="h-4 w-4" />
+                Erstes Login
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="admin-email">E-Mail</Label>
+              <Input
+                id="admin-email"
+                type="email"
+                placeholder="admin@email.de"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Nur autorisierte E-Mail-Adressen haben Zugang.
+              </p>
+            </div>
+            
+            {adminMode === "login" && (
+              <div className="space-y-2">
+                <Label htmlFor="admin-password">Passwort</Label>
+                <Input
+                  id="admin-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+            
+            <Button type="submit" className="w-full" disabled={adminLoading}>
+              {adminLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {adminMode === "login" ? "Admin Login" : "Passwort-Link senden"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Password Reset Dialog */}
       <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
