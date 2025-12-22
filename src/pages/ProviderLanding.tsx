@@ -9,7 +9,13 @@ import { LandingContactForm } from "@/components/landing/LandingContactForm";
 import { ServiceCard } from "@/components/landing/ServiceCard";
 import { BeforeAfterGallery } from "@/components/landing/BeforeAfterGallery";
 import { LegalFooter } from "@/components/landing/LegalFooter";
+import { IntakeStatusBadge } from "@/components/landing/IntakeStatusBadge";
+import { ServiceInquiryModal } from "@/components/landing/ServiceInquiryModal";
+import { GallerySection } from "@/components/landing/GallerySection";
+import { ReviewsSection } from "@/components/landing/ReviewsSection";
 import { toast } from "@/hooks/use-toast";
+
+type IntakeStatus = 'open' | 'waitlist' | 'closed';
 
 interface BusinessSettings {
   id: string;
@@ -26,6 +32,8 @@ interface BusinessSettings {
   accept_new_customers: boolean | null;
   impressum_text: string | null;
   terms_text: string | null;
+  client_intake_status: IntakeStatus | null;
+  gallery_images: { url: string; caption?: string }[] | null;
 }
 
 interface Service {
@@ -56,6 +64,14 @@ interface Feedback {
   is_featured: boolean;
 }
 
+interface Review {
+  id: string;
+  reviewer_name: string;
+  rating: number;
+  text: string | null;
+  created_at: string;
+}
+
 interface GalleryImage {
   id: string;
   before_url: string;
@@ -71,9 +87,14 @@ const ProviderLanding = () => {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [profileIncomplete, setProfileIncomplete] = useState(false);
+  const [inquiryModal, setInquiryModal] = useState<{ open: boolean; serviceName: string }>({
+    open: false,
+    serviceName: ""
+  });
 
   useEffect(() => {
     const fetchProviderData = async () => {
@@ -83,7 +104,7 @@ const ProviderLanding = () => {
         // Find provider by subdomain - include legal texts for gatekeeper check
         const { data: businessData, error: businessError } = await supabase
           .from('business_settings')
-          .select('id, user_id, business_name, owner_name, hero_headline, about_text, logo_url, phone, email, address, primary_color, accept_new_customers, subdomain, impressum_text, terms_text')
+          .select('id, user_id, business_name, owner_name, hero_headline, about_text, logo_url, phone, email, address, primary_color, accept_new_customers, subdomain, impressum_text, terms_text, client_intake_status, gallery_images')
           .eq('subdomain', slug)
           .maybeSingle();
 
@@ -101,7 +122,7 @@ const ProviderLanding = () => {
           return;
         }
 
-        setSettings(businessData);
+        setSettings(businessData as unknown as BusinessSettings);
 
         // Fetch active offers
         const { data: offersData } = await supabase
@@ -134,6 +155,17 @@ const ProviderLanding = () => {
           .limit(5);
 
         if (feedbackData) setFeedbacks(feedbackData);
+
+        // Fetch approved reviews
+        const { data: reviewsData } = await supabase
+          .from('reviews')
+          .select('id, reviewer_name, rating, text, created_at')
+          .eq('provider_id', businessData.user_id)
+          .eq('is_approved', true)
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (reviewsData) setReviews(reviewsData);
 
         // Fetch hoof photos for gallery
         const { data: hoofPhotos } = await supabase
@@ -216,11 +248,7 @@ const ProviderLanding = () => {
   const primaryColor = settings.primary_color || '#d97706';
 
   const handleServiceRequest = (serviceName: string) => {
-    document.getElementById('kontakt')?.scrollIntoView({ behavior: 'smooth' });
-    toast({
-      title: `Anfrage für: ${serviceName}`,
-      description: "Bitte füllen Sie das Kontaktformular aus.",
-    });
+    setInquiryModal({ open: true, serviceName });
   };
 
   const handleServiceBook = (serviceName: string) => {
@@ -235,8 +263,15 @@ const ProviderLanding = () => {
     document.getElementById('kontakt')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const intakeStatus = settings.client_intake_status || 'open';
+
   return (
     <div className="min-h-screen bg-background">
+      {/* Intake Status Badge - Top Right */}
+      <div className="fixed top-4 right-4 z-50">
+        <IntakeStatusBadge status={intakeStatus} />
+      </div>
+
       {/* Clean Hero Section - Only Logo, Name, Slogan, CTA */}
       <header 
         className="relative py-20 px-4"
@@ -257,7 +292,7 @@ const ProviderLanding = () => {
             {settings.hero_headline || 'Professionelle Hufpflege für Ihr Pferd'}
           </p>
           
-          {settings.accept_new_customers !== false && (
+          {intakeStatus !== 'closed' && (
             <Button
               size="lg"
               className="gap-2 text-white shadow-lg hover:shadow-xl transition-all"
@@ -265,7 +300,7 @@ const ProviderLanding = () => {
               onClick={scrollToContact}
             >
               <Calendar className="h-5 w-5" />
-              Termin anfragen
+              {intakeStatus === 'waitlist' ? 'Auf Warteliste setzen' : 'Termin anfragen'}
             </Button>
           )}
         </div>
@@ -355,8 +390,18 @@ const ProviderLanding = () => {
         </section>
       )}
 
-      {/* Testimonials Section */}
-      {feedbacks.length > 0 && (
+      {/* Custom Gallery Section */}
+      {settings.gallery_images && settings.gallery_images.length > 0 && (
+        <GallerySection images={settings.gallery_images} primaryColor={primaryColor} />
+      )}
+
+      {/* Reviews Section (from reviews table) */}
+      {reviews.length > 0 && (
+        <ReviewsSection reviews={reviews} primaryColor={primaryColor} />
+      )}
+
+      {/* Legacy Testimonials Section (from feedbacks table) */}
+      {feedbacks.length > 0 && reviews.length === 0 && (
         <section className="py-16 px-4">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold text-foreground mb-8 text-center">Kundenstimmen</h2>
@@ -387,7 +432,7 @@ const ProviderLanding = () => {
       )}
 
       {/* Contact Form Section */}
-      {settings.accept_new_customers !== false && (
+      {intakeStatus !== 'closed' && (
         <section id="kontakt" className="py-16 px-4 bg-muted/30">
           <div className="max-w-5xl mx-auto">
             <LandingContactForm
@@ -415,6 +460,16 @@ const ProviderLanding = () => {
         providerId={settings.user_id}
         providerName={settings.owner_name || settings.business_name || 'Hufbearbeiter'}
         providerLogo={settings.logo_url}
+        primaryColor={primaryColor}
+      />
+
+      {/* Service Inquiry Modal */}
+      <ServiceInquiryModal
+        open={inquiryModal.open}
+        onOpenChange={(open) => setInquiryModal({ ...inquiryModal, open })}
+        serviceName={inquiryModal.serviceName}
+        providerId={settings.user_id}
+        providerEmail={settings.email}
         primaryColor={primaryColor}
       />
     </div>

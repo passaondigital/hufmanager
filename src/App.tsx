@@ -48,6 +48,7 @@ import ImportCenter from "@/pages/ImportCenter";
 import ConnectForm from "@/pages/ConnectForm";
 import Netzwerk from "@/pages/Netzwerk";
 import MissionControl from "@/pages/admin/MissionControl";
+import SubmitReview from "@/pages/SubmitReview";
 
 // Components
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
@@ -119,6 +120,8 @@ function App() {
                     {/* Einladungs-Links für Kunden */}
                     <Route path="/connect/:slug" element={<ConnectForm />} />
                     
+                    {/* Öffentliche Review-Seite */}
+                    <Route path="/submit-review" element={<SubmitReview />} />
                     {/* Admin Mission Control - nur für Admins */}
                     <Route path="/admin/mission-control" element={
                       <ProtectedRoute allowedRoles={["admin"]}>

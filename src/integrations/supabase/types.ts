@@ -273,11 +273,13 @@ export type Database = {
           accept_new_customers: boolean | null
           address: string | null
           business_name: string | null
+          client_intake_status: string | null
           copecart_customer_portal_url: string | null
           copecart_vendor_id: string | null
           created_at: string
           custom_domain: string | null
           email: string | null
+          gallery_images: Json | null
           hero_headline: string | null
           id: string
           impressum_text: string | null
@@ -302,11 +304,13 @@ export type Database = {
           accept_new_customers?: boolean | null
           address?: string | null
           business_name?: string | null
+          client_intake_status?: string | null
           copecart_customer_portal_url?: string | null
           copecart_vendor_id?: string | null
           created_at?: string
           custom_domain?: string | null
           email?: string | null
+          gallery_images?: Json | null
           hero_headline?: string | null
           id?: string
           impressum_text?: string | null
@@ -331,11 +335,13 @@ export type Database = {
           accept_new_customers?: boolean | null
           address?: string | null
           business_name?: string | null
+          client_intake_status?: string | null
           copecart_customer_portal_url?: string | null
           copecart_vendor_id?: string | null
           created_at?: string
           custom_domain?: string | null
           email?: string | null
+          gallery_images?: Json | null
           hero_headline?: string | null
           id?: string
           impressum_text?: string | null
@@ -1205,6 +1211,45 @@ export type Database = {
           p256dh?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      reviews: {
+        Row: {
+          created_at: string
+          id: string
+          is_approved: boolean | null
+          provider_id: string
+          rating: number
+          reviewer_email: string | null
+          reviewer_name: string
+          text: string | null
+          token: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_approved?: boolean | null
+          provider_id: string
+          rating: number
+          reviewer_email?: string | null
+          reviewer_name: string
+          text?: string | null
+          token?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_approved?: boolean | null
+          provider_id?: string
+          rating?: number
+          reviewer_email?: string | null
+          reviewer_name?: string
+          text?: string | null
+          token?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
