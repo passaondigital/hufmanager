@@ -1292,6 +1292,7 @@ export type Database = {
         Args: { link_id: string }
         Returns: undefined
       }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
       provider_can_manage_client_horses: {
         Args: { _client_id: string; _provider_id: string }
         Returns: boolean

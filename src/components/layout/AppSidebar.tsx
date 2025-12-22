@@ -31,6 +31,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { useSubscription } from "@/hooks/useSubscription";
 
 // Hook to get count of new leads
 function useNewLeadsCount() {
@@ -49,15 +50,15 @@ function useNewLeadsCount() {
   });
 }
 
-const mainItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Kalender", url: "/kalender", icon: Calendar },
-  { title: "Kunden", url: "/kunden", icon: Users },
-  { title: "Netzwerk", url: "/netzwerk", icon: Briefcase },
-  { title: "Services", url: "/services", icon: Scissors },
-  { title: "Rechnungen", url: "/rechnungen", icon: FileText },
-  { title: "Hufanalyse", url: "/hufanalyse", icon: ClipboardList },
-  { title: "Chat", url: "/chat", icon: MessagesSquare },
+const baseMainItems = [
+  { title: "Dashboard", url: "/", icon: LayoutDashboard, module: null },
+  { title: "Kalender", url: "/kalender", icon: Calendar, module: null },
+  { title: "Kunden", url: "/kunden", icon: Users, module: null },
+  { title: "Netzwerk", url: "/netzwerk", icon: Briefcase, module: null },
+  { title: "Services", url: "/services", icon: Scissors, module: null },
+  { title: "Rechnungen", url: "/rechnungen", icon: FileText, module: "module_invoicing" as const },
+  { title: "Hufanalyse", url: "/hufanalyse", icon: ClipboardList, module: null },
+  { title: "Chat", url: "/chat", icon: MessagesSquare, module: "module_chat" as const },
 ];
 
 const bottomItems = [
@@ -82,6 +83,12 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { data: newLeadsCount = 0 } = useNewLeadsCount();
+  const { hasModuleAccess } = useSubscription();
+
+  // Filter main items based on feature flags
+  const mainItems = baseMainItems.filter(item => 
+    item.module === null || hasModuleAccess(item.module)
+  );
 
   // Dynamic funnel items with real badge count
   const funnelItems: NavItemType[] = [
