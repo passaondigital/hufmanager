@@ -49,55 +49,42 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
     : { r: 217, g: 119, b: 6 }; // Default amber color
 }
 
-// Fetch and convert image to base64 with robust error handling
-async function getImageBase64(url: string): Promise<string | null> {
+// Simplified logo loader - returns null on ANY error, never throws
+async function tryLoadLogo(url: string): Promise<string | null> {
   if (!url) return null;
   
   try {
-    // Use no-cors mode to avoid CORS issues, but this means we can't read the response
-    // Instead, we'll try a regular fetch first, then fall back to creating an image element
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
     
-    try {
-      const response = await fetch(url, { 
-        signal: controller.signal,
-        mode: 'cors',
-        credentials: 'omit'
-      });
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        console.warn('Logo fetch failed with status:', response.status);
-        return null;
-      }
-      
-      const blob = await response.blob();
-      
-      // Verify it's actually an image
-      if (!blob.type.startsWith('image/')) {
-        console.warn('Logo URL did not return an image:', blob.type);
-        return null;
-      }
-      
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = () => {
-          console.warn('FileReader error for logo');
-          resolve(null);
-        };
-        reader.readAsDataURL(blob);
-      });
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      console.warn('Logo fetch error:', fetchError);
-      return null;
-    }
-  } catch (error) {
-    console.warn('Unexpected error loading logo, continuing without it:', error);
-    return null;
+    const response = await fetch(url, { 
+      signal: controller.signal,
+      mode: 'cors',
+      credentials: 'omit'
+    });
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) return null;
+    
+    const blob = await response.blob();
+    if (!blob.type.startsWith('image/')) return null;
+    
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null; // Silently fail, no logo
   }
+}
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("de-DE", {
+    style: "currency",
+    currency: "EUR",
+  }).format(amount);
 }
 
 export async function generateInvoicePdf(
@@ -105,68 +92,57 @@ export async function generateInvoicePdf(
   clientProfile: ClientProfile | null,
   providerId: string
 ): Promise<Blob> {
-  // Wrap entire function in try/catch to ALWAYS return a valid PDF
+  // Default settings
+  let settings: BusinessSettings = {
+    business_name: null,
+    owner_name: null,
+    address: null,
+    phone: null,
+    email: null,
+    logo_url: null,
+    primary_color: "#d97706",
+    tax_number: null,
+  };
+  
+  // Try to fetch business settings (non-blocking on error)
   try {
-    // Fetch business settings
-    let settings: BusinessSettings = {
-      business_name: null,
-      owner_name: null,
-      address: null,
-      phone: null,
-      email: null,
-      logo_url: null,
-      primary_color: "#d97706",
-      tax_number: null,
-    };
+    const { data } = await supabase
+      .from("business_settings")
+      .select("*")
+      .eq("user_id", providerId)
+      .single();
     
+    if (data) settings = data;
+  } catch {
+    // Use defaults
+  }
+
+  const primaryColor = hexToRgb(settings.primary_color || "#d97706");
+  const doc = new jsPDF();
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 20;
+  let yPos = margin;
+
+  // ============ HEADER SECTION ============
+  // Try to add logo (completely optional, never crashes)
+  let logoHeight = 0;
+  if (settings.logo_url) {
     try {
-      const { data: businessSettings } = await supabase
-        .from("business_settings")
-        .select("*")
-        .eq("user_id", providerId)
-        .single();
-      
-      if (businessSettings) {
-        settings = businessSettings;
-      }
-    } catch (settingsError) {
-      console.warn('Could not fetch business settings, using defaults:', settingsError);
-    }
-
-    const primaryColor = hexToRgb(settings.primary_color || "#d97706");
-    const doc = new jsPDF();
-
-    // Page dimensions
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 20;
-    let yPos = margin;
-
-    // ============ HEADER SECTION ============
-    // Logo (left side) - completely safe, never throws
-    let logoHeight = 0;
-    if (settings.logo_url) {
-      try {
-        const logoBase64 = await getImageBase64(settings.logo_url);
-        if (logoBase64) {
-          try {
-            const logoWidth = 40;
-            logoHeight = 20;
-            // Detect image format from base64 header
-            let imageFormat: "PNG" | "JPEG" = "PNG";
-            if (logoBase64.includes("data:image/jpeg") || logoBase64.includes("data:image/jpg")) {
-              imageFormat = "JPEG";
-            }
-            doc.addImage(logoBase64, imageFormat, margin, yPos, logoWidth, logoHeight);
-          } catch (addImageError) {
-            console.warn('Could not add logo to PDF, continuing without it:', addImageError);
-            logoHeight = 0; // Reset since logo wasn't added
-          }
+      const logoBase64 = await tryLoadLogo(settings.logo_url);
+      if (logoBase64) {
+        const logoWidth = 40;
+        logoHeight = 20;
+        let imageFormat: "PNG" | "JPEG" = "PNG";
+        if (logoBase64.includes("data:image/jpeg") || logoBase64.includes("data:image/jpg")) {
+          imageFormat = "JPEG";
         }
-      } catch (logoError) {
-        console.warn('Error processing logo, generating PDF without it:', logoError);
-        logoHeight = 0;
+        doc.addImage(logoBase64, imageFormat, margin, yPos, logoWidth, logoHeight);
       }
+    } catch {
+      logoHeight = 0; // Skip logo on any error
     }
+  }
 
   // Business info (right side)
   doc.setFontSize(10);
@@ -213,7 +189,7 @@ export async function generateInvoicePdf(
 
   yPos = Math.max(yPos + logoHeight + 10, businessY + 5);
 
-  // Divider line with primary color
+  // Divider line
   doc.setDrawColor(primaryColor.r, primaryColor.g, primaryColor.b);
   doc.setLineWidth(0.5);
   doc.line(margin, yPos, pageWidth - margin, yPos);
@@ -223,17 +199,12 @@ export async function generateInvoicePdf(
   doc.setFontSize(9);
   doc.setTextColor(120, 120, 120);
   
-  // Sender line (small)
-  const senderLine = [
-    settings.business_name,
-    settings.address?.split("\n")[0],
-  ]
+  const senderLine = [settings.business_name, settings.address?.split("\n")[0]]
     .filter(Boolean)
     .join(" • ");
   doc.text(senderLine, margin, yPos);
   yPos += 8;
 
-  // Client address box
   doc.setFontSize(11);
   doc.setTextColor(0, 0, 0);
   doc.setFont("helvetica", "bold");
@@ -245,7 +216,6 @@ export async function generateInvoicePdf(
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   
-  // Client address
   if (clientProfile?.stable_street) {
     doc.text(clientProfile.stable_street, margin, yPos);
     yPos += 4;
@@ -359,27 +329,5 @@ export async function generateInvoicePdf(
     .join(" | ");
   doc.text(footerText, pageWidth / 2, footerY, { align: "center" });
 
-    return doc.output("blob");
-  } catch (error) {
-    // Ultimate fallback: generate a minimal PDF with just the error info
-    console.error('Critical error generating PDF, creating fallback:', error);
-    const fallbackDoc = new jsPDF();
-    fallbackDoc.setFontSize(16);
-    fallbackDoc.text("Rechnung", 20, 30);
-    fallbackDoc.setFontSize(12);
-    fallbackDoc.text(`Rechnungsnummer: ${invoice.invoice_number || invoice.id.slice(0, 8).toUpperCase()}`, 20, 50);
-    fallbackDoc.text(`Betrag: ${new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(invoice.total_amount)}`, 20, 60);
-    fallbackDoc.text(`Datum: ${invoice.issue_date}`, 20, 70);
-    fallbackDoc.setFontSize(10);
-    fallbackDoc.setTextColor(100, 100, 100);
-    fallbackDoc.text("(Dieses PDF wurde im Fallback-Modus erstellt)", 20, 90);
-    return fallbackDoc.output("blob");
-  }
-}
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency: "EUR",
-  }).format(amount);
+  return doc.output("blob");
 }
