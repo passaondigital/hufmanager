@@ -15,6 +15,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 import { toast } from "sonner";
 import { 
   Shield, 
@@ -952,7 +954,8 @@ export default function MissionControl() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="stats">
+          <TabsContent value="stats" className="space-y-6">
+            {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card>
                 <CardHeader className="pb-2">
@@ -1006,6 +1009,312 @@ export default function MissionControl() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Regional Distribution Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Bar Chart - PLZ Regions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Regionale Verteilung (PLZ-Gebiete)</CardTitle>
+                  <CardDescription>Provider nach PLZ-Regionen (erste 2 Ziffern)</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {(() => {
+                    // Group providers by first 2 digits of postal code
+                    const regionCounts = providers.reduce((acc, p) => {
+                      if (p.zip_code && p.zip_code.length >= 2) {
+                        const region = p.zip_code.substring(0, 2);
+                        acc[region] = (acc[region] || 0) + 1;
+                      } else {
+                        acc["Unbekannt"] = (acc["Unbekannt"] || 0) + 1;
+                      }
+                      return acc;
+                    }, {} as Record<string, number>);
+
+                    const chartData = Object.entries(regionCounts)
+                      .map(([region, count]) => ({ region: `${region}xxx`, count }))
+                      .sort((a, b) => b.count - a.count)
+                      .slice(0, 15); // Top 15 regions
+
+                    if (chartData.length === 0) {
+                      return (
+                        <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                          Keine PLZ-Daten verfügbar
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 20 }}>
+                            <XAxis type="number" allowDecimals={false} />
+                            <YAxis 
+                              type="category" 
+                              dataKey="region" 
+                              width={60}
+                              tick={{ fontSize: 12 }}
+                            />
+                            <Tooltip 
+                              formatter={(value: number) => [`${value} Provider`, 'Anzahl']}
+                              contentStyle={{ 
+                                backgroundColor: 'hsl(var(--card))', 
+                                border: '1px solid hsl(var(--border))',
+                                borderRadius: '8px'
+                              }}
+                            />
+                            <Bar 
+                              dataKey="count" 
+                              fill="hsl(var(--primary))" 
+                              radius={[0, 4, 4, 0]}
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+
+              {/* Pie Chart - Plan Distribution */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Plan-Verteilung</CardTitle>
+                  <CardDescription>Aktive Abonnements nach Plan-Typ</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {(() => {
+                    const planCounts = providers.reduce((acc, p) => {
+                      const plan = p.plan_override || p.subscription_plan || "starter";
+                      acc[plan] = (acc[plan] || 0) + 1;
+                      return acc;
+                    }, {} as Record<string, number>);
+
+                    const planLabels: Record<string, string> = {
+                      pro: "Pro",
+                      starter: "Starter",
+                      lifetime_grant: "Lifetime",
+                      beta_tester: "Beta",
+                      employee: "Team",
+                      manual_cash_1y: "Cash 1Y"
+                    };
+
+                    const COLORS = [
+                      'hsl(var(--primary))',
+                      'hsl(var(--chart-2))',
+                      'hsl(var(--chart-3))',
+                      'hsl(var(--chart-4))',
+                      'hsl(var(--chart-5))',
+                      'hsl(var(--muted-foreground))'
+                    ];
+
+                    const chartData = Object.entries(planCounts)
+                      .map(([plan, count]) => ({ 
+                        name: planLabels[plan] || plan, 
+                        value: count,
+                        plan 
+                      }))
+                      .sort((a, b) => b.value - a.value);
+
+                    if (chartData.length === 0) {
+                      return (
+                        <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                          Keine Plan-Daten verfügbar
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={chartData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={60}
+                              outerRadius={100}
+                              paddingAngle={2}
+                              dataKey="value"
+                              label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                              labelLine={false}
+                            >
+                              {chartData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip 
+                              formatter={(value: number) => [`${value} Provider`, 'Anzahl']}
+                              contentStyle={{ 
+                                backgroundColor: 'hsl(var(--card))', 
+                                border: '1px solid hsl(var(--border))',
+                                borderRadius: '8px'
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Volume Distribution */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Kundenvolumen nach Region</CardTitle>
+                <CardDescription>Anzahl Kunden und Pferde pro PLZ-Region</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  // Group by region with volume data
+                  const regionData = providers.reduce((acc, p) => {
+                    const region = p.zip_code?.substring(0, 2) || "??";
+                    if (!acc[region]) {
+                      acc[region] = { providers: 0, clients: 0, horses: 0 };
+                    }
+                    acc[region].providers++;
+                    acc[region].clients += p.client_count;
+                    acc[region].horses += p.horse_count;
+                    return acc;
+                  }, {} as Record<string, { providers: number; clients: number; horses: number }>);
+
+                  const chartData = Object.entries(regionData)
+                    .map(([region, data]) => ({
+                      region: region === "??" ? "Unbekannt" : `${region}xxx`,
+                      ...data
+                    }))
+                    .sort((a, b) => b.clients - a.clients)
+                    .slice(0, 12);
+
+                  if (chartData.length === 0) {
+                    return (
+                      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                        Keine Daten verfügbar
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="h-[350px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={chartData} margin={{ left: 10, right: 30, top: 10, bottom: 30 }}>
+                          <XAxis 
+                            dataKey="region" 
+                            tick={{ fontSize: 11 }}
+                            angle={-45}
+                            textAnchor="end"
+                            height={60}
+                          />
+                          <YAxis allowDecimals={false} />
+                          <Tooltip 
+                            formatter={(value: number, name: string) => {
+                              const labels: Record<string, string> = {
+                                clients: 'Kunden',
+                                horses: 'Pferde',
+                                providers: 'Provider'
+                              };
+                              return [`${value}`, labels[name] || name];
+                            }}
+                            contentStyle={{ 
+                              backgroundColor: 'hsl(var(--card))', 
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px'
+                            }}
+                          />
+                          <Legend 
+                            formatter={(value) => {
+                              const labels: Record<string, string> = {
+                                clients: 'Kunden',
+                                horses: 'Pferde'
+                              };
+                              return labels[value] || value;
+                            }}
+                          />
+                          <Bar dataKey="clients" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="horses" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+
+            {/* Pricing by Region */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Durchschnittspreise nach Region</CardTitle>
+                <CardDescription>Ø Basis-Preis pro PLZ-Region</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  // Calculate average price per region
+                  const regionPrices = providers.reduce((acc, p) => {
+                    if (!p.base_price) return acc;
+                    const region = p.zip_code?.substring(0, 2) || "??";
+                    if (!acc[region]) {
+                      acc[region] = { total: 0, count: 0 };
+                    }
+                    acc[region].total += p.base_price;
+                    acc[region].count++;
+                    return acc;
+                  }, {} as Record<string, { total: number; count: number }>);
+
+                  const chartData = Object.entries(regionPrices)
+                    .map(([region, data]) => ({
+                      region: region === "??" ? "Unbekannt" : `${region}xxx`,
+                      avgPrice: Math.round(data.total / data.count),
+                      count: data.count
+                    }))
+                    .filter(d => d.count >= 1)
+                    .sort((a, b) => b.avgPrice - a.avgPrice)
+                    .slice(0, 15);
+
+                  if (chartData.length === 0) {
+                    return (
+                      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                        Keine Preisdaten verfügbar
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 40 }}>
+                          <XAxis 
+                            type="number" 
+                            domain={[0, 'auto']}
+                            tickFormatter={(value) => `${value}€`}
+                          />
+                          <YAxis 
+                            type="category" 
+                            dataKey="region" 
+                            width={60}
+                            tick={{ fontSize: 12 }}
+                          />
+                          <Tooltip 
+                            formatter={(value: number) => [`${value} €`, 'Ø Preis']}
+                            contentStyle={{ 
+                              backgroundColor: 'hsl(var(--card))', 
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px'
+                            }}
+                          />
+                          <Bar 
+                            dataKey="avgPrice" 
+                            fill="hsl(var(--chart-3))" 
+                            radius={[0, 4, 4, 0]}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
 
