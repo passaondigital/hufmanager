@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Navigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,7 @@ type LoginMode = "provider" | "client";
 
 export default function Auth() {
   const { user, role, loading: authLoading, signIn, signUp } = useAuth();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   
   // Login mode (provider vs client)
@@ -61,8 +62,15 @@ export default function Auth() {
   const [pricingModalTitle, setPricingModalTitle] = useState("");
   const [pricingModalDescription, setPricingModalDescription] = useState("");
 
+  // Check for admin redirect parameter
+  const redirectTo = searchParams.get("redirect");
+
   // Redirect if already logged in
   if (!authLoading && user && role) {
+    // If there's a redirect parameter, use it
+    if (redirectTo) {
+      return <Navigate to={redirectTo} replace />;
+    }
     if (role === "provider") {
       return <Navigate to="/" replace />;
     }
@@ -448,6 +456,14 @@ export default function Auth() {
           AGB
         </a>
       </div>
+
+      {/* Hidden Admin Shortcut */}
+      <Link
+        to="/admin/mission-control"
+        className="mt-4 text-xs text-muted-foreground/40 hover:text-muted-foreground/80 transition-opacity"
+      >
+        🚀
+      </Link>
 
       {/* Password Reset Dialog */}
       <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>

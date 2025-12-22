@@ -104,7 +104,8 @@ export default function MissionControl() {
 
   const checkAdminAccess = async () => {
     if (!user) {
-      setIsAdmin(false);
+      // Redirect to auth with redirect parameter to come back here after login
+      navigate("/auth?redirect=/admin/mission-control");
       return;
     }
 
