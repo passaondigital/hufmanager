@@ -3,16 +3,19 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
-// VAPID public key - must match the one in Supabase secrets
+// VAPID public key - This should match the one stored in Supabase secrets
+// Users need to generate their own VAPID keys and store them in Supabase secrets
+// Generate with: npx web-push generate-vapid-keys
 const VAPID_PUBLIC_KEY = 'BN0wPMr6jY7gLNJJhK-VHfY_hNhMJuJLdTw3KE9x5Ks3c8L_5kFr8wNNyLMz0Yt7O8M_QJo5xQVdLx4rKf3nMqA';
 
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
+function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding)
     .replace(/-/g, '+')
     .replace(/_/g, '/');
   const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
+  const buffer = new ArrayBuffer(rawData.length);
+  const outputArray = new Uint8Array(buffer);
   for (let i = 0; i < rawData.length; ++i) {
     outputArray[i] = rawData.charCodeAt(i);
   }
@@ -83,13 +86,17 @@ export function usePushNotifications() {
       // Register service worker if not already registered
       let registration = await navigator.serviceWorker.getRegistration();
       if (!registration) {
+        console.log('Registering service worker...');
         registration = await navigator.serviceWorker.register('/sw.js');
         await navigator.serviceWorker.ready;
+        console.log('Service worker registered');
       }
 
-      // Subscribe to push without VAPID key (simpler setup)
+      // Subscribe to push with VAPID key for proper authentication
+      console.log('Subscribing to push notifications...');
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
 
       const subscriptionJson = subscription.toJSON();
