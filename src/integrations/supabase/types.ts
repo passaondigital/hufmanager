@@ -1072,6 +1072,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          access_valid_until: string | null
           avatar_url: string | null
           business_hours: Json | null
           city: string | null
@@ -1081,13 +1082,17 @@ export type Database = {
           deleted_at: string | null
           email: string | null
           emergency_contacts: Json | null
+          feature_flags: Json | null
           full_name: string | null
           has_logged_in: boolean | null
           ical_token: string | null
           id: string
           invited_at: string | null
+          is_manually_managed: boolean | null
+          is_suspended: boolean | null
           onboarding_completed: boolean | null
           phone: string | null
+          plan_override: string | null
           readable_id: string | null
           stable_city: string | null
           stable_latitude: number | null
@@ -1096,10 +1101,13 @@ export type Database = {
           stable_zip: string | null
           subscription_plan: string | null
           subscription_status: string | null
+          suspended_at: string | null
+          suspended_reason: string | null
           updated_at: string
           zip_code: string | null
         }
         Insert: {
+          access_valid_until?: string | null
           avatar_url?: string | null
           business_hours?: Json | null
           city?: string | null
@@ -1109,13 +1117,17 @@ export type Database = {
           deleted_at?: string | null
           email?: string | null
           emergency_contacts?: Json | null
+          feature_flags?: Json | null
           full_name?: string | null
           has_logged_in?: boolean | null
           ical_token?: string | null
           id: string
           invited_at?: string | null
+          is_manually_managed?: boolean | null
+          is_suspended?: boolean | null
           onboarding_completed?: boolean | null
           phone?: string | null
+          plan_override?: string | null
           readable_id?: string | null
           stable_city?: string | null
           stable_latitude?: number | null
@@ -1124,10 +1136,13 @@ export type Database = {
           stable_zip?: string | null
           subscription_plan?: string | null
           subscription_status?: string | null
+          suspended_at?: string | null
+          suspended_reason?: string | null
           updated_at?: string
           zip_code?: string | null
         }
         Update: {
+          access_valid_until?: string | null
           avatar_url?: string | null
           business_hours?: Json | null
           city?: string | null
@@ -1137,13 +1152,17 @@ export type Database = {
           deleted_at?: string | null
           email?: string | null
           emergency_contacts?: Json | null
+          feature_flags?: Json | null
           full_name?: string | null
           has_logged_in?: boolean | null
           ical_token?: string | null
           id?: string
           invited_at?: string | null
+          is_manually_managed?: boolean | null
+          is_suspended?: boolean | null
           onboarding_completed?: boolean | null
           phone?: string | null
+          plan_override?: string | null
           readable_id?: string | null
           stable_city?: string | null
           stable_latitude?: number | null
@@ -1152,6 +1171,8 @@ export type Database = {
           stable_zip?: string | null
           subscription_plan?: string | null
           subscription_status?: string | null
+          suspended_at?: string | null
+          suspended_reason?: string | null
           updated_at?: string
           zip_code?: string | null
         }
@@ -1277,7 +1298,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "provider" | "client"
+      app_role: "provider" | "client" | "admin"
       billing_type: "standard" | "flat_rate" | "series"
       contact_category: "client" | "partner" | "supplier" | "lead"
       equine_type: "horse" | "pony" | "donkey" | "mule" | "zebra"
@@ -1408,7 +1429,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["provider", "client"],
+      app_role: ["provider", "client", "admin"],
       billing_type: ["standard", "flat_rate", "series"],
       contact_category: ["client", "partner", "supplier", "lead"],
       equine_type: ["horse", "pony", "donkey", "mule", "zebra"],
