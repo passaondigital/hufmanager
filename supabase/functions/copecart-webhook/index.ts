@@ -20,20 +20,24 @@ function getPlanFromProductId(productId: string): string {
 }
 
 // Constant-time string comparison to prevent timing attacks
+// Uses TextEncoder for consistent byte comparison and fixed iteration count
 function constantTimeCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) {
-    // Still compare to maintain constant time even for length mismatch
-    let dummy = 0;
-    for (let i = 0; i < a.length; i++) {
-      dummy |= a.charCodeAt(i) ^ a.charCodeAt(i);
-    }
-    return false;
+  const encoder = new TextEncoder();
+  const aBytes = encoder.encode(a);
+  const bBytes = encoder.encode(b);
+  
+  // Use the longer length to ensure consistent timing regardless of input lengths
+  const maxLength = Math.max(aBytes.length, bBytes.length, 1);
+  
+  let result = aBytes.length ^ bBytes.length; // Non-zero if lengths differ
+  
+  for (let i = 0; i < maxLength; i++) {
+    // Use 0 as fallback for shorter string to maintain constant iterations
+    const aByte = i < aBytes.length ? aBytes[i] : 0;
+    const bByte = i < bBytes.length ? bBytes[i] : 0;
+    result |= aByte ^ bByte;
   }
   
-  let result = 0;
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
   return result === 0;
 }
 
