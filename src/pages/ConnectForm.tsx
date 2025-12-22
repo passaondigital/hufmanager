@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,10 +9,20 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { CheckCircle, Loader2, Footprints, User, MapPin } from "lucide-react";
+import { z } from "zod";
+
+// Input validation schema
+const formSchema = z.object({
+  name: z.string().trim().min(2, "Name muss mindestens 2 Zeichen haben").max(100, "Name darf maximal 100 Zeichen haben"),
+  phone: z.string().trim().max(30, "Telefonnummer darf maximal 30 Zeichen haben").optional().or(z.literal("")),
+  email: z.string().trim().email("Ungültige E-Mail-Adresse").max(255, "E-Mail darf maximal 255 Zeichen haben").optional().or(z.literal("")),
+  horse_name: z.string().trim().min(2, "Pferdename muss mindestens 2 Zeichen haben").max(100, "Pferdename darf maximal 100 Zeichen haben"),
+  stable_location: z.string().trim().max(200, "Stallname darf maximal 200 Zeichen haben").optional().or(z.literal("")),
+  message: z.string().trim().max(1000, "Nachricht darf maximal 1000 Zeichen haben").optional().or(z.literal("")),
+});
 
 const ConnectForm = () => {
   const { slug } = useParams<{ slug: string }>();
-  const navigate = useNavigate();
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -43,18 +53,25 @@ const ConnectForm = () => {
   });
 
   const submitMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (validatedData: z.infer<typeof formSchema>) => {
       if (!magicLink?.provider_id) throw new Error("No provider");
 
-      // Create lead entry
+      // Build message with validated and trimmed data
+      const messageContent = [
+        `Pferd: ${validatedData.horse_name}`,
+        validatedData.stable_location ? `Stall: ${validatedData.stable_location}` : null,
+        validatedData.message || null,
+      ].filter(Boolean).join("\n\n");
+
+      // Create lead entry with validated data
       const { error: leadError } = await supabase
         .from("leads")
         .insert({
           provider_id: magicLink.provider_id,
-          name: formData.name,
-          phone: formData.phone || null,
-          email: formData.email || null,
-          message: `Pferd: ${formData.horse_name}\nStall: ${formData.stable_location}\n\n${formData.message}`,
+          name: validatedData.name,
+          phone: validatedData.phone || null,
+          email: validatedData.email || null,
+          message: messageContent,
           source: "magic_link",
           lead_type: "termin",
           status: "neu",
@@ -62,16 +79,16 @@ const ConnectForm = () => {
 
       if (leadError) throw leadError;
 
-      // Create contact entry
+      // Create contact entry with validated data
       const { error: contactError } = await supabase
         .from("contacts")
         .insert({
           provider_id: magicLink.provider_id,
           category: "lead",
-          full_name: formData.name,
-          phone: formData.phone || null,
-          email: formData.email || null,
-          notes: `Pferd: ${formData.horse_name}\nStall: ${formData.stable_location}`,
+          full_name: validatedData.name,
+          phone: validatedData.phone || null,
+          email: validatedData.email || null,
+          notes: `Pferd: ${validatedData.horse_name}${validatedData.stable_location ? `\nStall: ${validatedData.stable_location}` : ""}`,
           source: "magic_link",
         });
 
@@ -85,7 +102,8 @@ const ConnectForm = () => {
     onSuccess: () => {
       setSubmitted(true);
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Form submission error:", error);
       toast({
         title: "Fehler",
         description: "Deine Anfrage konnte nicht gesendet werden. Bitte versuche es später erneut.",
@@ -96,15 +114,21 @@ const ConnectForm = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.horse_name) {
+    
+    // Validate form data with zod schema
+    const result = formSchema.safeParse(formData);
+    
+    if (!result.success) {
+      const firstError = result.error.errors[0];
       toast({
-        title: "Bitte ausfüllen",
-        description: "Name und Pferdename sind erforderlich.",
+        title: "Ungültige Eingabe",
+        description: firstError.message,
         variant: "destructive",
       });
       return;
     }
-    submitMutation.mutate();
+    
+    submitMutation.mutate(result.data);
   };
 
   if (isLoading) {
@@ -172,6 +196,7 @@ const ConnectForm = () => {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Max Mustermann"
                 required
+                maxLength={100}
               />
             </div>
 
@@ -184,6 +209,7 @@ const ConnectForm = () => {
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="+49 123 456789"
+                  maxLength={30}
                 />
               </div>
               <div className="space-y-2">
@@ -194,6 +220,7 @@ const ConnectForm = () => {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="max@example.com"
+                  maxLength={255}
                 />
               </div>
             </div>
@@ -209,6 +236,7 @@ const ConnectForm = () => {
                 onChange={(e) => setFormData({ ...formData, horse_name: e.target.value })}
                 placeholder="Blitz"
                 required
+                maxLength={100}
               />
             </div>
 
@@ -222,17 +250,19 @@ const ConnectForm = () => {
                 value={formData.stable_location}
                 onChange={(e) => setFormData({ ...formData, stable_location: e.target.value })}
                 placeholder="Reiterhof Sonnenschein, Musterstadt"
+                maxLength={200}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="message">Nachricht (optional)</Label>
+              <Label htmlFor="message">Nachricht (optional, max. 1000 Zeichen)</Label>
               <Textarea
                 id="message"
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 placeholder="z.B. Wann ist der beste Zeitraum für einen Termin?"
                 rows={3}
+                maxLength={1000}
               />
             </div>
 
