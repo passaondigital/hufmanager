@@ -1185,6 +1185,7 @@ export type Database = {
         Row: {
           base_price: number
           billing_type: Database["public"]["Enums"]["billing_type"]
+          booking_action: string
           category: string
           created_at: string
           description: string | null
@@ -1198,6 +1199,7 @@ export type Database = {
         Insert: {
           base_price?: number
           billing_type?: Database["public"]["Enums"]["billing_type"]
+          booking_action?: string
           category?: string
           created_at?: string
           description?: string | null
@@ -1211,6 +1213,7 @@ export type Database = {
         Update: {
           base_price?: number
           billing_type?: Database["public"]["Enums"]["billing_type"]
+          booking_action?: string
           category?: string
           created_at?: string
           description?: string | null

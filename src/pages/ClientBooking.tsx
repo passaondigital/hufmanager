@@ -28,6 +28,7 @@ interface Service {
   base_price: number;
   duration: number | null;
   provider_id: string;
+  booking_action: 'direct_book' | 'request_only';
 }
 
 interface Horse {
@@ -75,12 +76,12 @@ export default function ClientBooking() {
         // Fetch provider's active services
         const { data: servicesData } = await supabase
           .from("services")
-          .select("id, name, description, base_price, duration, provider_id")
+          .select("id, name, description, base_price, duration, provider_id, booking_action")
           .eq("provider_id", grant.provider_id)
           .eq("is_active", true)
           .order("name");
 
-        setServices(servicesData || []);
+        setServices((servicesData || []) as Service[]);
       }
 
       // Fetch user's horses
@@ -229,6 +230,9 @@ export default function ClientBooking() {
                           <p className="font-bold text-primary">
                             {formatCurrency(service.base_price)}
                           </p>
+                          {service.booking_action === "request_only" && (
+                            <span className="text-xs text-orange-600">Nur Anfrage</span>
+                          )}
                           {selectedService?.id === service.id && (
                             <Check className="h-5 w-5 text-primary mt-1 ml-auto" />
                           )}
