@@ -46,73 +46,85 @@ export default function ClientChat() {
     const initChat = async () => {
       setLoading(true);
       
-      // 1. Find provider from access_grants
-      const { data: accessGrant } = await supabase
-        .from("access_grants")
-        .select("provider_id")
-        .eq("client_id", user.id)
-        .eq("is_active", true)
-        .limit(1)
-        .maybeSingle();
-      
-      let providerId = accessGrant?.provider_id;
-      
-      // 2. Fallback: Check if created by a provider
-      if (!providerId) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("created_by_provider_id")
-          .eq("id", user.id)
+      try {
+        // 1. Find provider from access_grants
+        const { data: accessGrant } = await supabase
+          .from("access_grants")
+          .select("provider_id")
+          .eq("client_id", user.id)
+          .eq("is_active", true)
+          .limit(1)
           .maybeSingle();
         
-        providerId = profile?.created_by_provider_id;
-      }
-      
-      if (!providerId) {
-        setLoading(false);
-        return;
-      }
-      
-      // 3. Load provider info
-      const { data: providerProfile } = await supabase
-        .from("profiles")
-        .select("id, full_name, email")
-        .eq("id", providerId)
-        .maybeSingle();
-      
-      if (providerProfile) {
-        setProvider(providerProfile);
-      }
-      
-      // 4. Find or create conversation
-      const { data: existingConv } = await supabase
-        .from("conversations")
-        .select("id")
-        .eq("provider_id", providerId)
-        .eq("client_id", user.id)
-        .maybeSingle();
-      
-      if (existingConv) {
-        setConversationId(existingConv.id);
-      } else {
-        // Create new conversation
-        const { data: newConv, error } = await supabase
-          .from("conversations")
-          .insert({
-            provider_id: providerId,
-            client_id: user.id,
-            subject: "Chat",
-            last_message_at: new Date().toISOString(),
-          })
-          .select("id")
-          .single();
+        let providerId = accessGrant?.provider_id;
         
-        if (!error && newConv) {
-          setConversationId(newConv.id);
+        // 2. Fallback: Check if created by a provider
+        if (!providerId) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("created_by_provider_id")
+            .eq("id", user.id)
+            .maybeSingle();
+          
+          providerId = profile?.created_by_provider_id;
         }
+        
+        if (!providerId) {
+          // No provider found - stop loading and show empty state
+          setLoading(false);
+          return;
+        }
+        
+        // 3. Load provider info
+        const { data: providerProfile } = await supabase
+          .from("profiles")
+          .select("id, full_name, email")
+          .eq("id", providerId)
+          .maybeSingle();
+        
+        if (providerProfile) {
+          setProvider(providerProfile);
+        } else {
+          // Provider profile not found - stop loading
+          setLoading(false);
+          return;
+        }
+        
+        // 4. Find existing conversation
+        const { data: existingConv } = await supabase
+          .from("conversations")
+          .select("id")
+          .eq("provider_id", providerId)
+          .eq("client_id", user.id)
+          .maybeSingle();
+        
+        if (existingConv) {
+          setConversationId(existingConv.id);
+        } else {
+          // 5. Create new conversation immediately so chat works
+          const { data: newConv, error } = await supabase
+            .from("conversations")
+            .insert({
+              provider_id: providerId,
+              client_id: user.id,
+              subject: "Chat",
+              last_message_at: new Date().toISOString(),
+            })
+            .select("id")
+            .single();
+          
+          if (!error && newConv) {
+            setConversationId(newConv.id);
+          } else {
+            console.error("Failed to create conversation:", error);
+          }
+        }
+      } catch (error) {
+        console.error("Error initializing chat:", error);
+      } finally {
+        // CRITICAL: Always stop loading, even if errors occur
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
     
     initChat();
