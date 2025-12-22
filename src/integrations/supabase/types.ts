@@ -280,6 +280,7 @@ export type Database = {
           email: string | null
           hero_headline: string | null
           id: string
+          impressum_text: string | null
           logo_url: string | null
           owner_name: string | null
           paypal_link: string | null
@@ -290,6 +291,7 @@ export type Database = {
           stripe_public_key: string | null
           subdomain: string | null
           tax_number: string | null
+          terms_text: string | null
           travel_cost_flat: number | null
           travel_cost_per_km: number | null
           updated_at: string
@@ -307,6 +309,7 @@ export type Database = {
           email?: string | null
           hero_headline?: string | null
           id?: string
+          impressum_text?: string | null
           logo_url?: string | null
           owner_name?: string | null
           paypal_link?: string | null
@@ -317,6 +320,7 @@ export type Database = {
           stripe_public_key?: string | null
           subdomain?: string | null
           tax_number?: string | null
+          terms_text?: string | null
           travel_cost_flat?: number | null
           travel_cost_per_km?: number | null
           updated_at?: string
@@ -334,6 +338,7 @@ export type Database = {
           email?: string | null
           hero_headline?: string | null
           id?: string
+          impressum_text?: string | null
           logo_url?: string | null
           owner_name?: string | null
           paypal_link?: string | null
@@ -344,6 +349,7 @@ export type Database = {
           stripe_public_key?: string | null
           subdomain?: string | null
           tax_number?: string | null
+          terms_text?: string | null
           travel_cost_flat?: number | null
           travel_cost_per_km?: number | null
           updated_at?: string
