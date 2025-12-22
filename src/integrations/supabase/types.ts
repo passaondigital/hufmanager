@@ -176,11 +176,15 @@ export type Database = {
           horse_id: string
           id: string
           is_confirmed_by_client: boolean | null
+          is_internally_paid: boolean | null
+          is_series_appointment: boolean | null
           location: string | null
           notes: string | null
           price: number | null
           provider_id: string | null
           recurring_group_id: string | null
+          series_current: number | null
+          series_total: number | null
           service_type: string | null
           signature_url: string | null
           signed_at: string | null
@@ -204,11 +208,15 @@ export type Database = {
           horse_id: string
           id?: string
           is_confirmed_by_client?: boolean | null
+          is_internally_paid?: boolean | null
+          is_series_appointment?: boolean | null
           location?: string | null
           notes?: string | null
           price?: number | null
           provider_id?: string | null
           recurring_group_id?: string | null
+          series_current?: number | null
+          series_total?: number | null
           service_type?: string | null
           signature_url?: string | null
           signed_at?: string | null
@@ -232,11 +240,15 @@ export type Database = {
           horse_id?: string
           id?: string
           is_confirmed_by_client?: boolean | null
+          is_internally_paid?: boolean | null
+          is_series_appointment?: boolean | null
           location?: string | null
           notes?: string | null
           price?: number | null
           provider_id?: string | null
           recurring_group_id?: string | null
+          series_current?: number | null
+          series_total?: number | null
           service_type?: string | null
           signature_url?: string | null
           signed_at?: string | null
@@ -1166,6 +1178,7 @@ export type Database = {
       services: {
         Row: {
           base_price: number
+          billing_type: Database["public"]["Enums"]["billing_type"]
           category: string
           created_at: string
           description: string | null
@@ -1178,6 +1191,7 @@ export type Database = {
         }
         Insert: {
           base_price?: number
+          billing_type?: Database["public"]["Enums"]["billing_type"]
           category?: string
           created_at?: string
           description?: string | null
@@ -1190,6 +1204,7 @@ export type Database = {
         }
         Update: {
           base_price?: number
+          billing_type?: Database["public"]["Enums"]["billing_type"]
           category?: string
           created_at?: string
           description?: string | null
@@ -1248,6 +1263,7 @@ export type Database = {
     }
     Enums: {
       app_role: "provider" | "client"
+      billing_type: "standard" | "flat_rate" | "series"
       contact_category: "client" | "partner" | "supplier" | "lead"
       equine_type: "horse" | "pony" | "donkey" | "mule" | "zebra"
     }
@@ -1378,6 +1394,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["provider", "client"],
+      billing_type: ["standard", "flat_rate", "series"],
       contact_category: ["client", "partner", "supplier", "lead"],
       equine_type: ["horse", "pony", "donkey", "mule", "zebra"],
     },

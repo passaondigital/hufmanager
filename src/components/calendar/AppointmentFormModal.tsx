@@ -18,8 +18,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, Loader2, CalendarClock } from "lucide-react";
+import { AlertTriangle, Loader2, CalendarClock, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -71,7 +72,25 @@ export function AppointmentFormModal({
     notes: "",
     location: "",
     duration: 60,
+    isSeriesAppointment: false,
+    seriesCurrent: 1,
+    seriesTotal: 5,
   });
+
+  // Fetch services with billing_type
+  const { data: services = [] } = useQuery({
+    queryKey: ["services"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("services").select("*").eq("is_active", true);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Get current service billing type
+  const currentService = services.find((s: any) => s.name === formData.serviceType);
+  const isFlatRate = currentService?.billing_type === "flat_rate";
+  const isSeriesService = currentService?.billing_type === "series";
 
   // Fetch horses
   const { data: horses = [] } = useQuery({
@@ -141,6 +160,9 @@ export function AppointmentFormModal({
       notes: "",
       location: "",
       duration: 60,
+      isSeriesAppointment: false,
+      seriesCurrent: 1,
+      seriesTotal: 5,
     });
     setRecurrence("none");
     setCustomWeeks(4);
@@ -208,6 +230,13 @@ export function AppointmentFormModal({
         duration: validated.duration,
         provider_id: user.id,
         recurring_group_id: recurringGroupId,
+        // Business logic: flat_rate = price 0, but marked as paid
+        price: isFlatRate ? 0 : (currentService?.base_price || 0),
+        is_internally_paid: isFlatRate,
+        // Series appointment tracking
+        is_series_appointment: formData.isSeriesAppointment || isSeriesService,
+        series_current: (formData.isSeriesAppointment || isSeriesService) ? formData.seriesCurrent + i : null,
+        series_total: (formData.isSeriesAppointment || isSeriesService) ? formData.seriesTotal : null,
       });
     }
 
@@ -294,13 +323,73 @@ export function AppointmentFormModal({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Barhuf">Barhuf</SelectItem>
-                <SelectItem value="Beschlag">Beschlag</SelectItem>
-                <SelectItem value="Korrektur">Korrektur</SelectItem>
-                <SelectItem value="Notfall">Notfall</SelectItem>
-                <SelectItem value="Kontrolle">Kontrolle</SelectItem>
+                {services.length > 0 ? (
+                  services.map((service: any) => (
+                    <SelectItem key={service.id} value={service.name}>
+                      {service.name}
+                      {service.billing_type === "flat_rate" && " (Pauschal)"}
+                      {service.billing_type === "series" && " (Serie)"}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <>
+                    <SelectItem value="Barhuf">Barhuf</SelectItem>
+                    <SelectItem value="Beschlag">Beschlag</SelectItem>
+                    <SelectItem value="Korrektur">Korrektur</SelectItem>
+                    <SelectItem value="Notfall">Notfall</SelectItem>
+                    <SelectItem value="Kontrolle">Kontrolle</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
+            
+            {isFlatRate && (
+              <p className="text-xs text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/20 p-2 rounded">
+                💡 Pauschal-Service: Preis wird auf 0,00€ gesetzt, aber als "intern bezahlt" markiert.
+              </p>
+            )}
+          </div>
+
+          {/* Series Appointment Section */}
+          <div className="space-y-3 p-3 rounded-lg bg-muted/50 border border-border">
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="seriesAppointment"
+                checked={formData.isSeriesAppointment || isSeriesService}
+                onCheckedChange={(checked) => 
+                  setFormData({ ...formData, isSeriesAppointment: checked as boolean })
+                }
+                disabled={isSeriesService}
+              />
+              <Label htmlFor="seriesAppointment" className="flex items-center gap-2 cursor-pointer">
+                <Package className="h-4 w-4" />
+                Serien-Termin (Teil eines Pakets)
+              </Label>
+            </div>
+            
+            {(formData.isSeriesAppointment || isSeriesService) && (
+              <div className="flex items-center gap-2 ml-6">
+                <Label className="text-sm whitespace-nowrap">Termin</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={formData.seriesTotal}
+                  value={formData.seriesCurrent}
+                  onChange={(e) => setFormData({ ...formData, seriesCurrent: parseInt(e.target.value) || 1 })}
+                  className="w-16"
+                />
+                <Label className="text-sm">von</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={formData.seriesTotal}
+                  onChange={(e) => setFormData({ ...formData, seriesTotal: parseInt(e.target.value) || 5 })}
+                  className="w-16"
+                />
+                <span className="text-xs text-muted-foreground">(erscheint auf der Rechnung)</span>
+              </div>
+            )}
           </div>
 
           {/* Recurring Options */}
