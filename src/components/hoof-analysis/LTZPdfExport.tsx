@@ -43,6 +43,17 @@ interface LTZPdfExportProps {
   variant?: "icon" | "button";
 }
 
+// HTML escaping to prevent XSS attacks in generated PDF
+function escapeHtml(str: string | null | undefined): string {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 function getLabel(options: readonly { value: string; label: string }[], value?: string): string {
   return options.find(o => o.value === value)?.label || '—';
 }
@@ -64,12 +75,19 @@ export function LTZPdfExport({ analysis, horseName, ownerName, providerName, var
     const dateStr = format(parseISO(analysis.created_at), "dd.MM.yyyy", { locale: de });
     const timeStr = format(parseISO(analysis.created_at), "HH:mm", { locale: de });
 
+    // Escape all user-controlled data to prevent XSS
+    const safeHorseName = escapeHtml(horseName);
+    const safeOwnerName = escapeHtml(ownerName);
+    const safeProviderName = escapeHtml(providerName);
+    const safeNotes = escapeHtml(analysis.notes);
+    const safeRecommendations = (analysis.recommendations || []).map(r => escapeHtml(r));
+
     const htmlContent = `
 <!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>LTZ Bearbeitungsbogen - ${horseName}</title>
+  <title>LTZ Bearbeitungsbogen - ${safeHorseName}</title>
   <style>
     @page {
       size: A4;
@@ -294,10 +312,10 @@ export function LTZPdfExport({ analysis, horseName, ownerName, providerName, var
         <p>Hufanalyse nach Leipziger Standard</p>
       </div>
       <div class="header-right">
-        <strong>${horseName}</strong>
-        ${ownerName ? `Besitzer: ${ownerName}` : ''}
+        <strong>${safeHorseName}</strong>
+        ${safeOwnerName ? `Besitzer: ${safeOwnerName}` : ''}
         <br>Datum: ${dateStr} | ${timeStr}
-        ${providerName ? `<br>Bearbeiter: ${providerName}` : ''}
+        ${safeProviderName ? `<br>Bearbeiter: ${safeProviderName}` : ''}
       </div>
     </div>
 
@@ -419,19 +437,19 @@ export function LTZPdfExport({ analysis, horseName, ownerName, providerName, var
     </div>
     ` : ''}
 
-    ${(analysis.recommendations && analysis.recommendations.length > 0) ? `
+    ${(safeRecommendations && safeRecommendations.length > 0) ? `
     <div class="recommendations">
       <h3>⚠️ Bearbeitungsempfehlungen</h3>
       <ul>
-        ${analysis.recommendations.map(r => `<li>${r}</li>`).join('')}
+        ${safeRecommendations.map(r => `<li>${r}</li>`).join('')}
       </ul>
     </div>
     ` : ''}
 
-    ${analysis.notes ? `
+    ${safeNotes ? `
     <div class="notes-section">
       <h3>Zusätzliche Notizen</h3>
-      <p>${analysis.notes}</p>
+      <p>${safeNotes}</p>
     </div>
     ` : ''}
 
