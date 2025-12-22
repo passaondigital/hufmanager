@@ -2,13 +2,16 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import { AppHeader } from "./AppHeader";
-import { Menu } from "lucide-react";
+import { Menu, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/components/ThemeProvider";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 export function AppLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <div className="min-h-screen flex w-full bg-background">
@@ -42,6 +45,24 @@ export function AppLayout() {
               alt="HufManager" 
               className="h-8 w-auto"
             />
+          </div>
+          
+          {/* Mobile Actions */}
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="h-10 w-10"
+              aria-label="Theme wechseln"
+            >
+              {theme === "dark" ? (
+                <Sun className="h-5 w-5 text-primary" />
+              ) : (
+                <Moon className="h-5 w-5 text-muted-foreground" />
+              )}
+            </Button>
+            <NotificationBell />
           </div>
         </header>
 

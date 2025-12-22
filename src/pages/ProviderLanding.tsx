@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { LeadChatBot } from "@/components/landing/LeadChatBot";
 import { LandingContactForm } from "@/components/landing/LandingContactForm";
 import { ServiceCard } from "@/components/landing/ServiceCard";
+import { toast } from "@/hooks/use-toast";
 
 interface BusinessSettings {
   id: string;
@@ -20,6 +21,15 @@ interface BusinessSettings {
   address: string | null;
   primary_color: string | null;
   accept_new_customers: boolean | null;
+}
+
+interface Service {
+  id: string;
+  name: string;
+  description: string | null;
+  base_price: number;
+  duration: number | null;
+  booking_action: 'direct_book' | 'request_only';
 }
 
 interface Offer {
@@ -46,6 +56,7 @@ const ProviderLanding = () => {
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<BusinessSettings | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,6 +92,17 @@ const ProviderLanding = () => {
           .limit(3);
 
         if (offersData) setOffers(offersData);
+
+        // Fetch active services with booking_action
+        const { data: servicesData } = await supabase
+          .from('services')
+          .select('id, name, description, base_price, duration, booking_action')
+          .eq('provider_id', businessData.user_id)
+          .eq('is_active', true)
+          .order('name')
+          .limit(6);
+
+        if (servicesData) setServices(servicesData as Service[]);
 
         // Fetch featured feedbacks
         const { data: feedbackData } = await supabase
@@ -122,6 +144,24 @@ const ProviderLanding = () => {
   }
 
   const primaryColor = settings.primary_color || '#d97706';
+
+  const handleServiceRequest = (serviceName: string) => {
+    // Scroll to contact form
+    document.getElementById('kontakt')?.scrollIntoView({ behavior: 'smooth' });
+    toast({
+      title: `Anfrage für: ${serviceName}`,
+      description: "Bitte füllen Sie das Kontaktformular aus.",
+    });
+  };
+
+  const handleServiceBook = (serviceName: string) => {
+    // Scroll to contact form for now
+    document.getElementById('kontakt')?.scrollIntoView({ behavior: 'smooth' });
+    toast({
+      title: `Buchung für: ${serviceName}`,
+      description: "Bitte füllen Sie das Kontaktformular aus um einen Termin zu vereinbaren.",
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -187,10 +227,38 @@ const ProviderLanding = () => {
       )}
 
       {/* Services Section */}
+      {services.length > 0 && (
+        <section className="py-16 px-4">
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-2xl font-bold text-foreground mb-4 text-center">Services</h2>
+            <p className="text-muted-foreground text-center mb-8 max-w-2xl mx-auto">
+              Wählen Sie einen Service und buchen Sie direkt oder stellen Sie eine Anfrage
+            </p>
+            <div className="grid md:grid-cols-3 gap-6">
+              {services.map((service) => (
+                <ServiceCard
+                  key={service.id}
+                  title={service.name}
+                  description={service.description}
+                  price={service.base_price}
+                  priceType={service.duration ? `${service.duration} Min.` : null}
+                  features={null}
+                  primaryColor={primaryColor}
+                  bookingAction={service.booking_action}
+                  onBook={() => handleServiceBook(service.name)}
+                  onRequest={() => handleServiceRequest(service.name)}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Offers/Packages Section */}
       {offers.length > 0 && (
         <section className="py-16 px-4 bg-muted/30">
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-2xl font-bold text-foreground mb-4 text-center">Leistungen</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-4 text-center">Leistungen & Pakete</h2>
             <p className="text-muted-foreground text-center mb-8 max-w-2xl mx-auto">
               Professionelle Hufbearbeitung für jede Anforderung
             </p>

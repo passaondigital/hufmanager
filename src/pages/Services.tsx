@@ -35,6 +35,7 @@ const categoryColors: Record<string, string> = {
 };
 
 type BillingType = 'standard' | 'flat_rate' | 'series';
+type BookingAction = 'direct_book' | 'request_only';
 
 const billingTypeLabels: Record<BillingType, string> = {
   standard: "Standard",
@@ -48,6 +49,11 @@ const billingTypeColors: Record<BillingType, string> = {
   series: "bg-blue-500/10 text-blue-600",
 };
 
+const bookingActionLabels: Record<BookingAction, string> = {
+  direct_book: "Direkt buchen",
+  request_only: "Nur Anfrage",
+};
+
 interface Service {
   id: string;
   name: string;
@@ -57,6 +63,7 @@ interface Service {
   duration: number | null;
   is_active: boolean | null;
   billing_type: BillingType;
+  booking_action: BookingAction;
 }
 
 const Services = () => {
@@ -69,6 +76,7 @@ const Services = () => {
     base_price: 0,
     duration: 60,
     billing_type: "standard" as BillingType,
+    booking_action: "direct_book" as BookingAction,
   });
   const queryClient = useQueryClient();
 
@@ -130,7 +138,7 @@ const Services = () => {
 
   const openCreateDialog = () => {
     setEditingService(null);
-    setFormData({ name: "", description: "", category: "Standard", base_price: 0, duration: 60, billing_type: "standard" });
+    setFormData({ name: "", description: "", category: "Standard", base_price: 0, duration: 60, billing_type: "standard", booking_action: "direct_book" });
     setIsDialogOpen(true);
   };
 
@@ -143,6 +151,7 @@ const Services = () => {
       base_price: service.base_price,
       duration: service.duration || 60,
       billing_type: service.billing_type || "standard",
+      booking_action: service.booking_action || "direct_book",
     });
     setIsDialogOpen(true);
   };
@@ -197,6 +206,11 @@ const Services = () => {
                     {service.billing_type && service.billing_type !== "standard" && (
                       <Badge className={cn("font-medium", billingTypeColors[service.billing_type])}>
                         {billingTypeLabels[service.billing_type]}
+                      </Badge>
+                    )}
+                    {service.booking_action === "request_only" && (
+                      <Badge variant="outline" className="font-medium text-orange-600 border-orange-300">
+                        Nur Anfrage
                       </Badge>
                     )}
                   </div>
@@ -315,6 +329,22 @@ const Services = () => {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Buchungsoption</Label>
+              <Select
+                value={formData.booking_action}
+                onValueChange={(value: BookingAction) => setFormData({ ...formData, booking_action: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="direct_book">Direkt buchen (Kunde wählt Termin)</SelectItem>
+                  <SelectItem value="request_only">Nur Anfrage (Kunde schickt Anfrage)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {formData.billing_type === "flat_rate" && (
