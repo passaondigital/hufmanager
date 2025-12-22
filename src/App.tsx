@@ -47,6 +47,7 @@ import ProviderLanding from "@/pages/ProviderLanding";
 import ImportCenter from "@/pages/ImportCenter";
 import ConnectForm from "@/pages/ConnectForm";
 import Netzwerk from "@/pages/Netzwerk";
+import MissionControl from "@/pages/admin/MissionControl";
 
 // Components
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
@@ -117,6 +118,9 @@ function App() {
                     
                     {/* Einladungs-Links für Kunden */}
                     <Route path="/connect/:slug" element={<ConnectForm />} />
+                    
+                    {/* Admin Mission Control */}
+                    <Route path="/admin/mission-control" element={<MissionControl />} />
 
                     {/* --- 2. PROVIDER (PROFI) ROUTES --- */}
                     <Route
