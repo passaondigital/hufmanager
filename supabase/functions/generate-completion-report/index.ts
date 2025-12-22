@@ -210,7 +210,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const { appointmentId } = await req.json();
-    console.log("Generating report for appointment:", appointmentId);
+    console.log("[completion-report] Generating report");
 
     const { data: appointment, error: aptError } = await supabase
       .from("appointments")
@@ -320,7 +320,7 @@ const handler = async (req: Request): Promise<Response> => {
         `,
       });
       
-      console.log("Email with LTZ data sent successfully to:", client.email);
+      console.log("[completion-report] Email sent successfully");
     }
 
     return new Response(JSON.stringify({ success: true }), {
@@ -328,8 +328,8 @@ const handler = async (req: Request): Promise<Response> => {
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
-    console.error("Error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error("[completion-report] Error:", error instanceof Error ? error.name : "Unknown");
+    return new Response(JSON.stringify({ error: "Report generation failed" }), {
       status: 500,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
