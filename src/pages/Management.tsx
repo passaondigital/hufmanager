@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Building,
   Globe,
@@ -19,6 +20,8 @@ import {
   Clock,
   Bell,
   Crown,
+  FileText,
+  AlertTriangle,
 } from "lucide-react";
 import { BusinessHoursEditor, defaultHours, type BusinessHours } from "@/components/BusinessHoursEditor";
 import { ReminderSettingsCard } from "@/components/ReminderSettingsCard";
@@ -48,6 +51,8 @@ interface BusinessSettings {
   stripe_public_key: string | null;
   copecart_vendor_id: string | null;
   paypal_link: string | null;
+  impressum_text: string | null;
+  terms_text: string | null;
 }
 
 const Management = () => {
@@ -71,6 +76,8 @@ const Management = () => {
     stripe_public_key: "",
     copecart_vendor_id: "",
     paypal_link: "",
+    impressum_text: "",
+    terms_text: "",
   });
 
   const { data: settings, isLoading } = useQuery({
@@ -107,6 +114,8 @@ const Management = () => {
         stripe_public_key: settings.stripe_public_key || "",
         copecart_vendor_id: settings.copecart_vendor_id || "",
         paypal_link: settings.paypal_link || "",
+        impressum_text: settings.impressum_text || "",
+        terms_text: settings.terms_text || "",
       });
     }
   }, [settings]);
@@ -305,6 +314,8 @@ const Management = () => {
     }
   };
 
+  const isProfileIncomplete = formData.subdomain && !formData.impressum_text?.trim();
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -314,8 +325,20 @@ const Management = () => {
         </p>
       </div>
 
+      {/* Gatekeeper Warning */}
+      {isProfileIncomplete && (
+        <Alert variant="destructive" className="border-orange-500 bg-orange-50 dark:bg-orange-950/20">
+          <AlertTriangle className="h-4 w-4 text-orange-600" />
+          <AlertTitle className="text-orange-800 dark:text-orange-400">Profil ist offline</AlertTitle>
+          <AlertDescription className="text-orange-700 dark:text-orange-300">
+            Ihre öffentliche Landingpage ist nicht sichtbar, da das Impressum fehlt. 
+            Bitte hinterlegen Sie Ihr Impressum im Tab "Rechtliches".
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Tabs defaultValue="business" className="w-full">
-        <TabsList className="grid w-full max-w-4xl grid-cols-6">
+        <TabsList className="grid w-full max-w-4xl grid-cols-7">
           <TabsTrigger value="business" className="gap-2">
             <Building className="h-4 w-4" />
             <span className="hidden sm:inline">Geschäft</span>
@@ -326,7 +349,7 @@ const Management = () => {
           </TabsTrigger>
           <TabsTrigger value="hours" className="gap-2">
             <Clock className="h-4 w-4" />
-            <span className="hidden sm:inline">Arbeitszeiten</span>
+            <span className="hidden sm:inline">Zeiten</span>
           </TabsTrigger>
           <TabsTrigger value="reminders" className="gap-2">
             <Bell className="h-4 w-4" />
@@ -335,6 +358,13 @@ const Management = () => {
           <TabsTrigger value="landing" className="gap-2">
             <Globe className="h-4 w-4" />
             <span className="hidden sm:inline">Landingpage</span>
+          </TabsTrigger>
+          <TabsTrigger value="legal" className="gap-2 relative">
+            <FileText className="h-4 w-4" />
+            <span className="hidden sm:inline">Rechtliches</span>
+            {isProfileIncomplete && (
+              <span className="absolute -top-1 -right-1 h-2 w-2 bg-orange-500 rounded-full" />
+            )}
           </TabsTrigger>
           <TabsTrigger value="payment" className="gap-2">
             <CreditCard className="h-4 w-4" />
@@ -610,6 +640,81 @@ const Management = () => {
 
           {/* Services Editor */}
           <LandingServicesEditor />
+        </TabsContent>
+
+        {/* Legal / Rechtliches */}
+        <TabsContent value="legal" className="mt-6 space-y-6">
+          <Card className="animate-slide-up">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Impressum
+              </CardTitle>
+              <CardDescription>
+                Gesetzlich vorgeschriebene Angaben für Ihre Webseite. Ohne Impressum bleibt Ihr Profil offline.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!formData.impressum_text?.trim() && (
+                <Alert variant="destructive" className="border-orange-500 bg-orange-50 dark:bg-orange-950/20">
+                  <AlertTriangle className="h-4 w-4 text-orange-600" />
+                  <AlertDescription className="text-orange-700 dark:text-orange-300">
+                    Pflichtfeld: Bitte hinterlegen Sie Ihr Impressum, damit Ihre Landingpage öffentlich sichtbar wird.
+                  </AlertDescription>
+                </Alert>
+              )}
+              <Textarea
+                rows={12}
+                placeholder={`Beispiel:
+
+Max Mustermann
+Musterstraße 1
+12345 Musterstadt
+
+Telefon: 0123 456789
+E-Mail: info@beispiel.de
+
+Steuernummer: 12/345/67890
+...`}
+                value={formData.impressum_text}
+                onChange={(e) => setFormData({ ...formData, impressum_text: e.target.value })}
+                className="font-mono text-sm"
+              />
+              <div className="flex justify-end">
+                <Button className="gap-2" onClick={handleSave} disabled={saveMutation.isPending}>
+                  <Save className="h-4 w-4" />
+                  {saveMutation.isPending ? "Speichern..." : "Impressum speichern"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="animate-slide-up" style={{ animationDelay: "100ms" }}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                AGB & Datenschutz
+              </CardTitle>
+              <CardDescription>
+                Allgemeine Geschäftsbedingungen und Datenschutzerklärung (optional, aber empfohlen)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Textarea
+                rows={12}
+                placeholder="Fügen Sie hier Ihre AGB und Datenschutzerklärung ein..."
+                value={formData.terms_text}
+                onChange={(e) => setFormData({ ...formData, terms_text: e.target.value })}
+                className="font-mono text-sm"
+              />
+              <div className="flex justify-end">
+                <Button className="gap-2" onClick={handleSave} disabled={saveMutation.isPending}>
+                  <Save className="h-4 w-4" />
+                  {saveMutation.isPending ? "Speichern..." : "AGB speichern"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Payment */}

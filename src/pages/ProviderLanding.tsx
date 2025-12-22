@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, MapPin, Phone, Mail, Star, Check, Camera } from "lucide-react";
+import { Loader2, Star, Camera, Calendar } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { LeadChatBot } from "@/components/landing/LeadChatBot";
 import { LandingContactForm } from "@/components/landing/LandingContactForm";
 import { ServiceCard } from "@/components/landing/ServiceCard";
 import { BeforeAfterGallery } from "@/components/landing/BeforeAfterGallery";
+import { LegalFooter } from "@/components/landing/LegalFooter";
 import { toast } from "@/hooks/use-toast";
 
 interface BusinessSettings {
@@ -22,6 +24,8 @@ interface BusinessSettings {
   address: string | null;
   primary_color: string | null;
   accept_new_customers: boolean | null;
+  impressum_text: string | null;
+  terms_text: string | null;
 }
 
 interface Service {
@@ -69,23 +73,30 @@ const ProviderLanding = () => {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [profileIncomplete, setProfileIncomplete] = useState(false);
 
   useEffect(() => {
     const fetchProviderData = async () => {
       if (!slug) return;
 
       try {
-        // Find provider by subdomain - only select PUBLIC SAFE fields to prevent data leakage
-        // SECURITY: Do NOT use select('*') - sensitive fields like tax_number, stripe keys, paypal_link must not be exposed
+        // Find provider by subdomain - include legal texts for gatekeeper check
         const { data: businessData, error: businessError } = await supabase
           .from('business_settings')
-          .select('id, user_id, business_name, owner_name, hero_headline, about_text, logo_url, phone, email, address, primary_color, accept_new_customers, subdomain')
+          .select('id, user_id, business_name, owner_name, hero_headline, about_text, logo_url, phone, email, address, primary_color, accept_new_customers, subdomain, impressum_text, terms_text')
           .eq('subdomain', slug)
           .maybeSingle();
 
         if (businessError) throw businessError;
         if (!businessData) {
           setError('Provider nicht gefunden');
+          setLoading(false);
+          return;
+        }
+
+        // GATEKEEPER: Check if impressum is filled
+        if (!businessData.impressum_text || businessData.impressum_text.trim() === '') {
+          setProfileIncomplete(true);
           setLoading(false);
           return;
         }
@@ -124,7 +135,7 @@ const ProviderLanding = () => {
 
         if (feedbackData) setFeedbacks(feedbackData);
 
-        // Fetch hoof photos for gallery (group by horse to create before/after pairs)
+        // Fetch hoof photos for gallery
         const { data: hoofPhotos } = await supabase
           .from('hoof_photos')
           .select(`
@@ -138,7 +149,6 @@ const ProviderLanding = () => {
           .order('created_at', { ascending: false })
           .limit(20);
 
-        // Create before/after pairs from hoof photos (for demo, use consecutive photos)
         if (hoofPhotos && hoofPhotos.length >= 2) {
           const pairs: GalleryImage[] = [];
           for (let i = 0; i < hoofPhotos.length - 1; i += 2) {
@@ -172,6 +182,26 @@ const ProviderLanding = () => {
     );
   }
 
+  // GATEKEEPER: Profile incomplete - show friendly message
+  if (profileIncomplete) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
+            <span className="text-3xl">🔧</span>
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-3">
+            Profil wird eingerichtet
+          </h1>
+          <p className="text-muted-foreground">
+            Dieses Profil ist noch nicht vollständig eingerichtet. 
+            Bitte schauen Sie später noch einmal vorbei.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (error || !settings) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -186,7 +216,6 @@ const ProviderLanding = () => {
   const primaryColor = settings.primary_color || '#d97706';
 
   const handleServiceRequest = (serviceName: string) => {
-    // Scroll to contact form
     document.getElementById('kontakt')?.scrollIntoView({ behavior: 'smooth' });
     toast({
       title: `Anfrage für: ${serviceName}`,
@@ -195,7 +224,6 @@ const ProviderLanding = () => {
   };
 
   const handleServiceBook = (serviceName: string) => {
-    // Scroll to contact form for now
     document.getElementById('kontakt')?.scrollIntoView({ behavior: 'smooth' });
     toast({
       title: `Buchung für: ${serviceName}`,
@@ -203,54 +231,43 @@ const ProviderLanding = () => {
     });
   };
 
+  const scrollToContact = () => {
+    document.getElementById('kontakt')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section */}
+      {/* Clean Hero Section - Only Logo, Name, Slogan, CTA */}
       <header 
         className="relative py-20 px-4"
-        style={{ background: `linear-gradient(135deg, ${primaryColor}20 0%, ${primaryColor}05 100%)` }}
+        style={{ background: `linear-gradient(135deg, ${primaryColor}15 0%, ${primaryColor}05 100%)` }}
       >
         <div className="max-w-4xl mx-auto text-center">
           {settings.logo_url && (
             <img 
               src={settings.logo_url} 
               alt={settings.business_name || 'Logo'} 
-              className="h-24 w-24 rounded-full mx-auto mb-6 object-cover border-4 border-background shadow-lg"
+              className="h-28 w-28 rounded-full mx-auto mb-6 object-cover border-4 border-background shadow-xl"
             />
           )}
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
             {settings.business_name || settings.owner_name || 'Hufbearbeitung'}
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
             {settings.hero_headline || 'Professionelle Hufpflege für Ihr Pferd'}
           </p>
           
-          <div className="flex flex-wrap items-center justify-center gap-4 mt-8">
-            {settings.phone && (
-              <a 
-                href={`tel:${settings.phone}`}
-                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Phone className="h-4 w-4" />
-                {settings.phone}
-              </a>
-            )}
-            {settings.email && (
-              <a 
-                href={`mailto:${settings.email}`}
-                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Mail className="h-4 w-4" />
-                {settings.email}
-              </a>
-            )}
-            {settings.address && (
-              <span className="flex items-center gap-2 text-muted-foreground">
-                <MapPin className="h-4 w-4" />
-                {settings.address}
-              </span>
-            )}
-          </div>
+          {settings.accept_new_customers !== false && (
+            <Button
+              size="lg"
+              className="gap-2 text-white shadow-lg hover:shadow-xl transition-all"
+              style={{ backgroundColor: primaryColor }}
+              onClick={scrollToContact}
+            >
+              <Calendar className="h-5 w-5" />
+              Termin anfragen
+            </Button>
+          )}
         </div>
       </header>
 
@@ -268,7 +285,7 @@ const ProviderLanding = () => {
 
       {/* Services Section */}
       {services.length > 0 && (
-        <section className="py-16 px-4">
+        <section className="py-16 px-4 bg-muted/30">
           <div className="max-w-5xl mx-auto">
             <h2 className="text-2xl font-bold text-foreground mb-4 text-center">Services</h2>
             <p className="text-muted-foreground text-center mb-8 max-w-2xl mx-auto">
@@ -296,7 +313,7 @@ const ProviderLanding = () => {
 
       {/* Offers/Packages Section */}
       {offers.length > 0 && (
-        <section className="py-16 px-4 bg-muted/30">
+        <section className="py-16 px-4">
           <div className="max-w-5xl mx-auto">
             <h2 className="text-2xl font-bold text-foreground mb-4 text-center">Leistungen & Pakete</h2>
             <p className="text-muted-foreground text-center mb-8 max-w-2xl mx-auto">
@@ -321,7 +338,7 @@ const ProviderLanding = () => {
 
       {/* Before/After Gallery Section */}
       {galleryImages.length > 0 && (
-        <section className="py-16 px-4">
+        <section className="py-16 px-4 bg-muted/30">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-2 text-sm text-muted-foreground mb-2">
@@ -382,12 +399,16 @@ const ProviderLanding = () => {
         </section>
       )}
 
-      {/* Footer */}
-      <footer className="py-8 px-4 border-t border-border">
-        <div className="max-w-4xl mx-auto text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} {settings.business_name || settings.owner_name}. Alle Rechte vorbehalten.</p>
-        </div>
-      </footer>
+      {/* Legal Footer with Impressum & AGB Modals */}
+      <LegalFooter
+        businessName={settings.business_name || settings.owner_name || 'Hufbearbeiter'}
+        impressumText={settings.impressum_text}
+        termsText={settings.terms_text}
+        primaryColor={primaryColor}
+        phone={settings.phone}
+        email={settings.email}
+        address={settings.address}
+      />
 
       {/* Lead Chat Bot */}
       <LeadChatBot 
