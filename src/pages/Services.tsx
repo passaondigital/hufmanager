@@ -34,6 +34,20 @@ const categoryColors: Record<string, string> = {
   Zubehör: "bg-muted text-muted-foreground",
 };
 
+type BillingType = 'standard' | 'flat_rate' | 'series';
+
+const billingTypeLabels: Record<BillingType, string> = {
+  standard: "Standard",
+  flat_rate: "Pauschal/Abo",
+  series: "Serienpaket",
+};
+
+const billingTypeColors: Record<BillingType, string> = {
+  standard: "bg-accent/10 text-accent",
+  flat_rate: "bg-purple-500/10 text-purple-600",
+  series: "bg-blue-500/10 text-blue-600",
+};
+
 interface Service {
   id: string;
   name: string;
@@ -42,6 +56,7 @@ interface Service {
   base_price: number;
   duration: number | null;
   is_active: boolean | null;
+  billing_type: BillingType;
 }
 
 const Services = () => {
@@ -53,6 +68,7 @@ const Services = () => {
     category: "Standard",
     base_price: 0,
     duration: 60,
+    billing_type: "standard" as BillingType,
   });
   const queryClient = useQueryClient();
 
@@ -114,7 +130,7 @@ const Services = () => {
 
   const openCreateDialog = () => {
     setEditingService(null);
-    setFormData({ name: "", description: "", category: "Standard", base_price: 0, duration: 60 });
+    setFormData({ name: "", description: "", category: "Standard", base_price: 0, duration: 60, billing_type: "standard" });
     setIsDialogOpen(true);
   };
 
@@ -126,6 +142,7 @@ const Services = () => {
       category: service.category,
       base_price: service.base_price,
       duration: service.duration || 60,
+      billing_type: service.billing_type || "standard",
     });
     setIsDialogOpen(true);
   };
@@ -177,6 +194,11 @@ const Services = () => {
                     <Badge className={cn("font-medium", categoryColors[service.category])}>
                       {service.category}
                     </Badge>
+                    {service.billing_type && service.billing_type !== "standard" && (
+                      <Badge className={cn("font-medium", billingTypeColors[service.billing_type])}>
+                        {billingTypeLabels[service.billing_type]}
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-muted-foreground mb-4">{service.description}</p>
                   <div className="flex items-center gap-6 text-sm">
@@ -267,14 +289,45 @@ const Services = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Dauer (Minuten)</Label>
-              <Input
-                type="number"
-                value={formData.duration}
-                onChange={(e) => setFormData({ ...formData, duration: Number(e.target.value) })}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Dauer (Minuten)</Label>
+                <Input
+                  type="number"
+                  value={formData.duration}
+                  onChange={(e) => setFormData({ ...formData, duration: Number(e.target.value) })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Abrechnungsart</Label>
+                <Select
+                  value={formData.billing_type}
+                  onValueChange={(value: BillingType) => setFormData({ ...formData, billing_type: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standard">Standard (Preis pro Termin)</SelectItem>
+                    <SelectItem value="flat_rate">Pauschal / Abo / Extern</SelectItem>
+                    <SelectItem value="series">Teil eines Pakets</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+
+            {formData.billing_type === "flat_rate" && (
+              <p className="text-sm text-muted-foreground bg-purple-50 dark:bg-purple-950/20 p-3 rounded-lg">
+                💡 Termine mit diesem Service werden automatisch auf 0,00€ gesetzt aber als "intern bezahlt" markiert.
+              </p>
+            )}
+
+            {formData.billing_type === "series" && (
+              <p className="text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg">
+                💡 Bei Terminen können Sie "Termin X von Y" angeben. Dies erscheint auf der Rechnung.
+              </p>
+            )}
           </div>
 
           <DialogFooter>
