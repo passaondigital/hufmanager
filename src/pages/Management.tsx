@@ -29,6 +29,7 @@ import { ReminderSettingsCard } from "@/components/ReminderSettingsCard";
 import { SubscriptionCard } from "@/components/subscription/SubscriptionCard";
 import { LandingServicesEditor } from "@/components/landing/LandingServicesEditor";
 import { ReviewsManagement } from "@/components/management/ReviewsManagement";
+import { GalleryManager } from "@/components/management/GalleryManager";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -651,6 +652,9 @@ const Management = () => {
 
           {/* Services Editor */}
           <LandingServicesEditor />
+
+          {/* Gallery Manager */}
+          <GalleryManager />
         </TabsContent>
 
         {/* Legal / Rechtliches */}
