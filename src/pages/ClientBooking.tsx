@@ -46,6 +46,8 @@ export default function ClientBooking() {
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [providerId, setProviderId] = useState<string | null>(null);
+  
+  const MAX_NOTES_LENGTH = 2000;
 
   useEffect(() => {
     if (!user) return;
@@ -107,6 +109,16 @@ export default function ClientBooking() {
 
   const handleSubmit = async () => {
     if (!user || !providerId || !selectedService || !selectedHorse) return;
+
+    // Validate notes length
+    if (notes && notes.length > MAX_NOTES_LENGTH) {
+      toast({
+        title: "Notizen zu lang",
+        description: `Notizen dürfen maximal ${MAX_NOTES_LENGTH} Zeichen lang sein.`,
+        variant: "destructive",
+      });
+      return;
+    }
 
     setSubmitting(true);
 
@@ -385,14 +397,20 @@ export default function ClientBooking() {
             )}
 
             <div>
-              <Label htmlFor="notes">Notizen (optional)</Label>
+              <Label htmlFor="notes">
+                Notizen (optional)
+                <span className="text-xs text-muted-foreground ml-2">
+                  {notes.length}/{MAX_NOTES_LENGTH}
+                </span>
+              </Label>
               <Textarea
                 id="notes"
                 value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                onChange={(e) => setNotes(e.target.value.slice(0, MAX_NOTES_LENGTH))}
                 placeholder="z.B. Besondere Wünsche, Anfahrtsinfos..."
                 className="mt-1"
                 rows={3}
+                maxLength={MAX_NOTES_LENGTH}
               />
             </div>
 
