@@ -173,7 +173,7 @@ serve(async (req: Request): Promise<Response> => {
       const appointmentDate = new Date(appointment.date);
 
       if (!owner?.email) {
-        console.log(`No email for owner of horse ${horse.name}, skipping...`);
+        console.log("[reminders] Skipping: no owner email");
         continue;
       }
 
@@ -222,8 +222,8 @@ serve(async (req: Request): Promise<Response> => {
 
             sentCount++;
           } catch (emailError: any) {
-            console.error(`Failed to send email:`, emailError);
-            errors.push(`Email to ${owner.email}: ${emailError.message}`);
+            console.error("[reminders] Email send failed");
+            errors.push("Email delivery failed");
           }
         }
 
@@ -243,7 +243,7 @@ serve(async (req: Request): Promise<Response> => {
               channel: "in_app",
             });
           } catch (notifError: any) {
-            console.error(`Failed to create notification:`, notifError);
+            console.error("[reminders] Notification creation failed");
           }
         }
       }
@@ -262,9 +262,9 @@ serve(async (req: Request): Promise<Response> => {
     );
 
   } catch (error: any) {
-    console.error("Error in send-appointment-reminders:", error);
+    console.error("[reminders] Error:", error instanceof Error ? error.name : "Unknown");
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Reminder processing failed" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

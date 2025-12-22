@@ -30,14 +30,14 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {
-      console.error("Auth error:", authError);
+      console.error("[ai-chat] Auth failed");
       return new Response(JSON.stringify({ error: "Nicht autorisiert. Bitte melden Sie sich an." }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log("Authenticated user:", user.id);
+    console.log("[ai-chat] User authenticated");
 
     const { messages } = await req.json();
     
@@ -95,8 +95,7 @@ Antworte immer auf Deutsch, freundlich und präzise. Halte deine Antworten kurz 
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
+      console.error("[ai-chat] AI gateway error:", response.status);
       return new Response(JSON.stringify({ error: "KI-Dienst nicht erreichbar" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -107,8 +106,8 @@ Antworte immer auf Deutsch, freundlich und präzise. Halte deine Antworten kurz 
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
-    console.error("ai-chat error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unbekannter Fehler" }), {
+    console.error("[ai-chat] Error:", e instanceof Error ? e.name : "Unknown");
+    return new Response(JSON.stringify({ error: "Ein Fehler ist aufgetreten" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

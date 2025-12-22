@@ -84,10 +84,7 @@ const handler = async (req: Request): Promise<Response> => {
     const subscriptionId = payload.subscription_id || payload.id;
     const productId = payload.product_id || payload.product?.id;
 
-    console.log("Event type:", eventType);
-    console.log("Customer email:", customerEmail);
-    console.log("Subscription ID:", subscriptionId);
-    console.log("Product ID:", productId);
+    console.log("[copecart] Event:", eventType, "| Product:", productId);
 
     if (!customerEmail) {
       console.error("No customer email found in payload");
@@ -105,7 +102,7 @@ const handler = async (req: Request): Promise<Response> => {
       .maybeSingle();
 
     if (profileError) {
-      console.error("Error finding profile:", profileError.message);
+      console.error("[copecart] Profile lookup failed");
       return new Response(JSON.stringify({ error: "Database error" }), {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -113,7 +110,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (!profile) {
-      console.log("No user found with email:", customerEmail);
+      console.log("[copecart] No matching user found");
       // User hasn't registered yet - store this for later processing
       // Or the email doesn't match - log and return success to acknowledge receipt
       return new Response(JSON.stringify({ 
@@ -125,7 +122,7 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    console.log("Found profile:", profile.id);
+    console.log("[copecart] Profile found");
 
     let updateData: {
       subscription_status?: string;
@@ -206,14 +203,14 @@ const handler = async (req: Request): Promise<Response> => {
         .eq("id", profile.id);
 
       if (updateError) {
-        console.error("Error updating profile:", updateError.message);
+        console.error("[copecart] Update failed");
         return new Response(JSON.stringify({ error: "Failed to update subscription" }), {
           status: 500,
           headers: { "Content-Type": "application/json", ...corsHeaders },
         });
       }
 
-      console.log("Successfully updated profile with:", updateData);
+      console.log("[copecart] Subscription updated successfully");
     }
 
     return new Response(JSON.stringify({ success: true }), {
@@ -221,8 +218,8 @@ const handler = async (req: Request): Promise<Response> => {
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
-    console.error("Webhook error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error("[copecart] Error:", error instanceof Error ? error.name : "Unknown");
+    return new Response(JSON.stringify({ error: "Webhook processing failed" }), {
       status: 500,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
