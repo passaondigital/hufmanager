@@ -22,11 +22,13 @@ import {
   Crown,
   FileText,
   AlertTriangle,
+  Star,
 } from "lucide-react";
 import { BusinessHoursEditor, defaultHours, type BusinessHours } from "@/components/BusinessHoursEditor";
 import { ReminderSettingsCard } from "@/components/ReminderSettingsCard";
 import { SubscriptionCard } from "@/components/subscription/SubscriptionCard";
 import { LandingServicesEditor } from "@/components/landing/LandingServicesEditor";
+import { ReviewsManagement } from "@/components/management/ReviewsManagement";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -338,14 +340,14 @@ const Management = () => {
       )}
 
       <Tabs defaultValue="business" className="w-full">
-        <TabsList className="grid w-full max-w-4xl grid-cols-7">
+        <TabsList className="grid w-full max-w-4xl grid-cols-8">
           <TabsTrigger value="business" className="gap-2">
             <Building className="h-4 w-4" />
             <span className="hidden sm:inline">Geschäft</span>
           </TabsTrigger>
           <TabsTrigger value="subscription" className="gap-2">
             <Crown className="h-4 w-4" />
-            <span className="hidden sm:inline">Mein Abo</span>
+            <span className="hidden sm:inline">Abo</span>
           </TabsTrigger>
           <TabsTrigger value="hours" className="gap-2">
             <Clock className="h-4 w-4" />
@@ -357,7 +359,11 @@ const Management = () => {
           </TabsTrigger>
           <TabsTrigger value="landing" className="gap-2">
             <Globe className="h-4 w-4" />
-            <span className="hidden sm:inline">Landingpage</span>
+            <span className="hidden sm:inline">Landing</span>
+          </TabsTrigger>
+          <TabsTrigger value="reviews" className="gap-2">
+            <Star className="h-4 w-4" />
+            <span className="hidden sm:inline">Bewertungen</span>
           </TabsTrigger>
           <TabsTrigger value="legal" className="gap-2 relative">
             <FileText className="h-4 w-4" />
@@ -371,6 +377,11 @@ const Management = () => {
             <span className="hidden sm:inline">Zahlung</span>
           </TabsTrigger>
         </TabsList>
+
+        {/* Reviews Management Tab */}
+        <TabsContent value="reviews" className="mt-6">
+          <ReviewsManagement />
+        </TabsContent>
 
         {/* Business Info */}
         <TabsContent value="business" className="mt-6 space-y-6">
