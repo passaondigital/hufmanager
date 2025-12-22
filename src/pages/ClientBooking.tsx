@@ -3,23 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ArrowLeft, Scissors, Calendar, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, Scissors, Check, Loader2, Calendar, Clock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { TimeSlotPicker } from "@/components/booking/TimeSlotPicker";
 
 interface Service {
   id: string;
@@ -50,8 +42,8 @@ export default function ClientBooking() {
   const [step, setStep] = useState<BookingStep>("services");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedHorse, setSelectedHorse] = useState<string>("");
-  const [dateType, setDateType] = useState<"next" | "preferred">("next");
-  const [preferredDate, setPreferredDate] = useState("");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [selectedTime, setSelectedTime] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [providerId, setProviderId] = useState<string | null>(null);
 
@@ -106,36 +98,68 @@ export default function ClientBooking() {
     }).format(amount);
   };
 
+  const isDirectBooking = selectedService?.booking_action === "direct_book";
+
+  const handleSlotSelect = (date: Date, time: string) => {
+    setSelectedDate(date);
+    setSelectedTime(time);
+  };
+
   const handleSubmit = async () => {
     if (!user || !providerId || !selectedService || !selectedHorse) return;
 
     setSubmitting(true);
 
     try {
-      const { error } = await supabase.from("leads").insert({
-        provider_id: providerId,
-        name: user.email,
-        email: user.email,
-        lead_type: "termin",
-        status: "neu",
-        source: "client_app",
-        message: `Terminanfrage: ${selectedService.name}\n` +
-                 `Pferd: ${horses.find(h => h.id === selectedHorse)?.name}\n` +
-                 `Terminwunsch: ${dateType === "next" ? "Nächstmöglicher Termin" : format(new Date(preferredDate), "dd.MM.yyyy", { locale: de })}\n` +
-                 `Notizen: ${notes || "—"}`,
-      });
+      if (isDirectBooking && selectedDate && selectedTime) {
+        // Direct booking: Create an appointment directly
+        const { error } = await supabase.from("appointments").insert({
+          provider_id: providerId,
+          horse_id: selectedHorse,
+          date: format(selectedDate, "yyyy-MM-dd"),
+          time: selectedTime,
+          duration: selectedService.duration || 60,
+          service_type: selectedService.name,
+          price: selectedService.base_price,
+          status: "scheduled",
+          notes: notes || null,
+          is_confirmed_by_client: true,
+          confirmed_at: new Date().toISOString(),
+        });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: "Anfrage gesendet!",
-        description: "Dein Hufbearbeiter wird sich bald bei dir melden.",
-      });
+        toast({
+          title: "Termin gebucht!",
+          description: `${format(selectedDate, "EEEE, d. MMMM", { locale: de })} um ${selectedTime} Uhr`,
+        });
+      } else {
+        // Request only: Create a lead
+        const { error } = await supabase.from("leads").insert({
+          provider_id: providerId,
+          name: user.email,
+          email: user.email,
+          lead_type: "termin",
+          status: "neu",
+          source: "client_app",
+          message: `Terminanfrage: ${selectedService.name}\n` +
+                   `Pferd: ${horses.find(h => h.id === selectedHorse)?.name}\n` +
+                   `Notizen: ${notes || "—"}`,
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: "Anfrage gesendet!",
+          description: "Dein Hufbearbeiter wird sich bald bei dir melden.",
+        });
+      }
+
       navigate("/client-home");
     } catch (error: any) {
       toast({
         title: "Fehler",
-        description: "Die Anfrage konnte nicht gesendet werden.",
+        description: "Die Buchung konnte nicht durchgeführt werden.",
         variant: "destructive",
       });
     } finally {
@@ -233,6 +257,9 @@ export default function ClientBooking() {
                           {service.booking_action === "request_only" && (
                             <span className="text-xs text-orange-600">Nur Anfrage</span>
                           )}
+                          {service.booking_action === "direct_book" && (
+                            <span className="text-xs text-green-600">Direkt buchbar</span>
+                          )}
                           {selectedService?.id === service.id && (
                             <Check className="h-5 w-5 text-primary mt-1 ml-auto" />
                           )}
@@ -323,58 +350,39 @@ export default function ClientBooking() {
           </>
         )}
 
-        {/* Step: Select Date */}
+        {/* Step: Select Date/Time */}
         {step === "date" && (
           <>
             <div>
               <h2 className="text-lg font-semibold text-foreground mb-1">
-                Wann soll der Termin sein?
+                {isDirectBooking ? "Wähle deinen Termin" : "Terminanfrage"}
               </h2>
+              <p className="text-sm text-muted-foreground">
+                {isDirectBooking 
+                  ? "Wähle ein Datum und eine verfügbare Zeit"
+                  : "Dein Hufbearbeiter meldet sich mit verfügbaren Terminen"}
+              </p>
             </div>
 
-            <RadioGroup
-              value={dateType}
-              onValueChange={(v) => setDateType(v as "next" | "preferred")}
-              className="space-y-3"
-            >
-              <Card className={`cursor-pointer ${dateType === "next" ? "border-primary" : ""}`}>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <RadioGroupItem value="next" id="next" />
-                    <Label htmlFor="next" className="flex-1 cursor-pointer">
-                      <span className="font-medium">Nächstmöglicher Termin</span>
-                      <p className="text-sm text-muted-foreground">
-                        Der Provider wählt den nächsten freien Termin
-                      </p>
-                    </Label>
-                  </div>
+            {isDirectBooking && providerId ? (
+              <TimeSlotPicker
+                providerId={providerId}
+                serviceDuration={selectedService?.duration || 60}
+                onSelectSlot={handleSlotSelect}
+                selectedDate={selectedDate}
+                selectedTime={selectedTime}
+              />
+            ) : (
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-muted-foreground">
+                    Für diesen Service wird eine Terminanfrage erstellt.
+                    Dein Hufbearbeiter wird sich bei dir melden.
+                  </p>
                 </CardContent>
               </Card>
-
-              <Card className={`cursor-pointer ${dateType === "preferred" ? "border-primary" : ""}`}>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <RadioGroupItem value="preferred" id="preferred" />
-                    <Label htmlFor="preferred" className="flex-1 cursor-pointer">
-                      <span className="font-medium">Wunschtermin</span>
-                      <p className="text-sm text-muted-foreground">
-                        Gib deinen Wunschtermin an
-                      </p>
-                    </Label>
-                  </div>
-                  {dateType === "preferred" && (
-                    <div className="mt-3 ml-7">
-                      <Input
-                        type="date"
-                        value={preferredDate}
-                        onChange={(e) => setPreferredDate(e.target.value)}
-                        min={new Date().toISOString().split("T")[0]}
-                      />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </RadioGroup>
+            )}
 
             <div>
               <Label htmlFor="notes">Notizen (optional)</Label>
@@ -394,7 +402,7 @@ export default function ClientBooking() {
               </Button>
               <Button
                 className="flex-1"
-                disabled={dateType === "preferred" && !preferredDate}
+                disabled={isDirectBooking && (!selectedDate || !selectedTime)}
                 onClick={() => setStep("confirm")}
               >
                 Weiter
@@ -411,7 +419,7 @@ export default function ClientBooking() {
                 Zusammenfassung
               </h2>
               <p className="text-sm text-muted-foreground">
-                Prüfe deine Buchungsanfrage
+                {isDirectBooking ? "Prüfe deine Buchung" : "Prüfe deine Anfrage"}
               </p>
             </div>
 
@@ -427,14 +435,23 @@ export default function ClientBooking() {
                     {horses.find(h => h.id === selectedHorse)?.name}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Termin</span>
-                  <span className="font-medium">
-                    {dateType === "next"
-                      ? "Nächstmöglicher"
-                      : format(new Date(preferredDate), "dd.MM.yyyy", { locale: de })}
-                  </span>
-                </div>
+                {isDirectBooking && selectedDate && selectedTime && (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Datum</span>
+                      <span className="font-medium">
+                        {format(selectedDate, "EEEE, d. MMMM yyyy", { locale: de })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Uhrzeit</span>
+                      <span className="font-medium flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {selectedTime} Uhr
+                      </span>
+                    </div>
+                  </>
+                )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Preis</span>
                   <span className="font-bold text-primary">
@@ -460,7 +477,7 @@ export default function ClientBooking() {
                 disabled={submitting}
               >
                 {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Anfrage senden
+                {isDirectBooking ? "Jetzt buchen" : "Anfrage senden"}
               </Button>
             </div>
           </>
