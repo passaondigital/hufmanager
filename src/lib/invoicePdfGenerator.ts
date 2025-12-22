@@ -110,7 +110,7 @@ export async function generateInvoicePdf(
       .from("business_settings")
       .select("*")
       .eq("user_id", providerId)
-      .single();
+      .maybeSingle();
     
     if (data) settings = data;
   } catch {

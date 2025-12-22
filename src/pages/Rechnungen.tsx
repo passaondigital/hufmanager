@@ -179,6 +179,8 @@ export default function Rechnungen() {
     if (blob) {
       const url = window.URL.createObjectURL(blob);
       window.open(url, "_blank");
+      // Revoke after a delay to allow the new tab to load
+      setTimeout(() => window.URL.revokeObjectURL(url), 5000);
     }
   };
 
