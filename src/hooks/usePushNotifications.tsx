@@ -3,10 +3,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
-// VAPID public key - This should match the one stored in Supabase secrets
-// Users need to generate their own VAPID keys and store them in Supabase secrets
-// Generate with: npx web-push generate-vapid-keys
-const VAPID_PUBLIC_KEY = 'BN0wPMr6jY7gLNJJhK-VHfY_hNhMJuJLdTw3KE9x5Ks3c8L_5kFr8wNNyLMz0Yt7O8M_QJo5xQVdLx4rKf3nMqA';
+// VAPID public key from environment variable for easier rotation
+// Falls back to hardcoded value for backwards compatibility
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || 'BN0wPMr6jY7gLNJJhK-VHfY_hNhMJuJLdTw3KE9x5Ks3c8L_5kFr8wNNyLMz0Yt7O8M_QJo5xQVdLx4rKf3nMqA';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
