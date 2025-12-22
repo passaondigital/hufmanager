@@ -84,9 +84,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
+const signIn = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    
+    if (error) {
+      return { error };
+    }
+
+    // Check if user is suspended
+    if (data.user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_suspended, suspended_reason")
+        .eq("id", data.user.id)
+        .single();
+
+      if (profile?.is_suspended) {
+        // Sign out immediately
+        await supabase.auth.signOut();
+        const reason = profile.suspended_reason || "Ihr Konto wurde gesperrt.";
+        return { 
+          error: new Error(`Konto gesperrt: ${reason}`) 
+        };
+      }
+    }
+
+    return { error: null };
   };
 
   const signUp = async (email: string, password: string, fullName: string, role: "provider" | "client" = "client") => {

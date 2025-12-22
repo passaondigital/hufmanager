@@ -89,8 +89,13 @@ export default function Auth() {
     setLoading(false);
 
     if (error) {
-      // Check if user doesn't exist (for provider mode, offer to show pricing)
-      if (loginMode === "provider" && 
+      // Check if account is suspended
+      if (error.message.includes("Konto gesperrt")) {
+        toast.error(error.message, {
+          duration: 8000,
+          description: "Bitte kontaktieren Sie den Support.",
+        });
+      } else if (loginMode === "provider" && 
           (error.message.includes("Invalid login credentials") || 
            error.message.includes("User not found"))) {
         openPricingModal(
