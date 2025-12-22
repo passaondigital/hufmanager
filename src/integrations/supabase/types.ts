@@ -290,6 +290,8 @@ export type Database = {
           stripe_public_key: string | null
           subdomain: string | null
           tax_number: string | null
+          travel_cost_flat: number | null
+          travel_cost_per_km: number | null
           updated_at: string
           user_id: string | null
         }
@@ -315,6 +317,8 @@ export type Database = {
           stripe_public_key?: string | null
           subdomain?: string | null
           tax_number?: string | null
+          travel_cost_flat?: number | null
+          travel_cost_per_km?: number | null
           updated_at?: string
           user_id?: string | null
         }
@@ -340,6 +344,8 @@ export type Database = {
           stripe_public_key?: string | null
           subdomain?: string | null
           tax_number?: string | null
+          travel_cost_flat?: number | null
+          travel_cost_per_km?: number | null
           updated_at?: string
           user_id?: string | null
         }

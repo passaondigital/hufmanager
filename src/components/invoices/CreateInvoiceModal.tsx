@@ -19,19 +19,40 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Car, MapPin, Plus } from "lucide-react";
 import { z } from "zod";
+
+// Haversine formula to calculate distance between two coordinates
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 
 interface Client {
   id: string;
   full_name: string | null;
   readable_id: string | null;
+  stable_latitude: number | null;
+  stable_longitude: number | null;
 }
 
 interface Horse {
   id: string;
   name: string;
   owner_id: string;
+}
+
+interface BusinessSettings {
+  address: string | null;
+  travel_cost_per_km: number | null;
+  travel_cost_flat: number | null;
 }
 
 interface CreateInvoiceModalProps {
@@ -66,6 +87,10 @@ export function CreateInvoiceModal({
   const [horses, setHorses] = useState<Horse[]>([]);
   const [filteredHorses, setFilteredHorses] = useState<Horse[]>([]);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [businessSettings, setBusinessSettings] = useState<BusinessSettings | null>(null);
+  const [showTravelCost, setShowTravelCost] = useState(false);
+  const [travelKm, setTravelKm] = useState<string>("");
+  const [calculatedTravelCost, setCalculatedTravelCost] = useState<number>(0);
 
   const [formData, setFormData] = useState({
     client_id: preSelectedClientId || "",
@@ -96,6 +121,15 @@ export function CreateInvoiceModal({
     if (!open || !user || dataLoaded) return;
 
     const fetchData = async () => {
+      // Load business settings for travel costs
+      const { data: settings } = await supabase
+        .from("business_settings")
+        .select("address, travel_cost_per_km, travel_cost_flat")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      setBusinessSettings(settings);
+
       // Lade ALLE Kunden (Profile mit Rolle 'client') aus der Datenbank
       const { data: clientRoles } = await supabase
         .from("user_roles")
@@ -108,7 +142,7 @@ export function CreateInvoiceModal({
         const clientIds = clientRoles.map(r => r.user_id);
         const { data: profiles } = await supabase
           .from("profiles")
-          .select("id, full_name, readable_id")
+          .select("id, full_name, readable_id, stable_latitude, stable_longitude")
           .in("id", clientIds)
           .is("deleted_at", null)
           .order("full_name");
@@ -121,7 +155,7 @@ export function CreateInvoiceModal({
       // Fallback: Auch Profile laden, die vom Provider erstellt wurden
       const { data: createdProfiles } = await supabase
         .from("profiles")
-        .select("id, full_name, readable_id")
+        .select("id, full_name, readable_id, stable_latitude, stable_longitude")
         .eq("created_by_provider_id", user.id)
         .is("deleted_at", null);
 
@@ -157,6 +191,66 @@ export function CreateInvoiceModal({
       return () => clearTimeout(timer);
     }
   }, [open]);
+
+  // Calculate travel cost when km changes or client changes
+  useEffect(() => {
+    if (!businessSettings) return;
+    
+    const km = parseFloat(travelKm) || 0;
+    const perKm = businessSettings.travel_cost_per_km || 0;
+    const flat = businessSettings.travel_cost_flat || 0;
+    
+    // Calculate: flat fee + (km * cost per km) - round trip = km * 2
+    const cost = flat + (km * 2 * perKm);
+    setCalculatedTravelCost(Math.round(cost * 100) / 100);
+  }, [travelKm, businessSettings]);
+
+  // Auto-calculate distance when client is selected
+  const calculateTravelDistance = () => {
+    const selectedClient = clients.find(c => c.id === formData.client_id);
+    
+    if (!selectedClient?.stable_latitude || !selectedClient?.stable_longitude) {
+      toast({
+        title: "Keine Koordinaten",
+        description: "Für diesen Kunden sind keine Standortdaten hinterlegt. Bitte KM manuell eingeben.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // For now, use Nuremberg as default business location if not set
+    // In production, this would come from geocoding the business address
+    // Using approximate center of Germany as fallback
+    const businessLat = 49.45; // Nuremberg
+    const businessLon = 11.08;
+    
+    const distance = calculateDistance(
+      businessLat,
+      businessLon,
+      selectedClient.stable_latitude,
+      selectedClient.stable_longitude
+    );
+    
+    setTravelKm(Math.round(distance).toString());
+    setShowTravelCost(true);
+  };
+
+  const addTravelCostToAmount = () => {
+    const currentAmount = parseFloat(formData.total_amount) || 0;
+    const newAmount = currentAmount + calculatedTravelCost;
+    setFormData(prev => ({ ...prev, total_amount: newAmount.toFixed(2) }));
+    
+    // Add to notes
+    const travelNote = `Anfahrt: ${travelKm} km (Hin- und Rückfahrt) = €${calculatedTravelCost.toFixed(2)}`;
+    const currentNotes = formData.notes;
+    setFormData(prev => ({
+      ...prev,
+      notes: currentNotes ? `${currentNotes}\n${travelNote}` : travelNote
+    }));
+    
+    setShowTravelCost(false);
+    toast({ title: "Fahrtkosten hinzugefügt", description: `€${calculatedTravelCost.toFixed(2)} wurden zum Betrag addiert.` });
+  };
 
   // Filter horses when client changes
   useEffect(() => {
@@ -367,6 +461,95 @@ export function CreateInvoiceModal({
               </Select>
             </div>
           </div>
+
+          {/* Travel Cost Section */}
+          {formData.client_id && (
+            <div className="space-y-3 p-3 rounded-lg bg-muted/50 border border-border">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2">
+                  <Car className="h-4 w-4" />
+                  Fahrtkosten
+                </Label>
+                {!showTravelCost && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowTravelCost(true);
+                      calculateTravelDistance();
+                    }}
+                    className="gap-1"
+                  >
+                    <Plus className="h-3 w-3" />
+                    Anfahrt berechnen
+                  </Button>
+                )}
+              </div>
+              
+              {showTravelCost && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 space-y-1">
+                      <Label className="text-xs text-muted-foreground">Entfernung (einfache Strecke)</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          value={travelKm}
+                          onChange={(e) => setTravelKm(e.target.value)}
+                          placeholder="km"
+                          className="w-24"
+                        />
+                        <span className="text-sm text-muted-foreground">km</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={calculateTravelDistance}
+                          title="Distanz berechnen"
+                        >
+                          <MapPin className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {travelKm ? `${travelKm} km × 2 (Hin+Zurück) × €${businessSettings?.travel_cost_per_km || 0.50}/km` : ""}
+                      {businessSettings?.travel_cost_flat ? ` + €${businessSettings.travel_cost_flat} Pauschale` : ""}
+                    </span>
+                    <span className="font-semibold text-primary">
+                      = €{calculatedTravelCost.toFixed(2)}
+                    </span>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={addTravelCostToAmount}
+                      disabled={!travelKm || calculatedTravelCost <= 0}
+                      className="flex-1"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Zum Betrag hinzufügen
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowTravelCost(false)}
+                    >
+                      Abbrechen
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="notes">Notizen</Label>
