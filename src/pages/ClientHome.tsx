@@ -15,6 +15,7 @@ import { LastVisitWidget } from "@/components/client/LastVisitWidget";
 import { WhatsAppFAB } from "@/components/client/WhatsAppFAB";
 import { EmergencyVetWidget } from "@/components/client/EmergencyVetWidget";
 import { AppointmentChecklistWidget } from "@/components/client/AppointmentChecklistWidget";
+import { PushNotificationBanner } from "@/components/notifications/PushNotificationBanner";
 
 interface Horse {
   id: string;
@@ -140,6 +141,9 @@ export default function ClientHome() {
       </header>
 
       <main className="px-4 py-6 max-w-lg mx-auto space-y-6">
+        {/* Push Notification Banner */}
+        <PushNotificationBanner />
+
         {/* Unconfirmed Appointments Banner */}
         <UnconfirmedAppointmentsBanner />
 
