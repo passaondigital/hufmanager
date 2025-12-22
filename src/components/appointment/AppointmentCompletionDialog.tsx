@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Camera, Check, AlertTriangle, XCircle, Mic, Square, Play, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { uploadFile } from "@/lib/storage";
 
 interface AppointmentCompletionDialogProps {
   open: boolean;
@@ -137,19 +138,14 @@ export function AppointmentCompletionDialog({
   const uploadAudio = async (blob: Blob) => {
     setUploadingAudio(true);
     try {
-      const fileName = `${appointmentId}/audio_${Date.now()}.webm`;
+      // Use UUID for unpredictable file names
+      const fileName = `${appointmentId}/audio_${crypto.randomUUID()}.webm`;
       
-      const { error: uploadError } = await supabase.storage
-        .from('hoof_photos')
-        .upload(fileName, blob, { contentType: 'audio/webm' });
+      const { path, error: uploadError } = await uploadFile('hoof_photos', fileName, blob, { contentType: 'audio/webm' });
+      if (uploadError || !path) throw uploadError || new Error("Upload failed");
 
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from('hoof_photos')
-        .getPublicUrl(fileName);
-
-      setAudioUrl(urlData.publicUrl);
+      // Store path instead of public URL
+      setAudioUrl(path);
       toast({ title: "Sprachnotiz gespeichert 🎙️" });
     } catch (error: any) {
       toast({ title: "Fehler beim Speichern", description: error.message, variant: "destructive" });
@@ -193,19 +189,14 @@ export function AppointmentCompletionDialog({
     setUploading(true);
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${appointmentId}/${Date.now()}.${fileExt}`;
+      // Use UUID for unpredictable file names
+      const fileName = `${appointmentId}/${crypto.randomUUID()}.${fileExt}`;
       
-      const { error: uploadError } = await supabase.storage
-        .from('hoof_photos')
-        .upload(fileName, file);
+      const { path, error: uploadError } = await uploadFile('hoof_photos', fileName, file);
+      if (uploadError || !path) throw uploadError || new Error("Upload failed");
 
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from('hoof_photos')
-        .getPublicUrl(fileName);
-
-      setPhotoUrl(urlData.publicUrl);
+      // Store path instead of public URL
+      setPhotoUrl(path);
       toast({ title: "Foto gespeichert" });
     } catch (error: any) {
       toast({ title: "Fehler", description: error.message, variant: "destructive" });

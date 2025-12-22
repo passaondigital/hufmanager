@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Camera, X, Upload, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { uploadFile, getStorageUrl } from "@/lib/storage";
 
 interface LTZHoofPhotoCaptureProps {
   hoofKey: string;
@@ -51,19 +52,17 @@ export function LTZHoofPhotoCapture({
 
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${horseId}/${hoofKey}_${Date.now()}.${fileExt}`;
+      // Use UUID for unpredictable file names
+      const fileName = `${horseId}/${hoofKey}_${crypto.randomUUID()}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('horse-documents')
-        .upload(fileName, file);
+      const { path, error: uploadError } = await uploadFile('horse-documents', fileName, file);
+      if (uploadError || !path) throw uploadError || new Error("Upload failed");
 
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('horse-documents')
-        .getPublicUrl(fileName);
-
-      onPhotoChange(publicUrl);
+      // Get a signed URL for immediate display
+      const signedUrl = await getStorageUrl('horse-documents', path);
+      
+      // Pass the file path (not URL) to parent - parent should store path
+      onPhotoChange(path);
       
       toast({
         title: "Foto hochgeladen",

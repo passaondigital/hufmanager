@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Camera } from "lucide-react";
 import { Json } from "@/integrations/supabase/types";
+import { uploadFile, getStorageUrl } from "@/lib/storage";
 
 interface EditHorseModalProps {
   horse: Horse;
@@ -54,6 +55,7 @@ export function EditHorseModal({ horse, open, onClose, onSaved }: EditHorseModal
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoUrl, setPhotoUrl] = useState(horse.photo_url || "");
+  const [displayPhotoUrl, setDisplayPhotoUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState(() => buildInitialForm(horse));
 
@@ -61,6 +63,17 @@ export function EditHorseModal({ horse, open, onClose, onSaved }: EditHorseModal
   useEffect(() => {
     setPhotoUrl(horse.photo_url || "");
     setForm(buildInitialForm(horse));
+    
+    // Load signed URL for display
+    const loadPhotoUrl = async () => {
+      if (horse.photo_url) {
+        const signedUrl = await getStorageUrl('horse-documents', horse.photo_url);
+        setDisplayPhotoUrl(signedUrl);
+      } else {
+        setDisplayPhotoUrl(null);
+      }
+    };
+    loadPhotoUrl();
   }, [horse.id]);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,19 +103,19 @@ export function EditHorseModal({ horse, open, onClose, onSaved }: EditHorseModal
     setUploadingPhoto(true);
     try {
       const fileExt = file.name.split('.').pop();
-      const filePath = `${horse.id}/profile.${fileExt}`;
+      // Use UUID for unpredictable file names
+      const filePath = `${horse.id}/profile_${crypto.randomUUID()}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('horse-documents')
-        .upload(filePath, file, { upsert: true });
+      const { path, error: uploadError } = await uploadFile('horse-documents', filePath, file, { upsert: true });
+      if (uploadError || !path) throw uploadError || new Error("Upload failed");
 
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from('horse-documents')
-        .getPublicUrl(filePath);
-
-      setPhotoUrl(urlData.publicUrl);
+      // Store path, not URL
+      setPhotoUrl(path);
+      
+      // Get signed URL for display
+      const signedUrl = await getStorageUrl('horse-documents', path);
+      setDisplayPhotoUrl(signedUrl);
+      
       toast({ title: "Foto hochgeladen" });
     } catch (error: any) {
       toast({
@@ -198,10 +211,11 @@ export function EditHorseModal({ horse, open, onClose, onSaved }: EditHorseModal
           
           <div className="flex-1 overflow-y-auto py-4">
             <TabsContent value="basic" className="mt-0 space-y-4">
-              {/* Photo Upload */}
               <div className="flex items-center gap-4">
                 <div className="h-20 w-20 rounded-xl bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
-                  {photoUrl ? (
+                  {displayPhotoUrl ? (
+                    <img src={displayPhotoUrl} alt="Pferd" className="h-full w-full object-cover" />
+                  ) : photoUrl ? (
                     <img src={photoUrl} alt="Pferd" className="h-full w-full object-cover" />
                   ) : (
                     <span className="text-3xl">🐴</span>
