@@ -507,9 +507,16 @@ export default function Auth() {
             setAdminLoading(true);
 
             if (adminMode === "set-password") {
-              // Send password reset email for first-time setup
-              const { error } = await supabase.auth.resetPasswordForEmail(adminEmail, {
-                redirectTo: `${window.location.origin}/reset-password?admin=true`,
+              // Use signInWithOtp (magic link) which will create the user if they don't exist
+              const { error } = await supabase.auth.signInWithOtp({
+                email: adminEmail,
+                options: {
+                  emailRedirectTo: `${window.location.origin}/admin/mission-control`,
+                  data: {
+                    full_name: "Admin",
+                    role: "admin",
+                  },
+                },
               });
               
               setAdminLoading(false);
@@ -517,7 +524,7 @@ export default function Auth() {
               if (error) {
                 toast.error(error.message);
               } else {
-                toast.success("Ein Link zum Setzen deines Passworts wurde gesendet!");
+                toast.success("Ein Magic Link wurde an deine E-Mail gesendet! Klicke darauf um dich einzuloggen.");
                 setAdminDialogOpen(false);
                 setAdminEmail("");
               }
