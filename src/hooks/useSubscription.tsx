@@ -134,7 +134,14 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   // If suspended, no access
   const isActive = !isSuspended && (status === "active" || status === "trialing");
-  const isPro = plan === "pro" || plan === "advanced";
+  
+  // isPro: plan_override takes ABSOLUTE precedence over Copecart
+  // Any non-null, non-standard override = Pro access
+  const hasOverridePro = planOverride !== null && planOverride !== "standard";
+  const hasValidAccess = accessValidUntil ? accessValidUntil > new Date() : true;
+  const isPro = hasOverridePro && hasValidAccess 
+    ? true 
+    : plan === "pro" || plan === "advanced";
 
   const hasFeature = (feature: string): boolean => {
     if (isSuspended) return false;
