@@ -7,12 +7,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, FileText, Eye, Download, Search, Loader2 } from "lucide-react";
+import { ArrowLeft, FileText, Eye, Download, Search, Loader2, Mail } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
 import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
 import { PdfPreviewDialog } from "@/components/invoices/PdfPreviewDialog";
+
+interface ProviderInfo {
+  business_name: string | null;
+  owner_name: string | null;
+  email: string | null;
+}
 
 interface Invoice {
   id: string;
@@ -49,6 +55,8 @@ export default function ClientInvoices() {
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<ClientProfile | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [providerInfoMap, setProviderInfoMap] = useState<Map<string, ProviderInfo>>(new Map());
+  const [sendingEmailFor, setSendingEmailFor] = useState<string | null>(null);
   
   // PDF Preview state
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
@@ -94,6 +102,29 @@ export default function ClientInvoices() {
       if (!error && data) {
         setInvoices(data as Invoice[]);
         setFilteredInvoices(data as Invoice[]);
+        
+        // Fetch provider business settings for email
+        const providerIds = [...new Set(data.map(inv => inv.provider_id).filter(Boolean))] as string[];
+        if (providerIds.length > 0) {
+          const { data: settingsData } = await supabase
+            .from("business_settings")
+            .select("user_id, business_name, owner_name, email")
+            .in("user_id", providerIds);
+          
+          if (settingsData) {
+            const map = new Map<string, ProviderInfo>();
+            settingsData.forEach(s => {
+              if (s.user_id) {
+                map.set(s.user_id, {
+                  business_name: s.business_name,
+                  owner_name: s.owner_name,
+                  email: s.email,
+                });
+              }
+            });
+            setProviderInfoMap(map);
+          }
+        }
       }
       setLoading(false);
     };
@@ -188,6 +219,51 @@ export default function ClientInvoices() {
     setPdfBlob(null);
   };
 
+  const handleSendEmail = async (invoice: Invoice) => {
+    if (!userProfile?.email) {
+      toast({
+        title: "Keine E-Mail-Adresse",
+        description: "Bitte hinterlegen Sie Ihre E-Mail-Adresse in Ihrem Profil.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSendingEmailFor(invoice.id);
+    try {
+      const providerInfo = invoice.provider_id ? providerInfoMap.get(invoice.provider_id) : null;
+      const providerName = providerInfo?.business_name || providerInfo?.owner_name || "Ihr Hufbearbeiter";
+
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await supabase.functions.invoke("send-invoice-email", {
+        body: {
+          invoiceId: invoice.id,
+          recipientEmail: userProfile.email,
+          recipientName: userProfile.full_name || "Kunde",
+          invoiceNumber: invoice.invoice_number || "",
+          totalAmount: invoice.total_amount,
+          providerName,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      toast({ title: "E-Mail gesendet", description: "Die Rechnung wurde an Ihre E-Mail-Adresse gesendet." });
+    } catch (error) {
+      console.error("Failed to send email:", error);
+      toast({
+        title: "E-Mail-Versand fehlgeschlagen",
+        description: "Bitte versuchen Sie es erneut.",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingEmailFor(null);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -278,7 +354,7 @@ export default function ClientInvoices() {
                       </div>
                     </div>
                     <div className="flex flex-col gap-2">
-                      {generatingPdfFor === invoice.id ? (
+                      {generatingPdfFor === invoice.id || sendingEmailFor === invoice.id ? (
                         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                       ) : (
                         <>
@@ -299,6 +375,15 @@ export default function ClientInvoices() {
                             title="Herunterladen"
                           >
                             <Download className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleSendEmail(invoice)}
+                            title="Per E-Mail senden"
+                          >
+                            <Mail className="h-4 w-4" />
                           </Button>
                         </>
                       )}

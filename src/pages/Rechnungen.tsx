@@ -26,6 +26,7 @@ import { FileText, Search, Plus, Eye, Download, Trash2, MoreVertical, Loader2 } 
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { CreateInvoiceModal } from "@/components/invoices/CreateInvoiceModal";
+import { PdfPreviewDialog } from "@/components/invoices/PdfPreviewDialog";
 import { toast } from "@/hooks/use-toast";
 import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
 
@@ -65,6 +66,12 @@ export default function Rechnungen() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
   const [generatingPdfFor, setGeneratingPdfFor] = useState<string | null>(null);
+  
+  // PDF Preview state
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+  const [pdfTitle, setPdfTitle] = useState("");
+  const [pdfFileName, setPdfFileName] = useState("");
 
   const fetchInvoices = async () => {
     if (!user) return;
@@ -177,10 +184,10 @@ export default function Rechnungen() {
   const handleView = async (invoice: Invoice) => {
     const blob = await handleGeneratePdf(invoice);
     if (blob) {
-      const url = window.URL.createObjectURL(blob);
-      window.open(url, "_blank");
-      // Revoke after a delay to allow the new tab to load
-      setTimeout(() => window.URL.revokeObjectURL(url), 5000);
+      setPdfBlob(blob);
+      setPdfTitle(`Rechnung ${invoice.invoice_number || ""}`);
+      setPdfFileName(`Rechnung_${invoice.invoice_number || invoice.id.slice(0, 8)}.pdf`);
+      setPdfPreviewOpen(true);
     }
   };
 
@@ -197,6 +204,11 @@ export default function Rechnungen() {
       window.URL.revokeObjectURL(url);
       toast({ title: "PDF heruntergeladen" });
     }
+  };
+
+  const closePdfPreview = () => {
+    setPdfPreviewOpen(false);
+    setPdfBlob(null);
   };
 
   const handleDelete = async () => {
@@ -390,6 +402,15 @@ export default function Rechnungen() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* PDF Preview Dialog */}
+      <PdfPreviewDialog
+        open={pdfPreviewOpen}
+        onClose={closePdfPreview}
+        pdfBlob={pdfBlob}
+        title={pdfTitle}
+        fileName={pdfFileName}
+      />
     </div>
   );
 }
