@@ -16,6 +16,7 @@ import { WhatsAppFAB } from "@/components/client/WhatsAppFAB";
 import { EmergencyVetWidget } from "@/components/client/EmergencyVetWidget";
 import { AppointmentChecklistWidget } from "@/components/client/AppointmentChecklistWidget";
 import { PushNotificationBanner } from "@/components/notifications/PushNotificationBanner";
+import { ServiceHistoryWidget } from "@/components/client/ServiceHistoryWidget";
 
 interface Horse {
   id: string;
@@ -164,6 +165,9 @@ export default function ClientHome() {
 
         {/* Appointment Checklist Widget */}
         {user && <AppointmentChecklistWidget userId={user.id} />}
+
+        {/* Service History Widget */}
+        {user && <ServiceHistoryWidget userId={user.id} />}
 
         {/* Last Visit Widget */}
         {user && <LastVisitWidget userId={user.id} />}
