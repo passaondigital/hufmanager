@@ -40,7 +40,8 @@ import {
   ArrowUpDown,
   ChevronUp,
   ChevronDown,
-  Euro
+  Euro,
+  Trash2
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -120,6 +121,8 @@ export default function MissionControl() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [providerToDelete, setProviderToDelete] = useState<ProviderData | null>(null);
 
   // Sorting
   const [sortField, setSortField] = useState<SortField>("name");
@@ -539,7 +542,29 @@ export default function MissionControl() {
     }
   };
 
-  const handleSetPassword = async () => {
+  const handleDeleteUser = async () => {
+    if (!providerToDelete) return;
+
+    setDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-delete-user", {
+        body: { userId: providerToDelete.id },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      toast.success(`Account ${providerToDelete.full_name || providerToDelete.email} wurde gelöscht`);
+      setProviderToDelete(null);
+      setEditDialogOpen(false);
+      fetchProviders();
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      toast.error(error.message || "Fehler beim Löschen");
+    } finally {
+      setDeleting(false);
+    }
+  };
     if (!newPassword || !confirmPassword) {
       toast.error("Bitte beide Passwort-Felder ausfüllen");
       return;
@@ -1665,6 +1690,56 @@ export default function MissionControl() {
                       </AlertDialog>
                     </div>
                   )}
+
+                  <Separator className="my-6" />
+
+                  {/* Delete Account Section */}
+                  <div className="space-y-4">
+                    <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                      <div className="flex items-center gap-2 text-destructive mb-2">
+                        <Trash2 className="w-5 h-5" />
+                        <span className="font-semibold">Account dauerhaft löschen</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Der Account wird unwiderruflich gelöscht. Alle Daten werden entfernt.
+                      </p>
+                    </div>
+
+                    <AlertDialog open={!!providerToDelete} onOpenChange={(open) => !open && setProviderToDelete(null)}>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          className="w-full gap-2 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                          onClick={() => setProviderToDelete(selectedProvider)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Account löschen
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Account unwiderruflich löschen?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            <span className="font-semibold text-destructive">
+                              {providerToDelete?.full_name || providerToDelete?.email}
+                            </span>{" "}
+                            wird dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel disabled={deleting}>Abbrechen</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleDeleteUser}
+                            disabled={deleting}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            {deleting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                            Ja, endgültig löschen
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </TabsContent>
               </Tabs>
             )}
