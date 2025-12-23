@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Send, MessageSquare, User, Search, Plus, ArrowLeft } from "lucide-react";
+import { Send, MessageSquare, User, Search, Plus, ArrowLeft, Paperclip, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -35,6 +35,7 @@ interface Message {
   content: string;
   is_read: boolean;
   created_at: string;
+  image_url?: string | null;
 }
 
 interface Contact {
@@ -59,6 +60,10 @@ export default function Chat() {
   const [isNewChatMode, setIsNewChatMode] = useState(false);
   const [availableContacts, setAvailableContacts] = useState<Contact[]>([]);
   const [startWithProcessed, setStartWithProcessed] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -323,13 +328,64 @@ export default function Chat() {
     }
   }, [messages]);
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+      toast({ title: "Fehler", description: "Bitte nur Bilder auswählen", variant: "destructive" });
+      return;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Fehler", description: "Bild darf maximal 5MB groß sein", variant: "destructive" });
+      return;
+    }
+    
+    setSelectedImage(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const clearImage = () => {
+    setSelectedImage(null);
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+      setImagePreview(null);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const uploadImage = async (file: File): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user!.id}/${Date.now()}.${fileExt}`;
+    
+    const { error } = await supabase.storage.from('chat-images').upload(fileName, file);
+    if (error) return null;
+    
+    const { data: { publicUrl } } = supabase.storage.from('chat-images').getPublicUrl(fileName);
+    return publicUrl;
+  };
+
   const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation || !user) return;
+    if ((!newMessage.trim() && !selectedImage) || !selectedConversation || !user) return;
+
+    setSending(true);
+    let imageUrl: string | null = null;
+    
+    if (selectedImage) {
+      imageUrl = await uploadImage(selectedImage);
+      if (!imageUrl) {
+        toast({ title: "Fehler", description: "Bild konnte nicht hochgeladen werden", variant: "destructive" });
+        setSending(false);
+        return;
+      }
+    }
 
     await (supabase as any).from('messages').insert({
       conversation_id: selectedConversation.id,
       sender_id: user.id,
-      content: newMessage.trim(),
+      content: newMessage.trim() || (imageUrl ? '📷 Bild' : ''),
+      image_url: imageUrl,
     });
 
     // Zeitstempel der Konversation aktualisieren
@@ -339,6 +395,8 @@ export default function Chat() {
       .eq("id", selectedConversation.id);
 
     setNewMessage("");
+    clearImage();
+    setSending(false);
   };
 
   // Suchfilter (case-insensitive)
@@ -522,7 +580,18 @@ export default function Chat() {
                             : "bg-muted"
                         )}
                       >
-                        <p className="text-sm">{msg.content}</p>
+                        {msg.image_url && (
+                          <a href={msg.image_url} target="_blank" rel="noopener noreferrer" className="block mb-2">
+                            <img 
+                              src={msg.image_url} 
+                              alt="Bild" 
+                              className="rounded-lg max-w-full max-h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                            />
+                          </a>
+                        )}
+                        {msg.content && msg.content !== '📷 Bild' && (
+                          <p className="text-sm">{msg.content}</p>
+                        )}
                         <p className="text-xs opacity-70 mt-1">
                           {format(new Date(msg.created_at), "HH:mm", { locale: de })}
                         </p>
@@ -533,6 +602,22 @@ export default function Chat() {
               </ScrollArea>
             </CardContent>
             <div className="p-4 border-t">
+              {/* Image Preview */}
+              {imagePreview && (
+                <div className="relative mb-3 inline-block">
+                  <img src={imagePreview} alt="Vorschau" className="max-h-24 rounded-lg object-cover" />
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute -top-2 -right-2 h-6 w-6"
+                    onClick={clearImage}
+                    type="button"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+              
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -540,14 +625,34 @@ export default function Chat() {
                 }}
                 className="flex gap-2"
               >
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+                
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={sending}
+                  type="button"
+                >
+                  <Paperclip className="h-4 w-4" />
+                </Button>
+                
                 <Input
                   placeholder="Nachricht schreiben..."
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   className="flex-1"
+                  disabled={sending}
                 />
-                <Button type="submit" size="icon" disabled={!newMessage.trim()}>
-                  <Send className="h-4 w-4" />
+                <Button type="submit" size="icon" disabled={(!newMessage.trim() && !selectedImage) || sending}>
+                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </Button>
               </form>
             </div>
