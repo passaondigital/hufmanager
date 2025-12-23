@@ -134,8 +134,20 @@ const signIn = async (email: string, password: string) => {
     setRole(null);
   };
 
+  const value = { 
+    user, 
+    session, 
+    role, 
+    loading, 
+    isPasswordRecovery, 
+    clearPasswordRecovery, 
+    signIn, 
+    signUp, 
+    signOut 
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, role, loading, isPasswordRecovery, clearPasswordRecovery, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
