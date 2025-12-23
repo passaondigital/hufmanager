@@ -565,6 +565,8 @@ export default function MissionControl() {
       setDeleting(false);
     }
   };
+
+  const handleSetPassword = async () => {
     if (!newPassword || !confirmPassword) {
       toast.error("Bitte beide Passwort-Felder ausfüllen");
       return;
