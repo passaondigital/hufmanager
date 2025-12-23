@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -273,8 +273,7 @@ export async function generateInvoicePdf(
     [invoice.notes || "Hufbearbeitung", formatCurrency(invoice.total_amount)],
   ];
 
-  // @ts-expect-error jspdf-autotable types
-  doc.autoTable({
+  autoTable(doc, {
     startY: yPos,
     head: [tableData[0]],
     body: [tableData[1]],
