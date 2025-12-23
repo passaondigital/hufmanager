@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Send, ArrowLeft, User, Loader2, MessageSquare } from "lucide-react";
+import { Send, ArrowLeft, User, Loader2, MessageSquare, Paperclip, X, Image as ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -20,6 +20,7 @@ interface Message {
   content: string;
   is_read: boolean;
   created_at: string;
+  image_url?: string | null;
 }
 
 interface Provider {
@@ -37,7 +38,11 @@ export default function ClientChat() {
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Find provider and load/create conversation
   useEffect(() => {
@@ -177,15 +182,93 @@ export default function ClientChat() {
     }
   }, [messages]);
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Fehler",
+        description: "Bitte nur Bilder auswählen",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Fehler",
+        description: "Bild darf maximal 5MB groß sein",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setSelectedImage(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const clearImage = () => {
+    setSelectedImage(null);
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+      setImagePreview(null);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const uploadImage = async (file: File): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user!.id}/${Date.now()}.${fileExt}`;
+    
+    const { error } = await supabase.storage
+      .from('chat-images')
+      .upload(fileName, file);
+    
+    if (error) {
+      console.error('Upload error:', error);
+      return null;
+    }
+    
+    const { data: { publicUrl } } = supabase.storage
+      .from('chat-images')
+      .getPublicUrl(fileName);
+    
+    return publicUrl;
+  };
+
   const sendMessage = async () => {
-    if (!newMessage.trim() || !conversationId || !user) return;
+    if ((!newMessage.trim() && !selectedImage) || !conversationId || !user) return;
     
     setSending(true);
+    setUploading(!!selectedImage);
+    
+    let imageUrl: string | null = null;
+    
+    // Upload image if selected
+    if (selectedImage) {
+      imageUrl = await uploadImage(selectedImage);
+      if (!imageUrl) {
+        toast({
+          title: "Fehler",
+          description: "Bild konnte nicht hochgeladen werden",
+          variant: "destructive",
+        });
+        setSending(false);
+        setUploading(false);
+        return;
+      }
+    }
     
     const { error } = await supabase.from("messages").insert({
       conversation_id: conversationId,
       sender_id: user.id,
-      content: newMessage.trim(),
+      content: newMessage.trim() || (imageUrl ? '📷 Bild' : ''),
+      image_url: imageUrl,
     });
     
     if (!error) {
@@ -196,6 +279,7 @@ export default function ClientChat() {
         .eq("id", conversationId);
       
       setNewMessage("");
+      clearImage();
     } else {
       toast({
         title: "Fehler",
@@ -205,6 +289,7 @@ export default function ClientChat() {
     }
     
     setSending(false);
+    setUploading(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -290,7 +375,18 @@ export default function ClientChat() {
                         : "bg-muted rounded-bl-md"
                     )}
                   >
-                    <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                    {msg.image_url && (
+                      <a href={msg.image_url} target="_blank" rel="noopener noreferrer" className="block mb-2">
+                        <img 
+                          src={msg.image_url} 
+                          alt="Bild" 
+                          className="rounded-lg max-w-full max-h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                        />
+                      </a>
+                    )}
+                    {msg.content && msg.content !== '📷 Bild' && (
+                      <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                    )}
                     <p
                       className={cn(
                         "text-xs mt-1",
@@ -309,22 +405,67 @@ export default function ClientChat() {
 
       {/* Input */}
       <div className="sticky bottom-0 bg-background border-t border-border p-4">
-        <div className="max-w-2xl mx-auto flex gap-2">
-          <Input
-            placeholder="Nachricht schreiben..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={sending}
-            className="flex-1"
-          />
-          <Button onClick={sendMessage} disabled={!newMessage.trim() || sending} size="icon">
-            {sending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </Button>
+        <div className="max-w-2xl mx-auto">
+          {/* Image Preview */}
+          {imagePreview && (
+            <div className="relative mb-3 inline-block">
+              <img 
+                src={imagePreview} 
+                alt="Vorschau" 
+                className="max-h-32 rounded-lg object-cover"
+              />
+              <Button
+                variant="destructive"
+                size="icon"
+                className="absolute -top-2 -right-2 h-6 w-6"
+                onClick={clearImage}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
+          
+          <div className="flex gap-2">
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageSelect}
+              className="hidden"
+            />
+            
+            {/* Attachment button */}
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={sending}
+              type="button"
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
+            
+            <Input
+              placeholder="Nachricht schreiben..."
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={sending}
+              className="flex-1"
+            />
+            <Button 
+              onClick={sendMessage} 
+              disabled={(!newMessage.trim() && !selectedImage) || sending} 
+              size="icon"
+            >
+              {sending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
