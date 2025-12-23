@@ -292,7 +292,7 @@ export function CreateInvoiceModal({
 
     setLoading(true);
 
-    const { error } = await supabase.from("invoices").insert({
+    const { data: insertedInvoice, error } = await supabase.from("invoices").insert({
       client_id: formData.client_id,
       provider_id: user?.id,
       horse_id: formData.horse_id || null,
@@ -302,7 +302,7 @@ export function CreateInvoiceModal({
       total_amount: amount,
       status: formData.status,
       notes: formData.notes || null,
-    });
+    }).select().single();
 
     setLoading(false);
 
@@ -313,6 +313,37 @@ export function CreateInvoiceModal({
         variant: "destructive",
       });
       return;
+    }
+
+    // Send push notification to client
+    try {
+      const selectedClient = clients.find(c => c.id === formData.client_id);
+      const clientName = selectedClient?.full_name || "Kunde";
+      
+      // Get provider business name for notification
+      const { data: businessSettings } = await supabase
+        .from("business_settings")
+        .select("business_name, owner_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      const providerName = businessSettings?.business_name || businessSettings?.owner_name || "Ihr Hufbearbeiter";
+      const formattedAmount = new Intl.NumberFormat("de-DE", {
+        style: "currency",
+        currency: "EUR",
+      }).format(amount);
+
+      await supabase.functions.invoke("send-push-notification", {
+        body: {
+          user_id: formData.client_id,
+          title: "Neue Rechnung erhalten",
+          body: `${providerName} hat Ihnen eine Rechnung über ${formattedAmount} gestellt.`,
+          url: "/client-invoices",
+        },
+      });
+    } catch (pushError) {
+      console.error("Failed to send push notification:", pushError);
+      // Don't show error to user, invoice was still created successfully
     }
 
     toast({

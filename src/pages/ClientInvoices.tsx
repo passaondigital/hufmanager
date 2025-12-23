@@ -7,7 +7,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, FileText, Eye, Download, Search, Loader2, Mail } from "lucide-react";
+import { ArrowLeft, FileText, Eye, Download, Search, Loader2, Mail, CheckCircle2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
@@ -64,71 +74,72 @@ export default function ClientInvoices() {
   const [pdfTitle, setPdfTitle] = useState("");
   const [pdfFileName, setPdfFileName] = useState("");
   const [generatingPdfFor, setGeneratingPdfFor] = useState<string | null>(null);
+  const [invoiceToMarkPaid, setInvoiceToMarkPaid] = useState<Invoice | null>(null);
+  const [updatingStatusFor, setUpdatingStatusFor] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchData = async () => {
     if (!user) return;
+    setLoading(true);
+      
+    // Fetch user profile
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("full_name, readable_id, email, phone, city, zip_code, stable_street, stable_city, stable_zip")
+      .eq("id", user.id)
+      .single();
+    
+    if (profileData) {
+      setUserProfile(profileData);
+    }
+    
+    const { data, error } = await supabase
+      .from("invoices")
+      .select(`
+        id,
+        invoice_number,
+        issue_date,
+        due_date,
+        total_amount,
+        status,
+        pdf_url,
+        provider_id,
+        notes,
+        horse:horses(name)
+      `)
+      .eq("client_id", user.id)
+      .order("issue_date", { ascending: false });
 
-    const fetchData = async () => {
-      setLoading(true);
+    if (!error && data) {
+      setInvoices(data as Invoice[]);
+      setFilteredInvoices(data as Invoice[]);
       
-      // Fetch user profile
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("full_name, readable_id, email, phone, city, zip_code, stable_street, stable_city, stable_zip")
-        .eq("id", user.id)
-        .single();
-      
-      if (profileData) {
-        setUserProfile(profileData);
-      }
-      
-      const { data, error } = await supabase
-        .from("invoices")
-        .select(`
-          id,
-          invoice_number,
-          issue_date,
-          due_date,
-          total_amount,
-          status,
-          pdf_url,
-          provider_id,
-          notes,
-          horse:horses(name)
-        `)
-        .eq("client_id", user.id)
-        .order("issue_date", { ascending: false });
-
-      if (!error && data) {
-        setInvoices(data as Invoice[]);
-        setFilteredInvoices(data as Invoice[]);
+      // Fetch provider business settings for email
+      const providerIds = [...new Set(data.map(inv => inv.provider_id).filter(Boolean))] as string[];
+      if (providerIds.length > 0) {
+        const { data: settingsData } = await supabase
+          .from("business_settings")
+          .select("user_id, business_name, owner_name, email")
+          .in("user_id", providerIds);
         
-        // Fetch provider business settings for email
-        const providerIds = [...new Set(data.map(inv => inv.provider_id).filter(Boolean))] as string[];
-        if (providerIds.length > 0) {
-          const { data: settingsData } = await supabase
-            .from("business_settings")
-            .select("user_id, business_name, owner_name, email")
-            .in("user_id", providerIds);
-          
-          if (settingsData) {
-            const map = new Map<string, ProviderInfo>();
-            settingsData.forEach(s => {
-              if (s.user_id) {
-                map.set(s.user_id, {
-                  business_name: s.business_name,
-                  owner_name: s.owner_name,
-                  email: s.email,
-                });
-              }
-            });
-            setProviderInfoMap(map);
-          }
+        if (settingsData) {
+          const map = new Map<string, ProviderInfo>();
+          settingsData.forEach(s => {
+            if (s.user_id) {
+              map.set(s.user_id, {
+                business_name: s.business_name,
+                owner_name: s.owner_name,
+                email: s.email,
+              });
+            }
+          });
+          setProviderInfoMap(map);
         }
       }
-      setLoading(false);
-    };
+    }
+    setLoading(false);
+  };
 
+  useEffect(() => {
     fetchData();
   }, [user]);
 
@@ -264,6 +275,33 @@ export default function ClientInvoices() {
     }
   };
 
+  const handleMarkAsPaid = async () => {
+    if (!invoiceToMarkPaid) return;
+    
+    setUpdatingStatusFor(invoiceToMarkPaid.id);
+    try {
+      const { error } = await supabase
+        .from("invoices")
+        .update({ status: "paid" })
+        .eq("id", invoiceToMarkPaid.id);
+
+      if (error) throw error;
+
+      toast({ title: "Status aktualisiert", description: "Rechnung als bezahlt markiert." });
+      fetchData(); // Refresh data
+    } catch (error) {
+      console.error("Failed to update status:", error);
+      toast({
+        title: "Fehler",
+        description: "Status konnte nicht geändert werden.",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingStatusFor(null);
+      setInvoiceToMarkPaid(null);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -354,7 +392,7 @@ export default function ClientInvoices() {
                       </div>
                     </div>
                     <div className="flex flex-col gap-2">
-                      {generatingPdfFor === invoice.id || sendingEmailFor === invoice.id ? (
+                      {generatingPdfFor === invoice.id || sendingEmailFor === invoice.id || updatingStatusFor === invoice.id ? (
                         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                       ) : (
                         <>
@@ -385,6 +423,17 @@ export default function ClientInvoices() {
                           >
                             <Mail className="h-4 w-4" />
                           </Button>
+                          {invoice.status !== "paid" && (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                              onClick={() => setInvoiceToMarkPaid(invoice)}
+                              title="Als bezahlt markieren"
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </>
                       )}
                     </div>
@@ -404,6 +453,27 @@ export default function ClientInvoices() {
         title={pdfTitle}
         fileName={pdfFileName}
       />
+
+      {/* Mark as Paid Confirmation */}
+      <AlertDialog open={!!invoiceToMarkPaid} onOpenChange={() => setInvoiceToMarkPaid(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Rechnung als bezahlt markieren?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Möchten Sie die Rechnung <strong>{invoiceToMarkPaid?.invoice_number || "ohne Nummer"}</strong> als bezahlt markieren?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleMarkAsPaid}
+              className="bg-green-600 text-white hover:bg-green-700"
+            >
+              Als bezahlt markieren
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
