@@ -118,16 +118,15 @@ export default function ClientProfile() {
   };
 
   const handleDeleteHorse = async (horseId: string) => {
-    // Wir löschen das Pferd physisch (oder man könnte soft-delete nutzen)
-    const { error } = await supabase
-      .from('horses')
-      .delete()
-      .eq('id', horseId);
+    // Use RPC for safe deletion with cascade (soft delete + cancel appointments)
+    const { error } = await supabase.rpc('delete_horse_safe', {
+      _horse_id: horseId,
+    });
 
     if (error) {
-      toast.error("Konnte Pferd nicht löschen.");
+      toast.error("Konnte Pferd nicht löschen: " + (error.message || "Unbekannter Fehler"));
     } else {
-      toast.success("Pferd entfernt.");
+      toast.success("Pferd entfernt und zukünftige Termine abgesagt.");
       fetchData(); // Liste neu laden
     }
   };
