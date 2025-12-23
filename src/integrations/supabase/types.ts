@@ -1321,6 +1321,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_client_cascade: {
+        Args: { _client_id: string }
+        Returns: undefined
+      }
+      delete_horse_safe: { Args: { _horse_id: string }; Returns: undefined }
       generate_random_id: { Args: { prefix: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }

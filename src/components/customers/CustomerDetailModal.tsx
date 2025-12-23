@@ -137,41 +137,44 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
     },
   });
 
-  // Soft delete customer mutation
+  // Cascade delete customer mutation (uses RPC for proper cleanup)
   const deleteCustomer = useMutation({
     mutationFn: async (customerId: string) => {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("id", customerId);
+      const { error } = await supabase.rpc("delete_client_cascade", {
+        _client_id: customerId,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["provider-clients"] });
+      queryClient.invalidateQueries({ queryKey: ["provider-horses"] });
       toast({ 
         title: "Kunde gelöscht", 
-        description: "Die ID bleibt für 30 Tage reserviert." 
+        description: "Kunde, Pferde und zukünftige Termine wurden entfernt." 
       });
       onClose();
     },
-    onError: () => {
-      toast({ title: "Fehler beim Löschen", variant: "destructive" });
+    onError: (err: any) => {
+      toast({ 
+        title: "Fehler beim Löschen", 
+        description: err?.message || "Unbekannter Fehler",
+        variant: "destructive" 
+      });
     },
   });
 
-  // Soft delete horse mutation
+  // Safe delete horse mutation (uses RPC for proper cleanup)
   const deleteHorse = useMutation({
     mutationFn: async (horseId: string) => {
-      const { error } = await supabase
-        .from("horses")
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("id", horseId);
+      const { error } = await supabase.rpc("delete_horse_safe", {
+        _horse_id: horseId,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["provider-horses"] });
       queryClient.invalidateQueries({ queryKey: ["horses"] });
-      toast({ title: "Pferd gelöscht" });
+      toast({ title: "Pferd gelöscht", description: "Zukünftige Termine wurden abgesagt." });
       setHorseToDelete(null);
     },
     onError: (err: any) => {
