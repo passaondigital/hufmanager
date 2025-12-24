@@ -10,7 +10,7 @@ import { LogOut, FileText, ChevronRight, Plus, Shield, Scissors, User, MessageSq
 import { UnconfirmedAppointmentsBanner } from "@/components/UnconfirmedAppointmentsBanner";
 import { CreateHorseModal } from "@/components/horse-detail/CreateHorseModal";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
-import { NextAppointmentWidget } from "@/components/client/NextAppointmentWidget";
+import { UpcomingAppointmentsList } from "@/components/client/UpcomingAppointmentsList";
 import { LastVisitWidget } from "@/components/client/LastVisitWidget";
 import { WhatsAppFAB } from "@/components/client/WhatsAppFAB";
 import { EmergencyVetWidget } from "@/components/client/EmergencyVetWidget";
@@ -184,8 +184,8 @@ export default function ClientHome() {
           <ProviderSelector onProviderConnected={() => fetchData()} />
         )}
 
-        {/* Next Appointment Widget */}
-        {user && <NextAppointmentWidget userId={user.id} />}
+        {/* Upcoming Appointments List */}
+        {user && <UpcomingAppointmentsList userId={user.id} />}
 
         {/* Appointment Checklist Widget */}
         {user && <AppointmentChecklistWidget userId={user.id} />}
