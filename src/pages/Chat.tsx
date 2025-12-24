@@ -314,7 +314,24 @@ export default function Chat() {
       .on("postgres_changes", 
         { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${selectedConversation.id}` }, 
         (payload) => {
-          setMessages((prev) => [...prev, payload.new as Message]);
+          const newMsg = payload.new as Message;
+          // Avoid duplicates from optimistic UI or same user
+          setMessages((prev) => {
+            // Check if message already exists (by id or if it's a temp message from same sender with same content)
+            const exists = prev.some(m => 
+              m.id === newMsg.id || 
+              (m.id.startsWith('temp-') && m.sender_id === newMsg.sender_id && m.content === newMsg.content)
+            );
+            if (exists) {
+              // Replace temp message with real one
+              return prev.map(m => 
+                (m.id.startsWith('temp-') && m.sender_id === newMsg.sender_id && m.content === newMsg.content) 
+                  ? newMsg 
+                  : m
+              );
+            }
+            return [...prev, newMsg];
+          });
         }
       ).subscribe();
 
@@ -381,22 +398,53 @@ export default function Chat() {
       }
     }
 
-    await (supabase as any).from('messages').insert({
+    const messageContent = newMessage.trim() || (imageUrl ? '📷 Bild' : '');
+    
+    // Optimistic UI: Add message immediately
+    const optimisticMessage: Message = {
+      id: `temp-${Date.now()}`,
       conversation_id: selectedConversation.id,
       sender_id: user.id,
-      content: newMessage.trim() || (imageUrl ? '📷 Bild' : ''),
+      content: messageContent,
+      is_read: false,
+      created_at: new Date().toISOString(),
       image_url: imageUrl,
-    });
-
-    // Zeitstempel der Konversation aktualisieren
-    await (supabase as any)
-      .from('conversations')
-      .update({ last_message_at: new Date().toISOString() })
-      .eq("id", selectedConversation.id);
-
+    };
+    
+    setMessages((prev) => [...prev, optimisticMessage]);
     setNewMessage("");
     clearImage();
-    setSending(false);
+
+    try {
+      const { data, error } = await supabase.from('messages').insert({
+        conversation_id: selectedConversation.id,
+        sender_id: user.id,
+        content: messageContent,
+        image_url: imageUrl,
+      }).select().single();
+
+      if (error) {
+        // Remove optimistic message on error
+        setMessages((prev) => prev.filter(m => m.id !== optimisticMessage.id));
+        toast({ title: "Fehler", description: "Nachricht konnte nicht gesendet werden: " + error.message, variant: "destructive" });
+        console.error("Message send error:", error);
+      } else if (data) {
+        // Replace optimistic message with real one
+        setMessages((prev) => prev.map(m => m.id === optimisticMessage.id ? data as Message : m));
+      }
+
+      // Zeitstempel der Konversation aktualisieren
+      await supabase
+        .from('conversations')
+        .update({ last_message_at: new Date().toISOString() })
+        .eq("id", selectedConversation.id);
+        
+    } catch (err: any) {
+      setMessages((prev) => prev.filter(m => m.id !== optimisticMessage.id));
+      toast({ title: "Fehler", description: err.message || "Nachricht konnte nicht gesendet werden", variant: "destructive" });
+    } finally {
+      setSending(false);
+    }
   };
 
   // Suchfilter (case-insensitive)

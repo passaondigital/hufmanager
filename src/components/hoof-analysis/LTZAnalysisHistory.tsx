@@ -1,13 +1,25 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { FileText, ChevronDown, AlertTriangle, CheckCircle2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { FileText, ChevronDown, AlertTriangle, CheckCircle2, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
 import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
 import { 
   STANCE_OPTIONS,
   TOE_AXIS_OPTIONS,
@@ -62,6 +74,25 @@ export function LTZAnalysisHistory({ horseId, horseName, ownerName }: LTZAnalysi
 
       if (error) throw error;
       return data as HoofAnalysis[];
+    },
+  });
+
+  const queryClient = useQueryClient();
+
+  const deleteAnalysis = useMutation({
+    mutationFn: async (analysisId: string) => {
+      const { error } = await supabase
+        .from("hoof_analyses")
+        .delete()
+        .eq("id", analysisId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["hoof-analyses", horseId] });
+      toast({ title: "Analyse gelöscht", description: "Die Analyse wurde erfolgreich gelöscht." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Fehler", description: error.message, variant: "destructive" });
     },
   });
 
@@ -134,6 +165,35 @@ export function LTZAnalysisHistory({ horseId, horseName, ownerName }: LTZAnalysi
                       horseName={horseName}
                       ownerName={ownerName}
                     />
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Analyse löschen?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Diese Aktion kann nicht rückgängig gemacht werden. Die Analyse vom {format(parseISO(analysis.created_at), "dd.MM.yyyy", { locale: de })} wird dauerhaft gelöscht.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                          <AlertDialogAction 
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => deleteAnalysis.mutate(analysis.id)}
+                          >
+                            Löschen
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                     <ChevronDown className={`h-4 w-4 transition-transform ${expandedId === analysis.id ? 'rotate-180' : ''}`} />
                   </div>
                 </Button>

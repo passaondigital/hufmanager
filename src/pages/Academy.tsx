@@ -1,11 +1,25 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, Rocket, TrendingUp, BookOpen, Play, ArrowLeft } from "lucide-react";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { GraduationCap, Rocket, TrendingUp, BookOpen, Play, ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { AcademyContentModal } from "@/components/academy/AcademyContentModal";
 
 interface AcademyVideo {
   id: string;
@@ -42,8 +56,13 @@ const categories = [
 ];
 
 export default function Academy() {
+  const { role } = useAuth();
+  const queryClient = useQueryClient();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<AcademyVideo | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  const isProviderOrAdmin = role === 'provider' || role === 'admin';
 
   const { data: videos, isLoading } = useQuery({
     queryKey: ["academy-videos"],
@@ -58,21 +77,44 @@ export default function Academy() {
     },
   });
 
+  const deleteVideo = useMutation({
+    mutationFn: async (videoId: string) => {
+      const { error } = await supabase.from("academy_videos").delete().eq("id", videoId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["academy-videos"] });
+      toast({ title: "Gelöscht", description: "Video wurde entfernt." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+    },
+  });
+
   const filteredVideos = videos?.filter((v) => v.category === selectedCategory) || [];
 
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <div className="p-3 rounded-xl bg-primary/10">
-          <GraduationCap className="h-8 w-8 text-primary" />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="p-3 rounded-xl bg-primary/10">
+            <GraduationCap className="h-8 w-8 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">MemberHorse Academy</h1>
+            <p className="text-muted-foreground">
+              Lerne alles, was du für deinen Erfolg als Hufbearbeiter brauchst
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">MemberHorse Academy</h1>
-          <p className="text-muted-foreground">
-            Lerne alles, was du für deinen Erfolg als Hufbearbeiter brauchst
-          </p>
-        </div>
+        
+        {isProviderOrAdmin && (
+          <Button onClick={() => setShowAddModal(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Neuer Kurs
+          </Button>
+        )}
       </div>
 
       {/* Category Cards */}
@@ -149,9 +191,40 @@ export default function Academy() {
               {filteredVideos.map((video) => (
                 <Card
                   key={video.id}
-                  className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden group"
+                  className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden group relative"
                   onClick={() => setSelectedVideo(video)}
                 >
+                  {isProviderOrAdmin && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute top-2 right-2 z-10 h-8 w-8 bg-background/80 hover:bg-destructive hover:text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Video löschen?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Möchten Sie "{video.title}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                          <AlertDialogAction 
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => deleteVideo.mutate(video.id)}
+                          >
+                            Löschen
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                   <div className="relative aspect-video bg-muted">
                     {video.thumbnail_url ? (
                       <img
@@ -207,6 +280,9 @@ export default function Academy() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Add Content Modal */}
+      <AcademyContentModal open={showAddModal} onOpenChange={setShowAddModal} />
     </div>
   );
 }
