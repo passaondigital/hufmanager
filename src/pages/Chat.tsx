@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Send, MessageSquare, User, Search, Plus, ArrowLeft, Paperclip, X, Loader2 } from "lucide-react";
+import { Send, MessageSquare, User, Search, Plus, ArrowLeft, Paperclip, X, Loader2, Bell } from "lucide-react";
+import { PushNotificationToggle } from "@/components/notifications/PushNotificationToggle";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -489,12 +490,15 @@ export default function Chat() {
                 )}
             </CardTitle>
             
-            {/* DER NEUE PLUS BUTTON (nur wenn nicht im Auswahlmodus) */}
-            {!isNewChatMode && role === 'provider' && (
-                <Button variant="ghost" size="icon" onClick={handleStartNewChat}>
-                    <Plus className="h-5 w-5" />
-                </Button>
-            )}
+            <div className="flex items-center gap-1">
+              <PushNotificationToggle variant="ghost" size="icon" showLabel={false} />
+              {/* DER NEUE PLUS BUTTON (nur wenn nicht im Auswahlmodus) */}
+              {!isNewChatMode && role === 'provider' && (
+                  <Button variant="ghost" size="icon" onClick={handleStartNewChat}>
+                      <Plus className="h-5 w-5" />
+                  </Button>
+              )}
+            </div>
           </div>
           
           <div className="relative">

@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Send, ArrowLeft, User, Loader2, MessageSquare, Paperclip, X, Image as ImageIcon } from "lucide-react";
+import { Send, ArrowLeft, User, Loader2, MessageSquare, Paperclip, X, Image as ImageIcon, Bell } from "lucide-react";
+import { PushNotificationToggle } from "@/components/notifications/PushNotificationToggle";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -371,6 +372,7 @@ export default function ClientChat() {
             <h1 className="font-semibold truncate">{provider.full_name || "Hufbearbeiter"}</h1>
             <p className="text-xs text-muted-foreground truncate">{provider.email}</p>
           </div>
+          <PushNotificationToggle variant="ghost" size="icon" showLabel={false} />
         </div>
       </header>
 
