@@ -2,17 +2,17 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
+import { useTheme } from "@/components/ThemeProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LogOut, FileText, ChevronRight, Plus, Shield, Scissors, User, MessageSquare } from "lucide-react";
+import { LogOut, FileText, ChevronRight, Plus, Shield, Scissors, User, MessageSquare, Moon, Sun } from "lucide-react";
 import { UnconfirmedAppointmentsBanner } from "@/components/UnconfirmedAppointmentsBanner";
 import { CreateHorseModal } from "@/components/horse-detail/CreateHorseModal";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { UpcomingAppointmentsList } from "@/components/client/UpcomingAppointmentsList";
 import { LastVisitWidget } from "@/components/client/LastVisitWidget";
-import { WhatsAppFAB } from "@/components/client/WhatsAppFAB";
 import { EmergencyVetWidget } from "@/components/client/EmergencyVetWidget";
 import { AppointmentChecklistWidget } from "@/components/client/AppointmentChecklistWidget";
 import { PushNotificationBanner } from "@/components/notifications/PushNotificationBanner";
@@ -43,6 +43,7 @@ interface Profile {
 export default function ClientHome() {
   const { user, signOut, loading: authLoading } = useAuth();
   const { showOnboarding, completeOnboarding } = useOnboarding();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [horses, setHorses] = useState<Horse[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -148,9 +149,14 @@ export default function ClientHome() {
             alt="HufManager" 
             className="h-8 w-auto"
           />
-          <Button variant="ghost" size="icon" onClick={handleLogout}>
-            <LogOut className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={toggleTheme}>
+              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+            <Button variant="ghost" size="icon" onClick={handleLogout}>
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -332,9 +338,6 @@ export default function ClientHome() {
         onClose={() => setShowCreateModal(false)}
         onCreated={handleHorseCreated}
       />
-
-      {/* WhatsApp FAB */}
-      {user && <WhatsAppFAB userId={user.id} />}
       </div>
     </>
   );
