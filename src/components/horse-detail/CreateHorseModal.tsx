@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { USAGE_OPTIONS, HOUSING_OPTIONS } from "./types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter, SheetDescription } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Camera } from "lucide-react";
 import { z } from "zod";
+import { uploadFile, getStorageUrl } from "@/lib/storage";
 
 // Validation schema
 const horseFormSchema = z.object({
@@ -40,6 +41,10 @@ interface CreateHorseModalProps {
 
 export function CreateHorseModal({ open, onClose, onCreated, ownerId }: CreateHorseModalProps) {
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     name: '',
     nickname: '',
@@ -50,6 +55,57 @@ export function CreateHorseModal({ open, onClose, onCreated, ownerId }: CreateHo
     usage: '',
     housing: '',
   });
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Ungültiges Format",
+        description: "Bitte wähle ein Bild aus.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Datei zu groß",
+        description: "Das Bild darf maximal 5MB groß sein.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Show preview immediately
+    setPhotoPreview(URL.createObjectURL(file));
+    setUploadingPhoto(true);
+    
+    try {
+      const fileExt = file.name.split('.').pop();
+      // Use temp UUID, will be updated after horse creation
+      const tempId = crypto.randomUUID();
+      const filePath = `${tempId}/profile_${crypto.randomUUID()}.${fileExt}`;
+
+      const { path, error: uploadError } = await uploadFile('horse-documents', filePath, file, { upsert: true });
+      if (uploadError || !path) throw uploadError || new Error("Upload failed");
+
+      setPhotoUrl(path);
+      toast({ title: "Foto hochgeladen" });
+    } catch (error: any) {
+      toast({
+        title: "Fehler beim Upload",
+        description: error.message,
+        variant: "destructive",
+      });
+      setPhotoPreview(null);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   const handleCreate = async () => {
     // Validate with zod schema
@@ -87,6 +143,7 @@ export function CreateHorseModal({ open, onClose, onCreated, ownerId }: CreateHo
           usage: validated.usage || null,
           housing: validated.housing || null,
           owner_id: targetOwnerId,
+          photo_url: photoUrl || null,
         })
         .select('id')
         .single();
@@ -108,6 +165,8 @@ export function CreateHorseModal({ open, onClose, onCreated, ownerId }: CreateHo
         usage: '',
         housing: '',
       });
+      setPhotoUrl("");
+      setPhotoPreview(null);
     } catch (error: any) {
       toast({
         title: "Fehler beim Anlegen",
@@ -130,6 +189,40 @@ export function CreateHorseModal({ open, onClose, onCreated, ownerId }: CreateHo
         </SheetHeader>
         
         <div className="flex-1 overflow-y-auto py-4 space-y-4">
+          {/* Photo Upload */}
+          <div className="flex items-center gap-4">
+            <div className="h-20 w-20 rounded-xl bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+              {photoPreview ? (
+                <img src={photoPreview} alt="Pferd" className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-3xl">🐴</span>
+              )}
+            </div>
+            <div className="flex-1">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingPhoto}
+              >
+                {uploadingPhoto ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Camera className="h-4 w-4 mr-2" />
+                )}
+                Foto hochladen
+              </Button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Name *</Label>
