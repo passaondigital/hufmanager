@@ -4,11 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Star,
   Plus,
   Quote,
   Download,
+  Send,
+  Mail,
+  Loader2,
+  Copy,
+  CheckCircle2,
 } from "lucide-react";
 import {
   Select,
@@ -17,10 +23,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 
 const sourceLabels: Record<string, string> = {
   intern: "Intern",
@@ -38,14 +52,24 @@ interface Feedback {
   created_at: string;
 }
 
+interface Client {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+}
+
 const Auffassen = () => {
+  const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [newRating, setNewRating] = useState(5);
   const [formData, setFormData] = useState({
     customerName: "",
     source: "intern",
     text: "",
   });
+  const [linkCopied, setLinkCopied] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: feedbacks = [] } = useQuery({
@@ -64,13 +88,52 @@ const Auffassen = () => {
     },
   });
 
-  // Fetch clients for dropdown
+  // Fetch clients with recent appointments for review requests
   const { data: clients = [] } = useQuery({
-    queryKey: ["clients"],
+    queryKey: ["clients-for-review"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("*");
-      if (error) throw error;
-      return data;
+      if (!user) return [];
+      
+      // Get clients via access_grants and profiles
+      const { data: accessData } = await supabase
+        .from('access_grants')
+        .select('client_id, profiles:client_id(id, full_name, email)')
+        .eq('provider_id', user.id)
+        .eq('is_active', true);
+      
+      const clients: Client[] = [];
+      if (accessData) {
+        accessData.forEach((ag: any) => {
+          if (ag.profiles?.id) {
+            clients.push({
+              id: ag.profiles.id,
+              full_name: ag.profiles.full_name,
+              email: ag.profiles.email,
+            });
+          }
+        });
+      }
+      
+      // Also get clients created by this provider
+      const { data: createdProfiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .eq('created_by_provider_id', user.id)
+        .is('deleted_at', null);
+      
+      if (createdProfiles) {
+        createdProfiles.forEach((p) => {
+          if (!clients.find(c => c.id === p.id)) {
+            clients.push({
+              id: p.id,
+              full_name: p.full_name,
+              email: p.email,
+            });
+          }
+        });
+      }
+      
+      return clients;
     },
   });
 
@@ -161,6 +224,10 @@ const Auffassen = () => {
           <Button variant="outline" className="gap-2" onClick={handleExportCSV}>
             <Download className="h-4 w-4" />
             Export CSV
+          </Button>
+          <Button variant="outline" className="gap-2" onClick={() => setShowRequestModal(true)}>
+            <Send className="h-4 w-4" />
+            Rezension anfragen
           </Button>
           <Button className="gap-2" onClick={() => setShowForm(!showForm)}>
             <Plus className="h-4 w-4" />
@@ -348,6 +415,104 @@ const Auffassen = () => {
           </Card>
         ))}
       </div>
+
+      {/* Review Request Modal */}
+      <Dialog open={showRequestModal} onOpenChange={setShowRequestModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-primary" />
+              Rezension anfragen
+            </DialogTitle>
+            <DialogDescription>
+              Wählen Sie einen Kunden aus, um eine Bewertungsanfrage zu senden.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label>Kunde auswählen</Label>
+              <Select
+                value={selectedClient?.id || ""}
+                onValueChange={(value) => {
+                  const client = clients.find(c => c.id === value);
+                  setSelectedClient(client || null);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Kunde wählen..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.full_name || client.email || "Unbekannt"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedClient && (
+              <div className="space-y-4 pt-4 border-t">
+                <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                  <p className="text-sm font-medium">Bewertungslink für {selectedClient.full_name}:</p>
+                  <div className="flex gap-2">
+                    <Input 
+                      readOnly 
+                      value={`${window.location.origin}/bewertung/${user?.id}?kunde=${encodeURIComponent(selectedClient.full_name || '')}`}
+                      className="text-xs"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        navigator.clipboard.writeText(
+                          `${window.location.origin}/bewertung/${user?.id}?kunde=${encodeURIComponent(selectedClient.full_name || '')}`
+                        );
+                        setLinkCopied(true);
+                        setTimeout(() => setLinkCopied(false), 2000);
+                        toast({ title: "Link kopiert!" });
+                      }}
+                    >
+                      {linkCopied ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {selectedClient.email && (
+                  <Button 
+                    className="w-full gap-2"
+                    onClick={() => {
+                      const subject = encodeURIComponent("Ihre Meinung ist uns wichtig!");
+                      const body = encodeURIComponent(
+                        `Hallo ${selectedClient.full_name},\n\nwir hoffen, Sie sind mit unserer Arbeit zufrieden. Wir würden uns sehr freuen, wenn Sie uns eine kurze Bewertung hinterlassen könnten.\n\nBewertung abgeben: ${window.location.origin}/bewertung/${user?.id}?kunde=${encodeURIComponent(selectedClient.full_name || '')}\n\nVielen Dank!\n\nMit freundlichen Grüßen`
+                      );
+                      window.location.href = `mailto:${selectedClient.email}?subject=${subject}&body=${body}`;
+                      setShowRequestModal(false);
+                    }}
+                  >
+                    <Mail className="h-4 w-4" />
+                    Per E-Mail anfragen
+                  </Button>
+                )}
+              </div>
+            )}
+
+            <div className="flex justify-end pt-2">
+              <Button variant="outline" onClick={() => {
+                setShowRequestModal(false);
+                setSelectedClient(null);
+              }}>
+                Schließen
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
