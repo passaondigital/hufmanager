@@ -25,15 +25,13 @@ interface BusinessSettings {
   hero_headline: string | null;
   about_text: string | null;
   logo_url: string | null;
-  phone: string | null;
-  email: string | null;
-  address: string | null;
   primary_color: string | null;
   accept_new_customers: boolean | null;
   impressum_text: string | null;
   terms_text: string | null;
   client_intake_status: IntakeStatus | null;
   gallery_images: { url: string; caption?: string }[] | null;
+  subdomain: string | null;
 }
 
 interface Service {
@@ -101,12 +99,9 @@ const ProviderLanding = () => {
       if (!slug) return;
 
       try {
-        // Find provider by subdomain - include legal texts for gatekeeper check
+        // Use secure RPC function that only exposes non-sensitive fields
         const { data: businessData, error: businessError } = await supabase
-          .from('business_settings')
-          .select('id, user_id, business_name, owner_name, hero_headline, about_text, logo_url, phone, email, address, primary_color, accept_new_customers, subdomain, impressum_text, terms_text, client_intake_status, gallery_images')
-          .eq('subdomain', slug)
-          .maybeSingle();
+          .rpc('get_public_business_landing', { subdomain_input: slug });
 
         if (businessError) throw businessError;
         if (!businessData) {
@@ -115,20 +110,23 @@ const ProviderLanding = () => {
           return;
         }
 
+        // Cast the JSONB response to BusinessSettings
+        const typedBusinessData = businessData as unknown as BusinessSettings;
+
         // GATEKEEPER: Check if impressum is filled
-        if (!businessData.impressum_text || businessData.impressum_text.trim() === '') {
+        if (!typedBusinessData.impressum_text || typedBusinessData.impressum_text.trim() === '') {
           setProfileIncomplete(true);
           setLoading(false);
           return;
         }
 
-        setSettings(businessData as unknown as BusinessSettings);
+        setSettings(typedBusinessData);
 
         // Fetch active offers
         const { data: offersData } = await supabase
           .from('offers')
           .select('*')
-          .eq('provider_id', businessData.user_id)
+          .eq('provider_id', typedBusinessData.user_id)
           .eq('is_active', true)
           .order('sort_order')
           .limit(3);
@@ -139,7 +137,7 @@ const ProviderLanding = () => {
         const { data: servicesData } = await supabase
           .from('services')
           .select('id, name, description, base_price, duration, booking_action')
-          .eq('provider_id', businessData.user_id)
+          .eq('provider_id', typedBusinessData.user_id)
           .eq('is_active', true)
           .order('name')
           .limit(6);
@@ -150,7 +148,7 @@ const ProviderLanding = () => {
         const { data: feedbackData } = await supabase
           .from('feedbacks')
           .select('id, customer_name, rating, text, is_featured')
-          .eq('provider_id', businessData.user_id)
+          .eq('provider_id', typedBusinessData.user_id)
           .eq('is_featured', true)
           .limit(5);
 
@@ -160,7 +158,7 @@ const ProviderLanding = () => {
         const { data: reviewsData } = await supabase
           .from('reviews')
           .select('id, reviewer_name, rating, text, created_at')
-          .eq('provider_id', businessData.user_id)
+          .eq('provider_id', typedBusinessData.user_id)
           .eq('is_approved', true)
           .order('created_at', { ascending: false })
           .limit(10);
@@ -450,9 +448,6 @@ const ProviderLanding = () => {
         impressumText={settings.impressum_text}
         termsText={settings.terms_text}
         primaryColor={primaryColor}
-        phone={settings.phone}
-        email={settings.email}
-        address={settings.address}
       />
 
       {/* Lead Chat Bot */}
@@ -469,7 +464,6 @@ const ProviderLanding = () => {
         onOpenChange={(open) => setInquiryModal({ ...inquiryModal, open })}
         serviceName={inquiryModal.serviceName}
         providerId={settings.user_id}
-        providerEmail={settings.email}
         primaryColor={primaryColor}
       />
     </div>

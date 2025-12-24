@@ -14,9 +14,6 @@ interface LegalFooterProps {
   impressumText: string | null;
   termsText: string | null;
   primaryColor: string;
-  phone?: string | null;
-  email?: string | null;
-  address?: string | null;
 }
 
 export function LegalFooter({
@@ -24,9 +21,6 @@ export function LegalFooter({
   impressumText,
   termsText,
   primaryColor,
-  phone,
-  email,
-  address,
 }: LegalFooterProps) {
   const [showImpressum, setShowImpressum] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
@@ -38,22 +32,6 @@ export function LegalFooter({
         style={{ borderColor: `${primaryColor}30` }}
       >
         <div className="max-w-4xl mx-auto">
-          {/* Contact Info Row */}
-          <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground mb-6">
-            {phone && (
-              <a href={`tel:${phone}`} className="hover:text-foreground transition-colors">
-                {phone}
-              </a>
-            )}
-            {email && (
-              <a href={`mailto:${email}`} className="hover:text-foreground transition-colors">
-                {email}
-              </a>
-            )}
-            {address && (
-              <span>{address}</span>
-            )}
-          </div>
 
           {/* Legal Links */}
           <div className="flex justify-center gap-4 mb-6">

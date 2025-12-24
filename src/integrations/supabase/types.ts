@@ -1330,6 +1330,10 @@ export type Database = {
       }
       delete_horse_safe: { Args: { _horse_id: string }; Returns: undefined }
       generate_random_id: { Args: { prefix: string }; Returns: string }
+      get_public_business_landing: {
+        Args: { subdomain_input: string }
+        Returns: Json
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
