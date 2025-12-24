@@ -52,54 +52,38 @@ export default function ClientChat() {
       setLoading(true);
       
       try {
-        // 1. Find provider from access_grants
-        const { data: accessGrant } = await supabase
-          .from("access_grants")
-          .select("provider_id")
-          .eq("client_id", user.id)
-          .eq("is_active", true)
-          .limit(1)
-          .maybeSingle();
+        // Use RPC function to get or assign provider (bypasses RLS issues)
+        const { data: providerId, error: rpcError } = await supabase
+          .rpc('get_or_assign_provider_for_client');
         
-        let providerId = accessGrant?.provider_id;
+        if (rpcError) {
+          console.error("Error getting provider via RPC:", rpcError);
+        }
         
-        // 2. Fallback: Check if created by a provider
-        if (!providerId) {
+        let finalProviderId = providerId as string | null;
+        
+        // Fallback if RPC returned null: check profiles table
+        if (!finalProviderId) {
           const { data: profile } = await supabase
             .from("profiles")
             .select("created_by_provider_id")
             .eq("id", user.id)
             .maybeSingle();
           
-          providerId = profile?.created_by_provider_id;
+          finalProviderId = profile?.created_by_provider_id || null;
         }
         
-        // 3. Ultimate fallback: Find ANY provider for testing purposes
-        if (!providerId) {
-          const { data: anyProvider } = await supabase
-            .from("user_roles")
-            .select("user_id")
-            .eq("role", "provider")
-            .limit(1)
-            .maybeSingle();
-          
-          if (anyProvider) {
-            providerId = anyProvider.user_id;
-            console.log("Fallback: Using first available provider for testing:", providerId);
-          }
-        }
-        
-        if (!providerId) {
+        if (!finalProviderId) {
           // No provider found - stop loading and show empty state
           setLoading(false);
           return;
         }
         
-        // 3. Load provider info
+        // Load provider info
         const { data: providerProfile } = await supabase
           .from("profiles")
           .select("id, full_name, email")
-          .eq("id", providerId)
+          .eq("id", finalProviderId)
           .maybeSingle();
         
         if (providerProfile) {
@@ -110,22 +94,22 @@ export default function ClientChat() {
           return;
         }
         
-        // 4. Find existing conversation
+        // Find existing conversation
         const { data: existingConv } = await supabase
           .from("conversations")
           .select("id")
-          .eq("provider_id", providerId)
+          .eq("provider_id", finalProviderId)
           .eq("client_id", user.id)
           .maybeSingle();
         
         if (existingConv) {
           setConversationId(existingConv.id);
         } else {
-          // 5. Create new conversation immediately so chat works
+          // Create new conversation immediately so chat works
           const { data: newConv, error } = await supabase
             .from("conversations")
             .insert({
-              provider_id: providerId,
+              provider_id: finalProviderId,
               client_id: user.id,
               subject: "Chat",
               last_message_at: new Date().toISOString(),
