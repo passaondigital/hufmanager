@@ -18,6 +18,7 @@ import { AppointmentChecklistWidget } from "@/components/client/AppointmentCheck
 import { PushNotificationBanner } from "@/components/notifications/PushNotificationBanner";
 import { ServiceHistoryWidget } from "@/components/client/ServiceHistoryWidget";
 import { ProviderSelector } from "@/components/client/ProviderSelector";
+import { ConnectedProviderCard } from "@/components/client/ConnectedProviderCard";
 
 interface Horse {
   id: string;
@@ -174,6 +175,9 @@ export default function ClientHome() {
         {profile?.emergency_contacts && profile.emergency_contacts.length > 0 && (
           <EmergencyVetWidget contacts={profile.emergency_contacts} />
         )}
+
+        {/* Connected Provider Card - show if provider connected */}
+        {hasProvider === true && <ConnectedProviderCard />}
 
         {/* Provider Selector - show if no provider connected */}
         {hasProvider === false && (
