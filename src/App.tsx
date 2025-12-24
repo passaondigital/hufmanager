@@ -141,6 +141,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             
             {/* Öffentliche Review-Seite */}
             <Route path="/submit-review" element={<SubmitReview />} />
+            <Route path="/bewertung/:providerId" element={<SubmitReview />} />
             
             {/* Admin Mission Control - nur für Admins */}
             <Route path="/admin/mission-control" element={
