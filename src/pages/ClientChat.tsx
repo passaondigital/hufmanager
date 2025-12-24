@@ -168,7 +168,7 @@ export default function ClientChat() {
     
     loadMessages();
     
-    // Realtime subscription
+    // Realtime subscription with duplicate prevention
     const channel = supabase
       .channel(`client-messages-${conversationId}`)
       .on(
@@ -180,7 +180,13 @@ export default function ClientChat() {
           filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
-          setMessages((prev) => [...prev, payload.new as Message]);
+          const newMsg = payload.new as Message;
+          setMessages((prev) => {
+            // Prevent duplicates - check if message already exists
+            const exists = prev.some(m => m.id === newMsg.id);
+            if (exists) return prev;
+            return [...prev, newMsg];
+          });
         }
       )
       .subscribe();
@@ -278,29 +284,49 @@ export default function ClientChat() {
         return;
       }
     }
+
+    const messageContent = newMessage.trim() || (imageUrl ? '📷 Bild' : '');
     
-    const { error } = await supabase.from("messages").insert({
+    // Optimistic UI: Add message immediately
+    const optimisticMessage: Message = {
+      id: `temp-${Date.now()}`,
       conversation_id: conversationId,
       sender_id: user.id,
-      content: newMessage.trim() || (imageUrl ? '📷 Bild' : ''),
+      content: messageContent,
+      is_read: false,
+      created_at: new Date().toISOString(),
       image_url: imageUrl,
-    });
+    };
     
-    if (!error) {
+    setMessages((prev) => [...prev, optimisticMessage]);
+    setNewMessage("");
+    clearImage();
+    
+    const { data, error } = await supabase.from("messages").insert({
+      conversation_id: conversationId,
+      sender_id: user.id,
+      content: messageContent,
+      image_url: imageUrl,
+    }).select().single();
+    
+    if (!error && data) {
+      // Replace optimistic message with real one
+      setMessages((prev) => prev.map(m => m.id === optimisticMessage.id ? data as Message : m));
+      
       // Update conversation timestamp
       await supabase
         .from("conversations")
         .update({ last_message_at: new Date().toISOString() })
         .eq("id", conversationId);
-      
-      setNewMessage("");
-      clearImage();
     } else {
+      // Remove optimistic message on error
+      setMessages((prev) => prev.filter(m => m.id !== optimisticMessage.id));
       toast({
         title: "Fehler",
-        description: "Nachricht konnte nicht gesendet werden",
+        description: error?.message || "Nachricht konnte nicht gesendet werden",
         variant: "destructive",
       });
+      console.error("Message send error:", error);
     }
     
     setSending(false);
