@@ -17,6 +17,7 @@ import { EmergencyVetWidget } from "@/components/client/EmergencyVetWidget";
 import { AppointmentChecklistWidget } from "@/components/client/AppointmentChecklistWidget";
 import { PushNotificationBanner } from "@/components/notifications/PushNotificationBanner";
 import { ServiceHistoryWidget } from "@/components/client/ServiceHistoryWidget";
+import { ProviderSelector } from "@/components/client/ProviderSelector";
 
 interface Horse {
   id: string;
@@ -46,11 +47,22 @@ export default function ClientHome() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [hasProvider, setHasProvider] = useState<boolean | null>(null);
 
   const fetchData = async () => {
     if (!user) return;
     
     setLoading(true);
+    
+    // Check if client has a connected provider
+    const { data: grants } = await supabase
+      .from("access_grants")
+      .select("provider_id")
+      .eq("client_id", user.id)
+      .eq("is_active", true)
+      .limit(1);
+    
+    setHasProvider((grants && grants.length > 0) || false);
     
     // Fetch profile with emergency contacts
     const { data: profileData } = await supabase
@@ -161,6 +173,11 @@ export default function ClientHome() {
         {/* Emergency Vet Widget */}
         {profile?.emergency_contacts && profile.emergency_contacts.length > 0 && (
           <EmergencyVetWidget contacts={profile.emergency_contacts} />
+        )}
+
+        {/* Provider Selector - show if no provider connected */}
+        {hasProvider === false && (
+          <ProviderSelector onProviderConnected={() => fetchData()} />
         )}
 
         {/* Appointment Checklist Widget */}
