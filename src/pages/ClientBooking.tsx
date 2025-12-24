@@ -80,6 +80,21 @@ export default function ClientBooking() {
           foundProviderId = profileData.created_by_provider_id;
         }
       }
+      
+      // Ultimate fallback: Find ANY provider for testing purposes
+      if (!foundProviderId) {
+        const { data: anyProvider } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "provider")
+          .limit(1)
+          .maybeSingle();
+        
+        if (anyProvider) {
+          foundProviderId = anyProvider.user_id;
+          console.log("Fallback: Using first available provider for testing:", foundProviderId);
+        }
+      }
 
       if (foundProviderId) {
         setProviderId(foundProviderId);

@@ -74,6 +74,21 @@ export default function ClientChat() {
           providerId = profile?.created_by_provider_id;
         }
         
+        // 3. Ultimate fallback: Find ANY provider for testing purposes
+        if (!providerId) {
+          const { data: anyProvider } = await supabase
+            .from("user_roles")
+            .select("user_id")
+            .eq("role", "provider")
+            .limit(1)
+            .maybeSingle();
+          
+          if (anyProvider) {
+            providerId = anyProvider.user_id;
+            console.log("Fallback: Using first available provider for testing:", providerId);
+          }
+        }
+        
         if (!providerId) {
           // No provider found - stop loading and show empty state
           setLoading(false);
