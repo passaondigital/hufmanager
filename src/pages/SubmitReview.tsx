@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,9 +11,12 @@ import { toast } from "@/hooks/use-toast";
 
 const SubmitReview = () => {
   const [searchParams] = useSearchParams();
+  const { providerId: pathProviderId } = useParams();
   const navigate = useNavigate();
-  const providerId = searchParams.get("provider");
+  // Support both /bewertung/:providerId and /submit-review?provider=...
+  const providerId = pathProviderId || searchParams.get("provider");
   const token = searchParams.get("token");
+  const kundenName = searchParams.get("kunde");
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -23,7 +26,7 @@ const SubmitReview = () => {
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
   const [formData, setFormData] = useState({
-    reviewer_name: "",
+    reviewer_name: kundenName || "",
     reviewer_email: "",
     text: ""
   });
