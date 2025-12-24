@@ -1330,6 +1330,7 @@ export type Database = {
       }
       delete_horse_safe: { Args: { _horse_id: string }; Returns: undefined }
       generate_random_id: { Args: { prefix: string }; Returns: string }
+      get_or_assign_provider_for_client: { Args: never; Returns: string }
       get_public_business_landing: {
         Args: { subdomain_input: string }
         Returns: Json
