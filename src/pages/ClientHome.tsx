@@ -184,6 +184,9 @@ export default function ClientHome() {
           <ProviderSelector onProviderConnected={() => fetchData()} />
         )}
 
+        {/* Next Appointment Widget */}
+        {user && <NextAppointmentWidget userId={user.id} />}
+
         {/* Appointment Checklist Widget */}
         {user && <AppointmentChecklistWidget userId={user.id} />}
 
