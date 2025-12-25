@@ -133,6 +133,14 @@ export default function MissionControl() {
   const [newUserFirstName, setNewUserFirstName] = useState("");
   const [newUserLastName, setNewUserLastName] = useState("");
 
+  // Create Client form
+  const [createClientDialogOpen, setCreateClientDialogOpen] = useState(false);
+  const [creatingClient, setCreatingClient] = useState(false);
+  const [clientEmail, setClientEmail] = useState("");
+  const [clientPassword, setClientPassword] = useState("");
+  const [clientFullName, setClientFullName] = useState("");
+  const [clientProviderId, setClientProviderId] = useState("");
+
   // Password setup form
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -440,6 +448,40 @@ export default function MissionControl() {
       toast.error(error.message || "Fehler beim Erstellen des Benutzers");
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleCreateClient = async () => {
+    if (!clientEmail || !clientPassword || !clientFullName || !clientProviderId) {
+      toast.error("Bitte alle Felder ausfüllen");
+      return;
+    }
+
+    setCreatingClient(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-create-client", {
+        body: {
+          email: clientEmail,
+          password: clientPassword,
+          fullName: clientFullName,
+          providerId: clientProviderId,
+        },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      toast.success(`Client ${clientFullName} wurde erstellt und mit Provider verknüpft. KID: ${data.user?.readable_id || 'wird generiert'}`);
+      setCreateClientDialogOpen(false);
+      setClientEmail("");
+      setClientPassword("");
+      setClientFullName("");
+      setClientProviderId("");
+    } catch (error: any) {
+      console.error("Error creating client:", error);
+      toast.error(error.message || "Fehler beim Erstellen des Clients");
+    } finally {
+      setCreatingClient(false);
     }
   };
 
@@ -843,6 +885,79 @@ export default function MissionControl() {
                       <Button onClick={handleCreateUser} disabled={creating}>
                         {creating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                         Erstellen
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+                
+                {/* Create Client Dialog */}
+                <Dialog open={createClientDialogOpen} onOpenChange={setCreateClientDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="gap-2">
+                      <UserPlus className="w-4 h-4" />
+                      Neuen Client
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Neuen Client anlegen</DialogTitle>
+                      <DialogDescription>
+                        Erstelle einen Client-Account mit Passwort und verknüpfe ihn mit einem Provider.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="clientEmail">E-Mail</Label>
+                        <Input
+                          id="clientEmail"
+                          type="email"
+                          placeholder="kunde@example.com"
+                          value={clientEmail}
+                          onChange={(e) => setClientEmail(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="clientFullName">Vollständiger Name</Label>
+                        <Input
+                          id="clientFullName"
+                          placeholder="Max Mustermann"
+                          value={clientFullName}
+                          onChange={(e) => setClientFullName(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="clientPassword">Passwort</Label>
+                        <Input
+                          id="clientPassword"
+                          type="password"
+                          placeholder="Mindestens 6 Zeichen"
+                          value={clientPassword}
+                          onChange={(e) => setClientPassword(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="clientProvider">Provider verknüpfen</Label>
+                        <Select value={clientProviderId} onValueChange={setClientProviderId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Provider auswählen..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {providers.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.full_name || p.email} ({p.readable_id})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setCreateClientDialogOpen(false)}>
+                        Abbrechen
+                      </Button>
+                      <Button onClick={handleCreateClient} disabled={creatingClient}>
+                        {creatingClient && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        Client erstellen
                       </Button>
                     </DialogFooter>
                   </DialogContent>
