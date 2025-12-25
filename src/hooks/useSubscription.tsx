@@ -2,7 +2,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from "react
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
-type SubscriptionStatus = "active" | "cancelled" | "past_due" | "trialing" | null;
+type SubscriptionStatus = "active" | "cancelled" | "past_due" | "trialing" | "lifetime" | null;
 type SubscriptionPlan = "starter" | "advanced" | "pro" | null;
 
 interface FeatureFlags {
@@ -133,7 +133,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   }, [user?.id]);
 
   // If suspended, no access
-  const isActive = !isSuspended && (status === "active" || status === "trialing");
+  // Include "lifetime" status for users with lifetime access
+  const isActive = !isSuspended && (status === "active" || status === "trialing" || status === "lifetime");
   
   // isPro: plan_override takes ABSOLUTE precedence over Copecart
   // Any non-null, non-standard override = Pro access
