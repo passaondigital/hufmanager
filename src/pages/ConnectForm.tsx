@@ -33,21 +33,36 @@ const ConnectForm = () => {
     message: "",
   });
 
-  // Fetch magic link and provider info
+  // Fetch magic link via secure RPC function (prevents enumeration)
   const { data: magicLink, isLoading, error } = useQuery({
     queryKey: ["magic-link-public", slug],
     queryFn: async () => {
       if (!slug) throw new Error("No slug");
       
-      const { data, error } = await supabase
-        .from("magic_links")
-        .select("*, profiles:provider_id(full_name, avatar_url)")
-        .eq("slug", slug)
-        .eq("is_active", true)
-        .single();
+      // Use SECURITY DEFINER function instead of direct table access
+      const { data, error } = await supabase.rpc("validate_magic_link", {
+        slug_input: slug,
+      });
       
       if (error) throw error;
-      return data;
+      
+      // Cast to expected type - function returns JSONB
+      const result = data as { valid: boolean; id?: string; provider_id?: string; provider_name?: string; provider_avatar?: string | null } | null;
+      
+      // Function returns { valid: false } if not found
+      if (!result || !result.valid) {
+        throw new Error("Invalid magic link");
+      }
+      
+      // Transform to match expected structure
+      return {
+        id: result.id,
+        provider_id: result.provider_id,
+        profiles: {
+          full_name: result.provider_name,
+          avatar_url: result.provider_avatar,
+        },
+      };
     },
     enabled: !!slug,
   });

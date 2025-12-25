@@ -1355,6 +1355,7 @@ export type Database = {
         Args: { _client_id: string; _provider_id: string }
         Returns: boolean
       }
+      validate_magic_link: { Args: { slug_input: string }; Returns: Json }
     }
     Enums: {
       app_role: "provider" | "client" | "admin"
