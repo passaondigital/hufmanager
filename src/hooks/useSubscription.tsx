@@ -138,11 +138,12 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   
   // isPro: plan_override takes ABSOLUTE precedence over Copecart
   // Any non-null, non-standard override = Pro access
+  // Lifetime status also grants Pro features
   const hasOverridePro = planOverride !== null && planOverride !== "standard";
   const hasValidAccess = accessValidUntil ? accessValidUntil > new Date() : true;
   const isPro = hasOverridePro && hasValidAccess 
     ? true 
-    : plan === "pro" || plan === "advanced";
+    : plan === "pro" || plan === "advanced" || status === "lifetime";
 
   const hasFeature = (feature: string): boolean => {
     if (isSuspended) return false;
