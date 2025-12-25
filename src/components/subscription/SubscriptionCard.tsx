@@ -22,6 +22,7 @@ const STATUS_CONFIG: Record<string, { label: string; variant: "default" | "secon
   trialing: { label: "Testphase", variant: "secondary", icon: Clock },
   cancelled: { label: "Gekündigt", variant: "outline", icon: AlertCircle },
   past_due: { label: "Zahlung ausstehend", variant: "destructive", icon: AlertCircle },
+  lifetime: { label: "Lifetime", variant: "default", icon: Crown },
 };
 
 export function SubscriptionCard() {
@@ -100,7 +101,10 @@ export function SubscriptionCard() {
 
   const statusConfig = STATUS_CONFIG[status || "trialing"];
   const StatusIcon = statusConfig.icon;
-  const canUpgrade = plan !== "pro";
+  
+  // Lifetime users have max access and don't need upgrades
+  const isLifetime = status === "lifetime";
+  const canUpgrade = !isLifetime && plan !== "pro";
 
   return (
     <>
@@ -111,9 +115,9 @@ export function SubscriptionCard() {
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <Crown className="h-6 w-6 text-primary" />
               </div>
-              <div>
+            <div>
                 <CardTitle className="text-xl">
-                  {PLAN_NAMES[plan || "starter"]} Paket
+                  {isLifetime ? "Lifetime" : PLAN_NAMES[plan || "starter"]} Paket
                 </CardTitle>
                 <CardDescription>Dein aktuelles Abonnement</CardDescription>
               </div>
@@ -141,7 +145,7 @@ export function SubscriptionCard() {
                 <Check className="h-4 w-4 text-primary" />
                 Digitale Pferdeakte
               </li>
-              {(plan === "advanced" || plan === "pro") && (
+              {(plan === "advanced" || plan === "pro" || isLifetime) && (
                 <>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-primary" />
@@ -157,7 +161,7 @@ export function SubscriptionCard() {
                   </li>
                 </>
               )}
-              {plan === "pro" && (
+              {(plan === "pro" || isLifetime) && (
                 <>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-primary" />
