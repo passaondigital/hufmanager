@@ -15,6 +15,8 @@ import {
   CheckCircle,
   Clock,
   Users,
+  ShieldCheck,
+  UserPlus,
 } from "lucide-react";
 import {
   Select,
@@ -25,23 +27,28 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { CustomerDetailModal } from "@/components/customers/CustomerDetailModal";
 import { AddHorseModal } from "@/components/customers/AddHorseModal";
+import { PendingConnectionRequests } from "@/components/network/PendingConnectionRequests";
+import { ConnectionSearch } from "@/components/network/ConnectionSearch";
+import { VerifiedConnectionBadge } from "@/components/network/VerifiedConnectionBadge";
 
 const Kunden = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("alle");
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showAddHorseModal, setShowAddHorseModal] = useState(false);
   const [addHorseForCustomerId, setAddHorseForCustomerId] = useState<string | null>(null);
+  const [showConnectionSearch, setShowConnectionSearch] = useState(false);
 
-  // Fetch profiles (clients) - both created by provider AND connected via access_grants
+  // Fetch profiles (clients) - both created by provider AND connected via access_grants (ACTIVE only)
   const { data: clients = [] } = useQuery({
     queryKey: ["provider-clients", user?.id],
     queryFn: async () => {
@@ -56,12 +63,12 @@ const Kunden = () => {
       
       if (createdError) throw createdError;
       
-      // Then get clients connected via access_grants
+      // Then get clients connected via access_grants (only ACTIVE status)
       const { data: accessGrants, error: grantsError } = await supabase
         .from("access_grants")
-        .select("client_id")
+        .select("client_id, status")
         .eq("provider_id", user.id)
-        .eq("is_active", true);
+        .eq("status", "active");
       
       if (grantsError) throw grantsError;
       
@@ -80,13 +87,21 @@ const Kunden = () => {
         grantedClients = grantedData || [];
       }
       
-      // Combine and deduplicate
-      const allClients = [...(createdClients || [])];
+      // Combine and deduplicate, mark connection type
+      const allClients = [...(createdClients || [])].map(c => ({
+        ...c,
+        connectionType: 'created',
+        isVerified: true,
+      }));
       const existingIds = new Set(allClients.map(c => c.id));
       
       for (const client of grantedClients) {
         if (!existingIds.has(client.id)) {
-          allClients.push(client);
+          allClients.push({
+            ...client,
+            connectionType: 'granted',
+            isVerified: true,
+          });
         }
       }
       
@@ -154,20 +169,49 @@ const Kunden = () => {
     clients.some((c) => c.id === h.owner_id)
   ).length;
 
+  const handleConnectionStatusChanged = () => {
+    queryClient.invalidateQueries({ queryKey: ["provider-clients"] });
+    queryClient.invalidateQueries({ queryKey: ["provider-horses"] });
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Kunden</h1>
           <p className="text-muted-foreground mt-1">
-            {clients.length} Kunden • {totalHorses} Pferde
+            {clients.length} verifizierte Verbindungen • {totalHorses} Pferde
           </p>
         </div>
-        <Button className="gap-2" onClick={() => navigate("/aufnahme")}>
-          <Plus className="h-4 w-4" />
-          Neuer Kunde
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            className="gap-2" 
+            onClick={() => setShowConnectionSearch(!showConnectionSearch)}
+          >
+            <UserPlus className="h-4 w-4" />
+            <span className="hidden sm:inline">Kunde finden</span>
+          </Button>
+          <Button className="gap-2" onClick={() => navigate("/aufnahme")}>
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Neuer Kunde</span>
+          </Button>
+        </div>
       </div>
+
+      {/* Pending Connection Requests */}
+      <PendingConnectionRequests 
+        userType="provider" 
+        onStatusChanged={handleConnectionStatusChanged}
+      />
+
+      {/* Connection Search */}
+      {showConnectionSearch && (
+        <ConnectionSearch 
+          searchType="client" 
+          onConnectionRequested={() => setShowConnectionSearch(false)}
+        />
+      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
@@ -236,6 +280,10 @@ const Kunden = () => {
                           <Badge variant="outline" className="font-mono text-xs">
                             #{client.readable_id}
                           </Badge>
+                        )}
+                        {/* Verified Connection Badge */}
+                        {client.isVerified && (
+                          <VerifiedConnectionBadge status="active" size="sm" />
                         )}
                         {client.has_logged_in ? (
                           <Badge className="bg-green-500/10 text-green-600 gap-1">

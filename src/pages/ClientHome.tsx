@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LogOut, FileText, ChevronRight, Plus, Shield, Scissors, User, MessageSquare, Moon, Sun } from "lucide-react";
+import { LogOut, FileText, ChevronRight, Plus, Shield, Scissors, User, MessageSquare, Moon, Sun, Search } from "lucide-react";
 import { UnconfirmedAppointmentsBanner } from "@/components/UnconfirmedAppointmentsBanner";
 import { CreateHorseModal } from "@/components/horse-detail/CreateHorseModal";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
@@ -19,6 +19,9 @@ import { PushNotificationBanner } from "@/components/notifications/PushNotificat
 import { ServiceHistoryWidget } from "@/components/client/ServiceHistoryWidget";
 import { ProviderSelector } from "@/components/client/ProviderSelector";
 import { ConnectedProviderCard } from "@/components/client/ConnectedProviderCard";
+import { PendingConnectionRequests } from "@/components/network/PendingConnectionRequests";
+import { ConnectionSearch } from "@/components/network/ConnectionSearch";
+import { MyConnectionRequests } from "@/components/network/MyConnectionRequests";
 
 interface Horse {
   id: string;
@@ -50,18 +53,19 @@ export default function ClientHome() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [hasProvider, setHasProvider] = useState<boolean | null>(null);
+  const [showConnectionSearch, setShowConnectionSearch] = useState(false);
 
   const fetchData = async () => {
     if (!user) return;
     
     setLoading(true);
     
-    // Check if client has a connected provider
+    // Check if client has a connected provider (only ACTIVE status)
     const { data: grants } = await supabase
       .from("access_grants")
-      .select("provider_id")
+      .select("provider_id, status")
       .eq("client_id", user.id)
-      .eq("is_active", true)
+      .eq("status", "active")
       .limit(1);
     
     setHasProvider((grants && grants.length > 0) || false);
@@ -182,12 +186,27 @@ export default function ClientHome() {
           <EmergencyVetWidget contacts={profile.emergency_contacts} />
         )}
 
+        {/* Pending Connection Requests - Client needs to approve */}
+        <PendingConnectionRequests 
+          userType="client" 
+          onStatusChanged={fetchData}
+        />
+
+        {/* My Sent Requests */}
+        <MyConnectionRequests />
+
         {/* Connected Provider Card - show if provider connected */}
         {hasProvider === true && <ConnectedProviderCard />}
 
-        {/* Provider Selector - show if no provider connected */}
+        {/* Provider Search - show if no provider connected */}
         {hasProvider === false && (
-          <ProviderSelector onProviderConnected={() => fetchData()} />
+          <div className="space-y-4">
+            <ConnectionSearch 
+              searchType="provider" 
+              onConnectionRequested={fetchData}
+            />
+            <ProviderSelector onProviderConnected={fetchData} />
+          </div>
         )}
 
         {/* Upcoming Appointments List */}
