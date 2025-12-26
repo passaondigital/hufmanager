@@ -60,7 +60,11 @@ export type Database = {
           id: string
           is_active: boolean | null
           provider_id: string
+          request_message: string | null
+          requested_at: string | null
+          requested_by: string | null
           revoked_at: string | null
+          status: string
           updated_at: string
         }
         Insert: {
@@ -72,7 +76,11 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           provider_id: string
+          request_message?: string | null
+          requested_at?: string | null
+          requested_by?: string | null
           revoked_at?: string | null
+          status?: string
           updated_at?: string
         }
         Update: {
@@ -84,7 +92,11 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           provider_id?: string
+          request_message?: string | null
+          requested_at?: string | null
+          requested_by?: string | null
           revoked_at?: string | null
+          status?: string
           updated_at?: string
         }
         Relationships: [
@@ -98,6 +110,13 @@ export type Database = {
           {
             foreignKeyName: "access_grants_provider_id_fkey"
             columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_grants_requested_by_fkey"
+            columns: ["requested_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
