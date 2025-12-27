@@ -39,90 +39,67 @@ export function ConnectionSearch({ searchType, onConnectionRequested }: Connecti
     setSearching(true);
     setResult(null);
     
-    const cleanId = searchId.toUpperCase().replace("#", "").trim();
-    
     try {
-      if (searchType === 'provider') {
-        // Search for provider by PID
+      if (searchType === 'provider' || searchType === 'client') {
+        // Use secure RPC function to search profiles globally
         const { data, error } = await supabase
-          .from("profiles")
-          .select("id, full_name, avatar_url, readable_id")
-          .eq("readable_id", cleanId)
-          .is("deleted_at", null)
-          .maybeSingle();
+          .rpc("search_profile_by_readable_id", { search_id: searchId });
         
         if (error) throw error;
         
-        if (data) {
-          // Verify it's actually a provider
-          const { data: roleData } = await supabase
-            .rpc("has_role", { _user_id: data.id, _role: "provider" });
+        const result = data as { found: boolean; id?: string; readable_id?: string; full_name?: string; avatar_url?: string; role?: string };
+        
+        if (result?.found && result.id) {
+          const expectedRole = searchType;
           
-          if (roleData) {
+          if (result.role === expectedRole) {
             setResult({
-              id: data.id,
-              type: 'provider',
-              readable_id: data.readable_id || '',
-              name: data.full_name || 'Unbekannt',
-              avatar_url: data.avatar_url || undefined,
+              id: result.id,
+              type: searchType,
+              readable_id: result.readable_id || '',
+              name: result.full_name || 'Unbekannt',
+              avatar_url: result.avatar_url || undefined,
             });
           } else {
-            toast({ title: "Kein Hufbearbeiter gefunden", description: "Diese ID gehört nicht zu einem Hufbearbeiter.", variant: "destructive" });
-          }
-        } else {
-          toast({ title: "Nicht gefunden", description: "Kein Hufbearbeiter mit dieser ID gefunden.", variant: "destructive" });
-        }
-      } else if (searchType === 'client') {
-        // Search for client by KID
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("id, full_name, avatar_url, readable_id")
-          .eq("readable_id", cleanId)
-          .is("deleted_at", null)
-          .maybeSingle();
-        
-        if (error) throw error;
-        
-        if (data) {
-          const { data: roleData } = await supabase
-            .rpc("has_role", { _user_id: data.id, _role: "client" });
-          
-          if (roleData) {
-            setResult({
-              id: data.id,
-              type: 'client',
-              readable_id: data.readable_id || '',
-              name: data.full_name || 'Unbekannt',
-              avatar_url: data.avatar_url || undefined,
+            const label = searchType === 'provider' ? 'Hufbearbeiter' : 'Kunde';
+            toast({ 
+              title: `Kein ${label} gefunden`, 
+              description: `Diese ID gehört nicht zu einem ${label}.`, 
+              variant: "destructive" 
             });
-          } else {
-            toast({ title: "Kein Kunde gefunden", description: "Diese ID gehört nicht zu einem Kunden.", variant: "destructive" });
           }
         } else {
-          toast({ title: "Nicht gefunden", description: "Kein Kunde mit dieser ID gefunden.", variant: "destructive" });
+          const label = searchType === 'provider' ? 'Hufbearbeiter' : 'Kunde';
+          toast({ 
+            title: "Nicht gefunden", 
+            description: `Kein ${label} mit dieser ID gefunden.`, 
+            variant: "destructive" 
+          });
         }
       } else if (searchType === 'horse') {
-        // Search for horse by EQID
+        // Use secure RPC function to search horses globally
         const { data, error } = await supabase
-          .from("horses")
-          .select("id, name, readable_id, photo_url, breed")
-          .eq("readable_id", cleanId)
-          .is("deleted_at", null)
-          .maybeSingle();
+          .rpc("search_horse_by_readable_id", { search_id: searchId });
         
         if (error) throw error;
         
-        if (data) {
+        const result = data as { found: boolean; id?: string; readable_id?: string; name?: string; photo_url?: string; breed?: string; owner_id?: string };
+        
+        if (result?.found && result.id) {
           setResult({
-            id: data.id,
+            id: result.id,
             type: 'horse',
-            readable_id: data.readable_id || '',
-            name: data.name,
-            avatar_url: data.photo_url || undefined,
-            breed: data.breed || undefined,
+            readable_id: result.readable_id || '',
+            name: result.name || 'Unbekannt',
+            avatar_url: result.photo_url || undefined,
+            breed: result.breed || undefined,
           });
         } else {
-          toast({ title: "Nicht gefunden", description: "Kein Pferd mit dieser ID gefunden.", variant: "destructive" });
+          toast({ 
+            title: "Nicht gefunden", 
+            description: "Kein Pferd mit dieser ID gefunden.", 
+            variant: "destructive" 
+          });
         }
       }
     } catch (err) {
