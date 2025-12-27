@@ -3,6 +3,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentCustomers } from "@/components/dashboard/RecentCustomers";
 import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointments";
 import { OverdueAssessmentsWidget } from "@/components/dashboard/OverdueAssessmentsWidget";
+import { ShareInviteLinkCard } from "@/components/invite/ShareInviteLinkCard";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
@@ -28,11 +29,16 @@ const Dashboard = () => {
       <PushNotificationBanner />
 
       {/* Welcome Section */}
-      <div className="animate-fade-in">
-        <h1 className="text-2xl font-bold text-foreground">Willkommen zurück, {displayName}!</h1>
-        <p className="text-muted-foreground mt-1">
-          Hier ist ein Überblick über Ihr Geschäft heute.
-        </p>
+      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+        <div className="animate-fade-in">
+          <h1 className="text-2xl font-bold text-foreground">Willkommen zurück, {displayName}!</h1>
+          <p className="text-muted-foreground mt-1">
+            Hier ist ein Überblick über Ihr Geschäft heute.
+          </p>
+        </div>
+        <div className="lg:w-96">
+          <ShareInviteLinkCard />
+        </div>
       </div>
 
       {/* Stats Grid */}
