@@ -1374,6 +1374,14 @@ export type Database = {
         Args: { _client_id: string; _provider_id: string }
         Returns: boolean
       }
+      search_horse_by_readable_id: {
+        Args: { search_id: string }
+        Returns: Json
+      }
+      search_profile_by_readable_id: {
+        Args: { search_id: string }
+        Returns: Json
+      }
       validate_magic_link: { Args: { slug_input: string }; Returns: Json }
     }
     Enums: {
