@@ -46,6 +46,9 @@ export default function Auth() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   
+  // Invite code from URL (provider's readable_id)
+  const inviteCode = searchParams.get("invite_code");
+  
   // Login mode (provider vs client)
   const [loginMode, setLoginMode] = useState<LoginMode>("provider");
   
@@ -57,7 +60,8 @@ export default function Auth() {
   const [signupName, setSignupName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
-  const [selectedRole, setSelectedRole] = useState<RoleOption>("provider");
+  // Default to client if invite_code is present
+  const [selectedRole, setSelectedRole] = useState<RoleOption>(inviteCode ? "client" : "provider");
 
   // Password reset
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
@@ -78,6 +82,13 @@ export default function Auth() {
 
   // Check for admin redirect parameter
   const redirectTo = searchParams.get("redirect");
+  
+  // Store invite_code in sessionStorage for use after auth callback
+  useEffect(() => {
+    if (inviteCode) {
+      sessionStorage.setItem("huf_invite_code", inviteCode);
+    }
+  }, [inviteCode]);
 
   // Redirect if already logged in
   if (!authLoading && user && role) {
@@ -156,6 +167,10 @@ export default function Auth() {
         toast.error(error.message);
       }
     } else {
+      // If invite code was provided, store it so useAuth hook can process it
+      if (inviteCode) {
+        sessionStorage.setItem("huf_invite_code", inviteCode);
+      }
       toast.success("Registrierung erfolgreich! Bitte bestätigen Sie Ihre E-Mail.");
     }
   };

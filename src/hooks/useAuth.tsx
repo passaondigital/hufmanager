@@ -43,6 +43,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsPasswordRecovery(false);
   };
 
+  // Process invite code after successful login
+  const processInviteCode = async (userId: string) => {
+    const inviteCode = sessionStorage.getItem("huf_invite_code");
+    if (!inviteCode) return;
+    
+    try {
+      // Look up provider by readable_id
+      const { data: result } = await supabase.rpc("search_profile_by_readable_id", {
+        search_id: inviteCode
+      });
+      
+      // Cast to expected shape
+      const profileResult = result as { found: boolean; id?: string; role?: string } | null;
+      
+      if (profileResult && profileResult.found && profileResult.id && profileResult.role === 'provider') {
+        // Check if access_grant already exists
+        const { data: existingGrant } = await supabase
+          .from("access_grants")
+          .select("id")
+          .eq("client_id", userId)
+          .eq("provider_id", profileResult.id)
+          .maybeSingle();
+        
+        if (!existingGrant) {
+          // Create access_grant with active status
+          await supabase.from("access_grants").insert({
+            client_id: userId,
+            provider_id: profileResult.id,
+            status: "active",
+            is_active: true,
+            can_view_basic: true,
+            can_view_medical: true,
+            can_create_appointments: true,
+          });
+          console.log("Auto-connected to provider via invite link:", profileResult.id);
+        }
+      }
+    } catch (error) {
+      console.error("Error processing invite code:", error);
+    } finally {
+      // Clear the invite code from storage
+      sessionStorage.removeItem("huf_invite_code");
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -59,6 +104,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           setTimeout(() => {
             fetchUserRole(session.user.id).then(setRole);
+            // Process invite code on sign in
+            if (event === "SIGNED_IN") {
+              processInviteCode(session.user.id);
+            }
           }, 0);
         } else {
           setRole(null);
@@ -76,6 +125,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setRole(r);
           setLoading(false);
         });
+        // Also process invite code on initial load (in case of email confirmation redirect)
+        processInviteCode(session.user.id);
       } else {
         setLoading(false);
       }

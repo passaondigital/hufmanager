@@ -11,6 +11,7 @@ import { LogOut, FileText, ChevronRight, Plus, Shield, Scissors, User, MessageSq
 import { UnconfirmedAppointmentsBanner } from "@/components/UnconfirmedAppointmentsBanner";
 import { CreateHorseModal } from "@/components/horse-detail/CreateHorseModal";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
+import { MandatoryHorseModal } from "@/components/onboarding/MandatoryHorseModal";
 import { UpcomingAppointmentsList } from "@/components/client/UpcomingAppointmentsList";
 import { LastVisitWidget } from "@/components/client/LastVisitWidget";
 import { EmergencyVetWidget } from "@/components/client/EmergencyVetWidget";
@@ -45,7 +46,7 @@ interface Profile {
 
 export default function ClientHome() {
   const { user, signOut, loading: authLoading } = useAuth();
-  const { showOnboarding, completeOnboarding } = useOnboarding();
+  const { showOnboarding, completeOnboarding, isLoading: onboardingLoading } = useOnboarding();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [horses, setHorses] = useState<Horse[]>([]);
@@ -54,26 +55,18 @@ export default function ClientHome() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [hasProvider, setHasProvider] = useState<boolean | null>(null);
   const [showConnectionSearch, setShowConnectionSearch] = useState(false);
+  const [showMandatoryHorseModal, setShowMandatoryHorseModal] = useState(false);
+  const [isFirstLogin, setIsFirstLogin] = useState(false);
 
   const fetchData = async () => {
     if (!user) return;
     
     setLoading(true);
     
-    // Check if client has a connected provider (only ACTIVE status)
-    const { data: grants } = await supabase
-      .from("access_grants")
-      .select("provider_id, status")
-      .eq("client_id", user.id)
-      .eq("status", "active")
-      .limit(1);
-    
-    setHasProvider((grants && grants.length > 0) || false);
-    
-    // Fetch profile with emergency contacts
+    // Fetch profile with emergency contacts and check if first login
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("full_name, emergency_contacts")
+      .select("full_name, emergency_contacts, has_logged_in")
       .eq("id", user.id)
       .maybeSingle();
     
@@ -86,7 +79,24 @@ export default function ClientHome() {
         full_name: profileData.full_name,
         emergency_contacts: parsedContacts,
       });
+      
+      // Check if this is first login (has_logged_in was false or null)
+      if (!profileData.has_logged_in) {
+        setIsFirstLogin(true);
+        // Mark as logged in
+        await supabase.from("profiles").update({ has_logged_in: true }).eq("id", user.id);
+      }
     }
+    
+    // Check if client has a connected provider (only ACTIVE status)
+    const { data: grants } = await supabase
+      .from("access_grants")
+      .select("provider_id, status")
+      .eq("client_id", user.id)
+      .eq("status", "active")
+      .limit(1);
+    
+    setHasProvider((grants && grants.length > 0) || false);
 
     // Fetch horses - explicitly filter deleted_at for RLS compatibility
     const { data: horsesData, error } = await supabase
@@ -100,6 +110,11 @@ export default function ClientHome() {
 
     if (!error && horsesData) {
       setHorses(horsesData);
+      
+      // Show mandatory horse modal if first login AND no horses
+      if (isFirstLogin && horsesData.length === 0) {
+        setShowMandatoryHorseModal(true);
+      }
     }
     
     setLoading(false);
@@ -108,6 +123,13 @@ export default function ClientHome() {
   useEffect(() => {
     fetchData();
   }, [user]);
+  
+  // Show mandatory horse modal after initial data load if conditions met
+  useEffect(() => {
+    if (!loading && isFirstLogin && horses.length === 0 && !showOnboarding) {
+      setShowMandatoryHorseModal(true);
+    }
+  }, [loading, isFirstLogin, horses.length, showOnboarding]);
 
   const handleLogout = async () => {
     await signOut();
@@ -115,6 +137,7 @@ export default function ClientHome() {
   };
 
   const handleHorseCreated = (horseId: string) => {
+    setShowMandatoryHorseModal(false);
     fetchData();
     navigate(`/client-horse/${horseId}`);
   };
@@ -136,6 +159,14 @@ export default function ClientHome() {
 
   return (
     <>
+      {/* Mandatory Horse Modal - non-skippable */}
+      {showMandatoryHorseModal && !showOnboarding && (
+        <MandatoryHorseModal
+          open={showMandatoryHorseModal}
+          onComplete={handleHorseCreated}
+        />
+      )}
+
       {/* Onboarding Wizard */}
       {showOnboarding && (
         <OnboardingWizard 
