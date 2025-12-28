@@ -1,5 +1,6 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, User, LogOut, Settings, Sun, Moon, Download } from "lucide-react";
+import { Search, User, LogOut, Settings, Sun, Moon, Download, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,12 +17,39 @@ import { useTheme } from "@/components/ThemeProvider";
 import { toast } from "@/hooks/use-toast";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { supabase } from "@/integrations/supabase/client";
 
 export function AppHeader() {
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { canInstall, isInstalled, promptInstall } = usePWAInstall();
+  const [readableId, setReadableId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const fetchReadableId = async () => {
+      if (!user?.id) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("readable_id")
+        .eq("id", user.id)
+        .single();
+      if (data?.readable_id) {
+        setReadableId(data.readable_id);
+      }
+    };
+    fetchReadableId();
+  }, [user?.id]);
+
+  const copyToClipboard = () => {
+    if (readableId) {
+      navigator.clipboard.writeText(`#${readableId}`);
+      setCopied(true);
+      toast({ title: "ID kopiert!", description: `#${readableId}` });
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -83,6 +111,24 @@ export function AppHeader() {
         </Button>
 
         <NotificationBell />
+
+        {/* User ID Badge */}
+        {readableId && (
+          <button
+            onClick={copyToClipboard}
+            className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-muted hover:bg-muted/80 transition-colors group"
+            title="ID kopieren"
+          >
+            <span className="font-mono text-xs text-muted-foreground group-hover:text-foreground">
+              #{readableId}
+            </span>
+            {copied ? (
+              <Check className="h-3.5 w-3.5 text-green-500" />
+            ) : (
+              <Copy className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground" />
+            )}
+          </button>
+        )}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

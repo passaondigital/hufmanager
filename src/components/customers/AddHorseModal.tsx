@@ -121,11 +121,27 @@ export function AddHorseModal({ customerId, customerName, open, onClose }: Props
     },
   });
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!customerId) {
       toast({
         title: "Fehler",
         description: "Kein Kunde ausgewählt.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate customerId exists in profiles table before inserting
+    const { data: profileExists } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", customerId)
+      .maybeSingle();
+
+    if (!profileExists) {
+      toast({
+        title: "Fehler",
+        description: "Der ausgewählte Kunde existiert nicht mehr.",
         variant: "destructive",
       });
       return;
