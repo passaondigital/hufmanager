@@ -386,12 +386,16 @@ export default function Auth() {
                       type="button"
                       onClick={() => setSelectedRole("client")}
                       className={cn(
-                        "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
+                        "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 relative",
                         selectedRole === "client"
                           ? "border-primary bg-primary/10 shadow-md shadow-primary/20"
                           : "border-border bg-card hover:border-primary/50 hover:bg-muted/50"
                       )}
                     >
+                      {/* Free badge */}
+                      <div className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                        GRATIS
+                      </div>
                       <div className={cn(
                         "w-12 h-12 rounded-full flex items-center justify-center transition-colors",
                         selectedRole === "client"
@@ -407,7 +411,7 @@ export default function Auth() {
                         Pferdebesitzer
                       </span>
                       <span className="text-xs text-muted-foreground text-center">
-                        Behalte Termine im Blick
+                        Kostenlos für Besitzer
                       </span>
                     </button>
                   </div>
