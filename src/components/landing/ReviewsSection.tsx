@@ -1,5 +1,8 @@
-import { Star, Quote } from "lucide-react";
+import { Star, Quote, MessageSquare } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ReviewReactions } from "./ReviewReactions";
+import { ProofImageOverlay } from "./ProofImageOverlay";
 
 interface Review {
   id: string;
@@ -7,12 +10,22 @@ interface Review {
   rating: number;
   text: string | null;
   created_at: string;
+  source?: string;
+  proof_image_url?: string;
+  reactions?: { green: number; yellow: number; red: number };
 }
 
 interface ReviewsSectionProps {
   reviews: Review[];
   primaryColor?: string;
 }
+
+const sourceLabels: Record<string, string> = {
+  App: "App",
+  WhatsApp: "WhatsApp",
+  Google: "Google",
+  Email: "E-Mail",
+};
 
 export const ReviewsSection = ({ reviews, primaryColor = "#d97706" }: ReviewsSectionProps) => {
   if (!reviews || reviews.length === 0) return null;
@@ -47,34 +60,74 @@ export const ReviewsSection = ({ reviews, primaryColor = "#d97706" }: ReviewsSec
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
-          {reviews.map((review) => (
-            <Card key={review.id} className="bg-muted/20">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-1 mb-3">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className="h-4 w-4"
-                      fill={star <= review.rating ? primaryColor : 'transparent'}
-                      stroke={star <= review.rating ? primaryColor : 'currentColor'}
-                    />
-                  ))}
-                </div>
-                {review.text && (
-                  <p className="text-muted-foreground italic mb-4">"{review.text}"</p>
-                )}
-                <div className="flex items-center justify-between">
-                  <p className="font-medium text-foreground">{review.reviewer_name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(review.created_at).toLocaleDateString('de-DE', {
-                      month: 'short',
-                      year: 'numeric'
-                    })}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {reviews.map((review) => {
+            const reviewContent = (
+              <Card key={review.id} className="bg-muted/20 hover:bg-muted/30 transition-colors">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className="h-4 w-4"
+                          fill={star <= review.rating ? primaryColor : 'transparent'}
+                          stroke={star <= review.rating ? primaryColor : 'currentColor'}
+                        />
+                      ))}
+                    </div>
+                    {review.source && (
+                      <Badge variant="outline" className="text-xs">
+                        {sourceLabels[review.source] || review.source}
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  {review.text && (
+                    <p className="text-muted-foreground italic mb-4">"{review.text}"</p>
+                  )}
+                  
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-foreground">{review.reviewer_name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(review.created_at).toLocaleDateString('de-DE', {
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                  
+                  {/* Reactions */}
+                  <ReviewReactions
+                    reviewId={review.id}
+                    reactions={review.reactions || { green: 0, yellow: 0, red: 0 }}
+                  />
+                </CardContent>
+              </Card>
+            );
+
+            // Wrap with proof overlay if proof image exists
+            if (review.proof_image_url) {
+              return (
+                <ProofImageOverlay
+                  key={review.id}
+                  proofImageUrl={review.proof_image_url}
+                  source={review.source || 'App'}
+                >
+                  {reviewContent}
+                </ProofImageOverlay>
+              );
+            }
+
+            return reviewContent;
+          })}
+        </div>
+
+        {/* Engagement hint */}
+        <div className="text-center mt-8">
+          <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            Klicke auf die Reaktionen, um deine Meinung zu teilen
+          </p>
         </div>
       </div>
     </section>
