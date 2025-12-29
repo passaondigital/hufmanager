@@ -1241,10 +1241,14 @@ export type Database = {
           created_at: string
           id: string
           is_approved: boolean | null
+          is_visible: boolean | null
+          proof_image_url: string | null
           provider_id: string
           rating: number
+          reactions: Json | null
           reviewer_email: string | null
           reviewer_name: string
+          source: string | null
           text: string | null
           token: string | null
           updated_at: string
@@ -1253,10 +1257,14 @@ export type Database = {
           created_at?: string
           id?: string
           is_approved?: boolean | null
+          is_visible?: boolean | null
+          proof_image_url?: string | null
           provider_id: string
           rating: number
+          reactions?: Json | null
           reviewer_email?: string | null
           reviewer_name: string
+          source?: string | null
           text?: string | null
           token?: string | null
           updated_at?: string
@@ -1265,10 +1273,14 @@ export type Database = {
           created_at?: string
           id?: string
           is_approved?: boolean | null
+          is_visible?: boolean | null
+          proof_image_url?: string | null
           provider_id?: string
           rating?: number
+          reactions?: Json | null
           reviewer_email?: string | null
           reviewer_name?: string
+          source?: string | null
           text?: string | null
           token?: string | null
           updated_at?: string
@@ -1367,6 +1379,10 @@ export type Database = {
       }
       increment_magic_link_uses: {
         Args: { link_id: string }
+        Returns: undefined
+      }
+      increment_review_reaction: {
+        Args: { reaction_type: string; review_id: string }
         Returns: undefined
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }

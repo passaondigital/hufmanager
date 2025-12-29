@@ -68,6 +68,10 @@ interface Review {
   rating: number;
   text: string | null;
   created_at: string;
+  source?: string;
+  proof_image_url?: string;
+  is_visible?: boolean;
+  reactions?: { green: number; yellow: number; red: number };
 }
 
 interface GalleryImage {
@@ -154,16 +158,17 @@ const ProviderLanding = () => {
 
         if (feedbackData) setFeedbacks(feedbackData);
 
-        // Fetch approved reviews
+        // Fetch approved and visible reviews with new fields
         const { data: reviewsData } = await supabase
           .from('reviews')
-          .select('id, reviewer_name, rating, text, created_at')
+          .select('id, reviewer_name, rating, text, created_at, source, proof_image_url, reactions')
           .eq('provider_id', typedBusinessData.user_id)
           .eq('is_approved', true)
+          .eq('is_visible', true)
           .order('created_at', { ascending: false })
           .limit(10);
 
-        if (reviewsData) setReviews(reviewsData);
+        if (reviewsData) setReviews(reviewsData as Review[]);
 
         // Fetch hoof photos for gallery
         const { data: hoofPhotos } = await supabase
