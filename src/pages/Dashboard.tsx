@@ -12,7 +12,7 @@ import { PushNotificationBanner } from "@/components/notifications/PushNotificat
 const Dashboard = () => {
   const { user } = useAuth();
   const { showOnboarding, completeOnboarding } = useOnboarding();
-  const displayName = user?.email?.split("@")[0] || "Max";
+  const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Hufbearbeiter";
 
   return (
     <>
