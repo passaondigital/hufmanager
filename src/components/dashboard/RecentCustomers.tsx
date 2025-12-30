@@ -30,11 +30,12 @@ export function RecentCustomers() {
 
       if (createdError) throw createdError;
 
-      // Get clients connected via access_grants (active + pending)
+      // Get clients connected via access_grants (active + pending, and is_active = true)
       const { data: accessGrants, error: grantsError } = await supabase
         .from("access_grants")
         .select("client_id, status, granted_at")
         .eq("provider_id", user.id)
+        .eq("is_active", true)
         .in("status", ["active", "pending"]);
 
       if (grantsError) throw grantsError;
@@ -105,10 +106,9 @@ export function RecentCustomers() {
         }
       });
 
-      // Sort by created_at and take top 4
+      // Sort by created_at (show all clients, no limit for dashboard accuracy)
       return allClients
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, 4)
         .map((c) => ({
           id: c.id,
           name: c.full_name || "Unbekannter Kunde",
