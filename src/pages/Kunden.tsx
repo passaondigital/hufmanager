@@ -63,12 +63,12 @@ const Kunden = () => {
       
       if (createdError) throw createdError;
       
-      // Then get clients connected via access_grants (only ACTIVE status)
+      // Then get clients connected via access_grants (ACTIVE + PENDING status)
       const { data: accessGrants, error: grantsError } = await supabase
         .from("access_grants")
         .select("client_id, status")
         .eq("provider_id", user.id)
-        .eq("status", "active");
+        .in("status", ["active", "pending"]);
       
       if (grantsError) throw grantsError;
       
