@@ -1366,6 +1366,10 @@ export type Database = {
         Args: { subdomain_input: string }
         Returns: Json
       }
+      get_public_review_provider: {
+        Args: { provider_id_input: string }
+        Returns: Json
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]

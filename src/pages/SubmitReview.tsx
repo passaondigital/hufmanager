@@ -40,16 +40,16 @@ const SubmitReview = () => {
       }
 
       try {
+        // Use secure RPC function instead of direct table access
         const { data, error: fetchError } = await supabase
-          .from("business_settings")
-          .select("business_name, owner_name")
-          .eq("user_id", providerId)
-          .maybeSingle();
+          .rpc("get_public_review_provider", { provider_id_input: providerId });
 
         if (fetchError) throw fetchError;
+        
+        const result = data as { business_name?: string; owner_name?: string } | null;
 
-        if (data) {
-          setProviderName(data.business_name || data.owner_name || "Hufbearbeiter");
+        if (result && (result.business_name || result.owner_name)) {
+          setProviderName(result.business_name || result.owner_name || "Hufbearbeiter");
         } else {
           setError("Provider nicht gefunden");
         }
