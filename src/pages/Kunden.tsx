@@ -32,9 +32,11 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { CustomerDetailModal } from "@/components/customers/CustomerDetailModal";
 import { AddHorseModal } from "@/components/customers/AddHorseModal";
+import { LinkAppUserModal } from "@/components/customers/LinkAppUserModal";
 import { PendingConnectionRequests } from "@/components/network/PendingConnectionRequests";
 import { ConnectionSearch } from "@/components/network/ConnectionSearch";
 import { VerifiedConnectionBadge } from "@/components/network/VerifiedConnectionBadge";
+import { Link2 } from "lucide-react";
 
 const Kunden = () => {
   const { user } = useAuth();
@@ -47,6 +49,7 @@ const Kunden = () => {
   const [showAddHorseModal, setShowAddHorseModal] = useState(false);
   const [addHorseForCustomerId, setAddHorseForCustomerId] = useState<string | null>(null);
   const [showConnectionSearch, setShowConnectionSearch] = useState(false);
+  const [showLinkUserModal, setShowLinkUserModal] = useState(false);
 
   // Fetch profiles (clients) - both created by provider AND connected via access_grants (ACTIVE only)
   const { data: clients = [] } = useQuery({
@@ -188,10 +191,10 @@ const Kunden = () => {
           <Button 
             variant="outline" 
             className="gap-2" 
-            onClick={() => setShowConnectionSearch(!showConnectionSearch)}
+            onClick={() => setShowLinkUserModal(true)}
           >
-            <UserPlus className="h-4 w-4" />
-            <span className="hidden sm:inline">Kunde finden</span>
+            <Link2 className="h-4 w-4" />
+            <span className="hidden sm:inline">App-Nutzer verknüpfen</span>
           </Button>
           <Button className="gap-2" onClick={() => navigate("/aufnahme")}>
             <Plus className="h-4 w-4" />
@@ -400,6 +403,13 @@ const Kunden = () => {
           setShowAddHorseModal(false);
           setAddHorseForCustomerId(null);
         }}
+      />
+
+      {/* Link App User Modal */}
+      <LinkAppUserModal
+        open={showLinkUserModal}
+        onClose={() => setShowLinkUserModal(false)}
+        onSuccess={handleConnectionStatusChanged}
       />
     </div>
   );
