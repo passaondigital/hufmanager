@@ -80,9 +80,14 @@ export function LandingContactForm({ providerId, providerName, primaryColor = "#
 
       setIsSubmitted(true);
       toast.success("Nachricht gesendet! Wir melden uns bald.");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error submitting contact form:", error);
-      toast.error("Fehler beim Senden. Bitte versuchen Sie es erneut.");
+      // Handle rate limit error from database trigger
+      if (error?.message?.includes("Zu viele Anfragen") || error?.message?.includes("vorübergehend nicht verfügbar")) {
+        toast.error(error.message);
+      } else {
+        toast.error("Fehler beim Senden. Bitte versuchen Sie es erneut.");
+      }
     } finally {
       setIsSubmitting(false);
     }
