@@ -103,6 +103,14 @@ serve(async (req: Request): Promise<Response> => {
     const businessPhone = businessSettings?.phone || "";
     const businessEmail = businessSettings?.email || "";
 
+    // Debug logging to verify sender name
+    console.log("=== SENDER NAME DEBUG ===");
+    console.log("Provider user.id:", user.id);
+    console.log("businessSettings.business_name:", businessSettings?.business_name);
+    console.log("providerProfile.full_name:", providerProfile?.full_name);
+    console.log("Final businessName used:", businessName);
+    console.log("=========================");
+
     // Generate app URL (use origin from request or fallback)
     const origin = req.headers.get("origin") || "https://hufmanager.lovable.app";
     const loginUrl = `${origin}/auth`;
