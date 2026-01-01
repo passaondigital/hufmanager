@@ -83,7 +83,14 @@ const Services = () => {
   const { data: services = [], isLoading } = useQuery({
     queryKey: ["services"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("services").select("*").order("created_at");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Nicht angemeldet");
+      
+      const { data, error } = await supabase
+        .from("services")
+        .select("*")
+        .eq("provider_id", user.id)
+        .order("created_at");
       if (error) throw error;
       return data as Service[];
     },

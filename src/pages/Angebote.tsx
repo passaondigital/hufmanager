@@ -58,7 +58,14 @@ const Angebote = () => {
   const { data: offers = [] } = useQuery({
     queryKey: ["offers"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("offers").select("*").order("sort_order");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Nicht angemeldet");
+      
+      const { data, error } = await supabase
+        .from("offers")
+        .select("*")
+        .eq("provider_id", user.id)
+        .order("sort_order");
       if (error) throw error;
       return data as Offer[];
     },
