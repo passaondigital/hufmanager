@@ -1,4 +1,4 @@
-import { Users, Calendar, TrendingUp, MessageSquare } from "lucide-react";
+import { Users, Calendar, TrendingUp, MessageSquare, Loader2 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentCustomers } from "@/components/dashboard/RecentCustomers";
 import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointments";
@@ -8,11 +8,20 @@ import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { PushNotificationBanner } from "@/components/notifications/PushNotificationBanner";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { showOnboarding, completeOnboarding } = useOnboarding();
+  const { data: stats, isLoading } = useDashboardStats();
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Hufbearbeiter";
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("de-DE", {
+      style: "currency",
+      currency: "EUR",
+    }).format(amount);
+  };
 
   return (
     <>
@@ -42,44 +51,66 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Aktive Kunden"
-          value={47}
-          change="+3 diesen Monat"
-          changeType="positive"
-          icon={Users}
-          iconColor="primary"
-          navigateTo="/customers"
-        />
-        <StatCard
-          title="Termine diese Woche"
-          value={12}
-          change="2 heute"
-          changeType="neutral"
-          icon={Calendar}
-          iconColor="accent"
-          navigateTo="/calendar"
-        />
-        <StatCard
-          title="Neue Anfragen"
-          value={3}
-          change="1 ungelesen"
-          changeType="positive"
-          icon={MessageSquare}
-          iconColor="primary"
-          navigateTo="/anfragen"
-        />
-        <StatCard
-          title="Umsatz (Monat)"
-          value="€4.250"
-          change="+12% vs. Vormonat"
-          changeType="positive"
-          icon={TrendingUp}
-          iconColor="accent"
-          navigateTo="/analyse"
-        />
-      </div>
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-card rounded-xl border border-border p-6 flex items-center justify-center h-32">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            title="Aktive Kunden"
+            value={stats?.activeClients || 0}
+            change={stats?.activeClientsChange || "0 aktiv"}
+            changeType="neutral"
+            icon={Users}
+            iconColor="primary"
+            navigateTo="/customers"
+          />
+          <StatCard
+            title="Termine diese Woche"
+            value={stats?.appointmentsThisWeek || 0}
+            change={`${stats?.appointmentsToday || 0} heute`}
+            changeType="neutral"
+            icon={Calendar}
+            iconColor="accent"
+            navigateTo="/calendar"
+          />
+          <StatCard
+            title="Neue Anfragen"
+            value={stats?.newLeads || 0}
+            change={stats?.unreadLeads ? `${stats.unreadLeads} ungelesen` : "Keine neuen"}
+            changeType={stats?.unreadLeads ? "positive" : "neutral"}
+            icon={MessageSquare}
+            iconColor="primary"
+            navigateTo="/anfragen"
+          />
+          <StatCard
+            title="Umsatz (Monat)"
+            value={formatCurrency(stats?.monthlyRevenue || 0)}
+            change={
+              stats?.revenueChangePercent !== undefined
+                ? `${stats.revenueChangePercent >= 0 ? "+" : ""}${stats.revenueChangePercent}% vs. Vormonat`
+                : "Keine Daten"
+            }
+            changeType={
+              stats?.revenueChangePercent !== undefined
+                ? stats.revenueChangePercent > 0
+                  ? "positive"
+                  : stats.revenueChangePercent < 0
+                  ? "negative"
+                  : "neutral"
+                : "neutral"
+            }
+            icon={TrendingUp}
+            iconColor="accent"
+            navigateTo="/rechnungen"
+          />
+        </div>
+      )}
 
       {/* Smart Suggestions - Overdue Assessments */}
       <OverdueAssessmentsWidget />
