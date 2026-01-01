@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +16,7 @@ import {
   Euro,
   Download,
   BarChart3,
+  Loader2,
 } from "lucide-react";
 import {
   LineChart,
@@ -30,46 +32,60 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { cn } from "@/lib/utils";
-
-const revenueData = [
-  { month: "Jan", umsatz: 3200 },
-  { month: "Feb", umsatz: 3800 },
-  { month: "Mär", umsatz: 3500 },
-  { month: "Apr", umsatz: 4100 },
-  { month: "Mai", umsatz: 4500 },
-  { month: "Jun", umsatz: 4200 },
-  { month: "Jul", umsatz: 4800 },
-  { month: "Aug", umsatz: 4600 },
-  { month: "Sep", umsatz: 5100 },
-  { month: "Okt", umsatz: 4900 },
-  { month: "Nov", umsatz: 4250 },
-  { month: "Dez", umsatz: 3900 },
-];
-
-const appointmentsData = [
-  { month: "Jan", termine: 42 },
-  { month: "Feb", termine: 48 },
-  { month: "Mär", termine: 45 },
-  { month: "Apr", termine: 52 },
-  { month: "Mai", termine: 58 },
-  { month: "Jun", termine: 55 },
-  { month: "Jul", termine: 62 },
-  { month: "Aug", termine: 59 },
-  { month: "Sep", termine: 65 },
-  { month: "Okt", termine: 61 },
-  { month: "Nov", termine: 54 },
-  { month: "Dez", termine: 48 },
-];
-
-const serviceDistribution = [
-  { name: "Barhuf", value: 45, color: "hsl(150, 35%, 35%)" },
-  { name: "Beschlag", value: 35, color: "hsl(25, 80%, 50%)" },
-  { name: "Korrektur", value: 15, color: "hsl(40, 70%, 50%)" },
-  { name: "Sonstiges", value: 5, color: "hsl(30, 10%, 45%)" },
-];
+import { useAnalyseStats } from "@/hooks/useAnalyseStats";
 
 const Analyse = () => {
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const { data: stats, isLoading } = useAnalyseStats(selectedYear);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("de-DE", {
+      style: "currency",
+      currency: "EUR",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const renderChangeIndicator = (change: number, suffix: string = "vs. Vorjahr") => {
+    if (change === 0) {
+      return (
+        <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+          Keine Änderung
+        </p>
+      );
+    }
+    const isPositive = change > 0;
+    return (
+      <p className={`text-sm flex items-center gap-1 mt-1 ${isPositive ? "text-accent" : "text-muted-foreground"}`}>
+        {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+        {isPositive ? "+" : ""}{change}% {suffix}
+      </p>
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Analyse</h1>
+            <p className="text-muted-foreground mt-1">
+              Geschäftsübersicht und Leistungskennzahlen
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
+
+  const monthlyData = stats?.monthlyData || [];
+  const serviceDistribution = stats?.serviceDistribution || [];
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
@@ -80,13 +96,14 @@ const Analyse = () => {
           </p>
         </div>
         <div className="flex gap-3">
-          <Select defaultValue="2024">
+          <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
             <SelectTrigger className="w-[120px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="2024">2024</SelectItem>
-              <SelectItem value="2023">2023</SelectItem>
+              <SelectItem value={String(currentYear)}>{currentYear}</SelectItem>
+              <SelectItem value={String(currentYear - 1)}>{currentYear - 1}</SelectItem>
+              <SelectItem value={String(currentYear - 2)}>{currentYear - 2}</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline" className="gap-2">
@@ -103,11 +120,10 @@ const Analyse = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Jahresumsatz</p>
-                <p className="text-2xl font-bold text-foreground">€50.850</p>
-                <p className="text-sm text-accent flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-3 w-3" />
-                  +15% vs. Vorjahr
+                <p className="text-2xl font-bold text-foreground">
+                  {formatCurrency(stats?.yearlyRevenue || 0)}
                 </p>
+                {renderChangeIndicator(stats?.yearlyRevenueChange || 0)}
               </div>
               <div className="p-3 rounded-xl bg-primary/10">
                 <Euro className="h-6 w-6 text-primary" />
@@ -121,11 +137,10 @@ const Analyse = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Termine (Jahr)</p>
-                <p className="text-2xl font-bold text-foreground">649</p>
-                <p className="text-sm text-accent flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-3 w-3" />
-                  +8% vs. Vorjahr
+                <p className="text-2xl font-bold text-foreground">
+                  {stats?.yearlyAppointments || 0}
                 </p>
+                {renderChangeIndicator(stats?.yearlyAppointmentsChange || 0)}
               </div>
               <div className="p-3 rounded-xl bg-accent/10">
                 <Calendar className="h-6 w-6 text-accent" />
@@ -139,10 +154,11 @@ const Analyse = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Aktive Kunden</p>
-                <p className="text-2xl font-bold text-foreground">47</p>
-                <p className="text-sm text-accent flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-3 w-3" />
-                  +6 dieses Jahr
+                <p className="text-2xl font-bold text-foreground">
+                  {stats?.activeClients || 0}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Gesamt
                 </p>
               </div>
               <div className="p-3 rounded-xl bg-primary/10">
@@ -157,10 +173,11 @@ const Analyse = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Ø pro Termin</p>
-                <p className="text-2xl font-bold text-foreground">€78</p>
-                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                  <TrendingDown className="h-3 w-3" />
-                  -2% vs. Vorjahr
+                <p className="text-2xl font-bold text-foreground">
+                  {formatCurrency(stats?.avgPerAppointment || 0)}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Durchschnitt
                 </p>
               </div>
               <div className="p-3 rounded-xl bg-muted">
@@ -180,36 +197,42 @@ const Analyse = () => {
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={revenueData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis
-                    dataKey="month"
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
-                  />
-                  <YAxis
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
-                    tickFormatter={(value) => `€${value}`}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
-                    formatter={(value: number) => [`€${value}`, "Umsatz"]}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="umsatz"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={3}
-                    dot={{ fill: "hsl(var(--primary))", strokeWidth: 2 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              {monthlyData.every(d => d.umsatz === 0) ? (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  Keine Umsatzdaten für {selectedYear}
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={monthlyData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis
+                      dataKey="month"
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={12}
+                    />
+                    <YAxis
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={12}
+                      tickFormatter={(value) => `€${value}`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                      }}
+                      formatter={(value: number) => [`€${value}`, "Umsatz"]}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="umsatz"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={3}
+                      dot={{ fill: "hsl(var(--primary))", strokeWidth: 2 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -221,30 +244,36 @@ const Analyse = () => {
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={appointmentsData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis
-                    dataKey="month"
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
-                  />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
-                    formatter={(value: number) => [value, "Termine"]}
-                  />
-                  <Bar
-                    dataKey="termine"
-                    fill="hsl(var(--accent))"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+              {monthlyData.every(d => d.termine === 0) ? (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  Keine Termine für {selectedYear}
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlyData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis
+                      dataKey="month"
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={12}
+                    />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                      }}
+                      formatter={(value: number) => [value, "Termine"]}
+                    />
+                    <Bar
+                      dataKey="termine"
+                      fill="hsl(var(--accent))"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -256,47 +285,53 @@ const Analyse = () => {
           <CardTitle className="text-lg">Serviceverteilung</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row items-center gap-8">
-            <div className="h-[250px] w-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={serviceDistribution}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={2}
-                    dataKey="value"
-                  >
-                    {serviceDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
-                    formatter={(value: number) => [`${value}%`, ""]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+          {serviceDistribution.length === 0 ? (
+            <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+              Keine Service-Daten für {selectedYear}
             </div>
-            <div className="flex flex-wrap gap-4">
-              {serviceDistribution.map((item) => (
-                <div key={item.name} className="flex items-center gap-2">
-                  <div
-                    className="w-4 h-4 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  />
-                  <span className="text-foreground font-medium">{item.name}</span>
-                  <span className="text-muted-foreground">{item.value}%</span>
-                </div>
-              ))}
+          ) : (
+            <div className="flex flex-col md:flex-row items-center gap-8">
+              <div className="h-[250px] w-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={serviceDistribution}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {serviceDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                      }}
+                      formatter={(value: number) => [`${value}%`, ""]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex flex-wrap gap-4">
+                {serviceDistribution.map((item) => (
+                  <div key={item.name} className="flex items-center gap-2">
+                    <div
+                      className="w-4 h-4 rounded-full"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-foreground font-medium">{item.name}</span>
+                    <span className="text-muted-foreground">{item.value}%</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>
