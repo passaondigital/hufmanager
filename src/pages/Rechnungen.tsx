@@ -22,7 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { FileText, Search, Plus, Eye, Download, Trash2, MoreVertical, Loader2 } from "lucide-react";
+import { FileText, Search, Plus, Eye, Download, Trash2, MoreVertical, Loader2, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { CreateInvoiceModal } from "@/components/invoices/CreateInvoiceModal";
@@ -228,6 +228,20 @@ export default function Rechnungen() {
     setInvoiceToDelete(null);
   };
 
+  const handleMarkAsPaid = async (invoice: Invoice) => {
+    const { error } = await supabase
+      .from("invoices")
+      .update({ status: "paid" })
+      .eq("id", invoice.id);
+
+    if (error) {
+      toast({ title: "Fehler beim Aktualisieren", variant: "destructive" });
+    } else {
+      toast({ title: "Rechnung als bezahlt markiert" });
+      fetchInvoices();
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -364,6 +378,15 @@ export default function Rechnungen() {
                           <Download className="h-4 w-4 mr-2" />
                           Herunterladen
                         </DropdownMenuItem>
+                        {invoice.status !== "paid" && (
+                          <DropdownMenuItem 
+                            onClick={() => handleMarkAsPaid(invoice)}
+                            className="text-green-600 focus:text-green-600"
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Als bezahlt markieren
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem
                           onClick={() => setInvoiceToDelete(invoice)}
                           className="text-destructive focus:text-destructive"
