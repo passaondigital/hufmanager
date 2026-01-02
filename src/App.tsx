@@ -50,6 +50,7 @@ import ConnectForm from "@/pages/ConnectForm";
 import Netzwerk from "@/pages/Netzwerk";
 import MissionControl from "@/pages/admin/MissionControl";
 import SubmitReview from "@/pages/SubmitReview";
+import AboMatrix from "@/pages/AboMatrix";
 
 // Components
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
@@ -181,6 +182,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/hufanalyse" element={<Hufanalyse />} />
               <Route path="/rechnungen" element={<Rechnungen />} />
               <Route path="/support" element={<Support />} />
+              <Route path="/abo-matrix" element={<AboMatrix />} />
             </Route>
 
             {/* --- 3. CLIENT (PFERDEBESITZER) ROUTES --- */}

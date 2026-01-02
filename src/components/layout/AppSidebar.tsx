@@ -23,6 +23,7 @@ import {
   ClipboardList,
   Briefcase,
   Shield,
+  Diamond,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -34,6 +35,9 @@ import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
+
+// Stealth feature: Only these emails can see Abo-Matrix
+const STEALTH_EMAILS = ["barhufserviceschmid@gmail.com"];
 
 // Hook to get count of new leads
 function useNewLeadsCount() {
@@ -86,9 +90,10 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
   const navigate = useNavigate();
   const { data: newLeadsCount = 0 } = useNewLeadsCount();
   const { hasModuleAccess } = useSubscription();
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   
   const isAdmin = role === "admin";
+  const canSeeAboMatrix = user?.email && STEALTH_EMAILS.includes(user.email);
 
   // Filter main items based on feature flags
   const mainItems = baseMainItems.filter(item => 
@@ -210,6 +215,23 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 
       {/* Bottom Section */}
       <div className="p-3 border-t border-sidebar-border space-y-1">
+        {/* Stealth: Abo-Matrix - only visible to specific emails */}
+        {canSeeAboMatrix && (
+          <NavLink
+            to="/abo-matrix"
+            onClick={onNavigate}
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group min-h-[48px]",
+              isActive("/abo-matrix")
+                ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/30"
+                : "text-amber-500 hover:bg-sidebar-accent hover:text-amber-400"
+            )}
+          >
+            <Diamond className={cn("h-5 w-5 flex-shrink-0", collapsed && "mx-auto")} />
+            {!collapsed && <span className="font-medium text-[15px]">Abo-Matrix</span>}
+          </NavLink>
+        )}
+
         {/* Admin Link - only visible for admins */}
         {isAdmin && (
           <NavLink

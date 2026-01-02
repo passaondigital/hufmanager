@@ -1332,6 +1332,51 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_settings: {
+        Row: {
+          copecart_base_url: string | null
+          created_at: string
+          discount_percentage: number | null
+          id: string
+          price_4_weeks_zone1: number | null
+          price_4_weeks_zone2: number | null
+          price_6_weeks_zone1: number | null
+          price_6_weeks_zone2: number | null
+          price_8_weeks_zone1: number | null
+          price_8_weeks_zone2: number | null
+          provider_id: string
+          updated_at: string
+        }
+        Insert: {
+          copecart_base_url?: string | null
+          created_at?: string
+          discount_percentage?: number | null
+          id?: string
+          price_4_weeks_zone1?: number | null
+          price_4_weeks_zone2?: number | null
+          price_6_weeks_zone1?: number | null
+          price_6_weeks_zone2?: number | null
+          price_8_weeks_zone1?: number | null
+          price_8_weeks_zone2?: number | null
+          provider_id: string
+          updated_at?: string
+        }
+        Update: {
+          copecart_base_url?: string | null
+          created_at?: string
+          discount_percentage?: number | null
+          id?: string
+          price_4_weeks_zone1?: number | null
+          price_4_weeks_zone2?: number | null
+          price_6_weeks_zone1?: number | null
+          price_6_weeks_zone2?: number | null
+          price_8_weeks_zone1?: number | null
+          price_8_weeks_zone2?: number | null
+          provider_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
