@@ -12,6 +12,7 @@ import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { TimeSlotPicker } from "@/components/booking/TimeSlotPicker";
+import { SubscriptionWizard } from "@/components/client/SubscriptionWizard";
 
 interface Service {
   id: string;
@@ -28,7 +29,19 @@ interface Horse {
   name: string;
 }
 
+interface SubscriptionSettings {
+  price_4_weeks_zone1: number;
+  price_4_weeks_zone2: number;
+  price_6_weeks_zone1: number;
+  price_6_weeks_zone2: number;
+  price_8_weeks_zone1: number;
+  price_8_weeks_zone2: number;
+  discount_percentage: number;
+  copecart_base_url: string;
+}
+
 type BookingStep = "services" | "horse" | "date" | "confirm";
+type BookingMode = "wizard" | "standard";
 
 export default function ClientBooking() {
   const navigate = useNavigate();
@@ -38,6 +51,9 @@ export default function ClientBooking() {
   const [horses, setHorses] = useState<Horse[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  
+  const [bookingMode, setBookingMode] = useState<BookingMode>("standard");
+  const [subscriptionSettings, setSubscriptionSettings] = useState<SubscriptionSettings | null>(null);
   
   const [step, setStep] = useState<BookingStep>("services");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
@@ -98,6 +114,27 @@ export default function ClientBooking() {
 
       if (foundProviderId) {
         setProviderId(foundProviderId);
+
+        // Check if provider has subscription settings (for wizard mode)
+        const { data: subSettings } = await supabase
+          .from("subscription_settings")
+          .select("*")
+          .eq("provider_id", foundProviderId)
+          .maybeSingle();
+
+        if (subSettings && (subSettings.price_4_weeks_zone1 > 0 || subSettings.price_6_weeks_zone1 > 0 || subSettings.price_8_weeks_zone1 > 0)) {
+          setSubscriptionSettings({
+            price_4_weeks_zone1: subSettings.price_4_weeks_zone1 || 0,
+            price_4_weeks_zone2: subSettings.price_4_weeks_zone2 || 0,
+            price_6_weeks_zone1: subSettings.price_6_weeks_zone1 || 0,
+            price_6_weeks_zone2: subSettings.price_6_weeks_zone2 || 0,
+            price_8_weeks_zone1: subSettings.price_8_weeks_zone1 || 0,
+            price_8_weeks_zone2: subSettings.price_8_weeks_zone2 || 0,
+            discount_percentage: subSettings.discount_percentage || 5,
+            copecart_base_url: subSettings.copecart_base_url || "",
+          });
+          setBookingMode("wizard");
+        }
 
         // Fetch provider's active services
         const { data: servicesData } = await supabase
@@ -244,13 +281,24 @@ export default function ClientBooking() {
       </header>
 
       <main className="px-4 py-6 max-w-lg mx-auto space-y-6">
-        {/* Step: Select Service */}
-        {step === "services" && (
+        {/* Wizard Mode: Show subscription configurator */}
+        {bookingMode === "wizard" && subscriptionSettings && (
+          <SubscriptionWizard 
+            settings={subscriptionSettings} 
+            onSwitchToStandard={() => setBookingMode("standard")} 
+          />
+        )}
+
+        {/* Standard Mode: Step-by-step booking */}
+        {bookingMode === "standard" && (
           <>
-            <div>
-              <h2 className="text-lg font-semibold text-foreground mb-1">
-                Welcher Service?
-              </h2>
+            {/* Step: Select Service */}
+            {step === "services" && (
+              <>
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground mb-1">
+                    Welcher Service?
+                  </h2>
               <p className="text-sm text-muted-foreground">
                 Wähle einen Service deines Hufbearbeiters
               </p>
@@ -530,6 +578,8 @@ export default function ClientBooking() {
                 {isDirectBooking ? "Jetzt buchen" : "Anfrage senden"}
               </Button>
             </div>
+          </>
+        )}
           </>
         )}
       </main>
