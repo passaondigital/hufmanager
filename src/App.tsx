@@ -6,6 +6,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { useProfileGuardian } from "@/hooks/useProfileGuardian";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -13,6 +14,7 @@ import { PasswordRecoveryRedirect } from "@/components/auth/PasswordRecoveryRedi
 import { AppLayout } from "@/components/layout/AppLayout";
 import { OfflineIndicator } from "@/components/offline/OfflineIndicator";
 import { AuthLoadingScreen } from "@/components/auth/AuthLoadingScreen";
+import { ProfileGuardianScreen } from "@/components/auth/ProfileGuardianScreen";
 import { createIDBPersister } from "@/lib/offline/persister";
 import { initSyncManager } from "@/lib/offline/syncManager";
 
@@ -104,13 +106,19 @@ function App() {
   );
 }
 
-// Separate component that can use useAuth
+// Separate component that can use useAuth and Profile Guardian
 function AppContent({ queryClient }: { queryClient: QueryClient }) {
-  const { loading } = useAuth();
+  const { user, loading } = useAuth();
+  const { isRepairing, repairError, isProfileReady } = useProfileGuardian(user);
 
   // Show loading screen while checking authentication
   if (loading) {
     return <AuthLoadingScreen />;
+  }
+
+  // Show profile repair screen if authenticated but profile is being repaired
+  if (user && (isRepairing || !isProfileReady)) {
+    return <ProfileGuardianScreen isRepairing={isRepairing} error={repairError} />;
   }
 
   return (
