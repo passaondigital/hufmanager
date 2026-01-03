@@ -10,6 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { Loader2, Camera } from "lucide-react";
 import { z } from "zod";
 import { uploadFile, getStorageUrl } from "@/lib/storage";
+import { ensureUserProfile } from "@/lib/ensureProfile";
 
 // Validation schema
 const horseFormSchema = z.object({
@@ -146,6 +147,19 @@ export function CreateHorseModal({ open, onClose, onCreated, ownerId }: CreateHo
         toast({
           title: "Fehler",
           description: "Besitzer-ID konnte nicht ermittelt werden.",
+          variant: "destructive",
+        });
+        setSaving(false);
+        return;
+      }
+
+      // AUTO-HEAL: Ensure profile exists before creating horse
+      // This prevents foreign key violations for "ghost users"
+      const profileResult = await ensureUserProfile(userData.user);
+      if (!profileResult.success) {
+        toast({
+          title: "Profil-Fehler",
+          description: profileResult.error || "Profil konnte nicht erstellt werden.",
           variant: "destructive",
         });
         setSaving(false);
