@@ -152,6 +152,46 @@ export function ConnectionSearch({ searchType, onConnectionRequested }: Connecti
         grantData.client_id = horseData.owner_id;
       }
 
+      // CRITICAL: Verify both profiles exist before creating access grant
+      // This prevents foreign key violations
+      const { data: providerProfile, error: providerError } = await supabase
+        .rpc("search_profile_by_readable_id", { search_id: "" })
+        .limit(0); // Just to check if we can query
+      
+      // Verify client profile exists
+      const { data: clientCheck } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", grantData.client_id)
+        .is("deleted_at", null)
+        .maybeSingle();
+      
+      if (!clientCheck) {
+        toast({ 
+          title: "Profil nicht gefunden", 
+          description: "Das Kundenprofil existiert nicht oder wurde gelöscht.", 
+          variant: "destructive" 
+        });
+        return;
+      }
+
+      // Verify provider profile exists
+      const { data: providerCheck } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", grantData.provider_id)
+        .is("deleted_at", null)
+        .maybeSingle();
+      
+      if (!providerCheck) {
+        toast({ 
+          title: "Profil nicht gefunden", 
+          description: "Das Anbieter-Profil existiert nicht oder wurde gelöscht.", 
+          variant: "destructive" 
+        });
+        return;
+      }
+
       // Check if connection already exists
       const { data: existing } = await supabase
         .from("access_grants")
