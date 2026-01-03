@@ -382,6 +382,54 @@ export type Database = {
         }
         Relationships: []
       }
+      client_consents: {
+        Row: {
+          client_id: string
+          consent_type: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          provider_id: string
+          user_agent: string | null
+          version: string | null
+        }
+        Insert: {
+          client_id: string
+          consent_type: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          provider_id: string
+          user_agent?: string | null
+          version?: string | null
+        }
+        Update: {
+          client_id?: string
+          consent_type?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          provider_id?: string
+          user_agent?: string | null
+          version?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_consents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_consents_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           category: Database["public"]["Enums"]["contact_category"]
@@ -1331,6 +1379,41 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      subscription_links: {
+        Row: {
+          copecart_url: string
+          created_at: string
+          horse_count: number
+          id: string
+          interval: string
+          provider_id: string
+        }
+        Insert: {
+          copecart_url: string
+          created_at?: string
+          horse_count: number
+          id?: string
+          interval: string
+          provider_id: string
+        }
+        Update: {
+          copecart_url?: string
+          created_at?: string
+          horse_count?: number
+          id?: string
+          interval?: string
+          provider_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_links_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscription_settings: {
         Row: {
