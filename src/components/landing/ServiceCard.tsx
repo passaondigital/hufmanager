@@ -31,7 +31,6 @@ export function ServiceCard({
   priceType,
   features,
   icon = "scissors",
-  primaryColor = "#F47B20",
   bookingAction = "direct_book",
   onBook,
   onRequest,
@@ -47,55 +46,39 @@ export function ServiceCard({
   };
 
   return (
-    <Card className="hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/30 group flex flex-col">
+    <Card className="group flex flex-col border-2 transition-all duration-300 hover:border-primary/30 hover:shadow-xl">
       <CardHeader className="text-center pb-2">
-        <div
-          className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center transition-transform group-hover:scale-110"
-          style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
-        >
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform group-hover:scale-110">
           {IconComponent}
         </div>
         <CardTitle className="text-xl">{title}</CardTitle>
         {price !== null && (
           <div className="mt-2">
-            <span className="text-3xl font-bold" style={{ color: primaryColor }}>
-              {price}€
-            </span>
+            <span className="text-3xl font-bold text-primary">{price}€</span>
             {priceType && (
-              <span className="text-sm text-muted-foreground ml-1">/ {priceType}</span>
+              <span className="ml-1 text-sm text-muted-foreground">/ {priceType}</span>
             )}
           </div>
         )}
       </CardHeader>
-      <CardContent className="text-center flex-1 flex flex-col">
+      <CardContent className="flex flex-1 flex-col text-center">
         {description && (
-          <p className="text-muted-foreground text-sm mb-4">{description}</p>
+          <p className="mb-4 text-sm text-muted-foreground">{description}</p>
         )}
         {features && features.length > 0 && (
-          <ul className="space-y-2 text-left mb-4">
+          <ul className="mb-4 space-y-2 text-left">
             {features.map((feature, i) => (
               <li key={i} className="flex items-start gap-2 text-sm">
-                <Check
-                  className="h-4 w-4 mt-0.5 flex-shrink-0"
-                  style={{ color: primaryColor }}
-                />
+                <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
                 <span>{feature}</span>
               </li>
             ))}
           </ul>
         )}
-        
-        {/* Booking Button */}
+
         {(onBook || onRequest) && (
           <div className="mt-auto pt-4">
-            <Button
-              className="w-full gap-2"
-              style={{ 
-                backgroundColor: primaryColor, 
-                color: 'white',
-              }}
-              onClick={handleAction}
-            >
+            <Button className="w-full gap-2" onClick={handleAction}>
               {bookingAction === "request_only" ? (
                 <>
                   <MessageSquare className="h-4 w-4" />
