@@ -282,9 +282,10 @@ export default function ClientBooking() {
 
       <main className="px-4 py-6 max-w-lg mx-auto space-y-6">
         {/* Wizard Mode: Show subscription configurator */}
-        {bookingMode === "wizard" && subscriptionSettings && (
+        {bookingMode === "wizard" && subscriptionSettings && providerId && (
           <SubscriptionWizard 
-            settings={subscriptionSettings} 
+            settings={subscriptionSettings}
+            providerId={providerId}
             onSwitchToStandard={() => setBookingMode("standard")} 
           />
         )}
