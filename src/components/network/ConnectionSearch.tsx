@@ -18,7 +18,9 @@ interface SearchResult {
   name: string;
   avatar_url?: string;
   breed?: string; // for horses
+  owner_id?: string; // for horses (used to create connection requests without extra RLS-blocked queries)
 }
+
 
 interface ConnectionSearchProps {
   searchType: 'provider' | 'client' | 'horse';
@@ -94,6 +96,7 @@ export function ConnectionSearch({ searchType, onConnectionRequested }: Connecti
             name: result.name || 'Unbekannt',
             avatar_url: result.photo_url || undefined,
             breed: result.breed || undefined,
+            owner_id: result.owner_id || undefined,
           });
         } else {
           toast({ 
@@ -149,60 +152,19 @@ export function ConnectionSearch({ searchType, onConnectionRequested }: Connecti
         grantData.provider_id = user.id;
         grantData.client_id = result.id;
       } else if (searchType === 'horse') {
-        // For horse, we need to get the owner and create a connection request
-        const { data: horseData } = await supabase
-          .from("horses")
-          .select("owner_id")
-          .eq("id", result.id)
-          .single();
-        
-        if (!horseData) {
+        // Provider requesting connection via horse ID (EQID) -> connect to horse owner
+        const ownerId = result.owner_id;
+        if (!ownerId) {
           throw new Error("Pferdebesitzer nicht gefunden");
         }
         
         grantData.provider_id = user.id;
-        grantData.client_id = horseData.owner_id;
+        grantData.client_id = ownerId;
       }
 
-      // CRITICAL: Verify both profiles exist before creating access grant
-      // This prevents foreign key violations
-      const { data: providerProfile, error: providerError } = await supabase
-        .rpc("search_profile_by_readable_id", { search_id: "" })
-        .limit(0); // Just to check if we can query
-      
-      // Verify client profile exists
-      const { data: clientCheck } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("id", grantData.client_id)
-        .is("deleted_at", null)
-        .maybeSingle();
-      
-      if (!clientCheck) {
-        toast({ 
-          title: "Profil nicht gefunden", 
-          description: "Das Kundenprofil existiert nicht oder wurde gelöscht.", 
-          variant: "destructive" 
-        });
-        return;
-      }
-
-      // Verify provider profile exists
-      const { data: providerCheck } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("id", grantData.provider_id)
-        .is("deleted_at", null)
-        .maybeSingle();
-      
-      if (!providerCheck) {
-        toast({ 
-          title: "Profil nicht gefunden", 
-          description: "Das Anbieter-Profil existiert nicht oder wurde gelöscht.", 
-          variant: "destructive" 
-        });
-        return;
-      }
+      // NOTE: Do NOT "verify" target profiles via direct SELECT here.
+      // Those SELECTs can be blocked by RLS (e.g. client cannot read provider profile before connection).
+      // We rely on the secure RPC search result + FK constraints.
 
       // Check if connection already exists
       const { data: existing } = await supabase
@@ -244,17 +206,26 @@ export function ConnectionSearch({ searchType, onConnectionRequested }: Connecti
         if (error) throw error;
       }
 
-      // Create notification for target user
-      const targetUserId = searchType === 'provider' ? result.id : grantData.client_id;
-      const senderName = user.email?.split("@")[0] || "Jemand";
-      
-      await supabase.from("notifications").insert({
-        user_id: targetUserId,
-        title: "Neue Verbindungsanfrage",
-        message: `${senderName} möchte sich mit dir verbinden.`,
-        type: "connection_request",
-        link: searchType === 'provider' ? "/client-home" : "/netzwerk",
-      });
+      // Optional notification:
+      // - Clients are NOT allowed to insert into notifications table (RLS), so skip in that case.
+      // - Providers can insert, so keep for provider-initiated requests.
+      if (searchType !== 'provider') {
+        const targetUserId = searchType === 'client' ? result.id : grantData.client_id;
+        const senderName = user.email?.split("@")[0] || "Jemand";
+
+        const { error: notifError } = await supabase.from("notifications").insert({
+          user_id: targetUserId,
+          title: "Neue Verbindungsanfrage",
+          message: `${senderName} möchte sich mit dir verbinden.`,
+          type: "connection_request",
+          link: "/client-home",
+        });
+
+        if (notifError) {
+          // Don't fail the request if notification insertion is blocked/misconfigured
+          console.warn("Notification insert failed (ignored):", notifError);
+        }
+      }
 
       toast({ 
         title: "Anfrage gesendet!", 
