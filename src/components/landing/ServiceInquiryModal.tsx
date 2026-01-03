@@ -23,7 +23,7 @@ export const ServiceInquiryModal = ({
   serviceName,
   providerId,
   providerEmail,
-  primaryColor = "#d97706"
+  primaryColor = "#F47B20"
 }: ServiceInquiryModalProps) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({

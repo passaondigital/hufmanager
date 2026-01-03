@@ -23,7 +23,7 @@ interface LandingContactFormProps {
   primaryColor?: string;
 }
 
-export function LandingContactForm({ providerId, providerName, primaryColor = "#d97706" }: LandingContactFormProps) {
+export function LandingContactForm({ providerId, providerName, primaryColor = "#F47B20" }: LandingContactFormProps) {
   const [formData, setFormData] = useState({
     name: "",
     email: "",

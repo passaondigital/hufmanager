@@ -138,15 +138,22 @@ const ProviderLanding = () => {
         if (offersData) setOffers(offersData);
 
         // Fetch active services with booking_action
+        // STEALTH: Filter out subscription services (containing "BALANCE") from public view
         const { data: servicesData } = await supabase
           .from('services')
           .select('id, name, description, base_price, duration, booking_action')
           .eq('provider_id', typedBusinessData.user_id)
           .eq('is_active', true)
           .order('name')
-          .limit(6);
+          .limit(10);
 
-        if (servicesData) setServices(servicesData as Service[]);
+        if (servicesData) {
+          // STEALTH FILTER: Hide subscription-related services from competitors
+          const publicServices = servicesData.filter(
+            (service) => !service.name.toUpperCase().includes('BALANCE')
+          );
+          setServices(publicServices.slice(0, 6) as Service[]);
+        }
 
         // Fetch featured feedbacks - only from THIS provider
         const { data: feedbackData } = await supabase
@@ -248,7 +255,7 @@ const ProviderLanding = () => {
     );
   }
 
-  const primaryColor = settings.primary_color || '#d97706';
+  const primaryColor = settings.primary_color || '#F47B20'; // Brand Orange
 
   const handleServiceRequest = (serviceName: string) => {
     setInquiryModal({ open: true, serviceName });

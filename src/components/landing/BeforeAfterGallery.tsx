@@ -17,7 +17,7 @@ interface BeforeAfterGalleryProps {
   primaryColor?: string;
 }
 
-export function BeforeAfterGallery({ images, primaryColor = "#d97706" }: BeforeAfterGalleryProps) {
+export function BeforeAfterGallery({ images, primaryColor = "#F47B20" }: BeforeAfterGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [sliderPosition, setSliderPosition] = useState(50);
 

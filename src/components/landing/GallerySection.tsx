@@ -13,7 +13,7 @@ interface GallerySectionProps {
   primaryColor?: string;
 }
 
-export const GallerySection = ({ images, primaryColor = "#d97706" }: GallerySectionProps) => {
+export const GallerySection = ({ images, primaryColor = "#F47B20" }: GallerySectionProps) => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   if (!images || images.length === 0) return null;
