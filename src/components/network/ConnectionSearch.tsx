@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
+import { ensureUserProfile } from "@/lib/ensureProfile";
 
 interface SearchResult {
   id: string;
@@ -116,6 +117,17 @@ export function ConnectionSearch({ searchType, onConnectionRequested }: Connecti
     setSending(true);
     
     try {
+      // SELF-HEALING: Ensure current user's profile exists before creating access grant
+      const profileResult = await ensureUserProfile(user);
+      if (!profileResult.success) {
+        toast({ 
+          title: "Profil-Fehler", 
+          description: profileResult.error || "Profil konnte nicht erstellt werden.", 
+          variant: "destructive" 
+        });
+        return;
+      }
+
       // Create pending access grant
       const grantData: any = {
         status: 'pending',

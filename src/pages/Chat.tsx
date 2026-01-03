@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
+import { ensureUserProfile } from "@/lib/ensureProfile";
 
 interface Conversation {
   id: string;
@@ -98,6 +99,17 @@ export default function Chat() {
   const handleStartWithUser = async (userId: string) => {
     if (!user) return;
     
+    // SELF-HEALING: Ensure current user's profile exists before creating conversation
+    const profileResult = await ensureUserProfile(user);
+    if (!profileResult.success) {
+      toast({ 
+        title: "Profil-Fehler", 
+        description: profileResult.error || "Profil konnte nicht erstellt werden.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
     // Check if conversation already exists
     const { data: existingConv } = await supabase
       .from('conversations')
@@ -262,6 +274,17 @@ export default function Chat() {
   const startChatWithContact = async (contact: Contact) => {
     if (!user || !contact.profile_id) return;
     
+    // SELF-HEALING: Ensure current user's profile exists before creating conversation
+    const profileResult = await ensureUserProfile(user);
+    if (!profileResult.success) {
+      toast({ 
+        title: "Profil-Fehler", 
+        description: profileResult.error || "Profil konnte nicht erstellt werden.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
     // 1. Prüfen, ob Chat schon existiert
     const existing = conversations.find(c => c.client_id === contact.profile_id);
     if (existing) {
