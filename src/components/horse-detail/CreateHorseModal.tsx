@@ -123,13 +123,34 @@ export function CreateHorseModal({ open, onClose, onCreated, ownerId }: CreateHo
 
     setSaving(true);
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error("Nicht angemeldet");
+      const { data: userData, error: authError } = await supabase.auth.getUser();
+      
+      // CRITICAL: Validate user is authenticated
+      if (authError || !userData.user || !userData.user.id) {
+        toast({
+          title: "Nicht angemeldet",
+          description: "Bitte melde dich an, um ein Pferd anzulegen.",
+          variant: "destructive",
+        });
+        setSaving(false);
+        return;
+      }
 
       const validated = validationResult.data;
       
       // Use provided ownerId or fall back to current user (for clients creating their own horses)
       const targetOwnerId = ownerId || userData.user.id;
+      
+      // CRITICAL: Ensure owner_id is never null/undefined
+      if (!targetOwnerId) {
+        toast({
+          title: "Fehler",
+          description: "Besitzer-ID konnte nicht ermittelt werden.",
+          variant: "destructive",
+        });
+        setSaving(false);
+        return;
+      }
 
       const { data, error } = await supabase
         .from('horses')

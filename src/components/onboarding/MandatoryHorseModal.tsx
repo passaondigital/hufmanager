@@ -20,7 +20,15 @@ export function MandatoryHorseModal({ open, onComplete }: MandatoryHorseModalPro
   const [location, setLocation] = useState('');
 
   const handleCreate = async () => {
-    if (!user) return;
+    // CRITICAL: Validate user is authenticated and has a valid ID
+    if (!user || !user.id) {
+      toast({
+        title: 'Nicht angemeldet',
+        description: 'Bitte melde dich an, um ein Pferd anzulegen.',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     if (!horseName.trim()) {
       toast({
