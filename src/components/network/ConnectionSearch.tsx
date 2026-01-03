@@ -238,9 +238,28 @@ export function ConnectionSearch({ searchType, onConnectionRequested }: Connecti
       setRequestMessage("");
       onConnectionRequested?.();
       
-    } catch (err) {
+    } catch (err: any) {
       console.error("Connection request error:", err);
-      toast({ title: "Fehler beim Senden der Anfrage", variant: "destructive" });
+      
+      // Provide more specific error messages based on the error
+      let errorMessage = "Fehler beim Senden der Anfrage";
+      
+      if (err.message?.includes("violates foreign key constraint")) {
+        // This means either client_id or provider_id doesn't exist in profiles
+        if (err.message.includes("client_id")) {
+          errorMessage = "Dein Profil konnte nicht gefunden werden. Bitte lade die Seite neu.";
+        } else if (err.message.includes("provider_id")) {
+          errorMessage = "Der Hufbearbeiter wurde nicht gefunden. Möglicherweise existiert das Konto nicht mehr.";
+        }
+      } else if (err.message?.includes("new row violates row-level security")) {
+        errorMessage = "Du hast keine Berechtigung für diese Aktion. Bitte lade die Seite neu.";
+      }
+      
+      toast({ 
+        title: errorMessage,
+        description: err.message,
+        variant: "destructive" 
+      });
     } finally {
       setSending(false);
     }
