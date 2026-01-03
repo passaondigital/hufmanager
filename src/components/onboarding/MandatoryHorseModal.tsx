@@ -7,6 +7,7 @@ import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
+import { ensureUserProfile } from '@/lib/ensureProfile';
 
 interface MandatoryHorseModalProps {
   open: boolean;
@@ -41,6 +42,19 @@ export function MandatoryHorseModal({ open, onComplete }: MandatoryHorseModalPro
 
     setSaving(true);
     try {
+      // AUTO-HEAL: Ensure profile exists before creating horse
+      // This prevents foreign key violations for "ghost users"
+      const profileResult = await ensureUserProfile(user);
+      if (!profileResult.success) {
+        toast({
+          title: 'Profil-Fehler',
+          description: profileResult.error || 'Profil konnte nicht erstellt werden.',
+          variant: 'destructive',
+        });
+        setSaving(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('horses')
         .insert({
