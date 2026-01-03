@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ensureUserProfile } from "@/lib/ensureProfile";
 import {
   Dialog,
   DialogContent,
@@ -131,6 +132,17 @@ export function AddHorseModal({ customerId, customerName, open, onClose }: Props
       return;
     }
 
+    // Auto-heal profile if missing (Ghost User fix)
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    // If customerId matches the current user, auto-heal their profile
+    if (user && customerId === user.id) {
+      const healResult = await ensureUserProfile(user);
+      if (!healResult.success) {
+        console.error("Failed to auto-heal profile:", healResult.error);
+      }
+    }
+    
     // Validate customerId exists in profiles table before inserting
     const { data: profileExists } = await supabase
       .from("profiles")
