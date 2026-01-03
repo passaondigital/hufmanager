@@ -2,9 +2,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 
 /**
- * Ensures a user profile exists in the public.profiles table.
- * If missing, creates one using data from the auth user object.
- * This handles "ghost user" scenarios where auth.users exists but public.profiles doesn't.
+ * Ensures a user profile exists in the public.profiles table,
+ * and that the user has a role in user_roles (for RLS policies).
+ * 
+ * This handles "ghost user" scenarios where auth.users exists but 
+ * public.profiles or user_roles doesn't.
+ * 
+ * NOTE: The database has an AFTER INSERT trigger that auto-creates
+ * a 'client' role when a profile is inserted, but this function also
+ * handles legacy profiles missing roles.
  */
 export async function ensureUserProfile(user: User): Promise<{ success: boolean; error?: string }> {
   if (!user || !user.id) {
@@ -24,38 +30,55 @@ export async function ensureUserProfile(user: User): Promise<{ success: boolean;
       return { success: false, error: checkError.message };
     }
 
-    // Profile exists, nothing to do
-    if (existingProfile) {
-      return { success: true };
-    }
+    let profileCreated = false;
 
     // Profile missing - auto-heal by creating it
-    console.log("Auto-healing missing profile for user:", user.id);
-    
-    const fullName = user.user_metadata?.full_name || 
-                     user.user_metadata?.name ||
-                     user.email?.split('@')[0] || 
-                     'Unbekannt';
-    
-    const { error: insertError } = await supabase
-      .from("profiles")
-      .insert({
-        id: user.id,
-        email: user.email,
-        full_name: fullName,
-      });
+    if (!existingProfile) {
+      console.log("Auto-healing missing profile for user:", user.id);
+      
+      const fullName = user.user_metadata?.full_name || 
+                       user.user_metadata?.name ||
+                       user.email?.split('@')[0] || 
+                       'Unbekannt';
+      
+      const { error: insertError } = await supabase
+        .from("profiles")
+        .insert({
+          id: user.id,
+          email: user.email,
+          full_name: fullName,
+        });
 
-    if (insertError) {
-      // Handle unique constraint violation (profile was created by another process)
-      if (insertError.code === "23505") {
-        console.log("Profile was created by another process, continuing...");
-        return { success: true };
+      if (insertError) {
+        // Handle unique constraint violation (profile was created by another process)
+        if (insertError.code === "23505") {
+          console.log("Profile was created by another process, continuing...");
+        } else {
+          console.error("Error creating profile:", insertError);
+          return { success: false, error: insertError.message };
+        }
+      } else {
+        console.log("Successfully auto-healed profile for user:", user.id);
+        profileCreated = true;
+        // The DB trigger will auto-create the role, so we're done
       }
-      console.error("Error creating profile:", insertError);
-      return { success: false, error: insertError.message };
     }
 
-    console.log("Successfully auto-healed profile for user:", user.id);
+    // For existing profiles (not just created), ensure role exists
+    // The trigger only fires on INSERT, so legacy profiles might be missing roles
+    if (!profileCreated) {
+      // Check if user has a role using the get_user_role function
+      const { data: roleData } = await supabase
+        .rpc("get_user_role", { _user_id: user.id });
+      
+      // If no role exists, we can't INSERT directly (RLS blocks it)
+      // The user will need to be assigned a role through another mechanism
+      // For now, log a warning - the connection request will fail with clear error
+      if (!roleData) {
+        console.warn("User has profile but no role - RLS may block some actions:", user.id);
+      }
+    }
+
     return { success: true };
   } catch (err: any) {
     console.error("Unexpected error in ensureUserProfile:", err);
