@@ -255,7 +255,7 @@ const ProviderLanding = () => {
     );
   }
 
-  const primaryColor = settings.primary_color || '#F47B20'; // Brand Orange
+  const primaryColor = '#F47B20'; // Brand Orange (forced)
 
   const handleServiceRequest = (serviceName: string) => {
     setInquiryModal({ open: true, serviceName });
@@ -305,8 +305,7 @@ const ProviderLanding = () => {
           {intakeStatus !== 'closed' && (
             <Button
               size="lg"
-              className="gap-2 text-white shadow-lg hover:shadow-xl transition-all"
-              style={{ backgroundColor: primaryColor }}
+              className="gap-2 shadow-lg hover:shadow-xl transition-all"
               onClick={scrollToContact}
             >
               <Calendar className="h-5 w-5" />
@@ -337,7 +336,9 @@ const ProviderLanding = () => {
               Wählen Sie einen Service und buchen Sie direkt oder stellen Sie eine Anfrage
             </p>
             <div className="grid md:grid-cols-3 gap-6">
-              {services.map((service) => (
+              {services
+                .filter((service) => !service.name.toUpperCase().includes('BALANCE'))
+                .map((service) => (
                 <ServiceCard
                   key={service.id}
                   title={service.name}
@@ -365,7 +366,9 @@ const ProviderLanding = () => {
               Professionelle Hufbearbeitung für jede Anforderung
             </p>
             <div className="grid md:grid-cols-3 gap-6">
-              {offers.map((offer) => (
+              {offers
+                .filter((offer) => !offer.title.toUpperCase().includes('BALANCE'))
+                .map((offer) => (
                 <ServiceCard
                   key={offer.id}
                   title={offer.title}
