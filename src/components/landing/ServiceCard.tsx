@@ -31,7 +31,7 @@ export function ServiceCard({
   priceType,
   features,
   icon = "scissors",
-  primaryColor = "#d97706",
+  primaryColor = "#F47B20",
   bookingAction = "direct_book",
   onBook,
   onRequest,

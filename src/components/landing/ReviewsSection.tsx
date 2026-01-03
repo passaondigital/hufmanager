@@ -27,7 +27,7 @@ const sourceLabels: Record<string, string> = {
   Email: "E-Mail",
 };
 
-export const ReviewsSection = ({ reviews, primaryColor = "#d97706" }: ReviewsSectionProps) => {
+export const ReviewsSection = ({ reviews, primaryColor = "#F47B20" }: ReviewsSectionProps) => {
   if (!reviews || reviews.length === 0) return null;
 
   const averageRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
