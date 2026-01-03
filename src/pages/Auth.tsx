@@ -20,11 +20,8 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { PricingModal } from "@/components/subscription/PricingModal";
 
-// Allowed admin emails
-const ADMIN_EMAILS = [
-  "passaondigital@gmail.com",
-  "teamhufmanager@gmail.com"
-];
+// NOTE: Admin access is controlled server-side via user_roles table and RLS policies
+// Do NOT add client-side email whitelists - they can be bypassed
 
 const loginSchema = z.object({
   email: z.string().email("Ungültige E-Mail-Adresse"),
@@ -517,24 +514,18 @@ export default function Auth() {
           <form onSubmit={async (e) => {
             e.preventDefault();
             
-            // Validate email is allowed
-            if (!ADMIN_EMAILS.includes(adminEmail.toLowerCase())) {
-              toast.error("Diese E-Mail ist nicht für den Admin-Zugang autorisiert.");
-              return;
-            }
-
+            // Admin access is validated server-side via user_roles table and RLS policies
+            // Any user can attempt login, but only those with admin role in DB can access admin routes
+            
             setAdminLoading(true);
 
             if (adminMode === "set-password") {
-              // Use signInWithOtp (magic link) which will create the user if they don't exist
+              // Magic link login - admin role must be assigned in database
+              // Note: New users get 'client' role by default, admin must be set manually
               const { error } = await supabase.auth.signInWithOtp({
                 email: adminEmail,
                 options: {
                   emailRedirectTo: `${window.location.origin}/admin/mission-control`,
-                  data: {
-                    full_name: "Admin",
-                    role: "admin",
-                  },
                 },
               });
               
@@ -548,7 +539,7 @@ export default function Auth() {
                 setAdminEmail("");
               }
             } else {
-              // Normal login
+              // Normal login - backend will verify admin role via ProtectedRoute
               const { error } = await signIn(adminEmail, adminPassword);
               setAdminLoading(false);
 
@@ -559,6 +550,7 @@ export default function Auth() {
                   toast.error(error.message);
                 }
               } else {
+                // Navigation to admin page will be blocked by ProtectedRoute if user lacks admin role
                 setAdminDialogOpen(false);
                 navigate("/admin/mission-control");
               }
@@ -605,7 +597,7 @@ export default function Auth() {
                 required
               />
               <p className="text-xs text-muted-foreground">
-                Nur autorisierte E-Mail-Adressen haben Zugang.
+                Admin-Zugang erfordert entsprechende Berechtigung in der Datenbank.
               </p>
             </div>
             
