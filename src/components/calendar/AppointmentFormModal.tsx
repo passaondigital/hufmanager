@@ -225,13 +225,18 @@ export function AppointmentFormModal({
             }
 
             // Insert media_asset record with appointment_id
+            // Validate captureDate before parsing
+            const capturedAtDate = evidence.captureDate && !isNaN(Date.parse(evidence.captureDate))
+              ? new Date(evidence.captureDate).toISOString()
+              : new Date().toISOString();
+              
             const { error: assetError } = await supabase.from("media_assets").insert({
               horse_id: formData.horseId,
               appointment_id: firstAppointment.id,
               file_url: filePath,
               file_type: fileType,
               category: evidence.category,
-              captured_at: new Date(evidence.captureDate).toISOString(),
+              captured_at: capturedAtDate,
               title: evidence.file.name.split('.')[0],
               uploaded_by: user!.id,
             });
@@ -391,8 +396,8 @@ export function AppointmentFormModal({
     const recurringGroupId = recurrence !== "none" ? crypto.randomUUID() : null;
 
     // Calculate number of occurrences (12 months worth)
-    const weeksInterval = recurrence === "custom" ? customWeeks : parseInt(recurrence);
-    const occurrences = recurrence === "none" ? 1 : Math.floor(52 / weeksInterval);
+    const weeksInterval = recurrence === "custom" ? customWeeks : (recurrence === "none" ? 1 : parseInt(recurrence) || 4);
+    const occurrences = recurrence === "none" ? 1 : Math.floor(52 / weeksInterval) || 1;
 
     for (let i = 0; i < occurrences; i++) {
       const appointmentDate = addWeeks(selectedDate, i * weeksInterval);
