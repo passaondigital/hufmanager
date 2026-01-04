@@ -1032,6 +1032,7 @@ export type Database = {
       }
       media_assets: {
         Row: {
+          appointment_id: string | null
           captured_at: string
           category: string | null
           created_at: string
@@ -1045,6 +1046,7 @@ export type Database = {
           uploaded_by: string
         }
         Insert: {
+          appointment_id?: string | null
           captured_at?: string
           category?: string | null
           created_at?: string
@@ -1058,6 +1060,7 @@ export type Database = {
           uploaded_by: string
         }
         Update: {
+          appointment_id?: string | null
           captured_at?: string
           category?: string | null
           created_at?: string
@@ -1071,6 +1074,13 @@ export type Database = {
           uploaded_by?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "media_assets_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "media_assets_horse_id_fkey"
             columns: ["horse_id"]

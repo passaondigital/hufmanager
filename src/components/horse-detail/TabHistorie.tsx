@@ -24,7 +24,8 @@ export function TabHistorie({ appointments, horseId }: TabHistorieProps) {
         .eq("horse_id", horseId)
         .not("appointment_id", "is", null);
       if (error) throw error;
-      return data || [];
+      // Cast to include appointment_id which was just added via migration
+      return (data || []) as Array<{ id: string; appointment_id: string | null; file_type: string }>;
     },
     enabled: !!horseId,
   });

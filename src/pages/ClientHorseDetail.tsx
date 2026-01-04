@@ -172,7 +172,7 @@ export default function ClientHorseDetail() {
           </TabsContent>
 
           <TabsContent value="historie">
-            <TabHistorie appointments={appointments} />
+            <TabHistorie appointments={appointments} horseId={horse.id} />
           </TabsContent>
 
           <TabsContent value="medien">
