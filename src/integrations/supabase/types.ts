@@ -123,6 +123,42 @@ export type Database = {
           },
         ]
       }
+      admin_notes: {
+        Row: {
+          content: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          priority: string | null
+          status: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          priority?: string | null
+          status?: string
+          title: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          priority?: string | null
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ai_chat_messages: {
         Row: {
           content: string
@@ -1578,6 +1614,7 @@ export type Database = {
         Returns: undefined
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_master_admin: { Args: never; Returns: boolean }
       provider_can_manage_client_horses: {
         Args: { _client_id: string; _provider_id: string }
         Returns: boolean

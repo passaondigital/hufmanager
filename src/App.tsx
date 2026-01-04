@@ -51,6 +51,7 @@ import ImportCenter from "@/pages/ImportCenter";
 import ConnectForm from "@/pages/ConnectForm";
 import Netzwerk from "@/pages/Netzwerk";
 import MissionControl from "@/pages/admin/MissionControl";
+import AdminDashboard from "@/pages/admin/AdminDashboard";
 import SubmitReview from "@/pages/SubmitReview";
 import AboMatrix from "@/pages/AboMatrix";
 
@@ -156,6 +157,13 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/admin/mission-control" element={
               <ProtectedRoute allowedRoles={["admin"]}>
                 <MissionControl />
+              </ProtectedRoute>
+            } />
+            
+            {/* God Mode Dashboard - Master Admin */}
+            <Route path="/admin/god-mode" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminDashboard />
               </ProtectedRoute>
             } />
 
