@@ -97,7 +97,7 @@ export function AppointmentFormModal({
   const [conflictWarning, setConflictWarning] = useState<string | null>(null);
   const [recurrence, setRecurrence] = useState("none");
   const [customWeeks, setCustomWeeks] = useState(4);
-const [pendingEvidence, setPendingEvidence] = useState<PendingEvidence[]>([]);
+  const [pendingEvidence, setPendingEvidence] = useState<PendingEvidence[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0, fileName: "" });
 
@@ -163,7 +163,16 @@ const [pendingEvidence, setPendingEvidence] = useState<PendingEvidence[]>([]);
 
   // Create appointment mutation - with proper error handling and sequential flow
   const createAppointments = useMutation({
+    networkMode: "always",
+    onMutate: (appointments: any[]) => {
+      console.log("[AppointmentFormModal] mutate", {
+        online: typeof navigator !== "undefined" ? navigator.onLine : undefined,
+        appointmentsCount: appointments?.length,
+        evidenceCount: pendingEvidence.length,
+      });
+    },
     mutationFn: async (appointments: any[]) => {
+      console.log("[AppointmentFormModal] mutationFn start");
       // Start upload progress tracking immediately if we have evidence
       if (pendingEvidence.length > 0) {
         setIsUploading(true);
@@ -185,6 +194,8 @@ const [pendingEvidence, setPendingEvidence] = useState<PendingEvidence[]>([]);
         if (!createdAppointments || createdAppointments.length === 0) {
           throw new Error("Keine Termine erstellt - unbekannter Fehler");
         }
+
+        console.log("[AppointmentFormModal] createdAppointments", createdAppointments);
 
         // Step B: Get the first appointment ID for evidence linking
         const firstAppointment = createdAppointments[0];
@@ -337,6 +348,13 @@ const [pendingEvidence, setPendingEvidence] = useState<PendingEvidence[]>([]);
   };
 
   const handleSubmit = () => {
+    console.log("[AppointmentFormModal] handleSubmit click", {
+      selectedDate,
+      horseId: formData.horseId,
+      evidenceCount: pendingEvidence.length,
+      online: typeof navigator !== "undefined" ? navigator.onLine : undefined,
+    });
+
     if (!selectedDate || !user?.id) {
       toast({
         title: "Fehler",
@@ -404,6 +422,11 @@ const [pendingEvidence, setPendingEvidence] = useState<PendingEvidence[]>([]);
         completed_at: occurrenceIsPast ? new Date().toISOString() : null,
       });
     }
+
+    console.log("[AppointmentFormModal] submitting appointments", {
+      count: appointments.length,
+      first: appointments[0],
+    });
 
     createAppointments.mutate(appointments);
   };
