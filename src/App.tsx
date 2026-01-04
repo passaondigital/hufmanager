@@ -47,6 +47,7 @@ import ClientProfile from "@/pages/ClientProfile";
 import ClientChat from "@/pages/ClientChat";
 import NotFound from "@/pages/NotFound";
 import ProviderLanding from "@/pages/ProviderLanding";
+import ProviderHorseDetail from "@/pages/ProviderHorseDetail";
 import ImportCenter from "@/pages/ImportCenter";
 import ConnectForm from "@/pages/ConnectForm";
 import Netzwerk from "@/pages/Netzwerk";
@@ -199,6 +200,8 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/rechnungen" element={<Rechnungen />} />
               <Route path="/support" element={<Support />} />
               <Route path="/abo-matrix" element={<AboMatrix />} />
+              {/* Provider Horse Detail - Direct Access */}
+              <Route path="/horse/:id" element={<ProviderHorseDetail />} />
             </Route>
 
             {/* --- 3. CLIENT (PFERDEBESITZER) ROUTES --- */}
