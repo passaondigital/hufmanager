@@ -3,6 +3,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentCustomers } from "@/components/dashboard/RecentCustomers";
 import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointments";
 import { OverdueAssessmentsWidget } from "@/components/dashboard/OverdueAssessmentsWidget";
+import { RecentHorsesWidget } from "@/components/dashboard/RecentHorsesWidget";
 import { ShareInviteLinkCard } from "@/components/invite/ShareInviteLinkCard";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
@@ -36,6 +37,9 @@ const Dashboard = () => {
       <div className="space-y-6">
       {/* Push Notification Banner */}
       <PushNotificationBanner />
+
+      {/* Recent Horses Quick Access */}
+      <RecentHorsesWidget />
 
       {/* Welcome Section */}
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">

@@ -195,7 +195,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                     navigate(
                       result.type === "customer"
                         ? `/kunden`
-                        : `/client-horse/${result.id}`
+                        : `/horse/${result.id}?tab=historie`
                     )
                   )
                 }
