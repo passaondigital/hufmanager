@@ -97,8 +97,9 @@ export function AppointmentFormModal({
   const [conflictWarning, setConflictWarning] = useState<string | null>(null);
   const [recurrence, setRecurrence] = useState("none");
   const [customWeeks, setCustomWeeks] = useState(4);
-  const [pendingEvidence, setPendingEvidence] = useState<PendingEvidence[]>([]);
+const [pendingEvidence, setPendingEvidence] = useState<PendingEvidence[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0, fileName: "" });
 
   const [formData, setFormData] = useState({
     horseId: "",
@@ -185,8 +186,11 @@ export function AppointmentFormModal({
         // Step C: Upload and link evidence files BEFORE returning
         if (pendingEvidence.length > 0 && firstAppointment) {
           setIsUploading(true);
+          const totalFiles = pendingEvidence.length;
           
-          for (const evidence of pendingEvidence) {
+          for (let i = 0; i < pendingEvidence.length; i++) {
+            const evidence = pendingEvidence[i];
+            setUploadProgress({ current: i + 1, total: totalFiles, fileName: evidence.file.name });
             const fileExt = evidence.file.name.split('.').pop();
             const fileName = `${crypto.randomUUID()}.${fileExt}`;
             const filePath = `evidence/${formData.horseId}/${fileName}`;
@@ -222,11 +226,13 @@ export function AppointmentFormModal({
           }
           
           setIsUploading(false);
+          setUploadProgress({ current: 0, total: 0, fileName: "" });
         }
 
         return createdAppointments;
       } catch (err) {
         setIsUploading(false);
+        setUploadProgress({ current: 0, total: 0, fileName: "" });
         throw err;
       }
     },
@@ -261,6 +267,7 @@ export function AppointmentFormModal({
     onError: (error: Error) => {
       console.error("Appointment creation failed:", error);
       setIsUploading(false);
+      setUploadProgress({ current: 0, total: 0, fileName: "" });
       toast({
         title: "Fehler beim Speichern",
         description: error.message || "Der Termin konnte nicht erstellt werden.",
@@ -405,6 +412,36 @@ export function AppointmentFormModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+        {/* Upload Progress Overlay */}
+        {isUploading && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
+            <div className="flex flex-col items-center gap-4 p-6 text-center">
+              <div className="relative">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-xs font-bold text-primary">
+                    {uploadProgress.current}/{uploadProgress.total}
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="font-medium text-foreground">
+                  Lade hoch {uploadProgress.current} von {uploadProgress.total}...
+                </p>
+                <p className="text-sm text-muted-foreground truncate max-w-[280px]">
+                  {uploadProgress.fileName}
+                </p>
+              </div>
+              <div className="w-full max-w-[280px] h-2 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary transition-all duration-300 ease-out"
+                  style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+        
         <DialogHeader>
           <DialogTitle>Neuer Termin</DialogTitle>
           <DialogDescription>
