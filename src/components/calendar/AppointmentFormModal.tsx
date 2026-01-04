@@ -32,7 +32,8 @@ import {
   Stethoscope, 
   MoreHorizontal,
   FileText,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Camera
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -92,6 +93,7 @@ export function AppointmentFormModal({
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const [conflictWarning, setConflictWarning] = useState<string | null>(null);
   const [recurrence, setRecurrence] = useState("none");
   const [customWeeks, setCustomWeeks] = useState(4);
@@ -493,16 +495,37 @@ export function AppointmentFormModal({
                 multiple
                 className="hidden"
               />
-              <Button 
-                type="button" 
-                size="sm" 
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={!formData.horseId}
-              >
-                <Upload className="h-4 w-4 mr-1" />
-                Hinzufügen
-              </Button>
+              <input
+                type="file"
+                ref={cameraInputRef}
+                onChange={handleFileSelect}
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+              />
+              <div className="flex gap-1.5">
+                <Button 
+                  type="button" 
+                  size="sm" 
+                  variant="default"
+                  onClick={() => cameraInputRef.current?.click()}
+                  disabled={!formData.horseId}
+                  className="gap-1"
+                >
+                  <Camera className="h-4 w-4" />
+                  <span className="hidden sm:inline">Foto</span>
+                </Button>
+                <Button 
+                  type="button" 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={!formData.horseId}
+                >
+                  <Upload className="h-4 w-4 mr-1" />
+                  Datei
+                </Button>
+              </div>
             </div>
             
             {!formData.horseId && (
