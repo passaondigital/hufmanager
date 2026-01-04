@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { toast as sonnerToast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { z } from "zod";
@@ -283,14 +284,7 @@ export function AppointmentFormModal({
       resetForm();
       onClose();
     },
-    onError: (error: Error) => {
-      console.error("Appointment creation failed:", error);
-      toast({
-        title: "Fehler beim Speichern",
-        description: error.message || "Der Termin konnte nicht erstellt werden.",
-        variant: "destructive",
-      });
-    },
+    // Error handling happens in handleSubmit (mutateAsync catch)
   });
 
   const resetForm = () => {
@@ -350,6 +344,16 @@ export function AppointmentFormModal({
       if (item?.preview) URL.revokeObjectURL(item.preview);
       return prev.filter(e => e.id !== id);
     });
+  };
+
+  const visitStatusLabelToDbStatus = (labelOrValue: string) => {
+    const normalized = (labelOrValue || "").trim().toLowerCase();
+
+    if (["erledigt", "completed"].includes(normalized)) return "completed";
+    if (["geplant", "planned", "scheduled"].includes(normalized)) return "planned";
+    if (["abgesagt", "cancelled", "canceled"].includes(normalized)) return "cancelled";
+
+    return labelOrValue;
   };
 
   const handleSubmit = () => {
@@ -423,7 +427,7 @@ export function AppointmentFormModal({
         series_current: (formData.isSeriesAppointment || isSeriesService) ? formData.seriesCurrent + i : null,
         series_total: (formData.isSeriesAppointment || isSeriesService) ? formData.seriesTotal : null,
         // Auto-complete past appointments (Time Travel feature)
-        status: occurrenceIsPast ? 'completed' : 'scheduled',
+        status: visitStatusLabelToDbStatus(occurrenceIsPast ? "Erledigt" : "Geplant"),
         completed_at: occurrenceIsPast ? new Date().toISOString() : null,
       });
     }
@@ -433,7 +437,18 @@ export function AppointmentFormModal({
       first: appointments[0],
     });
 
-    createAppointments.mutate(appointments);
+    createAppointments
+      .mutateAsync(appointments)
+      .catch((error: any) => {
+        console.error(error);
+        const message = error?.message || "Der Termin konnte nicht erstellt werden.";
+        toast({
+          title: "Fehler beim Speichern",
+          description: message,
+          variant: "destructive",
+        });
+        sonnerToast.error(message);
+      });
   };
 
   const isPastDate = selectedDate ? selectedDate < new Date(new Date().setHours(0, 0, 0, 0)) : false;

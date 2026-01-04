@@ -183,10 +183,15 @@ export function VisitDetailSheet({ appointment, open, onClose }: VisitDetailShee
 
   const getStatusLabel = (status: string | null) => {
     switch (status) {
-      case 'completed': return 'Erledigt';
-      case 'cancelled': return 'Abgesagt';
-      case 'scheduled': return 'Geplant';
-      default: return status || 'Unbekannt';
+      case 'completed':
+        return 'Erledigt';
+      case 'cancelled':
+        return 'Abgesagt';
+      case 'scheduled':
+      case 'planned':
+        return 'Geplant';
+      default:
+        return status || 'Unbekannt';
     }
   };
 

@@ -60,6 +60,7 @@ export function TabHistorie({ appointments, horseId }: TabHistorieProps) {
       case 'cancelled':
         return 'Abgesagt';
       case 'scheduled':
+      case 'planned':
         return 'Geplant';
       default:
         return status || 'Unbekannt';
@@ -136,7 +137,7 @@ export function TabHistorie({ appointments, horseId }: TabHistorieProps) {
                                 "text-xs px-2 py-0.5 rounded-full",
                                 apt.status === 'completed' && "bg-green-500/10 text-green-500",
                                 apt.status === 'cancelled' && "bg-destructive/10 text-destructive",
-                                apt.status === 'scheduled' && "bg-primary/10 text-primary"
+                                (apt.status === 'scheduled' || apt.status === 'planned') && "bg-primary/10 text-primary"
                               )}>
                                 {getStatusLabel(apt.status)}
                               </span>
