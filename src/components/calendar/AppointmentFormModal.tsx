@@ -164,6 +164,12 @@ const [pendingEvidence, setPendingEvidence] = useState<PendingEvidence[]>([]);
   // Create appointment mutation - with proper error handling and sequential flow
   const createAppointments = useMutation({
     mutationFn: async (appointments: any[]) => {
+      // Start upload progress tracking immediately if we have evidence
+      if (pendingEvidence.length > 0) {
+        setIsUploading(true);
+        setUploadProgress({ current: 0, total: pendingEvidence.length, fileName: "Termin wird erstellt..." });
+      }
+      
       try {
         // Step A: Create the appointment records first
         const { data: createdAppointments, error: insertError } = await supabase
@@ -185,12 +191,12 @@ const [pendingEvidence, setPendingEvidence] = useState<PendingEvidence[]>([]);
         
         // Step C: Upload and link evidence files BEFORE returning
         if (pendingEvidence.length > 0 && firstAppointment) {
-          setIsUploading(true);
           const totalFiles = pendingEvidence.length;
           
           for (let i = 0; i < pendingEvidence.length; i++) {
             const evidence = pendingEvidence[i];
             setUploadProgress({ current: i + 1, total: totalFiles, fileName: evidence.file.name });
+            
             const fileExt = evidence.file.name.split('.').pop();
             const fileName = `${crypto.randomUUID()}.${fileExt}`;
             const filePath = `evidence/${formData.horseId}/${fileName}`;
@@ -201,10 +207,10 @@ const [pendingEvidence, setPendingEvidence] = useState<PendingEvidence[]>([]);
             else if (evidence.file.type === "application/pdf") fileType = "pdf";
 
             // Upload file to storage
-            const { error: uploadError } = await uploadFile("horse-documents", filePath, evidence.file);
-            if (uploadError) {
-              console.error("Upload error:", uploadError);
-              throw new Error(`Datei-Upload fehlgeschlagen: ${uploadError.message || "Unbekannter Fehler"}`);
+            const uploadResult = await uploadFile("horse-documents", filePath, evidence.file);
+            if (uploadResult.error) {
+              console.error("Upload error:", uploadResult.error);
+              throw new Error(`Datei-Upload fehlgeschlagen: ${uploadResult.error.message || "Unbekannter Fehler"}`);
             }
 
             // Insert media_asset record with appointment_id
@@ -224,16 +230,13 @@ const [pendingEvidence, setPendingEvidence] = useState<PendingEvidence[]>([]);
               throw new Error(`Medien-Verknüpfung fehlgeschlagen: ${assetError.message}`);
             }
           }
-          
-          setIsUploading(false);
-          setUploadProgress({ current: 0, total: 0, fileName: "" });
         }
 
         return createdAppointments;
-      } catch (err) {
+      } finally {
+        // Always reset upload state, regardless of success or failure
         setIsUploading(false);
         setUploadProgress({ current: 0, total: 0, fileName: "" });
-        throw err;
       }
     },
     onSuccess: (createdAppointments) => {
@@ -266,8 +269,6 @@ const [pendingEvidence, setPendingEvidence] = useState<PendingEvidence[]>([]);
     },
     onError: (error: Error) => {
       console.error("Appointment creation failed:", error);
-      setIsUploading(false);
-      setUploadProgress({ current: 0, total: 0, fileName: "" });
       toast({
         title: "Fehler beim Speichern",
         description: error.message || "Der Termin konnte nicht erstellt werden.",
