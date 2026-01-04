@@ -34,6 +34,13 @@ export function TabHistorie({ appointments }: TabHistorieProps) {
     }
   };
 
+  // Sort appointments by date descending (newest first) for proper timeline
+  const sortedAppointments = [...appointments].sort((a, b) => {
+    const dateA = new Date(a.date);
+    const dateB = new Date(b.date);
+    return dateB.getTime() - dateA.getTime();
+  });
+
   return (
     <div className="space-y-4">
       <Card>
@@ -44,13 +51,13 @@ export function TabHistorie({ appointments }: TabHistorieProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {appointments.length > 0 ? (
+          {sortedAppointments.length > 0 ? (
             <div className="relative">
               {/* Timeline line */}
               <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-border" />
               
               <div className="space-y-4">
-                {appointments.map((apt, index) => (
+                {sortedAppointments.map((apt, index) => (
                   <div key={apt.id} className="relative flex gap-4">
                     {/* Timeline dot */}
                     <div className={cn(
