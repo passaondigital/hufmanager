@@ -160,20 +160,32 @@ export function AppointmentFormModal({
     }
   }, [selectedDate, formData.time, existingAppointments]);
 
-  // Create appointment mutation
+  // Create appointment mutation - with proper error handling and sequential flow
   const createAppointments = useMutation({
     mutationFn: async (appointments: any[]) => {
-      const { data, error } = await supabase.from("appointments").insert(appointments).select();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: async (createdAppointments) => {
-      // Upload pending evidence if any
-      if (pendingEvidence.length > 0 && createdAppointments && createdAppointments[0]) {
-        setIsUploading(true);
+      try {
+        // Step A: Create the appointment records first
+        const { data: createdAppointments, error: insertError } = await supabase
+          .from("appointments")
+          .insert(appointments)
+          .select();
+        
+        if (insertError) {
+          console.error("Appointment insert error:", insertError);
+          throw new Error(`Termin konnte nicht erstellt werden: ${insertError.message}`);
+        }
+
+        if (!createdAppointments || createdAppointments.length === 0) {
+          throw new Error("Keine Termine erstellt - unbekannter Fehler");
+        }
+
+        // Step B: Get the first appointment ID for evidence linking
         const firstAppointment = createdAppointments[0];
         
-        try {
+        // Step C: Upload and link evidence files BEFORE returning
+        if (pendingEvidence.length > 0 && firstAppointment) {
+          setIsUploading(true);
+          
           for (const evidence of pendingEvidence) {
             const fileExt = evidence.file.name.split('.').pop();
             const fileName = `${crypto.randomUUID()}.${fileExt}`;
@@ -184,13 +196,15 @@ export function AppointmentFormModal({
             else if (evidence.file.type.startsWith("video/")) fileType = "video";
             else if (evidence.file.type === "application/pdf") fileType = "pdf";
 
+            // Upload file to storage
             const { error: uploadError } = await uploadFile("horse-documents", filePath, evidence.file);
             if (uploadError) {
               console.error("Upload error:", uploadError);
-              continue;
+              throw new Error(`Datei-Upload fehlgeschlagen: ${uploadError.message || "Unbekannter Fehler"}`);
             }
 
-            await supabase.from("media_assets").insert({
+            // Insert media_asset record with appointment_id
+            const { error: assetError } = await supabase.from("media_assets").insert({
               horse_id: formData.horseId,
               appointment_id: firstAppointment.id,
               file_url: filePath,
@@ -200,18 +214,37 @@ export function AppointmentFormModal({
               title: evidence.file.name.split('.')[0],
               uploaded_by: user!.id,
             });
+
+            if (assetError) {
+              console.error("Media asset insert error:", assetError);
+              throw new Error(`Medien-Verknüpfung fehlgeschlagen: ${assetError.message}`);
+            }
           }
           
-          queryClient.invalidateQueries({ queryKey: ["media-assets-for-visits"] });
-          queryClient.invalidateQueries({ queryKey: ["visit-evidence"] });
-        } catch (err) {
-          console.error("Evidence upload error:", err);
-        } finally {
           setIsUploading(false);
         }
-      }
 
+        return createdAppointments;
+      } catch (err) {
+        setIsUploading(false);
+        throw err;
+      }
+    },
+    onSuccess: (createdAppointments) => {
+      // Clean up file previews
+      pendingEvidence.forEach(item => {
+        if (item.preview) URL.revokeObjectURL(item.preview);
+      });
+
+      // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["calendar-appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["horse-appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["media-assets-for-visits"] });
+      queryClient.invalidateQueries({ queryKey: ["visit-evidence"] });
+      queryClient.invalidateQueries({ queryKey: ["recent-horses"] });
+
+      // Step D: Show success toast and close modal
       const count = createdAppointments.length;
       toast({
         title: count > 1 ? `${count} Termine erstellt` : "Termin erstellt",
@@ -221,12 +254,15 @@ export function AppointmentFormModal({
             ? `${count} wiederkehrende Termine wurden gespeichert.`
             : "Der Termin wurde erfolgreich gespeichert.",
       });
-      onClose();
+      
       resetForm();
+      onClose();
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
+      console.error("Appointment creation failed:", error);
+      setIsUploading(false);
       toast({
-        title: "Fehler",
+        title: "Fehler beim Speichern",
         description: error.message || "Der Termin konnte nicht erstellt werden.",
         variant: "destructive",
       });
