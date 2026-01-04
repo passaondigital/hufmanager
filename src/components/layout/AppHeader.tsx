@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, User, LogOut, Settings, Sun, Moon, Download, Copy, Check } from "lucide-react";
+import { User, LogOut, Settings, Sun, Moon, Download, Copy, Check, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +17,7 @@ import { toast } from "@/hooks/use-toast";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { supabase } from "@/integrations/supabase/client";
+import { GlobalSearch } from "@/components/search/GlobalSearch";
 
 export function AppHeader() {
   const navigate = useNavigate();
@@ -26,6 +26,7 @@ export function AppHeader() {
   const { canInstall, isInstalled, promptInstall } = usePWAInstall();
   const [readableId, setReadableId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     const fetchReadableId = async () => {
@@ -41,6 +42,18 @@ export function AppHeader() {
     };
     fetchReadableId();
   }, [user?.id]);
+
+  // Keyboard shortcut handler
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
 
   const copyToClipboard = () => {
     if (readableId) {
@@ -71,16 +84,21 @@ export function AppHeader() {
   const userInitials = user?.email?.substring(0, 2).toUpperCase() || "MH";
 
   return (
-    <header className="h-16 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-6">
-      <div className="flex items-center gap-4 flex-1 max-w-md">
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input
-            placeholder="Suchen..."
-            className="pl-12 h-11"
-          />
+    <>
+      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
+      <header className="h-16 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-6">
+        <div className="flex items-center gap-4 flex-1 max-w-md">
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="relative flex-1 flex items-center gap-2 h-11 px-4 rounded-md border border-input bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+          >
+            <Search className="h-4 w-4" />
+            <span className="text-sm">Suchen...</span>
+            <kbd className="pointer-events-none ml-auto hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+              <span className="text-xs">⌘</span>K
+            </kbd>
+          </button>
         </div>
-      </div>
 
       <div className="flex items-center gap-2">
         {/* PWA Install Button (Desktop) */}
@@ -162,6 +180,7 @@ export function AppHeader() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-    </header>
+      </header>
+    </>
   );
 }
