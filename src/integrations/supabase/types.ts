@@ -1030,6 +1030,56 @@ export type Database = {
         }
         Relationships: []
       }
+      media_assets: {
+        Row: {
+          captured_at: string
+          category: string | null
+          created_at: string
+          file_type: string
+          file_url: string
+          horse_id: string
+          id: string
+          notes: string | null
+          title: string | null
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          captured_at?: string
+          category?: string | null
+          created_at?: string
+          file_type: string
+          file_url: string
+          horse_id: string
+          id?: string
+          notes?: string | null
+          title?: string | null
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          captured_at?: string
+          category?: string | null
+          created_at?: string
+          file_type?: string
+          file_url?: string
+          horse_id?: string
+          id?: string
+          notes?: string | null
+          title?: string | null
+          updated_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_assets_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string

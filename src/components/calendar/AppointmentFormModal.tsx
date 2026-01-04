@@ -197,19 +197,12 @@ export function AppointmentFormModal({
       return;
     }
 
-    // Check if date is in the past
+    const validated = validationResult.data;
+    
+    // Check if date is in the past - if so, auto-complete the appointment
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    if (selectedDate < today) {
-      toast({
-        title: "Ungültiges Datum",
-        description: "Termine können nicht in der Vergangenheit erstellt werden.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const validated = validationResult.data;
+    const isPastDate = selectedDate < today;
     const appointments: any[] = [];
     const recurringGroupId = recurrence !== "none" ? crypto.randomUUID() : null;
 
@@ -219,6 +212,9 @@ export function AppointmentFormModal({
 
     for (let i = 0; i < occurrences; i++) {
       const appointmentDate = addWeeks(selectedDate, i * weeksInterval);
+      
+      // Check if this specific occurrence is in the past
+      const occurrenceIsPast = appointmentDate < today;
       
       appointments.push({
         horse_id: validated.horseId,
@@ -237,6 +233,9 @@ export function AppointmentFormModal({
         is_series_appointment: formData.isSeriesAppointment || isSeriesService,
         series_current: (formData.isSeriesAppointment || isSeriesService) ? formData.seriesCurrent + i : null,
         series_total: (formData.isSeriesAppointment || isSeriesService) ? formData.seriesTotal : null,
+        // Auto-complete past appointments (Time Travel feature)
+        status: occurrenceIsPast ? 'completed' : 'scheduled',
+        completed_at: occurrenceIsPast ? new Date().toISOString() : null,
       });
     }
 

@@ -1,147 +1,123 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, User, Loader2, Save, Trash2, ChevronRight } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Info, History, Image, Activity } from "lucide-react";
 import { toast } from "sonner";
-import { StableLocationCard } from "@/components/client/StableLocationCard";
-import { EmergencyContactsCard } from "@/components/client/EmergencyContactsCard";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
-interface Profile {
-  id: string;
-  full_name: string | null;
-  email: string | null;
-  phone: string | null;
-  stable_street: string | null;
-  stable_zip: string | null;
-  stable_city: string | null;
-  stable_latitude: number | null;
-  stable_longitude: number | null;
-  emergency_contacts: Array<{ role: string; name: string; phone: string }>;
-}
+import { TabSteckbrief } from "@/components/horse-detail/TabSteckbrief";
+import { TabHistorie } from "@/components/horse-detail/TabHistorie";
+import { TabMediaVault } from "@/components/horse-detail/TabMediaVault";
+import { TabGesundheit } from "@/components/horse-detail/TabGesundheit";
+import { EditHorseModal } from "@/components/horse-detail/EditHorseModal";
+import type { Horse, Appointment, HoofPhoto, HorseDocument } from "@/components/horse-detail/types";
 
-interface Horse {
-  id: string;
-  name: string;
-  breed: string | null;
-  photo_url: string | null;
-}
-
-export default function ClientProfile() {
+export default function ClientHorseDetail() {
+  const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [horses, setHorses] = useState<Horse[]>([]); // Hier speichern wir die Pferde
+  
+  const [horse, setHorse] = useState<Horse | null>(null);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [hoofPhotos, setHoofPhotos] = useState<HoofPhoto[]>([]);
+  const [documents, setDocuments] = useState<HorseDocument[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [formData, setFormData] = useState({
-    full_name: "",
-    phone: "",
-  });
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [activeTab, setActiveTab] = useState("steckbrief");
 
-  // Daten laden (Profil UND Pferde)
-  const fetchData = async () => {
-    if (!user) return;
+  const fetchHorseData = async () => {
+    if (!user || !id) return;
     setLoading(true);
 
-    // 1. Profil laden
-    const { data: profileData, error: profileError } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .maybeSingle();
+    try {
+      // Fetch horse
+      const { data: horseData, error: horseError } = await supabase
+        .from("horses")
+        .select("*")
+        .eq("id", id)
+        .eq("owner_id", user.id)
+        .is("deleted_at", null)
+        .maybeSingle();
 
-    if (!profileError && profileData) {
-      let parsedContacts = [];
-      if (profileData.emergency_contacts && Array.isArray(profileData.emergency_contacts)) {
-        parsedContacts = profileData.emergency_contacts;
+      if (horseError) throw horseError;
+      if (!horseData) {
+        toast.error("Pferd nicht gefunden");
+        navigate("/client-home");
+        return;
       }
-      setProfile({ ...profileData, emergency_contacts: parsedContacts } as Profile);
-      setFormData({
-        full_name: profileData.full_name || "",
-        phone: profileData.phone || "",
-      });
+
+      setHorse(horseData as unknown as Horse);
+
+      // Fetch appointments (sorted by date descending for proper timeline)
+      const { data: appointmentsData } = await supabase
+        .from("appointments")
+        .select("*")
+        .eq("horse_id", id)
+        .order("date", { ascending: false });
+
+      setAppointments((appointmentsData || []) as Appointment[]);
+
+      // Fetch hoof photos from provider
+      const { data: hoofPhotosData } = await supabase
+        .from("hoof_photos")
+        .select("*")
+        .eq("horse_id", id)
+        .order("taken_at", { ascending: false });
+
+      setHoofPhotos((hoofPhotosData || []) as HoofPhoto[]);
+
+      // Fetch documents
+      const { data: documentsData } = await supabase
+        .from("horse_documents")
+        .select("*")
+        .eq("horse_id", id)
+        .order("created_at", { ascending: false });
+
+      setDocuments((documentsData || []) as HorseDocument[]);
+
+    } catch (error: any) {
+      console.error("Error fetching horse data:", error);
+      toast.error("Fehler beim Laden der Daten");
+    } finally {
+      setLoading(false);
     }
-
-    // 2. Pferde laden (NEU!)
-    const { data: horsesData, error: horsesError } = await supabase
-      .from("horses")
-      .select("id, name, breed, photo_url")
-      .eq("owner_id", user.id)
-      .is("deleted_at", null); // Nur nicht-gelöschte Pferde
-
-    if (!horsesError && horsesData) {
-      setHorses(horsesData);
-    }
-
-    setLoading(false);
   };
 
   useEffect(() => {
-    fetchData();
-  }, [user]);
-
-  const handleSaveBasicInfo = async () => {
-    if (!user) return;
-    setIsSaving(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        full_name: formData.full_name || null,
-        phone: formData.phone || null,
-      })
-      .eq("id", user.id);
-
-    setIsSaving(false);
-    if (error) {
-      toast.error("Fehler beim Speichern");
-    } else {
-      toast.success("Profil gespeichert!");
-      fetchData();
+    if (user && id) {
+      fetchHorseData();
     }
-  };
-
-  const handleDeleteHorse = async (horseId: string) => {
-    // Use RPC for safe deletion with cascade (soft delete + cancel appointments)
-    const { error } = await supabase.rpc('delete_horse_safe', {
-      _horse_id: horseId,
-    });
-
-    if (error) {
-      toast.error("Konnte Pferd nicht löschen: " + (error.message || "Unbekannter Fehler"));
-    } else {
-      toast.success("Pferd entfernt und zukünftige Termine abgesagt.");
-      fetchData(); // Liste neu laden
-    }
-  };
+  }, [user, id]);
 
   if (authLoading || loading) {
     return (
-      <div className="p-8 space-y-4">
-        <Skeleton className="h-8 w-32" />
-        <Skeleton className="h-48 w-full" />
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
+          <div className="px-4 py-3 flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <Skeleton className="h-6 w-32" />
+          </div>
+        </header>
+        <main className="px-4 py-6 max-w-2xl mx-auto space-y-4">
+          <Skeleton className="h-48 w-full rounded-xl" />
+          <Skeleton className="h-32 w-full rounded-xl" />
+        </main>
       </div>
     );
   }
 
-  if (!profile) {
-    return <div className="p-8 text-center">Profil nicht gefunden</div>;
+  if (!horse) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">Pferd nicht gefunden</p>
+          <Button onClick={() => navigate("/client-home")}>Zurück</Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -152,151 +128,78 @@ export default function ClientProfile() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/client-home")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="font-semibold text-lg">Mein Profil</h1>
+          
+          <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border shrink-0">
+            {horse.photo_url ? (
+              <img src={horse.photo_url} alt={horse.name} className="h-full w-full object-cover" />
+            ) : (
+              <span className="text-lg">🐴</span>
+            )}
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <h1 className="font-semibold text-lg truncate">{horse.name}</h1>
+            <p className="text-xs text-muted-foreground truncate">
+              {horse.breed || "Pferd"} {horse.readable_id && `• ${horse.readable_id}`}
+            </p>
+          </div>
         </div>
       </header>
 
-      <main className="px-4 py-6 max-w-lg mx-auto space-y-6">
-        
-        {/* --- NEUE SEKTION: MEINE PFERDE --- */}
-        <div className="space-y-3">
-            <div className="flex items-center justify-between px-1">
-                <h2 className="text-lg font-semibold">Meine Pferde</h2>
-            </div>
-            
-            {horses.length === 0 ? (
-                <Card className="border-dashed bg-muted/20">
-                    <CardContent className="p-6 text-center text-muted-foreground">
-                        Noch keine Pferde angelegt.
-                    </CardContent>
-                </Card>
-            ) : (
-                <div className="space-y-3">
-                    {horses.map(horse => (
-                        <Card key={horse.id} className="overflow-hidden">
-                            <div className="flex items-center p-3 gap-3">
-                                {/* Bild / Avatar */}
-                                <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center overflow-hidden border shrink-0">
-                                    {horse.photo_url ? (
-                                        <img src={horse.photo_url} alt={horse.name} className="h-full w-full object-cover" />
-                                    ) : (
-                                        <span className="text-xl">🐴</span>
-                                    )}
-                                </div>
-                                
-                                {/* Klickbarer Bereich -> führt zur Detailseite */}
-                                <div 
-                                    className="flex-1 cursor-pointer min-w-0" 
-                                    onClick={() => navigate(`/client-horse/${horse.id}`)}
-                                >
-                                    <h3 className="font-medium truncate">{horse.name}</h3>
-                                    <p className="text-sm text-muted-foreground truncate">{horse.breed || "Pferd"}</p>
-                                </div>
+      <main className="px-4 py-6 max-w-2xl mx-auto">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="steckbrief" className="flex items-center gap-1.5">
+              <Info className="h-4 w-4" />
+              <span className="hidden sm:inline">Steckbrief</span>
+            </TabsTrigger>
+            <TabsTrigger value="historie" className="flex items-center gap-1.5">
+              <History className="h-4 w-4" />
+              <span className="hidden sm:inline">Historie</span>
+            </TabsTrigger>
+            <TabsTrigger value="medien" className="flex items-center gap-1.5">
+              <Image className="h-4 w-4" />
+              <span className="hidden sm:inline">Medien</span>
+            </TabsTrigger>
+            <TabsTrigger value="gesundheit" className="flex items-center gap-1.5">
+              <Activity className="h-4 w-4" />
+              <span className="hidden sm:inline">Gesundheit</span>
+            </TabsTrigger>
+          </TabsList>
 
-                                {/* Bearbeiten Button (Pfeil) */}
-                                <Button variant="ghost" size="icon" onClick={() => navigate(`/client-horse/${horse.id}`)}>
-                                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                </Button>
+          <TabsContent value="steckbrief">
+            <TabSteckbrief horse={horse} onEdit={() => setShowEditModal(true)} />
+          </TabsContent>
 
-                                {/* Löschen Button */}
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10">
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Pferd löschen?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Möchtest du "{horse.name}" wirklich löschen? Alle Daten dazu gehen verloren.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => handleDeleteHorse(horse.id)} className="bg-destructive">
-                                                Löschen
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </div>
-                        </Card>
-                    ))}
-                </div>
-            )}
-        </div>
+          <TabsContent value="historie">
+            <TabHistorie appointments={appointments} />
+          </TabsContent>
 
-        {/* --- PERSÖNLICHE DATEN (Alter Code) --- */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <User className="h-4 w-4 text-primary" />
-              Persönliche Daten
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="full_name">Name</Label>
-              <Input
-                id="full_name"
-                value={formData.full_name}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, full_name: e.target.value }))
-                }
-                placeholder="Dein Name"
-              />
-            </div>
-            <div>
-              <Label htmlFor="email">E-Mail</Label>
-              <Input
-                id="email"
-                value={profile.email || ""}
-                disabled
-                className="bg-muted"
-              />
-            </div>
-            <div>
-              <Label htmlFor="phone">Telefon</Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, phone: e.target.value }))
-                }
-                placeholder="+49 123 456789"
-              />
-            </div>
-            <Button onClick={handleSaveBasicInfo} disabled={isSaving} className="w-full">
-              {isSaving ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              Speichern
-            </Button>
-          </CardContent>
-        </Card>
+          <TabsContent value="medien">
+            <TabMediaVault horseId={horse.id} />
+          </TabsContent>
 
-        {/* Stable Location */}
-        <StableLocationCard
-          userId={profile.id}
-          stableStreet={profile.stable_street}
-          stableZip={profile.stable_zip}
-          stableCity={profile.stable_city}
-          stableLatitude={profile.stable_latitude}
-          stableLongitude={profile.stable_longitude}
-          onUpdate={fetchData}
-        />
-
-        {/* Emergency Contacts */}
-        <EmergencyContactsCard
-          userId={profile.id}
-          contacts={profile.emergency_contacts}
-          onUpdate={fetchData}
-        />
+          <TabsContent value="gesundheit">
+            <TabGesundheit 
+              horse={horse} 
+              onEdit={() => setShowEditModal(true)}
+            />
+          </TabsContent>
+        </Tabs>
       </main>
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <EditHorseModal
+          horse={horse}
+          open={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          onSaved={() => {
+            setShowEditModal(false);
+            fetchHorseData();
+          }}
+        />
+      )}
     </div>
   );
 }
