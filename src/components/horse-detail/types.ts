@@ -50,11 +50,18 @@ export interface HorseContacts {
 
 export interface Appointment {
   id: string;
+  horse_id: string;
   date: string;
   time: string | null;
   service_type: string | null;
   status: string | null;
   notes: string | null;
+  location: string | null;
+  duration: number | null;
+  price: number | null;
+  provider_id: string | null;
+  completed_at: string | null;
+  is_confirmed_by_client: boolean | null;
 }
 
 export interface HoofPhoto {
