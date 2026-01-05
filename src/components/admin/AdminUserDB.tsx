@@ -56,6 +56,7 @@ const PLAN_OPTIONS = [
   { value: "starter", label: "Starter (Free)" },
   { value: "pro", label: "Pro" },
   { value: "lifetime_grant", label: "Lifetime (Goldesel)" },
+  { value: "manual_cash_1y", label: "Barzahlung (1 Jahr)" },
   { value: "beta_tester", label: "Beta Tester" },
   { value: "employee", label: "Employee" },
 ];
@@ -73,6 +74,7 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
   
   // Edit form
   const [editPlan, setEditPlan] = useState("starter");
+  const [editAccessValidUntil, setEditAccessValidUntil] = useState("");
   const [banReason, setBanReason] = useState("");
 
   useEffect(() => {
@@ -158,24 +160,57 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
   const openEditDialog = (user: UserData) => {
     setSelectedUser(user);
     setEditPlan(user.plan_override || user.subscription_plan || "starter");
+    // Get access_valid_until from full profile
+    fetchUserAccessDate(user.id);
     setEditDialogOpen(true);
+  };
+
+  const fetchUserAccessDate = async (userId: string) => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("access_valid_until")
+      .eq("id", userId)
+      .single();
+    
+    if (data?.access_valid_until) {
+      setEditAccessValidUntil(format(new Date(data.access_valid_until), "yyyy-MM-dd"));
+    } else {
+      setEditAccessValidUntil("");
+    }
   };
 
   const handleForcePlan = async () => {
     if (!selectedUser) return;
     setSaving(true);
     try {
+      const updateData: Record<string, any> = {
+        plan_override: editPlan === "starter" ? null : editPlan,
+        subscription_plan: editPlan === "starter" ? "starter" : "pro",
+        subscription_status: editPlan === "starter" ? "trialing" : "active",
+      };
+
+      // Set access_valid_until
+      if (editAccessValidUntil) {
+        updateData.access_valid_until = new Date(editAccessValidUntil).toISOString();
+      } else if (editPlan === "lifetime_grant" || editPlan === "employee") {
+        // Auto-set far future date for lifetime plans
+        updateData.access_valid_until = "2099-12-31T00:00:00.000Z";
+      } else if (editPlan === "manual_cash_1y") {
+        // Auto-set 1 year from now
+        const oneYearFromNow = new Date();
+        oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+        updateData.access_valid_until = oneYearFromNow.toISOString();
+      }
+
       const { error } = await supabase
         .from("profiles")
-        .update({
-          plan_override: editPlan === "starter" ? null : editPlan,
-          subscription_plan: editPlan,
-          subscription_status: editPlan === "starter" ? "trialing" : "active",
-        })
+        .update(updateData)
         .eq("id", selectedUser.id);
 
       if (error) throw error;
-      toast.success(`Plan für ${selectedUser.full_name || selectedUser.email} auf "${editPlan}" geändert`);
+      
+      const planLabel = PLAN_OPTIONS.find(p => p.value === editPlan)?.label || editPlan;
+      toast.success(`Plan für ${selectedUser.full_name || selectedUser.email} auf "${planLabel}" geändert`);
       setEditDialogOpen(false);
       fetchUsers();
     } catch (error: any) {
@@ -447,14 +482,14 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Plan ändern</DialogTitle>
+            <DialogTitle>Subscription verwalten</DialogTitle>
             <DialogDescription>
-              Ändere den Plan für {selectedUser?.full_name || selectedUser?.email}
+              Ändere Plan und Zugriffsdauer für {selectedUser?.full_name || selectedUser?.email}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Neuer Plan</Label>
+              <Label>Plan Override</Label>
               <Select value={editPlan} onValueChange={setEditPlan}>
                 <SelectTrigger>
                   <SelectValue />
@@ -465,13 +500,43 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                Override überschreibt Copecart-Subscription
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Zugriff gültig bis</Label>
+              <Input
+                type="date"
+                value={editAccessValidUntil}
+                onChange={(e) => setEditAccessValidUntil(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                {editPlan === "lifetime_grant" || editPlan === "employee" 
+                  ? "Wird automatisch auf 2099 gesetzt wenn leer"
+                  : editPlan === "manual_cash_1y"
+                  ? "Wird automatisch auf +1 Jahr gesetzt wenn leer"
+                  : "Datum bis wann der Zugriff gültig ist"}
+              </p>
+            </div>
+
+            <div className="p-3 rounded-lg bg-muted/50 text-sm space-y-1">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Aktueller Plan:</span>
+                <span className="font-medium">{selectedUser?.subscription_plan || "—"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Aktueller Override:</span>
+                <span className="font-medium">{selectedUser?.plan_override || "—"}</span>
+              </div>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Abbrechen</Button>
             <Button onClick={handleForcePlan} disabled={saving}>
               {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Plan ändern
+              Speichern
             </Button>
           </DialogFooter>
         </DialogContent>
