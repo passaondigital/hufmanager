@@ -932,8 +932,17 @@ export default function MissionControl() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Quick Link to Feature Usage */}
-          <div className="ml-auto">
+          {/* Quick Links */}
+          <div className="ml-auto flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate("/admin/module-access-logs")}
+              className="gap-2"
+            >
+              <AlertTriangle className="w-4 h-4" />
+              Zugriffs-Logs
+            </Button>
             <Button 
               variant="outline" 
               size="sm" 

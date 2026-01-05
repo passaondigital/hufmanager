@@ -54,6 +54,7 @@ import Netzwerk from "@/pages/Netzwerk";
 import MissionControl from "@/pages/admin/MissionControl";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import FeatureUsageOverview from "@/pages/admin/FeatureUsageOverview";
+import ModuleAccessLogs from "@/pages/admin/ModuleAccessLogs";
 import SubmitReview from "@/pages/SubmitReview";
 import AboMatrix from "@/pages/AboMatrix";
 import Blog from "@/pages/Blog";
@@ -179,6 +180,11 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/admin/feature-usage" element={
               <ProtectedRoute allowedRoles={["admin"]}>
                 <FeatureUsageOverview />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/module-access-logs" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <ModuleAccessLogs />
               </ProtectedRoute>
             } />
 
