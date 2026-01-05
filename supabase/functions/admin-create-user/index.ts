@@ -10,6 +10,18 @@ interface CreateUserRequest {
   email: string;
   firstName: string;
   lastName: string;
+  planOverride?: string | null;
+  accessValidUntil?: string | null;
+  zipCode?: string | null;
+  city?: string | null;
+  phone?: string | null;
+  businessName?: string | null;
+  featureFlags?: {
+    module_invoicing?: boolean;
+    module_chat?: boolean;
+    module_maps?: boolean;
+    beta_features?: boolean;
+  } | null;
 }
 
 serve(async (req: Request) => {
@@ -70,7 +82,18 @@ serve(async (req: Request) => {
       );
     }
 
-    const { email, firstName, lastName }: CreateUserRequest = await req.json();
+    const { 
+      email, 
+      firstName, 
+      lastName,
+      planOverride,
+      accessValidUntil,
+      zipCode,
+      city,
+      phone,
+      businessName,
+      featureFlags
+    }: CreateUserRequest = await req.json();
     
     // Validate input
     if (!email || !firstName || !lastName) {
@@ -80,7 +103,7 @@ serve(async (req: Request) => {
       );
     }
 
-    console.log(`Admin ${callerUser.email} creating user: ${email}`);
+    console.log(`Admin ${callerUser.email} creating provider: ${email} with plan: ${planOverride || 'standard'}`);
 
     // Create user with invite (sends magic link email)
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
@@ -102,31 +125,85 @@ serve(async (req: Request) => {
       );
     }
 
-    console.log("User created:", newUser.user?.id);
+    if (!newUser.user) {
+      return new Response(
+        JSON.stringify({ error: "User creation failed - no user returned" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    // Update the profile with additional fields
-    if (newUser.user) {
-      const { error: updateError } = await supabaseAdmin
-        .from("profiles")
-        .update({
-          full_name: `${firstName} ${lastName}`,
-          is_manually_managed: true,
-          email: email,
-        })
-        .eq("id", newUser.user.id);
+    const userId = newUser.user.id;
+    const userEmail = newUser.user.email;
 
-      if (updateError) {
-        console.error("Error updating profile:", updateError);
+    console.log("User created:", userId);
+
+    // Update the profile with all fields
+    const profileUpdate: Record<string, unknown> = {
+      full_name: `${firstName} ${lastName}`,
+      is_manually_managed: planOverride ? true : false,
+      email: email,
+    };
+
+    // Add optional fields
+    if (planOverride) {
+      profileUpdate.plan_override = planOverride;
+      profileUpdate.subscription_plan = "pro"; // Give pro features for manual plans
+    }
+    if (accessValidUntil) {
+      profileUpdate.access_valid_until = new Date(accessValidUntil).toISOString();
+    }
+    if (zipCode) {
+      profileUpdate.zip_code = zipCode;
+    }
+    if (city) {
+      profileUpdate.city = city;
+    }
+    if (phone) {
+      profileUpdate.phone = phone;
+    }
+    if (featureFlags) {
+      profileUpdate.feature_flags = featureFlags;
+    }
+
+    const { error: updateError } = await supabaseAdmin
+      .from("profiles")
+      .update(profileUpdate)
+      .eq("id", userId);
+
+    if (updateError) {
+      console.error("Error updating profile:", updateError);
+    }
+
+    // Create business_settings if business name is provided
+    if (businessName) {
+      const { error: bsError } = await supabaseAdmin
+        .from("business_settings")
+        .upsert({
+          user_id: userId,
+          business_name: businessName,
+          phone: phone,
+        }, { onConflict: "user_id" });
+
+      if (bsError) {
+        console.error("Error creating business_settings:", bsError);
       }
     }
+
+    // Fetch readable_id for response
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("readable_id")
+      .eq("id", userId)
+      .single();
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         user: { 
-          id: newUser.user?.id, 
-          email: newUser.user?.email,
+          id: userId, 
+          email: userEmail,
           full_name: `${firstName} ${lastName}`,
+          readable_id: profile?.readable_id,
         } 
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
