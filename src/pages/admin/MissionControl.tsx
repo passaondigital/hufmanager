@@ -52,6 +52,11 @@ import {
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import AdminBlogManager from "@/components/admin/AdminBlogManager";
+import MissionControlKPIs from "@/components/admin/MissionControlKPIs";
+import BulkActionsBar from "@/components/admin/BulkActionsBar";
+import AdminActivityLogViewer from "@/components/admin/AdminActivityLogViewer";
+import { useAdminActivityLog } from "@/hooks/useAdminActivityLog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Horse icon fallback since lucide doesn't have it
 const Horse = () => (
@@ -142,9 +147,15 @@ export default function MissionControl() {
   const [deleting, setDeleting] = useState(false);
   const [providerToDelete, setProviderToDelete] = useState<ProviderData | null>(null);
 
+  // Bulk selection
+  const [selectedProviderIds, setSelectedProviderIds] = useState<string[]>([]);
+
   // Sorting
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+
+  // Activity Log
+  const { logActivity } = useAdminActivityLog();
 
   // New user form
   const [newUserEmail, setNewUserEmail] = useState("");
@@ -506,6 +517,15 @@ export default function MissionControl() {
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
+      // Log activity
+      await logActivity({
+        actionType: "provider_created",
+        targetType: "provider",
+        targetId: data.user?.id,
+        targetName: `${newUserFirstName} ${newUserLastName} (${newUserEmail})`,
+        details: { planOverride: newUserPlanOverride, email: newUserEmail },
+      });
+
       toast.success(`Provider ${newUserEmail} wurde erstellt. PID: ${data.user?.readable_id || 'wird generiert'}`);
       setCreateDialogOpen(false);
       // Reset form
@@ -658,6 +678,14 @@ export default function MissionControl() {
 
       if (error) throw error;
 
+      await logActivity({
+        actionType: "provider_suspended",
+        targetType: "provider",
+        targetId: selectedProvider.id,
+        targetName: selectedProvider.full_name || selectedProvider.email || "Provider",
+        details: { reason: suspendReason },
+      });
+
       toast.success("Account wurde gesperrt");
       setEditDialogOpen(false);
       fetchProviders();
@@ -685,6 +713,13 @@ export default function MissionControl() {
 
       if (error) throw error;
 
+      await logActivity({
+        actionType: "provider_unsuspended",
+        targetType: "provider",
+        targetId: selectedProvider.id,
+        targetName: selectedProvider.full_name || selectedProvider.email || "Provider",
+      });
+
       toast.success("Account wurde entsperrt");
       setEditDialogOpen(false);
       fetchProviders();
@@ -707,6 +742,13 @@ export default function MissionControl() {
 
       if (error) throw error;
       if (data.error) throw new Error(data.error);
+
+      await logActivity({
+        actionType: "provider_deleted",
+        targetType: "provider",
+        targetId: providerToDelete.id,
+        targetName: providerToDelete.full_name || providerToDelete.email || "Provider",
+      });
 
       toast.success(`Account ${providerToDelete.full_name || providerToDelete.email} wurde gelöscht`);
       setProviderToDelete(null);
@@ -916,6 +958,9 @@ export default function MissionControl() {
           </CardContent>
         </Card>
 
+        {/* KPI Dashboard */}
+        <MissionControlKPIs providers={providers} />
+
         <Tabs defaultValue="providers" className="space-y-6">
           <TabsList>
             <TabsTrigger value="providers" className="gap-2">
@@ -929,6 +974,10 @@ export default function MissionControl() {
             <TabsTrigger value="blog" className="gap-2">
               <FileText className="w-4 h-4" />
               Blog
+            </TabsTrigger>
+            <TabsTrigger value="activity" className="gap-2">
+              <ClipboardList className="w-4 h-4" />
+              Aktivität
             </TabsTrigger>
           </TabsList>
 
@@ -955,6 +1004,14 @@ export default function MissionControl() {
           </div>
 
           <TabsContent value="providers" className="space-y-4">
+            {/* Bulk Actions Bar */}
+            <BulkActionsBar
+              selectedIds={selectedProviderIds}
+              providers={sortedAndFilteredProviders}
+              onSelectionChange={setSelectedProviderIds}
+              onActionComplete={fetchProviders}
+            />
+
             {/* Action Bar */}
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <div className="relative flex-1 max-w-md">
@@ -1333,6 +1390,18 @@ export default function MissionControl() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-[40px]">
+                          <Checkbox
+                            checked={selectedProviderIds.length === sortedAndFilteredProviders.length && sortedAndFilteredProviders.length > 0}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedProviderIds(sortedAndFilteredProviders.map(p => p.id));
+                              } else {
+                                setSelectedProviderIds([]);
+                              }
+                            }}
+                          />
+                        </TableHead>
                         <TableHead className="w-[100px]">PID</TableHead>
                         <TableHead 
                           className="cursor-pointer hover:bg-muted/50"
@@ -1389,9 +1458,21 @@ export default function MissionControl() {
                       {sortedAndFilteredProviders.map((provider) => (
                         <TableRow 
                           key={provider.id} 
-                          className="cursor-pointer hover:bg-muted/50"
+                          className={`cursor-pointer hover:bg-muted/50 ${selectedProviderIds.includes(provider.id) ? 'bg-primary/5' : ''}`}
                           onClick={() => handleRowClick(provider)}
                         >
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <Checkbox
+                              checked={selectedProviderIds.includes(provider.id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedProviderIds(prev => [...prev, provider.id]);
+                                } else {
+                                  setSelectedProviderIds(prev => prev.filter(id => id !== provider.id));
+                                }
+                              }}
+                            />
+                          </TableCell>
                           <TableCell>
                             <code className="text-xs font-mono bg-muted px-2 py-1 rounded">
                               #{provider.readable_id || provider.id.slice(0, 8)}
@@ -1822,6 +1903,10 @@ export default function MissionControl() {
 
           <TabsContent value="blog" className="space-y-6">
             <AdminBlogManager />
+          </TabsContent>
+
+          <TabsContent value="activity" className="space-y-6">
+            <AdminActivityLogViewer limit={100} />
           </TabsContent>
         </Tabs>
 
