@@ -44,7 +44,10 @@ import {
   Trash2,
   Building2,
   Globe,
-  Phone
+  Phone,
+  GraduationCap,
+  ClipboardList,
+  BarChart3
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -76,6 +79,10 @@ interface ProviderData {
     module_invoicing?: boolean;
     module_chat?: boolean;
     module_maps?: boolean;
+    module_academy?: boolean;
+    module_hufanalyse?: boolean;
+    module_network?: boolean;
+    module_analytics?: boolean;
     beta_features?: boolean;
   } | null;
   is_suspended: boolean | null;
@@ -109,6 +116,10 @@ const DEFAULT_FEATURE_FLAGS = {
   module_invoicing: true,
   module_chat: true,
   module_maps: true,
+  module_academy: true,
+  module_hufanalyse: true,
+  module_network: true,
+  module_analytics: true,
   beta_features: false,
 };
 
@@ -1101,6 +1112,54 @@ export default function MissionControl() {
                               checked={newUserFeatureFlags.module_maps}
                               onCheckedChange={(checked) =>
                                 setNewUserFeatureFlags({ ...newUserFeatureFlags, module_maps: checked })
+                              }
+                            />
+                          </div>
+                          <div className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <GraduationCap className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-sm">Academy</span>
+                            </div>
+                            <Switch
+                              checked={newUserFeatureFlags.module_academy}
+                              onCheckedChange={(checked) =>
+                                setNewUserFeatureFlags({ ...newUserFeatureFlags, module_academy: checked })
+                              }
+                            />
+                          </div>
+                          <div className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <ClipboardList className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-sm">Hufanalyse</span>
+                            </div>
+                            <Switch
+                              checked={newUserFeatureFlags.module_hufanalyse}
+                              onCheckedChange={(checked) =>
+                                setNewUserFeatureFlags({ ...newUserFeatureFlags, module_hufanalyse: checked })
+                              }
+                            />
+                          </div>
+                          <div className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <Users className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-sm">Netzwerk</span>
+                            </div>
+                            <Switch
+                              checked={newUserFeatureFlags.module_network}
+                              onCheckedChange={(checked) =>
+                                setNewUserFeatureFlags({ ...newUserFeatureFlags, module_network: checked })
+                              }
+                            />
+                          </div>
+                          <div className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <BarChart3 className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-sm">Analytics</span>
+                            </div>
+                            <Switch
+                              checked={newUserFeatureFlags.module_analytics}
+                              onCheckedChange={(checked) =>
+                                setNewUserFeatureFlags({ ...newUserFeatureFlags, module_analytics: checked })
                               }
                             />
                           </div>
@@ -2099,6 +2158,66 @@ export default function MissionControl() {
                         checked={editFeatureFlags.module_maps}
                         onCheckedChange={(checked) =>
                           setEditFeatureFlags({ ...editFeatureFlags, module_maps: checked })
+                        }
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>Academy</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Zugriff auf Academy-Inhalte
+                        </p>
+                      </div>
+                      <Switch
+                        checked={editFeatureFlags.module_academy}
+                        onCheckedChange={(checked) =>
+                          setEditFeatureFlags({ ...editFeatureFlags, module_academy: checked })
+                        }
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>Hufanalyse (LTZ)</Label>
+                        <p className="text-sm text-muted-foreground">
+                          LTZ-Hufanalyse-Funktion
+                        </p>
+                      </div>
+                      <Switch
+                        checked={editFeatureFlags.module_hufanalyse}
+                        onCheckedChange={(checked) =>
+                          setEditFeatureFlags({ ...editFeatureFlags, module_hufanalyse: checked })
+                        }
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>Netzwerk</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Netzwerk / Connection-Features
+                        </p>
+                      </div>
+                      <Switch
+                        checked={editFeatureFlags.module_network}
+                        onCheckedChange={(checked) =>
+                          setEditFeatureFlags({ ...editFeatureFlags, module_network: checked })
+                        }
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>Analytics</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Analyse & Statistiken
+                        </p>
+                      </div>
+                      <Switch
+                        checked={editFeatureFlags.module_analytics}
+                        onCheckedChange={(checked) =>
+                          setEditFeatureFlags({ ...editFeatureFlags, module_analytics: checked })
                         }
                       />
                     </div>

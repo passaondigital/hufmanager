@@ -9,6 +9,10 @@ interface FeatureFlags {
   module_invoicing: boolean;
   module_chat: boolean;
   module_maps: boolean;
+  module_academy: boolean;
+  module_hufanalyse: boolean;
+  module_network: boolean;
+  module_analytics: boolean;
   beta_features: boolean;
 }
 
@@ -16,6 +20,10 @@ const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   module_invoicing: true,
   module_chat: true,
   module_maps: true,
+  module_academy: true,
+  module_hufanalyse: true,
+  module_network: true,
+  module_analytics: true,
   beta_features: false,
 };
 
