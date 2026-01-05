@@ -132,7 +132,13 @@ export default function MissionControl() {
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserFirstName, setNewUserFirstName] = useState("");
   const [newUserLastName, setNewUserLastName] = useState("");
-
+  const [newUserPlanOverride, setNewUserPlanOverride] = useState("standard");
+  const [newUserAccessValidUntil, setNewUserAccessValidUntil] = useState("");
+  const [newUserZipCode, setNewUserZipCode] = useState("");
+  const [newUserCity, setNewUserCity] = useState("");
+  const [newUserPhone, setNewUserPhone] = useState("");
+  const [newUserBusinessName, setNewUserBusinessName] = useState("");
+  const [newUserFeatureFlags, setNewUserFeatureFlags] = useState(DEFAULT_FEATURE_FLAGS);
   // Create Client form
   const [createClientDialogOpen, setCreateClientDialogOpen] = useState(false);
   const [creatingClient, setCreatingClient] = useState(false);
@@ -420,28 +426,55 @@ export default function MissionControl() {
 
   const handleCreateUser = async () => {
     if (!newUserEmail || !newUserFirstName || !newUserLastName) {
-      toast.error("Bitte alle Felder ausfüllen");
+      toast.error("Bitte E-Mail, Vorname und Nachname ausfüllen");
       return;
     }
 
     setCreating(true);
     try {
+      // Calculate access_valid_until based on plan
+      let accessDate = newUserAccessValidUntil;
+      if (!accessDate) {
+        if (newUserPlanOverride === "lifetime_grant" || newUserPlanOverride === "employee") {
+          accessDate = "2099-12-31";
+        } else if (newUserPlanOverride === "manual_cash_1y") {
+          const oneYearFromNow = new Date();
+          oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+          accessDate = oneYearFromNow.toISOString().split("T")[0];
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke("admin-create-user", {
         body: {
           email: newUserEmail,
           firstName: newUserFirstName,
           lastName: newUserLastName,
+          planOverride: newUserPlanOverride !== "standard" ? newUserPlanOverride : null,
+          accessValidUntil: accessDate || null,
+          zipCode: newUserZipCode || null,
+          city: newUserCity || null,
+          phone: newUserPhone || null,
+          businessName: newUserBusinessName || null,
+          featureFlags: newUserFeatureFlags,
         },
       });
 
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
-      toast.success(`Benutzer ${newUserEmail} wurde erstellt.`);
+      toast.success(`Provider ${newUserEmail} wurde erstellt. PID: ${data.user?.readable_id || 'wird generiert'}`);
       setCreateDialogOpen(false);
+      // Reset form
       setNewUserEmail("");
       setNewUserFirstName("");
       setNewUserLastName("");
+      setNewUserPlanOverride("standard");
+      setNewUserAccessValidUntil("");
+      setNewUserZipCode("");
+      setNewUserCity("");
+      setNewUserPhone("");
+      setNewUserBusinessName("");
+      setNewUserFeatureFlags(DEFAULT_FEATURE_FLAGS);
       fetchProviders();
     } catch (error: any) {
       console.error("Error creating user:", error);
@@ -839,42 +872,178 @@ export default function MissionControl() {
                       Neuen Provider
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Neuen Provider anlegen</DialogTitle>
                       <DialogDescription>
-                        Erstelle manuell einen neuen Provider-Account.
+                        Erstelle manuell einen neuen Provider-Account mit allen Einstellungen.
                       </DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="email">E-Mail</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="email@example.com"
-                          value={newUserEmail}
-                          onChange={(e) => setNewUserEmail(e.target.value)}
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-6 py-4">
+                      {/* Basic Info */}
+                      <div className="space-y-4">
+                        <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Basisdaten</h4>
                         <div className="space-y-2">
-                          <Label htmlFor="firstName">Vorname</Label>
+                          <Label htmlFor="email">E-Mail *</Label>
                           <Input
-                            id="firstName"
-                            placeholder="Max"
-                            value={newUserFirstName}
-                            onChange={(e) => setNewUserFirstName(e.target.value)}
+                            id="email"
+                            type="email"
+                            placeholder="email@example.com"
+                            value={newUserEmail}
+                            onChange={(e) => setNewUserEmail(e.target.value)}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="firstName">Vorname *</Label>
+                            <Input
+                              id="firstName"
+                              placeholder="Max"
+                              value={newUserFirstName}
+                              onChange={(e) => setNewUserFirstName(e.target.value)}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="lastName">Nachname *</Label>
+                            <Input
+                              id="lastName"
+                              placeholder="Mustermann"
+                              value={newUserLastName}
+                              onChange={(e) => setNewUserLastName(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="businessName">Firmenname</Label>
+                          <Input
+                            id="businessName"
+                            placeholder="z.B. Hufpflege Mustermann"
+                            value={newUserBusinessName}
+                            onChange={(e) => setNewUserBusinessName(e.target.value)}
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="lastName">Nachname</Label>
+                          <Label htmlFor="phone">Telefon</Label>
                           <Input
-                            id="lastName"
-                            placeholder="Mustermann"
-                            value={newUserLastName}
-                            onChange={(e) => setNewUserLastName(e.target.value)}
+                            id="phone"
+                            type="tel"
+                            placeholder="+49 123 456789"
+                            value={newUserPhone}
+                            onChange={(e) => setNewUserPhone(e.target.value)}
                           />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="zipCode">PLZ</Label>
+                            <Input
+                              id="zipCode"
+                              placeholder="12345"
+                              value={newUserZipCode}
+                              onChange={(e) => setNewUserZipCode(e.target.value)}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="city">Ort</Label>
+                            <Input
+                              id="city"
+                              placeholder="Musterstadt"
+                              value={newUserCity}
+                              onChange={(e) => setNewUserCity(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* Subscription Settings */}
+                      <div className="space-y-4">
+                        <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Abo & Zugang</h4>
+                        <div className="space-y-2">
+                          <Label>Plan / Zahlungsart</Label>
+                          <Select value={newUserPlanOverride} onValueChange={setNewUserPlanOverride}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PLAN_OVERRIDE_OPTIONS.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs text-muted-foreground">
+                            "Standard" = Copecart-basiert, andere = manuell verwaltet
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Zugang gültig bis</Label>
+                          <Input
+                            type="date"
+                            value={newUserAccessValidUntil}
+                            onChange={(e) => setNewUserAccessValidUntil(e.target.value)}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Leer = automatisch: Lifetime → 2099, Cash 1Y → +1 Jahr
+                          </p>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* Feature Flags */}
+                      <div className="space-y-4">
+                        <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Module freischalten</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <FileText className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-sm">Rechnungen</span>
+                            </div>
+                            <Switch
+                              checked={newUserFeatureFlags.module_invoicing}
+                              onCheckedChange={(checked) =>
+                                setNewUserFeatureFlags({ ...newUserFeatureFlags, module_invoicing: checked })
+                              }
+                            />
+                          </div>
+                          <div className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-sm">Chat</span>
+                            </div>
+                            <Switch
+                              checked={newUserFeatureFlags.module_chat}
+                              onCheckedChange={(checked) =>
+                                setNewUserFeatureFlags({ ...newUserFeatureFlags, module_chat: checked })
+                              }
+                            />
+                          </div>
+                          <div className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <MapIcon className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-sm">Anfahrt/Maps</span>
+                            </div>
+                            <Switch
+                              checked={newUserFeatureFlags.module_maps}
+                              onCheckedChange={(checked) =>
+                                setNewUserFeatureFlags({ ...newUserFeatureFlags, module_maps: checked })
+                              }
+                            />
+                          </div>
+                          <div className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-amber-500" />
+                              <span className="text-sm">Beta</span>
+                            </div>
+                            <Switch
+                              checked={newUserFeatureFlags.beta_features}
+                              onCheckedChange={(checked) =>
+                                setNewUserFeatureFlags({ ...newUserFeatureFlags, beta_features: checked })
+                              }
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -884,7 +1053,7 @@ export default function MissionControl() {
                       </Button>
                       <Button onClick={handleCreateUser} disabled={creating}>
                         {creating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        Erstellen
+                        Provider erstellen
                       </Button>
                     </DialogFooter>
                   </DialogContent>
