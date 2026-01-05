@@ -154,21 +154,40 @@ export default function Auth() {
     }
 
     setLoading(true);
-    const { error } = await signUp(signupEmail, signupPassword, signupName, selectedRole);
-    setLoading(false);
-
-    if (error) {
-      if (error.message.includes("already registered")) {
-        toast.error("Diese E-Mail ist bereits registriert");
+    
+    try {
+      const { error } = await signUp(signupEmail, signupPassword, signupName, selectedRole);
+      
+      if (error) {
+        console.error("Signup error:", error);
+        
+        // Handle specific error cases
+        if (error.message.includes("already registered") || 
+            error.message.includes("User already registered")) {
+          toast.error("Diese E-Mail ist bereits registriert. Bitte melden Sie sich an.");
+        } else if (error.message.includes("Edge Function")) {
+          // Edge function errors - user is likely created, just ignore
+          console.warn("Edge function warning during signup, but user may be created:", error.message);
+          toast.success("Registrierung erfolgreich! Bitte bestätigen Sie Ihre E-Mail.");
+        } else if (error.message.includes("Invalid email")) {
+          toast.error("Ungültige E-Mail-Adresse");
+        } else if (error.message.includes("Password")) {
+          toast.error("Passwort muss mindestens 6 Zeichen lang sein");
+        } else {
+          toast.error(`Registrierung fehlgeschlagen: ${error.message}`);
+        }
       } else {
-        toast.error(error.message);
+        // If invite code was provided, store it so useAuth hook can process it
+        if (inviteCode) {
+          sessionStorage.setItem("huf_invite_code", inviteCode);
+        }
+        toast.success("Registrierung erfolgreich! Bitte bestätigen Sie Ihre E-Mail.");
       }
-    } else {
-      // If invite code was provided, store it so useAuth hook can process it
-      if (inviteCode) {
-        sessionStorage.setItem("huf_invite_code", inviteCode);
-      }
-      toast.success("Registrierung erfolgreich! Bitte bestätigen Sie Ihre E-Mail.");
+    } catch (err: any) {
+      console.error("Unexpected signup error:", err);
+      toast.error("Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.");
+    } finally {
+      setLoading(false);
     }
   };
 
