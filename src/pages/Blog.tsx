@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { Calendar, ArrowRight, Loader2 } from "lucide-react";
+import { Calendar, ArrowRight, Loader2, Video, FileText } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,11 +17,23 @@ interface BlogPost {
   author_name: string | null;
   published_at: string | null;
   created_at: string;
+  content_type: "blog" | "video" | null;
+  category: string | null;
 }
+
+const CATEGORY_LABELS: Record<string, string> = {
+  allgemein: "Allgemein",
+  hufpflege: "Hufpflege",
+  gesundheit: "Gesundheit",
+  tipps: "Tipps & Tricks",
+  news: "News",
+  tutorial: "Tutorial",
+};
 
 export default function Blog() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPosts();
@@ -31,18 +43,26 @@ export default function Blog() {
     try {
       const { data, error } = await supabase
         .from("blog_posts")
-        .select("id, slug, title, excerpt, featured_image_url, author_name, published_at, created_at")
+        .select("id, slug, title, excerpt, featured_image_url, author_name, published_at, created_at, content_type, category")
         .eq("is_published", true)
         .order("published_at", { ascending: false });
 
       if (error) throw error;
-      setPosts(data || []);
+      setPosts((data || []) as BlogPost[]);
     } catch (error) {
       console.error("Error fetching posts:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  // Get unique categories from posts
+  const categories = Array.from(new Set(posts.map(p => p.category).filter(Boolean))) as string[];
+
+  // Filter posts by category
+  const filteredPosts = selectedCategory
+    ? posts.filter(p => p.category === selectedCategory)
+    : posts;
 
   if (loading) {
     return (
@@ -103,62 +123,124 @@ export default function Blog() {
         </div>
       </section>
 
+      {/* Category Filter */}
+      {categories.length > 0 && (
+        <section className="py-6 border-b">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm text-muted-foreground mr-2">Filter:</span>
+              <Button
+                variant={selectedCategory === null ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedCategory(null)}
+              >
+                Alle
+              </Button>
+              {categories.map((cat) => (
+                <Button
+                  key={cat}
+                  variant={selectedCategory === cat ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedCategory(cat)}
+                >
+                  {CATEGORY_LABELS[cat] || cat}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Blog Grid */}
       <section className="py-12 md:py-16">
         <div className="container mx-auto px-4">
-          {posts.length === 0 ? (
+          {filteredPosts.length === 0 ? (
             <div className="text-center py-16">
-              <p className="text-muted-foreground">Noch keine Artikel veröffentlicht.</p>
+              <p className="text-muted-foreground">
+                {selectedCategory ? "Keine Artikel in dieser Kategorie." : "Noch keine Artikel veröffentlicht."}
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-              {posts.map((post) => (
-                <Link 
-                  key={post.id} 
-                  to={`/blog/${post.slug}`}
-                  className="group"
-                >
-                  <Card className="overflow-hidden border-0 bg-card/50 hover:bg-card transition-colors h-full">
-                    {post.featured_image_url ? (
-                      <div className="aspect-[16/10] overflow-hidden">
-                        <img
-                          src={post.featured_image_url}
-                          alt={post.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                      </div>
-                    ) : (
-                      <div className="aspect-[16/10] bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                        <span className="text-4xl opacity-30">📰</span>
-                      </div>
-                    )}
-                    <CardContent className="p-5 space-y-3">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar className="w-4 h-4" />
-                        <span>
-                          {format(
-                            new Date(post.published_at || post.created_at),
-                            "d. MMMM yyyy",
-                            { locale: de }
+              {filteredPosts.map((post) => {
+                const isVideo = post.content_type === "video";
+                const categoryLabel = post.category ? CATEGORY_LABELS[post.category] || post.category : null;
+
+                return (
+                  <Link 
+                    key={post.id} 
+                    to={`/blog/${post.slug}`}
+                    className="group"
+                  >
+                    <Card className="overflow-hidden border-0 bg-card/50 hover:bg-card transition-colors h-full">
+                      {post.featured_image_url ? (
+                        <div className="aspect-[16/10] overflow-hidden relative">
+                          <img
+                            src={post.featured_image_url}
+                            alt={post.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          {isVideo && (
+                            <div className="absolute top-2 left-2">
+                              <Badge className="bg-blue-500">
+                                <Video className="w-3 h-3 mr-1" />
+                                Video
+                              </Badge>
+                            </div>
                           )}
-                        </span>
-                      </div>
-                      <h2 className="font-semibold text-lg group-hover:text-primary transition-colors line-clamp-2">
-                        {post.title}
-                      </h2>
-                      {post.excerpt && (
-                        <p className="text-sm text-muted-foreground line-clamp-3">
-                          {post.excerpt}
-                        </p>
+                        </div>
+                      ) : (
+                        <div className="aspect-[16/10] bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative">
+                          {isVideo ? (
+                            <Video className="w-12 h-12 text-primary/30" />
+                          ) : (
+                            <FileText className="w-12 h-12 text-primary/30" />
+                          )}
+                          {isVideo && (
+                            <div className="absolute top-2 left-2">
+                              <Badge className="bg-blue-500">
+                                <Video className="w-3 h-3 mr-1" />
+                                Video
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
                       )}
-                      <div className="flex items-center text-sm text-primary font-medium pt-2">
-                        Weiterlesen
-                        <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
+                      <CardContent className="p-5 space-y-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="w-4 h-4" />
+                            <span>
+                              {format(
+                                new Date(post.published_at || post.created_at),
+                                "d. MMMM yyyy",
+                                { locale: de }
+                              )}
+                            </span>
+                          </div>
+                          {categoryLabel && (
+                            <Badge variant="outline" className="text-xs">
+                              {categoryLabel}
+                            </Badge>
+                          )}
+                        </div>
+                        <h2 className="font-semibold text-lg group-hover:text-primary transition-colors line-clamp-2">
+                          {post.title}
+                        </h2>
+                        {post.excerpt && (
+                          <p className="text-sm text-muted-foreground line-clamp-3">
+                            {post.excerpt}
+                          </p>
+                        )}
+                        <div className="flex items-center text-sm text-primary font-medium pt-2">
+                          {isVideo ? "Video ansehen" : "Weiterlesen"}
+                          <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>

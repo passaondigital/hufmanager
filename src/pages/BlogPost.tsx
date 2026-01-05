@@ -3,9 +3,11 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { Calendar, ArrowLeft, User, Loader2 } from "lucide-react";
+import { Calendar, ArrowLeft, User, Loader2, Video, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import DOMPurify from "dompurify";
+
 interface BlogPostData {
   id: string;
   slug: string;
@@ -18,7 +20,19 @@ interface BlogPostData {
   created_at: string;
   meta_title: string | null;
   meta_description: string | null;
+  content_type: "blog" | "video" | null;
+  video_url: string | null;
+  category: string | null;
 }
+
+const CATEGORY_LABELS: Record<string, string> = {
+  allgemein: "Allgemein",
+  hufpflege: "Hufpflege",
+  gesundheit: "Gesundheit",
+  tipps: "Tipps & Tricks",
+  news: "News",
+  tutorial: "Tutorial",
+};
 
 // Sanitized content component to prevent XSS attacks
 function SanitizedContent({ content }: { content: string }) {
@@ -37,6 +51,40 @@ function SanitizedContent({ content }: { content: string }) {
       className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-semibold prose-a:text-primary prose-img:rounded-xl"
       dangerouslySetInnerHTML={{ __html: sanitizedContent }}
     />
+  );
+}
+
+// Video embed component
+function VideoEmbed({ url }: { url: string }) {
+  const embedUrl = useMemo(() => {
+    // Convert YouTube watch URLs to embed URLs
+    if (url.includes("youtube.com/watch")) {
+      const videoId = new URL(url).searchParams.get("v");
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    // Convert YouTube short URLs
+    if (url.includes("youtu.be/")) {
+      const videoId = url.split("youtu.be/")[1]?.split("?")[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    // Convert Vimeo URLs
+    if (url.includes("vimeo.com/") && !url.includes("player.vimeo.com")) {
+      const videoId = url.split("vimeo.com/")[1]?.split("?")[0];
+      return `https://player.vimeo.com/video/${videoId}`;
+    }
+    return url;
+  }, [url]);
+
+  return (
+    <div className="aspect-video w-full rounded-xl overflow-hidden bg-muted mb-8">
+      <iframe
+        src={embedUrl}
+        className="w-full h-full"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        title="Video"
+      />
+    </div>
   );
 }
 
@@ -74,7 +122,7 @@ export default function BlogPost() {
         .single();
 
       if (error) throw error;
-      setPost(data);
+      setPost(data as BlogPostData);
     } catch (error) {
       console.error("Error fetching post:", error);
       setError(true);
@@ -105,6 +153,9 @@ export default function BlogPost() {
       </div>
     );
   }
+
+  const isVideo = post.content_type === "video";
+  const categoryLabel = post.category ? CATEGORY_LABELS[post.category] || post.category : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -159,8 +210,31 @@ export default function BlogPost() {
       {/* Article */}
       <article className="container mx-auto px-4 pb-16">
         <div className="max-w-3xl mx-auto">
-          {/* Featured Image */}
-          {post.featured_image_url && (
+          {/* Badges */}
+          <div className="flex items-center gap-2 mb-4">
+            {isVideo ? (
+              <Badge variant="default" className="bg-blue-500">
+                <Video className="w-3 h-3 mr-1" />
+                Video
+              </Badge>
+            ) : (
+              <Badge variant="secondary">
+                <FileText className="w-3 h-3 mr-1" />
+                Artikel
+              </Badge>
+            )}
+            {categoryLabel && (
+              <Badge variant="outline">{categoryLabel}</Badge>
+            )}
+          </div>
+
+          {/* Video Embed (for video content type) */}
+          {isVideo && post.video_url && (
+            <VideoEmbed url={post.video_url} />
+          )}
+
+          {/* Featured Image (for blog posts without video) */}
+          {!isVideo && post.featured_image_url && (
             <div className="aspect-video overflow-hidden rounded-xl mb-8">
               <img
                 src={post.featured_image_url}
