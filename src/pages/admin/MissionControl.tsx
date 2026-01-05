@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import AdminBlogManager from "@/components/admin/AdminBlogManager";
 
 // Horse icon fallback since lucide doesn't have it
 const Horse = () => (
@@ -847,6 +848,10 @@ export default function MissionControl() {
               <Settings className="w-4 h-4" />
               Statistiken
             </TabsTrigger>
+            <TabsTrigger value="blog" className="gap-2">
+              <FileText className="w-4 h-4" />
+              Blog
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="providers" className="space-y-4">
@@ -1626,6 +1631,10 @@ export default function MissionControl() {
                 })()}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="blog" className="space-y-6">
+            <AdminBlogManager />
           </TabsContent>
         </Tabs>
 
