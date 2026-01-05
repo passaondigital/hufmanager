@@ -125,15 +125,22 @@ export default function Auth() {
           duration: 8000,
           description: "Bitte kontaktieren Sie den Support.",
         });
-      } else if (loginMode === "provider" && 
-          (error.message.includes("Invalid login credentials") || 
-           error.message.includes("User not found"))) {
-        openPricingModal(
-          "Noch kein Account?",
-          "Wähle jetzt dein Paket und starte mit HufManager."
-        );
       } else if (error.message.includes("Invalid login credentials")) {
-        toast.error("Ungültige Anmeldedaten");
+        // Just show invalid credentials - don't show pricing modal
+        // The user might have a typo in their password, not a missing account
+        toast.error("Ungültige Anmeldedaten", {
+          description: "Überprüfen Sie E-Mail und Passwort.",
+        });
+      } else if (error.message.includes("User not found")) {
+        // User actually doesn't exist - show pricing modal for providers
+        if (loginMode === "provider") {
+          openPricingModal(
+            "Noch kein Account?",
+            "Wähle jetzt dein Paket und starte mit HufManager."
+          );
+        } else {
+          toast.error("Kein Konto mit dieser E-Mail gefunden");
+        }
       } else {
         toast.error(error.message);
       }
