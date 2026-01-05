@@ -283,3 +283,61 @@
 .dark .calendar-container .rbc-today {
   @apply bg-primary/10;
 }
+
+/* TipTap Editor Styles */
+.ProseMirror {
+  @apply min-h-[300px] outline-none;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  @apply text-muted-foreground pointer-events-none float-left h-0;
+  content: attr(data-placeholder);
+}
+
+.ProseMirror h1 {
+  @apply text-2xl font-bold mt-4 mb-2;
+}
+
+.ProseMirror h2 {
+  @apply text-xl font-semibold mt-3 mb-2;
+}
+
+.ProseMirror h3 {
+  @apply text-lg font-medium mt-2 mb-1;
+}
+
+.ProseMirror ul {
+  @apply list-disc pl-6 my-2;
+}
+
+.ProseMirror ol {
+  @apply list-decimal pl-6 my-2;
+}
+
+.ProseMirror blockquote {
+  @apply border-l-4 border-primary/30 pl-4 italic my-4 text-muted-foreground;
+}
+
+.ProseMirror hr {
+  @apply border-t border-border my-4;
+}
+
+.ProseMirror code {
+  @apply bg-muted px-1.5 py-0.5 rounded text-sm font-mono;
+}
+
+.ProseMirror pre {
+  @apply bg-muted p-4 rounded-lg overflow-x-auto my-4;
+}
+
+.ProseMirror pre code {
+  @apply bg-transparent p-0;
+}
+
+.ProseMirror img {
+  @apply max-w-full h-auto rounded-lg my-4;
+}
+
+.ProseMirror a {
+  @apply text-primary underline hover:text-primary/80;
+}

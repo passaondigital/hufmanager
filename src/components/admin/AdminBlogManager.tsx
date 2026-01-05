@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
@@ -22,10 +23,16 @@ import {
   RefreshCw,
   Upload,
   Image as ImageIcon,
-  X
+  X,
+  Video,
+  Calendar,
+  Clock,
+  List
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import RichTextEditor from "./RichTextEditor";
+import ContentCalendar from "./ContentCalendar";
 
 interface BlogPost {
   id: string;
@@ -37,11 +44,24 @@ interface BlogPost {
   author_name: string | null;
   is_published: boolean;
   published_at: string | null;
+  scheduled_at: string | null;
   meta_title: string | null;
   meta_description: string | null;
+  content_type: "blog" | "video";
+  video_url: string | null;
+  category: string;
   created_at: string;
   updated_at: string;
 }
+
+const CATEGORIES = [
+  { value: "allgemein", label: "Allgemein" },
+  { value: "hufpflege", label: "Hufpflege" },
+  { value: "gesundheit", label: "Gesundheit" },
+  { value: "tipps", label: "Tipps & Tricks" },
+  { value: "news", label: "News" },
+  { value: "tutorial", label: "Tutorial" },
+];
 
 export default function AdminBlogManager() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -50,6 +70,7 @@ export default function AdminBlogManager() {
   const [uploading, setUploading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
+  const [activeTab, setActiveTab] = useState<"calendar" | "list">("calendar");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
@@ -62,6 +83,10 @@ export default function AdminBlogManager() {
   const [formMetaTitle, setFormMetaTitle] = useState("");
   const [formMetaDescription, setFormMetaDescription] = useState("");
   const [formIsPublished, setFormIsPublished] = useState(false);
+  const [formContentType, setFormContentType] = useState<"blog" | "video">("blog");
+  const [formVideoUrl, setFormVideoUrl] = useState("");
+  const [formCategory, setFormCategory] = useState("allgemein");
+  const [formScheduledAt, setFormScheduledAt] = useState("");
 
   useEffect(() => {
     fetchPosts();
@@ -76,7 +101,11 @@ export default function AdminBlogManager() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setPosts(data || []);
+      setPosts((data || []).map(post => ({
+        ...post,
+        content_type: post.content_type || "blog",
+        category: post.category || "allgemein",
+      })) as BlogPost[]);
     } catch (error: any) {
       console.error("Error fetching posts:", error);
       toast.error("Fehler beim Laden der Blog-Posts");
@@ -107,13 +136,11 @@ export default function AdminBlogManager() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       toast.error("Bitte nur Bilder hochladen");
       return;
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Bild darf maximal 5MB groß sein");
       return;
@@ -121,19 +148,16 @@ export default function AdminBlogManager() {
 
     setUploading(true);
     try {
-      // Generate unique filename
       const fileExt = file.name.split(".").pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `blog/${fileName}`;
 
-      // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from("blog-images")
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
       const { data: urlData } = supabase.storage
         .from("blog-images")
         .getPublicUrl(filePath);
@@ -145,7 +169,6 @@ export default function AdminBlogManager() {
       toast.error(error.message || "Fehler beim Hochladen");
     } finally {
       setUploading(false);
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -156,7 +179,7 @@ export default function AdminBlogManager() {
     setFormImageUrl("");
   };
 
-  const openNewDialog = () => {
+  const openNewDialog = (date?: Date) => {
     setEditingPost(null);
     setFormTitle("");
     setFormSlug("");
@@ -167,6 +190,10 @@ export default function AdminBlogManager() {
     setFormMetaTitle("");
     setFormMetaDescription("");
     setFormIsPublished(false);
+    setFormContentType("blog");
+    setFormVideoUrl("");
+    setFormCategory("allgemein");
+    setFormScheduledAt(date ? format(date, "yyyy-MM-dd'T'HH:mm") : "");
     setDialogOpen(true);
   };
 
@@ -181,12 +208,21 @@ export default function AdminBlogManager() {
     setFormMetaTitle(post.meta_title || "");
     setFormMetaDescription(post.meta_description || "");
     setFormIsPublished(post.is_published);
+    setFormContentType(post.content_type || "blog");
+    setFormVideoUrl(post.video_url || "");
+    setFormCategory(post.category || "allgemein");
+    setFormScheduledAt(post.scheduled_at ? format(new Date(post.scheduled_at), "yyyy-MM-dd'T'HH:mm") : "");
     setDialogOpen(true);
   };
 
   const handleSave = async () => {
     if (!formTitle || !formSlug || !formContent) {
       toast.error("Bitte Titel, Slug und Inhalt ausfüllen");
+      return;
+    }
+
+    if (formContentType === "video" && !formVideoUrl) {
+      toast.error("Bitte Video-URL angeben");
       return;
     }
 
@@ -203,6 +239,10 @@ export default function AdminBlogManager() {
         meta_description: formMetaDescription || null,
         is_published: formIsPublished,
         published_at: formIsPublished ? new Date().toISOString() : null,
+        content_type: formContentType,
+        video_url: formContentType === "video" ? formVideoUrl : null,
+        category: formCategory,
+        scheduled_at: formScheduledAt ? new Date(formScheduledAt).toISOString() : null,
       };
 
       if (editingPost) {
@@ -212,14 +252,14 @@ export default function AdminBlogManager() {
           .eq("id", editingPost.id);
 
         if (error) throw error;
-        toast.success("Blog-Post aktualisiert");
+        toast.success("Content aktualisiert");
       } else {
         const { error } = await supabase
           .from("blog_posts")
           .insert(postData);
 
         if (error) throw error;
-        toast.success("Blog-Post erstellt");
+        toast.success("Content erstellt");
       }
 
       setDialogOpen(false);
@@ -239,11 +279,12 @@ export default function AdminBlogManager() {
         .update({
           is_published: !post.is_published,
           published_at: !post.is_published ? new Date().toISOString() : null,
+          scheduled_at: !post.is_published ? null : post.scheduled_at, // Clear schedule when publishing
         })
         .eq("id", post.id);
 
       if (error) throw error;
-      toast.success(post.is_published ? "Post deaktiviert" : "Post veröffentlicht");
+      toast.success(post.is_published ? "Content deaktiviert" : "Content veröffentlicht");
       fetchPosts();
     } catch (error: any) {
       console.error("Error toggling publish:", error);
@@ -261,12 +302,39 @@ export default function AdminBlogManager() {
         .eq("id", post.id);
 
       if (error) throw error;
-      toast.success("Blog-Post gelöscht");
+      toast.success("Content gelöscht");
       fetchPosts();
     } catch (error: any) {
       console.error("Error deleting post:", error);
       toast.error("Fehler beim Löschen");
     }
+  };
+
+  const getStatusBadge = (post: BlogPost) => {
+    if (post.is_published) {
+      return (
+        <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+          <Eye className="w-3 h-3 mr-1" />
+          Live
+        </Badge>
+      );
+    }
+    if (post.scheduled_at) {
+      const scheduledDate = new Date(post.scheduled_at);
+      const isPast = scheduledDate < new Date();
+      return (
+        <Badge className={isPast ? "bg-orange-500/10 text-orange-600" : "bg-blue-500/10 text-blue-600"}>
+          <Clock className="w-3 h-3 mr-1" />
+          {isPast ? "Überfällig" : format(scheduledDate, "dd.MM. HH:mm")}
+        </Badge>
+      );
+    }
+    return (
+      <Badge variant="secondary">
+        <EyeOff className="w-3 h-3 mr-1" />
+        Entwurf
+      </Badge>
+    );
   };
 
   if (loading) {
@@ -285,10 +353,10 @@ export default function AdminBlogManager() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="w-5 h-5" />
-                Blog-Verwaltung
+                Content-Verwaltung
               </CardTitle>
               <CardDescription>
-                Erstelle und verwalte Blog-Posts für www.hufmanager.de
+                Blog-Posts und Videos planen, erstellen und verwalten
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -297,24 +365,74 @@ export default function AdminBlogManager() {
               </Button>
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button onClick={openNewDialog} className="gap-2">
+                  <Button onClick={() => openNewDialog()} className="gap-2">
                     <Plus className="w-4 h-4" />
-                    Neuer Post
+                    Neuer Content
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>
-                      {editingPost ? "Post bearbeiten" : "Neuer Blog-Post"}
+                      {editingPost ? "Content bearbeiten" : "Neuer Content"}
                     </DialogTitle>
                     <DialogDescription>
                       {editingPost 
                         ? `Bearbeite "${editingPost.title}"`
-                        : "Erstelle einen neuen Blog-Beitrag für die Webseite"}
+                        : "Erstelle einen neuen Blog-Beitrag oder Video"}
                     </DialogDescription>
                   </DialogHeader>
 
                   <div className="space-y-6 py-4">
+                    {/* Content Type & Category */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label>Content-Typ</Label>
+                        <Select value={formContentType} onValueChange={(v: "blog" | "video") => setFormContentType(v)}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="blog">
+                              <span className="flex items-center gap-2">
+                                <FileText className="w-4 h-4" />
+                                Blog-Post
+                              </span>
+                            </SelectItem>
+                            <SelectItem value="video">
+                              <span className="flex items-center gap-2">
+                                <Video className="w-4 h-4" />
+                                Video
+                              </span>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Kategorie</Label>
+                        <Select value={formCategory} onValueChange={setFormCategory}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {CATEGORIES.map((cat) => (
+                              <SelectItem key={cat.value} value={cat.value}>
+                                {cat.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Geplante Veröffentlichung</Label>
+                        <Input
+                          type="datetime-local"
+                          value={formScheduledAt}
+                          onChange={(e) => setFormScheduledAt(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Title & Slug */}
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Titel *</Label>
@@ -334,28 +452,42 @@ export default function AdminBlogManager() {
                       </div>
                     </div>
 
+                    {/* Video URL (only for video type) */}
+                    {formContentType === "video" && (
+                      <div className="space-y-2">
+                        <Label>Video-URL *</Label>
+                        <Input
+                          value={formVideoUrl}
+                          onChange={(e) => setFormVideoUrl(e.target.value)}
+                          placeholder="https://www.youtube.com/embed/... oder https://vimeo.com/..."
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          YouTube oder Vimeo Embed-URL einfügen
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Excerpt */}
                     <div className="space-y-2">
                       <Label>Kurzbeschreibung (Excerpt)</Label>
-                      <Textarea
+                      <Input
                         value={formExcerpt}
                         onChange={(e) => setFormExcerpt(e.target.value)}
                         placeholder="Eine kurze Zusammenfassung für Vorschau-Karten..."
-                        rows={2}
                       />
                     </div>
 
+                    {/* Rich Text Editor */}
                     <div className="space-y-2">
                       <Label>Inhalt *</Label>
-                      <Textarea
-                        value={formContent}
-                        onChange={(e) => setFormContent(e.target.value)}
-                        placeholder="Der vollständige Blog-Beitrag (HTML wird unterstützt)..."
-                        rows={12}
-                        className="font-mono text-sm"
+                      <RichTextEditor
+                        content={formContent}
+                        onChange={setFormContent}
+                        placeholder="Beginne hier zu schreiben..."
                       />
                     </div>
 
-                    {/* Image Upload Section */}
+                    {/* Featured Image */}
                     <div className="space-y-3">
                       <Label>Featured Image</Label>
                       
@@ -386,10 +518,7 @@ export default function AdminBlogManager() {
                             <>
                               <ImageIcon className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
                               <p className="text-sm text-muted-foreground">
-                                Klicken zum Hochladen oder Bild hierher ziehen
-                              </p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                JPG, PNG, WebP (max. 5MB)
+                                Klicken zum Hochladen
                               </p>
                             </>
                           )}
@@ -415,6 +544,7 @@ export default function AdminBlogManager() {
                       </div>
                     </div>
 
+                    {/* Author */}
                     <div className="space-y-2">
                       <Label>Autor</Label>
                       <Input
@@ -424,39 +554,50 @@ export default function AdminBlogManager() {
                       />
                     </div>
 
+                    {/* SEO Settings */}
                     <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
                       <h4 className="font-medium text-sm">SEO-Einstellungen</h4>
-                      <div className="space-y-2">
-                        <Label>Meta-Titel</Label>
-                        <Input
-                          value={formMetaTitle}
-                          onChange={(e) => setFormMetaTitle(e.target.value)}
-                          placeholder="Titel für Suchmaschinen (max. 60 Zeichen)"
-                          maxLength={60}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Meta-Beschreibung</Label>
-                        <Textarea
-                          value={formMetaDescription}
-                          onChange={(e) => setFormMetaDescription(e.target.value)}
-                          placeholder="Beschreibung für Google (max. 160 Zeichen)"
-                          maxLength={160}
-                          rows={2}
-                        />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Meta-Titel</Label>
+                          <Input
+                            value={formMetaTitle}
+                            onChange={(e) => setFormMetaTitle(e.target.value)}
+                            placeholder="Titel für Suchmaschinen (max. 60)"
+                            maxLength={60}
+                          />
+                          <p className="text-xs text-muted-foreground">{formMetaTitle.length}/60</p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Meta-Beschreibung</Label>
+                          <Input
+                            value={formMetaDescription}
+                            onChange={(e) => setFormMetaDescription(e.target.value)}
+                            placeholder="Beschreibung für Google (max. 160)"
+                            maxLength={160}
+                          />
+                          <p className="text-xs text-muted-foreground">{formMetaDescription.length}/160</p>
+                        </div>
                       </div>
                     </div>
 
+                    {/* Publish Toggle */}
                     <div className="flex items-center justify-between p-4 border rounded-lg">
                       <div>
-                        <Label>Veröffentlichen</Label>
+                        <Label>Sofort veröffentlichen</Label>
                         <p className="text-sm text-muted-foreground">
-                          Post auf www.hufmanager.de sichtbar machen
+                          {formScheduledAt 
+                            ? "Deaktiviert wenn geplante Veröffentlichung gesetzt ist"
+                            : "Content auf www.hufmanager.de sichtbar machen"}
                         </p>
                       </div>
                       <Switch
                         checked={formIsPublished}
-                        onCheckedChange={setFormIsPublished}
+                        onCheckedChange={(checked) => {
+                          setFormIsPublished(checked);
+                          if (checked) setFormScheduledAt(""); // Clear schedule when publishing immediately
+                        }}
+                        disabled={!!formScheduledAt}
                       />
                     </div>
                   </div>
@@ -476,118 +617,143 @@ export default function AdminBlogManager() {
           </div>
         </CardHeader>
         <CardContent>
-          {posts.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>Noch keine Blog-Posts vorhanden</p>
-              <p className="text-sm">Erstelle deinen ersten Beitrag!</p>
-            </div>
-          ) : (
-            <div className="border rounded-lg overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-16">Bild</TableHead>
-                    <TableHead>Titel</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Autor</TableHead>
-                    <TableHead>Erstellt</TableHead>
-                    <TableHead className="text-right">Aktionen</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {posts.map((post) => (
-                    <TableRow key={post.id}>
-                      <TableCell>
-                        {post.featured_image_url ? (
-                          <img
-                            src={post.featured_image_url}
-                            alt=""
-                            className="w-12 h-12 object-cover rounded"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
-                            <ImageIcon className="w-5 h-5 text-muted-foreground" />
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{post.title}</p>
-                          <p className="text-sm text-muted-foreground">
-                            /{post.slug}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {post.is_published ? (
-                          <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
-                            <Eye className="w-3 h-3 mr-1" />
-                            Live
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">
-                            <EyeOff className="w-3 h-3 mr-1" />
-                            Entwurf
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>{post.author_name || "—"}</TableCell>
-                      <TableCell>
-                        {format(new Date(post.created_at), "dd.MM.yyyy", { locale: de })}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleTogglePublish(post)}
-                            title={post.is_published ? "Deaktivieren" : "Veröffentlichen"}
-                          >
-                            {post.is_published ? (
-                              <EyeOff className="w-4 h-4" />
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "calendar" | "list")}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="calendar" className="gap-2">
+                <Calendar className="w-4 h-4" />
+                Kalender
+              </TabsTrigger>
+              <TabsTrigger value="list" className="gap-2">
+                <List className="w-4 h-4" />
+                Liste
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="calendar">
+              <ContentCalendar
+                items={posts}
+                onItemClick={openEditDialog}
+                onDateClick={(date) => openNewDialog(date)}
+              />
+            </TabsContent>
+
+            <TabsContent value="list">
+              {posts.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>Noch kein Content vorhanden</p>
+                  <p className="text-sm">Erstelle deinen ersten Beitrag!</p>
+                </div>
+              ) : (
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">Typ</TableHead>
+                        <TableHead className="w-16">Bild</TableHead>
+                        <TableHead>Titel</TableHead>
+                        <TableHead>Kategorie</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Autor</TableHead>
+                        <TableHead>Erstellt</TableHead>
+                        <TableHead className="text-right">Aktionen</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {posts.map((post) => (
+                        <TableRow key={post.id}>
+                          <TableCell>
+                            {post.content_type === "video" ? (
+                              <Video className="w-4 h-4 text-blue-500" />
                             ) : (
-                              <Eye className="w-4 h-4" />
+                              <FileText className="w-4 h-4 text-muted-foreground" />
                             )}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openEditDialog(post)}
-                          >
-                            <PenSquare className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(post)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                          {post.is_published && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              asChild
-                            >
-                              <a
-                                href={`/blog/${post.slug}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                          </TableCell>
+                          <TableCell>
+                            {post.featured_image_url ? (
+                              <img
+                                src={post.featured_image_url}
+                                alt=""
+                                className="w-12 h-12 object-cover rounded"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
+                                <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{post.title}</p>
+                              <p className="text-sm text-muted-foreground">
+                                /{post.slug}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {CATEGORIES.find((c) => c.value === post.category)?.label || post.category}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{getStatusBadge(post)}</TableCell>
+                          <TableCell>{post.author_name || "—"}</TableCell>
+                          <TableCell>
+                            {format(new Date(post.created_at), "dd.MM.yyyy", { locale: de })}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleTogglePublish(post)}
+                                title={post.is_published ? "Deaktivieren" : "Veröffentlichen"}
                               >
-                                <ExternalLink className="w-4 h-4" />
-                              </a>
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                                {post.is_published ? (
+                                  <EyeOff className="w-4 h-4" />
+                                ) : (
+                                  <Eye className="w-4 h-4" />
+                                )}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openEditDialog(post)}
+                              >
+                                <PenSquare className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDelete(post)}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                              {post.is_published && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  asChild
+                                >
+                                  <a
+                                    href={`/blog/${post.slug}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <ExternalLink className="w-4 h-4" />
+                                  </a>
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
