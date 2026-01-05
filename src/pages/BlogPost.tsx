@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { Calendar, ArrowLeft, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
+import DOMPurify from "dompurify";
 interface BlogPostData {
   id: string;
   slug: string;
@@ -18,6 +18,26 @@ interface BlogPostData {
   created_at: string;
   meta_title: string | null;
   meta_description: string | null;
+}
+
+// Sanitized content component to prevent XSS attacks
+function SanitizedContent({ content }: { content: string }) {
+  const sanitizedContent = useMemo(() => {
+    return DOMPurify.sanitize(content, {
+      ALLOWED_TAGS: ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong', 'em', 'b', 'i', 
+                     'ul', 'ol', 'li', 'a', 'img', 'blockquote', 'code', 'pre', 'br', 
+                     'span', 'div', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'hr'],
+      ALLOWED_ATTR: ['href', 'src', 'alt', 'class', 'target', 'rel', 'title', 'id'],
+      ALLOW_DATA_ATTR: false,
+    });
+  }, [content]);
+
+  return (
+    <div 
+      className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-semibold prose-a:text-primary prose-img:rounded-xl"
+      dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+    />
+  );
 }
 
 export default function BlogPost() {
@@ -175,11 +195,8 @@ export default function BlogPost() {
             {post.title}
           </h1>
 
-          {/* Content */}
-          <div 
-            className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-semibold prose-a:text-primary prose-img:rounded-xl"
-            dangerouslySetInnerHTML={{ __html: post.content }}
-          />
+          {/* Content - sanitized to prevent XSS */}
+          <SanitizedContent content={post.content} />
         </div>
       </article>
 
