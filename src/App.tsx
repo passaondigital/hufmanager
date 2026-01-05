@@ -53,6 +53,7 @@ import ConnectForm from "@/pages/ConnectForm";
 import Netzwerk from "@/pages/Netzwerk";
 import MissionControl from "@/pages/admin/MissionControl";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
+import FeatureUsageOverview from "@/pages/admin/FeatureUsageOverview";
 import SubmitReview from "@/pages/SubmitReview";
 import AboMatrix from "@/pages/AboMatrix";
 import Blog from "@/pages/Blog";
@@ -171,6 +172,13 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/admin/god-mode" element={
               <ProtectedRoute allowedRoles={["admin"]}>
                 <AdminDashboard />
+              </ProtectedRoute>
+            } />
+
+            {/* Feature Usage Overview - Admin */}
+            <Route path="/admin/feature-usage" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <FeatureUsageOverview />
               </ProtectedRoute>
             } />
 
