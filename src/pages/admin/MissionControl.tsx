@@ -41,7 +41,10 @@ import {
   ChevronUp,
   ChevronDown,
   Euro,
-  Trash2
+  Trash2,
+  Building2,
+  Globe,
+  Phone
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -85,6 +88,9 @@ interface ProviderData {
   business_name: string | null;
   phone: string | null;
   address: string | null;
+  subdomain: string | null;
+  about_text: string | null;
+  hero_headline: string | null;
   // Computed data
   base_price: number | null;
   client_count: number;
@@ -158,6 +164,16 @@ export default function MissionControl() {
   const [editAccessValidUntil, setEditAccessValidUntil] = useState<string>("");
   const [editFeatureFlags, setEditFeatureFlags] = useState(DEFAULT_FEATURE_FLAGS);
   const [suspendReason, setSuspendReason] = useState("");
+  
+  // Business settings edit state
+  const [editBusinessName, setEditBusinessName] = useState("");
+  const [editSubdomain, setEditSubdomain] = useState("");
+  const [editAddress, setEditAddress] = useState("");
+  const [editZipCode, setEditZipCode] = useState("");
+  const [editCity, setEditCity] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editAboutText, setEditAboutText] = useState("");
+  const [editHeroHeadline, setEditHeroHeadline] = useState("");
 
   useEffect(() => {
     checkAdminAccess();
@@ -223,7 +239,7 @@ export default function MissionControl() {
       // 3. Fetch business_settings for all providers
       const { data: businessSettings, error: bsError } = await supabase
         .from("business_settings")
-        .select("user_id, address, phone, business_name");
+        .select("user_id, address, phone, business_name, subdomain, about_text, hero_headline");
 
       if (bsError) console.warn("Could not fetch business_settings:", bsError);
 
@@ -337,6 +353,9 @@ export default function MissionControl() {
           business_name: bs?.business_name || null,
           phone: bs?.phone || profile.phone,
           address: bs?.address || null,
+          subdomain: bs?.subdomain || null,
+          about_text: bs?.about_text || null,
+          hero_headline: bs?.hero_headline || null,
           base_price: servicesByProvider.get(profile.id) || null,
           client_count: clientCountMap.get(profile.id)?.size || 0,
           horse_count: horseCountMap.get(profile.id) || 0,
@@ -532,6 +551,15 @@ export default function MissionControl() {
       ...(provider.feature_flags || {}),
     });
     setSuspendReason(provider.suspended_reason || "");
+    // Business settings
+    setEditBusinessName(provider.business_name || "");
+    setEditSubdomain(provider.subdomain || "");
+    setEditAddress(provider.address || "");
+    setEditZipCode(provider.zip_code || "");
+    setEditCity(provider.city || "");
+    setEditPhone(provider.phone || "");
+    setEditAboutText(provider.about_text || "");
+    setEditHeroHeadline(provider.hero_headline || "");
     setEditDialogOpen(true);
   };
 
@@ -540,18 +568,38 @@ export default function MissionControl() {
 
     setSaving(true);
     try {
-      const updateData: Record<string, unknown> = {
+      // Update profile
+      const profileData: Record<string, unknown> = {
         plan_override: editPlanOverride === "standard" ? null : editPlanOverride,
         access_valid_until: editAccessValidUntil ? new Date(editAccessValidUntil).toISOString() : null,
         feature_flags: editFeatureFlags,
+        zip_code: editZipCode || null,
+        city: editCity || null,
+        phone: editPhone || null,
       };
 
-      const { error } = await supabase
+      const { error: profileError } = await supabase
         .from("profiles")
-        .update(updateData)
+        .update(profileData)
         .eq("id", selectedProvider.id);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
+
+      // Update business_settings (upsert)
+      const { error: bsError } = await supabase
+        .from("business_settings")
+        .upsert({
+          user_id: selectedProvider.id,
+          business_name: editBusinessName || null,
+          subdomain: editSubdomain || null,
+          address: editAddress || null,
+          phone: editPhone || null,
+          about_text: editAboutText || null,
+          hero_headline: editHeroHeadline || null,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id" });
+
+      if (bsError) throw bsError;
 
       toast.success("Provider wurde aktualisiert");
       setEditDialogOpen(false);
@@ -1799,11 +1847,119 @@ export default function MissionControl() {
 
             {selectedProvider && (
               <Tabs defaultValue="subscription" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="profile">Profil</TabsTrigger>
                   <TabsTrigger value="subscription">Abo & Plan</TabsTrigger>
                   <TabsTrigger value="features">Features</TabsTrigger>
                   <TabsTrigger value="danger">Sperren</TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="profile" className="space-y-4 mt-4">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Business-Daten und Landingpage-Einstellungen.
+                  </p>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2 col-span-2">
+                      <Label className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4" />
+                        Firmenname
+                      </Label>
+                      <Input
+                        placeholder="z.B. Hufpflege Mustermann"
+                        value={editBusinessName}
+                        onChange={(e) => setEditBusinessName(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2 col-span-2">
+                      <Label className="flex items-center gap-2">
+                        <Globe className="w-4 h-4" />
+                        Subdomain (Landingpage)
+                      </Label>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">hufmanager.de/p/</span>
+                        <Input
+                          placeholder="max-mustermann"
+                          value={editSubdomain}
+                          onChange={(e) => setEditSubdomain(e.target.value)}
+                          className="flex-1"
+                        />
+                      </div>
+                      {editSubdomain && (
+                        <a 
+                          href={`/p/${editSubdomain}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline"
+                        >
+                          Landingpage öffnen →
+                        </a>
+                      )}
+                    </div>
+
+                    <div className="space-y-2 col-span-2">
+                      <Label>Hero-Headline</Label>
+                      <Input
+                        placeholder="z.B. Professionelle Hufpflege in Ihrer Region"
+                        value={editHeroHeadline}
+                        onChange={(e) => setEditHeroHeadline(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>PLZ</Label>
+                      <Input
+                        placeholder="12345"
+                        value={editZipCode}
+                        onChange={(e) => setEditZipCode(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Ort</Label>
+                      <Input
+                        placeholder="Musterstadt"
+                        value={editCity}
+                        onChange={(e) => setEditCity(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2 col-span-2">
+                      <Label className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4" />
+                        Vollständige Adresse
+                      </Label>
+                      <Input
+                        placeholder="Musterstraße 1, 12345 Musterstadt"
+                        value={editAddress}
+                        onChange={(e) => setEditAddress(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2 col-span-2">
+                      <Label className="flex items-center gap-2">
+                        <Phone className="w-4 h-4" />
+                        Telefon
+                      </Label>
+                      <Input
+                        placeholder="+49 123 456789"
+                        value={editPhone}
+                        onChange={(e) => setEditPhone(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2 col-span-2">
+                      <Label>Über-Text (Landingpage)</Label>
+                      <textarea
+                        className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        placeholder="Beschreibung für die Landingpage..."
+                        value={editAboutText}
+                        onChange={(e) => setEditAboutText(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </TabsContent>
 
                 <TabsContent value="subscription" className="space-y-4 mt-4">
                   <div className="space-y-2">
