@@ -36,10 +36,11 @@ export function SubscriptionCard() {
     const fetchPortalUrl = async () => {
       if (!user?.id) return;
       
+      // Fetch from the new secure provider_portal_credentials table
       const { data } = await supabase
-        .from("business_settings")
+        .from("provider_portal_credentials")
         .select("copecart_customer_portal_url")
-        .eq("user_id", user.id)
+        .eq("provider_id", user.id)
         .maybeSingle();
       
       if (data?.copecart_customer_portal_url) {
@@ -55,23 +56,18 @@ export function SubscriptionCard() {
     
     setSaving(true);
     try {
-      const { data: existing } = await supabase
-        .from("business_settings")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      // Use upsert to handle both insert and update
+      const { error } = await supabase
+        .from("provider_portal_credentials")
+        .upsert({ 
+          provider_id: user.id, 
+          copecart_customer_portal_url: portalUrl,
+          updated_at: new Date().toISOString()
+        }, { 
+          onConflict: 'provider_id' 
+        });
 
-      if (existing) {
-        await supabase
-          .from("business_settings")
-          .update({ copecart_customer_portal_url: portalUrl })
-          .eq("user_id", user.id);
-      } else {
-        await supabase
-          .from("business_settings")
-          .insert({ user_id: user.id, copecart_customer_portal_url: portalUrl });
-      }
-
+      if (error) throw error;
       toast.success("Portal-URL gespeichert");
     } catch (error) {
       console.error("Error saving portal URL:", error);

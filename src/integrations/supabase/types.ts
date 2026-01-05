@@ -1398,6 +1398,35 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_portal_credentials: {
+        Row: {
+          copecart_customer_portal_url: string | null
+          created_at: string
+          provider_id: string
+          updated_at: string
+        }
+        Insert: {
+          copecart_customer_portal_url?: string | null
+          created_at?: string
+          provider_id: string
+          updated_at?: string
+        }
+        Update: {
+          copecart_customer_portal_url?: string | null
+          created_at?: string
+          provider_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_portal_credentials_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       push_subscriptions: {
         Row: {
           auth: string
