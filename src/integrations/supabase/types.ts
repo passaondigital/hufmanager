@@ -325,7 +325,9 @@ export type Database = {
       blog_posts: {
         Row: {
           author_name: string | null
+          category: string | null
           content: string
+          content_type: string | null
           created_at: string
           excerpt: string | null
           featured_image_url: string | null
@@ -334,13 +336,17 @@ export type Database = {
           meta_description: string | null
           meta_title: string | null
           published_at: string | null
+          scheduled_at: string | null
           slug: string
           title: string
           updated_at: string
+          video_url: string | null
         }
         Insert: {
           author_name?: string | null
+          category?: string | null
           content: string
+          content_type?: string | null
           created_at?: string
           excerpt?: string | null
           featured_image_url?: string | null
@@ -349,13 +355,17 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           published_at?: string | null
+          scheduled_at?: string | null
           slug: string
           title: string
           updated_at?: string
+          video_url?: string | null
         }
         Update: {
           author_name?: string | null
+          category?: string | null
           content?: string
+          content_type?: string | null
           created_at?: string
           excerpt?: string | null
           featured_image_url?: string | null
@@ -364,9 +374,11 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           published_at?: string | null
+          scheduled_at?: string | null
           slug?: string
           title?: string
           updated_at?: string
+          video_url?: string | null
         }
         Relationships: []
       }
