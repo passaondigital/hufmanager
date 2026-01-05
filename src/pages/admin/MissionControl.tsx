@@ -146,6 +146,13 @@ export default function MissionControl() {
   const [newUserPhone, setNewUserPhone] = useState("");
   const [newUserBusinessName, setNewUserBusinessName] = useState("");
   const [newUserFeatureFlags, setNewUserFeatureFlags] = useState(DEFAULT_FEATURE_FLAGS);
+  // Initial services for new provider
+  const [newUserServices, setNewUserServices] = useState([
+    { name: "Barhufbearbeitung", price: 45, enabled: true },
+    { name: "Hufkorrektur", price: 55, enabled: false },
+    { name: "Erstberatung", price: 0, enabled: false },
+    { name: "Rehebeschlag", price: 120, enabled: false },
+  ]);
   // Create Client form
   const [createClientDialogOpen, setCreateClientDialogOpen] = useState(false);
   const [creatingClient, setCreatingClient] = useState(false);
@@ -464,6 +471,11 @@ export default function MissionControl() {
         }
       }
 
+      // Get enabled services
+      const enabledServices = newUserServices
+        .filter(s => s.enabled)
+        .map(s => ({ name: s.name, price: s.price }));
+
       const { data, error } = await supabase.functions.invoke("admin-create-user", {
         body: {
           email: newUserEmail,
@@ -476,6 +488,7 @@ export default function MissionControl() {
           phone: newUserPhone || null,
           businessName: newUserBusinessName || null,
           featureFlags: newUserFeatureFlags,
+          initialServices: enabledServices.length > 0 ? enabledServices : null,
         },
       });
 
@@ -495,6 +508,12 @@ export default function MissionControl() {
       setNewUserPhone("");
       setNewUserBusinessName("");
       setNewUserFeatureFlags(DEFAULT_FEATURE_FLAGS);
+      setNewUserServices([
+        { name: "Barhufbearbeitung", price: 45, enabled: true },
+        { name: "Hufkorrektur", price: 55, enabled: false },
+        { name: "Erstberatung", price: 0, enabled: false },
+        { name: "Rehebeschlag", price: 120, enabled: false },
+      ]);
       fetchProviders();
     } catch (error: any) {
       console.error("Error creating user:", error);
@@ -1097,6 +1116,45 @@ export default function MissionControl() {
                               }
                             />
                           </div>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* Initial Services */}
+                      <div className="space-y-4">
+                        <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Initiale Services</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Wähle aus, welche Standard-Services mit Preisen angelegt werden sollen.
+                        </p>
+                        <div className="space-y-3">
+                          {newUserServices.map((service, index) => (
+                            <div key={service.name} className="flex items-center gap-3 p-3 border rounded-lg">
+                              <Switch
+                                checked={service.enabled}
+                                onCheckedChange={(checked) => {
+                                  const updated = [...newUserServices];
+                                  updated[index].enabled = checked;
+                                  setNewUserServices(updated);
+                                }}
+                              />
+                              <span className="flex-1 text-sm font-medium">{service.name}</span>
+                              <div className="flex items-center gap-1">
+                                <Input
+                                  type="number"
+                                  value={service.price}
+                                  onChange={(e) => {
+                                    const updated = [...newUserServices];
+                                    updated[index].price = parseFloat(e.target.value) || 0;
+                                    setNewUserServices(updated);
+                                  }}
+                                  className="w-20 text-right"
+                                  disabled={!service.enabled}
+                                />
+                                <span className="text-sm text-muted-foreground">€</span>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>

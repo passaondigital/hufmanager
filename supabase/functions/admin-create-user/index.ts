@@ -6,6 +6,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface InitialService {
+  name: string;
+  price: number;
+}
+
 interface CreateUserRequest {
   email: string;
   firstName: string;
@@ -22,6 +27,7 @@ interface CreateUserRequest {
     module_maps?: boolean;
     beta_features?: boolean;
   } | null;
+  initialServices?: InitialService[] | null;
 }
 
 serve(async (req: Request) => {
@@ -92,7 +98,8 @@ serve(async (req: Request) => {
       city,
       phone,
       businessName,
-      featureFlags
+      featureFlags,
+      initialServices
     }: CreateUserRequest = await req.json();
     
     // Validate input
@@ -186,6 +193,29 @@ serve(async (req: Request) => {
 
       if (bsError) {
         console.error("Error creating business_settings:", bsError);
+      }
+    }
+
+    // Create initial services if provided
+    if (initialServices && initialServices.length > 0) {
+      const servicesToInsert = initialServices.map(service => ({
+        provider_id: userId,
+        name: service.name,
+        base_price: service.price,
+        category: "Hufbearbeitung",
+        billing_type: "standard",
+        is_active: true,
+        booking_action: "contact",
+      }));
+
+      const { error: servicesError } = await supabaseAdmin
+        .from("services")
+        .insert(servicesToInsert);
+
+      if (servicesError) {
+        console.error("Error creating services:", servicesError);
+      } else {
+        console.log(`Created ${servicesToInsert.length} services for provider ${userId}`);
       }
     }
 

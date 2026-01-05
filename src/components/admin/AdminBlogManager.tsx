@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +19,10 @@ import {
   Loader2,
   FileText,
   ExternalLink,
-  RefreshCw
+  RefreshCw,
+  Upload,
+  Image as ImageIcon,
+  X
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -44,8 +47,10 @@ export default function AdminBlogManager() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
   const [formTitle, setFormTitle] = useState("");
@@ -96,6 +101,59 @@ export default function AdminBlogManager() {
     if (!editingPost) {
       setFormSlug(generateSlug(title));
     }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Bitte nur Bilder hochladen");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Bild darf maximal 5MB groß sein");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      // Generate unique filename
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `blog/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from("blog-images")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("blog-images")
+        .getPublicUrl(filePath);
+
+      setFormImageUrl(urlData.publicUrl);
+      toast.success("Bild hochgeladen");
+    } catch (error: any) {
+      console.error("Error uploading image:", error);
+      toast.error(error.message || "Fehler beim Hochladen");
+    } finally {
+      setUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setFormImageUrl("");
   };
 
   const openNewDialog = () => {
@@ -291,29 +349,79 @@ export default function AdminBlogManager() {
                       <Textarea
                         value={formContent}
                         onChange={(e) => setFormContent(e.target.value)}
-                        placeholder="Der vollständige Blog-Beitrag (Markdown wird unterstützt)..."
+                        placeholder="Der vollständige Blog-Beitrag (HTML wird unterstützt)..."
                         rows={12}
                         className="font-mono text-sm"
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Bild-URL</Label>
+                    {/* Image Upload Section */}
+                    <div className="space-y-3">
+                      <Label>Featured Image</Label>
+                      
+                      {formImageUrl ? (
+                        <div className="relative">
+                          <img
+                            src={formImageUrl}
+                            alt="Featured"
+                            className="w-full h-48 object-cover rounded-lg border"
+                          />
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-2 right-2"
+                            onClick={handleRemoveImage}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div 
+                          className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          {uploading ? (
+                            <Loader2 className="w-8 h-8 mx-auto animate-spin text-muted-foreground" />
+                          ) : (
+                            <>
+                              <ImageIcon className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                              <p className="text-sm text-muted-foreground">
+                                Klicken zum Hochladen oder Bild hierher ziehen
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                JPG, PNG, WebP (max. 5MB)
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      )}
+                      
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleImageUpload}
+                      />
+                      
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">oder</span>
                         <Input
                           value={formImageUrl}
                           onChange={(e) => setFormImageUrl(e.target.value)}
-                          placeholder="https://..."
+                          placeholder="https://... (externe Bild-URL)"
+                          className="flex-1"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label>Autor</Label>
-                        <Input
-                          value={formAuthor}
-                          onChange={(e) => setFormAuthor(e.target.value)}
-                          placeholder="HufManager Team"
-                        />
-                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Autor</Label>
+                      <Input
+                        value={formAuthor}
+                        onChange={(e) => setFormAuthor(e.target.value)}
+                        placeholder="HufManager Team"
+                      />
                     </div>
 
                     <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
@@ -379,6 +487,7 @@ export default function AdminBlogManager() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-16">Bild</TableHead>
                     <TableHead>Titel</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Autor</TableHead>
@@ -389,6 +498,19 @@ export default function AdminBlogManager() {
                 <TableBody>
                   {posts.map((post) => (
                     <TableRow key={post.id}>
+                      <TableCell>
+                        {post.featured_image_url ? (
+                          <img
+                            src={post.featured_image_url}
+                            alt=""
+                            className="w-12 h-12 object-cover rounded"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
+                            <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <div>
                           <p className="font-medium">{post.title}</p>
@@ -450,7 +572,7 @@ export default function AdminBlogManager() {
                               asChild
                             >
                               <a
-                                href={`https://www.hufmanager.de/blog/${post.slug}`}
+                                href={`/blog/${post.slug}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                               >
