@@ -55,6 +55,8 @@ import MissionControl from "@/pages/admin/MissionControl";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import SubmitReview from "@/pages/SubmitReview";
 import AboMatrix from "@/pages/AboMatrix";
+import Blog from "@/pages/Blog";
+import BlogPost from "@/pages/BlogPost";
 
 // Components
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
@@ -153,6 +155,10 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             {/* Öffentliche Review-Seite */}
             <Route path="/submit-review" element={<SubmitReview />} />
             <Route path="/bewertung/:providerId" element={<SubmitReview />} />
+            
+            {/* Öffentliche Blog-Seiten */}
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
             
             {/* Admin Mission Control - nur für Admins */}
             <Route path="/admin/mission-control" element={
