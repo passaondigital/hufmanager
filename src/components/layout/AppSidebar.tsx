@@ -56,21 +56,37 @@ function useNewLeadsCount() {
   });
 }
 
-const baseMainItems = [
+type FeatureFlagKey = "module_invoicing" | "module_chat" | "module_maps" | "module_academy" | "module_hufanalyse" | "module_network" | "module_analytics" | "beta_features";
+
+interface MainNavItem {
+  title: string;
+  url: string;
+  icon: React.ComponentType<{ className?: string }>;
+  module: FeatureFlagKey | null;
+}
+
+const baseMainItems: MainNavItem[] = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, module: null },
   { title: "Kalender", url: "/kalender", icon: Calendar, module: null },
   { title: "Kunden", url: "/kunden", icon: Users, module: null },
-  { title: "Netzwerk", url: "/netzwerk", icon: Briefcase, module: null },
+  { title: "Netzwerk", url: "/netzwerk", icon: Briefcase, module: "module_network" },
   { title: "Services", url: "/services", icon: Scissors, module: null },
-  { title: "Rechnungen", url: "/rechnungen", icon: FileText, module: "module_invoicing" as const },
-  { title: "Hufanalyse", url: "/hufanalyse", icon: ClipboardList, module: null },
-  { title: "Chat", url: "/chat", icon: MessagesSquare, module: "module_chat" as const },
+  { title: "Rechnungen", url: "/rechnungen", icon: FileText, module: "module_invoicing" },
+  { title: "Hufanalyse", url: "/hufanalyse", icon: ClipboardList, module: "module_hufanalyse" },
+  { title: "Chat", url: "/chat", icon: MessagesSquare, module: "module_chat" },
 ];
 
-const bottomItems = [
-  { title: "Academy", url: "/academy", icon: GraduationCap },
-  { title: "Geld verdienen", url: "/partner", icon: Gift },
-  { title: "Management", url: "/management", icon: Settings },
+interface BottomNavItem {
+  title: string;
+  url: string;
+  icon: React.ComponentType<{ className?: string }>;
+  module: FeatureFlagKey | null;
+}
+
+const bottomItems: BottomNavItem[] = [
+  { title: "Academy", url: "/academy", icon: GraduationCap, module: "module_academy" },
+  { title: "Geld verdienen", url: "/partner", icon: Gift, module: null },
+  { title: "Management", url: "/management", icon: Settings, module: null },
 ];
 
 interface AppSidebarProps {
@@ -249,7 +265,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
           </NavLink>
         )}
         
-        {bottomItems.map((item) => (
+        {bottomItems.filter(item => item.module === null || hasModuleAccess(item.module)).map((item) => (
           <NavItem key={item.title} item={item} showBadge={false} />
         ))}
         

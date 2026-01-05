@@ -932,6 +932,19 @@ export default function MissionControl() {
             </TabsTrigger>
           </TabsList>
 
+          {/* Quick Link to Feature Usage */}
+          <div className="ml-auto">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate("/admin/feature-usage")}
+              className="gap-2"
+            >
+              <BarChart3 className="w-4 h-4" />
+              Feature-Nutzung
+            </Button>
+          </div>
+
           <TabsContent value="providers" className="space-y-4">
             {/* Action Bar */}
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
