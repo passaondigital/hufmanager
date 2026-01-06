@@ -1,36 +1,51 @@
+import { useState, useMemo } from "react";
 import { Star, Quote, MessageSquare } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ReviewReactions } from "./ReviewReactions";
-import { ProofImageAttachment } from "./ProofImageOverlay";
+import { ReviewsGrid, ReviewsCarousel, ReviewsMarquee, ReviewFilterPills, Review } from "./reviews";
 
-interface Review {
-  id: string;
-  reviewer_name: string;
-  rating: number;
-  text: string | null;
-  created_at: string;
-  source?: string;
-  proof_image_url?: string;
-  reactions?: { green: number; yellow: number; red: number };
-}
+export type ReviewsLayout = "grid" | "carousel" | "marquee";
 
 interface ReviewsSectionProps {
   reviews: Review[];
   primaryColor?: string;
+  layout?: ReviewsLayout;
 }
 
-const sourceLabels: Record<string, string> = {
-  App: "App",
-  WhatsApp: "WhatsApp",
-  Google: "Google",
-  Email: "E-Mail",
-};
+export const ReviewsSection = ({
+  reviews,
+  primaryColor = "#F47B20",
+  layout = "grid",
+}: ReviewsSectionProps) => {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-export const ReviewsSection = ({ reviews, primaryColor = "#F47B20" }: ReviewsSectionProps) => {
+  // Get available categories from reviews
+  const availableCategories = useMemo(() => {
+    const categories = reviews
+      .map((r) => r.category)
+      .filter((c): c is string => !!c);
+    return [...new Set(categories)];
+  }, [reviews]);
+
+  // Filter reviews by selected category
+  const filteredReviews = useMemo(() => {
+    if (!selectedCategory) return reviews;
+    return reviews.filter((r) => r.category === selectedCategory);
+  }, [reviews, selectedCategory]);
+
   if (!reviews || reviews.length === 0) return null;
 
   const averageRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+
+  const renderLayout = () => {
+    switch (layout) {
+      case "carousel":
+        return <ReviewsCarousel reviews={filteredReviews} primaryColor={primaryColor} />;
+      case "marquee":
+        return <ReviewsMarquee reviews={filteredReviews} primaryColor={primaryColor} />;
+      case "grid":
+      default:
+        return <ReviewsGrid reviews={filteredReviews} primaryColor={primaryColor} />;
+    }
+  };
 
   return (
     <section className="py-16 px-4">
@@ -59,64 +74,33 @@ export const ReviewsSection = ({ reviews, primaryColor = "#F47B20" }: ReviewsSec
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {reviews.map((review) => (
-            <Card key={review.id} className="bg-muted/20 hover:bg-muted/30 transition-colors">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className="h-4 w-4"
-                        fill={star <= review.rating ? primaryColor : 'transparent'}
-                        stroke={star <= review.rating ? primaryColor : 'currentColor'}
-                      />
-                    ))}
-                  </div>
-                  {review.source && (
-                    <Badge variant="outline" className="text-xs">
-                      {sourceLabels[review.source] || review.source}
-                    </Badge>
-                  )}
-                </div>
-                
-                {review.text && review.text.trim().length > 0 && (
-                  <p className="text-muted-foreground italic mb-4">"{review.text}"</p>
-                )}
-                
-                <div className="flex items-center justify-between">
-                  <p className="font-medium text-foreground">{review.reviewer_name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(review.created_at).toLocaleDateString('de-DE', {
-                      month: 'short',
-                      year: 'numeric'
-                    })}
-                  </p>
-                </div>
-                
-                {/* Reactions */}
-                <ReviewReactions
-                  reviewId={review.id}
-                  reactions={review.reactions || { green: 0, yellow: 0, red: 0 }}
-                />
-                
-                {/* Proof Image Attachment - inside the card */}
-                {review.proof_image_url && (
-                  <ProofImageAttachment proofImageUrl={review.proof_image_url} />
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {/* Filter pills - only show if there are categories */}
+        {availableCategories.length > 0 && (
+          <ReviewFilterPills
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            availableCategories={availableCategories}
+          />
+        )}
 
-        {/* Engagement hint */}
-        <div className="text-center mt-8">
-          <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
-            <MessageSquare className="h-4 w-4" />
-            Klicke auf die Reaktionen, um deine Meinung zu teilen
+        {/* Render based on layout */}
+        {filteredReviews.length > 0 ? (
+          renderLayout()
+        ) : (
+          <p className="text-center text-muted-foreground py-8">
+            Keine Bewertungen in dieser Kategorie.
           </p>
-        </div>
+        )}
+
+        {/* Engagement hint - only for grid layout */}
+        {layout === "grid" && (
+          <div className="text-center mt-8">
+            <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Klicke auf die Reaktionen, um deine Meinung zu teilen
+            </p>
+          </div>
+        )}
       </div>
     </section>
   );

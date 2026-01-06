@@ -32,6 +32,7 @@ interface BusinessSettings {
   client_intake_status: IntakeStatus | null;
   gallery_images: { url: string; caption?: string }[] | null;
   subdomain: string | null;
+  reviews_layout: 'grid' | 'carousel' | 'marquee' | null;
 }
 
 interface Service {
@@ -72,6 +73,7 @@ interface Review {
   proof_image_url?: string;
   is_visible?: boolean;
   reactions?: { green: number; yellow: number; red: number };
+  category?: string;
 }
 
 interface GalleryImage {
@@ -168,7 +170,7 @@ const ProviderLanding = () => {
         // Fetch approved and visible reviews with new fields
         const { data: reviewsData } = await supabase
           .from('reviews')
-          .select('id, reviewer_name, rating, text, created_at, source, proof_image_url, reactions')
+          .select('id, reviewer_name, rating, text, created_at, source, proof_image_url, reactions, category')
           .eq('provider_id', typedBusinessData.user_id)
           .eq('is_approved', true)
           .eq('is_visible', true)
@@ -410,7 +412,11 @@ const ProviderLanding = () => {
 
       {/* Reviews Section (from reviews table) */}
       {reviews.length > 0 && (
-        <ReviewsSection reviews={reviews} primaryColor={primaryColor} />
+        <ReviewsSection 
+          reviews={reviews} 
+          primaryColor={primaryColor}
+          layout={settings.reviews_layout || 'grid'}
+        />
       )}
 
       {/* Legacy Testimonials Section (from feedbacks table) */}
