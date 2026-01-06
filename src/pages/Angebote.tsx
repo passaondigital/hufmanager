@@ -552,28 +552,29 @@ const Angebote = () => {
       <OfferPreviewPanel offers={offers} />
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
-          <DialogHeader>
+        <DialogContent className="max-w-[95vw] sm:max-w-4xl md:max-w-5xl h-[90vh] sm:h-auto sm:max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>{editingOffer ? "Angebot bearbeiten" : "Neues Angebot"}</DialogTitle>
             <DialogDescription>
               {editingOffer ? "Bearbeiten Sie die Angebot-Details und das Rezept" : "Erstellen Sie ein neues Angebot"}
             </DialogDescription>
           </DialogHeader>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="details" className="gap-2">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+            <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
+              <TabsTrigger value="details" className="gap-2 text-sm">
                 <Package className="h-4 w-4" />
-                Details
+                <span className="hidden sm:inline">Details</span>
               </TabsTrigger>
-              <TabsTrigger value="recipe" className="gap-2" disabled={!editingOffer}>
+              <TabsTrigger value="recipe" className="gap-2 text-sm" disabled={!editingOffer}>
                 <Calculator className="h-4 w-4" />
-                Kalkulation & Material
+                <span className="hidden sm:inline">Kalkulation & Material</span>
+                <span className="sm:hidden">Kalkulation</span>
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="details" className="mt-4">
-              <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
+            <TabsContent value="details" className="mt-4 flex-1 overflow-hidden">
+              <div className="space-y-4 h-full overflow-y-auto pr-2 pb-4 [&_input]:text-base [&_textarea]:text-base [&_select]:text-base">
                 <div className="space-y-2">
                   <Label>Titel *</Label>
                   <Input
@@ -751,8 +752,8 @@ const Angebote = () => {
               </div>
             </TabsContent>
 
-            <TabsContent value="recipe" className="mt-4">
-              <div className="max-h-[50vh] overflow-y-auto pr-2">
+            <TabsContent value="recipe" className="mt-4 flex-1 overflow-hidden">
+              <div className="h-full overflow-y-auto pr-2 pb-4">
                 <OfferRecipeEditor
                   offerId={editingOffer?.id || null}
                   offerPrice={Number(formData.price) || null}
@@ -769,7 +770,7 @@ const Angebote = () => {
             </TabsContent>
           </Tabs>
 
-          <DialogFooter className="mt-4">
+          <DialogFooter className="mt-4 flex-shrink-0 pt-4 border-t sticky bottom-0 bg-background">
             <Button variant="outline" onClick={closeDialog}>
               Abbrechen
             </Button>

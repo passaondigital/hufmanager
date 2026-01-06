@@ -480,12 +480,13 @@ export function CreateInvoiceModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl md:max-w-3xl h-[90vh] sm:h-auto sm:max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Neue Rechnung erstellen</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto space-y-4 pr-2 pb-4 [&_input]:text-base [&_textarea]:text-base [&_select]:text-base">
           <div className="space-y-2">
             <Label htmlFor="client_id">Kunde *</Label>
             <Select
@@ -825,19 +826,20 @@ export function CreateInvoiceModal({
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notizen</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              placeholder="Optionale Notizen..."
-              maxLength={1000}
-              rows={3}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notizen</Label>
+              <Textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Optionale Notizen..."
+                maxLength={1000}
+                rows={3}
+              />
+            </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex justify-end gap-3 pt-4 flex-shrink-0 border-t mt-4 sticky bottom-0 bg-background">
             <Button type="button" variant="outline" onClick={onClose}>
               Abbrechen
             </Button>
