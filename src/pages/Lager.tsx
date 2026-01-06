@@ -40,6 +40,8 @@ import {
   ShoppingCart,
   Warehouse,
   AlertTriangle,
+  Printer,
+  ClipboardList,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
@@ -277,6 +279,15 @@ export default function Lager() {
             <ShoppingCart className="h-4 w-4" />
             Produktkatalog ({catalogProducts.length})
           </TabsTrigger>
+          <TabsTrigger value="shopping-list" className="gap-2 relative">
+            <ClipboardList className="h-4 w-4" />
+            Einkaufsliste
+            {lowStockItems.length > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1.5 text-xs">
+                {lowStockItems.length}
+              </Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
 
         {/* My Inventory Tab */}
@@ -502,6 +513,156 @@ export default function Lager() {
                     );
                   })}
                 </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Shopping List Tab */}
+        <TabsContent value="shopping-list">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5" />
+                  Einkaufsliste
+                </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Produkte unter Mindestbestand – jetzt nachbestellen
+                </p>
+              </div>
+              {lowStockItems.length > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const printWindow = window.open('', '_blank');
+                    if (!printWindow) {
+                      toast.error("Popup-Blocker aktiv – bitte erlauben");
+                      return;
+                    }
+                    const tableHtml = `
+                      <!DOCTYPE html>
+                      <html>
+                      <head>
+                        <title>Einkaufsliste</title>
+                        <style>
+                          body { font-family: system-ui, sans-serif; padding: 20px; }
+                          h1 { font-size: 24px; margin-bottom: 8px; }
+                          p { color: #666; margin-bottom: 20px; }
+                          table { width: 100%; border-collapse: collapse; }
+                          th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }
+                          th { background: #f5f5f5; font-weight: 600; }
+                          .text-right { text-align: right; }
+                          .text-center { text-align: center; }
+                          .missing { color: #dc2626; font-weight: 600; }
+                          .low { color: #dc2626; }
+                          @media print { button { display: none; } }
+                        </style>
+                      </head>
+                      <body>
+                        <h1>📋 Einkaufsliste</h1>
+                        <p>Generiert am ${new Date().toLocaleDateString('de-DE')} um ${new Date().toLocaleTimeString('de-DE')}</p>
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Produkt</th>
+                              <th>Marke</th>
+                              <th class="text-center">Bestand</th>
+                              <th class="text-center">Mindest</th>
+                              <th class="text-center">Fehlt</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            ${lowStockItems.map(item => `
+                              <tr>
+                                <td>${item.product_name}</td>
+                                <td>${item.brand || '-'}</td>
+                                <td class="text-center low">${item.current_stock}</td>
+                                <td class="text-center">${item.min_stock}</td>
+                                <td class="text-center missing">+${(item.min_stock || 0) - item.current_stock}</td>
+                              </tr>
+                            `).join('')}
+                          </tbody>
+                        </table>
+                        <script>window.onload = () => window.print();</script>
+                      </body>
+                      </html>
+                    `;
+                    printWindow.document.write(tableHtml);
+                    printWindow.document.close();
+                  }}
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  Liste drucken / PDF
+                </Button>
+              )}
+            </CardHeader>
+            <CardContent>
+              {lowStockItems.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <ClipboardList className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg font-medium">Alles auf Lager!</p>
+                  <p className="text-sm mt-1">
+                    Keine Produkte unter Mindestbestand
+                  </p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-16">Bild</TableHead>
+                      <TableHead>Produkt</TableHead>
+                      <TableHead>Marke</TableHead>
+                      <TableHead className="text-center">Bestand</TableHead>
+                      <TableHead className="text-center">Mindest</TableHead>
+                      <TableHead className="text-center">Fehlt</TableHead>
+                      <TableHead className="text-right">Aktion</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {lowStockItems.map((item) => {
+                      const missing = (item.min_stock || 0) - item.current_stock;
+                      return (
+                        <TableRow key={item.id}>
+                          <TableCell>
+                            {item.image_url ? (
+                              <img
+                                src={item.image_url}
+                                alt={item.product_name}
+                                className="w-10 h-10 object-cover rounded"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
+                                <Package className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="font-medium">{item.product_name}</TableCell>
+                          <TableCell>{item.brand || "-"}</TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="destructive">{item.current_stock}</Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline">{item.min_stock}</Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className="font-semibold text-destructive">+{missing}</span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditItem(item)}
+                            >
+                              <Pencil className="h-4 w-4 mr-1" />
+                              Bestand korrigieren
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
               )}
             </CardContent>
           </Card>
