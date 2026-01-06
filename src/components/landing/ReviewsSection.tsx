@@ -60,9 +60,9 @@ export const ReviewsSection = ({ reviews, primaryColor = "#F47B20" }: ReviewsSec
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
-          {reviews.map((review) => {
-            const reviewContent = (
-              <Card key={review.id} className="bg-muted/20 hover:bg-muted/30 transition-colors">
+          {reviews.map((review) => (
+            <div key={review.id} className="flex flex-col">
+              <Card className="bg-muted/20 hover:bg-muted/30 transition-colors flex-1">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-1">
@@ -103,23 +103,18 @@ export const ReviewsSection = ({ reviews, primaryColor = "#F47B20" }: ReviewsSec
                   />
                 </CardContent>
               </Card>
-            );
-
-            // Wrap with proof overlay if proof image exists
-            if (review.proof_image_url) {
-              return (
+              
+              {/* Proof Image Thumbnail */}
+              {review.proof_image_url && (
                 <ProofImageOverlay
-                  key={review.id}
                   proofImageUrl={review.proof_image_url}
                   source={review.source || 'App'}
                 >
-                  {reviewContent}
+                  <span className="sr-only">Bewertungsnachweis</span>
                 </ProofImageOverlay>
-              );
-            }
-
-            return reviewContent;
-          })}
+              )}
+            </div>
+          ))}
         </div>
 
         {/* Engagement hint */}
