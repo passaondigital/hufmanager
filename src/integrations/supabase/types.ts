@@ -1044,6 +1044,7 @@ export type Database = {
           image_url: string | null
           min_stock: number | null
           notes: string | null
+          price_purchase: number | null
           price_sell: number | null
           product_name: string
           tax_rate: number | null
@@ -1060,6 +1061,7 @@ export type Database = {
           image_url?: string | null
           min_stock?: number | null
           notes?: string | null
+          price_purchase?: number | null
           price_sell?: number | null
           product_name: string
           tax_rate?: number | null
@@ -1076,6 +1078,7 @@ export type Database = {
           image_url?: string | null
           min_stock?: number | null
           notes?: string | null
+          price_purchase?: number | null
           price_sell?: number | null
           product_name?: string
           tax_rate?: number | null
@@ -1391,12 +1394,56 @@ export type Database = {
         }
         Relationships: []
       }
+      offer_materials: {
+        Row: {
+          created_at: string
+          id: string
+          inventory_item_id: string
+          offer_id: string
+          quantity: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inventory_item_id: string
+          offer_id: string
+          quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inventory_item_id?: string
+          offer_id?: string
+          quantity?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_materials_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_materials_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       offers: {
         Row: {
+          auto_deduct: boolean | null
           billing_type: string | null
           created_at: string
           description: string | null
           display_mode: string | null
+          duration_minutes: number | null
           external_link: string | null
           features: string[] | null
           id: string
@@ -1407,15 +1454,18 @@ export type Database = {
           price: number | null
           price_type: string | null
           provider_id: string | null
+          recommended_tags: string[] | null
           sort_order: number | null
           title: string
           updated_at: string
         }
         Insert: {
+          auto_deduct?: boolean | null
           billing_type?: string | null
           created_at?: string
           description?: string | null
           display_mode?: string | null
+          duration_minutes?: number | null
           external_link?: string | null
           features?: string[] | null
           id?: string
@@ -1426,15 +1476,18 @@ export type Database = {
           price?: number | null
           price_type?: string | null
           provider_id?: string | null
+          recommended_tags?: string[] | null
           sort_order?: number | null
           title: string
           updated_at?: string
         }
         Update: {
+          auto_deduct?: boolean | null
           billing_type?: string | null
           created_at?: string
           description?: string | null
           display_mode?: string | null
+          duration_minutes?: number | null
           external_link?: string | null
           features?: string[] | null
           id?: string
@@ -1445,6 +1498,7 @@ export type Database = {
           price?: number | null
           price_type?: string | null
           provider_id?: string | null
+          recommended_tags?: string[] | null
           sort_order?: number | null
           title?: string
           updated_at?: string

@@ -63,6 +63,7 @@ interface InventoryItem {
   image_url: string | null;
   current_stock: number;
   price_sell: number | null;
+  price_purchase: number | null;
   tax_rate: number | null;
   notes: string | null;
   min_stock: number | null;
@@ -80,6 +81,7 @@ export default function Lager() {
   const [editFormData, setEditFormData] = useState({
     current_stock: 0,
     price_sell: "",
+    price_purchase: "",
     tax_rate: "19",
     min_stock: 0,
     notes: "",
@@ -190,6 +192,7 @@ export default function Lager() {
     setEditFormData({
       current_stock: item.current_stock,
       price_sell: item.price_sell?.toString() || "",
+      price_purchase: item.price_purchase?.toString() || "",
       tax_rate: item.tax_rate?.toString() || "19",
       min_stock: item.min_stock || 0,
       notes: item.notes || "",
@@ -205,6 +208,7 @@ export default function Lager() {
       updates: {
         current_stock: editFormData.current_stock,
         price_sell: editFormData.price_sell ? parseFloat(editFormData.price_sell) : null,
+        price_purchase: editFormData.price_purchase ? parseFloat(editFormData.price_purchase) : null,
         tax_rate: parseFloat(editFormData.tax_rate),
         min_stock: editFormData.min_stock,
         notes: editFormData.notes || null,
@@ -314,6 +318,7 @@ export default function Lager() {
                       <TableHead>Produkt</TableHead>
                       <TableHead>Marke</TableHead>
                       <TableHead className="text-center">Bestand</TableHead>
+                      <TableHead className="text-right">EK-Preis</TableHead>
                       <TableHead className="text-right">VK-Preis</TableHead>
                       <TableHead className="text-right">MwSt.</TableHead>
                       <TableHead className="text-right">Aktionen</TableHead>
@@ -354,6 +359,11 @@ export default function Lager() {
                               <AlertTriangle className="h-3 w-3 text-destructive" />
                             )}
                           </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {item.price_purchase
+                            ? `${item.price_purchase.toFixed(2)} €`
+                            : "-"}
                         </TableCell>
                         <TableCell className="text-right">
                           {item.price_sell
@@ -562,19 +572,38 @@ export default function Lager() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="price">Verkaufspreis (€)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="z.B. 149.00"
-                  value={editFormData.price_sell}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, price_sell: e.target.value })
-                  }
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="price_purchase">Einkaufspreis / EK (€)</Label>
+                  <Input
+                    id="price_purchase"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="z.B. 80.00"
+                    value={editFormData.price_purchase}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, price_purchase: e.target.value })
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Für Marge-Berechnung bei Angeboten
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="price">Verkaufspreis / VK (€)</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="z.B. 149.00"
+                    value={editFormData.price_sell}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, price_sell: e.target.value })
+                    }
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
