@@ -671,12 +671,13 @@ export default function Lager() {
 
       {/* Edit Inventory Item Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="max-w-[95vw] sm:max-w-xl h-[90vh] sm:h-auto sm:max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Bestand bearbeiten</DialogTitle>
           </DialogHeader>
           {editingItem && (
-            <div className="space-y-4">
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto space-y-4 pr-2 pb-4 [&_input]:text-base [&_textarea]:text-base [&_select]:text-base">
               <div className="flex items-center gap-4 p-3 bg-muted rounded-lg">
                 {editingItem.image_url ? (
                   <img
@@ -784,19 +785,20 @@ export default function Lager() {
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notizen</Label>
-                <Input
-                  id="notes"
-                  placeholder="Optionale Notizen..."
-                  value={editFormData.notes}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, notes: e.target.value })
-                  }
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notizen</Label>
+                  <Input
+                    id="notes"
+                    placeholder="Optionale Notizen..."
+                    value={editFormData.notes}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, notes: e.target.value })
+                    }
+                  />
+                </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-4">
+              <div className="flex justify-end gap-2 pt-4 flex-shrink-0 border-t mt-4 sticky bottom-0 bg-background">
                 <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
                   Abbrechen
                 </Button>
