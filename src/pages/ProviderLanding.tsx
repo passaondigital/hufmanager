@@ -60,6 +60,7 @@ interface Offer {
   display_mode: string | null;
   media_url: string | null;
   external_link: string | null;
+  billing_type: string | null;
 }
 
 interface Feedback {
@@ -138,7 +139,7 @@ const ProviderLanding = () => {
         // Fetch active offers with new fields
         const { data: offersData } = await supabase
           .from('offers')
-          .select('id, title, description, price, price_type, features, is_active, image_url, offer_type, display_mode, media_url, external_link')
+          .select('id, title, description, price, price_type, features, is_active, image_url, offer_type, display_mode, media_url, external_link, billing_type')
           .eq('provider_id', typedBusinessData.user_id)
           .eq('is_active', true)
           .neq('display_mode', 'hidden')
@@ -381,17 +382,18 @@ const ProviderLanding = () => {
                 .slice(0, 3)
                 .map((offer) => (
                 <OfferCard
-                  key={offer.id}
-                  title={offer.title}
-                  description={offer.description}
-                  price={offer.price}
-                  priceType={offer.price_type}
-                  features={offer.features}
-                  offerType={offer.offer_type || undefined}
-                  mediaUrl={offer.media_url}
-                  externalLink={offer.external_link}
-                  primaryColor={primaryColor}
-                />
+                    key={offer.id}
+                    title={offer.title}
+                    description={offer.description}
+                    price={offer.price}
+                    priceType={offer.price_type}
+                    features={offer.features}
+                    offerType={offer.offer_type || undefined}
+                    mediaUrl={offer.media_url}
+                    externalLink={offer.external_link}
+                    primaryColor={primaryColor}
+                    billingType={offer.billing_type}
+                  />
               ))}
             </div>
           </div>
@@ -416,6 +418,7 @@ const ProviderLanding = () => {
                     priceType={offer.price_type}
                     externalLink={offer.external_link}
                     primaryColor={primaryColor}
+                    billingType={offer.billing_type}
                   />
                 ))}
               </CardContent>
@@ -444,6 +447,7 @@ const ProviderLanding = () => {
                   mediaUrl={offer.media_url}
                   externalLink={offer.external_link}
                   primaryColor={primaryColor}
+                  billingType={offer.billing_type}
                 />
               ))}
             </div>

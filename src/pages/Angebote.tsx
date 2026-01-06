@@ -21,11 +21,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Edit, Trash2, GripVertical, Image as ImageIcon, Play, ExternalLink } from "lucide-react";
+import { Plus, Edit, Trash2, GripVertical, Image as ImageIcon, Play, ExternalLink, Star, RefreshCw, Clock, Gift } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { OfferPreviewPanel } from "@/components/landing/OfferPreviewPanel";
 
 // Extract YouTube video ID from URL
 const getYouTubeId = (url: string): string | null => {
@@ -52,6 +53,20 @@ const priceTypeLabels: Record<string, string> = {
   auf_anfrage: "Auf Anfrage",
 };
 
+const BILLING_TYPES = [
+  { value: "einmalig", label: "Einmalig", icon: null },
+  { value: "abo", label: "Abo", icon: <RefreshCw className="h-3 w-3" /> },
+  { value: "stuendlich", label: "Stündlich", icon: <Clock className="h-3 w-3" /> },
+  { value: "kostenlos", label: "Kostenlos", icon: <Gift className="h-3 w-3" /> },
+];
+
+const BILLING_COLORS: Record<string, string> = {
+  einmalig: "bg-muted text-muted-foreground",
+  abo: "bg-primary/10 text-primary",
+  stuendlich: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  kostenlos: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+};
+
 interface Offer {
   id: string;
   title: string;
@@ -65,6 +80,7 @@ interface Offer {
   media_url: string | null;
   external_link: string | null;
   sort_order: number | null;
+  billing_type: string | null;
 }
 
 const OFFER_TYPES = [
@@ -72,13 +88,6 @@ const OFFER_TYPES = [
   { value: "product", label: "Produkt" },
   { value: "digital", label: "Digital" },
   { value: "bundle", label: "Bundle" },
-];
-
-const DISPLAY_MODES = [
-  { value: "highlight_card", label: "Highlight-Karte" },
-  { value: "list_item", label: "Listenzeile" },
-  { value: "shop_grid", label: "Shop-Grid" },
-  { value: "hidden", label: "Versteckt" },
 ];
 
 const Angebote = () => {
@@ -95,6 +104,8 @@ const Angebote = () => {
     display_mode: "highlight_card",
     media_url: "",
     external_link: "",
+    is_highlight: true,
+    billing_type: "einmalig",
   });
   const queryClient = useQueryClient();
 
@@ -262,12 +273,15 @@ const Angebote = () => {
       display_mode: "highlight_card",
       media_url: "",
       external_link: "",
+      is_highlight: true,
+      billing_type: "einmalig",
     });
     setIsDialogOpen(true);
   };
 
   const openEditDialog = (offer: Offer) => {
     setEditingOffer(offer);
+    const isHighlight = offer.display_mode === "highlight_card" || !offer.display_mode;
     setFormData({
       title: offer.title,
       description: offer.description || "",
@@ -278,6 +292,8 @@ const Angebote = () => {
       display_mode: offer.display_mode || "highlight_card",
       media_url: offer.media_url || "",
       external_link: offer.external_link || "",
+      is_highlight: isHighlight,
+      billing_type: offer.billing_type || "einmalig",
     });
     setIsDialogOpen(true);
   };
@@ -292,16 +308,19 @@ const Angebote = () => {
       toast({ title: "Fehler", description: "Bitte geben Sie einen Titel ein.", variant: "destructive" });
       return;
     }
+    // Derive display_mode from toggle
+    const displayMode = formData.is_highlight ? "highlight_card" : "list_item";
     const data = {
       title: formData.title,
       description: formData.description,
-      price: formData.price_type === "auf_anfrage" ? null : Number(formData.price) || null,
+      price: formData.billing_type === "kostenlos" || formData.price_type === "auf_anfrage" ? null : Number(formData.price) || null,
       price_type: formData.price_type,
       features: formData.features.split(",").map((f) => f.trim()).filter(Boolean),
       offer_type: formData.offer_type,
-      display_mode: formData.display_mode,
+      display_mode: displayMode,
       media_url: formData.media_url || null,
       external_link: formData.external_link || null,
+      billing_type: formData.billing_type,
     };
     if (editingOffer) {
       updateOffer.mutate({ id: editingOffer.id, data });
@@ -378,19 +397,29 @@ const Angebote = () => {
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="text-xl font-semibold text-foreground">{offer.title}</h3>
-                        {offer.display_mode && offer.display_mode !== 'highlight_card' && (
+                        {offer.display_mode === 'highlight_card' || !offer.display_mode ? (
+                          <Badge className="text-xs gap-1 bg-primary/10 text-primary border-0">
+                            <Star className="h-3 w-3" />
+                            Highlight
+                          </Badge>
+                        ) : (
                           <Badge variant="secondary" className="text-xs">
-                            {DISPLAY_MODES.find(m => m.value === offer.display_mode)?.label || offer.display_mode}
+                            Liste
                           </Badge>
                         )}
-                        {offer.offer_type && offer.offer_type !== 'service' && (
-                          <Badge variant="outline" className="text-xs">
-                            {OFFER_TYPES.find(t => t.value === offer.offer_type)?.label || offer.offer_type}
+                        {offer.billing_type && offer.billing_type !== 'einmalig' && (
+                          <Badge className={cn("text-xs gap-1 border-0", BILLING_COLORS[offer.billing_type])}>
+                            {BILLING_TYPES.find(t => t.value === offer.billing_type)?.icon}
+                            {BILLING_TYPES.find(t => t.value === offer.billing_type)?.label}
                           </Badge>
                         )}
                       </div>
                       <div className="flex items-center gap-2 mt-1">
-                        {offer.price ? (
+                        {offer.billing_type === 'kostenlos' ? (
+                          <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0">
+                            Gratis
+                          </Badge>
+                        ) : offer.price ? (
                           <span className="text-2xl font-bold text-primary">
                             {offer.price_type === "ab" && "ab "}€{offer.price}
                           </span>
@@ -457,6 +486,9 @@ const Angebote = () => {
         </CardContent>
       </Card>
 
+      {/* Live Preview Panel */}
+      <OfferPreviewPanel offers={offers} />
+
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -497,23 +529,43 @@ const Angebote = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Anzeige-Modus</Label>
+                <Label>Abrechnungsart</Label>
                 <Select
-                  value={formData.display_mode}
-                  onValueChange={(value) => setFormData({ ...formData, display_mode: value })}
+                  value={formData.billing_type}
+                  onValueChange={(value) => setFormData({ ...formData, billing_type: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {DISPLAY_MODES.map((mode) => (
-                      <SelectItem key={mode.value} value={mode.value}>
-                        {mode.label}
+                    {BILLING_TYPES.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        <span className="flex items-center gap-2">
+                          {type.icon}
+                          {type.label}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            {/* Simple Toggle for Highlight */}
+            <div className="flex items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <Label className="text-base flex items-center gap-2">
+                  <Star className="h-4 w-4 text-primary" />
+                  Als Haupt-Angebot hervorheben?
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Highlight-Angebote werden groß mit Bild/Video angezeigt
+                </p>
+              </div>
+              <Switch
+                checked={formData.is_highlight}
+                onCheckedChange={(checked) => setFormData({ ...formData, is_highlight: checked })}
+              />
             </div>
 
             <div className="space-y-2">

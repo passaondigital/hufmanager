@@ -1393,6 +1393,7 @@ export type Database = {
       }
       offers: {
         Row: {
+          billing_type: string | null
           created_at: string
           description: string | null
           display_mode: string | null
@@ -1411,6 +1412,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          billing_type?: string | null
           created_at?: string
           description?: string | null
           display_mode?: string | null
@@ -1429,6 +1431,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          billing_type?: string | null
           created_at?: string
           description?: string | null
           display_mode?: string | null

@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Play, Sparkles, Package, ShoppingBag, Layers } from "lucide-react";
+import { ExternalLink, Play, Sparkles, Package, ShoppingBag, Layers, RefreshCw, Clock, Gift } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface OfferCardProps {
@@ -14,6 +14,7 @@ interface OfferCardProps {
   mediaUrl?: string | null;
   externalLink?: string | null;
   primaryColor?: string;
+  billingType?: string | null;
 }
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
@@ -28,6 +29,27 @@ const TYPE_LABELS: Record<string, string> = {
   product: "Produkt",
   digital: "Digital",
   bundle: "Bundle",
+};
+
+const BILLING_ICONS: Record<string, React.ReactNode> = {
+  einmalig: null,
+  abo: <RefreshCw className="h-3 w-3" />,
+  stuendlich: <Clock className="h-3 w-3" />,
+  kostenlos: <Gift className="h-3 w-3" />,
+};
+
+const BILLING_LABELS: Record<string, string> = {
+  einmalig: "Einmalig",
+  abo: "Abo",
+  stuendlich: "Stündlich",
+  kostenlos: "Kostenlos",
+};
+
+const BILLING_COLORS: Record<string, string> = {
+  einmalig: "bg-muted text-muted-foreground",
+  abo: "bg-primary/10 text-primary",
+  stuendlich: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  kostenlos: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
 };
 
 // Extract YouTube video ID from various URL formats
@@ -53,9 +75,11 @@ export const OfferCard = ({
   mediaUrl,
   externalLink,
   primaryColor = "#F47B20",
+  billingType = "einmalig",
 }: OfferCardProps) => {
   const youtubeId = mediaUrl ? getYouTubeId(mediaUrl) : null;
   const isImageUrl = mediaUrl && !youtubeId && (mediaUrl.startsWith("http") || mediaUrl.startsWith("/"));
+  const billing = billingType || "einmalig";
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col">
@@ -81,18 +105,30 @@ export const OfferCard = ({
       )}
 
       <CardContent className={cn("flex-1 flex flex-col", mediaUrl ? "pt-4" : "pt-6")}>
-        {/* Type Badge */}
-        {offerType && offerType !== "service" && (
-          <Badge variant="secondary" className="w-fit mb-2 gap-1">
-            {TYPE_ICONS[offerType]}
-            {TYPE_LABELS[offerType] || offerType}
-          </Badge>
-        )}
+        {/* Badges Row */}
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {offerType && offerType !== "service" && (
+            <Badge variant="secondary" className="gap-1 text-xs">
+              {TYPE_ICONS[offerType]}
+              {TYPE_LABELS[offerType] || offerType}
+            </Badge>
+          )}
+          {billing && billing !== "einmalig" && (
+            <Badge className={cn("gap-1 text-xs border-0", BILLING_COLORS[billing])}>
+              {BILLING_ICONS[billing]}
+              {BILLING_LABELS[billing]}
+            </Badge>
+          )}
+        </div>
 
         {/* Title & Price */}
         <div className="flex items-start justify-between gap-2 mb-3">
           <h3 className="font-semibold text-lg text-foreground">{title}</h3>
-          {price !== null && (
+          {billing === "kostenlos" ? (
+            <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0">
+              Gratis
+            </Badge>
+          ) : price !== null ? (
             <div className="text-right flex-shrink-0">
               <span className="text-xl font-bold" style={{ color: primaryColor }}>
                 €{price}
@@ -101,7 +137,7 @@ export const OfferCard = ({
                 <span className="text-xs text-muted-foreground block">/{priceType}</span>
               )}
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* Description */}
