@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { ZoomIn, ExternalLink } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -41,14 +40,14 @@ export const ProofImageOverlay = ({
       {/* Thumbnail below the card */}
       {!imageError && (
         <div 
-          className="mt-3 cursor-pointer group"
+          className="mt-4 cursor-pointer group"
           onClick={() => setIsOpen(true)}
         >
-          <div className="relative rounded-lg overflow-hidden border border-border/50 bg-muted/30">
+          <div className="relative rounded-xl overflow-hidden border border-border/30 shadow-sm hover:shadow-md transition-all duration-300">
             <img
               src={proofImageUrl}
               alt={`${sourceLabels[source] || source} Screenshot`}
-              className="w-full h-32 object-cover transition-transform duration-300 group-hover:scale-105"
+              className="w-full h-[120px] object-cover transition-transform duration-300 group-hover:scale-[1.03]"
               onLoad={() => setImageLoaded(true)}
               onError={() => setImageError(true)}
             />
@@ -57,18 +56,22 @@ export const ProofImageOverlay = ({
                 <span className="text-muted-foreground text-sm">Lädt...</span>
               </div>
             )}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 text-white bg-black/60 px-3 py-1.5 rounded-full text-sm">
+            {/* Hover overlay with zoom icon */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+              <div className="flex items-center gap-2 text-white bg-black/50 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium shadow-lg">
                 <ZoomIn className="h-4 w-4" />
                 Vergrößern
               </div>
             </div>
-            <Badge 
-              variant="secondary" 
-              className="absolute bottom-2 left-2 text-xs bg-background/90 backdrop-blur-sm"
-            >
-              {sourceLabels[source] || source} Nachweis
-            </Badge>
+            {/* Premium badge */}
+            <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full">
+              <span>📸</span>
+              <span>Bild-Nachweis</span>
+            </div>
+            {/* Source indicator */}
+            <div className="absolute bottom-2 right-2 bg-background/90 backdrop-blur-sm text-foreground text-xs font-medium px-2 py-1 rounded-md border border-border/50">
+              {sourceLabels[source] || source}
+            </div>
           </div>
         </div>
       )}
