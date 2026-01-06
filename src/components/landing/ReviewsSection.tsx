@@ -2,7 +2,7 @@ import { Star, Quote, MessageSquare } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ReviewReactions } from "./ReviewReactions";
-import { ProofImageOverlay } from "./ProofImageOverlay";
+import { ProofImageAttachment } from "./ProofImageOverlay";
 
 interface Review {
   id: string;
@@ -61,59 +61,52 @@ export const ReviewsSection = ({ reviews, primaryColor = "#F47B20" }: ReviewsSec
 
         <div className="grid md:grid-cols-2 gap-6">
           {reviews.map((review) => (
-            <div key={review.id} className="flex flex-col">
-              <Card className="bg-muted/20 hover:bg-muted/30 transition-colors flex-1">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={star}
-                          className="h-4 w-4"
-                          fill={star <= review.rating ? primaryColor : 'transparent'}
-                          stroke={star <= review.rating ? primaryColor : 'currentColor'}
-                        />
-                      ))}
-                    </div>
-                    {review.source && (
-                      <Badge variant="outline" className="text-xs">
-                        {sourceLabels[review.source] || review.source}
-                      </Badge>
-                    )}
+            <Card key={review.id} className="bg-muted/20 hover:bg-muted/30 transition-colors">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className="h-4 w-4"
+                        fill={star <= review.rating ? primaryColor : 'transparent'}
+                        stroke={star <= review.rating ? primaryColor : 'currentColor'}
+                      />
+                    ))}
                   </div>
-                  
-                  {review.text && (
-                    <p className="text-muted-foreground italic mb-4">"{review.text}"</p>
+                  {review.source && (
+                    <Badge variant="outline" className="text-xs">
+                      {sourceLabels[review.source] || review.source}
+                    </Badge>
                   )}
-                  
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium text-foreground">{review.reviewer_name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(review.created_at).toLocaleDateString('de-DE', {
-                        month: 'short',
-                        year: 'numeric'
-                      })}
-                    </p>
-                  </div>
-                  
-                  {/* Reactions */}
-                  <ReviewReactions
-                    reviewId={review.id}
-                    reactions={review.reactions || { green: 0, yellow: 0, red: 0 }}
-                  />
-                </CardContent>
-              </Card>
-              
-              {/* Proof Image Thumbnail */}
-              {review.proof_image_url && (
-                <ProofImageOverlay
-                  proofImageUrl={review.proof_image_url}
-                  source={review.source || 'App'}
-                >
-                  <span className="sr-only">Bewertungsnachweis</span>
-                </ProofImageOverlay>
-              )}
-            </div>
+                </div>
+                
+                {review.text && (
+                  <p className="text-muted-foreground italic mb-4">"{review.text}"</p>
+                )}
+                
+                <div className="flex items-center justify-between">
+                  <p className="font-medium text-foreground">{review.reviewer_name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {new Date(review.created_at).toLocaleDateString('de-DE', {
+                      month: 'short',
+                      year: 'numeric'
+                    })}
+                  </p>
+                </div>
+                
+                {/* Reactions */}
+                <ReviewReactions
+                  reviewId={review.id}
+                  reactions={review.reactions || { green: 0, yellow: 0, red: 0 }}
+                />
+                
+                {/* Proof Image Attachment - inside the card */}
+                {review.proof_image_url && (
+                  <ProofImageAttachment proofImageUrl={review.proof_image_url} />
+                )}
+              </CardContent>
+            </Card>
           ))}
         </div>
 
