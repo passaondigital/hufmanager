@@ -442,6 +442,7 @@ export type Database = {
           reminder_custom_text: string | null
           reminder_intervals: Json | null
           reviews_layout: string | null
+          section_order: Json | null
           stripe_public_key: string | null
           subdomain: string | null
           tax_number: string | null
@@ -474,6 +475,7 @@ export type Database = {
           reminder_custom_text?: string | null
           reminder_intervals?: Json | null
           reviews_layout?: string | null
+          section_order?: Json | null
           stripe_public_key?: string | null
           subdomain?: string | null
           tax_number?: string | null
@@ -506,6 +508,7 @@ export type Database = {
           reminder_custom_text?: string | null
           reminder_intervals?: Json | null
           reviews_layout?: string | null
+          section_order?: Json | null
           stripe_public_key?: string | null
           subdomain?: string | null
           tax_number?: string | null
@@ -1300,10 +1303,14 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          display_mode: string | null
+          external_link: string | null
           features: string[] | null
           id: string
           image_url: string | null
           is_active: boolean | null
+          media_url: string | null
+          offer_type: string | null
           price: number | null
           price_type: string | null
           provider_id: string | null
@@ -1314,10 +1321,14 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          display_mode?: string | null
+          external_link?: string | null
           features?: string[] | null
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          media_url?: string | null
+          offer_type?: string | null
           price?: number | null
           price_type?: string | null
           provider_id?: string | null
@@ -1328,10 +1339,14 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          display_mode?: string | null
+          external_link?: string | null
           features?: string[] | null
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          media_url?: string | null
+          offer_type?: string | null
           price?: number | null
           price_type?: string | null
           provider_id?: string | null

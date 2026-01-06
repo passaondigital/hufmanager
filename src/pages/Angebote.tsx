@@ -41,7 +41,25 @@ interface Offer {
   price_type: string | null;
   features: string[] | null;
   is_active: boolean | null;
+  offer_type: string | null;
+  display_mode: string | null;
+  media_url: string | null;
+  external_link: string | null;
 }
+
+const OFFER_TYPES = [
+  { value: "service", label: "Service" },
+  { value: "product", label: "Produkt" },
+  { value: "digital", label: "Digital" },
+  { value: "bundle", label: "Bundle" },
+];
+
+const DISPLAY_MODES = [
+  { value: "highlight_card", label: "Highlight-Karte" },
+  { value: "list_item", label: "Listenzeile" },
+  { value: "shop_grid", label: "Shop-Grid" },
+  { value: "hidden", label: "Versteckt" },
+];
 
 const Angebote = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -52,6 +70,10 @@ const Angebote = () => {
     price: "",
     price_type: "fest",
     features: "",
+    offer_type: "service",
+    display_mode: "highlight_card",
+    media_url: "",
+    external_link: "",
   });
   const queryClient = useQueryClient();
 
@@ -155,7 +177,17 @@ const Angebote = () => {
 
   const openCreateDialog = () => {
     setEditingOffer(null);
-    setFormData({ title: "", description: "", price: "", price_type: "fest", features: "" });
+    setFormData({ 
+      title: "", 
+      description: "", 
+      price: "", 
+      price_type: "fest", 
+      features: "",
+      offer_type: "service",
+      display_mode: "highlight_card",
+      media_url: "",
+      external_link: "",
+    });
     setIsDialogOpen(true);
   };
 
@@ -167,6 +199,10 @@ const Angebote = () => {
       price: offer.price?.toString() || "",
       price_type: offer.price_type || "fest",
       features: offer.features?.join(", ") || "",
+      offer_type: offer.offer_type || "service",
+      display_mode: offer.display_mode || "highlight_card",
+      media_url: offer.media_url || "",
+      external_link: offer.external_link || "",
     });
     setIsDialogOpen(true);
   };
@@ -187,6 +223,10 @@ const Angebote = () => {
       price: formData.price_type === "auf_anfrage" ? null : Number(formData.price) || null,
       price_type: formData.price_type,
       features: formData.features.split(",").map((f) => f.trim()).filter(Boolean),
+      offer_type: formData.offer_type,
+      display_mode: formData.display_mode,
+      media_url: formData.media_url || null,
+      external_link: formData.external_link || null,
     };
     if (editingOffer) {
       updateOffer.mutate({ id: editingOffer.id, data });
@@ -230,7 +270,19 @@ const Angebote = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <h3 className="text-xl font-semibold text-foreground">{offer.title}</h3>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-xl font-semibold text-foreground">{offer.title}</h3>
+                        {offer.display_mode && offer.display_mode !== 'highlight_card' && (
+                          <Badge variant="secondary" className="text-xs">
+                            {DISPLAY_MODES.find(m => m.value === offer.display_mode)?.label || offer.display_mode}
+                          </Badge>
+                        )}
+                        {offer.offer_type && offer.offer_type !== 'service' && (
+                          <Badge variant="outline" className="text-xs">
+                            {OFFER_TYPES.find(t => t.value === offer.offer_type)?.label || offer.offer_type}
+                          </Badge>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 mt-1">
                         {offer.price ? (
                           <span className="text-2xl font-bold text-primary">
@@ -255,6 +307,12 @@ const Angebote = () => {
                   </div>
 
                   <p className="text-muted-foreground mb-4">{offer.description}</p>
+
+                  {offer.media_url && (
+                    <p className="text-xs text-muted-foreground mb-2">
+                      🎬 Media: {offer.media_url.substring(0, 40)}...
+                    </p>
+                  )}
 
                   <div className="flex flex-wrap gap-2">
                     {offer.features?.map((feature) => (
@@ -301,7 +359,7 @@ const Angebote = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
             <div className="space-y-2">
               <Label>Titel *</Label>
               <Input
@@ -309,6 +367,46 @@ const Angebote = () => {
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="Angebot-Titel"
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Angebotstyp</Label>
+                <Select
+                  value={formData.offer_type}
+                  onValueChange={(value) => setFormData({ ...formData, offer_type: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {OFFER_TYPES.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Anzeige-Modus</Label>
+                <Select
+                  value={formData.display_mode}
+                  onValueChange={(value) => setFormData({ ...formData, display_mode: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DISPLAY_MODES.map((mode) => (
+                      <SelectItem key={mode.value} value={mode.value}>
+                        {mode.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -356,6 +454,27 @@ const Angebote = () => {
                 value={formData.features}
                 onChange={(e) => setFormData({ ...formData, features: e.target.value })}
                 placeholder="Beratung, Ausschneiden, Raspeln"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Media URL (YouTube oder Bild)</Label>
+              <Input
+                value={formData.media_url}
+                onChange={(e) => setFormData({ ...formData, media_url: e.target.value })}
+                placeholder="https://youtube.com/watch?v=... oder Bild-URL"
+              />
+              <p className="text-xs text-muted-foreground">
+                YouTube-Videos werden automatisch eingebettet
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Externer Link (optional)</Label>
+              <Input
+                value={formData.external_link}
+                onChange={(e) => setFormData({ ...formData, external_link: e.target.value })}
+                placeholder="https://shop.beispiel.de/produkt"
               />
             </div>
           </div>

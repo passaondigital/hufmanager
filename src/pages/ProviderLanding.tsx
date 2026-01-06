@@ -13,6 +13,8 @@ import { IntakeStatusBadge } from "@/components/landing/IntakeStatusBadge";
 import { ServiceInquiryModal } from "@/components/landing/ServiceInquiryModal";
 import { GallerySection } from "@/components/landing/GallerySection";
 import { ReviewsSection } from "@/components/landing/ReviewsSection";
+import { OfferCard } from "@/components/landing/OfferCard";
+import { ServiceListItem } from "@/components/landing/ServiceListItem";
 import { toast } from "@/hooks/use-toast";
 
 type IntakeStatus = 'open' | 'waitlist' | 'closed';
@@ -33,6 +35,7 @@ interface BusinessSettings {
   gallery_images: { url: string; caption?: string }[] | null;
   subdomain: string | null;
   reviews_layout: 'grid' | 'carousel' | 'marquee' | null;
+  section_order: string[] | null;
 }
 
 interface Service {
@@ -53,6 +56,10 @@ interface Offer {
   features: string[] | null;
   is_active: boolean;
   image_url: string | null;
+  offer_type: string | null;
+  display_mode: string | null;
+  media_url: string | null;
+  external_link: string | null;
 }
 
 interface Feedback {
@@ -128,14 +135,15 @@ const ProviderLanding = () => {
 
         setSettings(typedBusinessData);
 
-        // Fetch active offers
+        // Fetch active offers with new fields
         const { data: offersData } = await supabase
           .from('offers')
-          .select('*')
+          .select('id, title, description, price, price_type, features, is_active, image_url, offer_type, display_mode, media_url, external_link')
           .eq('provider_id', typedBusinessData.user_id)
           .eq('is_active', true)
+          .neq('display_mode', 'hidden')
           .order('sort_order')
-          .limit(3);
+          .limit(20);
 
         if (offersData) setOffers(offersData);
 
@@ -359,8 +367,8 @@ const ProviderLanding = () => {
         </section>
       )}
 
-      {/* Offers/Packages Section */}
-      {offers.length > 0 && (
+      {/* Highlights Section - display_mode = highlight_card */}
+      {offers.filter(o => o.display_mode === 'highlight_card' || !o.display_mode).length > 0 && (
         <section className="py-16 px-4">
           <div className="max-w-5xl mx-auto">
             <h2 className="text-2xl font-bold text-foreground mb-4 text-center">Leistungen & Pakete</h2>
@@ -369,15 +377,72 @@ const ProviderLanding = () => {
             </p>
             <div className="grid md:grid-cols-3 gap-6">
               {offers
-                .filter((offer) => !offer.title.toUpperCase().includes('BALANCE'))
+                .filter((offer) => (offer.display_mode === 'highlight_card' || !offer.display_mode) && !offer.title.toUpperCase().includes('BALANCE'))
+                .slice(0, 3)
                 .map((offer) => (
-                <ServiceCard
+                <OfferCard
                   key={offer.id}
                   title={offer.title}
                   description={offer.description}
                   price={offer.price}
                   priceType={offer.price_type}
                   features={offer.features}
+                  offerType={offer.offer_type || undefined}
+                  mediaUrl={offer.media_url}
+                  externalLink={offer.external_link}
+                  primaryColor={primaryColor}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Service List Section - display_mode = list_item */}
+      {offers.filter(o => o.display_mode === 'list_item').length > 0 && (
+        <section className="py-16 px-4 bg-muted/30">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-2xl font-bold text-foreground mb-4 text-center">Weitere Services</h2>
+            <Card className="overflow-hidden">
+              <CardContent className="p-0">
+                {offers
+                  .filter((offer) => offer.display_mode === 'list_item')
+                  .map((offer) => (
+                  <ServiceListItem
+                    key={offer.id}
+                    title={offer.title}
+                    description={offer.description}
+                    price={offer.price}
+                    priceType={offer.price_type}
+                    externalLink={offer.external_link}
+                    primaryColor={primaryColor}
+                  />
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+      )}
+
+      {/* Shop Grid Section - display_mode = shop_grid */}
+      {offers.filter(o => o.display_mode === 'shop_grid').length > 0 && (
+        <section className="py-16 px-4">
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-2xl font-bold text-foreground mb-4 text-center">Produkte</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {offers
+                .filter((offer) => offer.display_mode === 'shop_grid')
+                .map((offer) => (
+                <OfferCard
+                  key={offer.id}
+                  title={offer.title}
+                  description={offer.description}
+                  price={offer.price}
+                  priceType={offer.price_type}
+                  features={offer.features}
+                  offerType={offer.offer_type || undefined}
+                  mediaUrl={offer.media_url}
+                  externalLink={offer.external_link}
                   primaryColor={primaryColor}
                 />
               ))}
