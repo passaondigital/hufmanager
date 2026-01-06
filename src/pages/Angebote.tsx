@@ -552,8 +552,8 @@ const Angebote = () => {
       <OfferPreviewPanel offers={offers} />
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-4xl md:max-w-5xl h-[90vh] sm:h-auto sm:max-h-[90vh] flex flex-col">
-          <DialogHeader className="flex-shrink-0">
+        <DialogContent className="w-[95vw] sm:max-w-2xl md:max-w-4xl lg:max-w-5xl h-[92vh] sm:h-auto">
+          <DialogHeader>
             <DialogTitle>{editingOffer ? "Angebot bearbeiten" : "Neues Angebot"}</DialogTitle>
             <DialogDescription>
               {editingOffer ? "Bearbeiten Sie die Angebot-Details und das Rezept" : "Erstellen Sie ein neues Angebot"}
@@ -770,7 +770,7 @@ const Angebote = () => {
             </TabsContent>
           </Tabs>
 
-          <DialogFooter className="mt-4 flex-shrink-0 pt-4 border-t sticky bottom-0 bg-background">
+          <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>
               Abbrechen
             </Button>

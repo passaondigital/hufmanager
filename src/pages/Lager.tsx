@@ -17,6 +17,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -671,8 +672,8 @@ export default function Lager() {
 
       {/* Edit Inventory Item Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-xl h-[90vh] sm:h-auto sm:max-h-[90vh] flex flex-col">
-          <DialogHeader className="flex-shrink-0">
+        <DialogContent className="w-[95vw] sm:max-w-xl md:max-w-2xl h-[92vh] sm:h-auto">
+          <DialogHeader>
             <DialogTitle>Bestand bearbeiten</DialogTitle>
           </DialogHeader>
           {editingItem && (
@@ -798,7 +799,7 @@ export default function Lager() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-4 flex-shrink-0 border-t mt-4 sticky bottom-0 bg-background">
+              <DialogFooter>
                 <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
                   Abbrechen
                 </Button>
@@ -811,7 +812,7 @@ export default function Lager() {
                   )}
                   Speichern
                 </Button>
-              </div>
+              </DialogFooter>
             </div>
           )}
         </DialogContent>
