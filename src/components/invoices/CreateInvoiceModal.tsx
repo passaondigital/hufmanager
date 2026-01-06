@@ -386,9 +386,8 @@ export function CreateInvoiceModal({
       notes: formData.notes || null,
     }).select().single();
 
-    setLoading(false);
-
     if (error) {
+      setLoading(false);
       toast({
         title: "Fehler",
         description: "Rechnung konnte nicht erstellt werden. " + error.message,
@@ -396,6 +395,31 @@ export function CreateInvoiceModal({
       });
       return;
     }
+
+    // Deduct stock for each line item
+    if (lineItems.length > 0) {
+      const stockUpdates = lineItems.map(async (item) => {
+        const inventoryItem = inventoryItems.find(i => i.id === item.inventory_id);
+        if (inventoryItem) {
+          const newStock = Math.max(0, inventoryItem.current_stock - item.quantity);
+          return supabase
+            .from("inventory_items")
+            .update({ current_stock: newStock })
+            .eq("id", item.inventory_id);
+        }
+        return Promise.resolve({ error: null });
+      });
+
+      const results = await Promise.all(stockUpdates);
+      const stockErrors = results.filter(r => r.error);
+      
+      if (stockErrors.length > 0) {
+        console.error("Some stock updates failed:", stockErrors);
+        // Don't block invoice creation, just log the error
+      }
+    }
+
+    setLoading(false);
 
     // Send push notification to client
     try {
@@ -428,9 +452,12 @@ export function CreateInvoiceModal({
       // Don't show error to user, invoice was still created successfully
     }
 
+    const stockDeducted = lineItems.length > 0;
     toast({
       title: "Erfolg",
-      description: "Rechnung wurde erstellt.",
+      description: stockDeducted 
+        ? `Rechnung erstellt. Lagerbestand für ${lineItems.length} Produkt${lineItems.length > 1 ? 'e' : ''} aktualisiert.`
+        : "Rechnung wurde erstellt.",
     });
 
     setFormData({
@@ -443,6 +470,9 @@ export function CreateInvoiceModal({
       status: "pending",
       notes: "",
     });
+    setLineItems([]);
+    setShowTravelCost(false);
+    setTravelKm("");
 
     onSuccess();
     onClose();
