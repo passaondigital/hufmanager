@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,11 +21,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Edit, Trash2, GripVertical, Image as ImageIcon } from "lucide-react";
+import { Plus, Edit, Trash2, GripVertical, Image as ImageIcon, Play, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+// Extract YouTube video ID from URL
+const getYouTubeId = (url: string): string | null => {
+  if (!url) return null;
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s?]+)/,
+    /youtube\.com\/shorts\/([^&\s?]+)/,
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+};
+
+// Get YouTube thumbnail URL
+const getYouTubeThumbnail = (videoId: string): string => {
+  return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+};
 
 const priceTypeLabels: Record<string, string> = {
   fest: "Festpreis",
@@ -45,6 +64,7 @@ interface Offer {
   display_mode: string | null;
   media_url: string | null;
   external_link: string | null;
+  sort_order: number | null;
 }
 
 const OFFER_TYPES = [
@@ -64,6 +84,7 @@ const DISPLAY_MODES = [
 const Angebote = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -76,6 +97,10 @@ const Angebote = () => {
     external_link: "",
   });
   const queryClient = useQueryClient();
+
+  // Get YouTube preview for form
+  const youtubeId = getYouTubeId(formData.media_url);
+  const youtubeThumbnail = youtubeId ? getYouTubeThumbnail(youtubeId) : null;
 
   const { data: offers = [] } = useQuery({
     queryKey: ["offers"],
@@ -175,6 +200,56 @@ const Angebote = () => {
     },
   });
 
+  // Reorder mutation for drag & drop
+  const reorderOffers = useMutation({
+    mutationFn: async (newOrder: { id: string; sort_order: number }[]) => {
+      // Update each offer's sort_order
+      const promises = newOrder.map(({ id, sort_order }) =>
+        supabase.from("offers").update({ sort_order }).eq("id", id)
+      );
+      await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
+    },
+    onError: () => {
+      toast({ title: "Fehler", description: "Reihenfolge konnte nicht gespeichert werden.", variant: "destructive" });
+    },
+  });
+
+  const handleDragStart = useCallback((index: number) => {
+    setDraggedIndex(index);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, index: number) => {
+    e.preventDefault();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      return;
+    }
+
+    const newOffers = [...offers];
+    const [draggedItem] = newOffers.splice(draggedIndex, 1);
+    newOffers.splice(dropIndex, 0, draggedItem);
+
+    // Create new order array
+    const newOrder = newOffers.map((offer, idx) => ({
+      id: offer.id,
+      sort_order: idx,
+    }));
+
+    reorderOffers.mutate(newOrder);
+    setDraggedIndex(null);
+  }, [draggedIndex, offers, reorderOffers]);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggedIndex(null);
+  }, []);
+
   const openCreateDialog = () => {
     setEditingOffer(null);
     setFormData({ 
@@ -250,21 +325,52 @@ const Angebote = () => {
         </Button>
       </div>
 
-      <div className="grid gap-6">
-        {offers.map((offer, index) => (
+      <div className="grid gap-4">
+        {offers.map((offer, index) => {
+          const offerYoutubeId = offer.media_url ? getYouTubeId(offer.media_url) : null;
+          const offerThumbnail = offerYoutubeId ? getYouTubeThumbnail(offerYoutubeId) : null;
+          
+          return (
           <Card
             key={offer.id}
-            className={cn("relative overflow-hidden animate-slide-up", !offer.is_active && "opacity-60")}
+            draggable
+            onDragStart={() => handleDragStart(index)}
+            onDragOver={(e) => handleDragOver(e, index)}
+            onDrop={(e) => handleDrop(e, index)}
+            onDragEnd={handleDragEnd}
+            className={cn(
+              "relative overflow-hidden animate-slide-up cursor-grab active:cursor-grabbing transition-all",
+              !offer.is_active && "opacity-60",
+              draggedIndex === index && "opacity-50 scale-[0.98] ring-2 ring-primary"
+            )}
             style={{ animationDelay: `${index * 50}ms` }}
           >
             <CardContent className="p-6">
               <div className="flex gap-6">
                 <div className="flex items-center">
-                  <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
+                  <GripVertical className="h-5 w-5 text-muted-foreground" />
                 </div>
 
-                <div className="w-32 h-32 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                  <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                <div className="w-32 h-32 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden relative">
+                  {offerThumbnail ? (
+                    <>
+                      <img src={offerThumbnail} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <Play className="h-8 w-8 text-white" fill="white" />
+                      </div>
+                    </>
+                  ) : offer.media_url && offer.media_url.startsWith('http') ? (
+                    <img 
+                      src={offer.media_url} 
+                      alt="" 
+                      className="absolute inset-0 w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                  )}
                 </div>
 
                 <div className="flex-1 min-w-0">
@@ -339,7 +445,8 @@ const Angebote = () => {
               </div>
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
       </div>
 
       <Card className="bg-muted/30 border-dashed">
@@ -464,6 +571,35 @@ const Angebote = () => {
                 onChange={(e) => setFormData({ ...formData, media_url: e.target.value })}
                 placeholder="https://youtube.com/watch?v=... oder Bild-URL"
               />
+              {youtubeThumbnail && (
+                <div className="relative mt-2 rounded-lg overflow-hidden border border-border">
+                  <img
+                    src={youtubeThumbnail}
+                    alt="YouTube Preview"
+                    className="w-full aspect-video object-cover"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                    <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center">
+                      <Play className="h-6 w-6 text-white ml-1" fill="white" />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground p-2 bg-muted/80">
+                    YouTube Video erkannt
+                  </p>
+                </div>
+              )}
+              {formData.media_url && !youtubeThumbnail && formData.media_url.startsWith('http') && (
+                <div className="relative mt-2 rounded-lg overflow-hidden border border-border">
+                  <img
+                    src={formData.media_url}
+                    alt="Bild Preview"
+                    className="w-full aspect-video object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
               <p className="text-xs text-muted-foreground">
                 YouTube-Videos werden automatisch eingebettet
               </p>
