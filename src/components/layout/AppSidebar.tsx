@@ -25,6 +25,7 @@ import {
   Shield,
   Diamond,
   Lock,
+  Warehouse,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -72,6 +73,7 @@ const baseMainItems: MainNavItem[] = [
   { title: "Kunden", url: "/kunden", icon: Users, module: null },
   { title: "Netzwerk", url: "/netzwerk", icon: Briefcase, module: "module_network" },
   { title: "Services", url: "/services", icon: Scissors, module: null },
+  { title: "Material / Lager", url: "/lager", icon: Warehouse, module: null },
   { title: "Rechnungen", url: "/rechnungen", icon: FileText, module: "module_invoicing" },
   { title: "Hufanalyse", url: "/hufanalyse", icon: ClipboardList, module: "module_hufanalyse" },
   { title: "Chat", url: "/chat", icon: MessagesSquare, module: "module_chat" },

@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Shield, Users, Database, Bug, Activity, Crown, Plus, Zap } from "lucide-react";
+import { Loader2, Shield, Users, Database, Bug, Activity, Crown, Plus, Zap, Package } from "lucide-react";
 import { toast } from "sonner";
 
 // Admin Views
@@ -14,12 +14,14 @@ import { AdminHorseDB } from "@/components/admin/AdminHorseDB";
 import { AdminDevZentrale } from "@/components/admin/AdminDevZentrale";
 import { AdminSystemHealth } from "@/components/admin/AdminSystemHealth";
 import { AdminQuickNote } from "@/components/admin/AdminQuickNote";
+import { AdminProductCatalog } from "@/components/admin/AdminProductCatalog";
 
-type AdminView = "users" | "horses" | "dev" | "health";
+type AdminView = "users" | "horses" | "dev" | "health" | "catalog";
 
 const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "users", label: "User-DB", icon: Users },
   { id: "horses", label: "Pferde-DB", icon: Database },
+  { id: "catalog", label: "Produktkatalog", icon: Package },
   { id: "dev", label: "Dev-Zentrale", icon: Bug },
   { id: "health", label: "System-Health", icon: Activity },
 ];
@@ -172,6 +174,7 @@ export default function AdminDashboard() {
       <main className="flex-1 overflow-auto">
         {activeView === "users" && <AdminUserDB isMasterAdmin={isMasterAdmin} />}
         {activeView === "horses" && <AdminHorseDB isMasterAdmin={isMasterAdmin} />}
+        {activeView === "catalog" && <AdminProductCatalog />}
         {activeView === "dev" && <AdminDevZentrale />}
         {activeView === "health" && <AdminSystemHealth />}
       </main>

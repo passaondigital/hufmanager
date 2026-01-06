@@ -711,6 +711,39 @@ export type Database = {
         }
         Relationships: []
       }
+      global_products: {
+        Row: {
+          brand: string
+          category: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          name: string
+          shop_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          brand: string
+          category?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name: string
+          shop_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          brand?: string
+          category?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          shop_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hoof_analyses: {
         Row: {
           appointment_id: string | null
@@ -996,6 +1029,62 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_items: {
+        Row: {
+          brand: string | null
+          category: string | null
+          created_at: string
+          current_stock: number
+          global_product_id: string | null
+          id: string
+          image_url: string | null
+          notes: string | null
+          price_sell: number | null
+          product_name: string
+          tax_rate: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand?: string | null
+          category?: string | null
+          created_at?: string
+          current_stock?: number
+          global_product_id?: string | null
+          id?: string
+          image_url?: string | null
+          notes?: string | null
+          price_sell?: number | null
+          product_name: string
+          tax_rate?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand?: string | null
+          category?: string | null
+          created_at?: string
+          current_stock?: number
+          global_product_id?: string | null
+          id?: string
+          image_url?: string | null
+          notes?: string | null
+          price_sell?: number | null
+          product_name?: string
+          tax_rate?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_global_product_id_fkey"
+            columns: ["global_product_id"]
+            isOneToOne: false
+            referencedRelation: "global_products"
             referencedColumns: ["id"]
           },
         ]
