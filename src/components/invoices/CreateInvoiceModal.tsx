@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -480,12 +481,12 @@ export function CreateInvoiceModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] sm:max-w-2xl md:max-w-3xl h-[90vh] sm:h-auto sm:max-h-[90vh] flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="w-[95vw] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl h-[92vh] sm:h-auto">
+        <DialogHeader>
           <DialogTitle>Neue Rechnung erstellen</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden min-h-0">
           <div className="flex-1 overflow-y-auto space-y-4 pr-2 pb-4 [&_input]:text-base [&_textarea]:text-base [&_select]:text-base">
           <div className="space-y-2">
             <Label htmlFor="client_id">Kunde *</Label>
@@ -839,7 +840,7 @@ export function CreateInvoiceModal({
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 flex-shrink-0 border-t mt-4 sticky bottom-0 bg-background">
+          <DialogFooter className="mt-0">
             <Button type="button" variant="outline" onClick={onClose}>
               Abbrechen
             </Button>
@@ -847,7 +848,7 @@ export function CreateInvoiceModal({
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Rechnung erstellen
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
