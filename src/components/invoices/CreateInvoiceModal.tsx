@@ -479,364 +479,397 @@ export function CreateInvoiceModal({
     onClose();
   };
 
+  // Left column: Client & Horse Selection
+  const renderClientSelection = () => (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="client_id">Kunde *</Label>
+        <Select
+          value={formData.client_id}
+          onValueChange={(value) => setFormData(prev => ({ ...prev, client_id: value }))}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Kunde auswählen..." />
+          </SelectTrigger>
+          <SelectContent>
+            {clients.length === 0 ? (
+              <div className="p-2 text-sm text-muted-foreground">Keine Kunden gefunden</div>
+            ) : (
+              clients.map(client => (
+                <SelectItem key={client.id} value={client.id}>
+                  {client.full_name || "Unbekannt"}
+                  {client.readable_id && ` (${client.readable_id})`}
+                </SelectItem>
+              ))
+            )}
+          </SelectContent>
+        </Select>
+        {errors.client_id && <p className="text-sm text-destructive">{errors.client_id}</p>}
+      </div>
+
+      {/* Horse Selection */}
+      {formData.client_id && (
+        <div className="space-y-2">
+          <Label htmlFor="horse_id">Pferd (optional)</Label>
+          <Select
+            value={formData.horse_id}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, horse_id: value }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Pferd auswählen..." />
+            </SelectTrigger>
+            <SelectContent>
+              {filteredHorses.length === 0 ? (
+                <div className="p-2 text-sm text-muted-foreground">Keine Pferde für diesen Kunden</div>
+              ) : (
+                filteredHorses.map(horse => (
+                  <SelectItem key={horse.id} value={horse.id}>
+                    {horse.name}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Invoice Number */}
+      <div className="space-y-2">
+        <Label htmlFor="invoice_number">Rechnungsnummer</Label>
+        <Input
+          id="invoice_number"
+          value={formData.invoice_number}
+          onChange={(e) => setFormData(prev => ({ ...prev, invoice_number: e.target.value }))}
+          placeholder="z.B. RE-2024-001"
+          maxLength={50}
+        />
+        {errors.invoice_number && <p className="text-sm text-destructive">{errors.invoice_number}</p>}
+      </div>
+
+      {/* Dates */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="issue_date">Rechnungsdatum *</Label>
+          <Input
+            id="issue_date"
+            type="date"
+            value={formData.issue_date}
+            onChange={(e) => setFormData(prev => ({ ...prev, issue_date: e.target.value }))}
+          />
+          {errors.issue_date && <p className="text-sm text-destructive">{errors.issue_date}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="due_date">Fälligkeitsdatum</Label>
+          <Input
+            id="due_date"
+            type="date"
+            value={formData.due_date}
+            onChange={(e) => setFormData(prev => ({ ...prev, due_date: e.target.value }))}
+          />
+        </div>
+      </div>
+
+      {/* Status */}
+      <div className="space-y-2">
+        <Label htmlFor="status">Status</Label>
+        <Select
+          value={formData.status}
+          onValueChange={(value: "pending" | "paid" | "overdue") => setFormData(prev => ({ ...prev, status: value }))}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="pending">Offen</SelectItem>
+            <SelectItem value="paid">Bezahlt</SelectItem>
+            <SelectItem value="overdue">Überfällig</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Notes */}
+      <div className="space-y-2">
+        <Label htmlFor="notes">Notizen</Label>
+        <Textarea
+          id="notes"
+          value={formData.notes}
+          onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+          placeholder="Optionale Notizen..."
+          maxLength={1000}
+          rows={3}
+        />
+      </div>
+    </div>
+  );
+
+  // Right column: Amount & Products
+  const renderAmountProducts = () => (
+    <div className="space-y-4">
+      {/* Total Amount */}
+      <div className="space-y-2">
+        <Label htmlFor="total_amount">Betrag (€) *</Label>
+        <Input
+          id="total_amount"
+          type="number"
+          step="0.01"
+          min="0"
+          value={formData.total_amount}
+          onChange={(e) => setFormData(prev => ({ ...prev, total_amount: e.target.value }))}
+          placeholder="0.00"
+          className="text-lg font-semibold"
+        />
+        {errors.total_amount && <p className="text-sm text-destructive">{errors.total_amount}</p>}
+      </div>
+
+      {/* Travel Cost Section */}
+      {formData.client_id && (
+        <div className="space-y-3 p-3 rounded-lg bg-muted/50 border border-border">
+          <div className="flex items-center justify-between">
+            <Label className="flex items-center gap-2">
+              <Car className="h-4 w-4" />
+              Fahrtkosten
+            </Label>
+            {!showTravelCost && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setShowTravelCost(true);
+                  calculateTravelDistance();
+                }}
+                className="gap-1"
+              >
+                <Plus className="h-3 w-3" />
+                Anfahrt berechnen
+              </Button>
+            )}
+          </div>
+          
+          {showTravelCost && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="flex-1 space-y-1">
+                  <Label className="text-xs text-muted-foreground">Entfernung (einfache Strecke)</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={travelKm}
+                      onChange={(e) => setTravelKm(e.target.value)}
+                      placeholder="km"
+                      className="w-24"
+                    />
+                    <span className="text-sm text-muted-foreground">km</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={calculateTravelDistance}
+                      title="Distanz berechnen"
+                    >
+                      <MapPin className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">
+                  {travelKm ? `${travelKm} km × 2 (Hin+Zurück) × €${businessSettings?.travel_cost_per_km || 0.50}/km` : ""}
+                  {businessSettings?.travel_cost_flat ? ` + €${businessSettings.travel_cost_flat} Pauschale` : ""}
+                </span>
+                <span className="font-semibold text-primary">
+                  = €{calculatedTravelCost.toFixed(2)}
+                </span>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={addTravelCostToAmount}
+                  disabled={!travelKm || calculatedTravelCost <= 0}
+                  className="flex-1"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Zum Betrag hinzufügen
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowTravelCost(false)}
+                >
+                  Abbrechen
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Inventory / Product Line Items Section */}
+      <div className="space-y-3 p-3 rounded-lg bg-muted/50 border border-border">
+        <div className="flex items-center justify-between">
+          <Label className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Produkte aus Lager
+          </Label>
+          {inventoryItems.length > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowInventoryPicker(!showInventoryPicker)}
+              className="gap-1"
+            >
+              <Plus className="h-3 w-3" />
+              Produkt hinzufügen
+            </Button>
+          )}
+        </div>
+
+        {/* Inventory Picker */}
+        {showInventoryPicker && (
+          <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-2 bg-background">
+            {inventoryItems.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => addInventoryItem(item)}
+                className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-muted transition-colors text-left"
+              >
+                <div>
+                  <p className="font-medium text-sm">{item.product_name}</p>
+                  {item.brand && <p className="text-xs text-muted-foreground">{item.brand}</p>}
+                </div>
+                <div className="text-right">
+                  <p className="font-medium text-sm">{item.price_sell?.toFixed(2) || "0.00"} €</p>
+                  <p className="text-xs text-muted-foreground">Bestand: {item.current_stock}</p>
+                </div>
+              </button>
+            ))}
+            {inventoryItems.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-2">Keine Produkte im Lager</p>
+            )}
+          </div>
+        )}
+
+        {/* Added Line Items */}
+        {lineItems.length > 0 && (
+          <div className="space-y-2">
+            {lineItems.map((item, index) => (
+              <div key={item.inventory_id} className="flex items-center gap-2 p-2 bg-background rounded-lg border">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{item.name}</p>
+                  <p className="text-xs text-muted-foreground">{item.unit_price.toFixed(2)} € × {item.quantity}</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => updateLineItemQuantity(index, -1)}
+                  >
+                    <Minus className="h-3 w-3" />
+                  </Button>
+                  <Badge variant="secondary" className="min-w-[28px] justify-center">
+                    {item.quantity}
+                  </Badge>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => updateLineItemQuantity(index, 1)}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-destructive hover:text-destructive"
+                    onClick={() => removeLineItem(index)}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+                <p className="text-sm font-semibold w-20 text-right">
+                  {(item.quantity * item.unit_price).toFixed(2)} €
+                </p>
+              </div>
+            ))}
+            <div className="flex justify-between items-center pt-2 border-t">
+              <span className="text-sm font-medium">Produkte Gesamt:</span>
+              <span className="font-bold text-primary">{lineItemsTotal.toFixed(2)} €</span>
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="w-full"
+              onClick={() => {
+                const currentAmount = parseFloat(formData.total_amount) || 0;
+                setFormData(prev => ({ ...prev, total_amount: (currentAmount + lineItemsTotal).toFixed(2) }));
+                
+                // Add to notes
+                const productNotes = lineItems.map(li => `${li.name} (${li.quantity}x) = €${(li.quantity * li.unit_price).toFixed(2)}`).join("\n");
+                const currentNotes = formData.notes;
+                setFormData(prev => ({
+                  ...prev,
+                  notes: currentNotes ? `${currentNotes}\n\nProdukte:\n${productNotes}` : `Produkte:\n${productNotes}`
+                }));
+                
+                setLineItems([]);
+                toast({ title: "Produkte hinzugefügt", description: `€${lineItemsTotal.toFixed(2)} wurden zum Betrag addiert.` });
+              }}
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              Zum Betrag hinzufügen
+            </Button>
+          </div>
+        )}
+
+        {inventoryItems.length === 0 && lineItems.length === 0 && (
+          <p className="text-xs text-muted-foreground">
+            Keine Produkte im Lager. Füge Produkte unter "Material / Lager" hinzu.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl h-[92vh] sm:h-auto">
+      <DialogContent className="w-[95vw] sm:max-w-2xl md:max-w-4xl lg:max-w-5xl h-[92vh] sm:h-auto sm:max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Neue Rechnung erstellen</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden min-h-0">
-          <div className="flex-1 overflow-y-auto space-y-4 pr-2 pb-4 [&_input]:text-base [&_textarea]:text-base [&_select]:text-base">
-          <div className="space-y-2">
-            <Label htmlFor="client_id">Kunde *</Label>
-            <Select
-              value={formData.client_id}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, client_id: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Kunde auswählen..." />
-              </SelectTrigger>
-              <SelectContent>
-                {clients.length === 0 ? (
-                    <div className="p-2 text-sm text-muted-foreground">Keine Kunden gefunden</div>
-                ) : (
-                    clients.map(client => (
-                    <SelectItem key={client.id} value={client.id}>
-                        {client.full_name || "Unbekannt"}
-                        {client.readable_id && ` (${client.readable_id})`}
-                    </SelectItem>
-                    ))
-                )}
-              </SelectContent>
-            </Select>
-            {errors.client_id && <p className="text-sm text-destructive">{errors.client_id}</p>}
-          </div>
-
-          {/* Pferd Auswahl nur anzeigen, wenn Kunde gewählt */}
-          {formData.client_id && (
-            <div className="space-y-2">
-              <Label htmlFor="horse_id">Pferd (optional)</Label>
-              <Select
-                value={formData.horse_id}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, horse_id: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Pferd auswählen..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredHorses.length === 0 ? (
-                     <div className="p-2 text-sm text-muted-foreground">Keine Pferde für diesen Kunden</div>
-                  ) : (
-                    filteredHorses.map(horse => (
-                        <SelectItem key={horse.id} value={horse.id}>
-                        {horse.name}
-                        </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Label htmlFor="invoice_number">Rechnungsnummer</Label>
-            <Input
-              id="invoice_number"
-              value={formData.invoice_number}
-              onChange={(e) => setFormData(prev => ({ ...prev, invoice_number: e.target.value }))}
-              placeholder="z.B. RE-2024-001"
-              maxLength={50}
-            />
-            {errors.invoice_number && <p className="text-sm text-destructive">{errors.invoice_number}</p>}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="issue_date">Rechnungsdatum *</Label>
-              <Input
-                id="issue_date"
-                type="date"
-                value={formData.issue_date}
-                onChange={(e) => setFormData(prev => ({ ...prev, issue_date: e.target.value }))}
-              />
-              {errors.issue_date && <p className="text-sm text-destructive">{errors.issue_date}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="due_date">Fälligkeitsdatum</Label>
-              <Input
-                id="due_date"
-                type="date"
-                value={formData.due_date}
-                onChange={(e) => setFormData(prev => ({ ...prev, due_date: e.target.value }))}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="total_amount">Betrag (€) *</Label>
-              <Input
-                id="total_amount"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.total_amount}
-                onChange={(e) => setFormData(prev => ({ ...prev, total_amount: e.target.value }))}
-                placeholder="0.00"
-              />
-              {errors.total_amount && <p className="text-sm text-destructive">{errors.total_amount}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value: "pending" | "paid" | "overdue") => setFormData(prev => ({ ...prev, status: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Offen</SelectItem>
-                  <SelectItem value="paid">Bezahlt</SelectItem>
-                  <SelectItem value="overdue">Überfällig</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Travel Cost Section */}
-          {formData.client_id && (
-            <div className="space-y-3 p-3 rounded-lg bg-muted/50 border border-border">
-              <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-2">
-                  <Car className="h-4 w-4" />
-                  Fahrtkosten
-                </Label>
-                {!showTravelCost && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setShowTravelCost(true);
-                      calculateTravelDistance();
-                    }}
-                    className="gap-1"
-                  >
-                    <Plus className="h-3 w-3" />
-                    Anfahrt berechnen
-                  </Button>
-                )}
+          <div className="flex-1 overflow-y-auto pr-2 pb-4 [&_input]:text-base [&_textarea]:text-base [&_select]:text-base">
+            {/* 2-Column Layout on Desktop */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+              {/* Left Column: Client & Horse Selection */}
+              <div className="space-y-1">
+                <h3 className="text-sm font-medium text-muted-foreground mb-4 hidden md:block">
+                  Kunde & Details
+                </h3>
+                {renderClientSelection()}
               </div>
-              
-              {showTravelCost && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 space-y-1">
-                      <Label className="text-xs text-muted-foreground">Entfernung (einfache Strecke)</Label>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          min="0"
-                          value={travelKm}
-                          onChange={(e) => setTravelKm(e.target.value)}
-                          placeholder="km"
-                          className="w-24"
-                        />
-                        <span className="text-sm text-muted-foreground">km</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={calculateTravelDistance}
-                          title="Distanz berechnen"
-                        >
-                          <MapPin className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      {travelKm ? `${travelKm} km × 2 (Hin+Zurück) × €${businessSettings?.travel_cost_per_km || 0.50}/km` : ""}
-                      {businessSettings?.travel_cost_flat ? ` + €${businessSettings.travel_cost_flat} Pauschale` : ""}
-                    </span>
-                    <span className="font-semibold text-primary">
-                      = €{calculatedTravelCost.toFixed(2)}
-                    </span>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={addTravelCostToAmount}
-                      disabled={!travelKm || calculatedTravelCost <= 0}
-                      className="flex-1"
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Zum Betrag hinzufügen
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowTravelCost(false)}
-                    >
-                      Abbrechen
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
 
-          {/* Inventory / Product Line Items Section */}
-          <div className="space-y-3 p-3 rounded-lg bg-muted/50 border border-border">
-            <div className="flex items-center justify-between">
-              <Label className="flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                Produkte aus Lager
-              </Label>
-              {inventoryItems.length > 0 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowInventoryPicker(!showInventoryPicker)}
-                  className="gap-1"
-                >
-                  <Plus className="h-3 w-3" />
-                  Produkt hinzufügen
-                </Button>
-              )}
-            </div>
-
-            {/* Inventory Picker */}
-            {showInventoryPicker && (
-              <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-2 bg-background">
-                {inventoryItems.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => addInventoryItem(item)}
-                    className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-muted transition-colors text-left"
-                  >
-                    <div>
-                      <p className="font-medium text-sm">{item.product_name}</p>
-                      {item.brand && <p className="text-xs text-muted-foreground">{item.brand}</p>}
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium text-sm">{item.price_sell?.toFixed(2) || "0.00"} €</p>
-                      <p className="text-xs text-muted-foreground">Bestand: {item.current_stock}</p>
-                    </div>
-                  </button>
-                ))}
-                {inventoryItems.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-2">Keine Produkte im Lager</p>
-                )}
+              {/* Right Column: Amounts & Products */}
+              <div className="space-y-1">
+                <h3 className="text-sm font-medium text-muted-foreground mb-4 hidden md:block">
+                  Betrag & Produkte
+                </h3>
+                {renderAmountProducts()}
               </div>
-            )}
-
-            {/* Added Line Items */}
-            {lineItems.length > 0 && (
-              <div className="space-y-2">
-                {lineItems.map((item, index) => (
-                  <div key={item.inventory_id} className="flex items-center gap-2 p-2 bg-background rounded-lg border">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{item.name}</p>
-                      <p className="text-xs text-muted-foreground">{item.unit_price.toFixed(2)} € × {item.quantity}</p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => updateLineItemQuantity(index, -1)}
-                      >
-                        <Minus className="h-3 w-3" />
-                      </Button>
-                      <Badge variant="secondary" className="min-w-[28px] justify-center">
-                        {item.quantity}
-                      </Badge>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => updateLineItemQuantity(index, 1)}
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive hover:text-destructive"
-                        onClick={() => removeLineItem(index)}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                    <p className="text-sm font-semibold w-20 text-right">
-                      {(item.quantity * item.unit_price).toFixed(2)} €
-                    </p>
-                  </div>
-                ))}
-                <div className="flex justify-between items-center pt-2 border-t">
-                  <span className="text-sm font-medium">Produkte Gesamt:</span>
-                  <span className="font-bold text-primary">{lineItemsTotal.toFixed(2)} €</span>
-                </div>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => {
-                    const currentAmount = parseFloat(formData.total_amount) || 0;
-                    setFormData(prev => ({ ...prev, total_amount: (currentAmount + lineItemsTotal).toFixed(2) }));
-                    
-                    // Add to notes
-                    const productNotes = lineItems.map(li => `${li.name} (${li.quantity}x) = €${(li.quantity * li.unit_price).toFixed(2)}`).join("\n");
-                    const currentNotes = formData.notes;
-                    setFormData(prev => ({
-                      ...prev,
-                      notes: currentNotes ? `${currentNotes}\n\nProdukte:\n${productNotes}` : `Produkte:\n${productNotes}`
-                    }));
-                    
-                    setLineItems([]);
-                    toast({ title: "Produkte hinzugefügt", description: `€${lineItemsTotal.toFixed(2)} wurden zum Betrag addiert.` });
-                  }}
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Zum Betrag hinzufügen
-                </Button>
-              </div>
-            )}
-
-            {inventoryItems.length === 0 && lineItems.length === 0 && (
-              <p className="text-xs text-muted-foreground">
-                Keine Produkte im Lager. Füge Produkte unter "Material / Lager" hinzu.
-              </p>
-            )}
-          </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notizen</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="Optionale Notizen..."
-                maxLength={1000}
-                rows={3}
-              />
             </div>
           </div>
 
