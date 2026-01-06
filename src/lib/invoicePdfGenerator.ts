@@ -11,6 +11,9 @@ interface BusinessSettings {
   phone: string | null;
   email: string | null;
   logo_url: string | null;
+  iban: string | null;
+  bic: string | null;
+  bank_name: string | null;
   primary_color: string | null;
   tax_number: string | null;
   paypal_link?: string | null;
@@ -199,6 +202,9 @@ export async function generateInvoicePdf(
     logo_url: null,
     primary_color: "#F47B20",
     tax_number: null,
+    iban: null,
+    bic: null,
+    bank_name: null,
   };
   
   // Try to fetch business settings
@@ -533,16 +539,31 @@ export async function generateInvoicePdf(
     doc.text(settings.email, margin, col1Y);
   }
   
-  // Column 2: Bank Details (placeholder - could be extended)
+  // Column 2: Bank Details
   const col2X = margin + colWidth;
   let col2Y = footerY;
   doc.setFont("helvetica", "bold");
   doc.text("Bankverbindung", col2X, col2Y);
   col2Y += 4;
   doc.setFont("helvetica", "normal");
-  doc.text("Bitte bei Überweisung angeben:", col2X, col2Y);
-  col2Y += 3.5;
-  doc.text(`Ref: ${invoiceNumber}`, col2X, col2Y);
+  
+  if (settings.bank_name) {
+    doc.text(settings.bank_name, col2X, col2Y);
+    col2Y += 3.5;
+  }
+  if (settings.iban) {
+    doc.text(`IBAN: ${settings.iban}`, col2X, col2Y);
+    col2Y += 3.5;
+  }
+  if (settings.bic) {
+    doc.text(`BIC: ${settings.bic}`, col2X, col2Y);
+    col2Y += 3.5;
+  }
+  if (!settings.iban && !settings.bic && !settings.bank_name) {
+    doc.text("Bitte bei Überweisung angeben:", col2X, col2Y);
+    col2Y += 3.5;
+    doc.text(`Ref: ${invoiceNumber}`, col2X, col2Y);
+  }
   
   // Column 3: Legal Info
   const col3X = margin + colWidth * 2;
