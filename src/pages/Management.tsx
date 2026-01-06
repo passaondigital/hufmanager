@@ -29,6 +29,7 @@ import { ReminderSettingsCard } from "@/components/ReminderSettingsCard";
 import { SubscriptionCard } from "@/components/subscription/SubscriptionCard";
 import { LandingServicesEditor } from "@/components/landing/LandingServicesEditor";
 import { ReviewsManagement } from "@/components/management/ReviewsManagement";
+import { SectionManager } from "@/components/landing/SectionManager";
 import { GalleryManager } from "@/components/management/GalleryManager";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -649,6 +650,9 @@ const Management = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Section Manager - Drag & Drop Order */}
+          <SectionManager />
 
           {/* Services Editor */}
           <LandingServicesEditor />
