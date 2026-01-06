@@ -18,8 +18,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Car, MapPin, Plus } from "lucide-react";
+import { Loader2, Car, MapPin, Plus, Package, Minus, Trash2 } from "lucide-react";
 import { z } from "zod";
 
 // Haversine formula to calculate distance between two coordinates
@@ -53,6 +54,24 @@ interface BusinessSettings {
   address: string | null;
   travel_cost_per_km: number | null;
   travel_cost_flat: number | null;
+}
+
+interface InventoryItem {
+  id: string;
+  product_name: string;
+  brand: string | null;
+  current_stock: number;
+  price_sell: number | null;
+  tax_rate: number | null;
+  min_stock: number | null;
+}
+
+interface InvoiceLineItem {
+  inventory_id: string;
+  name: string;
+  quantity: number;
+  unit_price: number;
+  tax_rate: number;
 }
 
 interface CreateInvoiceModalProps {
@@ -91,6 +110,11 @@ export function CreateInvoiceModal({
   const [showTravelCost, setShowTravelCost] = useState(false);
   const [travelKm, setTravelKm] = useState<string>("");
   const [calculatedTravelCost, setCalculatedTravelCost] = useState<number>(0);
+  
+  // Inventory state
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([]);
+  const [showInventoryPicker, setShowInventoryPicker] = useState(false);
 
   const [formData, setFormData] = useState({
     client_id: preSelectedClientId || "",
@@ -177,6 +201,16 @@ export function CreateInvoiceModal({
         .is("deleted_at", null);
 
       setHorses(horsesData || []);
+      
+      // Load inventory items
+      const { data: inventoryData } = await supabase
+        .from("inventory_items")
+        .select("id, product_name, brand, current_stock, price_sell, tax_rate, min_stock")
+        .eq("user_id", user.id)
+        .gt("current_stock", 0)
+        .order("product_name");
+      
+      setInventoryItems((inventoryData || []) as InventoryItem[]);
       setDataLoaded(true);
     };
 
@@ -251,6 +285,54 @@ export function CreateInvoiceModal({
     setShowTravelCost(false);
     toast({ title: "Fahrtkosten hinzugefügt", description: `€${calculatedTravelCost.toFixed(2)} wurden zum Betrag addiert.` });
   };
+
+  // Inventory line item functions
+  const addInventoryItem = (item: InventoryItem) => {
+    const existingIndex = lineItems.findIndex(li => li.inventory_id === item.id);
+    
+    if (existingIndex >= 0) {
+      // Increase quantity if already added
+      const updated = [...lineItems];
+      if (updated[existingIndex].quantity < item.current_stock) {
+        updated[existingIndex].quantity += 1;
+        setLineItems(updated);
+      } else {
+        toast({ title: "Maximale Menge erreicht", description: "Nicht genügend Bestand vorhanden.", variant: "destructive" });
+      }
+    } else {
+      // Add new line item
+      setLineItems([...lineItems, {
+        inventory_id: item.id,
+        name: item.brand ? `${item.brand} - ${item.product_name}` : item.product_name,
+        quantity: 1,
+        unit_price: item.price_sell || 0,
+        tax_rate: item.tax_rate || 19,
+      }]);
+    }
+    setShowInventoryPicker(false);
+  };
+
+  const updateLineItemQuantity = (index: number, delta: number) => {
+    const updated = [...lineItems];
+    const newQty = updated[index].quantity + delta;
+    const inventoryItem = inventoryItems.find(i => i.id === updated[index].inventory_id);
+    
+    if (newQty <= 0) {
+      updated.splice(index, 1);
+    } else if (inventoryItem && newQty <= inventoryItem.current_stock) {
+      updated[index].quantity = newQty;
+    } else {
+      toast({ title: "Maximale Menge erreicht", variant: "destructive" });
+      return;
+    }
+    setLineItems(updated);
+  };
+
+  const removeLineItem = (index: number) => {
+    setLineItems(lineItems.filter((_, i) => i !== index));
+  };
+
+  const lineItemsTotal = lineItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
 
   // Filter horses when client changes
   useEffect(() => {
@@ -581,6 +663,137 @@ export function CreateInvoiceModal({
               )}
             </div>
           )}
+
+          {/* Inventory / Product Line Items Section */}
+          <div className="space-y-3 p-3 rounded-lg bg-muted/50 border border-border">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Produkte aus Lager
+              </Label>
+              {inventoryItems.length > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowInventoryPicker(!showInventoryPicker)}
+                  className="gap-1"
+                >
+                  <Plus className="h-3 w-3" />
+                  Produkt hinzufügen
+                </Button>
+              )}
+            </div>
+
+            {/* Inventory Picker */}
+            {showInventoryPicker && (
+              <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-2 bg-background">
+                {inventoryItems.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => addInventoryItem(item)}
+                    className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-muted transition-colors text-left"
+                  >
+                    <div>
+                      <p className="font-medium text-sm">{item.product_name}</p>
+                      {item.brand && <p className="text-xs text-muted-foreground">{item.brand}</p>}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium text-sm">{item.price_sell?.toFixed(2) || "0.00"} €</p>
+                      <p className="text-xs text-muted-foreground">Bestand: {item.current_stock}</p>
+                    </div>
+                  </button>
+                ))}
+                {inventoryItems.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-2">Keine Produkte im Lager</p>
+                )}
+              </div>
+            )}
+
+            {/* Added Line Items */}
+            {lineItems.length > 0 && (
+              <div className="space-y-2">
+                {lineItems.map((item, index) => (
+                  <div key={item.inventory_id} className="flex items-center gap-2 p-2 bg-background rounded-lg border">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{item.name}</p>
+                      <p className="text-xs text-muted-foreground">{item.unit_price.toFixed(2)} € × {item.quantity}</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => updateLineItemQuantity(index, -1)}
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <Badge variant="secondary" className="min-w-[28px] justify-center">
+                        {item.quantity}
+                      </Badge>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => updateLineItemQuantity(index, 1)}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        onClick={() => removeLineItem(index)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <p className="text-sm font-semibold w-20 text-right">
+                      {(item.quantity * item.unit_price).toFixed(2)} €
+                    </p>
+                  </div>
+                ))}
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <span className="text-sm font-medium">Produkte Gesamt:</span>
+                  <span className="font-bold text-primary">{lineItemsTotal.toFixed(2)} €</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    const currentAmount = parseFloat(formData.total_amount) || 0;
+                    setFormData(prev => ({ ...prev, total_amount: (currentAmount + lineItemsTotal).toFixed(2) }));
+                    
+                    // Add to notes
+                    const productNotes = lineItems.map(li => `${li.name} (${li.quantity}x) = €${(li.quantity * li.unit_price).toFixed(2)}`).join("\n");
+                    const currentNotes = formData.notes;
+                    setFormData(prev => ({
+                      ...prev,
+                      notes: currentNotes ? `${currentNotes}\n\nProdukte:\n${productNotes}` : `Produkte:\n${productNotes}`
+                    }));
+                    
+                    setLineItems([]);
+                    toast({ title: "Produkte hinzugefügt", description: `€${lineItemsTotal.toFixed(2)} wurden zum Betrag addiert.` });
+                  }}
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Zum Betrag hinzufügen
+                </Button>
+              </div>
+            )}
+
+            {inventoryItems.length === 0 && lineItems.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                Keine Produkte im Lager. Füge Produkte unter "Material / Lager" hinzu.
+              </p>
+            )}
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="notes">Notizen</Label>

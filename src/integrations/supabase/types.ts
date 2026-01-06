@@ -1042,6 +1042,7 @@ export type Database = {
           global_product_id: string | null
           id: string
           image_url: string | null
+          min_stock: number | null
           notes: string | null
           price_sell: number | null
           product_name: string
@@ -1057,6 +1058,7 @@ export type Database = {
           global_product_id?: string | null
           id?: string
           image_url?: string | null
+          min_stock?: number | null
           notes?: string | null
           price_sell?: number | null
           product_name: string
@@ -1072,6 +1074,7 @@ export type Database = {
           global_product_id?: string | null
           id?: string
           image_url?: string | null
+          min_stock?: number | null
           notes?: string | null
           price_sell?: number | null
           product_name?: string
