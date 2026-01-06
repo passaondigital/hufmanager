@@ -423,6 +423,8 @@ export type Database = {
           about_text: string | null
           accept_new_customers: boolean | null
           address: string | null
+          bank_name: string | null
+          bic: string | null
           business_name: string | null
           client_intake_status: string | null
           copecart_customer_portal_url: string | null
@@ -432,6 +434,7 @@ export type Database = {
           email: string | null
           gallery_images: Json | null
           hero_headline: string | null
+          iban: string | null
           id: string
           impressum_text: string | null
           logo_url: string | null
@@ -456,6 +459,8 @@ export type Database = {
           about_text?: string | null
           accept_new_customers?: boolean | null
           address?: string | null
+          bank_name?: string | null
+          bic?: string | null
           business_name?: string | null
           client_intake_status?: string | null
           copecart_customer_portal_url?: string | null
@@ -465,6 +470,7 @@ export type Database = {
           email?: string | null
           gallery_images?: Json | null
           hero_headline?: string | null
+          iban?: string | null
           id?: string
           impressum_text?: string | null
           logo_url?: string | null
@@ -489,6 +495,8 @@ export type Database = {
           about_text?: string | null
           accept_new_customers?: boolean | null
           address?: string | null
+          bank_name?: string | null
+          bic?: string | null
           business_name?: string | null
           client_intake_status?: string | null
           copecart_customer_portal_url?: string | null
@@ -498,6 +506,7 @@ export type Database = {
           email?: string | null
           gallery_images?: Json | null
           hero_headline?: string | null
+          iban?: string | null
           id?: string
           impressum_text?: string | null
           logo_url?: string | null

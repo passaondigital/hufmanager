@@ -21,8 +21,9 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Car, MapPin, Plus, Package, Minus, Trash2 } from "lucide-react";
+import { Loader2, Car, MapPin, Plus, Package, Minus, Trash2, Eye } from "lucide-react";
 import { z } from "zod";
+import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
 
 // Haversine formula to calculate distance between two coordinates
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -116,6 +117,7 @@ export function CreateInvoiceModal({
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([]);
   const [showInventoryPicker, setShowInventoryPicker] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     client_id: preSelectedClientId || "",
@@ -343,6 +345,64 @@ export function CreateInvoiceModal({
       setFilteredHorses([]);
     }
   }, [formData.client_id, horses]);
+
+  // Preview PDF function
+  const handlePreview = async () => {
+    const amount = parseFloat(formData.total_amount);
+    
+    if (!formData.client_id) {
+      toast({ title: "Bitte Kunde wählen", variant: "destructive" });
+      return;
+    }
+    if (isNaN(amount) || amount <= 0) {
+      toast({ title: "Bitte gültigen Betrag eingeben", variant: "destructive" });
+      return;
+    }
+
+    setPreviewLoading(true);
+    
+    try {
+      const selectedClient = clients.find(c => c.id === formData.client_id);
+      const selectedHorse = filteredHorses.find(h => h.id === formData.horse_id);
+      
+      // Build a mock invoice for preview
+      const previewInvoice = {
+        id: "PREVIEW",
+        invoice_number: formData.invoice_number || `VORSCHAU-${Date.now()}`,
+        issue_date: formData.issue_date,
+        due_date: formData.due_date || null,
+        total_amount: amount,
+        status: formData.status,
+        notes: formData.notes || null,
+        horse: selectedHorse ? { name: selectedHorse.name } : null,
+      };
+      
+      const clientProfile = selectedClient ? {
+        full_name: selectedClient.full_name,
+        email: null,
+        phone: null,
+        city: null,
+        zip_code: null,
+        stable_street: null,
+        stable_city: null,
+        stable_zip: null,
+        readable_id: selectedClient.readable_id,
+      } : null;
+      
+      const pdfBlob = await generateInvoicePdf(previewInvoice, clientProfile, user?.id || "");
+      
+      // Open PDF in new tab
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      window.open(pdfUrl, "_blank");
+      
+      toast({ title: "Vorschau generiert", description: "PDF wurde in neuem Tab geöffnet." });
+    } catch (error) {
+      console.error("Preview error:", error);
+      toast({ title: "Fehler bei Vorschau", variant: "destructive" });
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -873,10 +933,21 @@ export function CreateInvoiceModal({
             </div>
           </div>
 
-          <DialogFooter className="mt-0">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Abbrechen
-            </Button>
+          <DialogFooter className="mt-0 flex-col sm:flex-row gap-2 sm:gap-0">
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Abbrechen
+              </Button>
+              <Button 
+                type="button" 
+                variant="secondary" 
+                onClick={handlePreview}
+                disabled={previewLoading || !formData.client_id || !formData.total_amount}
+              >
+                {previewLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Eye className="mr-2 h-4 w-4" />}
+                Vorschau
+              </Button>
+            </div>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Rechnung erstellen

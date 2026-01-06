@@ -11,13 +11,14 @@ const corsHeaders = {
 };
 
 interface SendInvoiceRequest {
-  invoiceId: string;
-  recipientEmail: string;
-  recipientName: string;
-  invoiceNumber: string;
-  totalAmount: number;
-  providerName: string;
-  providerEmail?: string;
+  invoice_id: string;
+  recipient_email: string;
+  recipient_name: string;
+  invoice_number: string;
+  total_amount: number;
+  provider_name: string;
+  provider_email?: string;
+  pdf_base64?: string; // Base64 encoded PDF
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -51,9 +52,18 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const body: SendInvoiceRequest = await req.json();
-    const { invoiceId, recipientEmail, recipientName, invoiceNumber, totalAmount, providerName, providerEmail } = body;
+    const { 
+      invoice_id, 
+      recipient_email, 
+      recipient_name, 
+      invoice_number, 
+      total_amount, 
+      provider_name, 
+      provider_email,
+      pdf_base64 
+    } = body;
 
-    if (!invoiceId || !recipientEmail || !recipientName) {
+    if (!recipient_email || !recipient_name) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -64,56 +74,140 @@ const handler = async (req: Request): Promise<Response> => {
     const formattedAmount = new Intl.NumberFormat("de-DE", {
       style: "currency",
       currency: "EUR",
-    }).format(totalAmount);
+    }).format(total_amount);
 
-    // Send email to client
-    const emailResponse = await resend.emails.send({
-      from: "HufManager <onboarding@resend.dev>",
-      to: [recipientEmail],
-      subject: `Rechnung ${invoiceNumber || ""}`.trim(),
+    // Get provider business settings for additional branding
+    const { data: businessSettings } = await supabase
+      .from("business_settings")
+      .select("business_name, owner_name, email, phone")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const businessName = provider_name || businessSettings?.business_name || businessSettings?.owner_name || "Ihr Hufbearbeiter";
+    
+    // Build email options
+    const emailOptions: {
+      from: string;
+      to: string[];
+      subject: string;
+      html: string;
+      attachments?: { filename: string; content: Uint8Array }[];
+    } = {
+      from: `${businessName} <onboarding@resend.dev>`,
+      to: [recipient_email],
+      subject: `Rechnung ${invoice_number || ""}`.trim() + ` von ${businessName}`,
       html: `
         <!DOCTYPE html>
         <html lang="de">
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Rechnung</title>
         </head>
-        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%); padding: 30px; border-radius: 12px 12px 0 0;">
-            <h1 style="color: white; margin: 0; font-size: 24px;">Neue Rechnung</h1>
-          </div>
-          
-          <div style="background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; border-top: none;">
-            <p style="margin-top: 0;">Hallo ${recipientName},</p>
-            
-            <p>Sie haben eine neue Rechnung von <strong>${providerName}</strong> erhalten.</p>
-            
-            <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border: 1px solid #e5e7eb;">
-              <table style="width: 100%; border-collapse: collapse;">
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280;">Rechnungsnummer:</td>
-                  <td style="padding: 8px 0; text-align: right; font-weight: 600;">${invoiceNumber || "-"}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280;">Betrag:</td>
-                  <td style="padding: 8px 0; text-align: right; font-weight: 600; font-size: 18px; color: #d97706;">${formattedAmount}</td>
-                </tr>
-              </table>
-            </div>
-            
-            <p>Sie können die Rechnung in Ihrer HufManager-App einsehen und herunterladen.</p>
-            
-            <p style="margin-bottom: 0;">Mit freundlichen Grüßen,<br><strong>${providerName}</strong></p>
-          </div>
-          
-          <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
-            <p style="margin: 0;">Diese E-Mail wurde über HufManager versendet.</p>
-          </div>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
+          <table role="presentation" style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 40px 20px;">
+                <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                  <!-- Header -->
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #F47B20 0%, #e06b10 100%); padding: 32px 40px; text-align: center;">
+                      <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">
+                        ${businessName}
+                      </h1>
+                    </td>
+                  </tr>
+                  
+                  <!-- Body -->
+                  <tr>
+                    <td style="padding: 40px;">
+                      <h2 style="margin: 0 0 16px; color: #111827; font-size: 20px; font-weight: 600;">
+                        Guten Tag ${recipient_name},
+                      </h2>
+                      
+                      <p style="margin: 0 0 24px; color: #4b5563; font-size: 16px; line-height: 1.6;">
+                        anbei erhalten Sie Ihre Rechnung <strong style="color: #111827;">${invoice_number || "-"}</strong> 
+                        über <strong style="color: #F47B20;">${formattedAmount}</strong>.
+                      </p>
+                      
+                      <!-- Invoice Card -->
+                      <table role="presentation" style="width: 100%; background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 24px;">
+                        <tr>
+                          <td style="padding: 24px;">
+                            <table role="presentation" style="width: 100%;">
+                              <tr>
+                                <td style="padding-bottom: 12px;">
+                                  <span style="color: #6b7280; font-size: 14px;">Rechnungsnummer</span><br>
+                                  <span style="color: #111827; font-size: 16px; font-weight: 600;">${invoice_number || "-"}</span>
+                                </td>
+                                <td style="padding-bottom: 12px; text-align: right;">
+                                  <span style="color: #6b7280; font-size: 14px;">Betrag</span><br>
+                                  <span style="color: #F47B20; font-size: 20px; font-weight: 700;">${formattedAmount}</span>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                      
+                      ${pdf_base64 ? `
+                      <p style="margin: 0 0 24px; color: #4b5563; font-size: 14px; line-height: 1.6;">
+                        📎 Die Rechnung finden Sie als PDF im Anhang dieser E-Mail.
+                      </p>
+                      ` : `
+                      <p style="margin: 0 0 24px; color: #4b5563; font-size: 14px; line-height: 1.6;">
+                        Sie können die Rechnung in Ihrer HufManager-App einsehen und herunterladen.
+                      </p>
+                      `}
+                      
+                      <p style="margin: 0 0 16px; color: #4b5563; font-size: 14px; line-height: 1.6;">
+                        Bitte überweisen Sie den Betrag unter Angabe der Rechnungsnummer.
+                      </p>
+                      
+                      <p style="margin: 0; color: #4b5563; font-size: 14px; line-height: 1.6;">
+                        Bei Fragen stehen wir Ihnen gerne zur Verfügung.
+                      </p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background-color: #f9fafb; padding: 24px 40px; border-top: 1px solid #e5e7eb;">
+                      <p style="margin: 0; color: #6b7280; font-size: 12px; text-align: center;">
+                        ${businessName}${businessSettings?.phone ? ` • ${businessSettings.phone}` : ""}${businessSettings?.email ? ` • ${businessSettings.email}` : ""}
+                      </p>
+                      <p style="margin: 8px 0 0; color: #9ca3af; font-size: 11px; text-align: center;">
+                        Diese E-Mail wurde automatisch über HufManager versendet.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
         </body>
         </html>
       `,
-    });
+    };
+
+    // Add PDF attachment if provided
+    if (pdf_base64) {
+      // Decode base64 to Uint8Array
+      const binaryString = atob(pdf_base64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      
+      emailOptions.attachments = [
+        {
+          filename: `Rechnung_${invoice_number || invoice_id || "Rechnung"}.pdf`,
+          content: bytes,
+        },
+      ];
+    }
+
+    // Send email
+    const emailResponse = await resend.emails.send(emailOptions);
 
     console.log("Invoice email sent successfully:", emailResponse);
 
@@ -121,10 +215,11 @@ const handler = async (req: Request): Promise<Response> => {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error sending invoice email:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
