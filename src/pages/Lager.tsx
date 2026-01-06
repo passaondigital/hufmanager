@@ -39,7 +39,9 @@ import {
   Loader2,
   ShoppingCart,
   Warehouse,
+  AlertTriangle,
 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 
 interface GlobalProduct {
@@ -63,6 +65,7 @@ interface InventoryItem {
   price_sell: number | null;
   tax_rate: number | null;
   notes: string | null;
+  min_stock: number | null;
 }
 
 const TAX_RATES = ["0", "7", "19"];
@@ -78,6 +81,7 @@ export default function Lager() {
     current_stock: 0,
     price_sell: "",
     tax_rate: "19",
+    min_stock: 0,
     notes: "",
   });
 
@@ -187,6 +191,7 @@ export default function Lager() {
       current_stock: item.current_stock,
       price_sell: item.price_sell?.toString() || "",
       tax_rate: item.tax_rate?.toString() || "19",
+      min_stock: item.min_stock || 0,
       notes: item.notes || "",
     });
     setEditDialogOpen(true);
@@ -201,6 +206,7 @@ export default function Lager() {
         current_stock: editFormData.current_stock,
         price_sell: editFormData.price_sell ? parseFloat(editFormData.price_sell) : null,
         tax_rate: parseFloat(editFormData.tax_rate),
+        min_stock: editFormData.min_stock,
         notes: editFormData.notes || null,
       },
     });
@@ -223,6 +229,11 @@ export default function Lager() {
   const isInInventory = (productId: string) =>
     inventoryItems.some((i) => i.global_product_id === productId);
 
+  // Calculate low stock items
+  const lowStockItems = inventoryItems.filter(
+    (item) => item.min_stock && item.min_stock > 0 && item.current_stock <= item.min_stock
+  );
+
   return (
     <div className="container mx-auto p-6 max-w-7xl">
       <div className="mb-6">
@@ -234,6 +245,23 @@ export default function Lager() {
           Verwalte dein Material und deine Verkaufspreise
         </p>
       </div>
+
+      {/* Low Stock Alert */}
+      {lowStockItems.length > 0 && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Bestandswarnung</AlertTitle>
+          <AlertDescription>
+            <span className="font-medium">{lowStockItems.length} Produkt{lowStockItems.length > 1 ? "e" : ""}</span> unter Mindestbestand:{" "}
+            {lowStockItems.map((item, i) => (
+              <span key={item.id}>
+                {item.product_name} ({item.current_stock}/{item.min_stock})
+                {i < lowStockItems.length - 1 ? ", " : ""}
+              </span>
+            ))}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Tabs defaultValue="inventory" className="space-y-6">
         <TabsList>
@@ -310,11 +338,22 @@ export default function Lager() {
                         <TableCell className="font-medium">{item.product_name}</TableCell>
                         <TableCell>{item.brand || "-"}</TableCell>
                         <TableCell className="text-center">
-                          <Badge
-                            variant={item.current_stock > 0 ? "default" : "secondary"}
-                          >
-                            {item.current_stock}
-                          </Badge>
+                          <div className="flex items-center justify-center gap-1">
+                            <Badge
+                              variant={
+                                item.min_stock && item.current_stock <= item.min_stock
+                                  ? "destructive"
+                                  : item.current_stock > 0
+                                  ? "default"
+                                  : "secondary"
+                              }
+                            >
+                              {item.current_stock}
+                            </Badge>
+                            {item.min_stock && item.current_stock <= item.min_stock && (
+                              <AlertTriangle className="h-3 w-3 text-destructive" />
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           {item.price_sell
@@ -536,6 +575,23 @@ export default function Lager() {
                     setEditFormData({ ...editFormData, price_sell: e.target.value })
                   }
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="min_stock">Mindestbestand (für Warnung)</Label>
+                <Input
+                  id="min_stock"
+                  type="number"
+                  min="0"
+                  placeholder="z.B. 2"
+                  value={editFormData.min_stock}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, min_stock: parseInt(e.target.value) || 0 })
+                  }
+                />
+                <p className="text-xs text-muted-foreground">
+                  Du erhältst eine Warnung, wenn der Bestand diesen Wert erreicht
+                </p>
               </div>
 
               <div className="space-y-2">
