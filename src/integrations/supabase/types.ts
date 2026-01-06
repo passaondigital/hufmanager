@@ -441,6 +441,7 @@ export type Database = {
           primary_color: string | null
           reminder_custom_text: string | null
           reminder_intervals: Json | null
+          reviews_layout: string | null
           stripe_public_key: string | null
           subdomain: string | null
           tax_number: string | null
@@ -472,6 +473,7 @@ export type Database = {
           primary_color?: string | null
           reminder_custom_text?: string | null
           reminder_intervals?: Json | null
+          reviews_layout?: string | null
           stripe_public_key?: string | null
           subdomain?: string | null
           tax_number?: string | null
@@ -503,6 +505,7 @@ export type Database = {
           primary_color?: string | null
           reminder_custom_text?: string | null
           reminder_intervals?: Json | null
+          reviews_layout?: string | null
           stripe_public_key?: string | null
           subdomain?: string | null
           tax_number?: string | null
@@ -1507,6 +1510,7 @@ export type Database = {
       }
       reviews: {
         Row: {
+          category: string | null
           created_at: string
           id: string
           is_approved: boolean | null
@@ -1523,6 +1527,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           id?: string
           is_approved?: boolean | null
@@ -1539,6 +1544,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           id?: string
           is_approved?: boolean | null

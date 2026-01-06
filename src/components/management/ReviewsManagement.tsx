@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -18,8 +17,12 @@ import {
   Trash2,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  LayoutGrid,
+  Presentation,
+  MoveHorizontal
 } from "lucide-react";
+import { REVIEW_CATEGORIES } from "@/components/landing/reviews";
 
 interface Review {
   id: string;
@@ -29,15 +32,18 @@ interface Review {
   text: string | null;
   is_approved: boolean;
   created_at: string;
+  category: string | null;
 }
 
 type IntakeStatus = 'open' | 'waitlist' | 'closed';
+type ReviewsLayout = 'grid' | 'carousel' | 'marquee';
 
 export const ReviewsManagement = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [copied, setCopied] = useState(false);
   const [intakeStatus, setIntakeStatus] = useState<IntakeStatus>('open');
+  const [reviewsLayout, setReviewsLayout] = useState<ReviewsLayout>('grid');
 
   // Fetch reviews
   const { data: reviews, isLoading } = useQuery({
@@ -55,19 +61,22 @@ export const ReviewsManagement = () => {
     enabled: !!user?.id
   });
 
-  // Fetch business settings for intake status
+  // Fetch business settings for intake status and reviews layout
   const { data: settings } = useQuery({
     queryKey: ["business-settings-intake", user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
       const { data, error } = await supabase
         .from("business_settings")
-        .select("id, client_intake_status")
+        .select("id, client_intake_status, reviews_layout")
         .eq("user_id", user.id)
         .maybeSingle();
       if (error) throw error;
       if (data?.client_intake_status) {
         setIntakeStatus(data.client_intake_status as IntakeStatus);
+      }
+      if (data?.reviews_layout) {
+        setReviewsLayout(data.reviews_layout as ReviewsLayout);
       }
       return data;
     },
@@ -98,6 +107,48 @@ export const ReviewsManagement = () => {
     },
     onError: () => {
       toast({ title: "Fehler", description: "Konnte nicht gespeichert werden.", variant: "destructive" });
+    }
+  });
+
+  // Update reviews layout mutation
+  const updateLayoutMutation = useMutation({
+    mutationFn: async (layout: ReviewsLayout) => {
+      if (!user?.id) throw new Error("Not authenticated");
+      
+      if (settings?.id) {
+        const { error } = await supabase
+          .from("business_settings")
+          .update({ reviews_layout: layout })
+          .eq("id", settings.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("business_settings")
+          .insert({ user_id: user.id, reviews_layout: layout });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["business-settings-intake"] });
+      toast({ title: "Gespeichert", description: "Layout aktualisiert." });
+    },
+    onError: () => {
+      toast({ title: "Fehler", description: "Konnte nicht gespeichert werden.", variant: "destructive" });
+    }
+  });
+
+  // Update review category mutation
+  const updateCategoryMutation = useMutation({
+    mutationFn: async ({ id, category }: { id: string; category: string | null }) => {
+      const { error } = await supabase
+        .from("reviews")
+        .update({ category })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reviews"] });
+      toast({ title: "Kategorie aktualisiert" });
     }
   });
 
@@ -198,6 +249,55 @@ export const ReviewsManagement = () => {
         </CardContent>
       </Card>
 
+      {/* Reviews Layout Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <LayoutGrid className="h-5 w-5" />
+            Bewertungs-Layout
+          </CardTitle>
+          <CardDescription>
+            Wählen Sie, wie Bewertungen auf Ihrer Landingpage angezeigt werden
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4">
+            <Label>Layout:</Label>
+            <Select 
+              value={reviewsLayout} 
+              onValueChange={(v) => {
+                setReviewsLayout(v as ReviewsLayout);
+                updateLayoutMutation.mutate(v as ReviewsLayout);
+              }}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="grid">
+                  <div className="flex items-center gap-2">
+                    <LayoutGrid className="h-4 w-4" />
+                    Grid (Klassisch)
+                  </div>
+                </SelectItem>
+                <SelectItem value="carousel">
+                  <div className="flex items-center gap-2">
+                    <Presentation className="h-4 w-4" />
+                    Slideshow (Karussell)
+                  </div>
+                </SelectItem>
+                <SelectItem value="marquee">
+                  <div className="flex items-center gap-2">
+                    <MoveHorizontal className="h-4 w-4" />
+                    Animation (Laufband)
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Review Link Card */}
       <Card>
         <CardHeader>
@@ -264,7 +364,7 @@ export const ReviewsManagement = () => {
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center flex-wrap gap-2 mb-2">
                         <div className="flex items-center gap-0.5">
                           {[1, 2, 3, 4, 5].map((star) => (
                             <Star
@@ -281,18 +381,42 @@ export const ReviewsManagement = () => {
                             Ausstehend
                           </Badge>
                         )}
+                        {review.category && (
+                          <Badge variant="secondary" className="text-xs">
+                            {review.category}
+                          </Badge>
+                        )}
                       </div>
                       {review.text && (
                         <p className="text-muted-foreground text-sm mb-2">"{review.text}"</p>
                       )}
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(review.created_at).toLocaleDateString("de-DE", {
-                          day: "2-digit",
-                          month: "long",
-                          year: "numeric"
-                        })}
-                        {review.reviewer_email && ` • ${review.reviewer_email}`}
-                      </p>
+                      <div className="flex items-center gap-3 mt-3">
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(review.created_at).toLocaleDateString("de-DE", {
+                            day: "2-digit",
+                            month: "long",
+                            year: "numeric"
+                          })}
+                          {review.reviewer_email && ` • ${review.reviewer_email}`}
+                        </p>
+                        <Select
+                          value={review.category || "none"}
+                          onValueChange={(v) => updateCategoryMutation.mutate({ 
+                            id: review.id, 
+                            category: v === "none" ? null : v 
+                          })}
+                        >
+                          <SelectTrigger className="h-7 w-[140px] text-xs">
+                            <SelectValue placeholder="Kategorie" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Keine Kategorie</SelectItem>
+                            {REVIEW_CATEGORIES.map((cat) => (
+                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
