@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,12 +21,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Edit, Trash2, GripVertical, Image as ImageIcon, Play, ExternalLink, Star, RefreshCw, Clock, Gift } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Edit, Trash2, GripVertical, Image as ImageIcon, Play, ExternalLink, Star, RefreshCw, Clock, Gift, Package, Calculator } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { OfferPreviewPanel } from "@/components/landing/OfferPreviewPanel";
+import { OfferRecipeEditor } from "@/components/offers/OfferRecipeEditor";
+import { OfferStockBadge } from "@/components/offers/OfferStockBadge";
+import { useOfferMaterials } from "@/hooks/useOfferMaterials";
 
 // Extract YouTube video ID from URL
 const getYouTubeId = (url: string): string | null => {
@@ -81,6 +85,24 @@ interface Offer {
   external_link: string | null;
   sort_order: number | null;
   billing_type: string | null;
+  duration_minutes: number | null;
+  recommended_tags: string[] | null;
+  auto_deduct: boolean | null;
+}
+
+interface RecipeMaterial {
+  id?: string;
+  inventory_item_id: string;
+  quantity: number;
+  inventory_item?: {
+    id: string;
+    product_name: string;
+    brand: string | null;
+    current_stock: number;
+    price_sell: number | null;
+    price_purchase: number | null;
+    min_stock: number | null;
+  };
 }
 
 const OFFER_TYPES = [
@@ -94,6 +116,8 @@ const Angebote = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState("details");
+  const [recipeMaterials, setRecipeMaterials] = useState<RecipeMaterial[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -106,8 +130,19 @@ const Angebote = () => {
     external_link: "",
     is_highlight: true,
     billing_type: "einmalig",
+    duration_minutes: 60,
+    recommended_tags: [] as string[],
+    auto_deduct: true,
   });
   const queryClient = useQueryClient();
+  const { materials, setMaterials, saveMaterials } = useOfferMaterials(editingOffer?.id || null);
+
+  // Sync materials when editing offer changes
+  useEffect(() => {
+    if (editingOffer) {
+      setRecipeMaterials(materials);
+    }
+  }, [materials, editingOffer]);
 
   // Get YouTube preview for form
   const youtubeId = getYouTubeId(formData.media_url);
@@ -263,6 +298,8 @@ const Angebote = () => {
 
   const openCreateDialog = () => {
     setEditingOffer(null);
+    setRecipeMaterials([]);
+    setActiveTab("details");
     setFormData({ 
       title: "", 
       description: "", 
@@ -275,12 +312,16 @@ const Angebote = () => {
       external_link: "",
       is_highlight: true,
       billing_type: "einmalig",
+      duration_minutes: 60,
+      recommended_tags: [],
+      auto_deduct: true,
     });
     setIsDialogOpen(true);
   };
 
   const openEditDialog = (offer: Offer) => {
     setEditingOffer(offer);
+    setActiveTab("details");
     const isHighlight = offer.display_mode === "highlight_card" || !offer.display_mode;
     setFormData({
       title: offer.title,
@@ -294,6 +335,9 @@ const Angebote = () => {
       external_link: offer.external_link || "",
       is_highlight: isHighlight,
       billing_type: offer.billing_type || "einmalig",
+      duration_minutes: offer.duration_minutes || 60,
+      recommended_tags: offer.recommended_tags || [],
+      auto_deduct: offer.auto_deduct ?? true,
     });
     setIsDialogOpen(true);
   };
@@ -301,9 +345,11 @@ const Angebote = () => {
   const closeDialog = () => {
     setIsDialogOpen(false);
     setEditingOffer(null);
+    setRecipeMaterials([]);
+    setActiveTab("details");
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.title) {
       toast({ title: "Fehler", description: "Bitte geben Sie einen Titel ein.", variant: "destructive" });
       return;
@@ -321,9 +367,24 @@ const Angebote = () => {
       media_url: formData.media_url || null,
       external_link: formData.external_link || null,
       billing_type: formData.billing_type,
+      duration_minutes: formData.duration_minutes,
+      recommended_tags: formData.recommended_tags,
+      auto_deduct: formData.auto_deduct,
     };
+    
     if (editingOffer) {
-      updateOffer.mutate({ id: editingOffer.id, data });
+      updateOffer.mutate({ id: editingOffer.id, data }, {
+        onSuccess: async () => {
+          // Save recipe materials after offer is updated
+          if (recipeMaterials.length > 0 || materials.length > 0) {
+            try {
+              await saveMaterials(editingOffer.id, recipeMaterials);
+            } catch (e) {
+              console.error("Error saving materials:", e);
+            }
+          }
+        }
+      });
     } else {
       createOffer.mutate(data);
     }
@@ -413,6 +474,7 @@ const Angebote = () => {
                             {BILLING_TYPES.find(t => t.value === offer.billing_type)?.label}
                           </Badge>
                         )}
+                        <OfferStockBadge offerId={offer.id} />
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         {offer.billing_type === 'kostenlos' ? (
@@ -490,184 +552,224 @@ const Angebote = () => {
       <OfferPreviewPanel offers={offers} />
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>{editingOffer ? "Angebot bearbeiten" : "Neues Angebot"}</DialogTitle>
             <DialogDescription>
-              {editingOffer ? "Bearbeiten Sie die Angebot-Details" : "Erstellen Sie ein neues Angebot"}
+              {editingOffer ? "Bearbeiten Sie die Angebot-Details und das Rezept" : "Erstellen Sie ein neues Angebot"}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
-            <div className="space-y-2">
-              <Label>Titel *</Label>
-              <Input
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Angebot-Titel"
-              />
-            </div>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="details" className="gap-2">
+                <Package className="h-4 w-4" />
+                Details
+              </TabsTrigger>
+              <TabsTrigger value="recipe" className="gap-2" disabled={!editingOffer}>
+                <Calculator className="h-4 w-4" />
+                Kalkulation & Material
+              </TabsTrigger>
+            </TabsList>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Angebotstyp</Label>
-                <Select
-                  value={formData.offer_type}
-                  onValueChange={(value) => setFormData({ ...formData, offer_type: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {OFFER_TYPES.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Abrechnungsart</Label>
-                <Select
-                  value={formData.billing_type}
-                  onValueChange={(value) => setFormData({ ...formData, billing_type: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BILLING_TYPES.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        <span className="flex items-center gap-2">
-                          {type.icon}
-                          {type.label}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Simple Toggle for Highlight */}
-            <div className="flex items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <Label className="text-base flex items-center gap-2">
-                  <Star className="h-4 w-4 text-primary" />
-                  Als Haupt-Angebot hervorheben?
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Highlight-Angebote werden groß mit Bild/Video angezeigt
-                </p>
-              </div>
-              <Switch
-                checked={formData.is_highlight}
-                onCheckedChange={(checked) => setFormData({ ...formData, is_highlight: checked })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Beschreibung</Label>
-              <Textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Angebot-Beschreibung"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Preistyp</Label>
-                <Select
-                  value={formData.price_type}
-                  onValueChange={(value) => setFormData({ ...formData, price_type: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fest">Festpreis</SelectItem>
-                    <SelectItem value="ab">Ab Preis</SelectItem>
-                    <SelectItem value="auf_anfrage">Auf Anfrage</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {formData.price_type !== "auf_anfrage" && (
+            <TabsContent value="details" className="mt-4">
+              <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
                 <div className="space-y-2">
-                  <Label>Preis (€)</Label>
+                  <Label>Titel *</Label>
                   <Input
-                    type="number"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="Angebot-Titel"
                   />
                 </div>
-              )}
-            </div>
 
-            <div className="space-y-2">
-              <Label>Features (kommagetrennt)</Label>
-              <Textarea
-                value={formData.features}
-                onChange={(e) => setFormData({ ...formData, features: e.target.value })}
-                placeholder="Beratung, Ausschneiden, Raspeln"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Media URL (YouTube oder Bild)</Label>
-              <Input
-                value={formData.media_url}
-                onChange={(e) => setFormData({ ...formData, media_url: e.target.value })}
-                placeholder="https://youtube.com/watch?v=... oder Bild-URL"
-              />
-              {youtubeThumbnail && (
-                <div className="relative mt-2 rounded-lg overflow-hidden border border-border">
-                  <img
-                    src={youtubeThumbnail}
-                    alt="YouTube Preview"
-                    className="w-full aspect-video object-cover"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                    <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center">
-                      <Play className="h-6 w-6 text-white ml-1" fill="white" />
-                    </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Angebotstyp</Label>
+                    <Select
+                      value={formData.offer_type}
+                      onValueChange={(value) => setFormData({ ...formData, offer_type: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {OFFER_TYPES.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <p className="text-xs text-muted-foreground p-2 bg-muted/80">
-                    YouTube Video erkannt
+
+                  <div className="space-y-2">
+                    <Label>Abrechnungsart</Label>
+                    <Select
+                      value={formData.billing_type}
+                      onValueChange={(value) => setFormData({ ...formData, billing_type: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {BILLING_TYPES.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            <span className="flex items-center gap-2">
+                              {type.icon}
+                              {type.label}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Simple Toggle for Highlight */}
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <Label className="text-base flex items-center gap-2">
+                      <Star className="h-4 w-4 text-primary" />
+                      Als Haupt-Angebot hervorheben?
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Highlight-Angebote werden groß mit Bild/Video angezeigt
+                    </p>
+                  </div>
+                  <Switch
+                    checked={formData.is_highlight}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_highlight: checked })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Beschreibung</Label>
+                  <Textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Angebot-Beschreibung"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Preistyp</Label>
+                    <Select
+                      value={formData.price_type}
+                      onValueChange={(value) => setFormData({ ...formData, price_type: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fest">Festpreis</SelectItem>
+                        <SelectItem value="ab">Ab Preis</SelectItem>
+                        <SelectItem value="auf_anfrage">Auf Anfrage</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {formData.price_type !== "auf_anfrage" && (
+                    <div className="space-y-2">
+                      <Label>Preis (€)</Label>
+                      <Input
+                        type="number"
+                        value={formData.price}
+                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Features (kommagetrennt)</Label>
+                  <Textarea
+                    value={formData.features}
+                    onChange={(e) => setFormData({ ...formData, features: e.target.value })}
+                    placeholder="Beratung, Ausschneiden, Raspeln"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Media URL (YouTube oder Bild)</Label>
+                  <Input
+                    value={formData.media_url}
+                    onChange={(e) => setFormData({ ...formData, media_url: e.target.value })}
+                    placeholder="https://youtube.com/watch?v=... oder Bild-URL"
+                  />
+                  {youtubeThumbnail && (
+                    <div className="relative mt-2 rounded-lg overflow-hidden border border-border">
+                      <img
+                        src={youtubeThumbnail}
+                        alt="YouTube Preview"
+                        className="w-full aspect-video object-cover"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center">
+                          <Play className="h-6 w-6 text-white ml-1" fill="white" />
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground p-2 bg-muted/80">
+                        YouTube Video erkannt
+                      </p>
+                    </div>
+                  )}
+                  {formData.media_url && !youtubeThumbnail && formData.media_url.startsWith('http') && (
+                    <div className="relative mt-2 rounded-lg overflow-hidden border border-border">
+                      <img
+                        src={formData.media_url}
+                        alt="Bild Preview"
+                        className="w-full aspect-video object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    YouTube-Videos werden automatisch eingebettet
                   </p>
                 </div>
-              )}
-              {formData.media_url && !youtubeThumbnail && formData.media_url.startsWith('http') && (
-                <div className="relative mt-2 rounded-lg overflow-hidden border border-border">
-                  <img
-                    src={formData.media_url}
-                    alt="Bild Preview"
-                    className="w-full aspect-video object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
+
+                <div className="space-y-2">
+                  <Label>Externer Link (optional)</Label>
+                  <Input
+                    value={formData.external_link}
+                    onChange={(e) => setFormData({ ...formData, external_link: e.target.value })}
+                    placeholder="https://shop.beispiel.de/produkt"
                   />
                 </div>
-              )}
-              <p className="text-xs text-muted-foreground">
-                YouTube-Videos werden automatisch eingebettet
-              </p>
-            </div>
 
-            <div className="space-y-2">
-              <Label>Externer Link (optional)</Label>
-              <Input
-                value={formData.external_link}
-                onChange={(e) => setFormData({ ...formData, external_link: e.target.value })}
-                placeholder="https://shop.beispiel.de/produkt"
-              />
-            </div>
-          </div>
+                {!editingOffer && (
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      💡 Nach dem Erstellen können Sie im Tab "Kalkulation & Material" Rezepte mit Materialien aus Ihrem Lager definieren.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
 
-          <DialogFooter>
+            <TabsContent value="recipe" className="mt-4">
+              <div className="max-h-[50vh] overflow-y-auto pr-2">
+                <OfferRecipeEditor
+                  offerId={editingOffer?.id || null}
+                  offerPrice={Number(formData.price) || null}
+                  durationMinutes={formData.duration_minutes}
+                  recommendedTags={formData.recommended_tags}
+                  autoDeduct={formData.auto_deduct}
+                  onDurationChange={(mins) => setFormData({ ...formData, duration_minutes: mins })}
+                  onTagsChange={(tags) => setFormData({ ...formData, recommended_tags: tags })}
+                  onAutoDeductChange={(auto) => setFormData({ ...formData, auto_deduct: auto })}
+                  materials={recipeMaterials}
+                  onMaterialsChange={setRecipeMaterials}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <DialogFooter className="mt-4">
             <Button variant="outline" onClick={closeDialog}>
               Abbrechen
             </Button>
