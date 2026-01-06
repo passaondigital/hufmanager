@@ -81,7 +81,7 @@ export const ReviewsSection = ({ reviews, primaryColor = "#F47B20" }: ReviewsSec
                   )}
                 </div>
                 
-                {review.text && (
+                {review.text?.trim() && (
                   <p className="text-muted-foreground italic mb-4">"{review.text}"</p>
                 )}
                 
