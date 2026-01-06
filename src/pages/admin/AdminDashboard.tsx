@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Shield, Users, Database, Bug, Activity, Crown, Plus, Zap, Package } from "lucide-react";
+import { Loader2, Shield, Users, Database, Bug, Activity, Crown, Plus, Zap, Package, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
 // Admin Views
@@ -15,13 +15,15 @@ import { AdminDevZentrale } from "@/components/admin/AdminDevZentrale";
 import { AdminSystemHealth } from "@/components/admin/AdminSystemHealth";
 import { AdminQuickNote } from "@/components/admin/AdminQuickNote";
 import { AdminProductCatalog } from "@/components/admin/AdminProductCatalog";
+import { AdminSystemDoku } from "@/components/admin/AdminSystemDoku";
 
-type AdminView = "users" | "horses" | "dev" | "health" | "catalog";
+type AdminView = "users" | "horses" | "dev" | "health" | "catalog" | "docs";
 
 const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "users", label: "User-DB", icon: Users },
   { id: "horses", label: "Pferde-DB", icon: Database },
   { id: "catalog", label: "Produktkatalog", icon: Package },
+  { id: "docs", label: "System & Doku", icon: BookOpen },
   { id: "dev", label: "Dev-Zentrale", icon: Bug },
   { id: "health", label: "System-Health", icon: Activity },
 ];
@@ -175,6 +177,7 @@ export default function AdminDashboard() {
         {activeView === "users" && <AdminUserDB isMasterAdmin={isMasterAdmin} />}
         {activeView === "horses" && <AdminHorseDB isMasterAdmin={isMasterAdmin} />}
         {activeView === "catalog" && <AdminProductCatalog />}
+        {activeView === "docs" && <AdminSystemDoku />}
         {activeView === "dev" && <AdminDevZentrale />}
         {activeView === "health" && <AdminSystemHealth />}
       </main>
