@@ -47,7 +47,10 @@ import {
   Phone,
   GraduationCap,
   ClipboardList,
-  BarChart3
+  BarChart3,
+  Wand2,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -159,6 +162,7 @@ export default function MissionControl() {
 
   // New user form
   const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserPassword, setNewUserPassword] = useState("");
   const [newUserFirstName, setNewUserFirstName] = useState("");
   const [newUserLastName, setNewUserLastName] = useState("");
   const [newUserPlanOverride, setNewUserPlanOverride] = useState("standard");
@@ -501,6 +505,7 @@ export default function MissionControl() {
       const { data, error } = await supabase.functions.invoke("admin-create-user", {
         body: {
           email: newUserEmail,
+          password: newUserPassword || null,
           firstName: newUserFirstName,
           lastName: newUserLastName,
           planOverride: newUserPlanOverride !== "standard" ? newUserPlanOverride : null,
@@ -530,6 +535,7 @@ export default function MissionControl() {
       setCreateDialogOpen(false);
       // Reset form
       setNewUserEmail("");
+      setNewUserPassword("");
       setNewUserFirstName("");
       setNewUserLastName("");
       setNewUserPlanOverride("standard");
@@ -1055,6 +1061,38 @@ export default function MissionControl() {
                             onChange={(e) => setNewUserEmail(e.target.value)}
                           />
                         </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="providerPassword">Initiales Passwort (optional)</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="providerPassword"
+                              type="text"
+                              placeholder="Leer = Invite-Mail"
+                              value={newUserPassword}
+                              onChange={(e) => setNewUserPassword(e.target.value)}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={() => {
+                                const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%";
+                                let pw = "";
+                                for (let i = 0; i < 12; i++) {
+                                  pw += chars.charAt(Math.floor(Math.random() * chars.length));
+                                }
+                                setNewUserPassword(pw);
+                                toast.success("Passwort generiert!");
+                              }}
+                              title="Passwort generieren"
+                            >
+                              <Wand2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Wenn ausgefüllt, wird der User direkt mit diesem Passwort angelegt (keine E-Mail-Bestätigung nötig).
+                          </p>
+                        </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="firstName">Vorname *</Label>
@@ -1345,13 +1383,32 @@ export default function MissionControl() {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="clientPassword">Passwort</Label>
-                        <Input
-                          id="clientPassword"
-                          type="password"
-                          placeholder="Mindestens 6 Zeichen"
-                          value={clientPassword}
-                          onChange={(e) => setClientPassword(e.target.value)}
-                        />
+                        <div className="flex gap-2">
+                          <Input
+                            id="clientPassword"
+                            type="text"
+                            placeholder="Mindestens 6 Zeichen"
+                            value={clientPassword}
+                            onChange={(e) => setClientPassword(e.target.value)}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => {
+                              const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%";
+                              let pw = "";
+                              for (let i = 0; i < 12; i++) {
+                                pw += chars.charAt(Math.floor(Math.random() * chars.length));
+                              }
+                              setClientPassword(pw);
+                              toast.success("Passwort generiert!");
+                            }}
+                            title="Passwort generieren"
+                          >
+                            <Wand2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="clientProvider">Provider verknüpfen</Label>

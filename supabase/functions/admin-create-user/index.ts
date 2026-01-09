@@ -13,6 +13,7 @@ interface InitialService {
 
 interface CreateUserRequest {
   email: string;
+  password?: string | null;
   firstName: string;
   lastName: string;
   planOverride?: string | null;
@@ -90,6 +91,7 @@ serve(async (req: Request) => {
 
     const { 
       email, 
+      password,
       firstName, 
       lastName,
       planOverride,
@@ -110,19 +112,39 @@ serve(async (req: Request) => {
       );
     }
 
-    console.log(`Admin ${callerUser.email} creating provider: ${email} with plan: ${planOverride || 'standard'}`);
+    console.log(`Admin ${callerUser.email} creating provider: ${email} with plan: ${planOverride || 'standard'}, usePassword: ${!!password}`);
 
-    // Create user with invite (sends magic link email)
-    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
-      email,
-      {
-        data: {
+    let newUser;
+    let createError;
+
+    if (password) {
+      // Create user with password (direct login, no email confirmation needed)
+      const result = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true, // Mark email as confirmed immediately
+        user_metadata: {
           full_name: `${firstName} ${lastName}`,
           role: "provider",
         },
-        redirectTo: `${supabaseUrl.replace('.supabase.co', '.lovable.app')}/auth`,
-      }
-    );
+      });
+      newUser = result.data;
+      createError = result.error;
+    } else {
+      // Create user with invite (sends magic link email)
+      const result = await supabaseAdmin.auth.admin.inviteUserByEmail(
+        email,
+        {
+          data: {
+            full_name: `${firstName} ${lastName}`,
+            role: "provider",
+          },
+          redirectTo: `${supabaseUrl.replace('.supabase.co', '.lovable.app')}/auth`,
+        }
+      );
+      newUser = result.data;
+      createError = result.error;
+    }
 
     if (createError) {
       console.error("Error creating user:", createError);
