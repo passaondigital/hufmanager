@@ -205,7 +205,7 @@ serve(async (req: Request) => {
         category: "Hufbearbeitung",
         billing_type: "standard",
         is_active: true,
-        booking_action: "contact",
+        booking_action: "request_only",
       }));
 
       const { error: servicesError } = await supabaseAdmin
