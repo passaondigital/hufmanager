@@ -81,7 +81,9 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
 
       if (error) {
-        console.error("Error fetching subscription:", error);
+        // Non-blocking error - use defaults and allow dashboard to load
+        console.warn("Error fetching subscription (non-blocking):", error.message);
+        setLoading(false);
         return;
       }
 
