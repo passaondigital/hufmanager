@@ -1538,6 +1538,7 @@ export type Database = {
           phone: string | null
           plan_override: string | null
           readable_id: string | null
+          role: string | null
           stable_city: string | null
           stable_latitude: number | null
           stable_longitude: number | null
@@ -1573,6 +1574,7 @@ export type Database = {
           phone?: string | null
           plan_override?: string | null
           readable_id?: string | null
+          role?: string | null
           stable_city?: string | null
           stable_latitude?: number | null
           stable_longitude?: number | null
@@ -1608,6 +1610,7 @@ export type Database = {
           phone?: string | null
           plan_override?: string | null
           readable_id?: string | null
+          role?: string | null
           stable_city?: string | null
           stable_latitude?: number | null
           stable_longitude?: number | null

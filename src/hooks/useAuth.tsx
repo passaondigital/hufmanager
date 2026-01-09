@@ -142,21 +142,32 @@ const signIn = async (email: string, password: string) => {
       return { error };
     }
 
-    // Check if user is suspended
+    // Check if user is suspended - use maybeSingle() to avoid schema errors
     if (data.user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("is_suspended, suspended_reason")
-        .eq("id", data.user.id)
-        .single();
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("is_suspended, suspended_reason")
+          .eq("id", data.user.id)
+          .maybeSingle();
 
-      if (profile?.is_suspended) {
-        // Sign out immediately
-        await supabase.auth.signOut();
-        const reason = profile.suspended_reason || "Ihr Konto wurde gesperrt.";
-        return { 
-          error: new Error(`Konto gesperrt: ${reason}`) 
-        };
+        // Log profile errors but don't block login
+        if (profileError) {
+          console.warn("Profile check failed (non-blocking):", profileError.message);
+          // Continue with login - profile will be created/repaired by ProfileGuardian
+        }
+
+        if (profile?.is_suspended) {
+          // Sign out immediately
+          await supabase.auth.signOut();
+          const reason = profile.suspended_reason || "Ihr Konto wurde gesperrt.";
+          return { 
+            error: new Error(`Konto gesperrt: ${reason}`) 
+          };
+        }
+      } catch (err) {
+        // Non-blocking error - allow login to proceed
+        console.warn("Unexpected error during profile check:", err);
       }
     }
 
