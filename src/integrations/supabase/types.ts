@@ -108,8 +108,29 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "access_grants_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "access_grants_provider_id_fkey"
             columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_grants_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_grants_requested_by_fkey"
+            columns: ["requested_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -118,7 +139,7 @@ export type Database = {
             foreignKeyName: "access_grants_requested_by_fkey"
             columns: ["requested_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "safe_provider_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -249,6 +270,13 @@ export type Database = {
             referencedRelation: "appointments"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "appointment_reminders_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "safe_appointments"
+            referencedColumns: ["id"]
+          },
         ]
       }
       appointments: {
@@ -354,6 +382,13 @@ export type Database = {
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
             referencedColumns: ["id"]
           },
         ]
@@ -569,10 +604,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "client_consents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "client_consents_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_consents_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -640,6 +689,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "contacts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       conversations: {
@@ -679,10 +735,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "conversations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "conversations_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -826,10 +896,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "hoof_analyses_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "safe_appointments"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "hoof_analyses_horse_id_fkey"
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hoof_analyses_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
             referencedColumns: ["id"]
           },
         ]
@@ -874,10 +958,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "hoof_photos_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "safe_appointments"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "hoof_photos_horse_id_fkey"
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hoof_photos_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
             referencedColumns: ["id"]
           },
         ]
@@ -922,6 +1020,13 @@ export type Database = {
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_documents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
             referencedColumns: ["id"]
           },
         ]
@@ -1038,6 +1143,13 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horses_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1159,10 +1271,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "invoices_horse_id_fkey"
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
             referencedColumns: ["id"]
           },
         ]
@@ -1324,10 +1450,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "media_assets_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "safe_appointments"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "media_assets_horse_id_fkey"
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_assets_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
             referencedColumns: ["id"]
           },
         ]
@@ -1652,6 +1792,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "provider_portal_credentials_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: true
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       push_subscriptions: {
@@ -1816,6 +1963,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "subscription_links_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       subscription_settings: {
@@ -1883,7 +2037,300 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      safe_appointments: {
+        Row: {
+          completed_at: string | null
+          completion_notes: string | null
+          completion_pdf_url: string | null
+          confirmation_token: string | null
+          created_at: string | null
+          date: string | null
+          duration: number | null
+          gait_analysis_done: boolean | null
+          gait_analysis_ok: boolean | null
+          horse_id: string | null
+          id: string | null
+          is_confirmed_by_client: boolean | null
+          is_series_appointment: boolean | null
+          location: string | null
+          notes: string | null
+          price: number | null
+          provider_id: string | null
+          series_current: number | null
+          series_total: number | null
+          service_type: string | null
+          signature_url: string | null
+          status: string | null
+          time: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          completion_notes?: string | null
+          completion_pdf_url?: never
+          confirmation_token?: never
+          created_at?: string | null
+          date?: string | null
+          duration?: number | null
+          gait_analysis_done?: boolean | null
+          gait_analysis_ok?: boolean | null
+          horse_id?: string | null
+          id?: string | null
+          is_confirmed_by_client?: boolean | null
+          is_series_appointment?: boolean | null
+          location?: never
+          notes?: string | null
+          price?: number | null
+          provider_id?: string | null
+          series_current?: number | null
+          series_total?: number | null
+          service_type?: string | null
+          signature_url?: never
+          status?: string | null
+          time?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          completion_notes?: string | null
+          completion_pdf_url?: never
+          confirmation_token?: never
+          created_at?: string | null
+          date?: string | null
+          duration?: number | null
+          gait_analysis_done?: boolean | null
+          gait_analysis_ok?: boolean | null
+          horse_id?: string | null
+          id?: string | null
+          is_confirmed_by_client?: boolean | null
+          is_series_appointment?: boolean | null
+          location?: never
+          notes?: string | null
+          price?: number | null
+          provider_id?: string | null
+          series_current?: number | null
+          series_total?: number | null
+          service_type?: string | null
+          signature_url?: never
+          status?: string | null
+          time?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      safe_business_settings: {
+        Row: {
+          about_text: string | null
+          accept_new_customers: boolean | null
+          address: string | null
+          business_name: string | null
+          client_intake_status: string | null
+          email: string | null
+          gallery_images: Json | null
+          hero_headline: string | null
+          id: string | null
+          impressum_text: string | null
+          logo_url: string | null
+          owner_name: string | null
+          phone: string | null
+          primary_color: string | null
+          reviews_layout: string | null
+          section_order: Json | null
+          subdomain: string | null
+          terms_text: string | null
+          user_id: string | null
+        }
+        Insert: {
+          about_text?: string | null
+          accept_new_customers?: boolean | null
+          address?: string | null
+          business_name?: string | null
+          client_intake_status?: string | null
+          email?: string | null
+          gallery_images?: Json | null
+          hero_headline?: string | null
+          id?: string | null
+          impressum_text?: string | null
+          logo_url?: string | null
+          owner_name?: string | null
+          phone?: string | null
+          primary_color?: string | null
+          reviews_layout?: string | null
+          section_order?: Json | null
+          subdomain?: string | null
+          terms_text?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          about_text?: string | null
+          accept_new_customers?: boolean | null
+          address?: string | null
+          business_name?: string | null
+          client_intake_status?: string | null
+          email?: string | null
+          gallery_images?: Json | null
+          hero_headline?: string | null
+          id?: string | null
+          impressum_text?: string | null
+          logo_url?: string | null
+          owner_name?: string | null
+          phone?: string | null
+          primary_color?: string | null
+          reviews_layout?: string | null
+          section_order?: Json | null
+          subdomain?: string | null
+          terms_text?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      safe_horses: {
+        Row: {
+          anamnesis_interval_months: number | null
+          birth_year: number | null
+          breed: string | null
+          color: string | null
+          contacts: Json | null
+          created_at: string | null
+          discipline: string | null
+          eqid: string | null
+          equine_type: string | null
+          feeding_notes: string | null
+          gender: string | null
+          height: string | null
+          hoof_measurements: Json | null
+          housing: string | null
+          id: string | null
+          last_anamnesis_date: string | null
+          latitude: number | null
+          location_name: string | null
+          longitude: number | null
+          name: string | null
+          nickname: string | null
+          owner_id: string | null
+          photo_url: string | null
+          readable_id: string | null
+          shoeing_interval: number | null
+          updated_at: string | null
+          usage: string | null
+        }
+        Insert: {
+          anamnesis_interval_months?: number | null
+          birth_year?: number | null
+          breed?: string | null
+          color?: string | null
+          contacts?: Json | null
+          created_at?: string | null
+          discipline?: string | null
+          eqid?: string | null
+          equine_type?: string | null
+          feeding_notes?: string | null
+          gender?: string | null
+          height?: string | null
+          hoof_measurements?: Json | null
+          housing?: string | null
+          id?: string | null
+          last_anamnesis_date?: string | null
+          latitude?: number | null
+          location_name?: string | null
+          longitude?: number | null
+          name?: string | null
+          nickname?: string | null
+          owner_id?: string | null
+          photo_url?: string | null
+          readable_id?: string | null
+          shoeing_interval?: number | null
+          updated_at?: string | null
+          usage?: string | null
+        }
+        Update: {
+          anamnesis_interval_months?: number | null
+          birth_year?: number | null
+          breed?: string | null
+          color?: string | null
+          contacts?: Json | null
+          created_at?: string | null
+          discipline?: string | null
+          eqid?: string | null
+          equine_type?: string | null
+          feeding_notes?: string | null
+          gender?: string | null
+          height?: string | null
+          hoof_measurements?: Json | null
+          housing?: string | null
+          id?: string | null
+          last_anamnesis_date?: string | null
+          latitude?: number | null
+          location_name?: string | null
+          longitude?: number | null
+          name?: string | null
+          nickname?: string | null
+          owner_id?: string | null
+          photo_url?: string | null
+          readable_id?: string | null
+          shoeing_interval?: number | null
+          updated_at?: string | null
+          usage?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horses_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horses_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      safe_provider_profiles: {
+        Row: {
+          avatar_url: string | null
+          business_hours: Json | null
+          email: string | null
+          full_name: string | null
+          id: string | null
+          readable_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          business_hours?: Json | null
+          email?: string | null
+          full_name?: string | null
+          id?: string | null
+          readable_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          business_hours?: Json | null
+          email?: string | null
+          full_name?: string | null
+          id?: string | null
+          readable_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       delete_client_cascade: {
@@ -1892,7 +2339,33 @@ export type Database = {
       }
       delete_horse_safe: { Args: { _horse_id: string }; Returns: undefined }
       generate_random_id: { Args: { prefix: string }; Returns: string }
+      get_horse_medical_data: {
+        Args: { p_horse_id: string }
+        Returns: {
+          health_status: string
+          hoof_protection: string
+          hoof_type: string
+          medical_history: string
+          special_notes: string
+        }[]
+      }
       get_or_assign_provider_for_client: { Args: never; Returns: string }
+      get_provider_business_settings: {
+        Args: { p_provider_id: string }
+        Returns: {
+          about_text: string
+          accept_new_customers: boolean
+          address: string
+          business_name: string
+          email: string
+          hero_headline: string
+          logo_url: string
+          owner_name: string
+          phone: string
+          primary_color: string
+          subdomain: string
+        }[]
+      }
       get_public_business_landing: {
         Args: { subdomain_input: string }
         Returns: Json
