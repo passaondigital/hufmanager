@@ -1226,6 +1226,7 @@ export type Database = {
           invoice_number: string | null
           issue_date: string
           notes: string | null
+          payment_method: string | null
           pdf_url: string | null
           provider_id: string | null
           status: string | null
@@ -1241,6 +1242,7 @@ export type Database = {
           invoice_number?: string | null
           issue_date?: string
           notes?: string | null
+          payment_method?: string | null
           pdf_url?: string | null
           provider_id?: string | null
           status?: string | null
@@ -1256,6 +1258,7 @@ export type Database = {
           invoice_number?: string | null
           issue_date?: string
           notes?: string | null
+          payment_method?: string | null
           pdf_url?: string | null
           provider_id?: string | null
           status?: string | null
