@@ -128,6 +128,7 @@ export function CreateInvoiceModal({
     total_amount: "",
     status: "pending" as "pending" | "paid" | "overdue",
     payment_method: "" as "" | "Überweisung" | "Bar" | "PayPal",
+    customer_type: "privat" as "privat" | "gewerbe",
     notes: "",
   });
 
@@ -445,7 +446,8 @@ export function CreateInvoiceModal({
       due_date: formData.due_date || null,
       total_amount: amount,
       status: formData.status,
-      payment_method: formData.status === "paid" && formData.payment_method ? formData.payment_method : null,
+      payment_method: formData.payment_method || null,
+      customer_type: formData.customer_type,
       notes: formData.notes || null,
     }).select().single();
 
@@ -532,6 +534,7 @@ export function CreateInvoiceModal({
       total_amount: "",
       status: "pending",
       payment_method: "",
+      customer_type: "privat",
       notes: "",
     });
     setLineItems([]);
@@ -633,6 +636,23 @@ export function CreateInvoiceModal({
         </div>
       </div>
 
+      {/* Customer Type */}
+      <div className="space-y-2">
+        <Label htmlFor="customer_type">Kundentyp</Label>
+        <Select
+          value={formData.customer_type}
+          onValueChange={(value: "privat" | "gewerbe") => setFormData(prev => ({ ...prev, customer_type: value }))}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="privat">Privatkunde (inkl. 19% MwSt)</SelectItem>
+            <SelectItem value="gewerbe">Gewerbekunde (Netto)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Status */}
       <div className="space-y-2">
         <Label htmlFor="status">Status</Label>
@@ -640,9 +660,7 @@ export function CreateInvoiceModal({
           value={formData.status}
           onValueChange={(value: "pending" | "paid" | "overdue") => setFormData(prev => ({ 
             ...prev, 
-            status: value,
-            // Reset payment_method when status is not paid
-            payment_method: value === "paid" ? prev.payment_method : ""
+            status: value
           }))}
         >
           <SelectTrigger>
@@ -656,25 +674,23 @@ export function CreateInvoiceModal({
         </Select>
       </div>
 
-      {/* Payment Method - nur sichtbar wenn Status = Bezahlt */}
-      {formData.status === "paid" && (
-        <div className="space-y-2">
-          <Label htmlFor="payment_method">Zahlungsart</Label>
-          <Select
-            value={formData.payment_method}
-            onValueChange={(value: "Überweisung" | "Bar" | "PayPal") => setFormData(prev => ({ ...prev, payment_method: value }))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Zahlungsart wählen..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Überweisung">Überweisung</SelectItem>
-              <SelectItem value="Bar">Bar</SelectItem>
-              <SelectItem value="PayPal">PayPal</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+      {/* Payment Method - immer sichtbar */}
+      <div className="space-y-2">
+        <Label htmlFor="payment_method">Zahlungsart</Label>
+        <Select
+          value={formData.payment_method}
+          onValueChange={(value: "Überweisung" | "Bar" | "PayPal") => setFormData(prev => ({ ...prev, payment_method: value }))}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Zahlungsart wählen..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Überweisung">Überweisung</SelectItem>
+            <SelectItem value="Bar">Bar</SelectItem>
+            <SelectItem value="PayPal">PayPal</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Notes */}
       <div className="space-y-2">

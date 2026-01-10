@@ -1220,6 +1220,7 @@ export type Database = {
         Row: {
           client_id: string
           created_at: string
+          customer_type: string | null
           due_date: string | null
           horse_id: string | null
           id: string
@@ -1236,6 +1237,7 @@ export type Database = {
         Insert: {
           client_id: string
           created_at?: string
+          customer_type?: string | null
           due_date?: string | null
           horse_id?: string | null
           id?: string
@@ -1252,6 +1254,7 @@ export type Database = {
         Update: {
           client_id?: string
           created_at?: string
+          customer_type?: string | null
           due_date?: string | null
           horse_id?: string | null
           id?: string
