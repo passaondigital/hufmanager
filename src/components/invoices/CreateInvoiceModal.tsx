@@ -127,6 +127,7 @@ export function CreateInvoiceModal({
     due_date: "",
     total_amount: "",
     status: "pending" as "pending" | "paid" | "overdue",
+    payment_method: "" as "" | "Überweisung" | "Bar" | "PayPal",
     notes: "",
   });
 
@@ -444,6 +445,7 @@ export function CreateInvoiceModal({
       due_date: formData.due_date || null,
       total_amount: amount,
       status: formData.status,
+      payment_method: formData.status === "paid" && formData.payment_method ? formData.payment_method : null,
       notes: formData.notes || null,
     }).select().single();
 
@@ -529,6 +531,7 @@ export function CreateInvoiceModal({
       due_date: "",
       total_amount: "",
       status: "pending",
+      payment_method: "",
       notes: "",
     });
     setLineItems([]);
@@ -635,7 +638,12 @@ export function CreateInvoiceModal({
         <Label htmlFor="status">Status</Label>
         <Select
           value={formData.status}
-          onValueChange={(value: "pending" | "paid" | "overdue") => setFormData(prev => ({ ...prev, status: value }))}
+          onValueChange={(value: "pending" | "paid" | "overdue") => setFormData(prev => ({ 
+            ...prev, 
+            status: value,
+            // Reset payment_method when status is not paid
+            payment_method: value === "paid" ? prev.payment_method : ""
+          }))}
         >
           <SelectTrigger>
             <SelectValue />
@@ -647,6 +655,26 @@ export function CreateInvoiceModal({
           </SelectContent>
         </Select>
       </div>
+
+      {/* Payment Method - nur sichtbar wenn Status = Bezahlt */}
+      {formData.status === "paid" && (
+        <div className="space-y-2">
+          <Label htmlFor="payment_method">Zahlungsart</Label>
+          <Select
+            value={formData.payment_method}
+            onValueChange={(value: "Überweisung" | "Bar" | "PayPal") => setFormData(prev => ({ ...prev, payment_method: value }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Zahlungsart wählen..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Überweisung">Überweisung</SelectItem>
+              <SelectItem value="Bar">Bar</SelectItem>
+              <SelectItem value="PayPal">PayPal</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {/* Notes */}
       <div className="space-y-2">
