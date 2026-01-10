@@ -40,6 +40,7 @@ interface Invoice {
   status: string | null;
   notes: string | null;
   payment_method?: string | null;
+  customer_type?: string | null;
   horse?: { name: string } | null;
 }
 
@@ -458,15 +459,32 @@ export async function generateInvoicePdf(
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(COLORS.gray600.r, COLORS.gray600.g, COLORS.gray600.b);
-  doc.text("Zwischensumme:", totalBoxX, yPos);
-  doc.text(formatCurrency(invoice.total_amount), pageWidth - margin, yPos, { align: "right" });
   
-  yPos += 5;
+  const isGewerbe = invoice.customer_type === "gewerbe";
   
-  // MwSt line (assuming included)
-  doc.text("inkl. MwSt.:", totalBoxX, yPos);
-  doc.setTextColor(COLORS.gray500.r, COLORS.gray500.g, COLORS.gray500.b);
-  doc.text("enthalten", pageWidth - margin, yPos, { align: "right" });
+  if (isGewerbe) {
+    // Gewerbekunde: Netto-Rechnung
+    doc.text("Nettobetrag:", totalBoxX, yPos);
+    doc.text(formatCurrency(invoice.total_amount), pageWidth - margin, yPos, { align: "right" });
+    
+    yPos += 5;
+    
+    doc.text("MwSt.:", totalBoxX, yPos);
+    doc.setTextColor(COLORS.gray500.r, COLORS.gray500.g, COLORS.gray500.b);
+    doc.text("nicht ausgewiesen (Reverse Charge)", pageWidth - margin, yPos, { align: "right" });
+  } else {
+    // Privatkunde: Brutto mit MwSt
+    const netAmount = invoice.total_amount / 1.19;
+    const vatAmount = invoice.total_amount - netAmount;
+    
+    doc.text("Nettobetrag:", totalBoxX, yPos);
+    doc.text(formatCurrency(netAmount), pageWidth - margin, yPos, { align: "right" });
+    
+    yPos += 5;
+    
+    doc.text("MwSt. (19%):", totalBoxX, yPos);
+    doc.text(formatCurrency(vatAmount), pageWidth - margin, yPos, { align: "right" });
+  }
   
   yPos += 8;
   
@@ -477,7 +495,7 @@ export async function generateInvoicePdf(
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.white.r, COLORS.white.g, COLORS.white.b);
-  doc.text("Gesamtbetrag:", totalBoxX, yPos + 5);
+  doc.text(isGewerbe ? "Gesamtbetrag (Netto):" : "Gesamtbetrag:", totalBoxX, yPos + 5);
   doc.text(formatCurrency(invoice.total_amount), pageWidth - margin - 2, yPos + 5, { align: "right" });
 
   yPos += 25;
