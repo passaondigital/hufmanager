@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +23,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { FileText, Search, Plus, Eye, Download, Trash2, MoreVertical, Loader2, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -41,6 +49,7 @@ interface Invoice {
   client_id: string;
   provider_id: string | null;
   notes: string | null;
+  payment_method: string | null;
   horse: {
     name: string;
   } | null;
@@ -72,6 +81,10 @@ export default function Rechnungen() {
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [pdfTitle, setPdfTitle] = useState("");
   const [pdfFileName, setPdfFileName] = useState("");
+  
+  // Mark as paid state
+  const [invoiceToMarkPaid, setInvoiceToMarkPaid] = useState<Invoice | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("Überweisung");
 
   const fetchInvoices = async () => {
     if (!user) return;
@@ -90,6 +103,7 @@ export default function Rechnungen() {
         client_id,
         provider_id,
         notes,
+        payment_method,
         horse:horses(name)
       `)
       .eq("provider_id", user.id)
@@ -228,11 +242,13 @@ export default function Rechnungen() {
     setInvoiceToDelete(null);
   };
 
-  const handleMarkAsPaid = async (invoice: Invoice) => {
+  const handleMarkAsPaid = async () => {
+    if (!invoiceToMarkPaid) return;
+    
     const { error } = await supabase
       .from("invoices")
-      .update({ status: "paid" })
-      .eq("id", invoice.id);
+      .update({ status: "paid", payment_method: selectedPaymentMethod })
+      .eq("id", invoiceToMarkPaid.id);
 
     if (error) {
       toast({ title: "Fehler beim Aktualisieren", variant: "destructive" });
@@ -240,6 +256,8 @@ export default function Rechnungen() {
       toast({ title: "Rechnung als bezahlt markiert" });
       fetchInvoices();
     }
+    setInvoiceToMarkPaid(null);
+    setSelectedPaymentMethod("Überweisung");
   };
 
   return (
@@ -380,11 +398,16 @@ export default function Rechnungen() {
                         </DropdownMenuItem>
                         {invoice.status !== "paid" && (
                           <DropdownMenuItem 
-                            onClick={() => handleMarkAsPaid(invoice)}
+                            onClick={() => setInvoiceToMarkPaid(invoice)}
                             className="text-green-600 focus:text-green-600"
                           >
                             <CheckCircle className="h-4 w-4 mr-2" />
                             Als bezahlt markieren
+                          </DropdownMenuItem>
+                        )}
+                        {invoice.status === "paid" && invoice.payment_method && (
+                          <DropdownMenuItem disabled className="text-muted-foreground">
+                            Zahlart: {invoice.payment_method}
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem
@@ -421,6 +444,42 @@ export default function Rechnungen() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Löschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Mark as Paid Dialog with Payment Method */}
+      <AlertDialog open={!!invoiceToMarkPaid} onOpenChange={() => setInvoiceToMarkPaid(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Rechnung als bezahlt markieren</AlertDialogTitle>
+            <AlertDialogDescription>
+              Rechnung <strong>{invoiceToMarkPaid?.invoice_number || "ohne Nummer"}</strong> wird als bezahlt markiert.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Label htmlFor="payment-method" className="text-sm font-medium">
+              Zahlungsart
+            </Label>
+            <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
+              <SelectTrigger id="payment-method" className="mt-2">
+                <SelectValue placeholder="Zahlungsart wählen" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Überweisung">Überweisung</SelectItem>
+                <SelectItem value="Bar">Bar</SelectItem>
+                <SelectItem value="PayPal">PayPal</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleMarkAsPaid}
+              className="bg-green-600 text-white hover:bg-green-700"
+            >
+              Als bezahlt markieren
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

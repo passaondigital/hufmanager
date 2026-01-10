@@ -39,6 +39,7 @@ interface Invoice {
   total_amount: number;
   status: string | null;
   notes: string | null;
+  payment_method?: string | null;
   horse?: { name: string } | null;
 }
 
@@ -495,6 +496,15 @@ export async function generateInvoicePdf(
   
   doc.text(paymentNote, margin, yPos);
   yPos += 6;
+  
+  // Show payment method if available (for paid invoices)
+  if (invoice.payment_method) {
+    doc.setFont("helvetica", "bold");
+    doc.text(`Zahlart: ${invoice.payment_method}`, margin, yPos);
+    yPos += 6;
+    doc.setFont("helvetica", "normal");
+  }
+  
   doc.text("Vielen Dank für Ihr Vertrauen!", margin, yPos);
 
   // ============================================================================
