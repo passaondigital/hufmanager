@@ -6,6 +6,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Rate limiting configuration
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute window
+const MAX_REQUESTS_PER_WINDOW = 10; // Max 10 requests per minute per user
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -23,9 +27,14 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
+    
+    // Service role client for rate limit checks
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
@@ -37,7 +46,34 @@ serve(async (req) => {
       });
     }
 
-    console.log("[ai-chat] User authenticated");
+    console.log("[ai-chat] User authenticated:", user.id);
+
+    // SECURITY: Rate limiting - check requests in the last minute
+    const oneMinuteAgo = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
+    
+    const { count: recentRequestCount, error: countError } = await supabaseAdmin
+      .from("ai_chat_messages")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("role", "user")
+      .gte("created_at", oneMinuteAgo);
+    
+    if (countError) {
+      console.error("[ai-chat] Rate limit check failed:", countError.message);
+      // Continue without rate limiting if check fails
+    } else if (recentRequestCount !== null && recentRequestCount >= MAX_REQUESTS_PER_WINDOW) {
+      console.warn("[ai-chat] Rate limit exceeded for user:", user.id, "Count:", recentRequestCount);
+      return new Response(JSON.stringify({ 
+        error: "Rate limit erreicht. Bitte warten Sie eine Minute bevor Sie weitere Nachrichten senden." 
+      }), {
+        status: 429,
+        headers: { 
+          ...corsHeaders, 
+          "Content-Type": "application/json",
+          "Retry-After": "60"
+        },
+      });
+    }
 
     const { messages } = await req.json();
     
