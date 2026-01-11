@@ -1218,8 +1218,11 @@ export type Database = {
       }
       invoices: {
         Row: {
+          cancellation_reason: string | null
+          cancelled_at: string | null
           client_id: string
           created_at: string
+          credit_note_for: string | null
           customer_type: string | null
           due_date: string | null
           horse_id: string | null
@@ -1235,8 +1238,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           client_id: string
           created_at?: string
+          credit_note_for?: string | null
           customer_type?: string | null
           due_date?: string | null
           horse_id?: string | null
@@ -1252,8 +1258,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           client_id?: string
           created_at?: string
+          credit_note_for?: string | null
           customer_type?: string | null
           due_date?: string | null
           horse_id?: string | null
@@ -1281,6 +1290,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_credit_note_for_fkey"
+            columns: ["credit_note_for"]
+            isOneToOne: false
+            referencedRelation: "invoices"
             referencedColumns: ["id"]
           },
           {

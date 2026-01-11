@@ -461,8 +461,19 @@ export async function generateInvoicePdf(
   doc.setTextColor(COLORS.gray600.r, COLORS.gray600.g, COLORS.gray600.b);
   
   const isGewerbe = invoice.customer_type === "gewerbe";
+  const isKleinunternehmer = invoice.customer_type === "kleinunternehmer";
   
-  if (isGewerbe) {
+  if (isKleinunternehmer) {
+    // Kleinunternehmer: Keine MwSt. gemäß §19 UStG
+    doc.text("Betrag:", totalBoxX, yPos);
+    doc.text(formatCurrency(invoice.total_amount), pageWidth - margin, yPos, { align: "right" });
+    
+    yPos += 5;
+    
+    doc.setFontSize(8);
+    doc.setTextColor(COLORS.gray500.r, COLORS.gray500.g, COLORS.gray500.b);
+    doc.text("Gemäß §19 UStG wird keine Umsatzsteuer berechnet.", totalBoxX, yPos);
+  } else if (isGewerbe) {
     // Gewerbekunde: Netto-Rechnung
     doc.text("Nettobetrag:", totalBoxX, yPos);
     doc.text(formatCurrency(invoice.total_amount), pageWidth - margin, yPos, { align: "right" });
@@ -495,7 +506,12 @@ export async function generateInvoicePdf(
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.white.r, COLORS.white.g, COLORS.white.b);
-  doc.text(isGewerbe ? "Gesamtbetrag (Netto):" : "Gesamtbetrag:", totalBoxX, yPos + 5);
+  
+  let totalLabel = "Gesamtbetrag:";
+  if (isGewerbe) totalLabel = "Gesamtbetrag (Netto):";
+  if (isKleinunternehmer) totalLabel = "Rechnungsbetrag:";
+  
+  doc.text(totalLabel, totalBoxX, yPos + 5);
   doc.text(formatCurrency(invoice.total_amount), pageWidth - margin - 2, yPos + 5, { align: "right" });
 
   yPos += 25;
