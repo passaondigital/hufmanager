@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileText, Search, Plus, Eye, Download, Trash2, MoreVertical, Loader2, CheckCircle } from "lucide-react";
+import { FileText, Search, Plus, Eye, Download, Trash2, MoreVertical, Loader2, CheckCircle, Ban } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { CreateInvoiceModal } from "@/components/invoices/CreateInvoiceModal";
@@ -50,6 +50,8 @@ interface Invoice {
   provider_id: string | null;
   notes: string | null;
   payment_method: string | null;
+  cancelled_at: string | null;
+  cancellation_reason: string | null;
   horse: {
     name: string;
   } | null;
@@ -73,7 +75,7 @@ export default function Rechnungen() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
+  const [invoiceToCancel, setInvoiceToCancel] = useState<Invoice | null>(null);
   const [generatingPdfFor, setGeneratingPdfFor] = useState<string | null>(null);
   
   // PDF Preview state
@@ -104,6 +106,8 @@ export default function Rechnungen() {
         provider_id,
         notes,
         payment_method,
+        cancelled_at,
+        cancellation_reason,
         horse:horses(name)
       `)
       .eq("provider_id", user.id)
@@ -154,7 +158,10 @@ export default function Rechnungen() {
     setFilteredInvoices(filtered);
   }, [searchQuery, invoices]);
 
-  const getStatusBadge = (status: string | null) => {
+  const getStatusBadge = (status: string | null, cancelledAt: string | null) => {
+    if (cancelledAt) {
+      return <Badge variant="outline" className="bg-muted text-muted-foreground border-muted-foreground/30">Storniert</Badge>;
+    }
     switch (status) {
       case "paid":
         return <Badge className="bg-green-500/10 text-green-600 border-green-500/20">Bezahlt</Badge>;
@@ -225,21 +232,25 @@ export default function Rechnungen() {
     setPdfBlob(null);
   };
 
-  const handleDelete = async () => {
-    if (!invoiceToDelete) return;
+  const handleCancel = async () => {
+    if (!invoiceToCancel) return;
     
     const { error } = await supabase
       .from("invoices")
-      .delete()
-      .eq("id", invoiceToDelete.id);
+      .update({ 
+        cancelled_at: new Date().toISOString(),
+        cancellation_reason: "Storniert",
+        status: "cancelled"
+      })
+      .eq("id", invoiceToCancel.id);
 
     if (error) {
-      toast({ title: "Fehler beim Löschen", variant: "destructive" });
+      toast({ title: "Fehler beim Stornieren", variant: "destructive" });
     } else {
-      toast({ title: "Rechnung gelöscht" });
+      toast({ title: "Rechnung storniert", description: "Die Rechnung wurde als storniert markiert." });
       fetchInvoices();
     }
-    setInvoiceToDelete(null);
+    setInvoiceToCancel(null);
   };
 
   const handleMarkAsPaid = async () => {
@@ -354,7 +365,7 @@ export default function Rechnungen() {
                       <span className="font-semibold text-foreground">
                         {invoice.invoice_number || `Rechnung`}
                       </span>
-                      {getStatusBadge(invoice.status)}
+                      {getStatusBadge(invoice.status, invoice.cancelled_at)}
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {format(new Date(invoice.issue_date), "dd. MMMM yyyy", { locale: de })}
@@ -396,7 +407,7 @@ export default function Rechnungen() {
                           <Download className="h-4 w-4 mr-2" />
                           Herunterladen
                         </DropdownMenuItem>
-                        {invoice.status !== "paid" && (
+                        {invoice.status !== "paid" && !invoice.cancelled_at && (
                           <DropdownMenuItem 
                             onClick={() => setInvoiceToMarkPaid(invoice)}
                             className="text-green-600 focus:text-green-600"
@@ -410,13 +421,20 @@ export default function Rechnungen() {
                             Zahlart: {invoice.payment_method}
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem
-                          onClick={() => setInvoiceToDelete(invoice)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Löschen
-                        </DropdownMenuItem>
+                        {!invoice.cancelled_at && (
+                          <DropdownMenuItem
+                            onClick={() => setInvoiceToCancel(invoice)}
+                            className="text-amber-600 focus:text-amber-600"
+                          >
+                            <Ban className="h-4 w-4 mr-2" />
+                            Stornieren
+                          </DropdownMenuItem>
+                        )}
+                        {invoice.cancelled_at && (
+                          <DropdownMenuItem disabled className="text-muted-foreground">
+                            Storniert am {format(new Date(invoice.cancelled_at), "dd.MM.yyyy", { locale: de })}
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}
@@ -427,23 +445,24 @@ export default function Rechnungen() {
         </div>
       )}
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={!!invoiceToDelete} onOpenChange={() => setInvoiceToDelete(null)}>
+      {/* Cancel/Storno Confirmation */}
+      <AlertDialog open={!!invoiceToCancel} onOpenChange={() => setInvoiceToCancel(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Rechnung löschen?</AlertDialogTitle>
+            <AlertDialogTitle>Rechnung stornieren?</AlertDialogTitle>
             <AlertDialogDescription>
-              Die Rechnung <strong>{invoiceToDelete?.invoice_number || "ohne Nummer"}</strong> wird 
-              unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
+              Die Rechnung <strong>{invoiceToCancel?.invoice_number || "ohne Nummer"}</strong> wird 
+              als storniert markiert. Sie bleibt in der Übersicht erhalten, kann aber nicht mehr 
+              bearbeitet werden. Dies ist revisionssicher und entspricht den gesetzlichen Anforderungen.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Abbrechen</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleCancel}
+              className="bg-amber-600 text-white hover:bg-amber-700"
             >
-              Löschen
+              Stornieren
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

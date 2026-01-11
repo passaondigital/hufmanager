@@ -128,7 +128,7 @@ export function CreateInvoiceModal({
     total_amount: "",
     status: "pending" as "pending" | "paid" | "overdue",
     payment_method: "" as "" | "Überweisung" | "Bar" | "PayPal",
-    customer_type: "privat" as "privat" | "gewerbe",
+    customer_type: "privat" as "privat" | "gewerbe" | "kleinunternehmer",
     notes: "",
   });
 
@@ -641,16 +641,22 @@ export function CreateInvoiceModal({
         <Label htmlFor="customer_type">Kundentyp</Label>
         <Select
           value={formData.customer_type}
-          onValueChange={(value: "privat" | "gewerbe") => setFormData(prev => ({ ...prev, customer_type: value }))}
+          onValueChange={(value: "privat" | "gewerbe" | "kleinunternehmer") => setFormData(prev => ({ ...prev, customer_type: value }))}
         >
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="privat">Privatkunde (inkl. 19% MwSt)</SelectItem>
-            <SelectItem value="gewerbe">Gewerbekunde (Netto)</SelectItem>
+            <SelectItem value="gewerbe">Gewerbekunde (Netto / Reverse Charge)</SelectItem>
+            <SelectItem value="kleinunternehmer">Kleinunternehmer (§19 UStG - keine MwSt)</SelectItem>
           </SelectContent>
         </Select>
+        {formData.customer_type === "kleinunternehmer" && (
+          <p className="text-xs text-muted-foreground">
+            Kleinunternehmerregelung: Keine MwSt. ausgewiesen gemäß §19 UStG
+          </p>
+        )}
       </div>
 
       {/* Status */}
