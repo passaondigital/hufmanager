@@ -2039,6 +2039,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_consents: {
+        Row: {
+          agreement_type: string
+          agreement_version: string
+          id: string
+          ip_address: string | null
+          signed_at: string | null
+          storage_path: string | null
+          user_id: string
+        }
+        Insert: {
+          agreement_type: string
+          agreement_version: string
+          id?: string
+          ip_address?: string | null
+          signed_at?: string | null
+          storage_path?: string | null
+          user_id: string
+        }
+        Update: {
+          agreement_type?: string
+          agreement_version?: string
+          id?: string
+          ip_address?: string | null
+          signed_at?: string | null
+          storage_path?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
