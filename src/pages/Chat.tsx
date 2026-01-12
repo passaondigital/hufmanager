@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Send, MessageSquare, User, Search, Plus, ArrowLeft, Paperclip, X, Loader2, Bell } from "lucide-react";
 import { PushNotificationToggle } from "@/components/notifications/PushNotificationToggle";
+import { ChatImage } from "@/components/chat/ChatImage";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -403,8 +404,8 @@ export default function Chat() {
     const { error } = await supabase.storage.from('chat-images').upload(fileName, file);
     if (error) return null;
     
-    const { data: { publicUrl } } = supabase.storage.from('chat-images').getPublicUrl(fileName);
-    return publicUrl;
+    // Return just the file path, not a public URL - signed URLs will be fetched on display
+    return fileName;
   };
 
   const sendMessage = async () => {
@@ -656,13 +657,10 @@ export default function Chat() {
                         )}
                       >
                         {msg.image_url && (
-                          <a href={msg.image_url} target="_blank" rel="noopener noreferrer" className="block mb-2">
-                            <img 
-                              src={msg.image_url} 
-                              alt="Bild" 
-                              className="rounded-lg max-w-full max-h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                            />
-                          </a>
+                          <ChatImage 
+                            imagePath={msg.image_url} 
+                            className="rounded-lg max-w-full max-h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                          />
                         )}
                         {msg.content && msg.content !== '📷 Bild' && (
                           <p className="text-sm">{msg.content}</p>

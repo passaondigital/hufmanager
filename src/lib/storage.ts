@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 // Buckets that should use signed URLs (private access)
-const PRIVATE_BUCKETS = ['horse-documents', 'hoof_photos', 'legal-documents', 'signatures', 'completion-reports'];
+const PRIVATE_BUCKETS = ['horse-documents', 'hoof_photos', 'legal-documents', 'signatures', 'completion-reports', 'chat-images'];
 
 // Buckets that are intentionally public
 const PUBLIC_BUCKETS = ['logos'];
