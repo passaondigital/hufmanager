@@ -15,45 +15,167 @@ import { toast } from "sonner";
 import { CheckCircle, Download, FileSignature, Eraser, Loader2, Shield } from "lucide-react";
 import { getStorageUrl } from "@/lib/storage";
 
-const AVV_TEXT = `LOREM IPSUM AVV
+const AVV_TEXT = `AUFTRAGSVERARBEITUNGSVERTRAG (AVV)
+nach Art. 28 DSGVO für die Nutzung von HufManager
 
-Auftragsverarbeitungsvertrag gemäß Art. 28 DSGVO
+1. Vertragsparteien
 
-1. Gegenstand und Dauer der Verarbeitung
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+Dieser Vertrag wird geschlossen zwischen:
 
-2. Art und Zweck der Verarbeitung
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+Auftraggeber (Verantwortlicher im Sinne der DSGVO):
+Der jeweilige Nutzer von HufManager (z. B. Hufbearbeiter, Dienstleister, Partner).
 
-3. Art der personenbezogenen Daten
-Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
+und
+
+Auftragsverarbeiter:
+HufManager – betrieben durch
+Pascal Schmid, Barhufserviceschmid, Einzelunternehmen, Hauptstrasse 19, 54426 Talling (D)
+info@barhufserviceschmid.de / kontakt@hufmanager.de
+– nachfolgend „HufManager" genannt –
+
+2. Gegenstand und Dauer der Verarbeitung
+
+Gegenstand dieses Vertrages ist die Verarbeitung personenbezogener Daten durch HufManager im Auftrag des Auftraggebers im Rahmen der Nutzung der Softwareplattform „HufManager".
+
+Die Verarbeitung erfolgt für die Dauer des jeweiligen Nutzungsvertrages.
+
+3. Art und Zweck der Verarbeitung
+
+Die Verarbeitung umfasst insbesondere:
+• Erheben
+• Erfassen
+• Organisieren
+• Ordnen
+• Speichern
+• Anpassen
+• Auslesen
+• Verwenden
+• Offenlegen durch Übermittlung (nach Freigabe)
+• Abgleichen
+• Einschränken
+• Löschen
+
+Zweck der Verarbeitung ist die Bereitstellung eines digitalen Systems zur:
+• Kunden- und Pferdeverwaltung
+• Termin- und Leistungsorganisation
+• Dokumentation
+• Kommunikation
+• Abrechnungsunterstützung
+• professionellen, tierschutzkonformen Betreuung von Equiden
+• systematischen Nachvollziehbarkeit von Betreuung, Historie und Vitaldaten
 
 4. Kategorien betroffener Personen
-Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.
 
-5. Pflichten des Auftragsverarbeiters
-Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.
+• Pferdebesitzer / Tierhalter
+• Kunden des Auftraggebers
+• Mitarbeiter des Auftraggebers
+• Hufbearbeiter und Dienstleister
 
-6. Technische und organisatorische Maßnahmen
-Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur.
+5. Arten personenbezogener Daten
 
-7. Unterauftragsverarbeiter
-At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident.
+• Stammdaten (Name, Adresse, Kontaktdaten)
+• Vertrags- und Nutzungsdaten
+• Termin- und Leistungsdaten
+• Kommunikationsdaten
+• Rechnungsrelevante Daten
+• Dokumentationsdaten
+• Dateien, Notizen, Bilder
+• Systemkennungen und IDs
 
-8. Rechte der betroffenen Personen
-Similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio.
+Eine Verarbeitung besonderer Kategorien personenbezogener Daten im Sinne von Art. 9 DSGVO ist nicht vorgesehen.
 
-9. Meldepflichten bei Datenschutzvorfällen
-Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est.
+6. PASSAON-ID-System (besondere Systemarchitektur)
 
-10. Löschung und Rückgabe von Daten
-Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae.
+HufManager nutzt ein mehrstufiges ID-System zur strukturellen Trennung, Sicherung und kontrollierten Verknüpfung von Daten:
+• #kid – KundenID / Pferdebesitzer
+• #equid – EquidenID
+• #pid – ProfiID
+• #prid – PartnerID
 
-11. Haftung
-Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.
+Grundprinzipien:
+• IDs dienen als zusätzliche Schutz- und Organisationsebene personenbezogener Daten.
+• Die Verknüpfung oder Weitergabe von IDs erfolgt ausschließlich auf Grundlage aktiver Freigaben durch den jeweiligen ID-Inhaber.
+• Die EquidenID kann bei Verkauf oder Übergabe eines Pferdes auf neue Besitzer oder Dienstleister übertragen werden.
+• HufManager übernimmt keine Haftung für die Richtigkeit extern weitergegebener IDs, empfiehlt jedoch die Aufnahme der EquidenID in Kauf- oder Übergabeverträge.
 
-12. Schlussbestimmungen
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.`;
+Ziel ist eine lückenlose, professionelle, tierschutzkonforme Dokumentation über den gesamten Lebenszyklus eines Equiden.
+
+7. Offenlegung gegenüber Behörden
+
+Personenbezogene Daten werden ausschließlich auf Grundlage rechtlich wirksamer, schriftlicher Anordnungen (z. B. Gerichtsbeschluss, behördliche Verfügung) an staatliche Stellen übermittelt.
+
+Die betroffene Person wird unverzüglich informiert, sofern keine gesetzliche Verpflichtung oder Gefahr im Verzug dem entgegensteht.
+
+8. Löschung, Sperrung und Wiedervergabe von IDs
+
+Nach Vertragsende oder Löschung eines Accounts gelten folgende Fristen:
+
+EquidenID (#equid): Speicherung bis maximal 90 Tage nach Löschung oder nachgewiesenem Ableben, anschließend vollständige Löschung und mögliche Neuvergabe.
+
+Kunden-, Profi- und PartnerIDs (#kid, #pid, #prid): Speicherung bis maximal 180 Tage, anschließend vollständige Löschung und mögliche Neuvergabe.
+
+Während dieser Fristen erfolgt keine aktive Nutzung der Daten.
+
+9. Markt-, Forschungs- und Bedarfsanalysen
+
+HufManager ist berechtigt, vollständig anonymisierte und nicht rückführbare Kennzahlen für Markt-, Branchen- und Bedarfsanalysen zu verarbeiten und zu veröffentlichen.
+
+Beispiele:
+• Rasse- und Artverteilungen
+• Berufsgattungen
+• Anzahl Pferde pro Halter
+• Regionale Auswertungen
+• Haltungsbedingungen
+• Angebotsarten
+• Durchschnittspreise
+
+Eine Identifizierung einzelner Personen, Unternehmen oder Tiere ist ausgeschlossen.
+
+Ziel ist die Förderung von Branchenstandards, Transparenz, Versorgungsqualität und Fachkräfteentwicklung.
+
+10. Unterauftragsverarbeiter
+
+Der Auftraggeber erteilt hiermit die allgemeine Genehmigung zur Beauftragung folgender Sub-Dienstleister:
+• Supabase – Backend- und Datenbank-Infrastruktur
+• Resend – E-Mail-Kommunikation
+• All-inkl.com – Domains und Subdomains
+• CopeCart – Zahlungsabwicklung, Zugangsverwaltung, Affiliate-Auszahlungen
+
+11. Technische und organisatorische Maßnahmen (TOM)
+
+HufManager verpflichtet sich zur Umsetzung geeigneter technischer und organisatorischer Maßnahmen, insbesondere:
+• Rollen- und Rechtesystem
+• Zugriffsbeschränkungen
+• Trennung von Datenbereichen
+• Verschlüsselung
+• Backup- und Wiederherstellungssysteme
+• Protokollierung
+• Lösch- und Sperrkonzepte
+• Schutz durch ID-Systemarchitektur
+• organisatorische Zugriffskontrollen
+
+Die jeweils aktuellen TOMs sind Bestandteil dieses Vertrages.
+
+12. Pflichten des Auftragsverarbeiters
+
+HufManager verpflichtet sich insbesondere:
+• personenbezogene Daten ausschließlich auf dokumentierte Weisung zu verarbeiten
+• Vertraulichkeit zu wahren
+• Datenschutzverletzungen unverzüglich zu melden
+
+13. Haftung
+
+Die Haftung richtet sich nach den gesetzlichen Vorschriften der DSGVO.
+
+HufManager übernimmt keine Verantwortung für Inhalte, Eingaben, Zahlungsabwicklungen oder Geschäftsbeziehungen der Nutzer.
+
+14. Vertragsende
+
+Nach Beendigung des Nutzungsverhältnisses werden alle personenbezogenen Daten entsprechend den in Punkt 8 genannten Fristen gelöscht, sofern keine gesetzliche Aufbewahrungspflicht besteht.
+
+15. Schlussbestimmungen
+
+Änderungen dieses Vertrages bedürfen der Textform. HufManager behält sich vor, diesen Vertrag anzupassen, sofern dies aus rechtlichen, technischen oder organisatorischen Gründen erforderlich ist. Nutzer werden hierüber informiert und zur Zustimmung aufgefordert.`;
 
 interface ExistingAgreement {
   id: string;
