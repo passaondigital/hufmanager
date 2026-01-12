@@ -146,16 +146,64 @@ const Management = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["business-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["business-settings", user?.id] });
       toast({ title: "Gespeichert", description: "Einstellungen wurden gespeichert." });
     },
-    onError: () => {
-      toast({ title: "Fehler", description: "Einstellungen konnten nicht gespeichert werden.", variant: "destructive" });
+    onError: (err) => {
+      console.error("business_settings save error:", err);
+      toast({
+        title: "Fehler",
+        description: err instanceof Error ? err.message : "Einstellungen konnten nicht gespeichert werden.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const saveLegalMutation = useMutation({
+    mutationFn: async (payload: { impressum_text: string; terms_text: string }) => {
+      if (!user?.id) throw new Error("Not authenticated");
+
+      // Update only legal fields (robuster: weniger Felder = weniger Fehlerquellen)
+      const { data: updated, error: updateError } = await supabase
+        .from("business_settings")
+        .update(payload)
+        .eq("user_id", user.id)
+        .select("id");
+
+      if (updateError) throw updateError;
+
+      // If no row existed (or RLS filtered it out without error), create one.
+      if (!updated || updated.length === 0) {
+        const { error: insertError } = await supabase.from("business_settings").insert({
+          user_id: user.id,
+          ...payload,
+        });
+        if (insertError) throw insertError;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["business-settings", user?.id] });
+      toast({ title: "Gespeichert", description: "Rechtliches wurde gespeichert." });
+    },
+    onError: (err) => {
+      console.error("business_settings legal save error:", err);
+      toast({
+        title: "Fehler",
+        description: err instanceof Error ? err.message : "Rechtliches konnte nicht gespeichert werden.",
+        variant: "destructive",
+      });
     },
   });
 
   const handleSave = () => {
     saveMutation.mutate(formData);
+  };
+
+  const handleSaveLegal = () => {
+    saveLegalMutation.mutate({
+      impressum_text: formData.impressum_text,
+      terms_text: formData.terms_text,
+    });
   };
 
   const [isUploading, setIsUploading] = useState(false);
@@ -704,9 +752,9 @@ Steuernummer: 12/345/67890
                 className="font-mono text-sm"
               />
               <div className="flex justify-end">
-                <Button className="gap-2" onClick={handleSave} disabled={saveMutation.isPending}>
+                <Button className="gap-2" onClick={handleSaveLegal} disabled={saveLegalMutation.isPending}>
                   <Save className="h-4 w-4" />
-                  {saveMutation.isPending ? "Speichern..." : "Impressum speichern"}
+                  {saveLegalMutation.isPending ? "Speichern..." : "Impressum speichern"}
                 </Button>
               </div>
             </CardContent>
@@ -731,9 +779,9 @@ Steuernummer: 12/345/67890
                 className="font-mono text-sm"
               />
               <div className="flex justify-end">
-                <Button className="gap-2" onClick={handleSave} disabled={saveMutation.isPending}>
+                <Button className="gap-2" onClick={handleSaveLegal} disabled={saveLegalMutation.isPending}>
                   <Save className="h-4 w-4" />
-                  {saveMutation.isPending ? "Speichern..." : "AGB speichern"}
+                  {saveLegalMutation.isPending ? "Speichern..." : "AGB speichern"}
                 </Button>
               </div>
             </CardContent>

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useTheme } from "next-themes";
 import SignatureCanvas from "react-signature-canvas";
 import { jsPDF } from "jspdf";
 import { format } from "date-fns";
@@ -186,12 +187,15 @@ interface ExistingAgreement {
 
 export function AVVSigningCard() {
   const { user } = useAuth();
+  const { resolvedTheme } = useTheme();
   const signaturePadRef = useRef<SignatureCanvas>(null);
-  
+
+  const [signaturePenColor, setSignaturePenColor] = useState<string>("#000000");
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSigning, setIsSigning] = useState(false);
   const [existingAgreement, setExistingAgreement] = useState<ExistingAgreement | null>(null);
-  
+
   // Form state
   const [formData, setFormData] = useState({
     name: "",
@@ -201,11 +205,18 @@ export function AVVSigningCard() {
     signatureCity: "",
   });
 
+  useEffect(() => {
+    // Canvas kann keine CSS-Variablen (var(--...)) auflösen, deshalb echten Wert auslesen.
+    const root = document.documentElement;
+    const foreground = getComputedStyle(root).getPropertyValue("--foreground").trim();
+    setSignaturePenColor(foreground ? `hsl(${foreground})` : "#000000");
+  }, [resolvedTheme]);
+
   // Fetch existing agreement and profile data
   useEffect(() => {
     async function fetchData() {
       if (!user?.id) return;
-      
+
       setIsLoading(true);
       try {
         // Check for existing AVV agreement
@@ -215,20 +226,20 @@ export function AVVSigningCard() {
           .eq("provider_id", user.id)
           .eq("agreement_type", "AVV")
           .maybeSingle();
-        
+
         if (agreement?.accepted_at) {
           setExistingAgreement(agreement);
         }
-        
+
         // Get profile for pre-fill
         const { data: profile } = await supabase
           .from("profiles")
           .select("full_name, city")
           .eq("id", user.id)
           .single();
-        
+
         if (profile) {
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
             name: profile.full_name || "",
             signatureCity: profile.city || "",
@@ -240,7 +251,7 @@ export function AVVSigningCard() {
         setIsLoading(false);
       }
     }
-    
+
     fetchData();
   }, [user?.id]);
 
@@ -601,7 +612,7 @@ export function AVVSigningCard() {
                     style: { width: "100%", height: "128px" },
                   }}
                   backgroundColor="transparent"
-                  penColor="hsl(var(--foreground))"
+                  penColor={signaturePenColor}
                 />
               </div>
               <p className="text-xs text-muted-foreground">
