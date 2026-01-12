@@ -31,6 +31,7 @@ import { LandingServicesEditor } from "@/components/landing/LandingServicesEdito
 import { ReviewsManagement } from "@/components/management/ReviewsManagement";
 import { SectionManager } from "@/components/landing/SectionManager";
 import { GalleryManager } from "@/components/management/GalleryManager";
+import { AVVSigningCard } from "@/components/settings/AVVSigningCard";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -663,6 +664,9 @@ const Management = () => {
 
         {/* Legal / Rechtliches */}
         <TabsContent value="legal" className="mt-6 space-y-6">
+          {/* AVV Signing Card */}
+          <AVVSigningCard />
+
           <Card className="animate-slide-up">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
