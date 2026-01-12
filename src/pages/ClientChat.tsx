@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, ArrowLeft, User, Loader2, MessageSquare, Paperclip, X, Image as ImageIcon, Bell } from "lucide-react";
 import { PushNotificationToggle } from "@/components/notifications/PushNotificationToggle";
+import { ChatImage } from "@/components/chat/ChatImage";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -240,11 +241,8 @@ export default function ClientChat() {
       return null;
     }
     
-    const { data: { publicUrl } } = supabase.storage
-      .from('chat-images')
-      .getPublicUrl(fileName);
-    
-    return publicUrl;
+    // Return just the file path, not a public URL - signed URLs will be fetched on display
+    return fileName;
   };
 
   const sendMessage = async () => {
@@ -403,13 +401,10 @@ export default function ClientChat() {
                     )}
                   >
                     {msg.image_url && (
-                      <a href={msg.image_url} target="_blank" rel="noopener noreferrer" className="block mb-2">
-                        <img 
-                          src={msg.image_url} 
-                          alt="Bild" 
-                          className="rounded-lg max-w-full max-h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                        />
-                      </a>
+                      <ChatImage 
+                        imagePath={msg.image_url} 
+                        className="rounded-lg max-w-full max-h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                      />
                     )}
                     {msg.content && msg.content !== '📷 Bild' && (
                       <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
