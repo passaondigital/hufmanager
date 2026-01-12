@@ -1,40 +1,31 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { 
   FileText, 
   Upload, 
-  CheckCircle2, 
   Clock, 
-  AlertTriangle,
   Loader2,
   ExternalLink
 } from "lucide-react";
-import { format } from "date-fns";
-import { de } from "date-fns/locale";
+import { AVVSigningCard } from "./AVVSigningCard";
 import { uploadFile, getStorageUrl } from "@/lib/storage";
 
 interface LegalAgreement {
   id: string;
   agreement_type: string;
-  accepted_at: string | null;
   document_url: string | null;
   version: string;
 }
 
 export function LegalSettings() {
-  const [avvAgreement, setAvvAgreement] = useState<LegalAgreement | null>(null);
   const [agbAgreement, setAgbAgreement] = useState<LegalAgreement | null>(null);
   const [agbSignedUrl, setAgbSignedUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [avvAccepted, setAvvAccepted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -51,9 +42,7 @@ export function LegalSettings() {
       .eq('provider_id', userData.user.id);
 
     if (data) {
-      const avv = data.find(a => a.agreement_type === 'avv') || null;
       const agb = data.find(a => a.agreement_type === 'agb') || null;
-      setAvvAgreement(avv);
       setAgbAgreement(agb);
       
       // Get signed URL for AGB if exists
@@ -63,50 +52,6 @@ export function LegalSettings() {
       }
     }
     setLoading(false);
-  };
-
-  const handleAcceptAVV = async () => {
-    if (!avvAccepted) {
-      toast({
-        title: "Bitte bestätigen",
-        description: "Du musst den AVV-Vertrag bestätigen.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setSaving(true);
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) return;
-
-    try {
-      if (avvAgreement) {
-        await supabase
-          .from('legal_agreements')
-          .update({ accepted_at: new Date().toISOString() })
-          .eq('id', avvAgreement.id);
-      } else {
-        await supabase
-          .from('legal_agreements')
-          .insert({
-            provider_id: userData.user.id,
-            agreement_type: 'avv',
-            accepted_at: new Date().toISOString(),
-            version: '1.0',
-          });
-      }
-      
-      toast({ title: "AVV erfolgreich bestätigt" });
-      fetchAgreements();
-    } catch (error: any) {
-      toast({
-        title: "Fehler",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
   };
 
   const handleAGBUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -173,74 +118,8 @@ export function LegalSettings() {
 
   return (
     <div className="space-y-6">
-      {/* AVV Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
-            Auftragsverarbeitungsvertrag (AVV)
-          </CardTitle>
-          <CardDescription>
-            DSGVO-konformer Vertrag zwischen dir und Passaon (HufManager-Betreiber)
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {avvAgreement?.accepted_at ? (
-            <div className="flex items-center gap-3 p-4 bg-green-500/10 rounded-lg">
-              <CheckCircle2 className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="font-medium text-green-800">AVV bestätigt</p>
-                <p className="text-sm text-green-700">
-                  Am {format(new Date(avvAgreement.accepted_at), "dd.MM.yyyy 'um' HH:mm 'Uhr'", { locale: de })}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                <div className="flex gap-2">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
-                  <div className="text-sm">
-                    <p className="font-medium text-amber-800">AVV noch nicht bestätigt</p>
-                    <p className="text-amber-700 mt-1">
-                      Als Auftragsverarbeiter bist du verpflichtet, einen AVV abzuschließen.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <a 
-                  href="https://docs.google.com/document/d/AVV-TEMPLATE" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-sm text-primary hover:underline flex items-center gap-1"
-                >
-                  AVV-Vertrag lesen
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    id="avv-accept"
-                    checked={avvAccepted}
-                    onCheckedChange={(checked) => setAvvAccepted(checked as boolean)}
-                  />
-                  <Label htmlFor="avv-accept" className="text-sm cursor-pointer leading-relaxed">
-                    Ich habe den Auftragsverarbeitungsvertrag (AVV) gelesen und akzeptiere 
-                    die Bedingungen zur Verarbeitung personenbezogener Daten im Auftrag.
-                  </Label>
-                </div>
-
-                <Button onClick={handleAcceptAVV} disabled={saving || !avvAccepted}>
-                  {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  AVV digital bestätigen
-                </Button>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+      {/* AVV Section - New Signing Card */}
+      <AVVSigningCard />
 
       {/* AGB Section */}
       <Card>
