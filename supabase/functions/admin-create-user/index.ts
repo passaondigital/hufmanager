@@ -208,6 +208,7 @@ serve(async (req: Request) => {
       const { error: bsError } = await supabaseAdmin
         .from("business_settings")
         .upsert({
+          id: userId, // id must match user_id due to FK constraint on auth.users
           user_id: userId,
           business_name: businessName,
           phone: phone,
