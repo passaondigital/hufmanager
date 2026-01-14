@@ -7,12 +7,14 @@ const corsHeaders = {
 };
 
 // Map Copecart product IDs to subscription plans
-// These should be configured based on your actual Copecart products
+// HufManager Copecart Products:
+// - Anfänger (19€): 9bb65569 → starter
+// - Fortgeschritten (29€): ec500b5e → advanced
+// - Profi (39€): 483bbb5b → pro
 const PRODUCT_PLAN_MAP: Record<string, string> = {
-  // Add your Copecart product IDs here
-  // "product_id_starter": "starter",
-  // "product_id_pro": "pro",
-  // Default mapping - any product defaults to 'pro' if not mapped
+  "9bb65569": "starter",      // Anfänger 19€/Monat
+  "ec500b5e": "advanced",     // Fortgeschritten 29€/Monat
+  "483bbb5b": "pro",          // Profi 39€/Monat
 };
 
 function getPlanFromProductId(productId: string): string {
