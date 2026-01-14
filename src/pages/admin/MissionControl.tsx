@@ -113,11 +113,14 @@ interface ProviderData {
 }
 
 const PLAN_OVERRIDE_OPTIONS = [
-  { value: "standard", label: "Standard (Copecart)" },
-  { value: "lifetime_grant", label: "Lifetime Grant" },
-  { value: "manual_cash_1y", label: "Manual Cash Payment (1 Year)" },
-  { value: "beta_tester", label: "Beta Tester" },
-  { value: "employee", label: "Employee" },
+  { value: "standard", label: "Standard (wartet auf Copecart)" },
+  { value: "copecart_anfaenger", label: "🟢 Anfänger (19€/Monat)" },
+  { value: "copecart_fortgeschritten", label: "🟡 Fortgeschritten (29€/Monat)" },
+  { value: "copecart_profi", label: "🔵 Profi (39€/Monat)" },
+  { value: "lifetime_grant", label: "⭐ Lifetime Grant" },
+  { value: "manual_cash_1y", label: "💵 Barzahlung (1 Jahr)" },
+  { value: "beta_tester", label: "🧪 Beta Tester" },
+  { value: "employee", label: "👤 Mitarbeiter" },
 ];
 
 const DEFAULT_FEATURE_FLAGS = {

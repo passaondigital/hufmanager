@@ -107,7 +107,18 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       // Plan override takes precedence over Copecart
       if (data?.plan_override) {
         const override = data.plan_override;
-        if (override === "lifetime_grant" || override === "employee") {
+        
+        // Copecart plans set via admin
+        if (override === "copecart_anfaenger") {
+          setStatus("active");
+          setPlan("starter");
+        } else if (override === "copecart_fortgeschritten") {
+          setStatus("active");
+          setPlan("advanced");
+        } else if (override === "copecart_profi") {
+          setStatus("active");
+          setPlan("pro");
+        } else if (override === "lifetime_grant" || override === "employee") {
           setStatus("active");
           setPlan("pro");
         } else if (override === "manual_cash_1y" || override === "beta_tester") {
@@ -127,7 +138,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           }
         }
       } else {
-        // Use Copecart status
+        // Use Copecart webhook status
         setStatus((data?.subscription_status as SubscriptionStatus) || "trialing");
         setPlan((data?.subscription_plan as SubscriptionPlan) || "starter");
       }
