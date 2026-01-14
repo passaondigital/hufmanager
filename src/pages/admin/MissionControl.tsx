@@ -648,6 +648,7 @@ export default function MissionControl() {
       const { error: bsError } = await supabase
         .from("business_settings")
         .upsert({
+          id: selectedProvider.id, // id must match user_id due to FK constraint on auth.users
           user_id: selectedProvider.id,
           business_name: editBusinessName || null,
           subdomain: editSubdomain || null,
