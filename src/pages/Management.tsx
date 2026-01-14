@@ -139,6 +139,7 @@ const Management = () => {
       } else {
         // Create new
         const { error } = await supabase.from("business_settings").insert({
+          id: user.id, // id must match user_id due to FK constraint on auth.users
           user_id: user.id,
           ...data,
         });
@@ -175,6 +176,7 @@ const Management = () => {
       // If no row existed (or RLS filtered it out without error), create one.
       if (!updated || updated.length === 0) {
         const { error: insertError } = await supabase.from("business_settings").insert({
+          id: user.id, // id must match user_id due to FK constraint on auth.users
           user_id: user.id,
           ...payload,
         });
