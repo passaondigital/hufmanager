@@ -55,13 +55,13 @@ export default function ClientChat() {
       try {
         let finalProviderId: string | null = null;
         
-        // PRIORITY 1: Check for ACTIVE access_grants first (most reliable)
+        // PRIORITY 1: Check for ACTIVE access_grants first (most reliable) - require BOTH flags
         const { data: activeGrant } = await supabase
           .from("access_grants")
           .select("provider_id")
           .eq("client_id", user.id)
-          .eq("is_active", true)
           .eq("status", "active")
+          .eq("is_active", true)
           .order("granted_at", { ascending: false })
           .limit(1)
           .maybeSingle();

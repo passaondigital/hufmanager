@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Film, Image as ImageIcon, Download, ExternalLink } from "lucide-react";
+import { FileText, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ChatAttachmentProps {
@@ -15,13 +15,17 @@ export function ChatAttachment({ filePath, fileType, fileName, className }: Chat
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  // Get signed URL on mount
-  useState(() => {
+  // Get signed URL on mount - using useEffect instead of useState callback
+  useEffect(() => {
+    let cancelled = false;
+    
     const fetchSignedUrl = async () => {
       try {
         const { data, error } = await supabase.storage
           .from('chat-images')
           .createSignedUrl(filePath, 3600); // 1 hour expiry
+        
+        if (cancelled) return;
         
         if (error) {
           console.error('Error getting signed URL:', error);
@@ -30,15 +34,22 @@ export function ChatAttachment({ filePath, fileType, fileName, className }: Chat
           setSignedUrl(data.signedUrl);
         }
       } catch (err) {
+        if (cancelled) return;
         console.error('Error:', err);
         setError(true);
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
     
     fetchSignedUrl();
-  });
+    
+    return () => {
+      cancelled = true;
+    };
+  }, [filePath]);
 
   const handleDownload = async () => {
     if (!signedUrl) return;

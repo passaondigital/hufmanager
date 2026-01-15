@@ -59,11 +59,12 @@ export function ProviderSelector({ onProviderConnected }: ProviderSelectorProps)
 
       setProviders(profilesData || []);
 
-      // Fetch already connected providers
+      // Fetch already connected providers - require BOTH flags
       const { data: grants } = await supabase
         .from("access_grants")
         .select("provider_id")
         .eq("client_id", user.id)
+        .eq("status", "active")
         .eq("is_active", true);
 
       setConnectedProviders(grants?.map(g => g.provider_id) || []);
@@ -88,22 +89,24 @@ export function ProviderSelector({ onProviderConnected }: ProviderSelectorProps)
         .maybeSingle();
 
       if (existingGrant) {
-        // Reactivate existing grant
+        // Reactivate existing grant - set BOTH flags
         await supabase
           .from("access_grants")
           .update({ 
+            status: "active",
             is_active: true, 
             revoked_at: null,
             updated_at: new Date().toISOString()
           })
           .eq("id", existingGrant.id);
       } else {
-        // Create new access grant
+        // Create new access grant - set BOTH flags
         const { error } = await supabase
           .from("access_grants")
           .insert({
             client_id: user.id,
             provider_id: providerId,
+            status: "active",
             is_active: true,
             can_view_basic: true,
             can_view_medical: true,
