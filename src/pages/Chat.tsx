@@ -8,9 +8,9 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Send, MessageSquare, User, Search, Plus, ArrowLeft, Paperclip, X, Loader2, Bell } from "lucide-react";
+import { Send, MessageSquare, User, Search, Plus, ArrowLeft, Paperclip, X, Loader2, FileText } from "lucide-react";
 import { PushNotificationToggle } from "@/components/notifications/PushNotificationToggle";
-import { ChatImage } from "@/components/chat/ChatImage";
+import { ChatAttachment, getFileType, getFileEmoji } from "@/components/chat/ChatAttachment";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -370,22 +370,35 @@ export default function Chat() {
     }
   }, [messages]);
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    if (!file.type.startsWith('image/')) {
-      toast({ title: "Fehler", description: "Bitte nur Bilder auswählen", variant: "destructive" });
+    // Allowed file types
+    const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedVideoTypes = ['video/mp4', 'video/mov', 'video/quicktime', 'video/webm'];
+    const allowedDocTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const allAllowed = [...allowedImageTypes, ...allowedVideoTypes, ...allowedDocTypes];
+    
+    if (!allAllowed.includes(file.type)) {
+      toast({ title: "Nicht unterstützt", description: "Erlaubt: Bilder (JPG, PNG, GIF), Videos (MP4, MOV) und Dokumente (PDF, DOC)", variant: "destructive" });
       return;
     }
     
-    if (file.size > 5 * 1024 * 1024) {
-      toast({ title: "Fehler", description: "Bild darf maximal 5MB groß sein", variant: "destructive" });
+    // Validate file size (20MB max for videos, 10MB for docs, 5MB for images)
+    const maxSize = allowedVideoTypes.includes(file.type) ? 20 : allowedDocTypes.includes(file.type) ? 10 : 5;
+    if (file.size > maxSize * 1024 * 1024) {
+      toast({ title: "Datei zu groß", description: `Maximal ${maxSize}MB erlaubt`, variant: "destructive" });
       return;
     }
     
     setSelectedImage(file);
-    setImagePreview(URL.createObjectURL(file));
+    // Create preview for images/videos, null for docs
+    if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+      setImagePreview(URL.createObjectURL(file));
+    } else {
+      setImagePreview(null);
+    }
   };
 
   const clearImage = () => {
@@ -412,18 +425,20 @@ export default function Chat() {
     if ((!newMessage.trim() && !selectedImage) || !selectedConversation || !user) return;
 
     setSending(true);
-    let imageUrl: string | null = null;
+    let fileUrl: string | null = null;
+    let fileType: 'image' | 'video' | 'document' = 'image';
     
     if (selectedImage) {
-      imageUrl = await uploadImage(selectedImage);
-      if (!imageUrl) {
-        toast({ title: "Fehler", description: "Bild konnte nicht hochgeladen werden", variant: "destructive" });
+      fileUrl = await uploadImage(selectedImage);
+      fileType = getFileType(selectedImage.name);
+      if (!fileUrl) {
+        toast({ title: "Fehler", description: "Datei konnte nicht hochgeladen werden", variant: "destructive" });
         setSending(false);
         return;
       }
     }
 
-    const messageContent = newMessage.trim() || (imageUrl ? '📷 Bild' : '');
+    const messageContent = newMessage.trim() || (fileUrl ? getFileEmoji(fileType) + ' ' + (fileType === 'image' ? 'Bild' : fileType === 'video' ? 'Video' : 'Dokument') : '');
     
     // Optimistic UI: Add message immediately
     const optimisticMessage: Message = {
@@ -433,7 +448,7 @@ export default function Chat() {
       content: messageContent,
       is_read: false,
       created_at: new Date().toISOString(),
-      image_url: imageUrl,
+      image_url: fileUrl,
     };
     
     setMessages((prev) => [...prev, optimisticMessage]);
@@ -445,7 +460,7 @@ export default function Chat() {
         conversation_id: selectedConversation.id,
         sender_id: user.id,
         content: messageContent,
-        image_url: imageUrl,
+        image_url: fileUrl,
       }).select().single();
 
       if (error) {
@@ -657,12 +672,13 @@ export default function Chat() {
                         )}
                       >
                         {msg.image_url && (
-                          <ChatImage 
-                            imagePath={msg.image_url} 
-                            className="rounded-lg max-w-full max-h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                          <ChatAttachment 
+                            filePath={msg.image_url}
+                            fileType={getFileType(msg.image_url)}
+                            fileName={msg.image_url.split('/').pop()}
                           />
                         )}
-                        {msg.content && msg.content !== '📷 Bild' && (
+                        {msg.content && !msg.content.match(/^(📷|🎥|📄)\s/) && (
                           <p className="text-sm">{msg.content}</p>
                         )}
                         <p className="text-xs opacity-70 mt-1">
@@ -675,10 +691,19 @@ export default function Chat() {
               </ScrollArea>
             </CardContent>
             <div className="p-4 border-t">
-              {/* Image Preview */}
-              {imagePreview && (
+              {/* File Preview */}
+              {selectedImage && (
                 <div className="relative mb-3 inline-block">
-                  <img src={imagePreview} alt="Vorschau" className="max-h-24 rounded-lg object-cover" />
+                  {selectedImage.type.startsWith('image/') && imagePreview ? (
+                    <img src={imagePreview} alt="Vorschau" className="max-h-24 rounded-lg object-cover" />
+                  ) : selectedImage.type.startsWith('video/') && imagePreview ? (
+                    <video src={imagePreview} className="max-h-24 rounded-lg" muted />
+                  ) : (
+                    <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                      <FileText className="h-8 w-8 text-primary" />
+                      <span className="text-sm font-medium">{selectedImage.name}</span>
+                    </div>
+                  )}
                   <Button
                     variant="destructive"
                     size="icon"
@@ -698,12 +723,12 @@ export default function Chat() {
                 }}
                 className="flex gap-2"
               >
-                {/* Hidden file input */}
+                {/* Hidden file input - supports images, videos, and documents */}
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
-                  onChange={handleImageSelect}
+                  accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/mov,video/quicktime,video/webm,application/pdf,.doc,.docx"
+                  onChange={handleFileSelect}
                   className="hidden"
                 />
                 

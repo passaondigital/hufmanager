@@ -2,14 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Send, ArrowLeft, User, Loader2, MessageSquare, Paperclip, X, Image as ImageIcon, Bell } from "lucide-react";
+import { Send, ArrowLeft, User, Loader2, MessageSquare, Paperclip, X, Film, FileText } from "lucide-react";
 import { PushNotificationToggle } from "@/components/notifications/PushNotificationToggle";
-import { ChatImage } from "@/components/chat/ChatImage";
+import { ChatAttachment, getFileType, getFileEmoji } from "@/components/chat/ChatAttachment";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -54,17 +53,24 @@ export default function ClientChat() {
       setLoading(true);
       
       try {
-        // Use RPC function to get or assign provider (bypasses RLS issues)
-        const { data: providerId, error: rpcError } = await supabase
-          .rpc('get_or_assign_provider_for_client');
+        let finalProviderId: string | null = null;
         
-        if (rpcError) {
-          console.error("Error getting provider via RPC:", rpcError);
+        // PRIORITY 1: Check for ACTIVE access_grants first (most reliable)
+        const { data: activeGrant } = await supabase
+          .from("access_grants")
+          .select("provider_id")
+          .eq("client_id", user.id)
+          .eq("is_active", true)
+          .eq("status", "active")
+          .order("granted_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (activeGrant?.provider_id) {
+          finalProviderId = activeGrant.provider_id;
         }
         
-        let finalProviderId = providerId as string | null;
-        
-        // Fallback if RPC returned null: check profiles table
+        // PRIORITY 2: Check created_by_provider_id
         if (!finalProviderId) {
           const { data: profile } = await supabase
             .from("profiles")
@@ -73,6 +79,16 @@ export default function ClientChat() {
             .maybeSingle();
           
           finalProviderId = profile?.created_by_provider_id || null;
+        }
+        
+        // PRIORITY 3: Use RPC function as last resort (for pending connections)
+        if (!finalProviderId) {
+          const { data: providerId, error: rpcError } = await supabase
+            .rpc('get_or_assign_provider_for_client');
+          
+          if (!rpcError && providerId) {
+            finalProviderId = providerId as string;
+          }
         }
         
         if (!finalProviderId) {
@@ -189,32 +205,43 @@ export default function ClientChat() {
     }
   }, [messages]);
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
+    // Allowed file types
+    const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedVideoTypes = ['video/mp4', 'video/mov', 'video/quicktime', 'video/webm'];
+    const allowedDocTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const allAllowed = [...allowedImageTypes, ...allowedVideoTypes, ...allowedDocTypes];
+    
+    if (!allAllowed.includes(file.type)) {
       toast({
-        title: "Fehler",
-        description: "Bitte nur Bilder auswählen",
+        title: "Nicht unterstützt",
+        description: "Erlaubt: Bilder (JPG, PNG, GIF), Videos (MP4, MOV) und Dokumente (PDF, DOC)",
         variant: "destructive",
       });
       return;
     }
     
-    // Validate file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
+    // Validate file size (20MB max for videos, 10MB for docs, 5MB for images)
+    const maxSize = allowedVideoTypes.includes(file.type) ? 20 : allowedDocTypes.includes(file.type) ? 10 : 5;
+    if (file.size > maxSize * 1024 * 1024) {
       toast({
-        title: "Fehler",
-        description: "Bild darf maximal 5MB groß sein",
+        title: "Datei zu groß",
+        description: `Maximal ${maxSize}MB erlaubt`,
         variant: "destructive",
       });
       return;
     }
     
     setSelectedImage(file);
-    setImagePreview(URL.createObjectURL(file));
+    // Create preview for images/videos, null for docs
+    if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+      setImagePreview(URL.createObjectURL(file));
+    } else {
+      setImagePreview(null);
+    }
   };
 
   const clearImage = () => {
@@ -251,15 +278,17 @@ export default function ClientChat() {
     setSending(true);
     setUploading(!!selectedImage);
     
-    let imageUrl: string | null = null;
+    let fileUrl: string | null = null;
+    let fileType: 'image' | 'video' | 'document' = 'image';
     
-    // Upload image if selected
+    // Upload file if selected
     if (selectedImage) {
-      imageUrl = await uploadImage(selectedImage);
-      if (!imageUrl) {
+      fileUrl = await uploadImage(selectedImage);
+      fileType = getFileType(selectedImage.name);
+      if (!fileUrl) {
         toast({
           title: "Fehler",
-          description: "Bild konnte nicht hochgeladen werden",
+          description: "Datei konnte nicht hochgeladen werden",
           variant: "destructive",
         });
         setSending(false);
@@ -268,7 +297,7 @@ export default function ClientChat() {
       }
     }
 
-    const messageContent = newMessage.trim() || (imageUrl ? '📷 Bild' : '');
+    const messageContent = newMessage.trim() || (fileUrl ? getFileEmoji(fileType) + ' ' + (fileType === 'image' ? 'Bild' : fileType === 'video' ? 'Video' : 'Dokument') : '');
     
     // Optimistic UI: Add message immediately
     const optimisticMessage: Message = {
@@ -278,7 +307,7 @@ export default function ClientChat() {
       content: messageContent,
       is_read: false,
       created_at: new Date().toISOString(),
-      image_url: imageUrl,
+      image_url: fileUrl,
     };
     
     setMessages((prev) => [...prev, optimisticMessage]);
@@ -289,7 +318,7 @@ export default function ClientChat() {
       conversation_id: conversationId,
       sender_id: user.id,
       content: messageContent,
-      image_url: imageUrl,
+      image_url: fileUrl,
     }).select().single();
     
     if (!error && data) {
@@ -401,12 +430,13 @@ export default function ClientChat() {
                     )}
                   >
                     {msg.image_url && (
-                      <ChatImage 
-                        imagePath={msg.image_url} 
-                        className="rounded-lg max-w-full max-h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                      <ChatAttachment 
+                        filePath={msg.image_url}
+                        fileType={getFileType(msg.image_url)}
+                        fileName={msg.image_url.split('/').pop()}
                       />
                     )}
-                    {msg.content && msg.content !== '📷 Bild' && (
+                    {msg.content && !msg.content.match(/^(📷|🎥|📄)\s/) && (
                       <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                     )}
                     <p
@@ -428,14 +458,27 @@ export default function ClientChat() {
       {/* Input */}
       <div className="sticky bottom-0 bg-background border-t border-border p-4">
         <div className="max-w-2xl mx-auto">
-          {/* Image Preview */}
-          {imagePreview && (
+          {/* File Preview */}
+          {selectedImage && (
             <div className="relative mb-3 inline-block">
-              <img 
-                src={imagePreview} 
-                alt="Vorschau" 
-                className="max-h-32 rounded-lg object-cover"
-              />
+              {selectedImage.type.startsWith('image/') && imagePreview ? (
+                <img 
+                  src={imagePreview} 
+                  alt="Vorschau" 
+                  className="max-h-32 rounded-lg object-cover"
+                />
+              ) : selectedImage.type.startsWith('video/') && imagePreview ? (
+                <video 
+                  src={imagePreview} 
+                  className="max-h-32 rounded-lg"
+                  muted
+                />
+              ) : (
+                <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                  <FileText className="h-8 w-8 text-primary" />
+                  <span className="text-sm font-medium">{selectedImage.name}</span>
+                </div>
+              )}
               <Button
                 variant="destructive"
                 size="icon"
@@ -448,12 +491,12 @@ export default function ClientChat() {
           )}
           
           <div className="flex gap-2">
-            {/* Hidden file input */}
+            {/* Hidden file input - supports images, videos, and documents */}
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
-              onChange={handleImageSelect}
+              accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/mov,video/quicktime,video/webm,application/pdf,.doc,.docx"
+              onChange={handleFileSelect}
               className="hidden"
             />
             
