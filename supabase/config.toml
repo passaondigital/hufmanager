@@ -44,3 +44,6 @@ verify_jwt = true
 
 [functions.publish-scheduled-posts]
 verify_jwt = false
+
+[functions.send-provider-invitation]
+verify_jwt = true
