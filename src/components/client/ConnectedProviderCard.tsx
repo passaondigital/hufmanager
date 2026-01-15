@@ -40,11 +40,12 @@ export function ConnectedProviderCard() {
     setLoading(true);
 
     try {
-      // Get the connected provider via access_grants
+      // Get the connected provider via access_grants - require BOTH flags
       const { data: grant } = await supabase
         .from("access_grants")
         .select("provider_id")
         .eq("client_id", user.id)
+        .eq("status", "active")
         .eq("is_active", true)
         .limit(1)
         .maybeSingle();

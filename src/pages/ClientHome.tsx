@@ -88,12 +88,13 @@ export default function ClientHome() {
       }
     }
     
-    // Check if client has a connected provider (only ACTIVE status)
+    // Check if client has a connected provider (status='active' AND is_active=true)
     const { data: grants } = await supabase
       .from("access_grants")
-      .select("provider_id, status")
+      .select("provider_id")
       .eq("client_id", user.id)
       .eq("status", "active")
+      .eq("is_active", true)
       .limit(1);
     
     setHasProvider((grants && grants.length > 0) || false);
