@@ -1901,6 +1901,38 @@ export type Database = {
         }
         Relationships: []
       }
+      review_reactions: {
+        Row: {
+          created_at: string | null
+          fingerprint: string
+          id: string
+          reaction_type: string
+          review_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          fingerprint: string
+          id?: string
+          reaction_type: string
+          review_id: string
+        }
+        Update: {
+          created_at?: string | null
+          fingerprint?: string
+          id?: string
+          reaction_type?: string
+          review_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_reactions_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reviews: {
         Row: {
           category: string | null
@@ -2490,8 +2522,12 @@ export type Database = {
         Returns: undefined
       }
       increment_review_reaction: {
-        Args: { reaction_type: string; review_id: string }
-        Returns: undefined
+        Args: {
+          p_fingerprint?: string
+          p_reaction_type: string
+          p_review_id: string
+        }
+        Returns: Json
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_master_admin: { Args: never; Returns: boolean }
