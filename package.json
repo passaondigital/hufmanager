@@ -58,6 +58,7 @@
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.23.25",
     "glob": "10.5.0",
+    "html2canvas": "^1.4.1",
     "ical-generator": "^10.0.0",
     "idb-keyval": "^6.2.2",
     "input-otp": "^1.4.2",
