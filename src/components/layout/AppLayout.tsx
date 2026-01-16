@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/ThemeProvider";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 
 export function AppLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -75,6 +76,9 @@ export function AppLayout() {
           <Outlet />
         </main>
       </div>
+      
+      {/* Feedback Widget for bug reporting */}
+      <FeedbackWidget />
     </div>
   );
 }

@@ -50,7 +50,9 @@ import {
   BarChart3,
   Wand2,
   Eye,
-  EyeOff
+  EyeOff,
+  Megaphone,
+  Bug
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -58,6 +60,8 @@ import AdminBlogManager from "@/components/admin/AdminBlogManager";
 import MissionControlKPIs from "@/components/admin/MissionControlKPIs";
 import BulkActionsBar from "@/components/admin/BulkActionsBar";
 import AdminActivityLogViewer from "@/components/admin/AdminActivityLogViewer";
+import AdminBroadcastCard from "@/components/admin/AdminBroadcastCard";
+import AdminFeedbackViewer from "@/components/admin/AdminFeedbackViewer";
 import { useAdminActivityLog } from "@/hooks/useAdminActivityLog";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -988,6 +992,10 @@ export default function MissionControl() {
             <TabsTrigger value="activity" className="gap-2">
               <ClipboardList className="w-4 h-4" />
               Aktivität
+            </TabsTrigger>
+            <TabsTrigger value="tools" className="gap-2">
+              <Megaphone className="w-4 h-4" />
+              Tools
             </TabsTrigger>
           </TabsList>
 
@@ -1968,6 +1976,13 @@ export default function MissionControl() {
 
           <TabsContent value="activity" className="space-y-6">
             <AdminActivityLogViewer limit={100} />
+          </TabsContent>
+
+          <TabsContent value="tools" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <AdminBroadcastCard />
+              <AdminFeedbackViewer />
+            </div>
           </TabsContent>
         </Tabs>
 
