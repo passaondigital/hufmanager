@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -15,6 +15,41 @@ interface ReviewReactionsProps {
 }
 
 const STORAGE_KEY = "review_reactions";
+const FINGERPRINT_KEY = "review_fingerprint";
+
+// Generate a simple browser fingerprint for rate limiting
+const generateFingerprint = (): string => {
+  const components = [
+    navigator.userAgent,
+    navigator.language,
+    new Date().getTimezoneOffset().toString(),
+    screen.width.toString(),
+    screen.height.toString(),
+    screen.colorDepth.toString(),
+    navigator.hardwareConcurrency?.toString() || "unknown",
+  ];
+  
+  // Simple hash function
+  const str = components.join("|");
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  
+  return `fp_${Math.abs(hash).toString(36)}_${Date.now().toString(36)}`;
+};
+
+// Get or create a persistent fingerprint
+const getFingerprint = (): string => {
+  let fingerprint = localStorage.getItem(FINGERPRINT_KEY);
+  if (!fingerprint || fingerprint.length < 8) {
+    fingerprint = generateFingerprint();
+    localStorage.setItem(FINGERPRINT_KEY, fingerprint);
+  }
+  return fingerprint;
+};
 
 // Custom Horseshoe SVG component
 const HorseshoeIcon = ({ className, fill }: { className?: string; fill?: string }) => (
@@ -44,6 +79,9 @@ export const ReviewReactions = ({ reviewId, reactions }: ReviewReactionsProps) =
   const [localReactions, setLocalReactions] = useState(reactions);
   const [userReaction, setUserReaction] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Get fingerprint once on mount
+  const fingerprint = useMemo(() => getFingerprint(), []);
 
   // Check localStorage for existing reaction on this review
   useEffect(() => {
@@ -61,7 +99,7 @@ export const ReviewReactions = ({ reviewId, reactions }: ReviewReactionsProps) =
   }, [reviewId]);
 
   const handleReaction = async (type: "green" | "yellow" | "red") => {
-    // Check if user already reacted to this review
+    // Check if user already reacted to this review (client-side check)
     if (userReaction) {
       toast({
         title: "Bereits reagiert",
@@ -73,12 +111,42 @@ export const ReviewReactions = ({ reviewId, reactions }: ReviewReactionsProps) =
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.rpc("increment_review_reaction", {
-        review_id: reviewId,
-        reaction_type: type,
+      // Call the rate-limited function with fingerprint
+      const { data, error } = await supabase.rpc("increment_review_reaction", {
+        p_review_id: reviewId,
+        p_reaction_type: type,
+        p_fingerprint: fingerprint,
       });
 
       if (error) throw error;
+
+      // Check server response for rate limiting or duplicate
+      if (data && typeof data === 'object' && 'success' in data) {
+        const response = data as { success: boolean; error?: string };
+        if (!response.success) {
+          const errorMsg = response.error || 'Unknown error';
+          if (errorMsg === 'Already reacted') {
+            toast({
+              title: "Bereits reagiert",
+              description: "Du hast bereits auf diese Bewertung reagiert.",
+              variant: "destructive",
+            });
+          } else if (errorMsg === 'Rate limit exceeded') {
+            toast({
+              title: "Zu viele Anfragen",
+              description: "Bitte warte einen Moment und versuche es erneut.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Fehler",
+              description: "Reaktion konnte nicht gespeichert werden.",
+              variant: "destructive",
+            });
+          }
+          return;
+        }
+      }
 
       // Update local state
       setLocalReactions((prev) => ({
