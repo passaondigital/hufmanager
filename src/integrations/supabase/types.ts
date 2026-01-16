@@ -757,6 +757,54 @@ export type Database = {
           },
         ]
       }
+      feedback_reports: {
+        Row: {
+          admin_notes: string | null
+          browser_info: string | null
+          created_at: string
+          description: string
+          id: string
+          page_url: string
+          resolved_at: string | null
+          resolved_by: string | null
+          screenshot_url: string | null
+          status: string
+          user_email: string | null
+          user_id: string | null
+          user_role: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          browser_info?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          page_url: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          screenshot_url?: string | null
+          status?: string
+          user_email?: string | null
+          user_id?: string | null
+          user_role?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          browser_info?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          page_url?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          screenshot_url?: string | null
+          status?: string
+          user_email?: string | null
+          user_id?: string | null
+          user_role?: string | null
+        }
+        Relationships: []
+      }
       feedbacks: {
         Row: {
           created_at: string
