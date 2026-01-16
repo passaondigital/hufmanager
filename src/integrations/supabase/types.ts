@@ -1468,6 +1468,21 @@ export type Database = {
         }
         Relationships: []
       }
+      master_admins: {
+        Row: {
+          created_at: string
+          email: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+        }
+        Relationships: []
+      }
       media_assets: {
         Row: {
           appointment_id: string | null
