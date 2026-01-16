@@ -262,7 +262,7 @@ const Services = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 overflow-y-auto flex-1 -mx-4 px-4 sm:-mx-6 sm:px-6">
             <div className="space-y-2">
               <Label>Name *</Label>
               <Input
