@@ -3,9 +3,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
-// VAPID public key from environment variable for easier rotation
-// Falls back to hardcoded value for backwards compatibility
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || 'BN0wPMr6jY7gLNJJhK-VHfY_hNhMJuJLdTw3KE9x5Ks3c8L_5kFr8wNNyLMz0Yt7O8M_QJo5xQVdLx4rKf3nMqA';
+// VAPID public key - must be set via environment variable for security
+// No fallback to ensure proper key rotation capability
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -28,9 +28,14 @@ export function usePushNotifications() {
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [loading, setLoading] = useState(false);
 
-  // Check if push notifications are supported
+  // Check if push notifications are supported (requires VAPID key to be configured)
   useEffect(() => {
-    const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+    const supported = 
+      'serviceWorker' in navigator && 
+      'PushManager' in window && 
+      'Notification' in window &&
+      !!VAPID_PUBLIC_KEY; // Also require VAPID key to be set
+    
     setIsSupported(supported);
     
     if (supported) {
@@ -56,6 +61,16 @@ export function usePushNotifications() {
   }, [isSupported, user]);
 
   const subscribe = useCallback(async () => {
+    if (!VAPID_PUBLIC_KEY) {
+      console.warn('Push notifications disabled: VITE_VAPID_PUBLIC_KEY not configured');
+      toast({
+        title: 'Nicht verfügbar',
+        description: 'Push-Benachrichtigungen sind derzeit nicht konfiguriert.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+    
     if (!isSupported || !user) {
       toast({
         title: 'Nicht unterstützt',
