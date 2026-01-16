@@ -59,41 +59,65 @@ export function FeedbackWidget({ className }: FeedbackWidgetProps) {
   const [drawHistory, setDrawHistory] = useState<ImageData[]>([]);
 
   const captureScreenshot = useCallback(async () => {
-    setStep("capturing");
-    
     try {
-      // Hide our widget first
+      // Hide the FAB button
       const widgetButton = document.querySelector('[data-feedback-widget]');
-      if (widgetButton) (widgetButton as HTMLElement).style.display = 'none';
+      if (widgetButton) (widgetButton as HTMLElement).style.visibility = 'hidden';
       
-      // Small delay for UI to update
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Hide any Radix dialog overlays (portals render at body level)
+      const overlays = document.querySelectorAll('[data-radix-portal], [role="dialog"], .fixed.inset-0');
+      overlays.forEach(el => {
+        (el as HTMLElement).style.visibility = 'hidden';
+      });
+      
+      // Wait for React to update and dialogs to be fully hidden
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       const canvas = await html2canvas(document.body, {
         useCORS: true,
         allowTaint: true,
-        scale: window.devicePixelRatio || 1,
+        scale: Math.min(window.devicePixelRatio || 1, 2), // Cap scale for performance
         logging: false,
+        backgroundColor: null,
+        removeContainer: true,
         ignoreElements: (element) => {
-          return element.hasAttribute('data-feedback-widget') || 
-                 element.classList.contains('feedback-dialog');
+          // Ignore feedback-related elements and dialog portals
+          if (element.hasAttribute('data-feedback-widget')) return true;
+          if (element.hasAttribute('data-radix-portal')) return true;
+          if (element.getAttribute('role') === 'dialog') return true;
+          if (element.classList.contains('feedback-dialog')) return true;
+          return false;
         }
       });
       
-      // Show widget again
-      if (widgetButton) (widgetButton as HTMLElement).style.display = '';
+      // Restore visibility
+      if (widgetButton) (widgetButton as HTMLElement).style.visibility = '';
+      overlays.forEach(el => {
+        (el as HTMLElement).style.visibility = '';
+      });
       
       const dataUrl = canvas.toDataURL('image/png');
+      
+      if (!dataUrl || dataUrl === 'data:,') {
+        throw new Error('Empty screenshot');
+      }
+      
       setScreenshot(dataUrl);
       setStep("annotating");
+      setIsOpen(true);
     } catch (error) {
       console.error("Screenshot failed:", error);
       toast.error("Screenshot konnte nicht erstellt werden");
       setStep("idle");
+      setIsOpen(true);
       
-      // Show widget again on error
+      // Restore visibility on error
       const widgetButton = document.querySelector('[data-feedback-widget]');
-      if (widgetButton) (widgetButton as HTMLElement).style.display = '';
+      if (widgetButton) (widgetButton as HTMLElement).style.visibility = '';
+      const overlays = document.querySelectorAll('[data-radix-portal], [role="dialog"], .fixed.inset-0');
+      overlays.forEach(el => {
+        (el as HTMLElement).style.visibility = '';
+      });
     }
   }, []);
 
@@ -372,11 +396,14 @@ export function FeedbackWidget({ className }: FeedbackWidgetProps) {
   };
 
   const startCapture = () => {
+    // Close dialog first, then capture after it's fully unmounted
     setIsOpen(false);
-    // Brief delay to let dialog close
+    setStep("capturing");
+    
+    // Wait for dialog animation to complete and DOM to update
     setTimeout(() => {
       captureScreenshot();
-    }, 100);
+    }, 350);
   };
 
   // Show recording indicator when recording
@@ -449,15 +476,19 @@ export function FeedbackWidget({ className }: FeedbackWidgetProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Loading Dialog */}
-      <Dialog open={step === "capturing"}>
-        <DialogContent className="sm:max-w-sm feedback-dialog">
-          <div className="flex flex-col items-center justify-center py-8 gap-4">
+      {/* Loading Indicator (non-modal, hidden from screenshot) */}
+      {step === "capturing" && (
+        <div 
+          data-feedback-widget
+          className="fixed inset-0 bg-background/50 z-[100] flex items-center justify-center"
+          style={{ visibility: 'hidden' }}
+        >
+          <div className="bg-card p-6 rounded-lg shadow-xl flex flex-col items-center gap-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <p className="text-muted-foreground">Screenshot wird erstellt...</p>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
       {/* Annotation Dialog */}
       <Dialog open={step === "annotating"} onOpenChange={(open) => !open && handleClose()}>
