@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Bug, X, Pencil, Undo2, Send, Loader2 } from "lucide-react";
+import { Bug, X, Pencil, Undo2, Send, Loader2, Video, Camera, Square, Circle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -13,15 +13,48 @@ interface FeedbackWidgetProps {
   className?: string;
 }
 
+// Global console log capture
+const consoleLogs: Array<{type: string; message: string; timestamp: string}> = [];
+const MAX_LOGS = 50;
+
+// Override console methods to capture logs
+const originalConsole = {
+  log: console.log,
+  error: console.error,
+  warn: console.warn,
+};
+
+if (typeof window !== 'undefined' && !(window as any).__feedbackConsolePatched) {
+  (window as any).__feedbackConsolePatched = true;
+  
+  ['log', 'error', 'warn'].forEach((type) => {
+    (console as any)[type] = (...args: any[]) => {
+      consoleLogs.push({
+        type,
+        message: args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '),
+        timestamp: new Date().toISOString()
+      });
+      if (consoleLogs.length > MAX_LOGS) consoleLogs.shift();
+      (originalConsole as any)[type](...args);
+    };
+  });
+}
+
 export function FeedbackWidget({ className }: FeedbackWidgetProps) {
   const { user, role } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [step, setStep] = useState<"idle" | "capturing" | "annotating" | "form">("idle");
+  const [step, setStep] = useState<"idle" | "capturing" | "annotating" | "form" | "recording">("idle");
   const [screenshot, setScreenshot] = useState<string | null>(null);
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
+  const [recordingTime, setRecordingTime] = useState(0);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawHistory, setDrawHistory] = useState<ImageData[]>([]);
 
@@ -64,6 +97,74 @@ export function FeedbackWidget({ className }: FeedbackWidgetProps) {
     }
   }, []);
 
+  const startRecording = useCallback(async () => {
+    try {
+      setIsOpen(false);
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: { 
+          displaySurface: "browser",
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        },
+        audio: false
+      });
+      
+      recordedChunksRef.current = [];
+      const mediaRecorder = new MediaRecorder(stream, { 
+        mimeType: 'video/webm;codecs=vp9' 
+      });
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          recordedChunksRef.current.push(event.data);
+        }
+      };
+      
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+        setRecordedBlob(blob);
+        stream.getTracks().forEach(track => track.stop());
+        setIsRecording(false);
+        setStep("form");
+        setIsOpen(true);
+        if (recordingIntervalRef.current) {
+          clearInterval(recordingIntervalRef.current);
+        }
+      };
+      
+      // Stop when user stops sharing
+      stream.getVideoTracks()[0].onended = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+          mediaRecorderRef.current.stop();
+        }
+      };
+      
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+      
+      toast.info("Aufnahme gestartet - Zeige den Fehler und beende dann die Bildschirmfreigabe");
+      
+    } catch (error) {
+      console.error("Recording failed:", error);
+      toast.error("Screen Recording nicht verfügbar");
+      setIsOpen(true);
+    }
+  }, []);
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+  }, []);
+
   // Initialize canvas when screenshot is ready
   useEffect(() => {
     if (step === "annotating" && screenshot && canvasRef.current) {
@@ -87,6 +188,15 @@ export function FeedbackWidget({ className }: FeedbackWidgetProps) {
       img.src = screenshot;
     }
   }, [step, screenshot]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+      }
+    };
+  }, []);
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -146,6 +256,12 @@ export function FeedbackWidget({ className }: FeedbackWidgetProps) {
     }
   };
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const handleSubmit = async () => {
     if (!description.trim()) {
       toast.error("Bitte beschreibe das Problem");
@@ -155,13 +271,16 @@ export function FeedbackWidget({ className }: FeedbackWidgetProps) {
     setIsSubmitting(true);
 
     try {
-      // Get annotated screenshot
       let screenshotUrl = null;
-      if (canvasRef.current) {
+      let videoUrl = null;
+      const timestamp = Date.now();
+      const userId = user?.id || 'anonymous';
+
+      // Upload screenshot if available
+      if (canvasRef.current && step !== "recording") {
         const annotatedScreenshot = canvasRef.current.toDataURL('image/png');
         
-        // Upload to Supabase Storage
-        const fileName = `feedback/${Date.now()}_${user?.id || 'anonymous'}.png`;
+        const fileName = `feedback/${timestamp}_${userId}.png`;
         const base64Data = annotatedScreenshot.split(',')[1];
         const byteCharacters = atob(base64Data);
         const byteNumbers = new Array(byteCharacters.length);
@@ -183,12 +302,39 @@ export function FeedbackWidget({ className }: FeedbackWidgetProps) {
         }
       }
 
-      // Get browser info
+      // Upload video if available
+      if (recordedBlob) {
+        const videoFileName = `feedback/${timestamp}_${userId}.webm`;
+        
+        const { data: videoUploadData, error: videoUploadError } = await supabase.storage
+          .from('feedback-screenshots')
+          .upload(videoFileName, recordedBlob, { contentType: 'video/webm' });
+
+        if (!videoUploadError && videoUploadData) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('feedback-screenshots')
+            .getPublicUrl(videoUploadData.path);
+          videoUrl = publicUrl;
+        }
+      }
+
+      // Get browser info with console logs
       const browserInfo = {
         userAgent: navigator.userAgent,
         screenSize: `${window.screen.width}x${window.screen.height}`,
         viewport: `${window.innerWidth}x${window.innerHeight}`,
         language: navigator.language,
+        consoleLogs: consoleLogs.slice(-20), // Last 20 logs
+        performance: {
+          memory: (performance as any).memory ? {
+            usedJSHeapSize: (performance as any).memory.usedJSHeapSize,
+            totalJSHeapSize: (performance as any).memory.totalJSHeapSize,
+          } : null,
+          timing: performance.timing ? {
+            loadTime: performance.timing.loadEventEnd - performance.timing.navigationStart,
+          } : null
+        },
+        videoUrl: videoUrl
       };
 
       // Insert feedback report
@@ -198,7 +344,7 @@ export function FeedbackWidget({ className }: FeedbackWidgetProps) {
         user_role: role || null,
         page_url: window.location.href,
         description: description.trim(),
-        screenshot_url: screenshotUrl,
+        screenshot_url: screenshotUrl || videoUrl,
         browser_info: JSON.stringify(browserInfo),
         status: 'open'
       });
@@ -221,6 +367,8 @@ export function FeedbackWidget({ className }: FeedbackWidgetProps) {
     setScreenshot(null);
     setDescription("");
     setDrawHistory([]);
+    setRecordedBlob(null);
+    setRecordingTime(0);
   };
 
   const startCapture = () => {
@@ -230,6 +378,27 @@ export function FeedbackWidget({ className }: FeedbackWidgetProps) {
       captureScreenshot();
     }, 100);
   };
+
+  // Show recording indicator when recording
+  if (isRecording) {
+    return (
+      <div 
+        className="fixed top-4 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground px-4 py-2 rounded-full shadow-lg z-[100] flex items-center gap-3"
+      >
+        <Circle className="h-3 w-3 fill-current animate-pulse" />
+        <span className="font-medium">Aufnahme läuft: {formatTime(recordingTime)}</span>
+        <Button 
+          size="sm" 
+          variant="secondary" 
+          onClick={stopRecording}
+          className="h-7 px-2"
+        >
+          <Square className="h-3 w-3 mr-1" />
+          Stoppen
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -253,16 +422,28 @@ export function FeedbackWidget({ className }: FeedbackWidgetProps) {
               Problem melden
             </DialogTitle>
             <DialogDescription>
-              Erstelle einen Screenshot und markiere genau, was nicht funktioniert.
+              Erstelle einen Screenshot oder nimm ein Video auf, um das Problem zu zeigen.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <Button onClick={startCapture} className="w-full gap-2">
-              <Pencil className="h-4 w-4" />
-              Screenshot erstellen & markieren
+          <div className="space-y-3 py-4">
+            <Button onClick={startCapture} variant="outline" className="w-full gap-2 h-14">
+              <Camera className="h-5 w-5" />
+              <div className="text-left">
+                <div className="font-medium">Screenshot</div>
+                <div className="text-xs text-muted-foreground">Markiere den Fehler auf dem Bild</div>
+              </div>
             </Button>
-            <p className="text-xs text-muted-foreground text-center">
-              Nach dem Screenshot kannst du mit dem Finger oder der Maus das Problem markieren.
+            
+            <Button onClick={startRecording} variant="outline" className="w-full gap-2 h-14">
+              <Video className="h-5 w-5 text-destructive" />
+              <div className="text-left">
+                <div className="font-medium">Screen Recording</div>
+                <div className="text-xs text-muted-foreground">Zeige den Fehler in Aktion</div>
+              </div>
+            </Button>
+            
+            <p className="text-xs text-muted-foreground text-center pt-2">
+              Console-Logs und Browser-Info werden automatisch erfasst.
             </p>
           </div>
         </DialogContent>
@@ -340,12 +521,24 @@ export function FeedbackWidget({ className }: FeedbackWidgetProps) {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            {canvasRef.current && (
+            {/* Show screenshot preview */}
+            {canvasRef.current && !recordedBlob && (
               <div className="overflow-auto max-h-48 border rounded-lg">
                 <img 
                   src={canvasRef.current.toDataURL()} 
                   alt="Screenshot" 
                   className="w-full"
+                />
+              </div>
+            )}
+            
+            {/* Show video preview */}
+            {recordedBlob && (
+              <div className="overflow-auto max-h-48 border rounded-lg bg-black">
+                <video 
+                  src={URL.createObjectURL(recordedBlob)} 
+                  controls
+                  className="w-full max-h-48"
                 />
               </div>
             )}
@@ -361,13 +554,15 @@ export function FeedbackWidget({ className }: FeedbackWidgetProps) {
               />
             </div>
 
-            <p className="text-xs text-muted-foreground">
-              Seite: {window.location.pathname}
-            </p>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>📍 {window.location.pathname}</span>
+              <span>•</span>
+              <span>🔧 {consoleLogs.length} Console-Logs erfasst</span>
+            </div>
           </div>
           
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setStep("annotating")}>
+            <Button variant="outline" onClick={() => recordedBlob ? handleClose() : setStep("annotating")}>
               Zurück
             </Button>
             <Button 
