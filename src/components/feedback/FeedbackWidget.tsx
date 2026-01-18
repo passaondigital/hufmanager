@@ -444,7 +444,7 @@ export function FeedbackWidget({ className }: FeedbackWidgetProps) {
       <Button
         data-feedback-widget
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-20 right-4 h-12 w-12 rounded-full shadow-lg z-40 bg-destructive hover:bg-destructive/90 ${className}`}
+        className={`fixed bottom-40 md:bottom-20 right-4 h-12 w-12 rounded-full shadow-lg z-40 bg-destructive hover:bg-destructive/90 ${className}`}
         size="icon"
         title="Problem melden"
       >

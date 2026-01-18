@@ -121,7 +121,7 @@ export function AIChatWidget() {
     return (
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 z-50"
+        className="fixed bottom-24 md:bottom-6 right-4 md:right-6 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 z-50"
         size="icon"
       >
         <Sparkles className="h-6 w-6" />
@@ -130,7 +130,7 @@ export function AIChatWidget() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 w-96 h-[500px] bg-background border rounded-lg shadow-2xl flex flex-col z-50">
+    <div className="fixed bottom-24 md:bottom-6 right-4 md:right-6 w-[calc(100vw-2rem)] md:w-96 h-[70vh] md:h-[500px] bg-background border rounded-lg shadow-2xl flex flex-col z-50">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-primary/5">
         <div className="flex items-center gap-2">
