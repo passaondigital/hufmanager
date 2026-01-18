@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,6 +9,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
+
+// Routes where the FAB should be hidden (chat screens have their own input)
+const HIDDEN_ON_ROUTES = ['/chat', '/client-chat'];
 
 interface FeedbackWidgetProps {
   className?: string;
@@ -41,6 +45,7 @@ if (typeof window !== 'undefined' && !(window as any).__feedbackConsolePatched) 
 }
 
 export function FeedbackWidget({ className }: FeedbackWidgetProps) {
+  const location = useLocation();
   const { user, role } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<"idle" | "capturing" | "annotating" | "form" | "recording">("idle");
@@ -54,6 +59,9 @@ export function FeedbackWidget({ className }: FeedbackWidgetProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
+  
+  // Hide on chat routes to avoid overlapping send buttons
+  const isHiddenRoute = HIDDEN_ON_ROUTES.some(route => location.pathname.startsWith(route));
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawHistory, setDrawHistory] = useState<ImageData[]>([]);
@@ -426,6 +434,9 @@ export function FeedbackWidget({ className }: FeedbackWidgetProps) {
       </div>
     );
   }
+
+  // Hide on chat routes to avoid overlapping send buttons
+  if (isHiddenRoute) return null;
 
   return (
     <>
