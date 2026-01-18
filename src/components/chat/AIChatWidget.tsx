@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -10,18 +11,28 @@ type Message = { role: "user" | "assistant"; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
 
+// Routes where the FAB should be hidden (chat screens have their own input)
+const HIDDEN_ON_ROUTES = ['/chat', '/client-chat'];
+
 export function AIChatWidget() {
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Hide on chat routes to avoid overlapping send buttons
+  const isHiddenRoute = HIDDEN_ON_ROUTES.some(route => location.pathname.startsWith(route));
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Return null after all hooks are called
+  if (isHiddenRoute) return null;
 
   const streamChat = async (userMessages: Message[]) => {
     // Get the user's actual JWT token - authentication is required
