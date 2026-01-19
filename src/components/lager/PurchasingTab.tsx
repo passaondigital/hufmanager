@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -30,8 +30,13 @@ import {
   TrendingUp,
   TrendingDown,
   Wallet,
+  Sparkles,
+  Clock,
+  BarChart3,
+  CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { subWeeks, format, parseISO, differenceInDays } from "date-fns";
 
 interface InventoryItem {
   id: string;
@@ -66,14 +71,31 @@ interface PurchaseOrderItem {
   unit_price: number | null;
 }
 
+interface OfferMaterial {
+  id: string;
+  offer_id: string;
+  inventory_item_id: string;
+  quantity: number;
+}
+
+interface OrderSuggestion {
+  item: InventoryItem;
+  suggestedQuantity: number;
+  weeklyConsumption: number;
+  weeksUntilEmpty: number;
+  urgency: "critical" | "soon" | "planned";
+  reason: string;
+}
+
 export function PurchasingTab() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selectedSupplier, setSelectedSupplier] = useState<string>("");
+  const [showSuggestions, setShowSuggestions] = useState(true);
 
-  // Fetch inventory items with low stock
-  const { data: lowStockItems = [], isLoading: loadingInventory } = useQuery({
-    queryKey: ["inventory-items-low-stock", user?.id],
+  // Fetch ALL inventory items
+  const { data: allInventoryItems = [], isLoading: loadingInventory } = useQuery({
+    queryKey: ["inventory-items-all", user?.id],
     queryFn: async () => {
       if (!user) return [];
       const { data, error } = await supabase
@@ -83,12 +105,133 @@ export function PurchasingTab() {
         .order("product_name", { ascending: true });
 
       if (error) throw error;
-      return (data || []).filter(
-        (item) => item.min_stock && item.min_stock > 0 && item.current_stock <= item.min_stock
-      ) as InventoryItem[];
+      return data as InventoryItem[];
     },
     enabled: !!user,
   });
+
+  // Filter low stock items
+  const lowStockItems = useMemo(() => 
+    allInventoryItems.filter(
+      (item) => item.min_stock && item.min_stock > 0 && item.current_stock <= item.min_stock
+    ), [allInventoryItems]
+  );
+
+  // Fetch completed appointments from the last 8 weeks for consumption analysis
+  const { data: recentAppointments = [] } = useQuery({
+    queryKey: ["appointments-consumption", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const eightWeeksAgo = subWeeks(new Date(), 8).toISOString().split("T")[0];
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("id, date, service_type, completed_at")
+        .eq("provider_id", user.id)
+        .eq("status", "completed")
+        .gte("date", eightWeeksAgo)
+        .order("date", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  // Fetch offer_materials to understand which materials are used per service
+  const { data: offerMaterials = [] } = useQuery({
+    queryKey: ["offer-materials", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("offer_materials")
+        .select("*, offers!inner(provider_id, title)")
+        .eq("offers.provider_id", user.id);
+
+      if (error) throw error;
+      return data as (OfferMaterial & { offers: { provider_id: string; title: string } })[];
+    },
+    enabled: !!user,
+  });
+
+  // Calculate order suggestions based on consumption
+  const orderSuggestions = useMemo(() => {
+    if (allInventoryItems.length === 0) return [];
+
+    const suggestions: OrderSuggestion[] = [];
+    const weeksAnalyzed = 8;
+    const appointmentCount = recentAppointments.length;
+
+    // Calculate consumption per item based on offer_materials usage
+    const consumptionMap = new Map<string, number>();
+
+    // For each completed appointment, estimate material usage
+    offerMaterials.forEach((material) => {
+      const currentConsumption = consumptionMap.get(material.inventory_item_id) || 0;
+      // Estimate: each material is used once per appointment that uses that offer type
+      consumptionMap.set(
+        material.inventory_item_id,
+        currentConsumption + (material.quantity * (appointmentCount / weeksAnalyzed))
+      );
+    });
+
+    allInventoryItems.forEach((item) => {
+      const weeklyConsumption = consumptionMap.get(item.id) || 0;
+      const minStock = item.min_stock || 0;
+      const currentStock = item.current_stock;
+      
+      // Calculate weeks until stock runs out (based on consumption or min_stock)
+      let weeksUntilEmpty = Infinity;
+      if (weeklyConsumption > 0) {
+        weeksUntilEmpty = currentStock / weeklyConsumption;
+      } else if (minStock > 0 && currentStock <= minStock) {
+        weeksUntilEmpty = 0;
+      }
+
+      // Determine if we should suggest ordering
+      let shouldSuggest = false;
+      let urgency: "critical" | "soon" | "planned" = "planned";
+      let reason = "";
+      let suggestedQuantity = 0;
+
+      // Critical: Already below min_stock
+      if (minStock > 0 && currentStock <= minStock) {
+        shouldSuggest = true;
+        urgency = "critical";
+        suggestedQuantity = Math.max(minStock * 2 - currentStock, minStock);
+        reason = `Unter Mindestbestand (${currentStock}/${minStock})`;
+      }
+      // Soon: Will run out in 2-4 weeks based on consumption
+      else if (weeklyConsumption > 0 && weeksUntilEmpty <= 4 && weeksUntilEmpty > 0) {
+        shouldSuggest = true;
+        urgency = weeksUntilEmpty <= 2 ? "critical" : "soon";
+        // Suggest ordering enough for 6 weeks
+        suggestedQuantity = Math.ceil(weeklyConsumption * 6);
+        reason = `Reicht noch ~${Math.round(weeksUntilEmpty)} Wochen (${weeklyConsumption.toFixed(1)}/Woche)`;
+      }
+      // Planned: High consumption items that should be stocked up
+      else if (weeklyConsumption > 1 && currentStock < weeklyConsumption * 6) {
+        shouldSuggest = true;
+        urgency = "planned";
+        suggestedQuantity = Math.ceil(weeklyConsumption * 8) - currentStock;
+        reason = `Hoher Verbrauch: ${weeklyConsumption.toFixed(1)}/Woche`;
+      }
+
+      if (shouldSuggest && suggestedQuantity > 0) {
+        suggestions.push({
+          item,
+          suggestedQuantity: Math.ceil(suggestedQuantity),
+          weeklyConsumption: Math.round(weeklyConsumption * 10) / 10,
+          weeksUntilEmpty: Math.round(weeksUntilEmpty * 10) / 10,
+          urgency,
+          reason,
+        });
+      }
+    });
+
+    // Sort by urgency: critical first, then soon, then planned
+    const urgencyOrder = { critical: 0, soon: 1, planned: 2 };
+    return suggestions.sort((a, b) => urgencyOrder[a.urgency] - urgencyOrder[b.urgency]);
+  }, [allInventoryItems, recentAppointments, offerMaterials]);
 
   // Fetch suppliers
   const { data: suppliers = [] } = useQuery({
@@ -286,8 +429,103 @@ export function PurchasingTab() {
 
   const isNegativeBudget = budget.balance < 0;
 
+  const getUrgencyBadge = (urgency: "critical" | "soon" | "planned") => {
+    switch (urgency) {
+      case "critical":
+        return <Badge variant="destructive" className="gap-1"><AlertTriangle className="h-3 w-3" />Kritisch</Badge>;
+      case "soon":
+        return <Badge variant="secondary" className="gap-1 bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200"><Clock className="h-3 w-3" />Bald</Badge>;
+      case "planned":
+        return <Badge variant="outline" className="gap-1"><CheckCircle2 className="h-3 w-3" />Geplant</Badge>;
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Smart Order Suggestions */}
+      {orderSuggestions.length > 0 && showSuggestions && (
+        <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+          <CardHeader className="flex flex-row items-start justify-between">
+            <div className="space-y-1">
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Intelligenter Bestellvorschlag
+              </CardTitle>
+              <CardDescription>
+                Basierend auf deinem Verbrauch der letzten 8 Wochen ({recentAppointments.length} Termine)
+              </CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setShowSuggestions(false)}>
+              Ausblenden
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {orderSuggestions.slice(0, 5).map((suggestion) => (
+                <div
+                  key={suggestion.item.id}
+                  className="flex items-center justify-between p-3 rounded-lg border bg-card"
+                >
+                  <div className="flex items-center gap-3">
+                    {suggestion.item.image_url ? (
+                      <img
+                        src={suggestion.item.image_url}
+                        alt=""
+                        className="w-10 h-10 rounded object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
+                        <Package className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-medium">{suggestion.item.product_name}</p>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>{suggestion.reason}</span>
+                        {suggestion.weeklyConsumption > 0 && (
+                          <span className="flex items-center gap-1">
+                            <BarChart3 className="h-3 w-3" />
+                            {suggestion.weeklyConsumption}/Wo
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {getUrgencyBadge(suggestion.urgency)}
+                    <div className="text-right">
+                      <p className="font-semibold text-primary">+{suggestion.suggestedQuantity}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Bestand: {suggestion.item.current_stock}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant={suggestion.urgency === "critical" ? "default" : "outline"}
+                      onClick={() => {
+                        if (!selectedSupplier) {
+                          toast.error("Bitte wähle zuerst einen Lieferanten");
+                          return;
+                        }
+                        addToOrderMutation.mutate(suggestion.item);
+                      }}
+                      disabled={!selectedSupplier || addToOrderMutation.isPending}
+                    >
+                      <ShoppingCart className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {orderSuggestions.length > 5 && (
+                <p className="text-sm text-muted-foreground text-center pt-2">
+                  + {orderSuggestions.length - 5} weitere Vorschläge
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Budget Card */}
       <Card className={isNegativeBudget ? "border-destructive" : ""}>
         <CardHeader>
