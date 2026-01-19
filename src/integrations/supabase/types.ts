@@ -1739,35 +1739,96 @@ export type Database = {
         }
         Relationships: []
       }
+      product_recipe_items: {
+        Row: {
+          created_at: string
+          id: string
+          inventory_item_id: string | null
+          quantity: number
+          recipe_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inventory_item_id?: string | null
+          quantity?: number
+          recipe_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inventory_item_id?: string | null
+          quantity?: number
+          recipe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_recipe_items_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_recipe_items_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "product_recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_recipes: {
         Row: {
           component_product_id: string | null
+          created_at: string | null
+          description: string | null
           id: string
+          main_product_id: string | null
+          name: string | null
           parent_product_id: string | null
           provider_id: string | null
           quantity: number | null
+          updated_at: string | null
           user_id: string | null
         }
         Insert: {
           component_product_id?: string | null
+          created_at?: string | null
+          description?: string | null
           id?: string
+          main_product_id?: string | null
+          name?: string | null
           parent_product_id?: string | null
           provider_id?: string | null
           quantity?: number | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
           component_product_id?: string | null
+          created_at?: string | null
+          description?: string | null
           id?: string
+          main_product_id?: string | null
+          name?: string | null
           parent_product_id?: string | null
           provider_id?: string | null
           quantity?: number | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "product_recipes_component_product_id_fkey"
             columns: ["component_product_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_recipes_main_product_id_fkey"
+            columns: ["main_product_id"]
             isOneToOne: false
             referencedRelation: "inventory_items"
             referencedColumns: ["id"]

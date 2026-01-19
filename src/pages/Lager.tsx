@@ -43,9 +43,13 @@ import {
   AlertTriangle,
   Printer,
   ClipboardList,
+  Truck,
+  ShoppingBag,
+  Layers,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
+import { SuppliersTab, PurchasingTab, RecipesTab } from "@/components/lager";
 
 interface GlobalProduct {
   id: string;
@@ -271,7 +275,7 @@ export default function Lager() {
       )}
 
       <Tabs defaultValue="inventory" className="space-y-6">
-        <TabsList>
+        <TabsList className="flex flex-wrap gap-1">
           <TabsTrigger value="inventory" className="gap-2">
             <Package className="h-4 w-4" />
             Mein Bestand ({inventoryItems.length})
@@ -279,6 +283,23 @@ export default function Lager() {
           <TabsTrigger value="catalog" className="gap-2">
             <ShoppingCart className="h-4 w-4" />
             Produktkatalog ({catalogProducts.length})
+          </TabsTrigger>
+          <TabsTrigger value="suppliers" className="gap-2">
+            <Truck className="h-4 w-4" />
+            Lieferanten
+          </TabsTrigger>
+          <TabsTrigger value="purchasing" className="gap-2 relative">
+            <ShoppingBag className="h-4 w-4" />
+            Einkauf & Nachschub
+            {lowStockItems.length > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1.5 text-xs">
+                {lowStockItems.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="recipes" className="gap-2">
+            <Layers className="h-4 w-4" />
+            Produkt-Bundles
           </TabsTrigger>
           <TabsTrigger value="shopping-list" className="gap-2 relative">
             <ClipboardList className="h-4 w-4" />
@@ -517,6 +538,21 @@ export default function Lager() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Suppliers Tab */}
+        <TabsContent value="suppliers">
+          <SuppliersTab />
+        </TabsContent>
+
+        {/* Purchasing Tab */}
+        <TabsContent value="purchasing">
+          <PurchasingTab />
+        </TabsContent>
+
+        {/* Recipes Tab */}
+        <TabsContent value="recipes">
+          <RecipesTab />
         </TabsContent>
 
         {/* Shopping List Tab */}
