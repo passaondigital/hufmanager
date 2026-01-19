@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Car, MapPin, Plus, Package, Minus, Trash2, Eye } from "lucide-react";
+import { Loader2, Car, MapPin, Plus, Trash2, Eye, Package } from "lucide-react";
 import { z } from "zod";
 import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
 
@@ -69,11 +69,11 @@ interface InventoryItem {
 }
 
 interface InvoiceLineItem {
-  inventory_id: string;
-  name: string;
+  id: string; // Temporary ID for tracking
+  inventory_item_id: string | null; // Links to inventory_items table
+  title: string;
   quantity: number;
   unit_price: number;
-  tax_rate: number;
 }
 
 interface CreateInvoiceModalProps {
@@ -90,7 +90,6 @@ const invoiceSchema = z.object({
   invoice_number: z.string().max(50, "Rechnungsnummer zu lang").optional(),
   issue_date: z.string().min(1, "Bitte wählen Sie ein Datum"),
   due_date: z.string().optional(),
-  total_amount: z.number().min(0.01, "Betrag muss größer als 0 sein"),
   status: z.enum(["pending", "paid", "overdue"]),
   notes: z.string().max(1000, "Notizen zu lang").optional(),
 });
@@ -116,7 +115,6 @@ export function CreateInvoiceModal({
   // Inventory state
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([]);
-  const [showInventoryPicker, setShowInventoryPicker] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -125,7 +123,6 @@ export function CreateInvoiceModal({
     invoice_number: "",
     issue_date: new Date().toISOString().split("T")[0],
     due_date: "",
-    total_amount: "",
     status: "pending" as "pending" | "paid" | "overdue",
     payment_method: "" as "" | "Überweisung" | "Bar" | "PayPal",
     customer_type: "privat" as "privat" | "gewerbe" | "kleinunternehmer",
@@ -133,6 +130,11 @@ export function CreateInvoiceModal({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Calculate total from line items
+  const calculatedTotal = useMemo(() => {
+    return lineItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+  }, [lineItems]);
 
   // Reset form when modal opens with new preselected values
   useEffect(() => {
@@ -207,12 +209,11 @@ export function CreateInvoiceModal({
 
       setHorses(horsesData || []);
       
-      // Load inventory items
+      // Load inventory items (including those with 0 stock for manual entries)
       const { data: inventoryData } = await supabase
         .from("inventory_items")
         .select("id, product_name, brand, current_stock, price_sell, tax_rate, min_stock")
         .eq("user_id", user.id)
-        .gt("current_stock", 0)
         .order("product_name");
       
       setInventoryItems((inventoryData || []) as InventoryItem[]);
@@ -257,9 +258,6 @@ export function CreateInvoiceModal({
       return;
     }
     
-    // For now, use Nuremberg as default business location if not set
-    // In production, this would come from geocoding the business address
-    // Using approximate center of Germany as fallback
     const businessLat = 49.45; // Nuremberg
     const businessLon = 11.08;
     
@@ -274,70 +272,85 @@ export function CreateInvoiceModal({
     setShowTravelCost(true);
   };
 
-  const addTravelCostToAmount = () => {
-    const currentAmount = parseFloat(formData.total_amount) || 0;
-    const newAmount = currentAmount + calculatedTravelCost;
-    setFormData(prev => ({ ...prev, total_amount: newAmount.toFixed(2) }));
-    
-    // Add to notes
-    const travelNote = `Anfahrt: ${travelKm} km (Hin- und Rückfahrt) = €${calculatedTravelCost.toFixed(2)}`;
-    const currentNotes = formData.notes;
-    setFormData(prev => ({
-      ...prev,
-      notes: currentNotes ? `${currentNotes}\n${travelNote}` : travelNote
-    }));
-    
+  const addTravelCostAsLineItem = () => {
+    const newLineItem: InvoiceLineItem = {
+      id: `travel-${Date.now()}`,
+      inventory_item_id: null, // No inventory item for travel costs
+      title: `Anfahrt: ${travelKm} km (Hin- und Rückfahrt)`,
+      quantity: 1,
+      unit_price: calculatedTravelCost,
+    };
+    setLineItems([...lineItems, newLineItem]);
     setShowTravelCost(false);
-    toast({ title: "Fahrtkosten hinzugefügt", description: `€${calculatedTravelCost.toFixed(2)} wurden zum Betrag addiert.` });
+    setTravelKm("");
+    toast({ title: "Fahrtkosten hinzugefügt" });
   };
 
-  // Inventory line item functions
-  const addInventoryItem = (item: InventoryItem) => {
-    const existingIndex = lineItems.findIndex(li => li.inventory_id === item.id);
-    
-    if (existingIndex >= 0) {
-      // Increase quantity if already added
-      const updated = [...lineItems];
-      if (updated[existingIndex].quantity < item.current_stock) {
-        updated[existingIndex].quantity += 1;
-        setLineItems(updated);
-      } else {
-        toast({ title: "Maximale Menge erreicht", description: "Nicht genügend Bestand vorhanden.", variant: "destructive" });
-      }
-    } else {
-      // Add new line item
-      setLineItems([...lineItems, {
-        inventory_id: item.id,
-        name: item.brand ? `${item.brand} - ${item.product_name}` : item.product_name,
-        quantity: 1,
-        unit_price: item.price_sell || 0,
-        tax_rate: item.tax_rate || 19,
-      }]);
-    }
-    setShowInventoryPicker(false);
+  // Generate unique ID for line items
+  const generateLineItemId = () => `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+  // Add new empty line item
+  const addEmptyLineItem = () => {
+    const newLineItem: InvoiceLineItem = {
+      id: generateLineItemId(),
+      inventory_item_id: null,
+      title: "",
+      quantity: 1,
+      unit_price: 0,
+    };
+    setLineItems([...lineItems, newLineItem]);
   };
 
-  const updateLineItemQuantity = (index: number, delta: number) => {
-    const updated = [...lineItems];
-    const newQty = updated[index].quantity + delta;
-    const inventoryItem = inventoryItems.find(i => i.id === updated[index].inventory_id);
-    
-    if (newQty <= 0) {
-      updated.splice(index, 1);
-    } else if (inventoryItem && newQty <= inventoryItem.current_stock) {
-      updated[index].quantity = newQty;
-    } else {
-      toast({ title: "Maximale Menge erreicht", variant: "destructive" });
+  // Add line item from inventory selection
+  const addInventoryLineItem = (inventoryItem: InventoryItem) => {
+    const newLineItem: InvoiceLineItem = {
+      id: generateLineItemId(),
+      inventory_item_id: inventoryItem.id,
+      title: inventoryItem.brand 
+        ? `${inventoryItem.brand} - ${inventoryItem.product_name}` 
+        : inventoryItem.product_name,
+      quantity: 1,
+      unit_price: inventoryItem.price_sell || 0,
+    };
+    setLineItems([...lineItems, newLineItem]);
+  };
+
+  // Update line item
+  const updateLineItem = (id: string, field: keyof InvoiceLineItem, value: string | number | null) => {
+    setLineItems(lineItems.map(item => 
+      item.id === id ? { ...item, [field]: value } : item
+    ));
+  };
+
+  // Handle inventory selection for a line item
+  const handleInventorySelect = (lineItemId: string, inventoryItemId: string) => {
+    if (inventoryItemId === "custom") {
+      // Clear inventory link for custom entry
+      updateLineItem(lineItemId, "inventory_item_id", null);
       return;
     }
-    setLineItems(updated);
+    
+    const inventoryItem = inventoryItems.find(i => i.id === inventoryItemId);
+    if (inventoryItem) {
+      setLineItems(lineItems.map(item => 
+        item.id === lineItemId 
+          ? { 
+              ...item, 
+              inventory_item_id: inventoryItem.id,
+              title: inventoryItem.brand 
+                ? `${inventoryItem.brand} - ${inventoryItem.product_name}` 
+                : inventoryItem.product_name,
+              unit_price: inventoryItem.price_sell || 0,
+            } 
+          : item
+      ));
+    }
   };
 
-  const removeLineItem = (index: number) => {
-    setLineItems(lineItems.filter((_, i) => i !== index));
+  // Remove line item
+  const removeLineItem = (id: string) => {
+    setLineItems(lineItems.filter(item => item.id !== id));
   };
-
-  const lineItemsTotal = lineItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
 
   // Filter horses when client changes
   useEffect(() => {
@@ -350,14 +363,12 @@ export function CreateInvoiceModal({
 
   // Preview PDF function
   const handlePreview = async () => {
-    const amount = parseFloat(formData.total_amount);
-    
     if (!formData.client_id) {
       toast({ title: "Bitte Kunde wählen", variant: "destructive" });
       return;
     }
-    if (isNaN(amount) || amount <= 0) {
-      toast({ title: "Bitte gültigen Betrag eingeben", variant: "destructive" });
+    if (calculatedTotal <= 0) {
+      toast({ title: "Bitte Positionen hinzufügen", variant: "destructive" });
       return;
     }
 
@@ -367,15 +378,22 @@ export function CreateInvoiceModal({
       const selectedClient = clients.find(c => c.id === formData.client_id);
       const selectedHorse = filteredHorses.find(h => h.id === formData.horse_id);
       
+      // Build positions notes
+      const positionsText = lineItems.map(item => 
+        `${item.title} (${item.quantity}x) = €${(item.quantity * item.unit_price).toFixed(2)}`
+      ).join("\n");
+
       // Build a mock invoice for preview
       const previewInvoice = {
         id: "PREVIEW",
         invoice_number: formData.invoice_number || `VORSCHAU-${Date.now()}`,
         issue_date: formData.issue_date,
         due_date: formData.due_date || null,
-        total_amount: amount,
+        total_amount: calculatedTotal,
         status: formData.status,
-        notes: formData.notes || null,
+        notes: formData.notes 
+          ? `${formData.notes}\n\nPositionen:\n${positionsText}`
+          : `Positionen:\n${positionsText}`,
         horse: selectedHorse ? { name: selectedHorse.name } : null,
       };
       
@@ -410,7 +428,26 @@ export function CreateInvoiceModal({
     e.preventDefault();
     setErrors({});
 
-    const amount = parseFloat(formData.total_amount);
+    // Validate at least one line item exists
+    if (lineItems.length === 0) {
+      toast({
+        title: "Keine Positionen",
+        description: "Bitte fügen Sie mindestens eine Rechnungsposition hinzu.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate all line items have title and valid amounts
+    const invalidItems = lineItems.filter(item => !item.title.trim() || item.quantity <= 0);
+    if (invalidItems.length > 0) {
+      toast({
+        title: "Ungültige Positionen",
+        description: "Bitte füllen Sie alle Positionen vollständig aus.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     const validationData = {
       client_id: formData.client_id,
@@ -418,7 +455,6 @@ export function CreateInvoiceModal({
       invoice_number: formData.invoice_number || undefined,
       issue_date: formData.issue_date,
       due_date: formData.due_date || undefined,
-      total_amount: isNaN(amount) ? 0 : amount,
       status: formData.status,
       notes: formData.notes || undefined,
     };
@@ -437,116 +473,147 @@ export function CreateInvoiceModal({
 
     setLoading(true);
 
-    const { data: insertedInvoice, error } = await supabase.from("invoices").insert({
-      client_id: formData.client_id,
-      provider_id: user?.id,
-      horse_id: formData.horse_id || null,
-      invoice_number: formData.invoice_number || null,
-      issue_date: formData.issue_date,
-      due_date: formData.due_date || null,
-      total_amount: amount,
-      status: formData.status,
-      payment_method: formData.payment_method || null,
-      customer_type: formData.customer_type,
-      notes: formData.notes || null,
-    }).select().single();
+    try {
+      // Step 1: Create the invoice
+      const { data: insertedInvoice, error: invoiceError } = await supabase
+        .from("invoices")
+        .insert({
+          client_id: formData.client_id,
+          provider_id: user?.id,
+          horse_id: formData.horse_id || null,
+          invoice_number: formData.invoice_number || null,
+          issue_date: formData.issue_date,
+          due_date: formData.due_date || null,
+          total_amount: calculatedTotal,
+          status: formData.status,
+          payment_method: formData.payment_method || null,
+          customer_type: formData.customer_type,
+          notes: formData.notes || null,
+        })
+        .select()
+        .single();
 
-    if (error) {
-      setLoading(false);
+      if (invoiceError) {
+        throw new Error(`Rechnung erstellen fehlgeschlagen: ${invoiceError.message}`);
+      }
+
+      // Step 2: Create invoice_items for each line item
+      const invoiceItemsToInsert = lineItems.map(item => ({
+        invoice_id: insertedInvoice.id,
+        inventory_item_id: item.inventory_item_id,
+        title: item.title,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total_price: item.quantity * item.unit_price,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from("invoice_items")
+        .insert(invoiceItemsToInsert);
+
+      if (itemsError) {
+        console.error("Failed to insert invoice items:", itemsError);
+        // Don't throw - invoice was created, just log the error
+        toast({
+          title: "Warnung",
+          description: "Rechnung erstellt, aber Positionen konnten nicht gespeichert werden.",
+          variant: "destructive",
+        });
+      }
+
+      // Step 3: Deduct stock for each line item with inventory_item_id
+      const stockUpdates = lineItems
+        .filter(item => item.inventory_item_id)
+        .map(async (item) => {
+          const inventoryItem = inventoryItems.find(i => i.id === item.inventory_item_id);
+          if (inventoryItem) {
+            const newStock = Math.max(0, inventoryItem.current_stock - item.quantity);
+            return supabase
+              .from("inventory_items")
+              .update({ current_stock: newStock })
+              .eq("id", item.inventory_item_id!);
+          }
+          return Promise.resolve({ error: null });
+        });
+
+      await Promise.all(stockUpdates);
+
+      // Step 4: Send push notification to client
+      try {
+        const selectedClient = clients.find(c => c.id === formData.client_id);
+        
+        const { data: providerSettings } = await supabase
+          .from("business_settings")
+          .select("business_name, owner_name")
+          .eq("user_id", user?.id)
+          .maybeSingle();
+        
+        const providerName = providerSettings?.business_name || providerSettings?.owner_name || "Ihr Hufbearbeiter";
+        const formattedAmount = new Intl.NumberFormat("de-DE", {
+          style: "currency",
+          currency: "EUR",
+        }).format(calculatedTotal);
+
+        await supabase.functions.invoke("send-push-notification", {
+          body: {
+            user_id: formData.client_id,
+            title: "Neue Rechnung erhalten",
+            body: `${providerName} hat Ihnen eine Rechnung über ${formattedAmount} gestellt.`,
+            url: "/client-invoices",
+          },
+        });
+      } catch (pushError) {
+        console.error("Failed to send push notification:", pushError);
+      }
+
+      const itemsWithInventory = lineItems.filter(li => li.inventory_item_id).length;
+      toast({
+        title: "Erfolg",
+        description: itemsWithInventory > 0 
+          ? `Rechnung mit ${lineItems.length} Position${lineItems.length > 1 ? 'en' : ''} erstellt. Lagerbestand für ${itemsWithInventory} Produkt${itemsWithInventory > 1 ? 'e' : ''} aktualisiert.`
+          : `Rechnung mit ${lineItems.length} Position${lineItems.length > 1 ? 'en' : ''} erstellt.`,
+      });
+
+      // Reset form
+      setFormData({
+        client_id: "",
+        horse_id: "",
+        invoice_number: "",
+        issue_date: new Date().toISOString().split("T")[0],
+        due_date: "",
+        status: "pending",
+        payment_method: "",
+        customer_type: "privat",
+        notes: "",
+      });
+      setLineItems([]);
+      setShowTravelCost(false);
+      setTravelKm("");
+
+      onSuccess();
+      onClose();
+    } catch (error: any) {
+      console.error("Invoice creation error:", error);
       toast({
         title: "Fehler",
-        description: "Rechnung konnte nicht erstellt werden. " + error.message,
+        description: error.message || "Rechnung konnte nicht erstellt werden.",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    // Deduct stock for each line item
-    if (lineItems.length > 0) {
-      const stockUpdates = lineItems.map(async (item) => {
-        const inventoryItem = inventoryItems.find(i => i.id === item.inventory_id);
-        if (inventoryItem) {
-          const newStock = Math.max(0, inventoryItem.current_stock - item.quantity);
-          return supabase
-            .from("inventory_items")
-            .update({ current_stock: newStock })
-            .eq("id", item.inventory_id);
-        }
-        return Promise.resolve({ error: null });
-      });
-
-      const results = await Promise.all(stockUpdates);
-      const stockErrors = results.filter(r => r.error);
-      
-      if (stockErrors.length > 0) {
-        console.error("Some stock updates failed:", stockErrors);
-        // Don't block invoice creation, just log the error
-      }
-    }
-
-    setLoading(false);
-
-    // Send push notification to client
-    try {
-      const selectedClient = clients.find(c => c.id === formData.client_id);
-      const clientName = selectedClient?.full_name || "Kunde";
-      
-      // Get provider business name for notification
-      const { data: businessSettings } = await supabase
-        .from("business_settings")
-        .select("business_name, owner_name")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      
-      const providerName = businessSettings?.business_name || businessSettings?.owner_name || "Ihr Hufbearbeiter";
-      const formattedAmount = new Intl.NumberFormat("de-DE", {
-        style: "currency",
-        currency: "EUR",
-      }).format(amount);
-
-      await supabase.functions.invoke("send-push-notification", {
-        body: {
-          user_id: formData.client_id,
-          title: "Neue Rechnung erhalten",
-          body: `${providerName} hat Ihnen eine Rechnung über ${formattedAmount} gestellt.`,
-          url: "/client-invoices",
-        },
-      });
-    } catch (pushError) {
-      console.error("Failed to send push notification:", pushError);
-      // Don't show error to user, invoice was still created successfully
-    }
-
-    const stockDeducted = lineItems.length > 0;
-    toast({
-      title: "Erfolg",
-      description: stockDeducted 
-        ? `Rechnung erstellt. Lagerbestand für ${lineItems.length} Produkt${lineItems.length > 1 ? 'e' : ''} aktualisiert.`
-        : "Rechnung wurde erstellt.",
-    });
-
-    setFormData({
-      client_id: "",
-      horse_id: "",
-      invoice_number: "",
-      issue_date: new Date().toISOString().split("T")[0],
-      due_date: "",
-      total_amount: "",
-      status: "pending",
-      payment_method: "",
-      customer_type: "privat",
-      notes: "",
-    });
-    setLineItems([]);
-    setShowTravelCost(false);
-    setTravelKm("");
-
-    onSuccess();
-    onClose();
   };
 
-  // Left column: Client & Horse Selection
-  const renderClientSelection = () => (
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("de-DE", {
+      style: "currency",
+      currency: "EUR",
+    }).format(amount);
+  };
+
+  // Left column: Client & Details
+  const renderClientDetails = () => (
     <div className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="client_id">Kunde *</Label>
@@ -609,7 +676,6 @@ export function CreateInvoiceModal({
           placeholder="z.B. RE-2024-001"
           maxLength={50}
         />
-        {errors.invoice_number && <p className="text-sm text-destructive">{errors.invoice_number}</p>}
       </div>
 
       {/* Dates */}
@@ -622,7 +688,6 @@ export function CreateInvoiceModal({
             value={formData.issue_date}
             onChange={(e) => setFormData(prev => ({ ...prev, issue_date: e.target.value }))}
           />
-          {errors.issue_date && <p className="text-sm text-destructive">{errors.issue_date}</p>}
         </div>
 
         <div className="space-y-2">
@@ -648,54 +713,47 @@ export function CreateInvoiceModal({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="privat">Privatkunde (inkl. 19% MwSt)</SelectItem>
-            <SelectItem value="gewerbe">Gewerbekunde (Netto / Reverse Charge)</SelectItem>
-            <SelectItem value="kleinunternehmer">Kleinunternehmer (§19 UStG - keine MwSt)</SelectItem>
-          </SelectContent>
-        </Select>
-        {formData.customer_type === "kleinunternehmer" && (
-          <p className="text-xs text-muted-foreground">
-            Kleinunternehmerregelung: Keine MwSt. ausgewiesen gemäß §19 UStG
-          </p>
-        )}
-      </div>
-
-      {/* Status */}
-      <div className="space-y-2">
-        <Label htmlFor="status">Status</Label>
-        <Select
-          value={formData.status}
-          onValueChange={(value: "pending" | "paid" | "overdue") => setFormData(prev => ({ 
-            ...prev, 
-            status: value
-          }))}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="pending">Offen</SelectItem>
-            <SelectItem value="paid">Bezahlt</SelectItem>
-            <SelectItem value="overdue">Überfällig</SelectItem>
+            <SelectItem value="gewerbe">Gewerbekunde (Netto)</SelectItem>
+            <SelectItem value="kleinunternehmer">Kleinunternehmer (§19 UStG)</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {/* Payment Method - immer sichtbar */}
-      <div className="space-y-2">
-        <Label htmlFor="payment_method">Zahlungsart</Label>
-        <Select
-          value={formData.payment_method}
-          onValueChange={(value: "Überweisung" | "Bar" | "PayPal") => setFormData(prev => ({ ...prev, payment_method: value }))}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Zahlungsart wählen..." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Überweisung">Überweisung</SelectItem>
-            <SelectItem value="Bar">Bar</SelectItem>
-            <SelectItem value="PayPal">PayPal</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* Status & Payment */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="status">Status</Label>
+          <Select
+            value={formData.status}
+            onValueChange={(value: "pending" | "paid" | "overdue") => setFormData(prev => ({ ...prev, status: value }))}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="pending">Offen</SelectItem>
+              <SelectItem value="paid">Bezahlt</SelectItem>
+              <SelectItem value="overdue">Überfällig</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="payment_method">Zahlungsart</Label>
+          <Select
+            value={formData.payment_method}
+            onValueChange={(value: "Überweisung" | "Bar" | "PayPal") => setFormData(prev => ({ ...prev, payment_method: value }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Wählen..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Überweisung">Überweisung</SelectItem>
+              <SelectItem value="Bar">Bar</SelectItem>
+              <SelectItem value="PayPal">PayPal</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Notes */}
@@ -707,92 +765,182 @@ export function CreateInvoiceModal({
           onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
           placeholder="Optionale Notizen..."
           maxLength={1000}
-          rows={3}
+          rows={2}
         />
       </div>
     </div>
   );
 
-  // Right column: Amount & Products
-  const renderAmountProducts = () => (
+  // Right column: Invoice Positions
+  const renderInvoicePositions = () => (
     <div className="space-y-4">
-      {/* Total Amount */}
-      <div className="space-y-2">
-        <Label htmlFor="total_amount">Betrag (€) *</Label>
-        <Input
-          id="total_amount"
-          type="number"
-          step="0.01"
-          min="0"
-          value={formData.total_amount}
-          onChange={(e) => setFormData(prev => ({ ...prev, total_amount: e.target.value }))}
-          placeholder="0.00"
-          className="text-lg font-semibold"
-        />
-        {errors.total_amount && <p className="text-sm text-destructive">{errors.total_amount}</p>}
+      <div className="flex items-center justify-between">
+        <Label className="text-base font-semibold flex items-center gap-2">
+          <Package className="h-4 w-4" />
+          Rechnungspositionen
+        </Label>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={addEmptyLineItem}
+          className="gap-1"
+        >
+          <Plus className="h-3 w-3" />
+          Position hinzufügen
+        </Button>
+      </div>
+
+      {/* Line Items List */}
+      <div className="space-y-3 max-h-[280px] overflow-y-auto pr-1">
+        {lineItems.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
+            <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">Noch keine Positionen hinzugefügt</p>
+            <p className="text-xs mt-1">Klicken Sie auf "+ Position hinzufügen"</p>
+          </div>
+        ) : (
+          lineItems.map((item, index) => (
+            <div key={item.id} className="p-3 bg-muted/50 rounded-lg border space-y-2">
+              <div className="flex items-start gap-2">
+                {/* Product Selection Dropdown */}
+                <div className="flex-1 space-y-2">
+                  <Select
+                    value={item.inventory_item_id || "custom"}
+                    onValueChange={(value) => handleInventorySelect(item.id, value)}
+                  >
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue placeholder="Produkt aus Lager wählen..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="custom">
+                        <span className="text-muted-foreground">— Manueller Eintrag —</span>
+                      </SelectItem>
+                      {inventoryItems.map((inv) => (
+                        <SelectItem key={inv.id} value={inv.id}>
+                          <div className="flex justify-between items-center w-full gap-4">
+                            <span>{inv.brand ? `${inv.brand} - ${inv.product_name}` : inv.product_name}</span>
+                            <span className="text-muted-foreground text-xs">
+                              {formatCurrency(inv.price_sell || 0)} · {inv.current_stock} Stk.
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Editable Title */}
+                  <Input
+                    value={item.title}
+                    onChange={(e) => updateLineItem(item.id, "title", e.target.value)}
+                    placeholder="Beschreibung..."
+                    className="h-9 text-sm"
+                  />
+                </div>
+
+                {/* Delete Button */}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 text-destructive hover:text-destructive shrink-0"
+                  onClick={() => removeLineItem(item.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Quantity and Price */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <Label className="text-xs text-muted-foreground shrink-0">Menge:</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={item.quantity}
+                    onChange={(e) => updateLineItem(item.id, "quantity", parseInt(e.target.value) || 1)}
+                    className="h-8 w-16 text-sm text-center"
+                  />
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <Label className="text-xs text-muted-foreground shrink-0">Preis €:</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={item.unit_price}
+                    onChange={(e) => updateLineItem(item.id, "unit_price", parseFloat(e.target.value) || 0)}
+                    className="h-8 w-24 text-sm"
+                  />
+                </div>
+
+                <div className="ml-auto text-right">
+                  <span className="text-sm font-semibold">
+                    {formatCurrency(item.quantity * item.unit_price)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Travel Cost Section */}
       {formData.client_id && (
-        <div className="space-y-3 p-3 rounded-lg bg-muted/50 border border-border">
+        <div className="p-3 rounded-lg bg-muted/30 border border-dashed space-y-2">
           <div className="flex items-center justify-between">
-            <Label className="flex items-center gap-2">
+            <Label className="flex items-center gap-2 text-sm">
               <Car className="h-4 w-4" />
               Fahrtkosten
             </Label>
             {!showTravelCost && (
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => {
                   setShowTravelCost(true);
                   calculateTravelDistance();
                 }}
-                className="gap-1"
+                className="h-7 text-xs gap-1"
               >
                 <Plus className="h-3 w-3" />
-                Anfahrt berechnen
+                Hinzufügen
               </Button>
             )}
           </div>
           
           {showTravelCost && (
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="flex-1 space-y-1">
-                  <Label className="text-xs text-muted-foreground">Entfernung (einfache Strecke)</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min="0"
-                      value={travelKm}
-                      onChange={(e) => setTravelKm(e.target.value)}
-                      placeholder="km"
-                      className="w-24"
-                    />
-                    <span className="text-sm text-muted-foreground">km</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={calculateTravelDistance}
-                      title="Distanz berechnen"
-                    >
-                      <MapPin className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+                <Input
+                  type="number"
+                  min="0"
+                  value={travelKm}
+                  onChange={(e) => setTravelKm(e.target.value)}
+                  placeholder="km"
+                  className="w-20 h-8"
+                />
+                <span className="text-xs text-muted-foreground">km (einfach)</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={calculateTravelDistance}
+                  className="h-7"
+                  title="Distanz berechnen"
+                >
+                  <MapPin className="h-3 w-3" />
+                </Button>
               </div>
               
-              <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">
-                  {travelKm ? `${travelKm} km × 2 (Hin+Zurück) × €${businessSettings?.travel_cost_per_km || 0.50}/km` : ""}
-                  {businessSettings?.travel_cost_flat ? ` + €${businessSettings.travel_cost_flat} Pauschale` : ""}
+                  {travelKm ? `${travelKm}km × 2 × €${businessSettings?.travel_cost_per_km || 0.50}/km` : ""}
+                  {businessSettings?.travel_cost_flat ? ` + €${businessSettings.travel_cost_flat}` : ""}
                 </span>
-                <span className="font-semibold text-primary">
-                  = €{calculatedTravelCost.toFixed(2)}
-                </span>
+                <span className="font-medium">{formatCurrency(calculatedTravelCost)}</span>
               </div>
               
               <div className="flex gap-2">
@@ -800,18 +948,18 @@ export function CreateInvoiceModal({
                   type="button"
                   variant="secondary"
                   size="sm"
-                  onClick={addTravelCostToAmount}
+                  onClick={addTravelCostAsLineItem}
                   disabled={!travelKm || calculatedTravelCost <= 0}
-                  className="flex-1"
+                  className="flex-1 h-7 text-xs"
                 >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Zum Betrag hinzufügen
+                  Als Position hinzufügen
                 </Button>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowTravelCost(false)}
+                  className="h-7 text-xs"
                 >
                   Abbrechen
                 </Button>
@@ -821,133 +969,17 @@ export function CreateInvoiceModal({
         </div>
       )}
 
-      {/* Inventory / Product Line Items Section */}
-      <div className="space-y-3 p-3 rounded-lg bg-muted/50 border border-border">
+      {/* Total Display */}
+      <div className="pt-4 border-t-2 border-primary/20">
         <div className="flex items-center justify-between">
-          <Label className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            Produkte aus Lager
-          </Label>
-          {inventoryItems.length > 0 && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowInventoryPicker(!showInventoryPicker)}
-              className="gap-1"
-            >
-              <Plus className="h-3 w-3" />
-              Produkt hinzufügen
-            </Button>
-          )}
+          <span className="text-lg font-semibold">Gesamtbetrag:</span>
+          <span className="text-2xl font-bold text-primary">
+            {formatCurrency(calculatedTotal)}
+          </span>
         </div>
-
-        {/* Inventory Picker */}
-        {showInventoryPicker && (
-          <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-2 bg-background">
-            {inventoryItems.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => addInventoryItem(item)}
-                className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-muted transition-colors text-left"
-              >
-                <div>
-                  <p className="font-medium text-sm">{item.product_name}</p>
-                  {item.brand && <p className="text-xs text-muted-foreground">{item.brand}</p>}
-                </div>
-                <div className="text-right">
-                  <p className="font-medium text-sm">{item.price_sell?.toFixed(2) || "0.00"} €</p>
-                  <p className="text-xs text-muted-foreground">Bestand: {item.current_stock}</p>
-                </div>
-              </button>
-            ))}
-            {inventoryItems.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-2">Keine Produkte im Lager</p>
-            )}
-          </div>
-        )}
-
-        {/* Added Line Items */}
         {lineItems.length > 0 && (
-          <div className="space-y-2">
-            {lineItems.map((item, index) => (
-              <div key={item.inventory_id} className="flex items-center gap-2 p-2 bg-background rounded-lg border">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{item.name}</p>
-                  <p className="text-xs text-muted-foreground">{item.unit_price.toFixed(2)} € × {item.quantity}</p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => updateLineItemQuantity(index, -1)}
-                  >
-                    <Minus className="h-3 w-3" />
-                  </Button>
-                  <Badge variant="secondary" className="min-w-[28px] justify-center">
-                    {item.quantity}
-                  </Badge>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => updateLineItemQuantity(index, 1)}
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-destructive hover:text-destructive"
-                    onClick={() => removeLineItem(index)}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-                <p className="text-sm font-semibold w-20 text-right">
-                  {(item.quantity * item.unit_price).toFixed(2)} €
-                </p>
-              </div>
-            ))}
-            <div className="flex justify-between items-center pt-2 border-t">
-              <span className="text-sm font-medium">Produkte Gesamt:</span>
-              <span className="font-bold text-primary">{lineItemsTotal.toFixed(2)} €</span>
-            </div>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="w-full"
-              onClick={() => {
-                const currentAmount = parseFloat(formData.total_amount) || 0;
-                setFormData(prev => ({ ...prev, total_amount: (currentAmount + lineItemsTotal).toFixed(2) }));
-                
-                // Add to notes
-                const productNotes = lineItems.map(li => `${li.name} (${li.quantity}x) = €${(li.quantity * li.unit_price).toFixed(2)}`).join("\n");
-                const currentNotes = formData.notes;
-                setFormData(prev => ({
-                  ...prev,
-                  notes: currentNotes ? `${currentNotes}\n\nProdukte:\n${productNotes}` : `Produkte:\n${productNotes}`
-                }));
-                
-                setLineItems([]);
-                toast({ title: "Produkte hinzugefügt", description: `€${lineItemsTotal.toFixed(2)} wurden zum Betrag addiert.` });
-              }}
-            >
-              <Plus className="h-3 w-3 mr-1" />
-              Zum Betrag hinzufügen
-            </Button>
-          </div>
-        )}
-
-        {inventoryItems.length === 0 && lineItems.length === 0 && (
-          <p className="text-xs text-muted-foreground">
-            Keine Produkte im Lager. Füge Produkte unter "Material / Lager" hinzu.
+          <p className="text-xs text-muted-foreground mt-1">
+            {lineItems.length} Position{lineItems.length > 1 ? "en" : ""}
           </p>
         )}
       </div>
@@ -965,20 +997,20 @@ export function CreateInvoiceModal({
           <div className="flex-1 overflow-y-auto pr-2 pb-4 [&_input]:text-base [&_textarea]:text-base [&_select]:text-base">
             {/* 2-Column Layout on Desktop */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-              {/* Left Column: Client & Horse Selection */}
+              {/* Left Column: Client & Details */}
               <div className="space-y-1">
                 <h3 className="text-sm font-medium text-muted-foreground mb-4 hidden md:block">
                   Kunde & Details
                 </h3>
-                {renderClientSelection()}
+                {renderClientDetails()}
               </div>
 
-              {/* Right Column: Amounts & Products */}
+              {/* Right Column: Invoice Positions */}
               <div className="space-y-1">
                 <h3 className="text-sm font-medium text-muted-foreground mb-4 hidden md:block">
-                  Betrag & Produkte
+                  Positionen & Betrag
                 </h3>
-                {renderAmountProducts()}
+                {renderInvoicePositions()}
               </div>
             </div>
           </div>
@@ -992,13 +1024,13 @@ export function CreateInvoiceModal({
                 type="button" 
                 variant="secondary" 
                 onClick={handlePreview}
-                disabled={previewLoading || !formData.client_id || !formData.total_amount}
+                disabled={previewLoading || !formData.client_id || calculatedTotal <= 0}
               >
                 {previewLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Eye className="mr-2 h-4 w-4" />}
                 Vorschau
               </Button>
             </div>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || calculatedTotal <= 0}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Rechnung erstellen
             </Button>
