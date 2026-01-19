@@ -1916,6 +1916,57 @@ export type Database = {
         }
         Relationships: []
       }
+      revenue_events: {
+        Row: {
+          amount: number | null
+          client_email: string | null
+          copecart_order_id: string | null
+          id: string
+          product_name: string | null
+          provider_id: string | null
+          purchased_at: string | null
+          raw_data: Json | null
+          status: string | null
+        }
+        Insert: {
+          amount?: number | null
+          client_email?: string | null
+          copecart_order_id?: string | null
+          id?: string
+          product_name?: string | null
+          provider_id?: string | null
+          purchased_at?: string | null
+          raw_data?: Json | null
+          status?: string | null
+        }
+        Update: {
+          amount?: number | null
+          client_email?: string | null
+          copecart_order_id?: string | null
+          id?: string
+          product_name?: string | null
+          provider_id?: string | null
+          purchased_at?: string | null
+          raw_data?: Json | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_events_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_events_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       review_reactions: {
         Row: {
           created_at: string | null
