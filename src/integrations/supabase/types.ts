@@ -1739,6 +1739,42 @@ export type Database = {
         }
         Relationships: []
       }
+      product_recipes: {
+        Row: {
+          component_product_id: string | null
+          id: string
+          parent_product_id: string | null
+          quantity: number | null
+        }
+        Insert: {
+          component_product_id?: string | null
+          id?: string
+          parent_product_id?: string | null
+          quantity?: number | null
+        }
+        Update: {
+          component_product_id?: string | null
+          id?: string
+          parent_product_id?: string | null
+          quantity?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_recipes_component_product_id_fkey"
+            columns: ["component_product_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_recipes_parent_product_id_fkey"
+            columns: ["parent_product_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           access_valid_until: string | null
@@ -1882,6 +1918,97 @@ export type Database = {
             columns: ["provider_id"]
             isOneToOne: true
             referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_order_items: {
+        Row: {
+          id: string
+          inventory_item_id: string | null
+          order_id: string | null
+          quantity: number | null
+          unit_price: number | null
+        }
+        Insert: {
+          id?: string
+          inventory_item_id?: string | null
+          order_id?: string | null
+          quantity?: number | null
+          unit_price?: number | null
+        }
+        Update: {
+          id?: string
+          inventory_item_id?: string | null
+          order_id?: string | null
+          quantity?: number | null
+          unit_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          created_at: string | null
+          id: string
+          order_date: string | null
+          provider_id: string
+          status: string | null
+          supplier_id: string | null
+          total_amount: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          order_date?: string | null
+          provider_id: string
+          status?: string | null
+          supplier_id?: string | null
+          total_amount?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          order_date?: string | null
+          provider_id?: string
+          status?: string | null
+          supplier_id?: string | null
+          total_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -2184,6 +2311,51 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      suppliers: {
+        Row: {
+          created_at: string | null
+          customer_number: string | null
+          email: string | null
+          id: string
+          name: string
+          provider_id: string
+          website: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_number?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          provider_id: string
+          website?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_number?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          provider_id?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suppliers_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_consents: {
         Row: {
