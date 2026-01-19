@@ -1744,19 +1744,25 @@ export type Database = {
           component_product_id: string | null
           id: string
           parent_product_id: string | null
+          provider_id: string | null
           quantity: number | null
+          user_id: string | null
         }
         Insert: {
           component_product_id?: string | null
           id?: string
           parent_product_id?: string | null
+          provider_id?: string | null
           quantity?: number | null
+          user_id?: string | null
         }
         Update: {
           component_product_id?: string | null
           id?: string
           parent_product_id?: string | null
+          provider_id?: string | null
           quantity?: number | null
+          user_id?: string | null
         }
         Relationships: [
           {
