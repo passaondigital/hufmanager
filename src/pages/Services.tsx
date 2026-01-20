@@ -21,7 +21,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Edit, Clock, Euro } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Plus, Edit, Clock, Euro, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -184,7 +190,19 @@ const Services = () => {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Services</h1>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            Services
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground hover:text-[#F47B20] cursor-help transition-colors" />
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-xs">
+                  <p>Dein Leistungskatalog. Hier legst du einmalig deine Standard-Preise an (z.B. 'Barhufbearbeitung', 'Eisen abnehmen'), um sie schnell in Rechnungen einzufügen.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </h1>
           <p className="text-muted-foreground mt-1">
             Verwalten Sie Ihre angebotenen Dienstleistungen
           </p>

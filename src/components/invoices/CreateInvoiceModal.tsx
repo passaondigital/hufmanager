@@ -725,7 +725,19 @@ export function CreateInvoiceModal({
 
       {/* Customer Type */}
       <div className="space-y-2">
-        <Label htmlFor="customer_type">Kundentyp</Label>
+        <Label htmlFor="customer_type" className="flex items-center gap-2">
+          Kundentyp
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-3.5 w-3.5 text-muted-foreground hover:text-[#F47B20] cursor-help transition-colors" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs">
+                <p>Aktivieren 'Kleinunternehmer', wenn du gemäß § 19 UStG keine Umsatzsteuer ausweist (Umsatz unter 22.000€/Jahr). Dies entfernt automatisch die MwSt-Zeilen auf deinen Rechnungen.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </Label>
         <Select
           value={formData.customer_type}
           onValueChange={(value: "privat" | "gewerbe" | "kleinunternehmer") => setFormData(prev => ({ ...prev, customer_type: value }))}
