@@ -86,8 +86,12 @@ interface BottomNavItem {
   module: FeatureFlagKey | null;
 }
 
-const bottomItems: BottomNavItem[] = [
-  { title: "Academy", url: "/academy", icon: GraduationCap, module: "module_academy" },
+interface BottomNavItemWithStatus extends BottomNavItem {
+  comingSoon?: boolean;
+}
+
+const bottomItems: BottomNavItemWithStatus[] = [
+  { title: "Academy", url: "/academy", icon: GraduationCap, module: "module_academy", comingSoon: true },
   { title: "Geld verdienen", url: "/partner", icon: Gift, module: null },
   { title: "Management", url: "/management", icon: Settings, module: null },
 ];
@@ -305,6 +309,30 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         
         {bottomItems.map((item) => {
           const isLocked = item.module !== null && !hasModuleAccess(item.module);
+          
+          // Coming Soon items - disabled with badge
+          if (item.comingSoon) {
+            return (
+              <div
+                key={item.title}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 min-h-[48px]",
+                  "text-sidebar-foreground/40 cursor-not-allowed"
+                )}
+              >
+                <item.icon className={cn("h-5 w-5 flex-shrink-0 opacity-50", collapsed && "mx-auto")} />
+                {!collapsed && (
+                  <>
+                    <span className="font-medium text-[15px] opacity-50">{item.title}</span>
+                    <span className="ml-auto text-[10px] font-medium bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                      Coming Soon
+                    </span>
+                  </>
+                )}
+              </div>
+            );
+          }
+          
           if (isLocked) {
             return (
               <button
