@@ -1008,6 +1008,54 @@ export type Database = {
           },
         ]
       }
+      hoof_entries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          entry_date: string
+          horse_id: string
+          id: string
+          images: string[] | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          entry_date?: string
+          horse_id: string
+          id?: string
+          images?: string[] | null
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          entry_date?: string
+          horse_id?: string
+          id?: string
+          images?: string[] | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hoof_entries_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hoof_entries_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hoof_history: {
         Row: {
           created_at: string
@@ -1209,6 +1257,7 @@ export type Database = {
           owner_id: string
           photo_url: string | null
           readable_id: string | null
+          recall_interval_weeks: number | null
           shoeing_interval: number | null
           special_notes: string | null
           updated_at: string
@@ -1244,6 +1293,7 @@ export type Database = {
           owner_id: string
           photo_url?: string | null
           readable_id?: string | null
+          recall_interval_weeks?: number | null
           shoeing_interval?: number | null
           special_notes?: string | null
           updated_at?: string
@@ -1279,6 +1329,7 @@ export type Database = {
           owner_id?: string
           photo_url?: string | null
           readable_id?: string | null
+          recall_interval_weeks?: number | null
           shoeing_interval?: number | null
           special_notes?: string | null
           updated_at?: string
