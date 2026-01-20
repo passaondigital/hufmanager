@@ -266,8 +266,18 @@ export function RecipesTab() {
       toast.error("Name ist erforderlich");
       return;
     }
-    saveMutation.mutate(formData);
+    
+    // Filter out items with empty inventory_item_id to prevent UUID errors
+    const validItems = formData.items.filter(item => item.inventory_item_id && item.inventory_item_id.trim() !== "");
+    
+    saveMutation.mutate({
+      ...formData,
+      items: validItems,
+    });
   };
+
+  // Check if form has any invalid items (empty product selection)
+  const hasInvalidItems = formData.items.some(item => !item.inventory_item_id || item.inventory_item_id.trim() === "");
 
   const getItemName = (id: string) => {
     const item = inventoryItems.find((i) => i.id === id);
@@ -462,11 +472,16 @@ export function RecipesTab() {
               </div>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            {hasInvalidItems && (
+              <p className="text-sm text-warning mr-auto">
+                Hinweis: Zutaten ohne Produkt werden ignoriert
+              </p>
+            )}
             <Button variant="outline" onClick={handleCloseDialog}>
               Abbrechen
             </Button>
-            <Button onClick={handleSave} disabled={saveMutation.isPending}>
+            <Button onClick={handleSave} disabled={saveMutation.isPending || !formData.name.trim()}>
               {saveMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Speichern
             </Button>
