@@ -966,6 +966,63 @@ export type Database = {
           },
         ]
       }
+      hoof_history: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          entry_date: string
+          entry_type: string
+          horse_id: string
+          id: string
+          photo_after_url: string | null
+          photo_before_url: string | null
+          updated_at: string
+          voice_note_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          entry_date?: string
+          entry_type: string
+          horse_id: string
+          id?: string
+          photo_after_url?: string | null
+          photo_before_url?: string | null
+          updated_at?: string
+          voice_note_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          entry_date?: string
+          entry_type?: string
+          horse_id?: string
+          id?: string
+          photo_after_url?: string | null
+          photo_before_url?: string | null
+          updated_at?: string
+          voice_note_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hoof_history_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hoof_history_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hoof_photos: {
         Row: {
           appointment_id: string | null
