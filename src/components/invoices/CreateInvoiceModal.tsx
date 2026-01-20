@@ -28,9 +28,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Car, MapPin, Plus, Trash2, Eye, Package, Info } from "lucide-react";
+import { Loader2, Car, MapPin, Plus, Trash2, Eye, Package, Info, PenTool } from "lucide-react";
 import { z } from "zod";
 import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
+import { SignaturePad } from "@/components/signature/SignaturePad";
 
 // Haversine formula to calculate distance between two coordinates
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -127,6 +128,7 @@ export function CreateInvoiceModal({
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     client_id: preSelectedClientId || "",
@@ -414,6 +416,7 @@ export function CreateInvoiceModal({
           ? `${formData.notes}\n\nPositionen:\n${positionsText}`
           : `Positionen:\n${positionsText}`,
         horse: selectedHorse ? { name: selectedHorse.name } : null,
+        signature_url: signatureDataUrl,
       };
       
       const clientProfile = selectedClient ? {
@@ -508,6 +511,7 @@ export function CreateInvoiceModal({
           payment_method: formData.payment_method || null,
           customer_type: formData.customer_type,
           notes: formData.notes || null,
+          signature_url: signatureDataUrl,
         })
         .select()
         .single();
@@ -608,6 +612,7 @@ export function CreateInvoiceModal({
       setLineItems([]);
       setShowTravelCost(false);
       setTravelKm("");
+      setSignatureDataUrl(null);
 
       onSuccess();
       onClose();
@@ -1120,6 +1125,26 @@ export function CreateInvoiceModal({
           </p>
         )}
       </div>
+
+      {/* Signature Section */}
+      {lineItems.length > 0 && (
+        <div className="pt-4 mt-4 border-t border-dashed border-muted-foreground/30">
+          <SignaturePad
+            onSignatureChange={setSignatureDataUrl}
+            initialSignature={signatureDataUrl}
+          />
+          {signatureDataUrl && (
+            <div className="mt-3 p-3 bg-muted/30 rounded-lg">
+              <p className="text-xs text-muted-foreground mb-2">Unterschrift-Vorschau:</p>
+              <img 
+                src={signatureDataUrl} 
+                alt="Unterschrift" 
+                className="max-h-16 max-w-full object-contain"
+              />
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 

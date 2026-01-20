@@ -42,6 +42,7 @@ interface Invoice {
   payment_method?: string | null;
   customer_type?: string | null;
   horse?: { name: string } | null;
+  signature_url?: string | null;
 }
 
 // Design tokens - Premium color palette
@@ -515,6 +516,53 @@ export async function generateInvoicePdf(
   doc.text(formatCurrency(invoice.total_amount), pageWidth - margin - 2, yPos + 5, { align: "right" });
 
   yPos += 25;
+
+  // ============================================================================
+  // SIGNATURE SECTION - If signature is available
+  // ============================================================================
+  
+  if (invoice.signature_url) {
+    try {
+      const signatureBase64 = await tryLoadLogo(invoice.signature_url);
+      if (signatureBase64) {
+        // Add separator line
+        doc.setDrawColor(COLORS.gray200.r, COLORS.gray200.g, COLORS.gray200.b);
+        doc.setLineWidth(0.3);
+        doc.line(margin, yPos, margin + 80, yPos);
+        
+        yPos += 3;
+        
+        // Add signature image
+        const sigWidth = 60;
+        const sigHeight = 25;
+        
+        let imageFormat: "PNG" | "JPEG" = "PNG";
+        if (signatureBase64.includes("data:image/jpeg") || signatureBase64.includes("data:image/jpg")) {
+          imageFormat = "JPEG";
+        }
+        
+        doc.addImage(signatureBase64, imageFormat, margin, yPos, sigWidth, sigHeight);
+        
+        yPos += sigHeight + 3;
+        
+        // Add signature label and legal text
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(COLORS.gray500.r, COLORS.gray500.g, COLORS.gray500.b);
+        doc.text("Kundenunterschrift", margin, yPos);
+        
+        yPos += 4;
+        
+        doc.setFontSize(7);
+        doc.setTextColor(COLORS.gray400.r, COLORS.gray400.g, COLORS.gray400.b);
+        doc.text("Hiermit bestätige ich die ordnungsgemäße Durchführung der Arbeiten.", margin, yPos);
+        
+        yPos += 10;
+      }
+    } catch {
+      // Skip signature on error
+    }
+  }
 
   // ============================================================================
   // PAYMENT INFO - Friendly note
