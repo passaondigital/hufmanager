@@ -21,8 +21,14 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Car, MapPin, Plus, Trash2, Eye, Package } from "lucide-react";
+import { Loader2, Car, MapPin, Plus, Trash2, Eye, Package, Info } from "lucide-react";
 import { z } from "zod";
 import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
 
@@ -711,6 +717,9 @@ export function CreateInvoiceModal({
             value={formData.due_date}
             onChange={(e) => setFormData(prev => ({ ...prev, due_date: e.target.value }))}
           />
+          <p className="text-xs text-muted-foreground">
+            Leer lassen für 'Sofort fällig'.
+          </p>
         </div>
       </div>
 
@@ -906,6 +915,16 @@ export function CreateInvoiceModal({
             <Label className="flex items-center gap-2 text-sm">
               <Car className="h-4 w-4" />
               Fahrtkosten
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3.5 w-3.5 text-muted-foreground hover:text-[#F47B20] cursor-help transition-colors" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p>Wähle 'Kilometer' für automatische Distanzberechnung (Hin- & Rückweg) oder 'Pauschale' für feste Zonentarife.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </Label>
             {!showTravelCost && (
               <Button
@@ -962,29 +981,42 @@ export function CreateInvoiceModal({
                       className="w-20 h-8"
                     />
                     <span className="text-xs text-muted-foreground">km (einfach)</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={calculateTravelDistance}
-                      className="h-7"
-                      title="Distanz berechnen"
-                    >
-                      <MapPin className="h-3 w-3" />
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={calculateTravelDistance}
+                            className="h-7"
+                          >
+                            <MapPin className="h-3 w-3" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                          <p>Automatische Distanzermittlung basierend auf der Kundenadresse.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                   
-                  <div className="flex items-center gap-2">
-                    <Label className="text-xs text-muted-foreground shrink-0">Preis pro km:</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={pricePerKm}
-                      onChange={(e) => setPricePerKm(e.target.value)}
-                      className="w-20 h-8 text-sm"
-                    />
-                    <span className="text-xs text-muted-foreground">€</span>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs text-muted-foreground shrink-0">Preis pro km:</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={pricePerKm}
+                        onChange={(e) => setPricePerKm(e.target.value)}
+                        className="w-20 h-8 text-sm"
+                      />
+                      <span className="text-xs text-muted-foreground">€</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-0.5">
+                      Standard: 0,30€ - 0,60€. Dieser Wert multipliziert sich mit der doppelten Strecke (Hin/Rück).
+                    </p>
                   </div>
                   
                   <div className="flex items-center justify-between text-xs">
