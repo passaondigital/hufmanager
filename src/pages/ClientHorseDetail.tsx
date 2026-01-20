@@ -5,13 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Info, History, Image, Activity } from "lucide-react";
+import { ArrowLeft, Info, History, Image, Activity, Footprints } from "lucide-react";
 import { toast } from "sonner";
 
 import { TabSteckbrief } from "@/components/horse-detail/TabSteckbrief";
 import { TabHistorie } from "@/components/horse-detail/TabHistorie";
 import { TabMediaVault } from "@/components/horse-detail/TabMediaVault";
 import { TabGesundheit } from "@/components/horse-detail/TabGesundheit";
+import { TabHufHistorie } from "@/components/horse-detail/TabHufHistorie";
 import { EditHorseModal } from "@/components/horse-detail/EditHorseModal";
 import type { Horse, Appointment, HoofPhoto, HorseDocument } from "@/components/horse-detail/types";
 
@@ -148,7 +149,7 @@ export default function ClientHorseDetail() {
 
       <main className="px-4 py-6 max-w-2xl mx-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="steckbrief" className="flex items-center gap-1.5">
               <Info className="h-4 w-4" />
               <span className="hidden sm:inline">Steckbrief</span>
@@ -156,6 +157,10 @@ export default function ClientHorseDetail() {
             <TabsTrigger value="historie" className="flex items-center gap-1.5">
               <History className="h-4 w-4" />
               <span className="hidden sm:inline">Historie</span>
+            </TabsTrigger>
+            <TabsTrigger value="huf-historie" className="flex items-center gap-1.5">
+              <Footprints className="h-4 w-4" />
+              <span className="hidden sm:inline">Huf-Historie</span>
             </TabsTrigger>
             <TabsTrigger value="medien" className="flex items-center gap-1.5">
               <Image className="h-4 w-4" />
@@ -173,6 +178,10 @@ export default function ClientHorseDetail() {
 
           <TabsContent value="historie">
             <TabHistorie appointments={appointments} horseId={horse.id} />
+          </TabsContent>
+
+          <TabsContent value="huf-historie">
+            <TabHufHistorie horseId={horse.id} horseName={horse.name} />
           </TabsContent>
 
           <TabsContent value="medien">
