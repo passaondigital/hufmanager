@@ -60,6 +60,7 @@ interface AppointmentFormModalProps {
   onClose: () => void;
   selectedDate: Date | null;
   existingAppointments: any[];
+  preselectedHorseId?: string | null;
 }
 
 interface PendingEvidence {
@@ -90,6 +91,7 @@ export function AppointmentFormModal({
   onClose,
   selectedDate,
   existingAppointments,
+  preselectedHorseId,
 }: AppointmentFormModalProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -161,6 +163,13 @@ export function AppointmentFormModal({
       checkForConflicts(selectedDate, formData.time);
     }
   }, [selectedDate, formData.time, existingAppointments]);
+
+  // Pre-select horse when passed from calendar
+  useEffect(() => {
+    if (preselectedHorseId && isOpen) {
+      setFormData(prev => ({ ...prev, horseId: preselectedHorseId }));
+    }
+  }, [preselectedHorseId, isOpen]);
 
   // Create appointment mutation - with proper error handling and sequential flow
   const createAppointments = useMutation({
