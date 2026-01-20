@@ -1428,6 +1428,7 @@ export type Database = {
           payment_method: string | null
           pdf_url: string | null
           provider_id: string | null
+          signature_url: string | null
           status: string | null
           total_amount: number
           updated_at: string
@@ -1448,6 +1449,7 @@ export type Database = {
           payment_method?: string | null
           pdf_url?: string | null
           provider_id?: string | null
+          signature_url?: string | null
           status?: string | null
           total_amount: number
           updated_at?: string
@@ -1468,6 +1470,7 @@ export type Database = {
           payment_method?: string | null
           pdf_url?: string | null
           provider_id?: string | null
+          signature_url?: string | null
           status?: string | null
           total_amount?: number
           updated_at?: string
