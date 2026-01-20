@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Car, MapPin, Plus, Trash2, Eye, Package } from "lucide-react";
 import { z } from "zod";
@@ -109,7 +110,11 @@ export function CreateInvoiceModal({
   const [dataLoaded, setDataLoaded] = useState(false);
   const [businessSettings, setBusinessSettings] = useState<BusinessSettings | null>(null);
   const [showTravelCost, setShowTravelCost] = useState(false);
+  const [travelCostMode, setTravelCostMode] = useState<"kilometer" | "pauschale">("kilometer");
   const [travelKm, setTravelKm] = useState<string>("");
+  const [pricePerKm, setPricePerKm] = useState<string>("0.50");
+  const [flatAmount, setFlatAmount] = useState<string>("");
+  const [flatDescription, setFlatDescription] = useState<string>("Anfahrtspauschale");
   const [calculatedTravelCost, setCalculatedTravelCost] = useState<number>(0);
   
   // Inventory state
@@ -232,18 +237,20 @@ export function CreateInvoiceModal({
     }
   }, [open]);
 
-  // Calculate travel cost when km changes or client changes
+  // Calculate travel cost when km changes or mode changes
   useEffect(() => {
-    if (!businessSettings) return;
-    
-    const km = parseFloat(travelKm) || 0;
-    const perKm = businessSettings.travel_cost_per_km || 0;
-    const flat = businessSettings.travel_cost_flat || 0;
-    
-    // Calculate: flat fee + (km * cost per km) - round trip = km * 2
-    const cost = flat + (km * 2 * perKm);
-    setCalculatedTravelCost(Math.round(cost * 100) / 100);
-  }, [travelKm, businessSettings]);
+    if (travelCostMode === "kilometer") {
+      const km = parseFloat(travelKm) || 0;
+      const perKm = parseFloat(pricePerKm) || 0;
+      // Calculate: km * 2 (round trip) * price per km
+      const cost = km * 2 * perKm;
+      setCalculatedTravelCost(Math.round(cost * 100) / 100);
+    } else {
+      // Pauschale mode - just use the flat amount
+      const flat = parseFloat(flatAmount) || 0;
+      setCalculatedTravelCost(Math.round(flat * 100) / 100);
+    }
+  }, [travelKm, pricePerKm, flatAmount, travelCostMode]);
 
   // Auto-calculate distance when client is selected
   const calculateTravelDistance = () => {
@@ -273,16 +280,22 @@ export function CreateInvoiceModal({
   };
 
   const addTravelCostAsLineItem = () => {
+    const title = travelCostMode === "kilometer"
+      ? `Anfahrt: ${travelKm} km (Hin- und Rückfahrt)`
+      : flatDescription.trim() || "Anfahrtspauschale";
+    
     const newLineItem: InvoiceLineItem = {
       id: `travel-${Date.now()}`,
       inventory_item_id: null, // No inventory item for travel costs
-      title: `Anfahrt: ${travelKm} km (Hin- und Rückfahrt)`,
+      title,
       quantity: 1,
       unit_price: calculatedTravelCost,
     };
     setLineItems([...lineItems, newLineItem]);
     setShowTravelCost(false);
     setTravelKm("");
+    setFlatAmount("");
+    setFlatDescription("Anfahrtspauschale");
     toast({ title: "Fahrtkosten hinzugefügt" });
   };
 
@@ -888,7 +901,7 @@ export function CreateInvoiceModal({
 
       {/* Travel Cost Section */}
       {formData.client_id && (
-        <div className="p-3 rounded-lg bg-muted/30 border border-dashed space-y-2">
+        <div className="p-3 rounded-lg bg-muted/30 border border-dashed space-y-3">
           <div className="flex items-center justify-between">
             <Label className="flex items-center gap-2 text-sm">
               <Car className="h-4 w-4" />
@@ -901,7 +914,9 @@ export function CreateInvoiceModal({
                 size="sm"
                 onClick={() => {
                   setShowTravelCost(true);
-                  calculateTravelDistance();
+                  if (travelCostMode === "kilometer") {
+                    calculateTravelDistance();
+                  }
                 }}
                 className="h-7 text-xs gap-1"
               >
@@ -912,44 +927,122 @@ export function CreateInvoiceModal({
           </div>
           
           {showTravelCost && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min="0"
-                  value={travelKm}
-                  onChange={(e) => setTravelKm(e.target.value)}
-                  placeholder="km"
-                  className="w-20 h-8"
-                />
-                <span className="text-xs text-muted-foreground">km (einfach)</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={calculateTravelDistance}
-                  className="h-7"
-                  title="Distanz berechnen"
+            <div className="space-y-3">
+              {/* Mode Switcher */}
+              <ToggleGroup
+                type="single"
+                value={travelCostMode}
+                onValueChange={(value) => value && setTravelCostMode(value as "kilometer" | "pauschale")}
+                className="justify-start"
+              >
+                <ToggleGroupItem 
+                  value="kilometer" 
+                  className="h-8 px-3 text-xs data-[state=on]:bg-[#F47B20] data-[state=on]:text-white"
                 >
-                  <MapPin className="h-3 w-3" />
-                </Button>
-              </div>
+                  Kilometer
+                </ToggleGroupItem>
+                <ToggleGroupItem 
+                  value="pauschale" 
+                  className="h-8 px-3 text-xs data-[state=on]:bg-[#F47B20] data-[state=on]:text-white"
+                >
+                  Pauschale
+                </ToggleGroupItem>
+              </ToggleGroup>
+
+              {/* Mode A: Kilometer */}
+              {travelCostMode === "kilometer" && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={travelKm}
+                      onChange={(e) => setTravelKm(e.target.value)}
+                      placeholder="km"
+                      className="w-20 h-8"
+                    />
+                    <span className="text-xs text-muted-foreground">km (einfach)</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={calculateTravelDistance}
+                      className="h-7"
+                      title="Distanz berechnen"
+                    >
+                      <MapPin className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs text-muted-foreground shrink-0">Preis pro km:</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={pricePerKm}
+                      onChange={(e) => setPricePerKm(e.target.value)}
+                      className="w-20 h-8 text-sm"
+                    />
+                    <span className="text-xs text-muted-foreground">€</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">
+                      {travelKm ? `${travelKm} km × 2 × €${pricePerKm}/km` : "Formel: Distanz × 2 × Preis/km"}
+                    </span>
+                    <span className="font-medium">{formatCurrency(calculatedTravelCost)}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Mode B: Pauschale (Flat Rate) */}
+              {travelCostMode === "pauschale" && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs text-muted-foreground shrink-0">Betrag:</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={flatAmount}
+                      onChange={(e) => setFlatAmount(e.target.value)}
+                      placeholder="0.00"
+                      className="w-24 h-8 text-sm"
+                    />
+                    <span className="text-xs text-muted-foreground">€</span>
+                  </div>
+                  
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Beschreibung (optional):</Label>
+                    <Input
+                      type="text"
+                      value={flatDescription}
+                      onChange={(e) => setFlatDescription(e.target.value)}
+                      placeholder="Anfahrtspauschale"
+                      className="h-8 text-sm mt-1"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">
+                      {flatDescription || "Anfahrtspauschale"}
+                    </span>
+                    <span className="font-medium">{formatCurrency(calculatedTravelCost)}</span>
+                  </div>
+                </div>
+              )}
               
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">
-                  {travelKm ? `${travelKm}km × 2 × €${businessSettings?.travel_cost_per_km || 0.50}/km` : ""}
-                  {businessSettings?.travel_cost_flat ? ` + €${businessSettings.travel_cost_flat}` : ""}
-                </span>
-                <span className="font-medium">{formatCurrency(calculatedTravelCost)}</span>
-              </div>
-              
-              <div className="flex gap-2">
+              <div className="flex gap-2 pt-1">
                 <Button
                   type="button"
                   variant="secondary"
                   size="sm"
                   onClick={addTravelCostAsLineItem}
-                  disabled={!travelKm || calculatedTravelCost <= 0}
+                  disabled={
+                    (travelCostMode === "kilometer" && (!travelKm || calculatedTravelCost <= 0)) ||
+                    (travelCostMode === "pauschale" && calculatedTravelCost <= 0)
+                  }
                   className="flex-1 h-7 text-xs"
                 >
                   Als Position hinzufügen

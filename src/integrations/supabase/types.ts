@@ -1893,110 +1893,188 @@ export type Database = {
       profiles: {
         Row: {
           access_valid_until: string | null
+          address: string | null
           avatar_url: string | null
+          bank_name: string | null
+          bic: string | null
           business_hours: Json | null
+          business_name: string | null
+          cancellation_policy: string | null
           city: string | null
+          company_name: string | null
           copecart_subscription_id: string | null
+          country: string | null
           created_at: string
           created_by_provider_id: string | null
+          currency: string | null
           deleted_at: string | null
           email: string | null
           emergency_contacts: Json | null
           feature_flags: Json | null
+          first_name: string | null
           full_name: string | null
           has_logged_in: boolean | null
+          iban: string | null
           ical_token: string | null
           id: string
+          image_url: string | null
           invited_at: string | null
+          invoice_footer: string | null
+          invoice_notes_default: string | null
           is_manually_managed: boolean | null
           is_suspended: boolean | null
+          last_name: string | null
+          logo_url: string | null
+          mobile: string | null
           onboarding_completed: boolean | null
+          owner_name: string | null
           phone: string | null
           plan_override: string | null
           readable_id: string | null
+          reminder_1h: boolean | null
+          reminder_6h: boolean | null
+          reminder_evening: boolean | null
+          reminder_text: string | null
           role: string | null
           stable_city: string | null
           stable_latitude: number | null
           stable_longitude: number | null
           stable_street: string | null
           stable_zip: string | null
+          street: string | null
           subscription_plan: string | null
           subscription_status: string | null
           suspended_at: string | null
           suspended_reason: string | null
+          tax_id: string | null
+          tax_number: string | null
           updated_at: string
+          vat_number: string | null
+          website: string | null
           zip_code: string | null
         }
         Insert: {
           access_valid_until?: string | null
+          address?: string | null
           avatar_url?: string | null
+          bank_name?: string | null
+          bic?: string | null
           business_hours?: Json | null
+          business_name?: string | null
+          cancellation_policy?: string | null
           city?: string | null
+          company_name?: string | null
           copecart_subscription_id?: string | null
+          country?: string | null
           created_at?: string
           created_by_provider_id?: string | null
+          currency?: string | null
           deleted_at?: string | null
           email?: string | null
           emergency_contacts?: Json | null
           feature_flags?: Json | null
+          first_name?: string | null
           full_name?: string | null
           has_logged_in?: boolean | null
+          iban?: string | null
           ical_token?: string | null
           id: string
+          image_url?: string | null
           invited_at?: string | null
+          invoice_footer?: string | null
+          invoice_notes_default?: string | null
           is_manually_managed?: boolean | null
           is_suspended?: boolean | null
+          last_name?: string | null
+          logo_url?: string | null
+          mobile?: string | null
           onboarding_completed?: boolean | null
+          owner_name?: string | null
           phone?: string | null
           plan_override?: string | null
           readable_id?: string | null
+          reminder_1h?: boolean | null
+          reminder_6h?: boolean | null
+          reminder_evening?: boolean | null
+          reminder_text?: string | null
           role?: string | null
           stable_city?: string | null
           stable_latitude?: number | null
           stable_longitude?: number | null
           stable_street?: string | null
           stable_zip?: string | null
+          street?: string | null
           subscription_plan?: string | null
           subscription_status?: string | null
           suspended_at?: string | null
           suspended_reason?: string | null
+          tax_id?: string | null
+          tax_number?: string | null
           updated_at?: string
+          vat_number?: string | null
+          website?: string | null
           zip_code?: string | null
         }
         Update: {
           access_valid_until?: string | null
+          address?: string | null
           avatar_url?: string | null
+          bank_name?: string | null
+          bic?: string | null
           business_hours?: Json | null
+          business_name?: string | null
+          cancellation_policy?: string | null
           city?: string | null
+          company_name?: string | null
           copecart_subscription_id?: string | null
+          country?: string | null
           created_at?: string
           created_by_provider_id?: string | null
+          currency?: string | null
           deleted_at?: string | null
           email?: string | null
           emergency_contacts?: Json | null
           feature_flags?: Json | null
+          first_name?: string | null
           full_name?: string | null
           has_logged_in?: boolean | null
+          iban?: string | null
           ical_token?: string | null
           id?: string
+          image_url?: string | null
           invited_at?: string | null
+          invoice_footer?: string | null
+          invoice_notes_default?: string | null
           is_manually_managed?: boolean | null
           is_suspended?: boolean | null
+          last_name?: string | null
+          logo_url?: string | null
+          mobile?: string | null
           onboarding_completed?: boolean | null
+          owner_name?: string | null
           phone?: string | null
           plan_override?: string | null
           readable_id?: string | null
+          reminder_1h?: boolean | null
+          reminder_6h?: boolean | null
+          reminder_evening?: boolean | null
+          reminder_text?: string | null
           role?: string | null
           stable_city?: string | null
           stable_latitude?: number | null
           stable_longitude?: number | null
           stable_street?: string | null
           stable_zip?: string | null
+          street?: string | null
           subscription_plan?: string | null
           subscription_status?: string | null
           suspended_at?: string | null
           suspended_reason?: string | null
+          tax_id?: string | null
+          tax_number?: string | null
           updated_at?: string
+          vat_number?: string | null
+          website?: string | null
           zip_code?: string | null
         }
         Relationships: []
@@ -2307,7 +2385,9 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
+          position: number | null
           provider_id: string | null
+          rank: number | null
           sort_order: number | null
           updated_at: string
         }
@@ -2322,7 +2402,9 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
+          position?: number | null
           provider_id?: string | null
+          rank?: number | null
           sort_order?: number | null
           updated_at?: string
         }
@@ -2337,7 +2419,9 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+          position?: number | null
           provider_id?: string | null
+          rank?: number | null
           sort_order?: number | null
           updated_at?: string
         }
@@ -2438,6 +2522,7 @@ export type Database = {
           id: string
           name: string
           notes: string | null
+          phone: string | null
           provider_id: string
           website: string | null
         }
@@ -2448,6 +2533,7 @@ export type Database = {
           id?: string
           name: string
           notes?: string | null
+          phone?: string | null
           provider_id: string
           website?: string | null
         }
@@ -2458,6 +2544,7 @@ export type Database = {
           id?: string
           name?: string
           notes?: string | null
+          phone?: string | null
           provider_id?: string
           website?: string | null
         }
