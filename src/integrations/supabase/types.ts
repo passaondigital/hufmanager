@@ -2308,6 +2308,7 @@ export type Database = {
           is_active: boolean | null
           name: string
           provider_id: string | null
+          sort_order: number | null
           updated_at: string
         }
         Insert: {
@@ -2322,6 +2323,7 @@ export type Database = {
           is_active?: boolean | null
           name: string
           provider_id?: string | null
+          sort_order?: number | null
           updated_at?: string
         }
         Update: {
@@ -2336,6 +2338,7 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           provider_id?: string | null
+          sort_order?: number | null
           updated_at?: string
         }
         Relationships: []
@@ -2434,6 +2437,7 @@ export type Database = {
           email: string | null
           id: string
           name: string
+          notes: string | null
           provider_id: string
           website: string | null
         }
@@ -2443,6 +2447,7 @@ export type Database = {
           email?: string | null
           id?: string
           name: string
+          notes?: string | null
           provider_id: string
           website?: string | null
         }
@@ -2452,6 +2457,7 @@ export type Database = {
           email?: string | null
           id?: string
           name?: string
+          notes?: string | null
           provider_id?: string
           website?: string | null
         }
