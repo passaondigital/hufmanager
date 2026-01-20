@@ -28,6 +28,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -46,6 +52,7 @@ import {
   Truck,
   ShoppingBag,
   Layers,
+  Info,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
@@ -251,6 +258,16 @@ export default function Lager() {
         <h1 className="text-3xl font-bold flex items-center gap-3">
           <Warehouse className="h-8 w-8 text-primary" />
           Mein Lager
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-5 w-5 text-muted-foreground hover:text-[#F47B20] cursor-help transition-colors" />
+              </TooltipTrigger>
+              <TooltipContent side="right" className="max-w-xs">
+                <p>Verwalte deinen Bestand (Hufeisen, Nägel, Polster). Wenn du Material in Rechnungen nutzt, wird der Bestand automatisch reduziert. Hilft dir, rechtzeitig nachzubestellen.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </h1>
         <p className="text-muted-foreground mt-1">
           Verwalte dein Material und deine Verkaufspreise

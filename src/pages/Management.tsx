@@ -9,6 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Building,
   Globe,
   CreditCard,
@@ -23,6 +29,7 @@ import {
   FileText,
   AlertTriangle,
   Star,
+  Info,
 } from "lucide-react";
 import { BusinessHoursEditor, defaultHours, type BusinessHours } from "@/components/BusinessHoursEditor";
 import { ReminderSettingsCard } from "@/components/ReminderSettingsCard";
@@ -625,7 +632,19 @@ const Management = () => {
         <TabsContent value="landing" className="mt-6 space-y-6">
           <Card className="animate-slide-up">
             <CardHeader>
-              <CardTitle>Landingpage-Einstellungen</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                Landingpage-Einstellungen
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground hover:text-[#F47B20] cursor-help transition-colors" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-xs">
+                      <p>Deine digitale Visitenkarte. Hier gestaltest du die Seite, die deine Kunden sehen, wenn sie dich online suchen oder Termine buchen.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </CardTitle>
               <CardDescription>
                 Konfigurieren Sie Ihre öffentliche Landingpage
               </CardDescription>
@@ -721,7 +740,17 @@ const Management = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                Impressum
+                Rechtliches
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground hover:text-[#F47B20] cursor-help transition-colors" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-xs">
+                      <p>Rechtssicherheit für deine Dokumente. Hinterlege hier AGB, Steuernummer und Impressum. Diese Daten erscheinen automatisch im Fußbereich jeder Rechnung und auf deiner Landingpage.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </CardTitle>
               <CardDescription>
                 Gesetzlich vorgeschriebene Angaben für Ihre Webseite. Ohne Impressum bleibt Ihr Profil offline.
@@ -794,7 +823,19 @@ Steuernummer: 12/345/67890
         <TabsContent value="payment" className="mt-6 space-y-6">
           <Card className="animate-slide-up">
             <CardHeader>
-              <CardTitle>Zahlungslinks</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                Zahlungslinks
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground hover:text-[#F47B20] cursor-help transition-colors" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-xs">
+                      <p>Deine Bankdaten und Zahlungsziele. Lege fest, wohin Kunden überweisen sollen und welche Fristen (z.B. 7 Tage) standardmäßig auf der Rechnung stehen.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </CardTitle>
               <CardDescription>
                 Verbinden Sie Ihre Zahlungsanbieter für einfache Rechnungsstellung
               </CardDescription>

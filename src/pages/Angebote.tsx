@@ -21,8 +21,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Edit, Trash2, GripVertical, Image as ImageIcon, Play, ExternalLink, Star, RefreshCw, Clock, Gift, Package, Calculator } from "lucide-react";
+import { Plus, Edit, Trash2, GripVertical, Image as ImageIcon, Play, ExternalLink, Star, RefreshCw, Clock, Gift, Package, Calculator, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -394,7 +400,19 @@ const Angebote = () => {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Angebote</h1>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            Angebote
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground hover:text-[#F47B20] cursor-help transition-colors" />
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-xs">
+                  <p>Kostenvoranschläge für Kunden. Erstelle ein Angebot vor dem Termin. Wenn der Kunde annimmt, kannst du es mit einem Klick in eine Rechnung umwandeln.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </h1>
           <p className="text-muted-foreground mt-1">
             Verwalten Sie Ihre Service-Angebote für die Landingpage (max. 3 aktiv)
           </p>
