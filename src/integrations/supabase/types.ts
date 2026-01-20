@@ -757,6 +757,48 @@ export type Database = {
           },
         ]
       }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          description: string | null
+          expense_date: string
+          id: string
+          is_recurring: boolean
+          receipt_url: string | null
+          recurring_interval: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          description?: string | null
+          expense_date?: string
+          id?: string
+          is_recurring?: boolean
+          receipt_url?: string | null
+          recurring_interval?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          expense_date?: string
+          id?: string
+          is_recurring?: boolean
+          receipt_url?: string | null
+          recurring_interval?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       feedback_reports: {
         Row: {
           admin_notes: string | null
