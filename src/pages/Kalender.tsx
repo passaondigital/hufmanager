@@ -32,6 +32,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppointmentFormModal } from "@/components/calendar/AppointmentFormModal";
 import { CalendarSyncModal } from "@/components/calendar/CalendarSyncModal";
 import { AppointmentTooltip } from "@/components/calendar/AppointmentTooltip";
+import { NearbyDueClientsPanel } from "@/components/calendar/NearbyDueClientsPanel";
 
 // Import CSS for react-big-calendar
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -105,6 +106,7 @@ const Kalender = () => {
   const [isSendingReminders, setIsSendingReminders] = useState(false);
   const [currentView, setCurrentView] = useState<typeof Views[keyof typeof Views]>(Views.WEEK);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [preselectedHorseId, setPreselectedHorseId] = useState<string | null>(null);
   
   // State for reschedule confirmation dialog
   const [pendingReschedule, setPendingReschedule] = useState<{
@@ -412,41 +414,56 @@ const Kalender = () => {
         ))}
       </div>
 
-      {/* Calendar */}
-      <Card className="overflow-hidden">
-        <CardContent className="p-0">
-          <div className="h-[700px] calendar-container">
-            <DnDCalendar
-              localizer={localizer}
-              events={events}
-              view={currentView}
-              onView={(view) => setCurrentView(view)}
-              date={currentDate}
-              onNavigate={setCurrentDate}
-              onEventDrop={handleEventDrop}
-              onEventResize={handleEventResize}
-              onSelectSlot={handleSelectSlot}
-              selectable
-              resizable
-              eventPropGetter={eventStyleGetter}
-              components={{
-                event: EventComponent,
-              }}
-              messages={messages}
-              culture="de"
-              step={30}
-              timeslots={2}
-              min={new Date(0, 0, 0, 6, 0)} // 6 AM
-              max={new Date(0, 0, 0, 21, 0)} // 9 PM
-              defaultView={Views.WEEK}
-              views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
-              popup
-              tooltipAccessor={() => ""} // Disable default tooltip (we use custom)
-              className="rbc-calendar-custom"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Calendar with Suggestions Panel */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        {/* Main Calendar */}
+        <Card className="overflow-hidden lg:col-span-3">
+          <CardContent className="p-0">
+            <div className="h-[700px] calendar-container">
+              <DnDCalendar
+                localizer={localizer}
+                events={events}
+                view={currentView}
+                onView={(view) => setCurrentView(view)}
+                date={currentDate}
+                onNavigate={setCurrentDate}
+                onEventDrop={handleEventDrop}
+                onEventResize={handleEventResize}
+                onSelectSlot={handleSelectSlot}
+                selectable
+                resizable
+                eventPropGetter={eventStyleGetter}
+                components={{
+                  event: EventComponent,
+                }}
+                messages={messages}
+                culture="de"
+                step={30}
+                timeslots={2}
+                min={new Date(0, 0, 0, 6, 0)} // 6 AM
+                max={new Date(0, 0, 0, 21, 0)} // 9 PM
+                defaultView={Views.WEEK}
+                views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
+                popup
+                tooltipAccessor={() => ""} // Disable default tooltip (we use custom)
+                className="rbc-calendar-custom"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Nearby Due Clients Sidebar */}
+        <div className="space-y-4">
+          <NearbyDueClientsPanel
+            selectedDate={selectedDate || currentDate}
+            onSelectHorse={(horseId) => {
+              setPreselectedHorseId(horseId);
+              setSelectedDate(currentDate);
+              setIsFormOpen(true);
+            }}
+          />
+        </div>
+      </div>
 
       {/* Modals */}
       <AppointmentFormModal
@@ -454,9 +471,11 @@ const Kalender = () => {
         onClose={() => {
           setIsFormOpen(false);
           setSelectedDate(null);
+          setPreselectedHorseId(null);
         }}
         selectedDate={selectedDate}
         existingAppointments={appointments}
+        preselectedHorseId={preselectedHorseId}
       />
 
       <CalendarSyncModal

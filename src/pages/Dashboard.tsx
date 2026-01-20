@@ -3,6 +3,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentCustomers } from "@/components/dashboard/RecentCustomers";
 import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointments";
 import { OverdueAssessmentsWidget } from "@/components/dashboard/OverdueAssessmentsWidget";
+import { DueAppointmentsWidget } from "@/components/dashboard/DueAppointmentsWidget";
 import { RecentHorsesWidget } from "@/components/dashboard/RecentHorsesWidget";
 import { ShareInviteLinkCard } from "@/components/invite/ShareInviteLinkCard";
 import { useAuth } from "@/hooks/useAuth";
@@ -115,6 +116,9 @@ const Dashboard = () => {
           />
         </div>
       )}
+
+      {/* Intelligent Recall - Due Appointments */}
+      <DueAppointmentsWidget />
 
       {/* Smart Suggestions - Overdue Assessments */}
       <OverdueAssessmentsWidget />
