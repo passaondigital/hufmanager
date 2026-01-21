@@ -66,6 +66,15 @@ interface BusinessSettings {
   travel_cost_flat: number | null;
 }
 
+interface ProviderPaymentSettings {
+  default_payment_method: string | null;
+}
+
+interface PaymentProduct {
+  service_id: string;
+  copecart_checkout_url: string | null;
+}
+
 interface InventoryItem {
   id: string;
   product_name: string;
@@ -129,6 +138,10 @@ export function CreateInvoiceModal({
   const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
+  
+  // CopeCart payment state
+  const [providerPaymentSettings, setProviderPaymentSettings] = useState<ProviderPaymentSettings | null>(null);
+  const [paymentProducts, setPaymentProducts] = useState<PaymentProduct[]>([]);
 
   const [formData, setFormData] = useState({
     client_id: preSelectedClientId || "",
@@ -137,7 +150,7 @@ export function CreateInvoiceModal({
     issue_date: new Date().toISOString().split("T")[0],
     due_date: "",
     status: "pending" as "pending" | "paid" | "overdue",
-    payment_method: "" as "" | "Überweisung" | "Bar" | "PayPal",
+    payment_method: "" as "" | "Überweisung" | "Bar" | "PayPal" | "CopeCart",
     customer_type: "privat" as "privat" | "gewerbe" | "kleinunternehmer",
     notes: "",
   });
@@ -230,6 +243,33 @@ export function CreateInvoiceModal({
         .order("product_name");
       
       setInventoryItems((inventoryData || []) as InventoryItem[]);
+      
+      // Load provider payment settings for default payment method
+      const { data: paymentSettings } = await supabase
+        .from("provider_payment_settings")
+        .select("default_payment_method")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      setProviderPaymentSettings(paymentSettings);
+      
+      // Set default payment method if available
+      if (paymentSettings?.default_payment_method) {
+        setFormData(prev => ({
+          ...prev,
+          payment_method: paymentSettings.default_payment_method as any,
+        }));
+      }
+      
+      // Load CopeCart payment products mapping
+      const { data: paymentProductsData } = await supabase
+        .from("payment_products")
+        .select("service_id, copecart_checkout_url")
+        .eq("user_id", user.id)
+        .eq("is_active", true);
+      
+      setPaymentProducts((paymentProductsData || []) as PaymentProduct[]);
+      
       setDataLoaded(true);
     };
 
@@ -496,6 +536,29 @@ export function CreateInvoiceModal({
     setLoading(true);
 
     try {
+      // Generate payment link for CopeCart if selected
+      let paymentLink: string | null = null;
+      let paymentStatus: string = "unpaid";
+      
+      if (formData.payment_method === "CopeCart") {
+        // Find CopeCart URL from line items that have inventory_item_id
+        // In real use, services would be linked - for now check if any service has a CopeCart URL
+        // This would typically be based on the service_type of the line items
+        const serviceIds = lineItems
+          .filter(item => item.inventory_item_id)
+          .map(item => item.inventory_item_id);
+        
+        // Find matching payment product URL
+        const matchingProduct = paymentProducts.find(pp => 
+          serviceIds.includes(pp.service_id) && pp.copecart_checkout_url
+        );
+        
+        if (matchingProduct?.copecart_checkout_url) {
+          // Base URL will be appended with invoice ID after creation
+          paymentLink = matchingProduct.copecart_checkout_url;
+        }
+      }
+      
       // Step 1: Create the invoice
       const { data: insertedInvoice, error: invoiceError } = await supabase
         .from("invoices")
@@ -512,12 +575,24 @@ export function CreateInvoiceModal({
           customer_type: formData.customer_type,
           notes: formData.notes || null,
           signature_url: signatureDataUrl,
+          payment_status: paymentStatus,
         })
         .select()
         .single();
 
       if (invoiceError) {
         throw new Error(`Rechnung erstellen fehlgeschlagen: ${invoiceError.message}`);
+      }
+      
+      // Step 1b: Update payment link with invoice ID if CopeCart
+      if (paymentLink && insertedInvoice) {
+        const separator = paymentLink.includes("?") ? "&" : "?";
+        const fullPaymentLink = `${paymentLink}${separator}custom=${insertedInvoice.id}`;
+        
+        await supabase
+          .from("invoices")
+          .update({ payment_link: fullPaymentLink })
+          .eq("id", insertedInvoice.id);
       }
 
       // Step 2: Create invoice_items for each line item
@@ -778,10 +853,24 @@ export function CreateInvoiceModal({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="payment_method">Zahlungsart</Label>
+          <Label htmlFor="payment_method" className="flex items-center gap-2">
+            Zahlungsmethode
+            {formData.payment_method === "CopeCart" && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3.5 w-3.5 text-muted-foreground hover:text-[#F47B20] cursor-help transition-colors" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p>Verbinde deine Leistung mit einem CopeCart-Produkt, um automatische Zahlungslinks zu generieren.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </Label>
           <Select
             value={formData.payment_method}
-            onValueChange={(value: "Überweisung" | "Bar" | "PayPal") => setFormData(prev => ({ ...prev, payment_method: value }))}
+            onValueChange={(value: "Überweisung" | "Bar" | "PayPal" | "CopeCart") => setFormData(prev => ({ ...prev, payment_method: value }))}
           >
             <SelectTrigger>
               <SelectValue placeholder="Wählen..." />
@@ -789,6 +878,7 @@ export function CreateInvoiceModal({
             <SelectContent>
               <SelectItem value="Überweisung">Überweisung</SelectItem>
               <SelectItem value="Bar">Bar</SelectItem>
+              <SelectItem value="CopeCart">CopeCart</SelectItem>
               <SelectItem value="PayPal">PayPal</SelectItem>
             </SelectContent>
           </Select>
