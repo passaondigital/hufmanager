@@ -37,6 +37,7 @@ interface ParsedRow {
   email?: string;
   phone?: string;
   company_name?: string;
+  street?: string;
   notes?: string;
 }
 
@@ -59,6 +60,7 @@ const CSVImportSection = () => {
         email: row.email || null,
         phone: row.phone || null,
         company_name: row.company_name || null,
+        street: row.street || null,
         notes: row.notes || null,
         source: "csv_import",
       }));
@@ -141,6 +143,9 @@ const CSVImportSection = () => {
     const companyIdx = headers.findIndex((h) => 
       h.includes("firma") || h.includes("company") || h.includes("unternehmen")
     );
+    const streetIdx = headers.findIndex((h) => 
+      h.includes("straße") || h.includes("strasse") || h.includes("street") || h.includes("adresse")
+    );
     const notesIdx = headers.findIndex((h) => 
       h.includes("notiz") || h.includes("note") || h.includes("bemerkung")
     );
@@ -153,13 +158,14 @@ const CSVImportSection = () => {
         email: emailIdx >= 0 ? cols[emailIdx] : undefined,
         phone: phoneIdx >= 0 ? cols[phoneIdx] : undefined,
         company_name: companyIdx >= 0 ? cols[companyIdx] : undefined,
+        street: streetIdx >= 0 ? cols[streetIdx] : undefined,
         notes: notesIdx >= 0 ? cols[notesIdx] : undefined,
       };
     }).filter((row) => row.full_name && row.full_name !== "Unbekannt");
   };
 
   const downloadTemplate = () => {
-    const template = "Name,Email,Telefon,Firma,Notizen\nMax Mustermann,max@example.com,0123456789,Musterfirma,Beispiel-Notiz";
+    const template = "Name,Email,Telefon,Straße,Firma,Notizen\nMax Mustermann,max@example.com,0123456789,Musterstraße 123,Musterfirma,Beispiel-Notiz";
     const blob = new Blob([template], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -277,6 +283,7 @@ const CSVImportSection = () => {
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Telefon</TableHead>
+                    <TableHead>Straße</TableHead>
                     <TableHead>Firma</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -286,12 +293,13 @@ const CSVImportSection = () => {
                       <TableCell className="font-medium">{row.full_name}</TableCell>
                       <TableCell>{row.email || "-"}</TableCell>
                       <TableCell>{row.phone || "-"}</TableCell>
+                      <TableCell>{row.street || "-"}</TableCell>
                       <TableCell>{row.company_name || "-"}</TableCell>
                     </TableRow>
                   ))}
                   {parsedData.length > 10 && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground">
+                      <TableCell colSpan={5} className="text-center text-muted-foreground">
                         ... und {parsedData.length - 10} weitere
                       </TableCell>
                     </TableRow>
@@ -315,7 +323,7 @@ const CSVImportSection = () => {
           <h4 className="font-medium mb-2">Unterstützte Formate:</h4>
           <ul className="space-y-1 text-sm text-muted-foreground list-disc list-inside">
             <li>CSV-Dateien mit Komma oder Semikolon als Trennzeichen</li>
-            <li>Erste Zeile als Header (Name, Email, Telefon, Firma, Notizen)</li>
+            <li>Erste Zeile als Header (Name, Email, Telefon, Straße, Firma, Notizen)</li>
             <li>Excel-Export als CSV speichern</li>
           </ul>
         </div>

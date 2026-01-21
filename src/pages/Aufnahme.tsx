@@ -68,7 +68,9 @@ const Aufnahme = () => {
     lastName: "",
     email: "",
     phone: "",
-    address: "",
+    street: "",
+    zipCode: "",
+    city: "",
     notes: "",
     sendInvitation: true,
   });
@@ -402,7 +404,9 @@ const Aufnahme = () => {
       lastName: "",
       email: "",
       phone: "",
-      address: "",
+      street: "",
+      zipCode: "",
+      city: "",
       notes: "",
       sendInvitation: true,
     });
@@ -487,13 +491,34 @@ const Aufnahme = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="address">Adresse</Label>
+                <Label htmlFor="street">Straße & Hausnummer</Label>
                 <Input
-                  id="address"
-                  placeholder="Straße, PLZ Ort"
-                  value={customerForm.address}
-                  onChange={(e) => setCustomerForm({ ...customerForm, address: e.target.value })}
+                  id="street"
+                  placeholder="Musterstraße 123"
+                  value={customerForm.street}
+                  onChange={(e) => setCustomerForm({ ...customerForm, street: e.target.value })}
                 />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="zipCode">PLZ</Label>
+                  <Input
+                    id="zipCode"
+                    placeholder="12345"
+                    value={customerForm.zipCode}
+                    onChange={(e) => setCustomerForm({ ...customerForm, zipCode: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="city">Ort</Label>
+                  <Input
+                    id="city"
+                    placeholder="Musterstadt"
+                    value={customerForm.city}
+                    onChange={(e) => setCustomerForm({ ...customerForm, city: e.target.value })}
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
