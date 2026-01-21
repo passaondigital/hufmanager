@@ -1697,7 +1697,11 @@ export type Database = {
           issue_date: string
           notes: string | null
           organization_id: string | null
+          paid_at: string | null
+          payment_external_id: string | null
+          payment_link: string | null
           payment_method: string | null
+          payment_status: string | null
           pdf_url: string | null
           provider_id: string | null
           signature_url: string | null
@@ -1719,7 +1723,11 @@ export type Database = {
           issue_date?: string
           notes?: string | null
           organization_id?: string | null
+          paid_at?: string | null
+          payment_external_id?: string | null
+          payment_link?: string | null
           payment_method?: string | null
+          payment_status?: string | null
           pdf_url?: string | null
           provider_id?: string | null
           signature_url?: string | null
@@ -1741,7 +1749,11 @@ export type Database = {
           issue_date?: string
           notes?: string | null
           organization_id?: string | null
+          paid_at?: string | null
+          payment_external_id?: string | null
+          payment_link?: string | null
           payment_method?: string | null
+          payment_status?: string | null
           pdf_url?: string | null
           provider_id?: string | null
           signature_url?: string | null
@@ -2197,6 +2209,44 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_products: {
+        Row: {
+          copecart_checkout_url: string | null
+          copecart_product_id: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          service_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          copecart_checkout_url?: string | null
+          copecart_product_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          service_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          copecart_checkout_url?: string | null
+          copecart_product_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          service_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_products_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_recipe_items: {
         Row: {
           created_at: string
@@ -2505,6 +2555,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      provider_payment_settings: {
+        Row: {
+          copecart_vendor_id: string | null
+          copecart_webhook_secret: string | null
+          created_at: string | null
+          default_payment_method: string | null
+          id: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          copecart_vendor_id?: string | null
+          copecart_webhook_secret?: string | null
+          created_at?: string | null
+          default_payment_method?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          copecart_vendor_id?: string | null
+          copecart_webhook_secret?: string | null
+          created_at?: string | null
+          default_payment_method?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       provider_portal_credentials: {
         Row: {
