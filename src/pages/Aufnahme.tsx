@@ -73,6 +73,8 @@ const Aufnahme = () => {
     city: "",
     notes: "",
     sendInvitation: true,
+    isBusiness: false,
+    vatId: "",
   });
 
   // Horse form state
@@ -409,6 +411,8 @@ const Aufnahme = () => {
       city: "",
       notes: "",
       sendInvitation: true,
+      isBusiness: false,
+      vatId: "",
     });
   };
 
@@ -519,6 +523,42 @@ const Aufnahme = () => {
                     onChange={(e) => setCustomerForm({ ...customerForm, city: e.target.value })}
                   />
                 </div>
+              </div>
+
+              {/* Business Customer Toggle */}
+              <div className="space-y-4 p-4 bg-muted/50 rounded-lg border">
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    id="isBusiness"
+                    checked={customerForm.isBusiness}
+                    onCheckedChange={(checked) =>
+                      setCustomerForm({ ...customerForm, isBusiness: checked as boolean })
+                    }
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor="isBusiness" className="cursor-pointer font-medium">
+                      Ist Geschäftskunde (B2B)
+                    </Label>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      Aktivieren für Unternehmen, Reitställe, etc.
+                    </p>
+                  </div>
+                </div>
+                
+                {customerForm.isBusiness && (
+                  <div className="space-y-2 pl-7">
+                    <Label htmlFor="vatId">USt-IdNr.</Label>
+                    <Input
+                      id="vatId"
+                      placeholder="DE123456789"
+                      value={customerForm.vatId}
+                      onChange={(e) => setCustomerForm({ ...customerForm, vatId: e.target.value })}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Umsatzsteuer-Identifikationsnummer für B2B-Rechnungen
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">

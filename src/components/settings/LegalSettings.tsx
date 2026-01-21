@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -21,16 +22,69 @@ interface LegalAgreement {
   version: string;
 }
 
+interface TaxInfo {
+  vat_id: string;
+  tax_number: string;
+}
+
 export function LegalSettings() {
   const [agbAgreement, setAgbAgreement] = useState<LegalAgreement | null>(null);
   const [agbSignedUrl, setAgbSignedUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [savingTax, setSavingTax] = useState(false);
+  const [taxInfo, setTaxInfo] = useState<TaxInfo>({ vat_id: "", tax_number: "" });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchAgreements();
+    fetchTaxInfo();
   }, []);
+
+  const fetchTaxInfo = async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return;
+
+    const { data } = await supabase
+      .from('business_settings')
+      .select('vat_id, tax_number')
+      .eq('user_id', userData.user.id)
+      .maybeSingle();
+
+    if (data) {
+      setTaxInfo({
+        vat_id: data.vat_id || "",
+        tax_number: data.tax_number || "",
+      });
+    }
+  };
+
+  const handleSaveTaxInfo = async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return;
+
+    setSavingTax(true);
+    try {
+      const { error } = await supabase
+        .from('business_settings')
+        .update({
+          vat_id: taxInfo.vat_id || null,
+          tax_number: taxInfo.tax_number || null,
+        })
+        .eq('user_id', userData.user.id);
+
+      if (error) throw error;
+      toast({ title: "Steuerdaten gespeichert" });
+    } catch (error: any) {
+      toast({
+        title: "Fehler beim Speichern",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSavingTax(false);
+    }
+  };
 
   const fetchAgreements = async () => {
     const { data: userData } = await supabase.auth.getUser();
@@ -118,6 +172,55 @@ export function LegalSettings() {
 
   return (
     <div className="space-y-6">
+      {/* Tax Information for ZUGFeRD / E-Invoicing */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            Steuerdaten für E-Rechnungen (ZUGFeRD)
+          </CardTitle>
+          <CardDescription>
+            Pflichtangaben für B2B-Rechnungen nach EU-Norm
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="vat_id">USt-IdNr. (Umsatzsteuer-ID)</Label>
+              <Input
+                id="vat_id"
+                placeholder="DE123456789"
+                value={taxInfo.vat_id}
+                onChange={(e) => setTaxInfo({ ...taxInfo, vat_id: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Erforderlich für B2B-Rechnungen innerhalb der EU
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tax_number">Steuernummer</Label>
+              <Input
+                id="tax_number"
+                placeholder="12/345/67890"
+                value={taxInfo.tax_number}
+                onChange={(e) => setTaxInfo({ ...taxInfo, tax_number: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Alternative für lokale Geschäfte ohne USt-IdNr.
+              </p>
+            </div>
+          </div>
+          <Button onClick={handleSaveTaxInfo} disabled={savingTax}>
+            {savingTax ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <FileText className="h-4 w-4 mr-2" />
+            )}
+            Steuerdaten speichern
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* AVV Section - New Signing Card */}
       <AVVSigningCard />
 
