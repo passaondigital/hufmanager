@@ -609,11 +609,13 @@ export type Database = {
           iban: string | null
           id: string
           impressum_text: string | null
+          imprint: string | null
           logo_url: string | null
           owner_name: string | null
           paypal_link: string | null
           phone: string | null
           primary_color: string | null
+          privacy: string | null
           reminder_custom_text: string | null
           reminder_intervals: Json | null
           reviews_layout: string | null
@@ -621,6 +623,7 @@ export type Database = {
           stripe_public_key: string | null
           subdomain: string | null
           tax_number: string | null
+          terms: string | null
           terms_text: string | null
           travel_cost_flat: number | null
           travel_cost_per_km: number | null
@@ -646,11 +649,13 @@ export type Database = {
           iban?: string | null
           id?: string
           impressum_text?: string | null
+          imprint?: string | null
           logo_url?: string | null
           owner_name?: string | null
           paypal_link?: string | null
           phone?: string | null
           primary_color?: string | null
+          privacy?: string | null
           reminder_custom_text?: string | null
           reminder_intervals?: Json | null
           reviews_layout?: string | null
@@ -658,6 +663,7 @@ export type Database = {
           stripe_public_key?: string | null
           subdomain?: string | null
           tax_number?: string | null
+          terms?: string | null
           terms_text?: string | null
           travel_cost_flat?: number | null
           travel_cost_per_km?: number | null
@@ -683,11 +689,13 @@ export type Database = {
           iban?: string | null
           id?: string
           impressum_text?: string | null
+          imprint?: string | null
           logo_url?: string | null
           owner_name?: string | null
           paypal_link?: string | null
           phone?: string | null
           primary_color?: string | null
+          privacy?: string | null
           reminder_custom_text?: string | null
           reminder_intervals?: Json | null
           reviews_layout?: string | null
@@ -695,6 +703,7 @@ export type Database = {
           stripe_public_key?: string | null
           subdomain?: string | null
           tax_number?: string | null
+          terms?: string | null
           terms_text?: string | null
           travel_cost_flat?: number | null
           travel_cost_per_km?: number | null
