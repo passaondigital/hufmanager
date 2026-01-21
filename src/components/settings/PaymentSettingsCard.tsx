@@ -25,7 +25,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Save, Info, Loader2, CreditCard, Copy, Check, BookOpen } from "lucide-react";
+import { Save, Info, Loader2, CreditCard, Copy, Check, BookOpen, ExternalLink } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface PaymentSettings {
@@ -206,88 +206,109 @@ export function PaymentSettingsCard() {
           </p>
         </div>
 
-        {/* CopeCart Integration Guide */}
+        {/* CopeCart Integration Guide with Affiliate */}
         <Accordion type="single" collapsible className="w-full">
           <AccordionItem value="copecart-guide" className="border rounded-lg bg-muted/50">
             <AccordionTrigger className="px-4 hover:no-underline">
               <span className="flex items-center gap-2 text-sm font-medium">
                 <BookOpen className="h-4 w-4 text-[#F47B20]" />
-                📖 Anleitung: So verbindest du CopeCart
+                📖 Anleitung: So verbindest du CopeCart & verdienst Geld
               </span>
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-4">
-              <div className="space-y-4 text-sm">
-                {/* Step 1 */}
+              <div className="space-y-5 text-sm">
+                {/* Step 1 - Account Creation with Affiliate */}
                 <div className="flex gap-3">
                   <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#F47B20] text-white flex items-center justify-center text-xs font-bold">
                     1
                   </div>
-                  <div>
-                    <p className="font-medium">Vendor-ID eintragen</p>
+                  <div className="flex-1 space-y-3">
+                    <p className="font-medium">Account erstellen</p>
                     <p className="text-muted-foreground">
-                      Logge dich bei CopeCart ein und kopiere deine Vendor-ID aus deinen Profileinstellungen. 
-                      Füge sie oben in das Feld "CopeCart Vendor ID" ein.
+                      Du hast noch kein CopeCart Konto? Erstelle es hier kostenlos und starte sofort.
+                    </p>
+                    <Button
+                      type="button"
+                      asChild
+                      className="bg-[#F47B20] hover:bg-[#F47B20]/90"
+                    >
+                      <a 
+                        href="https://copecart.com/users/sign_up?cp=barhufserviceschmid&language=de" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                      >
+                        Kostenloses Konto erstellen
+                        <ExternalLink className="h-4 w-4 ml-2" />
+                      </a>
+                    </Button>
+                    <p className="text-xs text-muted-foreground italic">
+                      Hast du schon ein Konto? Dann logge dich ein und kopiere deine "Vendor ID" aus den Profileinstellungen hier her.
                     </p>
                   </div>
                 </div>
 
-                {/* Step 2 */}
+                {/* Step 2 - Interface Setup */}
                 <div className="flex gap-3">
                   <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#F47B20] text-white flex items-center justify-center text-xs font-bold">
                     2
                   </div>
                   <div>
-                    <p className="font-medium">Automatische Zahlungsbestätigung aktivieren</p>
+                    <p className="font-medium">Schnittstelle einrichten</p>
                     <p className="text-muted-foreground">
-                      Damit deine Rechnungen automatisch als "Bezahlt" markiert werden, musst du die Schnittstelle (Webhook) aktivieren.
+                      Damit der HufManager deine Zahlungen automatisch erkennt, musst du die IPN-Benachrichtigung aktivieren.
                     </p>
                   </div>
                 </div>
 
-                {/* Step 3 - Webhook URL */}
+                {/* Step 3 - Webhook URL (WICHTIG) */}
                 <div className="flex gap-3">
                   <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#F47B20] text-white flex items-center justify-center text-xs font-bold">
                     3
                   </div>
                   <div className="flex-1 space-y-2">
-                    <p className="font-medium">Webhook-URL in CopeCart hinterlegen</p>
+                    <p className="font-medium">Webhook hinterlegen (WICHTIG)</p>
                     <p className="text-muted-foreground">
-                      Gehe in CopeCart zu <strong>"Einstellungen" → "IPN Anbindungen"</strong>. 
-                      Erstelle einen neuen Eintrag und füge diese URL dort ein:
+                      Kopiere diese Adresse. Gehe in CopeCart zu <strong>"Einstellungen" → "IPN Anbindungen"</strong>. 
+                      Erstelle eine neue <strong>"Integration zur Vertragserfüllung"</strong> und füge die Adresse dort ein.
                     </p>
                     <div className="flex gap-2 mt-2">
                       <Input
                         readOnly
                         value={WEBHOOK_URL}
-                        className="font-mono text-xs bg-background"
+                        className="font-mono text-xs bg-background truncate"
                       />
                       <Button
                         type="button"
                         variant="outline"
-                        size="icon"
+                        size="sm"
                         onClick={handleCopyWebhookUrl}
-                        className="flex-shrink-0"
+                        className="flex-shrink-0 gap-1.5"
                       >
                         {copied ? (
-                          <Check className="h-4 w-4 text-green-600" />
+                          <>
+                            <Check className="h-4 w-4 text-green-600" />
+                            Kopiert
+                          </>
                         ) : (
-                          <Copy className="h-4 w-4 text-[#F47B20]" />
+                          <>
+                            <Copy className="h-4 w-4 text-[#F47B20]" />
+                            Kopieren
+                          </>
                         )}
                       </Button>
                     </div>
                   </div>
                 </div>
 
-                {/* Step 4 */}
+                {/* Step 4 - Security */}
                 <div className="flex gap-3">
                   <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#F47B20] text-white flex items-center justify-center text-xs font-bold">
                     4
                   </div>
                   <div>
-                    <p className="font-medium">IPN-Kennwort (optional)</p>
+                    <p className="font-medium">Sicherheit</p>
                     <p className="text-muted-foreground">
-                      Wenn du in CopeCart ein "IPN Kennwort" festlegst, trage exakt dieses Kennwort oben 
-                      im Feld "Webhook Secret" ein. Dieses sichert die Verbindung zusätzlich ab.
+                      Lege in CopeCart ein "Kennwort" fest und trage exakt dieses Kennwort oben im Feld "Webhook Secret" ein.
                     </p>
                   </div>
                 </div>
