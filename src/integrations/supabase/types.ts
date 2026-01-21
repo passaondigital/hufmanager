@@ -780,6 +780,7 @@ export type Database = {
           provider_id: string
           readable_id: string | null
           source: string | null
+          street: string | null
           updated_at: string
           zip_code: string | null
         }
@@ -799,6 +800,7 @@ export type Database = {
           provider_id: string
           readable_id?: string | null
           source?: string | null
+          street?: string | null
           updated_at?: string
           zip_code?: string | null
         }
@@ -818,6 +820,7 @@ export type Database = {
           provider_id?: string
           readable_id?: string | null
           source?: string | null
+          street?: string | null
           updated_at?: string
           zip_code?: string | null
         }

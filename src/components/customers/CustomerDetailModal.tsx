@@ -70,6 +70,9 @@ interface Customer {
   full_name?: string;
   email?: string;
   phone?: string;
+  street?: string;
+  zip_code?: string;
+  city?: string;
   has_logged_in?: boolean;
   invited_at?: string;
   created_at?: string;
@@ -101,6 +104,9 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
     full_name: "",
     email: "",
     phone: "",
+    street: "",
+    zip_code: "",
+    city: "",
   });
 
   // Initialize edit form when customer changes
@@ -110,19 +116,33 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
         full_name: customer.full_name || "",
         email: customer.email || "",
         phone: customer.phone || "",
+        street: customer.street || "",
+        zip_code: customer.zip_code || "",
+        city: customer.city || "",
       });
     }
   };
 
   // Update customer mutation
   const updateCustomer = useMutation({
-    mutationFn: async (data: { id: string; full_name: string; email: string; phone: string }) => {
+    mutationFn: async (data: { 
+      id: string; 
+      full_name: string; 
+      email: string; 
+      phone: string;
+      street: string;
+      zip_code: string;
+      city: string;
+    }) => {
       const { error } = await supabase
         .from("profiles")
         .update({
           full_name: data.full_name,
           email: data.email || null,
           phone: data.phone || null,
+          street: data.street || null,
+          zip_code: data.zip_code || null,
+          city: data.city || null,
         })
         .eq("id", data.id);
       if (error) throw error;
@@ -208,6 +228,19 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
     window.open(url, "_blank");
   };
 
+  // Open navigation using address (street, zip, city)
+  const openAddressNavigation = (street: string, zip: string, city: string) => {
+    const address = encodeURIComponent(`${street}, ${zip} ${city}`);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const url = isIOS
+      ? `maps://maps.apple.com/?daddr=${address}`
+      : `https://www.google.com/maps/dir/?api=1&destination=${address}`;
+    window.open(url, "_blank");
+  };
+
+  // Check if customer has a complete address for navigation
+  const hasCompleteAddress = customer?.street && customer?.zip_code && customer?.city;
+
   if (!customer) return null;
 
   return (
@@ -286,20 +319,71 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                       />
                     </div>
                   </div>
+                  <div className="space-y-2">
+                    <Label>Straße & Hausnummer</Label>
+                    <Input
+                      placeholder="Musterstraße 123"
+                      value={editForm.street}
+                      onChange={(e) => setEditForm({ ...editForm, street: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>PLZ</Label>
+                      <Input
+                        placeholder="12345"
+                        value={editForm.zip_code}
+                        onChange={(e) => setEditForm({ ...editForm, zip_code: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Ort</Label>
+                      <Input
+                        placeholder="Musterstadt"
+                        value={editForm.city}
+                        onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
+                      />
+                    </div>
+                  </div>
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                  {customer.email && (
-                    <span className="flex items-center gap-1">
-                      <Mail className="h-4 w-4" />
-                      {customer.email}
-                    </span>
-                  )}
-                  {customer.phone && (
-                    <span className="flex items-center gap-1">
-                      <Phone className="h-4 w-4" />
-                      {customer.phone}
-                    </span>
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                    {customer.email && (
+                      <span className="flex items-center gap-1">
+                        <Mail className="h-4 w-4" />
+                        {customer.email}
+                      </span>
+                    )}
+                    {customer.phone && (
+                      <span className="flex items-center gap-1">
+                        <Phone className="h-4 w-4" />
+                        {customer.phone}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Address display with navigation */}
+                  {(customer.street || customer.zip_code || customer.city) && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <MapPin className="h-4 w-4" />
+                      <span>
+                        {[customer.street, `${customer.zip_code || ''} ${customer.city || ''}`.trim()]
+                          .filter(Boolean)
+                          .join(', ')}
+                      </span>
+                      {hasCompleteAddress && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-primary"
+                          onClick={() => openAddressNavigation(customer.street!, customer.zip_code!, customer.city!)}
+                        >
+                          <Navigation className="h-3.5 w-3.5 mr-1" />
+                          Route
+                        </Button>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
