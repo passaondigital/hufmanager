@@ -169,6 +169,51 @@ async function sendPaymentConfirmationEmail(
   }
 }
 
+// Send push notification for payment confirmation
+async function sendPaymentPushNotification(
+  supabaseUrl: string,
+  supabaseServiceKey: string,
+  userId: string,
+  invoiceNumber: string,
+  amount: number,
+  isProvider: boolean
+): Promise<void> {
+  const formattedAmount = formatCurrency(amount);
+  
+  const title = isProvider 
+    ? "💰 Zahlung erhalten"
+    : "✅ Zahlung bestätigt";
+  
+  const body = isProvider
+    ? `Rechnung ${invoiceNumber}: ${formattedAmount} via CopeCart erhalten`
+    : `Ihre Zahlung über ${formattedAmount} wurde erfolgreich verarbeitet`;
+  
+  try {
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${supabaseServiceKey}`,
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        title,
+        body,
+        url: isProvider ? "/rechnungen" : "/meine-rechnungen",
+      }),
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      console.log(`[copecart] Push notification sent to ${isProvider ? 'provider' : 'client'}: ${result.sent} delivered`);
+    } else {
+      console.error(`[copecart] Push notification failed: ${response.status}`);
+    }
+  } catch (error) {
+    console.error(`[copecart] Failed to send push notification:`, error);
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("Copecart webhook received");
 
@@ -341,6 +386,31 @@ const handler = async (req: Request): Promise<Response> => {
               }
             } else {
               console.log("[copecart] Resend not configured, skipping email notifications");
+            }
+            
+            // Send push notifications (works independently of email)
+            // Push to provider
+            if (invoice.provider_id) {
+              await sendPaymentPushNotification(
+                supabaseUrl,
+                supabaseServiceKey,
+                invoice.provider_id,
+                invoice.invoice_number || invoice.id.slice(0, 8),
+                invoice.total_amount,
+                true // isProvider
+              );
+            }
+            
+            // Push to client
+            if (invoice.client_id) {
+              await sendPaymentPushNotification(
+                supabaseUrl,
+                supabaseServiceKey,
+                invoice.client_id,
+                invoice.invoice_number || invoice.id.slice(0, 8),
+                invoice.total_amount,
+                false // isProvider
+              );
             }
           }
         }
