@@ -39,6 +39,7 @@ import { ReviewsManagement } from "@/components/management/ReviewsManagement";
 import { SectionManager } from "@/components/landing/SectionManager";
 import { GalleryManager } from "@/components/management/GalleryManager";
 import { AVVSigningCard } from "@/components/settings/AVVSigningCard";
+import { PaymentSettingsCard } from "@/components/settings/PaymentSettingsCard";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -821,23 +822,27 @@ Steuernummer: 12/345/67890
 
         {/* Payment */}
         <TabsContent value="payment" className="mt-6 space-y-6">
+          {/* New Payment Settings Card */}
+          <PaymentSettingsCard />
+
+          {/* Existing Payment Integrations */}
           <Card className="animate-slide-up">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                Zahlungslinks
+                Weitere Zahlungsanbieter
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Info className="h-4 w-4 text-muted-foreground hover:text-[#F47B20] cursor-help transition-colors" />
                     </TooltipTrigger>
                     <TooltipContent side="right" className="max-w-xs">
-                      <p>Deine Bankdaten und Zahlungsziele. Lege fest, wohin Kunden überweisen sollen und welche Fristen (z.B. 7 Tage) standardmäßig auf der Rechnung stehen.</p>
+                      <p>Zusätzliche Zahlungsanbieter für verschiedene Zahlungsmethoden.</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </CardTitle>
               <CardDescription>
-                Verbinden Sie Ihre Zahlungsanbieter für einfache Rechnungsstellung
+                Weitere Zahlungsanbieter-Integrationen
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -852,15 +857,6 @@ Steuernummer: 12/345/67890
               </div>
 
               <div className="space-y-2">
-                <Label>CopeCart Vendor ID</Label>
-                <Input
-                  placeholder="Ihre Vendor ID"
-                  value={formData.copecart_vendor_id}
-                  onChange={(e) => setFormData({ ...formData, copecart_vendor_id: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
                 <Label>PayPal.me Link</Label>
                 <Input
                   placeholder="paypal.me/IhrName"
@@ -870,7 +866,7 @@ Steuernummer: 12/345/67890
               </div>
 
               <div className="flex justify-end">
-                <Button className="gap-2" onClick={handleSave} disabled={saveMutation.isPending}>
+                <Button className="gap-2 bg-[#F47B20] hover:bg-[#F47B20]/90" onClick={handleSave} disabled={saveMutation.isPending}>
                   <Save className="h-4 w-4" />
                   {saveMutation.isPending ? "Speichern..." : "Speichern"}
                 </Button>

@@ -27,11 +27,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Plus, Edit, Clock, Euro, Info } from "lucide-react";
+import { Plus, Edit, Clock, Euro, Info, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ServicePaymentModal } from "@/components/services/ServicePaymentModal";
 
 const categoryColors: Record<string, string> = {
   Standard: "bg-accent/10 text-accent",
@@ -75,6 +76,7 @@ interface Service {
 const Services = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [paymentModalService, setPaymentModalService] = useState<Service | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -261,6 +263,23 @@ const Services = () => {
                       }
                     />
                   </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => setPaymentModalService(service)}
+                          className="text-muted-foreground hover:text-[#F47B20]"
+                        >
+                          <Link2 className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>CopeCart-Verknüpfung</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <Button variant="ghost" size="icon" onClick={() => openEditDialog(service)}>
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -395,6 +414,13 @@ const Services = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Service Payment Modal */}
+      <ServicePaymentModal
+        isOpen={!!paymentModalService}
+        onClose={() => setPaymentModalService(null)}
+        service={paymentModalService}
+      />
     </div>
   );
 };
