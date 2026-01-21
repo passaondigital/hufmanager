@@ -626,6 +626,7 @@ export type Database = {
           travel_cost_per_km: number | null
           updated_at: string
           user_id: string | null
+          vat_id: string | null
         }
         Insert: {
           about_text?: string | null
@@ -662,6 +663,7 @@ export type Database = {
           travel_cost_per_km?: number | null
           updated_at?: string
           user_id?: string | null
+          vat_id?: string | null
         }
         Update: {
           about_text?: string | null
@@ -698,6 +700,7 @@ export type Database = {
           travel_cost_per_km?: number | null
           updated_at?: string
           user_id?: string | null
+          vat_id?: string | null
         }
         Relationships: []
       }
@@ -773,6 +776,7 @@ export type Database = {
           email: string | null
           full_name: string
           id: string
+          is_business: boolean | null
           notes: string | null
           organization_id: string | null
           phone: string | null
@@ -782,6 +786,7 @@ export type Database = {
           source: string | null
           street: string | null
           updated_at: string
+          vat_id: string | null
           zip_code: string | null
         }
         Insert: {
@@ -793,6 +798,7 @@ export type Database = {
           email?: string | null
           full_name: string
           id?: string
+          is_business?: boolean | null
           notes?: string | null
           organization_id?: string | null
           phone?: string | null
@@ -802,6 +808,7 @@ export type Database = {
           source?: string | null
           street?: string | null
           updated_at?: string
+          vat_id?: string | null
           zip_code?: string | null
         }
         Update: {
@@ -813,6 +820,7 @@ export type Database = {
           email?: string | null
           full_name?: string
           id?: string
+          is_business?: boolean | null
           notes?: string | null
           organization_id?: string | null
           phone?: string | null
@@ -822,6 +830,7 @@ export type Database = {
           source?: string | null
           street?: string | null
           updated_at?: string
+          vat_id?: string | null
           zip_code?: string | null
         }
         Relationships: [

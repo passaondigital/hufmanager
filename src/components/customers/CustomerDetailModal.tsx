@@ -46,6 +46,7 @@ import {
   AlertTriangle,
   Navigation,
   FileText,
+  Building2,
 } from "lucide-react";
 import { ProviderHorseEditSheet } from "@/components/customers/ProviderHorseEditSheet";
 import { ClientInvoicesSection } from "@/components/invoices/ClientInvoicesSection";
@@ -76,6 +77,8 @@ interface Customer {
   has_logged_in?: boolean;
   invited_at?: string;
   created_at?: string;
+  is_business?: boolean;
+  vat_id?: string;
 }
 
 interface Props {
@@ -107,6 +110,8 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
     street: "",
     zip_code: "",
     city: "",
+    is_business: false,
+    vat_id: "",
   });
 
   // Initialize edit form when customer changes
@@ -119,6 +124,8 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
         street: customer.street || "",
         zip_code: customer.zip_code || "",
         city: customer.city || "",
+        is_business: customer.is_business || false,
+        vat_id: customer.vat_id || "",
       });
     }
   };
@@ -133,6 +140,8 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
       street: string;
       zip_code: string;
       city: string;
+      is_business: boolean;
+      vat_id: string;
     }) => {
       const { error } = await supabase
         .from("profiles")
@@ -143,6 +152,8 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
           street: data.street || null,
           zip_code: data.zip_code || null,
           city: data.city || null,
+          is_business: data.is_business,
+          vat_id: data.vat_id || null,
         })
         .eq("id", data.id);
       if (error) throw error;
@@ -345,6 +356,34 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                       />
                     </div>
                   </div>
+                  
+                  {/* Business Customer Toggle */}
+                  <div className="space-y-3 p-3 bg-muted/50 rounded-lg border">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="is_business"
+                        checked={editForm.is_business}
+                        onChange={(e) => setEditForm({ ...editForm, is_business: e.target.checked })}
+                        className="h-4 w-4 rounded border-border"
+                      />
+                      <Label htmlFor="is_business" className="cursor-pointer flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-primary" />
+                        Geschäftskunde (B2B)
+                      </Label>
+                    </div>
+                    
+                    {editForm.is_business && (
+                      <div className="space-y-2 pl-7">
+                        <Label>USt-IdNr.</Label>
+                        <Input
+                          placeholder="DE123456789"
+                          value={editForm.vat_id}
+                          onChange={(e) => setEditForm({ ...editForm, vat_id: e.target.value })}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -362,6 +401,15 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                       </span>
                     )}
                   </div>
+                  
+                  {/* Business customer badge */}
+                  {customer.is_business && (
+                    <Badge variant="secondary" className="flex items-center gap-1 w-fit">
+                      <Building2 className="h-3 w-3" />
+                      Geschäftskunde
+                      {customer.vat_id && <span className="ml-1 font-mono text-xs">({customer.vat_id})</span>}
+                    </Badge>
+                  )}
                   
                   {/* Address display with navigation */}
                   {(customer.street || customer.zip_code || customer.city) && (
