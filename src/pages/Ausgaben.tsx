@@ -188,8 +188,8 @@ export default function Ausgaben() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-foreground">
-              {totalThisMonth.toLocaleString("de-DE", { style: "currency", currency: "EUR" })}
+            <p className="text-3xl font-bold text-destructive">
+              -{totalThisMonth.toLocaleString("de-DE", { style: "currency", currency: "EUR" })}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               {thisMonthExpenses.length} Einträge
@@ -313,8 +313,8 @@ export default function Ausgaben() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="text-right font-medium whitespace-nowrap">
-                          {Number(expense.amount).toLocaleString("de-DE", {
+                        <TableCell className="text-right font-medium whitespace-nowrap text-destructive">
+                          -{Number(expense.amount).toLocaleString("de-DE", {
                             style: "currency",
                             currency: "EUR",
                           })}
