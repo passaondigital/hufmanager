@@ -97,6 +97,7 @@ interface ProviderData {
     module_analytics?: boolean;
     beta_features?: boolean;
   } | null;
+  feature_statuses: FeatureStatuses | null;
   is_suspended: boolean | null;
   suspended_at: string | null;
   suspended_reason: string | null;
@@ -127,7 +128,10 @@ const PLAN_OVERRIDE_OPTIONS = [
   { value: "employee", label: "👤 Mitarbeiter" },
 ];
 
-import { FeatureStatuses, FeatureStatus, FeatureKey, FEATURE_DEFINITIONS } from "@/types/featureFlags";
+import { FeatureStatuses, FeatureStatus, FeatureKey, FEATURE_DEFINITIONS, migrateBooleanToStatus } from "@/types/featureFlags";
+import { ProviderFeatureEditor } from "@/components/admin/ProviderFeatureEditor";
+import { GlobalFeatureFlagsManager } from "@/components/admin/GlobalFeatureFlagsManager";
+import { FeatureRolloutDashboard } from "@/components/admin/FeatureRolloutDashboard";
 
 const DEFAULT_FEATURE_STATUSES: FeatureStatuses = {
   module_invoicing: 'public',
@@ -218,6 +222,7 @@ export default function MissionControl() {
   const [editPlanOverride, setEditPlanOverride] = useState<string>("standard");
   const [editAccessValidUntil, setEditAccessValidUntil] = useState<string>("");
   const [editFeatureFlags, setEditFeatureFlags] = useState(DEFAULT_FEATURE_FLAGS);
+  const [editFeatureStatuses, setEditFeatureStatuses] = useState<FeatureStatuses>(DEFAULT_FEATURE_STATUSES);
   const [suspendReason, setSuspendReason] = useState("");
   
   // Business settings edit state
@@ -399,6 +404,7 @@ export default function MissionControl() {
           plan_override: profile.plan_override,
           access_valid_until: profile.access_valid_until,
           feature_flags: profile.feature_flags as ProviderData["feature_flags"],
+          feature_statuses: profile.feature_statuses as FeatureStatuses | null,
           is_suspended: profile.is_suspended,
           suspended_at: profile.suspended_at,
           suspended_reason: profile.suspended_reason,
@@ -628,6 +634,15 @@ export default function MissionControl() {
       ...DEFAULT_FEATURE_FLAGS,
       ...(provider.feature_flags || {}),
     });
+    // Migrate boolean flags to status-based system
+    const migratedStatuses = migrateBooleanToStatus(
+      provider.feature_flags,
+      provider.feature_statuses || null
+    );
+    setEditFeatureStatuses({
+      ...DEFAULT_FEATURE_STATUSES,
+      ...migratedStatuses,
+    });
     setSuspendReason(provider.suspended_reason || "");
     // Business settings
     setEditBusinessName(provider.business_name || "");
@@ -647,10 +662,12 @@ export default function MissionControl() {
     setSaving(true);
     try {
       // Update profile
+      // Update profile with both legacy flags and new feature statuses
       const profileData: Record<string, unknown> = {
         plan_override: editPlanOverride === "standard" ? null : editPlanOverride,
         access_valid_until: editAccessValidUntil ? new Date(editAccessValidUntil).toISOString() : null,
         feature_flags: editFeatureFlags,
+        feature_statuses: editFeatureStatuses,
         zip_code: editZipCode || null,
         city: editCity || null,
         phone: editPhone || null,
@@ -1011,6 +1028,10 @@ export default function MissionControl() {
             <TabsTrigger value="tools" className="gap-2">
               <Megaphone className="w-4 h-4" />
               Tools
+            </TabsTrigger>
+            <TabsTrigger value="rollout" className="gap-2">
+              <Sparkles className="w-4 h-4" />
+              Feature Rollout
             </TabsTrigger>
           </TabsList>
 
@@ -1999,6 +2020,19 @@ export default function MissionControl() {
               <AdminFeedbackViewer />
             </div>
           </TabsContent>
+
+          <TabsContent value="rollout" className="space-y-6">
+            <GlobalFeatureFlagsManager />
+            <FeatureRolloutDashboard 
+              providers={providers}
+              onProviderClick={(providerId) => {
+                const provider = providers.find(p => p.id === providerId);
+                if (provider) {
+                  openEditDialog(provider);
+                }
+              }}
+            />
+          </TabsContent>
         </Tabs>
 
         {/* Quick-View Drawer */}
@@ -2310,37 +2344,21 @@ export default function MissionControl() {
                 </TabsContent>
 
                 <TabsContent value="features" className="space-y-4 mt-4">
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Steuere, welche Module dieser Provider sieht und nutzen kann.
-                  </p>
-
-                  <div className="space-y-3">
-                    {FEATURE_DEFINITIONS.map((feature) => {
-                      const currentStatus = (editFeatureFlags as any)[feature.key] ? 'public' : 'disabled';
-                      
-                      return (
-                        <div 
-                          key={feature.key}
-                          className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
-                            currentStatus === 'disabled' 
-                              ? "bg-muted/50 border-muted opacity-60" 
-                              : "bg-card border-border"
-                          }`}
-                        >
-                          <div className="flex-1">
-                            <Label className="font-medium">{feature.name}</Label>
-                            <p className="text-sm text-muted-foreground">{feature.description}</p>
-                          </div>
-                          <Switch
-                            checked={(editFeatureFlags as any)[feature.key] === true}
-                            onCheckedChange={(checked) =>
-                              setEditFeatureFlags({ ...editFeatureFlags, [feature.key]: checked })
-                            }
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <ProviderFeatureEditor
+                    featureStatuses={editFeatureStatuses}
+                    onFeatureStatusChange={(key, status) => {
+                      setEditFeatureStatuses(prev => ({
+                        ...prev,
+                        [key]: status,
+                      }));
+                      // Also sync to legacy flags for backward compatibility
+                      setEditFeatureFlags(prev => ({
+                        ...prev,
+                        [key]: status === 'public' || status === 'beta' || status === 'early_access',
+                      }));
+                    }}
+                    disabled={saving}
+                  />
                 </TabsContent>
 
                 <TabsContent value="danger" className="space-y-4 mt-4">
