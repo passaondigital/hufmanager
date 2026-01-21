@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileText, Search, Plus, Eye, Download, Trash2, MoreVertical, Loader2, CheckCircle, Ban } from "lucide-react";
+import { FileText, Search, Plus, Eye, Download, Trash2, MoreVertical, Loader2, CheckCircle, Ban, Link2, Copy } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { CreateInvoiceModal } from "@/components/invoices/CreateInvoiceModal";
@@ -50,6 +50,9 @@ interface Invoice {
   provider_id: string | null;
   notes: string | null;
   payment_method: string | null;
+  payment_link: string | null;
+  payment_status: string | null;
+  paid_at: string | null;
   cancelled_at: string | null;
   cancellation_reason: string | null;
   horse: {
@@ -106,6 +109,9 @@ export default function Rechnungen() {
         provider_id,
         notes,
         payment_method,
+        payment_link,
+        payment_status,
+        paid_at,
         cancelled_at,
         cancellation_reason,
         horse:horses(name)
@@ -171,6 +177,20 @@ export default function Rechnungen() {
       default:
         return <Badge variant="secondary">Offen</Badge>;
     }
+  };
+
+  const getPaymentStatusBadge = (paymentStatus: string | null, paymentLink: string | null) => {
+    if (!paymentLink) return null;
+    
+    if (paymentStatus === "paid") {
+      return <Badge className="bg-green-500/10 text-green-600 border-green-500/20">Bezahlt</Badge>;
+    }
+    return <Badge className="bg-destructive/10 text-destructive border-destructive/20">Unbezahlt</Badge>;
+  };
+
+  const handleCopyPaymentLink = (paymentLink: string) => {
+    navigator.clipboard.writeText(paymentLink);
+    toast({ title: "Zahlungslink kopiert", description: "Der Link wurde in die Zwischenablage kopiert." });
   };
 
   const formatCurrency = (amount: number) => {
@@ -258,7 +278,12 @@ export default function Rechnungen() {
     
     const { error } = await supabase
       .from("invoices")
-      .update({ status: "paid", payment_method: selectedPaymentMethod })
+      .update({ 
+        status: "paid", 
+        payment_method: selectedPaymentMethod,
+        payment_status: "paid",
+        paid_at: new Date().toISOString()
+      })
       .eq("id", invoiceToMarkPaid.id);
 
     if (error) {
@@ -366,6 +391,17 @@ export default function Rechnungen() {
                         {invoice.invoice_number || `Rechnung`}
                       </span>
                       {getStatusBadge(invoice.status, invoice.cancelled_at)}
+                      {invoice.payment_link && invoice.payment_method === "CopeCart" && (
+                        <Badge 
+                          variant="outline" 
+                          className={invoice.payment_status === "paid" 
+                            ? "bg-green-500/10 text-green-600 border-green-500/20" 
+                            : "bg-destructive/10 text-destructive border-destructive/20"
+                          }
+                        >
+                          {invoice.payment_status === "paid" ? "CopeCart ✓" : "CopeCart offen"}
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {format(new Date(invoice.issue_date), "dd. MMMM yyyy", { locale: de })}
@@ -407,6 +443,24 @@ export default function Rechnungen() {
                           <Download className="h-4 w-4 mr-2" />
                           Herunterladen
                         </DropdownMenuItem>
+                        {invoice.payment_link && invoice.status !== "paid" && !invoice.cancelled_at && (
+                          <DropdownMenuItem 
+                            onClick={() => handleCopyPaymentLink(invoice.payment_link!)}
+                            className="text-[#F47B20] focus:text-[#F47B20]"
+                          >
+                            <Copy className="h-4 w-4 mr-2" />
+                            Zahlungslink kopieren
+                          </DropdownMenuItem>
+                        )}
+                        {invoice.payment_link && invoice.status !== "paid" && !invoice.cancelled_at && (
+                          <DropdownMenuItem 
+                            onClick={() => window.open(invoice.payment_link!, "_blank")}
+                            className="text-[#F47B20] focus:text-[#F47B20]"
+                          >
+                            <Link2 className="h-4 w-4 mr-2" />
+                            Zahlungslink öffnen
+                          </DropdownMenuItem>
+                        )}
                         {invoice.status !== "paid" && !invoice.cancelled_at && (
                           <DropdownMenuItem 
                             onClick={() => setInvoiceToMarkPaid(invoice)}
@@ -419,6 +473,7 @@ export default function Rechnungen() {
                         {invoice.status === "paid" && invoice.payment_method && (
                           <DropdownMenuItem disabled className="text-muted-foreground">
                             Zahlart: {invoice.payment_method}
+                            {invoice.paid_at && ` (${format(new Date(invoice.paid_at), "dd.MM.yyyy", { locale: de })})`}
                           </DropdownMenuItem>
                         )}
                         {!invoice.cancelled_at && (

@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, FileText, Eye, Download, Search, Loader2, Mail, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, FileText, Eye, Download, Search, Loader2, Mail, CheckCircle2, CreditCard } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +40,9 @@ interface Invoice {
   pdf_url: string | null;
   provider_id: string | null;
   notes: string | null;
+  payment_link: string | null;
+  payment_status: string | null;
+  payment_method: string | null;
   horse: {
     name: string;
   } | null;
@@ -104,6 +107,9 @@ export default function ClientInvoices() {
         pdf_url,
         provider_id,
         notes,
+        payment_link,
+        payment_status,
+        payment_method,
         horse:horses(name)
       `)
       .eq("client_id", user.id)
@@ -384,12 +390,28 @@ export default function ClientInvoices() {
                           🐴 {invoice.horse.name}
                         </p>
                       )}
-                      <div className="flex items-center gap-2 pt-1">
+                      <div className="flex items-center gap-2 pt-1 flex-wrap">
                         <span className="font-bold text-foreground">
                           {formatCurrency(invoice.total_amount)}
                         </span>
                         {getStatusBadge(invoice.status)}
+                        {invoice.payment_link && invoice.payment_method === "CopeCart" && invoice.status !== "paid" && (
+                          <Badge className="bg-[#F47B20]/10 text-[#F47B20] border-[#F47B20]/20">
+                            CopeCart
+                          </Badge>
+                        )}
                       </div>
+                      
+                      {/* Prominent "Jetzt bezahlen" button for CopeCart unpaid invoices */}
+                      {invoice.payment_link && invoice.status !== "paid" && invoice.payment_status !== "paid" && (
+                        <Button
+                          className="w-full mt-2 bg-[#F47B20] hover:bg-[#F47B20]/90 text-white"
+                          onClick={() => window.open(invoice.payment_link!, "_blank")}
+                        >
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          Jetzt bezahlen
+                        </Button>
+                      )}
                     </div>
                     <div className="flex flex-col gap-2">
                       {generatingPdfFor === invoice.id || sendingEmailFor === invoice.id || updatingStatusFor === invoice.id ? (
@@ -423,7 +445,7 @@ export default function ClientInvoices() {
                           >
                             <Mail className="h-4 w-4" />
                           </Button>
-                          {invoice.status !== "paid" && (
+                          {invoice.status !== "paid" && !invoice.payment_link && (
                             <Button
                               variant="outline"
                               size="icon"
