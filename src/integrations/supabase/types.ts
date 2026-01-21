@@ -1038,6 +1038,36 @@ export type Database = {
         }
         Relationships: []
       }
+      global_feature_defaults: {
+        Row: {
+          created_at: string | null
+          default_status: Database["public"]["Enums"]["feature_status"]
+          description: string | null
+          feature_key: string
+          feature_name: string
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_status?: Database["public"]["Enums"]["feature_status"]
+          description?: string | null
+          feature_key: string
+          feature_name: string
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          default_status?: Database["public"]["Enums"]["feature_status"]
+          description?: string | null
+          feature_key?: string
+          feature_name?: string
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       global_products: {
         Row: {
           brand: string
@@ -2279,6 +2309,7 @@ export type Database = {
           email: string | null
           emergency_contacts: Json | null
           feature_flags: Json | null
+          feature_statuses: Json | null
           first_name: string | null
           full_name: string | null
           has_logged_in: boolean | null
@@ -2343,6 +2374,7 @@ export type Database = {
           email?: string | null
           emergency_contacts?: Json | null
           feature_flags?: Json | null
+          feature_statuses?: Json | null
           first_name?: string | null
           full_name?: string | null
           has_logged_in?: boolean | null
@@ -2407,6 +2439,7 @@ export type Database = {
           email?: string | null
           emergency_contacts?: Json | null
           feature_flags?: Json | null
+          feature_statuses?: Json | null
           first_name?: string | null
           full_name?: string | null
           has_logged_in?: boolean | null
@@ -3392,6 +3425,7 @@ export type Database = {
       billing_type: "standard" | "flat_rate" | "series"
       contact_category: "client" | "partner" | "supplier" | "lead"
       equine_type: "horse" | "pony" | "donkey" | "mule" | "zebra"
+      feature_status: "disabled" | "beta" | "early_access" | "public"
       organization_role: "admin" | "employee"
     }
     CompositeTypes: {
@@ -3533,6 +3567,7 @@ export const Constants = {
       billing_type: ["standard", "flat_rate", "series"],
       contact_category: ["client", "partner", "supplier", "lead"],
       equine_type: ["horse", "pony", "donkey", "mule", "zebra"],
+      feature_status: ["disabled", "beta", "early_access", "public"],
       organization_role: ["admin", "employee"],
     },
   },

@@ -1,10 +1,20 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { 
+  FeatureStatus, 
+  FeatureKey, 
+  FeatureStatuses, 
+  migrateBooleanToStatus, 
+  isFeatureAccessible,
+  shouldShowBetaBadge,
+  isFeatureHidden
+} from "@/types/featureFlags";
 
 type SubscriptionStatus = "active" | "cancelled" | "past_due" | "trialing" | "lifetime" | null;
 type SubscriptionPlan = "starter" | "advanced" | "pro" | null;
 
+// Legacy boolean flags for backward compatibility
 interface FeatureFlags {
   module_invoicing: boolean;
   module_chat: boolean;
@@ -27,6 +37,18 @@ const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   beta_features: false,
 };
 
+const DEFAULT_FEATURE_STATUSES: FeatureStatuses = {
+  module_invoicing: 'public',
+  module_chat: 'public',
+  module_maps: 'public',
+  module_academy: 'public',
+  module_hufanalyse: 'public',
+  module_network: 'public',
+  module_analytics: 'public',
+  beta_features: 'disabled',
+  module_team: 'disabled',
+};
+
 interface SubscriptionContextType {
   status: SubscriptionStatus;
   plan: SubscriptionPlan;
@@ -35,10 +57,14 @@ interface SubscriptionContextType {
   isPro: boolean;
   isSuspended: boolean;
   featureFlags: FeatureFlags;
+  featureStatuses: FeatureStatuses;
   planOverride: string | null;
   accessValidUntil: Date | null;
   hasFeature: (feature: string) => boolean;
   hasModuleAccess: (module: keyof FeatureFlags) => boolean;
+  getFeatureStatus: (feature: FeatureKey) => FeatureStatus;
+  isFeatureVisible: (feature: FeatureKey) => boolean;
+  showBetaBadge: (feature: FeatureKey) => boolean;
   refetch: () => Promise<void>;
 }
 
@@ -58,6 +84,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isSuspended, setIsSuspended] = useState(false);
   const [featureFlags, setFeatureFlags] = useState<FeatureFlags>(DEFAULT_FEATURE_FLAGS);
+  const [featureStatuses, setFeatureStatuses] = useState<FeatureStatuses>(DEFAULT_FEATURE_STATUSES);
   const [planOverride, setPlanOverride] = useState<string | null>(null);
   const [accessValidUntil, setAccessValidUntil] = useState<Date | null>(null);
 
@@ -67,6 +94,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       setPlan(null);
       setIsSuspended(false);
       setFeatureFlags(DEFAULT_FEATURE_FLAGS);
+      setFeatureStatuses(DEFAULT_FEATURE_STATUSES);
       setPlanOverride(null);
       setAccessValidUntil(null);
       setLoading(false);
@@ -76,7 +104,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("subscription_status, subscription_plan, is_suspended, feature_flags, plan_override, access_valid_until")
+        .select("subscription_status, subscription_plan, is_suspended, feature_flags, feature_statuses, plan_override, access_valid_until")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -90,11 +118,19 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       // Set suspension status
       setIsSuspended(data?.is_suspended === true);
 
-      // Set feature flags with defaults
+      // Set feature flags with defaults (legacy boolean)
       const flags = data?.feature_flags as Record<string, boolean> | null;
       setFeatureFlags({
         ...DEFAULT_FEATURE_FLAGS,
         ...(flags || {}),
+      });
+
+      // Set feature statuses (new granular system)
+      const statuses = data?.feature_statuses as FeatureStatuses | null;
+      const migratedStatuses = migrateBooleanToStatus(flags, statuses);
+      setFeatureStatuses({
+        ...DEFAULT_FEATURE_STATUSES,
+        ...migratedStatuses,
       });
 
       // Set plan override
@@ -173,9 +209,33 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     return planFeatures.includes(feature);
   };
 
+  // Legacy boolean check for backward compatibility
   const hasModuleAccess = (module: keyof FeatureFlags): boolean => {
     if (isSuspended) return false;
+    // Check new status system first
+    const status = featureStatuses[module as FeatureKey];
+    if (status) {
+      return isFeatureAccessible(status);
+    }
+    // Fall back to boolean flags
     return featureFlags[module] === true;
+  };
+
+  // Get the status of a specific feature
+  const getFeatureStatus = (feature: FeatureKey): FeatureStatus => {
+    return featureStatuses[feature] || 'public';
+  };
+
+  // Check if feature should be visible in UI (not disabled)
+  const isFeatureVisible = (feature: FeatureKey): boolean => {
+    if (isSuspended) return false;
+    const status = featureStatuses[feature];
+    return !isFeatureHidden(status);
+  };
+
+  // Check if feature should show beta badge
+  const showBetaBadge = (feature: FeatureKey): boolean => {
+    return shouldShowBetaBadge(featureStatuses[feature]);
   };
 
   return (
@@ -188,10 +248,14 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         isPro,
         isSuspended,
         featureFlags,
+        featureStatuses,
         planOverride,
         accessValidUntil,
         hasFeature,
         hasModuleAccess,
+        getFeatureStatus,
+        isFeatureVisible,
+        showBetaBadge,
         refetch: fetchSubscription,
       }}
     >
