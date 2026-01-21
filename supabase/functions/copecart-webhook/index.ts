@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { Resend } from "https://esm.sh/resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -49,6 +50,125 @@ function constantTimeCompare(a: string, b: string): boolean {
   return result === 0;
 }
 
+// Format currency helper
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("de-DE", {
+    style: "currency",
+    currency: "EUR",
+  }).format(amount);
+}
+
+// Send payment confirmation email
+async function sendPaymentConfirmationEmail(
+  resend: InstanceType<typeof Resend>,
+  to: string,
+  recipientName: string,
+  invoiceNumber: string,
+  amount: number,
+  providerName: string,
+  isProvider: boolean
+): Promise<void> {
+  const formattedAmount = formatCurrency(amount);
+  
+  const subject = isProvider 
+    ? `✅ Zahlung erhalten: Rechnung ${invoiceNumber}`
+    : `✅ Zahlung bestätigt: Rechnung ${invoiceNumber}`;
+  
+  const bodyText = isProvider
+    ? `Die Zahlung für Rechnung <strong>${invoiceNumber}</strong> über <strong style="color: #16a34a;">${formattedAmount}</strong> wurde erfolgreich über CopeCart empfangen.`
+    : `Ihre Zahlung für Rechnung <strong>${invoiceNumber}</strong> über <strong style="color: #16a34a;">${formattedAmount}</strong> bei ${providerName} wurde erfolgreich verarbeitet.`;
+
+  try {
+    await resend.emails.send({
+      from: `HufManager <onboarding@resend.dev>`,
+      to: [to],
+      subject,
+      html: `
+        <!DOCTYPE html>
+        <html lang="de">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
+          <table role="presentation" style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 40px 20px;">
+                <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                  <!-- Header -->
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); padding: 32px 40px; text-align: center;">
+                      <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">
+                        ✅ Zahlung erfolgreich
+                      </h1>
+                    </td>
+                  </tr>
+                  
+                  <!-- Body -->
+                  <tr>
+                    <td style="padding: 40px;">
+                      <h2 style="margin: 0 0 16px; color: #111827; font-size: 20px; font-weight: 600;">
+                        Guten Tag ${recipientName},
+                      </h2>
+                      
+                      <p style="margin: 0 0 24px; color: #4b5563; font-size: 16px; line-height: 1.6;">
+                        ${bodyText}
+                      </p>
+                      
+                      <!-- Payment Card -->
+                      <table role="presentation" style="width: 100%; background-color: #f0fdf4; border-radius: 8px; border: 1px solid #bbf7d0; margin-bottom: 24px;">
+                        <tr>
+                          <td style="padding: 24px;">
+                            <table role="presentation" style="width: 100%;">
+                              <tr>
+                                <td style="padding-bottom: 12px;">
+                                  <span style="color: #6b7280; font-size: 14px;">Rechnungsnummer</span><br>
+                                  <span style="color: #111827; font-size: 16px; font-weight: 600;">${invoiceNumber}</span>
+                                </td>
+                                <td style="padding-bottom: 12px; text-align: right;">
+                                  <span style="color: #6b7280; font-size: 14px;">Betrag</span><br>
+                                  <span style="color: #16a34a; font-size: 20px; font-weight: 700;">${formattedAmount}</span>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td colspan="2">
+                                  <span style="color: #6b7280; font-size: 14px;">Status</span><br>
+                                  <span style="display: inline-block; background-color: #16a34a; color: #ffffff; padding: 4px 12px; border-radius: 4px; font-size: 14px; font-weight: 600;">Bezahlt</span>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                      
+                      <p style="margin: 0; color: #4b5563; font-size: 14px; line-height: 1.6;">
+                        ${isProvider ? "Die Rechnung wurde automatisch als bezahlt markiert." : "Vielen Dank für Ihre Zahlung!"}
+                      </p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background-color: #f9fafb; padding: 24px 40px; border-top: 1px solid #e5e7eb;">
+                      <p style="margin: 0; color: #9ca3af; font-size: 11px; text-align: center;">
+                        Diese E-Mail wurde automatisch über HufManager versendet.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `,
+    });
+    console.log(`[copecart] Payment confirmation email sent to ${isProvider ? 'provider' : 'client'}: ${to}`);
+  } catch (error) {
+    console.error(`[copecart] Failed to send email to ${to}:`, error);
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("Copecart webhook received");
 
@@ -86,6 +206,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
     
     // Create service role client for data access
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
@@ -95,15 +216,151 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
 
+    // Initialize Resend for email notifications
+    const resend = resendApiKey ? new Resend(resendApiKey) : null;
+
     // Copecart IPN fields - try multiple possible field names
     const eventType = payload.event || payload.type || payload.event_type;
     const customerEmail = (payload.customer?.email || payload.email || payload.buyer?.email || payload.buyer_email || "").toLowerCase().trim();
     const customerName = payload.customer?.name || payload.buyer?.name || payload.buyer_name || payload.name || "";
     const subscriptionId = payload.subscription_id || payload.id || payload.order_id;
     const productId = payload.product_id || payload.product?.id || "";
+    
+    // Check for custom field (invoice ID for payment links)
+    const customField = payload.custom || payload.custom_field || payload.metadata?.custom || "";
+    
+    console.log("[copecart] Event:", eventType, "| Product:", productId, "| Email:", customerEmail, "| Custom:", customField);
 
-    console.log("[copecart] Event:", eventType, "| Product:", productId, "| Email:", customerEmail);
+    // Check if this is an invoice payment (custom field contains invoice ID)
+    const isInvoicePayment = customField && customField.length > 10; // UUID length check
+    
+    if (isInvoicePayment) {
+      console.log("[copecart] Processing invoice payment for invoice ID:", customField);
+      
+      // Fetch the invoice
+      const { data: invoice, error: invoiceError } = await supabase
+        .from("invoices")
+        .select(`
+          id,
+          invoice_number,
+          total_amount,
+          status,
+          payment_status,
+          client_id,
+          provider_id
+        `)
+        .eq("id", customField)
+        .maybeSingle();
+      
+      if (invoiceError) {
+        console.error("[copecart] Invoice lookup error:", invoiceError.message);
+      }
+      
+      if (invoice) {
+        console.log("[copecart] Invoice found:", invoice.invoice_number);
+        
+        // Check if it's a successful payment event
+        const isSuccessfulPayment = [
+          "order_created",
+          "order.created",
+          "subscription_payment_succeeded",
+          "subscription.payment.succeeded",
+          "payment_completed",
+          "payment.completed",
+          "purchase",
+          "sale",
+        ].includes(eventType);
+        
+        if (isSuccessfulPayment) {
+          // Update invoice status to paid
+          const { error: updateError } = await supabase
+            .from("invoices")
+            .update({
+              status: "paid",
+              payment_status: "paid",
+              paid_at: new Date().toISOString(),
+              payment_external_id: subscriptionId || payload.transaction_id || payload.order_id,
+            })
+            .eq("id", invoice.id);
+          
+          if (updateError) {
+            console.error("[copecart] Failed to update invoice:", updateError.message);
+          } else {
+            console.log("[copecart] Invoice marked as paid:", invoice.invoice_number);
+            
+            // Send email notifications if Resend is configured
+            if (resend) {
+              // Fetch client and provider info for emails
+              const { data: clientProfile } = await supabase
+                .from("profiles")
+                .select("email, full_name")
+                .eq("id", invoice.client_id)
+                .maybeSingle();
+              
+              const { data: providerProfile } = await supabase
+                .from("profiles")
+                .select("email, full_name")
+                .eq("id", invoice.provider_id)
+                .maybeSingle();
+              
+              const { data: businessSettings } = await supabase
+                .from("business_settings")
+                .select("business_name, owner_name, email")
+                .eq("user_id", invoice.provider_id)
+                .maybeSingle();
+              
+              const providerName = businessSettings?.business_name || businessSettings?.owner_name || providerProfile?.full_name || "Ihr Hufbearbeiter";
+              const providerEmail = businessSettings?.email || providerProfile?.email;
+              const clientName = clientProfile?.full_name || customerName || "Kunde";
+              const clientEmail = clientProfile?.email || customerEmail;
+              
+              // Send notification to provider
+              if (providerEmail) {
+                await sendPaymentConfirmationEmail(
+                  resend,
+                  providerEmail,
+                  providerName,
+                  invoice.invoice_number || invoice.id.slice(0, 8),
+                  invoice.total_amount,
+                  providerName,
+                  true // isProvider
+                );
+              }
+              
+              // Send notification to client
+              if (clientEmail) {
+                await sendPaymentConfirmationEmail(
+                  resend,
+                  clientEmail,
+                  clientName,
+                  invoice.invoice_number || invoice.id.slice(0, 8),
+                  invoice.total_amount,
+                  providerName,
+                  false // isProvider
+                );
+              }
+            } else {
+              console.log("[copecart] Resend not configured, skipping email notifications");
+            }
+          }
+        }
+        
+        // Return success for invoice payment processing
+        return new Response(JSON.stringify({ 
+          success: true, 
+          message: "Invoice payment processed",
+          invoiceId: invoice.id,
+          invoiceNumber: invoice.invoice_number,
+        }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      } else {
+        console.log("[copecart] Invoice not found for ID:", customField);
+      }
+    }
 
+    // Continue with subscription processing if no invoice payment
     if (!customerEmail) {
       console.error("No customer email found in payload");
       return new Response(JSON.stringify({ error: "No customer email found" }), {
