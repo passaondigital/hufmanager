@@ -27,17 +27,20 @@ import {
   Lock,
   Warehouse,
   Wallet,
+  FlaskConical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import { useModuleAccessTracker } from "@/hooks/useModuleAccessTracker";
+import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
+import { FeatureKey } from "@/types/featureFlags";
 
 // Stealth feature: Only these emails can see Abo-Matrix
 const STEALTH_EMAILS = ["barhufserviceschmid@gmail.com"];
@@ -59,43 +62,38 @@ function useNewLeadsCount() {
   });
 }
 
-type FeatureFlagKey = "module_invoicing" | "module_chat" | "module_maps" | "module_academy" | "module_hufanalyse" | "module_network" | "module_analytics" | "beta_features";
-
 interface MainNavItem {
   title: string;
   url: string;
   icon: React.ComponentType<{ className?: string }>;
-  module: FeatureFlagKey | null;
+  featureKey: FeatureKey | null;
 }
 
 const baseMainItems: MainNavItem[] = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard, module: null },
-  { title: "Kalender", url: "/kalender", icon: Calendar, module: null },
-  { title: "Kunden", url: "/kunden", icon: Users, module: null },
-  { title: "Netzwerk", url: "/netzwerk", icon: Briefcase, module: "module_network" },
-  { title: "Services", url: "/services", icon: Scissors, module: null },
-  { title: "Material / Lager", url: "/lager", icon: Warehouse, module: null },
-  { title: "Ausgaben", url: "/ausgaben", icon: Wallet, module: null },
-  { title: "Rechnungen", url: "/rechnungen", icon: FileText, module: "module_invoicing" },
-  { title: "Hufanalyse", url: "/hufanalyse", icon: ClipboardList, module: "module_hufanalyse" },
-  { title: "Chat", url: "/chat", icon: MessagesSquare, module: "module_chat" },
+  { title: "Dashboard", url: "/", icon: LayoutDashboard, featureKey: null },
+  { title: "Kalender", url: "/kalender", icon: Calendar, featureKey: null },
+  { title: "Kunden", url: "/kunden", icon: Users, featureKey: null },
+  { title: "Netzwerk", url: "/netzwerk", icon: Briefcase, featureKey: "module_network" },
+  { title: "Services", url: "/services", icon: Scissors, featureKey: null },
+  { title: "Material / Lager", url: "/lager", icon: Warehouse, featureKey: null },
+  { title: "Ausgaben", url: "/ausgaben", icon: Wallet, featureKey: null },
+  { title: "Rechnungen", url: "/rechnungen", icon: FileText, featureKey: "module_invoicing" },
+  { title: "Hufanalyse", url: "/hufanalyse", icon: ClipboardList, featureKey: "module_hufanalyse" },
+  { title: "Chat", url: "/chat", icon: MessagesSquare, featureKey: "module_chat" },
 ];
 
 interface BottomNavItem {
   title: string;
   url: string;
   icon: React.ComponentType<{ className?: string }>;
-  module: FeatureFlagKey | null;
-}
-
-interface BottomNavItemWithStatus extends BottomNavItem {
+  featureKey: FeatureKey | null;
   comingSoon?: boolean;
 }
 
-const bottomItems: BottomNavItemWithStatus[] = [
-  { title: "Academy", url: "/academy", icon: GraduationCap, module: "module_academy", comingSoon: true },
-  { title: "Geld verdienen", url: "/partner", icon: Gift, module: null },
-  { title: "Management", url: "/management", icon: Settings, module: null },
+const bottomItems: BottomNavItem[] = [
+  { title: "Academy", url: "/academy", icon: GraduationCap, featureKey: "module_academy", comingSoon: true },
+  { title: "Geld verdienen", url: "/partner", icon: Gift, featureKey: null },
+  { title: "Management", url: "/management", icon: Settings, featureKey: null },
 ];
 
 interface AppSidebarProps {
@@ -107,6 +105,7 @@ interface NavItemType {
   url: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: string | number;
+  showBetaBadge?: boolean;
 }
 
 export function AppSidebar({ onNavigate }: AppSidebarProps) {
@@ -114,17 +113,23 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { data: newLeadsCount = 0 } = useNewLeadsCount();
-  const { checkAndTrackModuleAccess, hasModuleAccess } = useModuleAccessTracker();
+  const { isFeatureVisible, showBetaBadge: checkBetaBadge, getFeatureStatus } = useSubscription();
   const { role, user } = useAuth();
   
   const isAdmin = role === "admin";
   const canSeeAboMatrix = user?.email && STEALTH_EMAILS.includes(user.email);
 
-  // All main items with locked status
-  const mainItemsWithStatus = baseMainItems.map(item => ({
-    ...item,
-    isLocked: item.module !== null && !hasModuleAccess(item.module),
-  }));
+  // All main items with visibility and beta status
+  const mainItemsWithStatus = baseMainItems.map(item => {
+    const featureKey = item.featureKey;
+    const isHidden = featureKey !== null && !isFeatureVisible(featureKey);
+    const hasBetaBadge = featureKey !== null && checkBetaBadge(featureKey);
+    return {
+      ...item,
+      isHidden,
+      hasBetaBadge,
+    };
+  }).filter(item => !item.isHidden); // Filter out hidden items
 
   // Dynamic funnel items with real badge count
   const funnelItems: NavItemType[] = [
@@ -135,11 +140,10 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
     { title: "Analyse", url: "/analyse", icon: BarChart3 },
   ];
 
-  const handleLockedClick = (moduleName: FeatureFlagKey) => {
-    checkAndTrackModuleAccess(moduleName);
+  const handleDisabledClick = (featureName: string) => {
     toast({
       title: "Modul nicht verfügbar",
-      description: "Dieses Modul ist für deinen Account nicht aktiviert. Kontaktiere den Support.",
+      description: `${featureName} ist für deinen Account nicht aktiviert. Kontaktiere den Support.`,
       variant: "destructive",
     });
   };
@@ -156,7 +160,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
     }
   };
 
-  const NavItem = ({ item, showBadge = true }: { item: NavItemType; showBadge?: boolean }) => (
+  const NavItem = ({ item, showBadgeCount = true }: { item: NavItemType; showBadgeCount?: boolean }) => (
     <NavLink
       to={item.url}
       onClick={onNavigate}
@@ -175,7 +179,12 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       {!collapsed && (
         <>
           <span className="font-medium text-[15px]">{item.title}</span>
-          {showBadge && item.badge !== undefined && Number(item.badge) > 0 && (
+          {item.showBetaBadge && (
+            <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0 bg-orange-500/20 text-orange-400 border-orange-500/30">
+              BETA
+            </Badge>
+          )}
+          {showBadgeCount && item.badge !== undefined && Number(item.badge) > 0 && (
             <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
               {item.badge}
             </span>
@@ -185,25 +194,33 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
     </NavLink>
   );
 
-  const LockedNavItem = ({ item }: { item: MainNavItem & { isLocked: boolean } }) => (
-    <button
-      onClick={() => item.module && handleLockedClick(item.module)}
+  const NavItemWithBeta = ({ item, hasBetaBadge }: { item: MainNavItem; hasBetaBadge: boolean }) => (
+    <NavLink
+      to={item.url}
+      onClick={onNavigate}
       className={cn(
-        "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group min-h-[48px]",
-        "text-sidebar-foreground/40 hover:bg-sidebar-accent/50 cursor-not-allowed"
+        "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group min-h-[48px]",
+        isActive(item.url)
+          ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/30"
+          : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
       )}
     >
       <item.icon className={cn(
-        "h-5 w-5 flex-shrink-0 transition-colors opacity-50", 
-        collapsed && "mx-auto"
+        "h-5 w-5 flex-shrink-0 transition-colors", 
+        collapsed && "mx-auto",
+        isActive(item.url) && "text-sidebar-primary-foreground"
       )} />
       {!collapsed && (
         <>
-          <span className="font-medium text-[15px] opacity-50">{item.title}</span>
-          <Lock className="ml-auto h-3.5 w-3.5 opacity-50" />
+          <span className="font-medium text-[15px]">{item.title}</span>
+          {hasBetaBadge && (
+            <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0 bg-orange-500/20 text-orange-400 border-orange-500/30">
+              BETA
+            </Badge>
+          )}
         </>
       )}
-    </button>
+    </NavLink>
   );
 
   return (
@@ -250,11 +267,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
             </p>
           )}
           {mainItemsWithStatus.map((item) => (
-            item.isLocked ? (
-              <LockedNavItem key={item.title} item={item} />
-            ) : (
-              <NavItem key={item.title} item={item} showBadge={false} />
-            )
+            <NavItemWithBeta key={item.title} item={item} hasBetaBadge={item.hasBetaBadge} />
           ))}
         </div>
 
@@ -284,7 +297,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
               "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group min-h-[48px]",
               isActive("/abo-matrix")
                 ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/30"
-                : "text-amber-500 hover:bg-sidebar-accent hover:text-amber-400"
+                : "text-sidebar-accent-foreground hover:bg-sidebar-accent"
             )}
           >
             <Diamond className={cn("h-5 w-5 flex-shrink-0", collapsed && "mx-auto")} />
@@ -301,7 +314,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
               "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group min-h-[48px]",
               isActive("/admin/mission-control")
                 ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/30"
-                : "text-amber-500 hover:bg-sidebar-accent hover:text-amber-400"
+                : "text-sidebar-accent-foreground hover:bg-sidebar-accent"
             )}
           >
             <Shield className={cn("h-5 w-5 flex-shrink-0", collapsed && "mx-auto")} />
@@ -310,7 +323,12 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         )}
         
         {bottomItems.map((item) => {
-          const isLocked = item.module !== null && !hasModuleAccess(item.module);
+          const featureKey = item.featureKey;
+          const isHidden = featureKey !== null && !isFeatureVisible(featureKey);
+          const hasBetaBadge = featureKey !== null && checkBetaBadge(featureKey);
+          
+          // Hidden items - don't render
+          if (isHidden) return null;
           
           // Coming Soon items - disabled with badge
           if (item.comingSoon) {
@@ -335,27 +353,35 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
             );
           }
           
-          if (isLocked) {
-            return (
-              <button
-                key={item.title}
-                onClick={() => item.module && handleLockedClick(item.module)}
-                className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group min-h-[48px]",
-                  "text-sidebar-foreground/40 hover:bg-sidebar-accent/50 cursor-not-allowed"
-                )}
-              >
-                <item.icon className={cn("h-5 w-5 flex-shrink-0 opacity-50", collapsed && "mx-auto")} />
-                {!collapsed && (
-                  <>
-                    <span className="font-medium text-[15px] opacity-50">{item.title}</span>
-                    <Lock className="ml-auto h-3.5 w-3.5 opacity-50" />
-                  </>
-                )}
-              </button>
-            );
-          }
-          return <NavItem key={item.title} item={item} showBadge={false} />;
+          return (
+            <NavLink
+              key={item.title}
+              to={item.url}
+              onClick={onNavigate}
+              className={cn(
+                "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group min-h-[48px]",
+                isActive(item.url)
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/30"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              )}
+            >
+              <item.icon className={cn(
+                "h-5 w-5 flex-shrink-0 transition-colors", 
+                collapsed && "mx-auto",
+                isActive(item.url) && "text-sidebar-primary-foreground"
+              )} />
+              {!collapsed && (
+                <>
+                  <span className="font-medium text-[15px]">{item.title}</span>
+                  {hasBetaBadge && (
+                    <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0 bg-orange-500/20 text-orange-400 border-orange-500/30">
+                      BETA
+                    </Badge>
+                  )}
+                </>
+              )}
+            </NavLink>
+          );
         })}
         
         {/* Support Button */}

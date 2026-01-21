@@ -127,6 +127,21 @@ const PLAN_OVERRIDE_OPTIONS = [
   { value: "employee", label: "👤 Mitarbeiter" },
 ];
 
+import { FeatureStatuses, FeatureStatus, FeatureKey, FEATURE_DEFINITIONS } from "@/types/featureFlags";
+
+const DEFAULT_FEATURE_STATUSES: FeatureStatuses = {
+  module_invoicing: 'public',
+  module_chat: 'public',
+  module_maps: 'public',
+  module_academy: 'public',
+  module_hufanalyse: 'public',
+  module_network: 'public',
+  module_analytics: 'public',
+  beta_features: 'disabled',
+  module_team: 'disabled',
+};
+
+// Legacy default for backward compat
 const DEFAULT_FEATURE_FLAGS = {
   module_invoicing: true,
   module_chat: true,
@@ -2299,126 +2314,32 @@ export default function MissionControl() {
                     Steuere, welche Module dieser Provider sieht und nutzen kann.
                   </p>
 
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label>Rechnungen</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Darf Rechnungen schreiben
-                        </p>
-                      </div>
-                      <Switch
-                        checked={editFeatureFlags.module_invoicing}
-                        onCheckedChange={(checked) =>
-                          setEditFeatureFlags({ ...editFeatureFlags, module_invoicing: checked })
-                        }
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label>Chat</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Darf den Chat nutzen
-                        </p>
-                      </div>
-                      <Switch
-                        checked={editFeatureFlags.module_chat}
-                        onCheckedChange={(checked) =>
-                          setEditFeatureFlags({ ...editFeatureFlags, module_chat: checked })
-                        }
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label>Anfahrt / Maps</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Darf die Anfahrts-Funktion nutzen
-                        </p>
-                      </div>
-                      <Switch
-                        checked={editFeatureFlags.module_maps}
-                        onCheckedChange={(checked) =>
-                          setEditFeatureFlags({ ...editFeatureFlags, module_maps: checked })
-                        }
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label>Academy</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Zugriff auf Academy-Inhalte
-                        </p>
-                      </div>
-                      <Switch
-                        checked={editFeatureFlags.module_academy}
-                        onCheckedChange={(checked) =>
-                          setEditFeatureFlags({ ...editFeatureFlags, module_academy: checked })
-                        }
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label>Hufanalyse (LTZ)</Label>
-                        <p className="text-sm text-muted-foreground">
-                          LTZ-Hufanalyse-Funktion
-                        </p>
-                      </div>
-                      <Switch
-                        checked={editFeatureFlags.module_hufanalyse}
-                        onCheckedChange={(checked) =>
-                          setEditFeatureFlags({ ...editFeatureFlags, module_hufanalyse: checked })
-                        }
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label>Netzwerk</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Netzwerk / Connection-Features
-                        </p>
-                      </div>
-                      <Switch
-                        checked={editFeatureFlags.module_network}
-                        onCheckedChange={(checked) =>
-                          setEditFeatureFlags({ ...editFeatureFlags, module_network: checked })
-                        }
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label>Analytics</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Analyse & Statistiken
-                        </p>
-                      </div>
-                      <Switch
-                        checked={editFeatureFlags.module_analytics}
-                        onCheckedChange={(checked) =>
-                          setEditFeatureFlags({ ...editFeatureFlags, module_analytics: checked })
-                        }
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label>Beta Features</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Sieht neue Test-Funktionen
-                        </p>
-                      </div>
-                      <Switch
-                        checked={editFeatureFlags.beta_features}
-                        onCheckedChange={(checked) =>
-                          setEditFeatureFlags({ ...editFeatureFlags, beta_features: checked })
-                        }
-                      />
-                    </div>
+                  <div className="space-y-3">
+                    {FEATURE_DEFINITIONS.map((feature) => {
+                      const currentStatus = (editFeatureFlags as any)[feature.key] ? 'public' : 'disabled';
+                      
+                      return (
+                        <div 
+                          key={feature.key}
+                          className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                            currentStatus === 'disabled' 
+                              ? "bg-muted/50 border-muted opacity-60" 
+                              : "bg-card border-border"
+                          }`}
+                        >
+                          <div className="flex-1">
+                            <Label className="font-medium">{feature.name}</Label>
+                            <p className="text-sm text-muted-foreground">{feature.description}</p>
+                          </div>
+                          <Switch
+                            checked={(editFeatureFlags as any)[feature.key] === true}
+                            onCheckedChange={(checked) =>
+                              setEditFeatureFlags({ ...editFeatureFlags, [feature.key]: checked })
+                            }
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 </TabsContent>
 
