@@ -240,6 +240,56 @@ export type Database = {
         }
         Relationships: []
       }
+      appointment_groups: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date: string
+          id: string
+          location_lat: number | null
+          location_lng: number | null
+          location_name: string | null
+          notes: string | null
+          organization_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date: string
+          id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          location_name?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          location_name?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_groups_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointment_reminders: {
         Row: {
           appointment_id: string
@@ -281,6 +331,7 @@ export type Database = {
       }
       appointments: {
         Row: {
+          assigned_to_user_id: string | null
           completed_at: string | null
           completion_notes: string | null
           completion_pdf_url: string | null
@@ -292,6 +343,7 @@ export type Database = {
           gait_analysis_done: boolean | null
           gait_analysis_ok: boolean | null
           gait_video_url: string | null
+          group_id: string | null
           horse_id: string
           id: string
           is_confirmed_by_client: boolean | null
@@ -299,6 +351,7 @@ export type Database = {
           is_series_appointment: boolean | null
           location: string | null
           notes: string | null
+          organization_id: string | null
           price: number | null
           provider_id: string | null
           recurring_group_id: string | null
@@ -313,6 +366,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_to_user_id?: string | null
           completed_at?: string | null
           completion_notes?: string | null
           completion_pdf_url?: string | null
@@ -324,6 +378,7 @@ export type Database = {
           gait_analysis_done?: boolean | null
           gait_analysis_ok?: boolean | null
           gait_video_url?: string | null
+          group_id?: string | null
           horse_id: string
           id?: string
           is_confirmed_by_client?: boolean | null
@@ -331,6 +386,7 @@ export type Database = {
           is_series_appointment?: boolean | null
           location?: string | null
           notes?: string | null
+          organization_id?: string | null
           price?: number | null
           provider_id?: string | null
           recurring_group_id?: string | null
@@ -345,6 +401,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_to_user_id?: string | null
           completed_at?: string | null
           completion_notes?: string | null
           completion_pdf_url?: string | null
@@ -356,6 +413,7 @@ export type Database = {
           gait_analysis_done?: boolean | null
           gait_analysis_ok?: boolean | null
           gait_video_url?: string | null
+          group_id?: string | null
           horse_id?: string
           id?: string
           is_confirmed_by_client?: boolean | null
@@ -363,6 +421,7 @@ export type Database = {
           is_series_appointment?: boolean | null
           location?: string | null
           notes?: string | null
+          organization_id?: string | null
           price?: number | null
           provider_id?: string | null
           recurring_group_id?: string | null
@@ -378,6 +437,27 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "appointments_assigned_to_user_id_fkey"
+            columns: ["assigned_to_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_assigned_to_user_id_fkey"
+            columns: ["assigned_to_user_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "appointment_groups"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "appointments_horse_id_fkey"
             columns: ["horse_id"]
             isOneToOne: false
@@ -389,6 +469,13 @@ export type Database = {
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -452,6 +539,56 @@ export type Database = {
           video_url?: string | null
         }
         Relationships: []
+      }
+      broadcast_logs: {
+        Row: {
+          channel: string
+          created_at: string
+          id: string
+          message_content: string
+          organization_id: string | null
+          recipient_ids: string[] | null
+          recipients_count: number
+          sent_at: string | null
+          sent_by: string
+          status: string
+          subject: string | null
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          id?: string
+          message_content: string
+          organization_id?: string | null
+          recipient_ids?: string[] | null
+          recipients_count?: number
+          sent_at?: string | null
+          sent_by: string
+          status?: string
+          subject?: string | null
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          id?: string
+          message_content?: string
+          organization_id?: string | null
+          recipient_ids?: string[] | null
+          recipients_count?: number
+          sent_at?: string | null
+          sent_by?: string
+          status?: string
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broadcast_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       business_settings: {
         Row: {
@@ -637,6 +774,7 @@ export type Database = {
           full_name: string
           id: string
           notes: string | null
+          organization_id: string | null
           phone: string | null
           profile_id: string | null
           provider_id: string
@@ -655,6 +793,7 @@ export type Database = {
           full_name: string
           id?: string
           notes?: string | null
+          organization_id?: string | null
           phone?: string | null
           profile_id?: string | null
           provider_id: string
@@ -673,6 +812,7 @@ export type Database = {
           full_name?: string
           id?: string
           notes?: string | null
+          organization_id?: string | null
           phone?: string | null
           profile_id?: string | null
           provider_id?: string
@@ -682,6 +822,13 @@ export type Database = {
           zip_code?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "contacts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "contacts_profile_id_fkey"
             columns: ["profile_id"]
@@ -766,6 +913,7 @@ export type Database = {
           expense_date: string
           id: string
           is_recurring: boolean
+          organization_id: string | null
           receipt_url: string | null
           recurring_interval: string | null
           updated_at: string
@@ -779,6 +927,7 @@ export type Database = {
           expense_date?: string
           id?: string
           is_recurring?: boolean
+          organization_id?: string | null
           receipt_url?: string | null
           recurring_interval?: string | null
           updated_at?: string
@@ -792,12 +941,21 @@ export type Database = {
           expense_date?: string
           id?: string
           is_recurring?: boolean
+          organization_id?: string | null
           receipt_url?: string | null
           recurring_interval?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "expenses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       feedback_reports: {
         Row: {
@@ -1254,6 +1412,7 @@ export type Database = {
           medical_history: string | null
           name: string
           nickname: string | null
+          organization_id: string | null
           owner_id: string
           photo_url: string | null
           readable_id: string | null
@@ -1290,6 +1449,7 @@ export type Database = {
           medical_history?: string | null
           name: string
           nickname?: string | null
+          organization_id?: string | null
           owner_id: string
           photo_url?: string | null
           readable_id?: string | null
@@ -1326,6 +1486,7 @@ export type Database = {
           medical_history?: string | null
           name?: string
           nickname?: string | null
+          organization_id?: string | null
           owner_id?: string
           photo_url?: string | null
           readable_id?: string | null
@@ -1336,6 +1497,13 @@ export type Database = {
           usage?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "horses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "horses_owner_id_fkey"
             columns: ["owner_id"]
@@ -1363,6 +1531,7 @@ export type Database = {
           image_url: string | null
           min_stock: number | null
           notes: string | null
+          organization_id: string | null
           price_purchase: number | null
           price_sell: number | null
           product_name: string
@@ -1380,6 +1549,7 @@ export type Database = {
           image_url?: string | null
           min_stock?: number | null
           notes?: string | null
+          organization_id?: string | null
           price_purchase?: number | null
           price_sell?: number | null
           product_name: string
@@ -1397,6 +1567,7 @@ export type Database = {
           image_url?: string | null
           min_stock?: number | null
           notes?: string | null
+          organization_id?: string | null
           price_purchase?: number | null
           price_sell?: number | null
           product_name?: string
@@ -1410,6 +1581,13 @@ export type Database = {
             columns: ["global_product_id"]
             isOneToOne: false
             referencedRelation: "global_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1476,6 +1654,7 @@ export type Database = {
           invoice_number: string | null
           issue_date: string
           notes: string | null
+          organization_id: string | null
           payment_method: string | null
           pdf_url: string | null
           provider_id: string | null
@@ -1497,6 +1676,7 @@ export type Database = {
           invoice_number?: string | null
           issue_date?: string
           notes?: string | null
+          organization_id?: string | null
           payment_method?: string | null
           pdf_url?: string | null
           provider_id?: string | null
@@ -1518,6 +1698,7 @@ export type Database = {
           invoice_number?: string | null
           issue_date?: string
           notes?: string | null
+          organization_id?: string | null
           payment_method?: string | null
           pdf_url?: string | null
           provider_id?: string | null
@@ -1560,6 +1741,13 @@ export type Database = {
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1940,6 +2128,33 @@ export type Database = {
         }
         Relationships: []
       }
+      organizations: {
+        Row: {
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       product_recipe_items: {
         Row: {
           created_at: string
@@ -2080,6 +2295,8 @@ export type Database = {
           logo_url: string | null
           mobile: string | null
           onboarding_completed: boolean | null
+          org_role: Database["public"]["Enums"]["organization_role"] | null
+          organization_id: string | null
           owner_name: string | null
           phone: string | null
           plan_override: string | null
@@ -2142,6 +2359,8 @@ export type Database = {
           logo_url?: string | null
           mobile?: string | null
           onboarding_completed?: boolean | null
+          org_role?: Database["public"]["Enums"]["organization_role"] | null
+          organization_id?: string | null
           owner_name?: string | null
           phone?: string | null
           plan_override?: string | null
@@ -2204,6 +2423,8 @@ export type Database = {
           logo_url?: string | null
           mobile?: string | null
           onboarding_completed?: boolean | null
+          org_role?: Database["public"]["Enums"]["organization_role"] | null
+          organization_id?: string | null
           owner_name?: string | null
           phone?: string | null
           plan_override?: string | null
@@ -2230,7 +2451,15 @@ export type Database = {
           website?: string | null
           zip_code?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_profiles_organization"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       provider_portal_credentials: {
         Row: {
@@ -3105,6 +3334,7 @@ export type Database = {
         Args: { provider_id_input: string }
         Returns: Json
       }
+      get_user_organization: { Args: { _user_id: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -3130,6 +3360,11 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_master_admin: { Args: never; Returns: boolean }
+      is_org_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_org_member: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
       provider_can_manage_client_horses: {
         Args: { _client_id: string; _provider_id: string }
         Returns: boolean
@@ -3146,9 +3381,18 @@ export type Database = {
     }
     Enums: {
       app_role: "provider" | "client" | "admin"
+      appointment_status:
+        | "scheduled"
+        | "confirmed"
+        | "in_progress"
+        | "completed"
+        | "canceled_by_client"
+        | "canceled_by_provider"
+        | "no_show"
       billing_type: "standard" | "flat_rate" | "series"
       contact_category: "client" | "partner" | "supplier" | "lead"
       equine_type: "horse" | "pony" | "donkey" | "mule" | "zebra"
+      organization_role: "admin" | "employee"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3277,9 +3521,19 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["provider", "client", "admin"],
+      appointment_status: [
+        "scheduled",
+        "confirmed",
+        "in_progress",
+        "completed",
+        "canceled_by_client",
+        "canceled_by_provider",
+        "no_show",
+      ],
       billing_type: ["standard", "flat_rate", "series"],
       contact_category: ["client", "partner", "supplier", "lead"],
       equine_type: ["horse", "pony", "donkey", "mule", "zebra"],
+      organization_role: ["admin", "employee"],
     },
   },
 } as const
