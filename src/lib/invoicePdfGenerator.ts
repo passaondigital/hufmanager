@@ -16,6 +16,7 @@ interface BusinessSettings {
   bank_name: string | null;
   primary_color: string | null;
   tax_number: string | null;
+  vat_id: string | null;
   paypal_link?: string | null;
 }
 
@@ -29,6 +30,7 @@ interface ClientProfile {
   stable_city: string | null;
   stable_zip: string | null;
   readable_id?: string | null;
+  vat_id?: string | null;
 }
 
 interface Invoice {
@@ -43,6 +45,7 @@ interface Invoice {
   customer_type?: string | null;
   horse?: { name: string } | null;
   signature_url?: string | null;
+  client_id?: string | null;
 }
 
 // Design tokens - Premium color palette
@@ -205,6 +208,7 @@ export async function generateInvoicePdf(
     logo_url: null,
     primary_color: "#F47B20",
     tax_number: null,
+    vat_id: null,
     iban: null,
     bic: null,
     bank_name: null,
@@ -222,6 +226,30 @@ export async function generateInvoicePdf(
   } catch {
     // Use defaults
   }
+
+  // Fetch customer VAT ID from contacts table (for B2B clients)
+  let customerVatId: string | null = null;
+  if (invoice.client_id) {
+    try {
+      const { data: contactData } = await supabase
+        .from("contacts")
+        .select("vat_id, is_business")
+        .eq("profile_id", invoice.client_id)
+        .eq("provider_id", providerId)
+        .maybeSingle();
+      
+      if (contactData?.is_business && contactData?.vat_id) {
+        customerVatId = contactData.vat_id;
+      }
+    } catch {
+      // Customer VAT ID not available
+    }
+  }
+  
+  // Merge customer VAT ID into client profile for rendering
+  const enrichedClientProfile = clientProfile 
+    ? { ...clientProfile, vat_id: customerVatId } 
+    : null;
 
   const brandColor = settings.primary_color ? hexToRgb(settings.primary_color) : COLORS.primary;
   const doc = new jsPDF();
@@ -283,7 +311,7 @@ export async function generateInvoicePdf(
   const dueDate = invoice.due_date
     ? format(new Date(invoice.due_date), "dd.MM.yyyy", { locale: de })
     : null;
-  const customerNumber = clientProfile?.readable_id || "-";
+  const customerNumber = enrichedClientProfile?.readable_id || "-";
 
   // Meta data box (right side)
   const metaBoxX = pageWidth - margin - 70;
@@ -349,25 +377,36 @@ export async function generateInvoicePdf(
   doc.setTextColor(COLORS.gray900.r, COLORS.gray900.g, COLORS.gray900.b);
   doc.setFont("helvetica", "bold");
   
-  const clientName = clientProfile?.full_name || "Kunde";
+  const clientName = enrichedClientProfile?.full_name || "Kunde";
   doc.text(clientName, margin, addressY);
   
   doc.setFont("helvetica", "normal");
   let addrY = addressY + 5;
   
-  if (clientProfile?.stable_street) {
-    doc.text(clientProfile.stable_street, margin, addrY);
+  if (enrichedClientProfile?.stable_street) {
+    doc.text(enrichedClientProfile.stable_street, margin, addrY);
     addrY += 4.5;
   }
   
   const clientCityLine = [
-    clientProfile?.stable_zip || clientProfile?.zip_code,
-    clientProfile?.stable_city || clientProfile?.city,
+    enrichedClientProfile?.stable_zip || enrichedClientProfile?.zip_code,
+    enrichedClientProfile?.stable_city || enrichedClientProfile?.city,
   ]
     .filter(Boolean)
     .join(" ");
   if (clientCityLine) {
     doc.text(clientCityLine, margin, addrY);
+    addrY += 4.5;
+  }
+  
+  // Customer VAT ID for B2B clients
+  if (enrichedClientProfile?.vat_id) {
+    addrY += 2;
+    doc.setFontSize(8);
+    doc.setTextColor(COLORS.gray600.r, COLORS.gray600.g, COLORS.gray600.b);
+    doc.text(`Ihre USt-IdNr.: ${enrichedClientProfile.vat_id}`, margin, addrY);
+    doc.setFontSize(10);
+    doc.setTextColor(COLORS.gray900.r, COLORS.gray900.g, COLORS.gray900.b);
     addrY += 4.5;
   }
 
@@ -593,7 +632,10 @@ export async function generateInvoicePdf(
   // FOOTER - 3-Column Layout (Contact, Bank, Legal)
   // ============================================================================
   
-  const footerHeight = 30;
+  // Calculate footer height based on content (extra space for tax IDs)
+  const hasVatId = !!settings.vat_id;
+  const hasTaxNumber = !!settings.tax_number;
+  const footerHeight = 30 + (hasVatId && hasTaxNumber ? 4 : 0);
   const footerY = pageHeight - footerHeight - 10;
   const colWidth = contentWidth / 3;
   
@@ -667,6 +709,10 @@ export async function generateInvoicePdf(
   
   if (settings.owner_name) {
     doc.text(`Inhaber: ${settings.owner_name}`, col3X, col3Y);
+    col3Y += 3.5;
+  }
+  if (settings.vat_id) {
+    doc.text(`USt-IdNr.: ${settings.vat_id}`, col3X, col3Y);
     col3Y += 3.5;
   }
   if (settings.tax_number) {
