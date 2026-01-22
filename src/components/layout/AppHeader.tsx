@@ -16,6 +16,7 @@ import { useTheme } from "@/components/ThemeProvider";
 import { toast } from "@/hooks/use-toast";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { FeierabendWaechter } from "@/components/tracking/FeierabendWaechter";
 import { supabase } from "@/integrations/supabase/client";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 
@@ -113,6 +114,9 @@ export function AppHeader() {
             <span>Installieren</span>
           </Button>
         )}
+
+        {/* Feierabend-Wächter Toggle */}
+        <FeierabendWaechter />
 
         {/* Theme Toggle */}
         <Button
