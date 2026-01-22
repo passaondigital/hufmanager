@@ -263,36 +263,41 @@ export default function Auth() {
             </TabsList>
             
             <TabsContent value="login" className="mt-6">
-              {/* Login Mode Toggle */}
+              {/* Login Mode Toggle - Profi vs Kunde */}
               <div className="mb-6">
-                <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg">
+                <div className="grid grid-cols-2 gap-2 p-1.5 bg-muted rounded-xl border border-border">
                   <button
                     type="button"
                     onClick={() => setLoginMode("provider")}
                     className={cn(
-                      "flex items-center justify-center gap-2 px-3 py-2.5 rounded-md text-sm font-medium transition-all",
+                      "flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-200",
                       loginMode === "provider"
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
+                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     )}
                   >
-                    <Hammer className="h-4 w-4" />
-                    Als Profi
+                    <Hammer className="h-5 w-5" />
+                    Profi Login
                   </button>
                   <button
                     type="button"
                     onClick={() => setLoginMode("client")}
                     className={cn(
-                      "flex items-center justify-center gap-2 px-3 py-2.5 rounded-md text-sm font-medium transition-all",
+                      "flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-200",
                       loginMode === "client"
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
+                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     )}
                   >
-                    <Heart className="h-4 w-4" />
-                    Als Kunde
+                    <Heart className="h-5 w-5" />
+                    Kunden Login
                   </button>
                 </div>
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  {loginMode === "provider" 
+                    ? "Für Hufschmiede & Hufpfleger (#pid)" 
+                    : "Für Pferdebesitzer (#kid)"}
+                </p>
               </div>
 
               <form onSubmit={handleLogin} className="space-y-5">
