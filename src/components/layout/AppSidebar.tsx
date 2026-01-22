@@ -28,6 +28,8 @@ import {
   Warehouse,
   Wallet,
   FlaskConical,
+  Package,
+  UsersRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -69,17 +71,25 @@ interface MainNavItem {
   featureKey: FeatureKey | null;
 }
 
-const baseMainItems: MainNavItem[] = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard, featureKey: null },
-  { title: "Kalender", url: "/kalender", icon: Calendar, featureKey: null },
-  { title: "Kunden", url: "/kunden", icon: Users, featureKey: null },
-  { title: "Netzwerk", url: "/netzwerk", icon: Briefcase, featureKey: "module_network" },
-  { title: "Services", url: "/services", icon: Scissors, featureKey: null },
-  { title: "Material / Lager", url: "/lager", icon: Warehouse, featureKey: null },
-  { title: "Ausgaben", url: "/ausgaben", icon: Wallet, featureKey: null },
-  { title: "Rechnungen", url: "/rechnungen", icon: FileText, featureKey: "module_invoicing" },
-  { title: "Hufanalyse", url: "/hufanalyse", icon: ClipboardList, featureKey: "module_hufanalyse" },
-  { title: "Chat", url: "/chat", icon: MessagesSquare, featureKey: "module_chat" },
+// Die 5 A's - Core Navigation für Profis (#pid)
+interface FiveAsItem {
+  title: string;
+  url: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: number;
+  description: string;
+}
+
+// Erweiterungen - Locked Add-ons
+interface AddonItem {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  locked: boolean;
+}
+
+const addonItems: AddonItem[] = [
+  { title: "Lager", icon: Warehouse, locked: true },
+  { title: "Mitarbeiter", icon: UsersRound, locked: true },
 ];
 
 interface BottomNavItem {
@@ -119,25 +129,26 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
   const isAdmin = role === "admin";
   const canSeeAboMatrix = user?.email && STEALTH_EMAILS.includes(user.email);
 
-  // All main items with visibility and beta status
-  const mainItemsWithStatus = baseMainItems.map(item => {
-    const featureKey = item.featureKey;
-    const isHidden = featureKey !== null && !isFeatureVisible(featureKey);
-    const hasBetaBadge = featureKey !== null && checkBetaBadge(featureKey);
-    return {
-      ...item,
-      isHidden,
-      hasBetaBadge,
-    };
-  }).filter(item => !item.isHidden); // Filter out hidden items
+  // Die 5 A's - Der Profi-Workflow
+  const fiveAsItems: (FiveAsItem & { badge?: number })[] = [
+    { 
+      title: "Anfragen", 
+      url: "/anfragen", 
+      icon: MessageSquare, 
+      badge: newLeadsCount > 0 ? newLeadsCount : undefined,
+      description: "Inbox für neue Leads"
+    },
+    { title: "Angebote", url: "/angebote", icon: FileText, description: "Kostenvoranschläge" },
+    { title: "Aufnahme", url: "/aufnahme", icon: UserPlus, description: "Kunden & Pferde verwalten" },
+    { title: "Auffassen", url: "/kalender", icon: Calendar, description: "Termine & Tour-Planung" },
+    { title: "Analyse", url: "/analyse", icon: BarChart3, description: "Finanzen & Dokumentation" },
+  ];
 
-  // Dynamic funnel items with real badge count
-  const funnelItems: NavItemType[] = [
-    { title: "Anfragen", url: "/anfragen", icon: MessageSquare, badge: newLeadsCount > 0 ? newLeadsCount : undefined },
-    { title: "Angebote", url: "/angebote", icon: FileText },
-    { title: "Aufnahme", url: "/aufnahme", icon: UserPlus },
-    { title: "Auffassen", url: "/auffassen", icon: Star },
-    { title: "Analyse", url: "/analyse", icon: BarChart3 },
+  // Quick Access Items
+  const quickAccessItems: NavItemType[] = [
+    { title: "Dashboard", url: "/", icon: LayoutDashboard },
+    { title: "Kunden", url: "/kunden", icon: Users },
+    { title: "Services", url: "/services", icon: Scissors },
   ];
 
   const handleDisabledClick = (featureName: string) => {
@@ -145,6 +156,13 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       title: "Modul nicht verfügbar",
       description: `${featureName} ist für deinen Account nicht aktiviert. Kontaktiere den Support.`,
       variant: "destructive",
+    });
+  };
+
+  const handleLockedClick = (featureName: string) => {
+    toast({
+      title: "Erweiterung gesperrt",
+      description: `${featureName} ist ein kostenpflichtiges Add-on. Upgrade auf Pro für alle Features.`,
     });
   };
 
@@ -194,7 +212,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
     </NavLink>
   );
 
-  const NavItemWithBeta = ({ item, hasBetaBadge }: { item: MainNavItem; hasBetaBadge: boolean }) => (
+  const FiveAsNavItem = ({ item }: { item: FiveAsItem & { badge?: number } }) => (
     <NavLink
       to={item.url}
       onClick={onNavigate}
@@ -213,14 +231,32 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       {!collapsed && (
         <>
           <span className="font-medium text-[15px]">{item.title}</span>
-          {hasBetaBadge && (
-            <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0 bg-orange-500/20 text-orange-400 border-orange-500/30">
-              BETA
-            </Badge>
+          {item.badge !== undefined && item.badge > 0 && (
+            <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
+              {item.badge}
+            </span>
           )}
         </>
       )}
     </NavLink>
+  );
+
+  const LockedAddonItem = ({ item }: { item: AddonItem }) => (
+    <button
+      onClick={() => handleLockedClick(item.title)}
+      className={cn(
+        "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 min-h-[48px]",
+        "text-sidebar-foreground/40 hover:bg-sidebar-accent/50 cursor-not-allowed"
+      )}
+    >
+      <item.icon className={cn("h-5 w-5 flex-shrink-0 opacity-50", collapsed && "mx-auto")} />
+      {!collapsed && (
+        <>
+          <span className="font-medium text-[15px] opacity-50">{item.title}</span>
+          <Lock className="ml-auto h-4 w-4 opacity-50" />
+        </>
+      )}
+    </button>
   );
 
   return (
@@ -259,29 +295,45 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       </div>
 
       <ScrollArea className="flex-1 py-4">
-        {/* Main Navigation */}
+        {/* Quick Access */}
         <div className="px-3 space-y-1">
           {!collapsed && (
             <p className="text-xs font-medium text-sidebar-foreground/50 uppercase tracking-wider px-3 mb-2">
-              Übersicht
+              Schnellzugriff
             </p>
           )}
-          {mainItemsWithStatus.map((item) => (
-            <NavItemWithBeta key={item.title} item={item} hasBetaBadge={item.hasBetaBadge} />
+          {quickAccessItems.map((item) => (
+            <NavItem key={item.title} item={item} />
           ))}
         </div>
 
         <Separator className="my-4 bg-sidebar-border" />
 
-        {/* Funnel Navigation */}
+        {/* Die 5 A's - Core Workflow */}
         <div className="px-3 space-y-1">
           {!collapsed && (
-            <p className="text-xs font-medium text-sidebar-foreground/50 uppercase tracking-wider px-3 mb-2">
-              Sales Funnel
+            <p className="text-xs font-medium text-primary uppercase tracking-wider px-3 mb-2 flex items-center gap-2">
+              <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+              Die 5 A's
             </p>
           )}
-          {funnelItems.map((item) => (
-            <NavItem key={item.title} item={item} />
+          {fiveAsItems.map((item) => (
+            <FiveAsNavItem key={item.title} item={item} />
+          ))}
+        </div>
+
+        <Separator className="my-4 bg-sidebar-border" />
+
+        {/* Erweiterungen - Locked Add-ons */}
+        <div className="px-3 space-y-1">
+          {!collapsed && (
+            <p className="text-xs font-medium text-sidebar-foreground/50 uppercase tracking-wider px-3 mb-2 flex items-center gap-2">
+              <Package className="h-3 w-3" />
+              Erweiterungen
+            </p>
+          )}
+          {addonItems.map((item) => (
+            <LockedAddonItem key={item.title} item={item} />
           ))}
         </div>
       </ScrollArea>
