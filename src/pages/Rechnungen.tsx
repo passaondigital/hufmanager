@@ -430,12 +430,28 @@ export default function Rechnungen() {
           ))}
         </div>
       ) : filteredInvoices.length === 0 ? (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">
-              {searchQuery ? "Keine Rechnungen gefunden" : "Keine Rechnungen vorhanden"}
+        <Card className="border-dashed border-2 border-border/50 bg-muted/20">
+          <CardContent className="py-12 text-center">
+            <div className="mx-auto w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
+              <span className="text-4xl">💶</span>
+            </div>
+            <h3 className="text-xl font-semibold text-foreground mb-2">
+              {searchQuery ? "Keine Treffer" : "Noch keine Rechnungen?"}
+            </h3>
+            <p className="text-muted-foreground max-w-sm mx-auto mb-6">
+              {searchQuery 
+                ? "Versuche einen anderen Suchbegriff." 
+                : "Mach deinen ersten Termin fertig und verdiene Geld!"}
             </p>
+            {!searchQuery && (
+              <Button 
+                size="lg" 
+                className="px-8 h-12 text-base font-semibold"
+                onClick={() => window.location.href = '/kalender'}
+              >
+                Zum Kalender
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (

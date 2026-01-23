@@ -73,6 +73,7 @@ interface MainNavItem {
 
 // Die 5 A's - Core Navigation für Profis (#pid)
 interface FiveAsItem {
+  number: number;
   title: string;
   url: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -129,19 +130,20 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
   const isAdmin = role === "admin";
   const canSeeAboMatrix = user?.email && STEALTH_EMAILS.includes(user.email);
 
-  // Die 5 A's - Der Profi-Workflow
-  const fiveAsItems: (FiveAsItem & { badge?: number })[] = [
+  // Die 5 A's - Der Profi-Workflow (mit Nummern für visuelle Führung)
+  const fiveAsItems: (FiveAsItem & { badge?: number; number: number })[] = [
     { 
+      number: 1,
       title: "Anfragen", 
       url: "/anfragen", 
       icon: MessageSquare, 
       badge: newLeadsCount > 0 ? newLeadsCount : undefined,
       description: "Inbox für neue Leads"
     },
-    { title: "Angebote", url: "/angebote", icon: FileText, description: "Kostenvoranschläge" },
-    { title: "Aufnahme", url: "/aufnahme", icon: UserPlus, description: "Kunden & Pferde verwalten" },
-    { title: "Auffassen", url: "/kalender", icon: Calendar, description: "Termine & Tour-Planung" },
-    { title: "Analyse", url: "/analyse", icon: BarChart3, description: "Finanzen & Dokumentation" },
+    { number: 2, title: "Angebote", url: "/angebote", icon: FileText, description: "Kostenvoranschläge" },
+    { number: 3, title: "Aufnahme", url: "/aufnahme", icon: UserPlus, description: "Kunden & Pferde verwalten" },
+    { number: 4, title: "Auffassen", url: "/kalender", icon: Calendar, description: "Termine & Tour-Planung" },
+    { number: 5, title: "Analyse", url: "/analyse", icon: BarChart3, description: "Finanzen & Dokumentation" },
   ];
 
   // Quick Access Items
@@ -212,7 +214,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
     </NavLink>
   );
 
-  const FiveAsNavItem = ({ item }: { item: FiveAsItem & { badge?: number } }) => (
+  const FiveAsNavItem = ({ item, index }: { item: FiveAsItem & { badge?: number }; index: number }) => (
     <NavLink
       to={item.url}
       onClick={onNavigate}
@@ -223,6 +225,15 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
           : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
       )}
     >
+      {/* Nummer-Badge für visuelle Führung */}
+      <div className={cn(
+        "flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold flex-shrink-0",
+        isActive(item.url)
+          ? "bg-sidebar-primary-foreground/20 text-sidebar-primary-foreground"
+          : "bg-primary/10 text-primary"
+      )}>
+        {item.number}
+      </div>
       <item.icon className={cn(
         "h-5 w-5 flex-shrink-0 transition-colors", 
         collapsed && "mx-auto",
@@ -317,8 +328,8 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
               Die 5 A's
             </p>
           )}
-          {fiveAsItems.map((item) => (
-            <FiveAsNavItem key={item.title} item={item} />
+          {fiveAsItems.map((item, index) => (
+            <FiveAsNavItem key={item.title} item={item} index={index} />
           ))}
         </div>
 
