@@ -2612,6 +2612,109 @@ export type Database = {
           },
         ]
       }
+      provider_documents: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          description: string | null
+          document_type: string
+          expense_id: string | null
+          file_name: string | null
+          file_size: number | null
+          file_url: string
+          folder: string | null
+          horse_id: string | null
+          id: string
+          mime_type: string | null
+          provider_id: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          description?: string | null
+          document_type: string
+          expense_id?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_url: string
+          folder?: string | null
+          horse_id?: string | null
+          id?: string
+          mime_type?: string | null
+          provider_id: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          description?: string | null
+          document_type?: string
+          expense_id?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_url?: string
+          folder?: string | null
+          horse_id?: string | null
+          id?: string
+          mime_type?: string | null
+          provider_id?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_documents_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_documents_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "safe_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_documents_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_documents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_documents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_documents_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "provider_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       provider_payment_settings: {
         Row: {
           copecart_vendor_id: string | null
@@ -3426,14 +3529,89 @@ export type Database = {
           },
         ]
       }
+      vehicle_mileage_logs: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          id: string
+          log_date: string
+          odometer_end: number | null
+          odometer_start: number
+          photo_end_url: string | null
+          photo_start_url: string | null
+          provider_id: string
+          purpose: string | null
+          route_description: string | null
+          status: string | null
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          id?: string
+          log_date?: string
+          odometer_end?: number | null
+          odometer_start: number
+          photo_end_url?: string | null
+          photo_start_url?: string | null
+          provider_id: string
+          purpose?: string | null
+          route_description?: string | null
+          status?: string | null
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          id?: string
+          log_date?: string
+          odometer_end?: number | null
+          odometer_start?: number
+          photo_end_url?: string | null
+          photo_start_url?: string | null
+          provider_id?: string
+          purpose?: string | null
+          route_description?: string | null
+          status?: string | null
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_mileage_logs_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_mileage_logs_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "safe_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_mileage_logs_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "provider_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_sessions: {
         Row: {
           appointment_id: string | null
+          break_duration_minutes: number | null
           created_at: string
           duration_minutes: number | null
           ended_at: string | null
           horse_id: string | null
           id: string
+          mileage_log_id: string | null
           notes: string | null
           provider_id: string
           started_at: string
@@ -3441,11 +3619,13 @@ export type Database = {
         }
         Insert: {
           appointment_id?: string | null
+          break_duration_minutes?: number | null
           created_at?: string
           duration_minutes?: number | null
           ended_at?: string | null
           horse_id?: string | null
           id?: string
+          mileage_log_id?: string | null
           notes?: string | null
           provider_id: string
           started_at: string
@@ -3453,11 +3633,13 @@ export type Database = {
         }
         Update: {
           appointment_id?: string | null
+          break_duration_minutes?: number | null
           created_at?: string
           duration_minutes?: number | null
           ended_at?: string | null
           horse_id?: string | null
           id?: string
+          mileage_log_id?: string | null
           notes?: string | null
           provider_id?: string
           started_at?: string
@@ -3490,6 +3672,13 @@ export type Database = {
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_sessions_mileage_log_id_fkey"
+            columns: ["mileage_log_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_mileage_logs"
             referencedColumns: ["id"]
           },
           {

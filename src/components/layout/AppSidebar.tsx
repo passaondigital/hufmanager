@@ -166,9 +166,9 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       title: "Auffassen", 
       icon: Calendar,
       subItems: [
-        { title: "Kalender & Tour", url: "/kalender", icon: Route, description: "Termine & Routen" },
-        { title: "Work-Mode", url: "/hufanalyse", icon: Camera, description: "HufCam & Tools" },
-        { title: "Feedback", url: "/auffassen", icon: Star, description: "Bewertungen" },
+        { title: "Kalender", url: "/kalender", icon: Calendar, description: "Termine planen" },
+        { title: "Work-Mode", url: "/work-mode", icon: Timer, description: "Zeit, km, HufCam, Analyse" },
+        { title: "Feedback", url: "/auffassen", icon: Star, description: "Bewertungen sammeln" },
       ]
     },
     { 
