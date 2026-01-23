@@ -332,6 +332,7 @@ export type Database = {
       appointments: {
         Row: {
           assigned_to_user_id: string | null
+          client_id: string | null
           completed_at: string | null
           completion_notes: string | null
           completion_pdf_url: string | null
@@ -367,6 +368,7 @@ export type Database = {
         }
         Insert: {
           assigned_to_user_id?: string | null
+          client_id?: string | null
           completed_at?: string | null
           completion_notes?: string | null
           completion_pdf_url?: string | null
@@ -402,6 +404,7 @@ export type Database = {
         }
         Update: {
           assigned_to_user_id?: string | null
+          client_id?: string | null
           completed_at?: string | null
           completion_notes?: string | null
           completion_pdf_url?: string | null
@@ -446,6 +449,20 @@ export type Database = {
           {
             foreignKeyName: "appointments_assigned_to_user_id_fkey"
             columns: ["assigned_to_user_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_client_id_fkey"
+            columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "safe_provider_profiles"
             referencedColumns: ["id"]
@@ -1451,6 +1468,8 @@ export type Database = {
           gender: string | null
           health_status: string | null
           height: string | null
+          holding_type: string | null
+          hoof_data: Json | null
           hoof_measurements: Json | null
           hoof_protection: string | null
           hoof_type: string | null
@@ -1469,6 +1488,7 @@ export type Database = {
           readable_id: string | null
           recall_interval_weeks: number | null
           shoeing_interval: number | null
+          shoeing_status: string | null
           special_notes: string | null
           updated_at: string
           usage: string | null
@@ -1488,6 +1508,8 @@ export type Database = {
           gender?: string | null
           health_status?: string | null
           height?: string | null
+          holding_type?: string | null
+          hoof_data?: Json | null
           hoof_measurements?: Json | null
           hoof_protection?: string | null
           hoof_type?: string | null
@@ -1506,6 +1528,7 @@ export type Database = {
           readable_id?: string | null
           recall_interval_weeks?: number | null
           shoeing_interval?: number | null
+          shoeing_status?: string | null
           special_notes?: string | null
           updated_at?: string
           usage?: string | null
@@ -1525,6 +1548,8 @@ export type Database = {
           gender?: string | null
           health_status?: string | null
           height?: string | null
+          holding_type?: string | null
+          hoof_data?: Json | null
           hoof_measurements?: Json | null
           hoof_protection?: string | null
           hoof_type?: string | null
@@ -1543,6 +1568,7 @@ export type Database = {
           readable_id?: string | null
           recall_interval_weeks?: number | null
           shoeing_interval?: number | null
+          shoeing_status?: string | null
           special_notes?: string | null
           updated_at?: string
           usage?: string | null
@@ -2370,6 +2396,7 @@ export type Database = {
           business_name: string | null
           cancellation_policy: string | null
           city: string | null
+          client_status: string | null
           company_name: string | null
           copecart_subscription_id: string | null
           country: string | null
@@ -2383,6 +2410,8 @@ export type Database = {
           feature_statuses: Json | null
           first_name: string | null
           full_name: string | null
+          geo_lat: number | null
+          geo_lng: number | null
           has_logged_in: boolean | null
           iban: string | null
           ical_token: string | null
@@ -2400,6 +2429,7 @@ export type Database = {
           org_role: Database["public"]["Enums"]["organization_role"] | null
           organization_id: string | null
           owner_name: string | null
+          payment_rating: string | null
           phone: string | null
           plan_override: string | null
           readable_id: string | null
@@ -2422,6 +2452,9 @@ export type Database = {
           tax_number: string | null
           updated_at: string
           vat_number: string | null
+          vehicle_consumption_per_100km: number | null
+          vehicle_name: string | null
+          vehicle_plate: string | null
           website: string | null
           zip_code: string | null
         }
@@ -2435,6 +2468,7 @@ export type Database = {
           business_name?: string | null
           cancellation_policy?: string | null
           city?: string | null
+          client_status?: string | null
           company_name?: string | null
           copecart_subscription_id?: string | null
           country?: string | null
@@ -2448,6 +2482,8 @@ export type Database = {
           feature_statuses?: Json | null
           first_name?: string | null
           full_name?: string | null
+          geo_lat?: number | null
+          geo_lng?: number | null
           has_logged_in?: boolean | null
           iban?: string | null
           ical_token?: string | null
@@ -2465,6 +2501,7 @@ export type Database = {
           org_role?: Database["public"]["Enums"]["organization_role"] | null
           organization_id?: string | null
           owner_name?: string | null
+          payment_rating?: string | null
           phone?: string | null
           plan_override?: string | null
           readable_id?: string | null
@@ -2487,6 +2524,9 @@ export type Database = {
           tax_number?: string | null
           updated_at?: string
           vat_number?: string | null
+          vehicle_consumption_per_100km?: number | null
+          vehicle_name?: string | null
+          vehicle_plate?: string | null
           website?: string | null
           zip_code?: string | null
         }
@@ -2500,6 +2540,7 @@ export type Database = {
           business_name?: string | null
           cancellation_policy?: string | null
           city?: string | null
+          client_status?: string | null
           company_name?: string | null
           copecart_subscription_id?: string | null
           country?: string | null
@@ -2513,6 +2554,8 @@ export type Database = {
           feature_statuses?: Json | null
           first_name?: string | null
           full_name?: string | null
+          geo_lat?: number | null
+          geo_lng?: number | null
           has_logged_in?: boolean | null
           iban?: string | null
           ical_token?: string | null
@@ -2530,6 +2573,7 @@ export type Database = {
           org_role?: Database["public"]["Enums"]["organization_role"] | null
           organization_id?: string | null
           owner_name?: string | null
+          payment_rating?: string | null
           phone?: string | null
           plan_override?: string | null
           readable_id?: string | null
@@ -2552,6 +2596,9 @@ export type Database = {
           tax_number?: string | null
           updated_at?: string
           vat_number?: string | null
+          vehicle_consumption_per_100km?: number | null
+          vehicle_name?: string | null
+          vehicle_plate?: string | null
           website?: string | null
           zip_code?: string | null
         }
@@ -2752,6 +2799,109 @@ export type Database = {
         }
         Relationships: []
       }
+      quotes: {
+        Row: {
+          client_id: string | null
+          converted_to_invoice_id: string | null
+          created_at: string
+          description: string | null
+          horse_id: string | null
+          id: string
+          items: Json | null
+          provider_id: string
+          quote_number: string | null
+          responded_at: string | null
+          sent_at: string | null
+          status: string
+          title: string
+          total_amount: number
+          updated_at: string
+          valid_until: string | null
+          viewed_at: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          converted_to_invoice_id?: string | null
+          created_at?: string
+          description?: string | null
+          horse_id?: string | null
+          id?: string
+          items?: Json | null
+          provider_id: string
+          quote_number?: string | null
+          responded_at?: string | null
+          sent_at?: string | null
+          status?: string
+          title: string
+          total_amount?: number
+          updated_at?: string
+          valid_until?: string | null
+          viewed_at?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          converted_to_invoice_id?: string | null
+          created_at?: string
+          description?: string | null
+          horse_id?: string | null
+          id?: string
+          items?: Json | null
+          provider_id?: string
+          quote_number?: string | null
+          responded_at?: string | null
+          sent_at?: string | null
+          status?: string
+          title?: string
+          total_amount?: number
+          updated_at?: string
+          valid_until?: string | null
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       revenue_events: {
         Row: {
           amount: number | null
@@ -2900,10 +3050,12 @@ export type Database = {
           duration: number | null
           id: string
           is_active: boolean | null
+          is_group_service: boolean | null
           name: string
           position: number | null
           provider_id: string | null
           rank: number | null
+          service_category: string | null
           sort_order: number | null
           updated_at: string
         }
@@ -2917,10 +3069,12 @@ export type Database = {
           duration?: number | null
           id?: string
           is_active?: boolean | null
+          is_group_service?: boolean | null
           name: string
           position?: number | null
           provider_id?: string | null
           rank?: number | null
+          service_category?: string | null
           sort_order?: number | null
           updated_at?: string
         }
@@ -2934,10 +3088,12 @@ export type Database = {
           duration?: number | null
           id?: string
           is_active?: boolean | null
+          is_group_service?: boolean | null
           name?: string
           position?: number | null
           provider_id?: string | null
           rank?: number | null
+          service_category?: string | null
           sort_order?: number | null
           updated_at?: string
         }
@@ -3128,6 +3284,163 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      vehicle_logs: {
+        Row: {
+          appointment_ids: string[] | null
+          created_at: string
+          distance_km: number | null
+          end_km: number | null
+          end_location: string | null
+          end_time: string | null
+          fuel_cost: number | null
+          id: string
+          log_date: string
+          other_costs: number | null
+          provider_id: string
+          route_description: string | null
+          start_km: number | null
+          start_location: string | null
+          start_time: string | null
+          toll_cost: number | null
+          updated_at: string
+        }
+        Insert: {
+          appointment_ids?: string[] | null
+          created_at?: string
+          distance_km?: number | null
+          end_km?: number | null
+          end_location?: string | null
+          end_time?: string | null
+          fuel_cost?: number | null
+          id?: string
+          log_date?: string
+          other_costs?: number | null
+          provider_id: string
+          route_description?: string | null
+          start_km?: number | null
+          start_location?: string | null
+          start_time?: string | null
+          toll_cost?: number | null
+          updated_at?: string
+        }
+        Update: {
+          appointment_ids?: string[] | null
+          created_at?: string
+          distance_km?: number | null
+          end_km?: number | null
+          end_location?: string | null
+          end_time?: string | null
+          fuel_cost?: number | null
+          id?: string
+          log_date?: string
+          other_costs?: number | null
+          provider_id?: string
+          route_description?: string | null
+          start_km?: number | null
+          start_location?: string | null
+          start_time?: string | null
+          toll_cost?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_logs_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_logs_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_sessions: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          duration_minutes: number | null
+          ended_at: string | null
+          horse_id: string | null
+          id: string
+          notes: string | null
+          provider_id: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          duration_minutes?: number | null
+          ended_at?: string | null
+          horse_id?: string | null
+          id?: string
+          notes?: string | null
+          provider_id: string
+          started_at: string
+          status?: string
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          duration_minutes?: number | null
+          ended_at?: string | null
+          horse_id?: string | null
+          id?: string
+          notes?: string | null
+          provider_id?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_sessions_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_sessions_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "safe_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_sessions_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_sessions_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_sessions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_sessions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
