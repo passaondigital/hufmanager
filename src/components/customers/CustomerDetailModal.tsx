@@ -47,9 +47,12 @@ import {
   Navigation,
   FileText,
   Building2,
+  Check,
+  X,
 } from "lucide-react";
 import { ProviderHorseEditSheet } from "@/components/customers/ProviderHorseEditSheet";
 import { ClientInvoicesSection } from "@/components/invoices/ClientInvoicesSection";
+import { AddressGeocoder } from "@/components/customers/AddressGeocoder";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -74,6 +77,8 @@ interface Customer {
   street?: string;
   zip_code?: string;
   city?: string;
+  geo_lat?: number | null;
+  geo_lng?: number | null;
   has_logged_in?: boolean;
   invited_at?: string;
   created_at?: string;
@@ -110,6 +115,8 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
     street: "",
     zip_code: "",
     city: "",
+    geo_lat: null as number | null,
+    geo_lng: null as number | null,
     is_business: false,
     vat_id: "",
   });
@@ -124,6 +131,8 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
         street: customer.street || "",
         zip_code: customer.zip_code || "",
         city: customer.city || "",
+        geo_lat: customer.geo_lat || null,
+        geo_lng: customer.geo_lng || null,
         is_business: customer.is_business || false,
         vat_id: customer.vat_id || "",
       });
@@ -140,6 +149,8 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
       street: string;
       zip_code: string;
       city: string;
+      geo_lat: number | null;
+      geo_lng: number | null;
       is_business: boolean;
       vat_id: string;
     }) => {
@@ -152,6 +163,8 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
           street: data.street || null,
           zip_code: data.zip_code || null,
           city: data.city || null,
+          geo_lat: data.geo_lat,
+          geo_lng: data.geo_lng,
           is_business: data.is_business,
           vat_id: data.vat_id || null,
         })
@@ -330,32 +343,19 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Straße & Hausnummer</Label>
-                    <Input
-                      placeholder="Musterstraße 123"
-                      value={editForm.street}
-                      onChange={(e) => setEditForm({ ...editForm, street: e.target.value })}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>PLZ</Label>
-                      <Input
-                        placeholder="12345"
-                        value={editForm.zip_code}
-                        onChange={(e) => setEditForm({ ...editForm, zip_code: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Ort</Label>
-                      <Input
-                        placeholder="Musterstadt"
-                        value={editForm.city}
-                        onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
-                      />
-                    </div>
-                  </div>
+                  {/* Address with Auto-Geocoding */}
+                  <AddressGeocoder
+                    street={editForm.street}
+                    zipCode={editForm.zip_code}
+                    city={editForm.city}
+                    geoLat={editForm.geo_lat}
+                    geoLng={editForm.geo_lng}
+                    onStreetChange={(value) => setEditForm({ ...editForm, street: value })}
+                    onZipCodeChange={(value) => setEditForm({ ...editForm, zip_code: value })}
+                    onCityChange={(value) => setEditForm({ ...editForm, city: value })}
+                    onGeoChange={(lat, lng) => setEditForm({ ...editForm, geo_lat: lat, geo_lng: lng })}
+                    showMiniMap={true}
+                  />
                   
                   {/* Business Customer Toggle */}
                   <div className="space-y-3 p-3 bg-muted/50 rounded-lg border">
@@ -411,26 +411,49 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                     </Badge>
                   )}
                   
-                  {/* Address display with navigation */}
+                  {/* Address display with navigation & GPS status */}
                   {(customer.street || customer.zip_code || customer.city) && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <MapPin className="h-4 w-4" />
-                      <span>
-                        {[customer.street, `${customer.zip_code || ''} ${customer.city || ''}`.trim()]
-                          .filter(Boolean)
-                          .join(', ')}
-                      </span>
-                      {hasCompleteAddress && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2 text-primary"
-                          onClick={() => openAddressNavigation(customer.street!, customer.zip_code!, customer.city!)}
-                        >
-                          <Navigation className="h-3.5 w-3.5 mr-1" />
-                          Route
-                        </Button>
-                      )}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <MapPin className="h-4 w-4" />
+                        <span>
+                          {[customer.street, `${customer.zip_code || ''} ${customer.city || ''}`.trim()]
+                            .filter(Boolean)
+                            .join(', ')}
+                        </span>
+                        {hasCompleteAddress && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-primary"
+                            onClick={() => openAddressNavigation(customer.street!, customer.zip_code!, customer.city!)}
+                          >
+                            <Navigation className="h-3.5 w-3.5 mr-1" />
+                            Route
+                          </Button>
+                        )}
+                      </div>
+                      {/* GPS Status indicator */}
+                      <div className="flex items-center gap-2">
+                        {customer.geo_lat && customer.geo_lng ? (
+                          <div className="flex items-center gap-1.5 text-xs">
+                            <div className="flex items-center justify-center w-4 h-4 rounded-full bg-green-100">
+                              <Check className="h-2.5 w-2.5 text-green-600" />
+                            </div>
+                            <span className="text-green-600">GPS verfügbar</span>
+                            <span className="text-muted-foreground font-mono">
+                              ({customer.geo_lat.toFixed(4)}, {customer.geo_lng.toFixed(4)})
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 text-xs">
+                            <div className="flex items-center justify-center w-4 h-4 rounded-full bg-amber-100">
+                              <X className="h-2.5 w-2.5 text-amber-600" />
+                            </div>
+                            <span className="text-amber-600">Kein GPS - Bearbeiten zum Ermitteln</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

@@ -19,6 +19,7 @@ import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { LocationPicker } from "@/components/LocationPicker";
+import { AddressGeocoder } from "@/components/customers/AddressGeocoder";
 import { z } from "zod";
 
 import { DuplicateWarningDialog } from "@/components/customers/DuplicateWarningDialog";
@@ -75,6 +76,8 @@ const Aufnahme = () => {
     sendInvitation: true,
     isBusiness: false,
     vatId: "",
+    geoLat: null as number | null,
+    geoLng: null as number | null,
   });
 
   // Horse form state
@@ -132,6 +135,13 @@ const Aufnahme = () => {
       email: string;
       phone: string;
       created_by_provider_id: string;
+      street?: string;
+      zip_code?: string;
+      city?: string;
+      geo_lat?: number | null;
+      geo_lng?: number | null;
+      is_business?: boolean;
+      vat_id?: string;
     }) => {
       // Generate a UUID for the new profile
       const newId = crypto.randomUUID();
@@ -143,6 +153,13 @@ const Aufnahme = () => {
         phone: data.phone || null,
         created_by_provider_id: data.created_by_provider_id,
         has_logged_in: false,
+        street: data.street || null,
+        zip_code: data.zip_code || null,
+        city: data.city || null,
+        geo_lat: data.geo_lat || null,
+        geo_lng: data.geo_lng || null,
+        is_business: data.is_business || false,
+        vat_id: data.vat_id || null,
       });
       if (error) throw error;
       return { id: newId, email: data.email, full_name: data.full_name };
@@ -317,6 +334,13 @@ const Aufnahme = () => {
       email: validated.email || "",
       phone: validated.phone || "",
       created_by_provider_id: user.id,
+      street: customerForm.street || undefined,
+      zip_code: customerForm.zipCode || undefined,
+      city: customerForm.city || undefined,
+      geo_lat: customerForm.geoLat,
+      geo_lng: customerForm.geoLng,
+      is_business: customerForm.isBusiness,
+      vat_id: customerForm.vatId || undefined,
     });
   };
 
@@ -413,6 +437,8 @@ const Aufnahme = () => {
       sendInvitation: true,
       isBusiness: false,
       vatId: "",
+      geoLat: null,
+      geoLng: null,
     });
   };
 
@@ -494,36 +520,19 @@ const Aufnahme = () => {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="street">Straße & Hausnummer</Label>
-                <Input
-                  id="street"
-                  placeholder="Musterstraße 123"
-                  value={customerForm.street}
-                  onChange={(e) => setCustomerForm({ ...customerForm, street: e.target.value })}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="zipCode">PLZ</Label>
-                  <Input
-                    id="zipCode"
-                    placeholder="12345"
-                    value={customerForm.zipCode}
-                    onChange={(e) => setCustomerForm({ ...customerForm, zipCode: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="city">Ort</Label>
-                  <Input
-                    id="city"
-                    placeholder="Musterstadt"
-                    value={customerForm.city}
-                    onChange={(e) => setCustomerForm({ ...customerForm, city: e.target.value })}
-                  />
-                </div>
-              </div>
+              {/* Address with Auto-Geocoding */}
+              <AddressGeocoder
+                street={customerForm.street}
+                zipCode={customerForm.zipCode}
+                city={customerForm.city}
+                geoLat={customerForm.geoLat}
+                geoLng={customerForm.geoLng}
+                onStreetChange={(value) => setCustomerForm({ ...customerForm, street: value })}
+                onZipCodeChange={(value) => setCustomerForm({ ...customerForm, zipCode: value })}
+                onCityChange={(value) => setCustomerForm({ ...customerForm, city: value })}
+                onGeoChange={(lat, lng) => setCustomerForm({ ...customerForm, geoLat: lat, geoLng: lng })}
+                showMiniMap={true}
+              />
 
               {/* Business Customer Toggle */}
               <div className="space-y-4 p-4 bg-muted/50 rounded-lg border">
