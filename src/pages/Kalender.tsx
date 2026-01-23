@@ -26,6 +26,7 @@ import {
   CalendarClock,
   CalendarDays,
   MapIcon,
+  Camera,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +38,7 @@ import { CalendarSyncModal } from "@/components/calendar/CalendarSyncModal";
 import { AppointmentTooltip } from "@/components/calendar/AppointmentTooltip";
 import { NearbyDueClientsPanel } from "@/components/calendar/NearbyDueClientsPanel";
 import { TourMapView } from "@/components/calendar/TourMapView";
+import { HufCamProStandalone } from "@/components/hufcam";
 
 // Import CSS for react-big-calendar
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -111,7 +113,7 @@ const Kalender = () => {
   const [currentView, setCurrentView] = useState<typeof Views[keyof typeof Views]>(Views.WEEK);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [preselectedHorseId, setPreselectedHorseId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"calendar" | "map">("calendar");
+  const [activeTab, setActiveTab] = useState<"calendar" | "map" | "hufcam">("calendar");
   
   // State for reschedule confirmation dialog
   const [pendingReschedule, setPendingReschedule] = useState<{
@@ -517,7 +519,7 @@ const Kalender = () => {
       </div>
 
       {/* Tabs for Calendar and Map View */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "calendar" | "map")}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "calendar" | "map" | "hufcam")}>
         <div className="flex items-center justify-between flex-wrap gap-2">
           <TabsList>
             <TabsTrigger value="calendar" className="gap-2">
@@ -527,6 +529,10 @@ const Kalender = () => {
             <TabsTrigger value="map" className="gap-2">
               <MapIcon className="h-4 w-4" />
               Karten-Ansicht
+            </TabsTrigger>
+            <TabsTrigger value="hufcam" className="gap-2">
+              <Camera className="h-4 w-4" />
+              HufCam Pro
             </TabsTrigger>
           </TabsList>
           
@@ -633,6 +639,13 @@ const Kalender = () => {
               selectedDate={currentDate}
               isLoading={isLoadingMapData}
             />
+          </div>
+        </TabsContent>
+
+        {/* HufCam Pro Tab */}
+        <TabsContent value="hufcam" className="mt-4">
+          <div className="max-w-xl mx-auto">
+            <HufCamProStandalone />
           </div>
         </TabsContent>
       </Tabs>
