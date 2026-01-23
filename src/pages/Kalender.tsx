@@ -6,6 +6,7 @@ import { de } from "date-fns/locale";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +24,8 @@ import {
   Smartphone,
   CheckCircle2,
   CalendarClock,
+  CalendarDays,
+  MapIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +36,7 @@ import { AppointmentFormModal } from "@/components/calendar/AppointmentFormModal
 import { CalendarSyncModal } from "@/components/calendar/CalendarSyncModal";
 import { AppointmentTooltip } from "@/components/calendar/AppointmentTooltip";
 import { NearbyDueClientsPanel } from "@/components/calendar/NearbyDueClientsPanel";
+import { TourMapView } from "@/components/calendar/TourMapView";
 
 // Import CSS for react-big-calendar
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -107,6 +111,7 @@ const Kalender = () => {
   const [currentView, setCurrentView] = useState<typeof Views[keyof typeof Views]>(Views.WEEK);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [preselectedHorseId, setPreselectedHorseId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"calendar" | "map">("calendar");
   
   // State for reschedule confirmation dialog
   const [pendingReschedule, setPendingReschedule] = useState<{
@@ -135,7 +140,7 @@ const Kalender = () => {
   });
 
   // Fetch appointments
-  const { data: appointments = [] } = useQuery({
+  const { data: appointments = [], isLoading: isLoadingAppointments } = useQuery({
     queryKey: ["appointments"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -145,6 +150,114 @@ const Kalender = () => {
       if (error) throw error;
       return data;
     },
+  });
+
+  // Type for map appointments
+  type MapAppointment = {
+    id: string;
+    date: string;
+    time: string | null;
+    status: string | null;
+    service_type: string | null;
+    horses: { name: string } | null;
+    clients: {
+      first_name: string | null;
+      last_name: string | null;
+      geo_lat: number | null;
+      geo_lng: number | null;
+    } | null;
+  };
+
+  // Fetch appointments with client geo data for map view
+  const { data: mapAppointments = [], isLoading: isLoadingMapData } = useQuery<MapAppointment[]>({
+    queryKey: ["appointments-map", format(currentDate, "yyyy-MM-dd")],
+    queryFn: async (): Promise<MapAppointment[]> => {
+      const dateStr = format(currentDate, "yyyy-MM-dd");
+      
+      // First get appointments for the date
+      const { data: aptData, error: aptError } = await supabase
+        .from("appointments")
+        .select(`
+          id,
+          date,
+          time,
+          status,
+          service_type,
+          horses(id, name, owner_id)
+        `)
+        .eq("date", dateStr)
+        .order("time", { ascending: true });
+      
+      if (aptError) throw aptError;
+      if (!aptData || aptData.length === 0) return [];
+      
+      // Get unique owner IDs
+      const ownerIds = [...new Set(
+        aptData
+          .map(apt => apt.horses?.owner_id)
+          .filter((id): id is string => !!id)
+      )];
+      
+      if (ownerIds.length === 0) {
+        // Return appointments without client data
+        return aptData.map(apt => ({
+          id: apt.id,
+          date: apt.date,
+          time: apt.time,
+          status: apt.status,
+          service_type: apt.service_type,
+          horses: apt.horses ? { name: apt.horses.name } : null,
+          clients: null,
+        }));
+      }
+      
+      // Fetch client data with raw fetch to avoid Supabase type issues
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      
+      const clientResponse = await fetch(
+        `${supabaseUrl}/rest/v1/clients?select=id,first_name,last_name,geo_lat,geo_lng&id=in.(${ownerIds.map(id => `"${id}"`).join(",")})`,
+        {
+          headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+          },
+        }
+      );
+      
+      type ClientGeoData = {
+        id: string;
+        first_name: string | null;
+        last_name: string | null;
+        geo_lat: number | null;
+        geo_lng: number | null;
+      };
+      
+      let clients: ClientGeoData[] = [];
+      if (clientResponse.ok) {
+        clients = await clientResponse.json();
+      }
+      
+      // Create a map for quick lookup
+      const clientMap = new Map(
+        clients.map(c => [c.id, c])
+      );
+      
+      // Combine the data
+      return aptData.map(apt => {
+        const client = apt.horses?.owner_id ? clientMap.get(apt.horses.owner_id) : null;
+        return {
+          id: apt.id,
+          date: apt.date,
+          time: apt.time,
+          status: apt.status,
+          service_type: apt.service_type,
+          horses: apt.horses ? { name: apt.horses.name } : null,
+          clients: client || null,
+        };
+      });
+    },
+    enabled: activeTab === "map",
   });
 
   // Convert appointments to calendar events
@@ -401,69 +514,126 @@ const Kalender = () => {
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-2">
-        {Object.entries(SERVICE_COLORS).map(([type, colors]) => (
-          <Badge
-            key={type}
-            className="text-xs"
-            style={{ backgroundColor: colors.bg, color: "white" }}
-          >
-            {type}
-          </Badge>
-        ))}
-      </div>
+      {/* Tabs for Calendar and Map View */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "calendar" | "map")}>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <TabsList>
+            <TabsTrigger value="calendar" className="gap-2">
+              <CalendarDays className="h-4 w-4" />
+              Kalender
+            </TabsTrigger>
+            <TabsTrigger value="map" className="gap-2">
+              <MapIcon className="h-4 w-4" />
+              Karten-Ansicht
+            </TabsTrigger>
+          </TabsList>
+          
+          {/* Legend */}
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(SERVICE_COLORS).map(([type, colors]) => (
+              <Badge
+                key={type}
+                className="text-xs"
+                style={{ backgroundColor: colors.bg, color: "white" }}
+              >
+                {type}
+              </Badge>
+            ))}
+          </div>
+        </div>
 
-      {/* Calendar with Suggestions Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        {/* Main Calendar */}
-        <Card className="overflow-hidden lg:col-span-3">
-          <CardContent className="p-0">
-            <div className="h-[700px] calendar-container">
-              <DnDCalendar
-                localizer={localizer}
-                events={events}
-                view={currentView}
-                onView={(view) => setCurrentView(view)}
-                date={currentDate}
-                onNavigate={setCurrentDate}
-                onEventDrop={handleEventDrop}
-                onEventResize={handleEventResize}
-                onSelectSlot={handleSelectSlot}
-                selectable
-                resizable
-                eventPropGetter={eventStyleGetter}
-                components={{
-                  event: EventComponent,
+        {/* Calendar View */}
+        <TabsContent value="calendar" className="mt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            {/* Main Calendar */}
+            <Card className="overflow-hidden lg:col-span-3">
+              <CardContent className="p-0">
+                <div className="h-[700px] calendar-container">
+                  <DnDCalendar
+                    localizer={localizer}
+                    events={events}
+                    view={currentView}
+                    onView={(view) => setCurrentView(view)}
+                    date={currentDate}
+                    onNavigate={setCurrentDate}
+                    onEventDrop={handleEventDrop}
+                    onEventResize={handleEventResize}
+                    onSelectSlot={handleSelectSlot}
+                    selectable
+                    resizable
+                    eventPropGetter={eventStyleGetter}
+                    components={{
+                      event: EventComponent,
+                    }}
+                    messages={messages}
+                    culture="de"
+                    step={30}
+                    timeslots={2}
+                    min={new Date(0, 0, 0, 6, 0)} // 6 AM
+                    max={new Date(0, 0, 0, 21, 0)} // 9 PM
+                    defaultView={Views.WEEK}
+                    views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
+                    popup
+                    tooltipAccessor={() => ""} // Disable default tooltip (we use custom)
+                    className="rbc-calendar-custom"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Nearby Due Clients Sidebar */}
+            <div className="space-y-4">
+              <NearbyDueClientsPanel
+                selectedDate={selectedDate || currentDate}
+                onSelectHorse={(horseId) => {
+                  setPreselectedHorseId(horseId);
+                  setSelectedDate(currentDate);
+                  setIsFormOpen(true);
                 }}
-                messages={messages}
-                culture="de"
-                step={30}
-                timeslots={2}
-                min={new Date(0, 0, 0, 6, 0)} // 6 AM
-                max={new Date(0, 0, 0, 21, 0)} // 9 PM
-                defaultView={Views.WEEK}
-                views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
-                popup
-                tooltipAccessor={() => ""} // Disable default tooltip (we use custom)
-                className="rbc-calendar-custom"
               />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </TabsContent>
 
-        {/* Nearby Due Clients Sidebar */}
-        <div className="space-y-4">
-          <NearbyDueClientsPanel
-            selectedDate={selectedDate || currentDate}
-            onSelectHorse={(horseId) => {
-              setPreselectedHorseId(horseId);
-              setSelectedDate(currentDate);
-              setIsFormOpen(true);
-            }}
-          />
-        </div>
-      </div>
+        {/* Map View */}
+        <TabsContent value="map" className="mt-4">
+          <div className="space-y-4">
+            {/* Date Navigation for Map */}
+            <Card>
+              <CardContent className="p-3 flex items-center justify-between gap-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentDate(new Date(currentDate.getTime() - 86400000))}
+                >
+                  ← Vorheriger Tag
+                </Button>
+                <div className="text-center">
+                  <div className="font-semibold">
+                    {format(currentDate, "EEEE, dd. MMMM yyyy", { locale: de })}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {mapAppointments.length} Termine
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentDate(new Date(currentDate.getTime() + 86400000))}
+                >
+                  Nächster Tag →
+                </Button>
+              </CardContent>
+            </Card>
+
+            <TourMapView
+              appointments={mapAppointments}
+              selectedDate={currentDate}
+              isLoading={isLoadingMapData}
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Modals */}
       <AppointmentFormModal
