@@ -30,13 +30,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileText, Search, Plus, Eye, Download, Trash2, MoreVertical, Loader2, CheckCircle, Ban, Link2, Copy } from "lucide-react";
+import { FileText, Search, Plus, Eye, Download, Trash2, MoreVertical, Loader2, CheckCircle, Ban, Link2, Copy, FileSpreadsheet } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { CreateInvoiceModal } from "@/components/invoices/CreateInvoiceModal";
 import { PdfPreviewDialog } from "@/components/invoices/PdfPreviewDialog";
 import { toast } from "@/hooks/use-toast";
 import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
+import { downloadDatevExport, downloadSimpleExport } from "@/lib/datevExport";
 
 interface Invoice {
   id: string;
@@ -296,6 +297,45 @@ export default function Rechnungen() {
     setSelectedPaymentMethod("Überweisung");
   };
 
+  const handleDatevExport = () => {
+    if (!user) return;
+    const exportableInvoices = invoices.map(inv => ({
+      id: inv.id,
+      invoice_number: inv.invoice_number,
+      issue_date: inv.issue_date,
+      due_date: inv.due_date,
+      total_amount: inv.total_amount,
+      status: inv.status,
+      notes: inv.notes,
+      client: inv.clientProfile ? {
+        full_name: inv.clientProfile.full_name,
+        readable_id: inv.clientProfile.readable_id,
+      } : null,
+      horse: inv.horse,
+    }));
+    downloadDatevExport(exportableInvoices, user.id);
+    toast({ title: "DATEV-Export heruntergeladen" });
+  };
+
+  const handleSimpleExport = () => {
+    const exportableInvoices = invoices.map(inv => ({
+      id: inv.id,
+      invoice_number: inv.invoice_number,
+      issue_date: inv.issue_date,
+      due_date: inv.due_date,
+      total_amount: inv.total_amount,
+      status: inv.status,
+      notes: inv.notes,
+      client: inv.clientProfile ? {
+        full_name: inv.clientProfile.full_name,
+        readable_id: inv.clientProfile.readable_id,
+      } : null,
+      horse: inv.horse,
+    }));
+    downloadSimpleExport(exportableInvoices);
+    toast({ title: "CSV-Export heruntergeladen" });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -303,10 +343,30 @@ export default function Rechnungen() {
           <h1 className="text-2xl font-bold text-foreground">Rechnungen</h1>
           <p className="text-muted-foreground">Übersicht aller Kundenrechnungen</p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Rechnung erstellen
-        </Button>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <FileSpreadsheet className="h-4 w-4" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleDatevExport}>
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                DATEV-Export
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSimpleExport}>
+                <Download className="h-4 w-4 mr-2" />
+                CSV-Export
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button onClick={() => setShowCreateModal(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Rechnung erstellen
+          </Button>
+        </div>
       </div>
 
       <CreateInvoiceModal

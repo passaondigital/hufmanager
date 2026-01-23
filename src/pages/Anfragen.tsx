@@ -12,13 +12,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MessageSquare, Phone, MapPin, Search, Filter, Calendar, AlertTriangle, HelpCircle, Loader2 } from "lucide-react";
+import { MessageSquare, Phone, MapPin, Search, Filter, Calendar, AlertTriangle, HelpCircle, Loader2, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { BroadcastModal } from "@/components/broadcast/BroadcastModal";
 
 interface Lead {
   id: string;
@@ -53,6 +54,7 @@ const Anfragen = () => {
   const navigate = useNavigate();
   const [filter, setFilter] = useState("alle");
   const [search, setSearch] = useState("");
+  const [showBroadcast, setShowBroadcast] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: leads = [], isLoading } = useQuery({
@@ -110,17 +112,30 @@ const Anfragen = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Anfragen</h1>
           <p className="text-muted-foreground mt-1">
             Neue Kundenanfragen über deine Webseite
           </p>
         </div>
-        <Badge variant="secondary" className="text-lg px-4 py-2">
-          {leads.filter((l) => l.status === "neu").length} Neue
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            onClick={() => setShowBroadcast(true)}
+          >
+            <Send className="h-4 w-4" />
+            Rundmail
+          </Button>
+          <Badge variant="secondary" className="text-lg px-4 py-2">
+            {leads.filter((l) => l.status === "neu").length} Neue
+          </Badge>
+        </div>
       </div>
+
+      {/* Broadcast Modal */}
+      <BroadcastModal open={showBroadcast} onOpenChange={setShowBroadcast} />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
