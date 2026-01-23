@@ -8,7 +8,7 @@ import { RecentHorsesWidget } from "@/components/dashboard/RecentHorsesWidget";
 import { ShareInviteLinkCard } from "@/components/invite/ShareInviteLinkCard";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
-import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
+import { ProviderSetupWizard } from "@/components/onboarding/ProviderSetupWizard";
 import { PushNotificationBanner } from "@/components/notifications/PushNotificationBanner";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 
@@ -27,12 +27,9 @@ const Dashboard = () => {
 
   return (
     <>
-      {/* Onboarding Wizard */}
+      {/* Provider Onboarding - 3-Step Setup Wizard */}
       {showOnboarding && (
-        <OnboardingWizard 
-          onComplete={completeOnboarding}
-          onSkip={completeOnboarding}
-        />
+        <ProviderSetupWizard onComplete={completeOnboarding} />
       )}
 
       <div className="space-y-6">

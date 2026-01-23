@@ -171,19 +171,30 @@ const Anfragen = () => {
         </div>
       )}
 
-      {/* Empty State */}
+      {/* Empty State - Freundlich & Hilfreich */}
       {!isLoading && filteredLeads.length === 0 && (
-        <Card className="py-12">
-          <CardContent className="text-center">
-            <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">
+        <Card className="border-dashed border-2 border-border/50 bg-muted/20">
+          <CardContent className="py-12 text-center">
+            <div className="mx-auto w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
+              <span className="text-4xl">📬</span>
+            </div>
+            <h3 className="text-xl font-semibold text-foreground mb-2">
               {leads.length === 0 ? "Noch keine Anfragen" : "Keine Treffer"}
             </h3>
-            <p className="text-muted-foreground max-w-md mx-auto">
+            <p className="text-muted-foreground max-w-sm mx-auto mb-6">
               {leads.length === 0 
-                ? "Sobald potenzielle Kunden über deine Webseite anfragen, erscheinen sie hier."
+                ? "Sobald potenzielle Kunden über deine Webseite anfragen, erscheinen sie hier." 
                 : "Versuche einen anderen Suchbegriff oder Filter."}
             </p>
+            {leads.length === 0 && (
+              <Button 
+                size="lg" 
+                className="px-8 h-12 text-base font-semibold"
+                onClick={() => navigate('/management')}
+              >
+                Webseite einrichten
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
