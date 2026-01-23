@@ -400,22 +400,22 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         </div>
       </ScrollArea>
 
-      {/* Bottom Section - MANAGEMENT */}
-      <div className="p-3 border-t border-sidebar-border space-y-1">
+      {/* Bottom Section - MANAGEMENT (kompakt) */}
+      <div className="px-3 py-2 border-t border-sidebar-border">
         {/* Stealth: Abo-Matrix */}
         {canSeeAboMatrix && (
           <NavLink
             to="/abo-matrix"
             onClick={onNavigate}
             className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 min-h-[48px]",
+              "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200",
               isActive("/abo-matrix")
-                ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/30"
+                ? "bg-sidebar-primary text-sidebar-primary-foreground"
                 : "text-sidebar-accent-foreground hover:bg-sidebar-accent"
             )}
           >
-            <Diamond className={cn("h-5 w-5 flex-shrink-0", collapsed && "mx-auto")} />
-            {!collapsed && <span className="font-medium text-[15px]">Abo-Matrix</span>}
+            <Diamond className={cn("h-4 w-4 flex-shrink-0", collapsed && "mx-auto")} />
+            {!collapsed && <span className="text-sm">Abo-Matrix</span>}
           </NavLink>
         )}
 
@@ -425,102 +425,100 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
             to="/admin/mission-control"
             onClick={onNavigate}
             className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 min-h-[48px]",
+              "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200",
               isActive("/admin/mission-control")
-                ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/30"
+                ? "bg-sidebar-primary text-sidebar-primary-foreground"
                 : "text-sidebar-accent-foreground hover:bg-sidebar-accent"
             )}
           >
-            <Shield className={cn("h-5 w-5 flex-shrink-0", collapsed && "mx-auto")} />
-            {!collapsed && <span className="font-medium text-[15px]">Mission Control</span>}
+            <Shield className={cn("h-4 w-4 flex-shrink-0", collapsed && "mx-auto")} />
+            {!collapsed && <span className="text-sm">Mission Control</span>}
           </NavLink>
         )}
 
-        {/* Management Section */}
+        {/* Management Header */}
         {!collapsed && (
-          <p className="text-xs font-medium text-sidebar-foreground/50 uppercase tracking-wider px-3 py-2 flex items-center gap-2">
-            <Settings className="h-3 w-3" />
+          <p className="text-[10px] font-medium text-sidebar-foreground/40 uppercase tracking-wider px-2 pt-2 pb-1 flex items-center gap-1.5">
+            <Settings className="h-2.5 w-2.5" />
             Management
           </p>
         )}
         
-        <NavLink
-          to="/management?tab=profile"
-          onClick={onNavigate}
-          className={cn(
-            "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 min-h-[44px]",
-            isActive("/management") && location.search.includes("profile")
-              ? "bg-primary/10 text-primary"
-              : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-          )}
-        >
-          <User className={cn("h-4 w-4 flex-shrink-0", collapsed && "mx-auto")} />
-          {!collapsed && <span className="text-sm">Profil</span>}
-        </NavLink>
+        {/* Kompakte Management Links */}
+        <div className="space-y-0.5">
+          <NavLink
+            to="/management?tab=profile"
+            onClick={onNavigate}
+            className={cn(
+              "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200",
+              isActive("/management") && location.search.includes("profile")
+                ? "bg-primary/10 text-primary"
+                : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            )}
+          >
+            <User className={cn("h-3.5 w-3.5 flex-shrink-0", collapsed && "mx-auto")} />
+            {!collapsed && <span className="text-xs">Profil</span>}
+          </NavLink>
 
-        <NavLink
-          to="/ausgaben"
-          onClick={onNavigate}
-          className={cn(
-            "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 min-h-[44px]",
-            isActive("/ausgaben")
-              ? "bg-primary/10 text-primary"
-              : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-          )}
-        >
-          <Car className={cn("h-4 w-4 flex-shrink-0", collapsed && "mx-auto")} />
-          {!collapsed && <span className="text-sm">Fahrzeug & Ausgaben</span>}
-        </NavLink>
+          <NavLink
+            to="/ausgaben"
+            onClick={onNavigate}
+            className={cn(
+              "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200",
+              isActive("/ausgaben")
+                ? "bg-primary/10 text-primary"
+                : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            )}
+          >
+            <Car className={cn("h-3.5 w-3.5 flex-shrink-0", collapsed && "mx-auto")} />
+            {!collapsed && <span className="text-xs">Fahrzeug & Ausgaben</span>}
+          </NavLink>
 
-        <NavLink
-          to="/management?tab=subscription"
-          onClick={onNavigate}
-          className={cn(
-            "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 min-h-[44px]",
-            isActive("/management") && location.search.includes("subscription")
-              ? "bg-primary/10 text-primary"
-              : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-          )}
-        >
-          <CreditCard className={cn("h-4 w-4 flex-shrink-0", collapsed && "mx-auto")} />
-          {!collapsed && <span className="text-sm">Abo & Module</span>}
-        </NavLink>
+          <NavLink
+            to="/management?tab=subscription"
+            onClick={onNavigate}
+            className={cn(
+              "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200",
+              isActive("/management") && location.search.includes("subscription")
+                ? "bg-primary/10 text-primary"
+                : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            )}
+          >
+            <CreditCard className={cn("h-3.5 w-3.5 flex-shrink-0", collapsed && "mx-auto")} />
+            {!collapsed && <span className="text-xs">Abo & Module</span>}
+          </NavLink>
 
-        <Separator className="my-2 bg-sidebar-border" />
+          <NavLink
+            to="/support"
+            onClick={onNavigate}
+            className={cn(
+              "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200",
+              isActive("/support")
+                ? "bg-primary/10 text-primary"
+                : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            )}
+          >
+            <LifeBuoy className={cn("h-3.5 w-3.5 flex-shrink-0", collapsed && "mx-auto")} />
+            {!collapsed && <span className="text-xs">Hilfe & Support</span>}
+          </NavLink>
 
-        {/* Support */}
-        <NavLink
-          to="/support"
-          onClick={onNavigate}
-          className={cn(
-            "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 min-h-[44px]",
-            isActive("/support")
-              ? "bg-primary/10 text-primary"
-              : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-          )}
-        >
-          <LifeBuoy className={cn("h-4 w-4 flex-shrink-0", collapsed && "mx-auto")} />
-          {!collapsed && <span className="text-sm">Hilfe & Support</span>}
-        </NavLink>
+          <PWAInstallButton collapsed={collapsed} />
+          
+          <button
+            onClick={handleLogout}
+            className={cn(
+              "w-full flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200",
+              "text-sidebar-foreground/40 hover:bg-destructive/10 hover:text-destructive"
+            )}
+          >
+            <LogOut className={cn("h-3.5 w-3.5 flex-shrink-0", collapsed && "mx-auto")} />
+            {!collapsed && <span className="text-xs">Abmelden</span>}
+          </button>
+        </div>
 
-        <PWAInstallButton collapsed={collapsed} />
-        
-        <button
-          onClick={handleLogout}
-          className={cn(
-            "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 min-h-[44px]",
-            "text-sidebar-foreground/50 hover:bg-destructive/10 hover:text-destructive"
-          )}
-        >
-          <LogOut className={cn("h-4 w-4 flex-shrink-0", collapsed && "mx-auto")} />
-          {!collapsed && <span className="text-sm">Abmelden</span>}
-        </button>
-
-        <Separator className="my-2 bg-sidebar-border" />
-
-        {/* Legal Links */}
-        {!collapsed ? (
-          <div className="flex flex-wrap items-center justify-center gap-2 px-2 py-1 text-xs text-sidebar-foreground/50">
+        {/* Legal Links - ganz kompakt */}
+        {!collapsed && (
+          <div className="flex items-center justify-center gap-1.5 pt-2 text-[10px] text-sidebar-foreground/40">
             <a 
               href="https://hufmanager.de/impressum" 
               target="_blank" 
@@ -539,7 +537,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
               Datenschutz
             </a>
           </div>
-        ) : null}
+        )}
       </div>
     </aside>
   );
