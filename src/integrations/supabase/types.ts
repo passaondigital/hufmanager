@@ -3740,6 +3740,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_submit_review: {
+        Args: { p_provider_id: string; p_token?: string }
+        Returns: boolean
+      }
       delete_client_cascade: {
         Args: { _client_id: string }
         Returns: undefined
@@ -3777,9 +3781,51 @@ export type Database = {
         Args: { subdomain_input: string }
         Returns: Json
       }
+      get_public_offers: {
+        Args: { provider_id_input: string }
+        Returns: {
+          billing_type: string
+          description: string
+          display_mode: string
+          external_link: string
+          features: Json
+          id: string
+          image_url: string
+          media_url: string
+          offer_type: string
+          price: number
+          price_type: string
+          title: string
+        }[]
+      }
       get_public_review_provider: {
         Args: { provider_id_input: string }
         Returns: Json
+      }
+      get_public_reviews: {
+        Args: { provider_id_input: string }
+        Returns: {
+          category: string
+          created_at: string
+          id: string
+          proof_image_url: string
+          rating: number
+          reactions: Json
+          reviewer_name: string
+          source: string
+          text: string
+        }[]
+      }
+      get_public_services: {
+        Args: { provider_id_input: string }
+        Returns: {
+          base_price: number
+          booking_action: string
+          description: string
+          duration: number
+          id: string
+          name: string
+        }[]
       }
       get_user_organization: { Args: { _user_id: string }; Returns: string }
       get_user_role: {
