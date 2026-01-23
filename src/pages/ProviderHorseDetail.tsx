@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Info, History, Image, Activity, FileText, ChevronDown, ChevronUp, Footprints } from "lucide-react";
+import { ArrowLeft, Info, History, Image, Activity, FileText, ChevronDown, ChevronUp, Footprints, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -283,7 +283,7 @@ export default function ProviderHorseDetail() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="historie" className="flex items-center gap-1.5">
             <History className="h-4 w-4" />
             <span className="hidden sm:inline">Historie</span>
@@ -291,6 +291,10 @@ export default function ProviderHorseDetail() {
           <TabsTrigger value="steckbrief" className="flex items-center gap-1.5">
             <Info className="h-4 w-4" />
             <span className="hidden sm:inline">Steckbrief</span>
+          </TabsTrigger>
+          <TabsTrigger value="huf-doku" className="flex items-center gap-1.5">
+            <Camera className="h-4 w-4" />
+            <span className="hidden sm:inline">Huf-Doku</span>
           </TabsTrigger>
           <TabsTrigger value="huf-historie" className="flex items-center gap-1.5">
             <Footprints className="h-4 w-4" />
@@ -316,6 +320,24 @@ export default function ProviderHorseDetail() {
 
         <TabsContent value="steckbrief">
           <TabSteckbrief horse={horse} onEdit={() => setShowEditModal(true)} />
+        </TabsContent>
+
+        <TabsContent value="huf-doku">
+          <div className="space-y-4">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-foreground">HufCam Pro</h3>
+              <p className="text-sm text-muted-foreground">
+                Fotografiere alle 4 Hufe mit dem geführten Wizard
+              </p>
+            </div>
+            <HufCamPro 
+              horseName={horse.name}
+              horseId={horse.id}
+              onCollageGenerated={(collageUrl) => {
+                console.log("Collage generated:", collageUrl);
+              }}
+            />
+          </div>
         </TabsContent>
 
         <TabsContent value="huf-historie">

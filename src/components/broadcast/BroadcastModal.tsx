@@ -15,7 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Send, Users, Calendar, AlertTriangle, Plane } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Loader2, Send, Users, Calendar, AlertTriangle, Plane, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { startOfWeek, endOfWeek, format } from "date-fns";
 
@@ -49,6 +50,7 @@ export function BroadcastModal({ open, onOpenChange }: BroadcastModalProps) {
   const [target, setTarget] = useState<TargetAudience>("all");
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
+  const [sendPushNotification, setSendPushNotification] = useState(true);
   const [isSending, setIsSending] = useState(false);
 
   // Fetch recipient counts
@@ -174,10 +176,34 @@ export function BroadcastModal({ open, onOpenChange }: BroadcastModalProps) {
         if (error) throw error;
       }
 
+      // Send push notifications if enabled
+      if (sendPushNotification) {
+        console.log("Sending push notifications to", clientIds.length, "clients...");
+        
+        // Send push notifications in parallel (max 10 concurrent)
+        const batchSize = 10;
+        for (let i = 0; i < clientIds.length; i += batchSize) {
+          const batch = clientIds.slice(i, i + batchSize);
+          await Promise.allSettled(
+            batch.map((clientId) =>
+              supabase.functions.invoke("send-push-notification", {
+                body: {
+                  user_id: clientId,
+                  title: title,
+                  body: message,
+                  url: "/client-home",
+                },
+              })
+            )
+          );
+        }
+      }
+
       return clientIds.length;
     },
     onSuccess: (count) => {
-      toast.success(`Rundmail an ${count} Kunden gesendet`);
+      const pushText = sendPushNotification ? " (inkl. Push)" : "";
+      toast.success(`Rundmail an ${count} Kunden gesendet${pushText}`);
       queryClient.invalidateQueries({ queryKey: ["broadcast-recipients"] });
       onOpenChange(false);
       resetForm();
@@ -194,6 +220,7 @@ export function BroadcastModal({ open, onOpenChange }: BroadcastModalProps) {
     setTarget("all");
     setTitle("");
     setMessage("");
+    setSendPushNotification(true);
   };
 
   const applyTemplate = (template: typeof TEMPLATES[0]) => {
@@ -308,6 +335,26 @@ export function BroadcastModal({ open, onOpenChange }: BroadcastModalProps) {
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Deine Nachricht an die Kunden..."
                 rows={5}
+              />
+            </div>
+
+            {/* Push Notification Toggle */}
+            <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30">
+              <div className="flex items-center gap-3">
+                <Bell className="h-4 w-4 text-primary" />
+                <div>
+                  <Label htmlFor="push-toggle" className="cursor-pointer font-medium">
+                    Push-Benachrichtigung
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Kunden erhalten eine Benachrichtigung auf dem Handy
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="push-toggle"
+                checked={sendPushNotification}
+                onCheckedChange={setSendPushNotification}
               />
             </div>
           </div>
