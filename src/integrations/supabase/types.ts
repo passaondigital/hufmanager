@@ -2678,6 +2678,72 @@ export type Database = {
           },
         ]
       }
+      provider_vehicles: {
+        Row: {
+          average_consumption: number | null
+          brand: string | null
+          color: string | null
+          created_at: string
+          current_odometer: number | null
+          fuel_type: string | null
+          id: string
+          insurance_company: string | null
+          insurance_expiry: string | null
+          insurance_policy_number: string | null
+          is_primary: boolean | null
+          license_plate: string | null
+          model: string | null
+          price_per_km: number | null
+          provider_id: string
+          tax_yearly: number | null
+          travel_cost_flat: number | null
+          updated_at: string
+          year: number | null
+        }
+        Insert: {
+          average_consumption?: number | null
+          brand?: string | null
+          color?: string | null
+          created_at?: string
+          current_odometer?: number | null
+          fuel_type?: string | null
+          id?: string
+          insurance_company?: string | null
+          insurance_expiry?: string | null
+          insurance_policy_number?: string | null
+          is_primary?: boolean | null
+          license_plate?: string | null
+          model?: string | null
+          price_per_km?: number | null
+          provider_id: string
+          tax_yearly?: number | null
+          travel_cost_flat?: number | null
+          updated_at?: string
+          year?: number | null
+        }
+        Update: {
+          average_consumption?: number | null
+          brand?: string | null
+          color?: string | null
+          created_at?: string
+          current_odometer?: number | null
+          fuel_type?: string | null
+          id?: string
+          insurance_company?: string | null
+          insurance_expiry?: string | null
+          insurance_policy_number?: string | null
+          is_primary?: boolean | null
+          license_plate?: string | null
+          model?: string | null
+          price_per_km?: number | null
+          provider_id?: string
+          tax_yearly?: number | null
+          travel_cost_flat?: number | null
+          updated_at?: string
+          year?: number | null
+        }
+        Relationships: []
+      }
       purchase_order_items: {
         Row: {
           id: string
