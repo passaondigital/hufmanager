@@ -11,11 +11,17 @@ import {
   User, 
   ArrowRight, 
   CheckCircle2, 
-  Clock, 
   Lightbulb,
   Link2,
   Layers,
-  Globe
+  Globe,
+  MessageSquare,
+  TrendingUp,
+  Camera,
+  Clock,
+  Bell,
+  Smartphone,
+  Shield
 } from "lucide-react";
 
 // Custom Horse icon
@@ -25,254 +31,236 @@ const Horse = ({ className }: { className?: string }) => (
   </svg>
 );
 
-// ID Dictionary Data
-const ID_DICTIONARY = [
+// ============================================
+// THE HOLY TRINITY - Core Data Architecture
+// ============================================
+const HOLY_TRINITY = [
   {
-    id: "#PID / #uid",
+    id: "#PID",
     name: "Provider ID",
-    table: "profiles + user_roles",
-    description: "Hauptbenutzer-ID für Hufbearbeiter/Anbieter",
-    format: "PID-XXXXXX",
+    table: "profiles + user_roles (role='provider')",
+    description: "Der eingeloggte Hufbearbeiter/Anbieter. Zentrale Entität für alle Business-Daten.",
+    format: "PID-XXXXXX (6-stellig)",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
     relations: [
-      "→ business_settings (1:1)",
-      "→ offers (1:n)",
-      "→ services (1:n)",
-      "→ inventory_items (1:n)",
-      "→ invoices (1:n als provider_id)"
+      "→ business_settings (1:1) - Firmendaten",
+      "→ offers (1:n) - Dienstleistungen",
+      "→ contacts/#KID (1:n) - Kunden",
+      "→ invoices (1:n) - Rechnungen",
+      "→ appointments (1:n) - Termine"
     ]
   },
   {
     id: "#KID",
     name: "Kunden ID",
-    table: "profiles (role=client)",
-    description: "Kunde/Pferdebesitzer mit App-Zugang",
-    format: "KID-XXXXXX",
+    table: "profiles (role='client') + contacts",
+    description: "Pferdebesitzer mit optionalem App-Zugang. Gehört immer zu einem #PID.",
+    format: "KID-XXXXXX (6-stellig)",
+    color: "text-blue-500",
+    bgColor: "bg-blue-500/10",
     relations: [
-      "→ horses (1:n als owner_id)",
-      "→ access_grants (n:m mit Provider)",
-      "→ invoices (1:n als client_id)",
-      "→ conversations (1:n)"
+      "← profiles.provider_id (n:1) - Zugehöriger Provider",
+      "→ horses/#EQID (1:n) - Besitzt Pferde",
+      "→ access_grants (n:m) - Berechtigungen",
+      "→ invoices (1:n) - Erhält Rechnungen",
+      "→ conversations (1:n) - Chat mit Provider"
     ]
   },
   {
     id: "#EQID",
     name: "Equiden ID",
     table: "horses",
-    description: "Eindeutige Pferde-Identifikation",
-    format: "EQID-XXXXXX",
+    description: "Das Pferd – zentrale Dokumentations-Entität. Alle Behandlungen hier.",
+    format: "EQID-XXXXXX (6-stellig)",
+    color: "text-amber-500",
+    bgColor: "bg-amber-500/10",
     relations: [
-      "← profiles.owner_id (n:1)",
-      "→ appointments (1:n)",
-      "→ hoof_analyses (1:n)",
-      "→ horse_documents (1:n)",
-      "→ media_assets (1:n)"
-    ]
-  },
-  {
-    id: "#GP_ID",
-    name: "Global Product ID",
-    table: "global_products",
-    description: "Admin-gepflegte Produktvorlagen (Goodsmith, etc.)",
-    format: "UUID",
-    relations: [
-      "→ inventory_items.global_product_id (1:n)",
-      "Admin kann zentral pflegen"
-    ]
-  },
-  {
-    id: "#INV_ID",
-    name: "Inventory Item ID",
-    table: "inventory_items",
-    description: "Provider-eigenes Lager mit Beständen",
-    format: "UUID",
-    relations: [
-      "← profiles.user_id (n:1)",
-      "← global_products (optional)",
-      "→ offer_materials (n:m mit Offers)"
-    ]
-  },
-  {
-    id: "#OID",
-    name: "Offer ID",
-    table: "offers",
-    description: "Dienstleistungs-Pakete / Angebote",
-    format: "UUID",
-    relations: [
-      "← profiles.provider_id (n:1)",
-      "→ offer_materials (1:n) → Rezeptur",
-      "Nutzt inventory_items für Kalkulation"
-    ]
-  },
-  {
-    id: "#INV_NO",
-    name: "Rechnungsnummer",
-    table: "invoices",
-    description: "Fortlaufende Rechnungsnummer",
-    format: "RE-2026-XXXX",
-    relations: [
-      "← profiles.provider_id (n:1)",
-      "← profiles.client_id (n:1)",
-      "← horses.horse_id (optional)"
+      "← profiles.owner_id/#KID (n:1) - Gehört zu Besitzer",
+      "→ appointments (1:n) - Termine",
+      "→ hoof_analyses (1:n) - LTZ-Analysen",
+      "→ horse_documents (1:n) - Dokumente",
+      "→ media_assets (1:n) - Fotos/Collagen"
     ]
   }
 ];
 
-// Module Data
-const MODULES = [
+// ============================================
+// DIE 5 A's - Workflow Navigation
+// ============================================
+const FIVE_AS_WORKFLOW = [
   {
-    id: "calendar",
-    name: "Kalender",
-    icon: Calendar,
-    status: "active" as const,
-    description: "Terminverwaltung für Hufbearbeiter",
+    number: 1,
+    id: "anfragen",
+    name: "Anfragen",
+    icon: MessageSquare,
+    route: "/anfragen",
+    description: "Inbox & CRM – Alle Kommunikation zentral",
     features: [
-      "Termine erstellen & bearbeiten",
-      "Serien-Termine (wiederkehrend)",
-      "Kunden-Bestätigung per Token",
-      "iCal Export für externe Kalender",
-      "Push-Benachrichtigungen"
+      "Neue Leads aus Landing Page",
+      "Massen-Benachrichtigung (Broadcast)",
+      "Push + Email an Kunden",
+      "Chat-Verlauf"
     ],
-    dependencies: ["horses", "profiles"],
-    tables: ["appointments", "appointment_reminders"]
+    bigOrangeButton: "Neue Anfrage"
   },
   {
-    id: "inventory",
-    name: "Lager & Material",
-    icon: Package,
-    status: "active" as const,
-    description: "Materialverwaltung mit Bestandsführung",
-    features: [
-      "Produkte aus Katalog übernehmen",
-      "Min-Bestand Warnungen",
-      "Einkaufsliste generieren",
-      "EK/VK Preise pflegen",
-      "Rezepturen für Angebote"
-    ],
-    dependencies: ["global_products"],
-    tables: ["inventory_items", "offer_materials", "global_products"]
-  },
-  {
-    id: "invoices",
-    name: "Rechnungen",
-    icon: FileText,
-    status: "active" as const,
-    description: "Rechnungserstellung mit PDF-Export",
-    features: [
-      "PDF-Generierung (jsPDF)",
-      "Auto-Nummerierung",
-      "Status-Tracking (Offen/Bezahlt)",
-      "Kunden-Portal Ansicht",
-      "E-Mail Versand"
-    ],
-    dependencies: ["profiles", "horses", "offers"],
-    tables: ["invoices"]
-  },
-  {
-    id: "offers",
+    number: 2,
+    id: "angebote",
     name: "Angebote",
-    icon: Layers,
-    status: "active" as const,
-    description: "Dienstleistungs-Pakete mit Kalkulation",
+    icon: Package,
+    route: "/angebote",
+    description: "Sales & Kostenvoranschläge",
     features: [
+      "Dienstleistungs-Pakete erstellen",
       "Rezeptur-Editor (Material-Verknüpfung)",
       "Margen-Kalkulation",
-      "Bestandsprüfung (Stock Badge)",
-      "Landing Page Integration",
-      "Buchbare vs. Nur-Anzeige"
+      "Landing Page Integration"
     ],
-    dependencies: ["inventory_items"],
-    tables: ["offers", "offer_materials"]
+    bigOrangeButton: "Neues Angebot"
   },
   {
-    id: "hufanalyse",
-    name: "Hufanalyse (LTZ)",
-    icon: Horse,
-    status: "active" as const,
-    description: "Latero-Torsale-Zehenachse Analyse",
-    features: [
-      "4-Huf Detailerfassung",
-      "Gangbild-Analyse",
-      "Foto-Dokumentation",
-      "PDF-Report Export",
-      "Verlaufsvergleich"
-    ],
-    dependencies: ["horses", "appointments"],
-    tables: ["hoof_analyses", "hoof_photos"]
-  },
-  {
-    id: "chat",
-    name: "Chat / Nachrichten",
+    number: 3,
+    id: "aufnahme",
+    name: "Aufnahme",
     icon: Users,
-    status: "active" as const,
-    description: "Kommunikation zwischen Provider & Client",
+    route: "/customers",
+    description: "Kunden #KID & Pferde #EQID verwalten",
     features: [
-      "Echtzeit-Nachrichten",
-      "Bild-Uploads",
-      "Push-Benachrichtigungen",
-      "Ungelesen-Counter",
-      "Konversations-Übersicht"
+      "Kunden-Übersicht & Detail",
+      "Pferde-Akte (Stammdaten, Medizin, Huf-Status)",
+      "Dokumente & Röntgenbilder",
+      "HufCam Pro Integration"
     ],
-    dependencies: ["profiles", "access_grants"],
-    tables: ["conversations", "messages"]
+    bigOrangeButton: "Neues Pferd"
   },
   {
-    id: "landing",
-    name: "Landing Page",
-    icon: Globe,
-    status: "active" as const,
-    description: "Öffentliche Provider-Website",
+    number: 4,
+    id: "auffassen",
+    name: "Auffassen",
+    icon: Calendar,
+    route: "/calendar",
+    description: "Termine, Kalender, Durchführung",
     features: [
-      "Subdomain-Routing",
-      "Bewertungen anzeigen",
-      "Kontaktformular → Leads",
-      "Galerie-Manager",
-      "SEO-optimiert"
+      "Kalender & Touren-Planung",
+      "Termin-Tracking (Start/Stop)",
+      "Tacho-Foto für Kilometer",
+      "HufCam Pro Wizard",
+      "GPS-Integration"
     ],
-    dependencies: ["business_settings", "reviews", "offers"],
-    tables: ["business_settings", "leads", "reviews"]
+    bigOrangeButton: "Termin starten"
   },
   {
-    id: "network",
-    name: "Netzwerk",
-    icon: Link2,
-    status: "beta" as const,
-    description: "Verbindungen zwischen Providern & Clients",
+    number: 5,
+    id: "analyse",
+    name: "Analyse",
+    icon: TrendingUp,
+    route: "/rechnungen",
+    description: "Rechnungen, Finanzen, Doku-Historie",
     features: [
-      "Verbindungsanfragen",
-      "QR-Code / Magic Links",
-      "Zugriffsrechte verwalten",
-      "Tierarzt-Kontakte teilen"
+      "Rechnungserstellung (PDF)",
+      "DATEV-Export",
+      "ZUGFeRD-konform",
+      "Umsatz-Dashboard",
+      "Offene Posten"
     ],
-    dependencies: ["profiles"],
-    tables: ["access_grants", "magic_links"]
-  },
-  {
-    id: "subscriptions",
-    name: "Abo-System",
-    icon: CheckCircle2,
-    status: "active" as const,
-    description: "CopeCart Integration für Zahlungen",
-    features: [
-      "CopeCart Webhook",
-      "Plan-Überschreibung (Admin)",
-      "Feature Flags",
-      "Zugangs-Ablaufdatum"
-    ],
-    dependencies: ["profiles"],
-    tables: ["profiles (subscription_*)", "subscription_links"]
+    bigOrangeButton: "Neue Rechnung"
   }
 ];
 
-// Data Flow Steps
+// ============================================
+// CORE FEATURES
+// ============================================
+const CORE_FEATURES = [
+  {
+    id: "hufcam-pro",
+    name: "HufCam Pro",
+    icon: Camera,
+    status: "active" as const,
+    location: "Auffassen + Aufnahme",
+    description: "Foto-Dokumentation mit strukturiertem Wizard",
+    features: [
+      "4-Huf Wizard: VL → VR → HL → HR",
+      "4 Ansichten: Dorsal, Lateral, Sohle, Ballen",
+      "Overlay-Guides (Schablonen) über Kamera",
+      "Auto-Collage (1080x1080) mit Branding",
+      "Social-Media-Ready Export"
+    ]
+  },
+  {
+    id: "feierabend-waechter",
+    name: "Feierabend-Wächter",
+    icon: Clock,
+    status: "active" as const,
+    location: "AppHeader (Global)",
+    description: "Status-Toggle für Arbeitszeiten",
+    features: [
+      "Manueller Toggle: Im Dienst / Feierabend",
+      "Auto-Erkennung via business_hours",
+      "Blockiert neue Anfragen wenn aktiv",
+      "LocalStorage-Persistenz",
+      "Cross-Tab Sync"
+    ]
+  },
+  {
+    id: "work-tracker",
+    name: "Arbeitszeit-Tracking",
+    icon: Clock,
+    status: "active" as const,
+    location: "Auffassen (Termin-Detail)",
+    description: "Stoppuhr & Kilometer-Erfassung",
+    features: [
+      "Start/Pause/Stop Timer",
+      "Tacho-Foto (Anfang & Ende)",
+      "Automatische Streckenberechnung",
+      "Preis pro Kilometer",
+      "In Rechnung übernehmen"
+    ]
+  },
+  {
+    id: "broadcast",
+    name: "Massen-Benachrichtigung",
+    icon: Bell,
+    status: "active" as const,
+    location: "Anfragen",
+    description: "Rundmail an Kunden senden",
+    features: [
+      "Zielgruppe: Alle / Diese Woche / Überfällig",
+      "Vorlagen: Krankheit, Urlaub",
+      "Push-Notification + In-App",
+      "Optional: Email-Kopie",
+      "Batch-Verarbeitung"
+    ]
+  },
+  {
+    id: "client-app",
+    name: "Client-App",
+    icon: Smartphone,
+    status: "active" as const,
+    location: "Separater Login-Flow",
+    description: "Pferdebesitzer-Portal (nur lesen)",
+    features: [
+      "Eigene Pferde einsehen (#EQID)",
+      "Terminübersicht",
+      "Rechnungen downloaden",
+      "Chat mit Provider",
+      "Huf-Collagen vom Profi sehen"
+    ]
+  }
+];
+
+// ============================================
+// DATA FLOW
+// ============================================
 const DATA_FLOW = [
   {
     step: 1,
-    from: "Provider (Du)",
+    from: "#PID (Provider)",
     fromIcon: User,
     action: "Erstellt",
     to: "Business Settings",
     toIcon: Database,
-    description: "Firmenname, Logo, Subdomain, Impressum"
+    description: "Firmenname, Logo, Subdomain, AGB"
   },
   {
     step: 2,
@@ -288,54 +276,85 @@ const DATA_FLOW = [
     from: "Besucher",
     fromIcon: Users,
     action: "Füllt aus",
-    to: "Lead / Anfrage",
-    toIcon: FileText,
+    to: "Lead → Anfragen",
+    toIcon: MessageSquare,
     description: "Kontaktformular → leads Tabelle"
   },
   {
     step: 4,
-    from: "Provider",
+    from: "#PID",
     fromIcon: User,
     action: "Erstellt",
-    to: "Client Profil",
+    to: "#KID (Kunde)",
     toIcon: Users,
-    description: "Kunde mit #KID, optional App-Einladung"
+    description: "Kunde mit optionalem App-Zugang (Magic Link)"
   },
   {
     step: 5,
-    from: "Client",
+    from: "#KID",
     fromIcon: Users,
-    action: "Loggt ein",
-    to: "Client App",
-    toIcon: Database,
-    description: "Sieht eigene Pferde, Termine, Rechnungen"
+    action: "Legt an",
+    to: "#EQID (Pferd)",
+    toIcon: Horse,
+    description: "Pferd wird der Akte hinzugefügt"
   },
   {
     step: 6,
-    from: "access_grants",
-    fromIcon: Link2,
-    action: "Verknüpft",
-    to: "Provider ↔ Client",
-    toIcon: Users,
-    description: "Berechtigungen: can_view_medical, can_create_appointments"
+    from: "#PID",
+    fromIcon: User,
+    action: "Plant",
+    to: "Termin (Auffassen)",
+    toIcon: Calendar,
+    description: "#KID bekommt Push + Bestätigungs-Link"
   },
   {
     step: 7,
-    from: "Client",
-    fromIcon: Users,
-    action: "Legt an",
-    to: "Pferd (#EQID)",
-    toIcon: Horse,
-    description: "Provider wird benachrichtigt (Trigger)"
+    from: "#PID",
+    fromIcon: User,
+    action: "Dokumentiert",
+    to: "HufCam Pro Collage",
+    toIcon: Camera,
+    description: "Wird an #EQID angehängt, #KID kann sehen"
   },
   {
     step: 8,
-    from: "Provider",
+    from: "#PID",
     fromIcon: User,
-    action: "Erstellt",
-    to: "Termin",
-    toIcon: Calendar,
-    description: "Client bekommt Push + Bestätigungs-Link"
+    action: "Stellt",
+    to: "Rechnung (Analyse)",
+    toIcon: FileText,
+    description: "#KID kann in Client-App downloaden"
+  }
+];
+
+// ============================================
+// UI PRINCIPLES
+// ============================================
+const UI_PRINCIPLES = [
+  {
+    name: "Grandma-Test",
+    description: "App muss in 10 Minuten ohne Handbuch verständlich sein",
+    icon: "👵"
+  },
+  {
+    name: "Big Orange Button",
+    description: "Pro Screen nur EINE Hauptaktion in Orange, Rest dezent",
+    icon: "🟠"
+  },
+  {
+    name: "Numbered Navigation",
+    description: "Die 5 A's mit Nummern 1-5 für klaren Workflow",
+    icon: "1️⃣"
+  },
+  {
+    name: "Friendly Empty States",
+    description: "Keine leeren Tabellen – motivierende Texte + CTA",
+    icon: "💬"
+  },
+  {
+    name: "Hidden Pro Features",
+    description: "DATEV, ZUGFeRD etc. in 3-Punkt-Menü, nicht auf erster Ebene",
+    icon: "⋮"
   }
 ];
 
@@ -357,70 +376,132 @@ export function AdminSystemDoku() {
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Database className="w-6 h-6 text-primary" />
-          System & Dokumentation
+          Mission Control – System & Dokumentation
         </h1>
         <p className="text-muted-foreground mt-1">
-          Architektur-Übersicht, ID-Dictionary und Modul-Verknüpfungen
+          Strategische Architektur, Die 5 A's Workflow, Das Huf-Dreieck
         </p>
       </div>
 
-      <Tabs defaultValue="ids" className="space-y-4">
-        <TabsList className="grid w-full max-w-lg grid-cols-3">
-          <TabsTrigger value="ids" className="gap-2">
+      {/* UI Principles Banner */}
+      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-background">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Shield className="w-5 h-5 text-primary" />
+            UI-Prinzipien (Grandma-Test)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-4">
+            {UI_PRINCIPLES.map((p) => (
+              <div key={p.name} className="flex items-center gap-2 text-sm">
+                <span className="text-lg">{p.icon}</span>
+                <div>
+                  <span className="font-medium">{p.name}:</span>
+                  <span className="text-muted-foreground ml-1">{p.description}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Tabs defaultValue="trinity" className="space-y-4">
+        <TabsList className="grid w-full max-w-2xl grid-cols-4">
+          <TabsTrigger value="trinity" className="gap-2">
             <Database className="w-4 h-4" />
-            Daten-Struktur
+            Huf-Dreieck
           </TabsTrigger>
-          <TabsTrigger value="modules" className="gap-2">
+          <TabsTrigger value="fiveAs" className="gap-2">
             <Layers className="w-4 h-4" />
-            Module
+            Die 5 A's
+          </TabsTrigger>
+          <TabsTrigger value="features" className="gap-2">
+            <Camera className="w-4 h-4" />
+            Core Features
           </TabsTrigger>
           <TabsTrigger value="flow" className="gap-2">
             <Link2 className="w-4 h-4" />
-            Client-Bridge
+            Datenfluss
           </TabsTrigger>
         </TabsList>
 
-        {/* TAB 1: ID Dictionary */}
-        <TabsContent value="ids" className="space-y-4">
+        {/* TAB 1: Das Huf-Dreieck (Holy Trinity) */}
+        <TabsContent value="trinity" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Database className="w-5 h-5 text-primary" />
-                ID-Dictionary
+                Das Huf-Dreieck – Core Daten-Architektur
               </CardTitle>
               <CardDescription>
-                Übersicht aller System-IDs und ihrer Verknüpfungen
+                Alle Features basieren auf diesem Dreieck: #PID → #KID → #EQID
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Visual Triangle */}
+              <div className="flex justify-center mb-6">
+                <div className="relative w-80 h-64">
+                  {/* Top: PID */}
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 text-center">
+                    <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mx-auto border-2 border-primary">
+                      <User className="w-8 h-8 text-primary" />
+                    </div>
+                    <p className="font-bold text-primary mt-2">#PID</p>
+                    <p className="text-xs text-muted-foreground">Provider</p>
+                  </div>
+                  
+                  {/* Bottom Left: KID */}
+                  <div className="absolute bottom-0 left-0 text-center">
+                    <div className="w-20 h-20 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto border-2 border-blue-500">
+                      <Users className="w-8 h-8 text-blue-500" />
+                    </div>
+                    <p className="font-bold text-blue-500 mt-2">#KID</p>
+                    <p className="text-xs text-muted-foreground">Kunde</p>
+                  </div>
+                  
+                  {/* Bottom Right: EQID */}
+                  <div className="absolute bottom-0 right-0 text-center">
+                    <div className="w-20 h-20 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto border-2 border-amber-500">
+                      <Horse className="w-8 h-8 text-amber-500" />
+                    </div>
+                    <p className="font-bold text-amber-500 mt-2">#EQID</p>
+                    <p className="text-xs text-muted-foreground">Equide</p>
+                  </div>
+                  
+                  {/* Connection Lines */}
+                  <svg className="absolute inset-0 w-full h-full" style={{ zIndex: -1 }}>
+                    <line x1="50%" y1="25%" x2="15%" y2="75%" stroke="hsl(var(--muted-foreground))" strokeWidth="2" strokeDasharray="5,5" />
+                    <line x1="50%" y1="25%" x2="85%" y2="75%" stroke="hsl(var(--muted-foreground))" strokeWidth="2" strokeDasharray="5,5" />
+                    <line x1="15%" y1="75%" x2="85%" y2="75%" stroke="hsl(var(--muted-foreground))" strokeWidth="2" strokeDasharray="5,5" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Details Table */}
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[120px]">ID</TableHead>
-                      <TableHead className="w-[140px]">Name</TableHead>
-                      <TableHead className="w-[180px]">Tabelle</TableHead>
+                      <TableHead className="w-[100px]">ID</TableHead>
+                      <TableHead className="w-[120px]">Name</TableHead>
                       <TableHead>Beschreibung</TableHead>
                       <TableHead className="w-[280px]">Verknüpfungen</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {ID_DICTIONARY.map((item) => (
+                    {HOLY_TRINITY.map((item) => (
                       <TableRow key={item.id}>
                         <TableCell>
-                          <code className="px-2 py-1 bg-primary/10 text-primary rounded font-mono text-sm">
+                          <code className={`px-2 py-1 ${item.bgColor} ${item.color} rounded font-mono text-sm font-bold`}>
                             {item.id}
                           </code>
                         </TableCell>
                         <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell>
-                          <code className="text-xs text-muted-foreground">{item.table}</code>
-                          <div className="text-xs text-muted-foreground mt-1">{item.format}</div>
-                        </TableCell>
                         <TableCell className="text-sm">{item.description}</TableCell>
                         <TableCell>
                           <ul className="text-xs space-y-1">
-                            {item.relations.map((rel, idx) => (
+                            {item.relations.slice(0, 3).map((rel, idx) => (
                               <li key={idx} className="text-muted-foreground">{rel}</li>
                             ))}
                           </ul>
@@ -433,119 +514,137 @@ export function AdminSystemDoku() {
             </CardContent>
           </Card>
 
-          {/* Quick Reference Card */}
-          <Card className="border-primary/20 bg-primary/5">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Lightbulb className="w-5 h-5 text-amber-500" />
-                Quick Reference
+          {/* Important Note */}
+          <Card className="border-destructive/20 bg-destructive/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base text-destructive flex items-center gap-2">
+                ⚠️ Wichtig: Kein #PRID mehr!
               </CardTitle>
             </CardHeader>
+            <CardContent className="text-sm">
+              <p>Die alte "Partner-ID" (#PRID) existiert nicht mehr. Alle Features basieren ausschließlich auf dem Huf-Dreieck:</p>
+              <p className="font-mono mt-2 text-muted-foreground">#PID (Provider) → #KID (Kunde) → #EQID (Pferd)</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* TAB 2: Die 5 A's */}
+        <TabsContent value="fiveAs" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Layers className="w-5 h-5 text-primary" />
+                Die 5 A's – Profi-Workflow
+              </CardTitle>
+              <CardDescription>
+                Nummerierte Navigation für klaren Arbeitsablauf
+              </CardDescription>
+            </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="font-semibold">Provider erstellt Client:</span>
-                  <p className="text-muted-foreground">profiles.created_by_provider_id wird gesetzt → Auto-Trigger erstellt access_grant</p>
-                </div>
-                <div>
-                  <span className="font-semibold">Rezeptur-Logik:</span>
-                  <p className="text-muted-foreground">offers ↔ offer_materials ↔ inventory_items (n:m Beziehung)</p>
-                </div>
-                <div>
-                  <span className="font-semibold">Soft-Delete:</span>
-                  <p className="text-muted-foreground">profiles.deleted_at, horses.deleted_at, contacts.deleted_at</p>
-                </div>
+              <div className="space-y-4">
+                {FIVE_AS_WORKFLOW.map((item) => (
+                  <div key={item.id} className="flex items-start gap-4 p-4 rounded-lg bg-muted/50 border">
+                    {/* Number Badge */}
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                      <span className="text-lg font-bold text-primary-foreground">{item.number}</span>
+                    </div>
+
+                    {/* Icon */}
+                    <div className="flex-shrink-0 p-2 bg-muted rounded-lg">
+                      <item.icon className="w-5 h-5 text-muted-foreground" />
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold">{item.name}</h3>
+                        <Badge variant="outline" className="text-xs">{item.route}</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
+                      
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {item.features.map((f, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-xs">
+                            {f}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Big Orange Button */}
+                    <div className="flex-shrink-0 text-right">
+                      <span className="text-xs text-muted-foreground block mb-1">Hauptaktion:</span>
+                      <Badge className="bg-primary text-primary-foreground">{item.bigOrangeButton}</Badge>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* TAB 2: Modules */}
-        <TabsContent value="modules" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {MODULES.map((module) => (
-              <Card key={module.id} className="flex flex-col">
+        {/* TAB 3: Core Features */}
+        <TabsContent value="features" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {CORE_FEATURES.map((feature) => (
+              <Card key={feature.id} className="flex flex-col">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-primary/10 rounded-lg">
-                        <module.icon className="w-5 h-5 text-primary" />
+                        <feature.icon className="w-5 h-5 text-primary" />
                       </div>
                       <div>
-                        <CardTitle className="text-base">{module.name}</CardTitle>
-                        <CardDescription className="text-xs mt-0.5">{module.description}</CardDescription>
+                        <CardTitle className="text-base">{feature.name}</CardTitle>
+                        <CardDescription className="text-xs mt-0.5">{feature.description}</CardDescription>
                       </div>
                     </div>
-                    {getStatusBadge(module.status)}
+                    {getStatusBadge(feature.status)}
                   </div>
                 </CardHeader>
                 <CardContent className="flex-1 space-y-3">
-                  {/* Features */}
                   <div>
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Features</span>
-                    <ul className="mt-1 space-y-1">
-                      {module.features.slice(0, 4).map((feature, idx) => (
-                        <li key={idx} className="text-xs flex items-start gap-2">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-500 mt-0.5 flex-shrink-0" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                      {module.features.length > 4 && (
-                        <li className="text-xs text-muted-foreground">
-                          +{module.features.length - 4} weitere...
-                        </li>
-                      )}
-                    </ul>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      Location: {feature.location}
+                    </span>
                   </div>
-
-                  {/* Dependencies */}
-                  <div>
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Abhängigkeiten</span>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {module.dependencies.map((dep, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
-                          {dep}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Tables */}
-                  <div>
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Tabellen</span>
-                    <div className="mt-1 text-xs text-muted-foreground font-mono">
-                      {module.tables.join(", ")}
-                    </div>
-                  </div>
+                  <ul className="space-y-1">
+                    {feature.features.map((f, idx) => (
+                      <li key={idx} className="text-xs flex items-start gap-2">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-500 mt-0.5 flex-shrink-0" />
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </CardContent>
               </Card>
             ))}
           </div>
         </TabsContent>
 
-        {/* TAB 3: Client-Provider Bridge */}
+        {/* TAB 4: Data Flow */}
         <TabsContent value="flow" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Link2 className="w-5 h-5 text-primary" />
-                Client-Provider Bridge
+                Datenfluss – Von Einrichtung bis Client-Nutzung
               </CardTitle>
               <CardDescription>
-                Datenfluss von der Provider-Einrichtung bis zur Client-Nutzung
+                Schritt-für-Schritt Ablauf im HufManager
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {DATA_FLOW.map((flow, idx) => (
-                  <div key={idx} className="flex items-center gap-4 p-4 rounded-lg bg-muted/50 border">
+                  <div key={idx} className="flex items-center gap-4 p-3 rounded-lg bg-muted/50 border">
                     {/* Step Number */}
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
                       <span className="text-sm font-bold text-primary">{flow.step}</span>
                     </div>
 
                     {/* From */}
-                    <div className="flex items-center gap-2 min-w-[140px]">
+                    <div className="flex items-center gap-2 min-w-[120px]">
                       <flow.fromIcon className="w-4 h-4 text-muted-foreground" />
                       <span className="font-medium text-sm">{flow.from}</span>
                     </div>
@@ -572,7 +671,7 @@ export function AdminSystemDoku() {
             </CardContent>
           </Card>
 
-          {/* Summary Card */}
+          {/* Summary */}
           <Card className="border-emerald-500/20 bg-emerald-500/5">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -584,19 +683,19 @@ export function AdminSystemDoku() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="font-semibold">Kern-Entitäten:</span>
-                  <p className="text-muted-foreground">Provider, Client, Horse, Appointment, Invoice, Offer</p>
+                  <p className="text-muted-foreground">#PID (Provider), #KID (Kunde), #EQID (Pferd)</p>
+                </div>
+                <div>
+                  <span className="font-semibold">Workflow:</span>
+                  <p className="text-muted-foreground">Die 5 A's: Anfragen → Angebote → Aufnahme → Auffassen → Analyse</p>
                 </div>
                 <div>
                   <span className="font-semibold">Zugriffskontrolle:</span>
-                  <p className="text-muted-foreground">RLS Policies + access_grants Tabelle für Provider↔Client Berechtigungen</p>
+                  <p className="text-muted-foreground">RLS Policies + access_grants für #PID↔#KID</p>
                 </div>
                 <div>
-                  <span className="font-semibold">Notifications:</span>
-                  <p className="text-muted-foreground">DB-Trigger → notifications Tabelle + Push via Edge Function</p>
-                </div>
-                <div>
-                  <span className="font-semibold">Multi-Tenancy:</span>
-                  <p className="text-muted-foreground">Jeder Provider sieht nur seine Daten via user_id / provider_id Filters</p>
+                  <span className="font-semibold">Mobile First:</span>
+                  <p className="text-muted-foreground">PWA mit Offline-First Ansatz, Push-Notifications</p>
                 </div>
               </div>
             </CardContent>
