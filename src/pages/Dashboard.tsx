@@ -6,6 +6,7 @@ import { OverdueAssessmentsWidget } from "@/components/dashboard/OverdueAssessme
 import { DueAppointmentsWidget } from "@/components/dashboard/DueAppointmentsWidget";
 import { RecentHorsesWidget } from "@/components/dashboard/RecentHorsesWidget";
 import { ShareInviteLinkCard } from "@/components/invite/ShareInviteLinkCard";
+import { FirstStepsChecklist } from "@/components/dashboard/FirstStepsChecklist";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { ProviderSetupWizard } from "@/components/onboarding/ProviderSetupWizard";
@@ -35,6 +36,9 @@ const Dashboard = () => {
       <div className="space-y-6">
       {/* Push Notification Banner */}
       <PushNotificationBanner />
+
+      {/* First Steps Checklist - Shows progress for new users */}
+      <FirstStepsChecklist />
 
       {/* Recent Horses Quick Access */}
       <RecentHorsesWidget />
