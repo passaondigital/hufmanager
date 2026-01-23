@@ -19,6 +19,7 @@ import { TabDokumente } from "@/components/horse-detail/TabDokumente";
 import { TabHufHistorie } from "@/components/horse-detail/TabHufHistorie";
 import { EditHorseModal } from "@/components/horse-detail/EditHorseModal";
 import { LTZAnalysisHistory } from "@/components/hoof-analysis/LTZAnalysisHistory";
+import { HufCamPro } from "@/components/hufcam/HufCamPro";
 import type { Horse, Appointment, HoofPhoto, HorseDocument } from "@/components/horse-detail/types";
 
 interface OwnerProfile {
