@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   MessageSquare,
-  MessagesSquare,
   FileText,
   UserPlus,
   Star,
@@ -12,24 +11,33 @@ import {
   Calendar,
   Users,
   Settings,
-  Scissors,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   LogOut,
   GraduationCap,
   Gift,
   LifeBuoy,
-  ExternalLink,
-  ClipboardList,
-  Briefcase,
   Shield,
   Diamond,
   Lock,
   Warehouse,
-  Wallet,
-  FlaskConical,
-  Package,
   UsersRound,
+  Package,
+  Inbox,
+  Clock,
+  Globe,
+  ShoppingBag,
+  ClipboardList,
+  User,
+  Car,
+  CreditCard,
+  Receipt,
+  TrendingUp,
+  Camera,
+  FileCheck,
+  Timer,
+  Route,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -40,9 +48,12 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
-import { FeatureKey } from "@/types/featureFlags";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 // Stealth feature: Only these emails can see Abo-Matrix
 const STEALTH_EMAILS = ["barhufserviceschmid@gmail.com"];
@@ -60,63 +71,49 @@ function useNewLeadsCount() {
       if (error) throw error;
       return count || 0;
     },
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 30000,
   });
 }
 
-interface MainNavItem {
-  title: string;
-  url: string;
-  icon: React.ComponentType<{ className?: string }>;
-  featureKey: FeatureKey | null;
+// Hook to get count of unread messages
+function useUnreadMessagesCount() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["unread-messages-count", user?.id],
+    queryFn: async () => {
+      if (!user) return 0;
+      const { count, error } = await supabase
+        .from("messages")
+        .select("*", { count: "exact", head: true })
+        .eq("is_read", false)
+        .neq("sender_id", user.id);
+      
+      if (error) throw error;
+      return count || 0;
+    },
+    refetchInterval: 30000,
+    enabled: !!user,
+  });
 }
 
-// Die 5 A's - Core Navigation für Profis (#pid)
-interface FiveAsItem {
-  number: number;
+interface SubMenuItem {
   title: string;
   url: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: number;
-  description: string;
+  description?: string;
 }
 
-// Erweiterungen - Locked Add-ons
-interface AddonItem {
+interface MainMenuItem {
+  number: number;
   title: string;
   icon: React.ComponentType<{ className?: string }>;
-  locked: boolean;
+  badge?: number;
+  subItems: SubMenuItem[];
 }
-
-const addonItems: AddonItem[] = [
-  { title: "Lager", icon: Warehouse, locked: true },
-  { title: "Mitarbeiter", icon: UsersRound, locked: true },
-];
-
-interface BottomNavItem {
-  title: string;
-  url: string;
-  icon: React.ComponentType<{ className?: string }>;
-  featureKey: FeatureKey | null;
-  comingSoon?: boolean;
-}
-
-const bottomItems: BottomNavItem[] = [
-  { title: "Academy", url: "/academy", icon: GraduationCap, featureKey: "module_academy", comingSoon: true },
-  { title: "Geld verdienen", url: "/partner", icon: Gift, featureKey: null },
-  { title: "Management", url: "/management", icon: Settings, featureKey: null },
-];
 
 interface AppSidebarProps {
   onNavigate?: () => void;
-}
-
-interface NavItemType {
-  title: string;
-  url: string;
-  icon: React.ComponentType<{ className?: string }>;
-  badge?: string | number;
-  showBetaBadge?: boolean;
 }
 
 export function AppSidebar({ onNavigate }: AppSidebarProps) {
@@ -124,41 +121,85 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { data: newLeadsCount = 0 } = useNewLeadsCount();
-  const { isFeatureVisible, showBetaBadge: checkBetaBadge, getFeatureStatus } = useSubscription();
+  const { data: unreadMessagesCount = 0 } = useUnreadMessagesCount();
   const { role, user } = useAuth();
   
   const isAdmin = role === "admin";
   const canSeeAboMatrix = user?.email && STEALTH_EMAILS.includes(user.email);
 
-  // Die 5 A's - Der Profi-Workflow (mit Nummern für visuelle Führung)
-  const fiveAsItems: (FiveAsItem & { badge?: number; number: number })[] = [
+  // Track which menus are open
+  const [openMenus, setOpenMenus] = useState<Record<number, boolean>>({});
+
+  // Die 5 A's - Neue Struktur mit Untermenüs
+  const fiveAsItems: MainMenuItem[] = [
     { 
       number: 1,
       title: "Anfragen", 
-      url: "/anfragen", 
       icon: MessageSquare, 
-      badge: newLeadsCount > 0 ? newLeadsCount : undefined,
-      description: "Inbox für neue Leads"
+      badge: (newLeadsCount || 0) + (unreadMessagesCount || 0),
+      subItems: [
+        { title: "Inbox", url: "/chat", icon: Inbox, badge: unreadMessagesCount || undefined, description: "Nachrichten & Chat" },
+        { title: "Warteliste", url: "/anfragen", icon: Clock, badge: newLeadsCount || undefined, description: "Potenzielle Kunden" },
+        { title: "Landingpage", url: "/management?tab=landing", icon: Globe, description: "Öffentliche Visitenkarte" },
+      ]
     },
-    { number: 2, title: "Angebote", url: "/angebote", icon: FileText, description: "Kostenvoranschläge" },
-    { number: 3, title: "Aufnahme", url: "/aufnahme", icon: UserPlus, description: "Kunden & Pferde verwalten" },
-    { number: 4, title: "Auffassen", url: "/kalender", icon: Calendar, description: "Termine & Tour-Planung" },
-    { number: 5, title: "Analyse", url: "/analyse", icon: BarChart3, description: "Finanzen & Dokumentation" },
+    { 
+      number: 2, 
+      title: "Angebote", 
+      icon: FileText,
+      subItems: [
+        { title: "Service-Katalog", url: "/services", icon: ShoppingBag, description: "Leistungen definieren" },
+        { title: "Offene Angebote", url: "/angebote", icon: ClipboardList, description: "Kostenvoranschläge" },
+      ]
+    },
+    { 
+      number: 3, 
+      title: "Aufnahme", 
+      icon: UserPlus,
+      subItems: [
+        { title: "Kunden", url: "/kunden", icon: Users, description: "#kid verwalten" },
+        { title: "Pferde", url: "/aufnahme", icon: UserPlus, description: "#eqid verwalten" },
+      ]
+    },
+    { 
+      number: 4, 
+      title: "Auffassen", 
+      icon: Calendar,
+      subItems: [
+        { title: "Kalender & Tour", url: "/kalender", icon: Route, description: "Termine & Routen" },
+        { title: "Work-Mode", url: "/hufanalyse", icon: Camera, description: "HufCam & Tools" },
+        { title: "Feedback", url: "/auffassen", icon: Star, description: "Bewertungen" },
+      ]
+    },
+    { 
+      number: 5, 
+      title: "Analyse", 
+      icon: BarChart3,
+      subItems: [
+        { title: "Finanzen", url: "/rechnungen", icon: Receipt, description: "Rechnungen & Export" },
+        { title: "Betriebszahlen", url: "/analyse", icon: TrendingUp, description: "Charts & Stats" },
+      ]
+    },
   ];
 
-  // Quick Access Items
-  const quickAccessItems: NavItemType[] = [
-    { title: "Dashboard", url: "/", icon: LayoutDashboard },
-    { title: "Kunden", url: "/kunden", icon: Users },
-    { title: "Services", url: "/services", icon: Scissors },
+  // Erweiterungen - Locked Add-ons
+  const addonItems = [
+    { title: "Lager", icon: Warehouse, locked: true },
+    { title: "Mitarbeiter", icon: UsersRound, locked: true },
   ];
 
-  const handleDisabledClick = (featureName: string) => {
-    toast({
-      title: "Modul nicht verfügbar",
-      description: `${featureName} ist für deinen Account nicht aktiviert. Kontaktiere den Support.`,
-      variant: "destructive",
-    });
+  // Check if a submenu contains the active route
+  const isMenuActive = (item: MainMenuItem) => {
+    return item.subItems.some(sub => location.pathname === sub.url || location.pathname.startsWith(sub.url.split("?")[0]));
+  };
+
+  const isActive = (path: string) => {
+    const basePath = path.split("?")[0];
+    return location.pathname === basePath || location.pathname.startsWith(basePath + "/");
+  };
+
+  const toggleMenu = (number: number) => {
+    setOpenMenus(prev => ({ ...prev, [number]: !prev[number] }));
   };
 
   const handleLockedClick = (featureName: string) => {
@@ -167,8 +208,6 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       description: `${featureName} ist ein kostenpflichtiges Add-on. Upgrade auf Pro für alle Features.`,
     });
   };
-
-  const isActive = (path: string) => location.pathname === path;
 
   const handleLogout = async () => {
     try {
@@ -180,79 +219,86 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
     }
   };
 
-  const NavItem = ({ item, showBadgeCount = true }: { item: NavItemType; showBadgeCount?: boolean }) => (
+  // Sub-menu item component
+  const SubNavItem = ({ item }: { item: SubMenuItem }) => (
     <NavLink
       to={item.url}
       onClick={onNavigate}
       className={cn(
-        "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group min-h-[48px]",
+        "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ml-8 min-h-[40px]",
         isActive(item.url)
-          ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/30"
-          : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          ? "bg-primary/10 text-primary font-medium"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground"
       )}
     >
-      <item.icon className={cn(
-        "h-5 w-5 flex-shrink-0 transition-colors", 
-        collapsed && "mx-auto",
-        isActive(item.url) && "text-sidebar-primary-foreground"
-      )} />
-      {!collapsed && (
-        <>
-          <span className="font-medium text-[15px]">{item.title}</span>
-          {item.showBetaBadge && (
-            <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0 bg-orange-500/20 text-orange-400 border-orange-500/30">
-              BETA
-            </Badge>
-          )}
-          {showBadgeCount && item.badge !== undefined && Number(item.badge) > 0 && (
-            <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
-              {item.badge}
-            </span>
-          )}
-        </>
+      <item.icon className="h-4 w-4 flex-shrink-0" />
+      <span className="text-sm">{item.title}</span>
+      {item.badge !== undefined && item.badge > 0 && (
+        <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+          {item.badge}
+        </span>
       )}
     </NavLink>
   );
 
-  const FiveAsNavItem = ({ item, index }: { item: FiveAsItem & { badge?: number }; index: number }) => (
-    <NavLink
-      to={item.url}
-      onClick={onNavigate}
-      className={cn(
-        "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group min-h-[48px]",
-        isActive(item.url)
-          ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/30"
-          : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-      )}
-    >
-      {/* Nummer-Badge für visuelle Führung */}
-      <div className={cn(
-        "flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold flex-shrink-0",
-        isActive(item.url)
-          ? "bg-sidebar-primary-foreground/20 text-sidebar-primary-foreground"
-          : "bg-primary/10 text-primary"
-      )}>
-        {item.number}
-      </div>
-      <item.icon className={cn(
-        "h-5 w-5 flex-shrink-0 transition-colors", 
-        collapsed && "mx-auto",
-        isActive(item.url) && "text-sidebar-primary-foreground"
-      )} />
-      {!collapsed && (
-        <>
-          <span className="font-medium text-[15px]">{item.title}</span>
-          {item.badge !== undefined && item.badge > 0 && (
-            <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
-              {item.badge}
-            </span>
-          )}
-        </>
-      )}
-    </NavLink>
-  );
+  // Main menu item with collapsible sub-items
+  const MainNavItem = ({ item }: { item: MainMenuItem }) => {
+    const isOpen = openMenus[item.number] ?? isMenuActive(item);
+    const menuActive = isMenuActive(item);
 
-  const LockedAddonItem = ({ item }: { item: AddonItem }) => (
+    return (
+      <Collapsible open={isOpen} onOpenChange={() => toggleMenu(item.number)}>
+        <CollapsibleTrigger asChild>
+          <button
+            className={cn(
+              "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 min-h-[48px]",
+              menuActive
+                ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/30"
+                : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            )}
+          >
+            {/* Nummer-Badge */}
+            <div className={cn(
+              "flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold flex-shrink-0",
+              menuActive
+                ? "bg-sidebar-primary-foreground/20 text-sidebar-primary-foreground"
+                : "bg-primary/10 text-primary"
+            )}>
+              {item.number}
+            </div>
+            <item.icon className={cn(
+              "h-5 w-5 flex-shrink-0 transition-colors",
+              collapsed && "mx-auto"
+            )} />
+            {!collapsed && (
+              <>
+                <span className="font-medium text-[15px] flex-1 text-left">{item.title}</span>
+                {item.badge !== undefined && item.badge > 0 && (
+                  <span className="bg-destructive text-destructive-foreground text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center mr-2">
+                    {item.badge}
+                  </span>
+                )}
+                <ChevronDown className={cn(
+                  "h-4 w-4 transition-transform",
+                  isOpen && "rotate-180"
+                )} />
+              </>
+            )}
+          </button>
+        </CollapsibleTrigger>
+        {!collapsed && (
+          <CollapsibleContent className="space-y-1 pt-1">
+            {item.subItems.map((sub) => (
+              <SubNavItem key={sub.url} item={sub} />
+            ))}
+          </CollapsibleContent>
+        )}
+      </Collapsible>
+    );
+  };
+
+  // Locked addon item
+  const LockedAddonItem = ({ item }: { item: { title: string; icon: React.ComponentType<{ className?: string }>; locked: boolean } }) => (
     <button
       onClick={() => handleLockedClick(item.title)}
       className={cn(
@@ -306,16 +352,21 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       </div>
 
       <ScrollArea className="flex-1 py-4">
-        {/* Quick Access */}
-        <div className="px-3 space-y-1">
-          {!collapsed && (
-            <p className="text-xs font-medium text-sidebar-foreground/50 uppercase tracking-wider px-3 mb-2">
-              Schnellzugriff
-            </p>
-          )}
-          {quickAccessItems.map((item) => (
-            <NavItem key={item.title} item={item} />
-          ))}
+        {/* Dashboard Quick Access */}
+        <div className="px-3 mb-2">
+          <NavLink
+            to="/"
+            onClick={onNavigate}
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 min-h-[48px]",
+              isActive("/") && location.pathname === "/"
+                ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/30"
+                : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            )}
+          >
+            <LayoutDashboard className={cn("h-5 w-5 flex-shrink-0", collapsed && "mx-auto")} />
+            {!collapsed && <span className="font-medium text-[15px]">Dashboard</span>}
+          </NavLink>
         </div>
 
         <Separator className="my-4 bg-sidebar-border" />
@@ -328,8 +379,8 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
               Die 5 A's
             </p>
           )}
-          {fiveAsItems.map((item, index) => (
-            <FiveAsNavItem key={item.title} item={item} index={index} />
+          {fiveAsItems.map((item) => (
+            <MainNavItem key={item.number} item={item} />
           ))}
         </div>
 
@@ -349,15 +400,15 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         </div>
       </ScrollArea>
 
-      {/* Bottom Section */}
+      {/* Bottom Section - MANAGEMENT */}
       <div className="p-3 border-t border-sidebar-border space-y-1">
-        {/* Stealth: Abo-Matrix - only visible to specific emails */}
+        {/* Stealth: Abo-Matrix */}
         {canSeeAboMatrix && (
           <NavLink
             to="/abo-matrix"
             onClick={onNavigate}
             className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group min-h-[48px]",
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 min-h-[48px]",
               isActive("/abo-matrix")
                 ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/30"
                 : "text-sidebar-accent-foreground hover:bg-sidebar-accent"
@@ -368,13 +419,13 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
           </NavLink>
         )}
 
-        {/* Admin Link - only visible for admins */}
+        {/* Admin Link */}
         {isAdmin && (
           <NavLink
             to="/admin/mission-control"
             onClick={onNavigate}
             className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group min-h-[48px]",
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 min-h-[48px]",
               isActive("/admin/mission-control")
                 ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/30"
                 : "text-sidebar-accent-foreground hover:bg-sidebar-accent"
@@ -384,82 +435,72 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
             {!collapsed && <span className="font-medium text-[15px]">Mission Control</span>}
           </NavLink>
         )}
+
+        {/* Management Section */}
+        {!collapsed && (
+          <p className="text-xs font-medium text-sidebar-foreground/50 uppercase tracking-wider px-3 py-2 flex items-center gap-2">
+            <Settings className="h-3 w-3" />
+            Management
+          </p>
+        )}
         
-        {bottomItems.map((item) => {
-          const featureKey = item.featureKey;
-          const isHidden = featureKey !== null && !isFeatureVisible(featureKey);
-          const hasBetaBadge = featureKey !== null && checkBetaBadge(featureKey);
-          
-          // Hidden items - don't render
-          if (isHidden) return null;
-          
-          // Coming Soon items - disabled with badge
-          if (item.comingSoon) {
-            return (
-              <div
-                key={item.title}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 min-h-[48px]",
-                  "text-sidebar-foreground/40 cursor-not-allowed"
-                )}
-              >
-                <item.icon className={cn("h-5 w-5 flex-shrink-0 opacity-50", collapsed && "mx-auto")} />
-                {!collapsed && (
-                  <>
-                    <span className="font-medium text-[15px] opacity-50">{item.title}</span>
-                    <span className="ml-auto text-[10px] font-medium bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                      Coming Soon
-                    </span>
-                  </>
-                )}
-              </div>
-            );
-          }
-          
-          return (
-            <NavLink
-              key={item.title}
-              to={item.url}
-              onClick={onNavigate}
-              className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group min-h-[48px]",
-                isActive(item.url)
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/30"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-              )}
-            >
-              <item.icon className={cn(
-                "h-5 w-5 flex-shrink-0 transition-colors", 
-                collapsed && "mx-auto",
-                isActive(item.url) && "text-sidebar-primary-foreground"
-              )} />
-              {!collapsed && (
-                <>
-                  <span className="font-medium text-[15px]">{item.title}</span>
-                  {hasBetaBadge && (
-                    <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0 bg-orange-500/20 text-orange-400 border-orange-500/30">
-                      BETA
-                    </Badge>
-                  )}
-                </>
-              )}
-            </NavLink>
-          );
-        })}
-        
-        {/* Support Button */}
+        <NavLink
+          to="/management?tab=profile"
+          onClick={onNavigate}
+          className={cn(
+            "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 min-h-[44px]",
+            isActive("/management") && location.search.includes("profile")
+              ? "bg-primary/10 text-primary"
+              : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          )}
+        >
+          <User className={cn("h-4 w-4 flex-shrink-0", collapsed && "mx-auto")} />
+          {!collapsed && <span className="text-sm">Profil</span>}
+        </NavLink>
+
+        <NavLink
+          to="/ausgaben"
+          onClick={onNavigate}
+          className={cn(
+            "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 min-h-[44px]",
+            isActive("/ausgaben")
+              ? "bg-primary/10 text-primary"
+              : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          )}
+        >
+          <Car className={cn("h-4 w-4 flex-shrink-0", collapsed && "mx-auto")} />
+          {!collapsed && <span className="text-sm">Fahrzeug & Ausgaben</span>}
+        </NavLink>
+
+        <NavLink
+          to="/management?tab=subscription"
+          onClick={onNavigate}
+          className={cn(
+            "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 min-h-[44px]",
+            isActive("/management") && location.search.includes("subscription")
+              ? "bg-primary/10 text-primary"
+              : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          )}
+        >
+          <CreditCard className={cn("h-4 w-4 flex-shrink-0", collapsed && "mx-auto")} />
+          {!collapsed && <span className="text-sm">Abo & Module</span>}
+        </NavLink>
+
+        <Separator className="my-2 bg-sidebar-border" />
+
+        {/* Support */}
         <NavLink
           to="/support"
           onClick={onNavigate}
           className={cn(
-            "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group min-h-[48px]",
+            "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 min-h-[44px]",
             isActive("/support")
-              ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/30"
+              ? "bg-primary/10 text-primary"
               : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
           )}
         >
-          <LifeBuoy className={cn("h-5 w-5 flex-shrink-0", collapsed && "mx-auto")} />
-          {!collapsed && <span className="font-medium text-[15px]">Hilfe & Support</span>}
+          <LifeBuoy className={cn("h-4 w-4 flex-shrink-0", collapsed && "mx-auto")} />
+          {!collapsed && <span className="text-sm">Hilfe & Support</span>}
         </NavLink>
 
         <PWAInstallButton collapsed={collapsed} />
@@ -467,12 +508,12 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         <button
           onClick={handleLogout}
           className={cn(
-            "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 min-h-[48px]",
+            "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 min-h-[44px]",
             "text-sidebar-foreground/50 hover:bg-destructive/10 hover:text-destructive"
           )}
         >
-          <LogOut className={cn("h-5 w-5 flex-shrink-0", collapsed && "mx-auto")} />
-          {!collapsed && <span className="font-medium text-[15px]">Abmelden</span>}
+          <LogOut className={cn("h-4 w-4 flex-shrink-0", collapsed && "mx-auto")} />
+          {!collapsed && <span className="text-sm">Abmelden</span>}
         </button>
 
         <Separator className="my-2 bg-sidebar-border" />
@@ -484,43 +525,21 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
               href="https://hufmanager.de/impressum" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="hover:text-primary transition-colors"
+              className="hover:text-sidebar-foreground hover:underline"
             >
               Impressum
             </a>
-            <span>•</span>
+            <span>·</span>
             <a 
               href="https://hufmanager.de/datenschutz" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="hover:text-primary transition-colors"
+              className="hover:text-sidebar-foreground hover:underline"
             >
               Datenschutz
             </a>
-            <span>•</span>
-            <a 
-              href="https://hufmanager.de/agb" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="hover:text-primary transition-colors"
-            >
-              AGB
-            </a>
           </div>
-        ) : (
-          <a
-            href="https://hufmanager.de/impressum"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(
-              "flex items-center justify-center px-3 py-3 rounded-lg transition-all duration-200 min-h-[48px]",
-              "text-sidebar-foreground/50 hover:text-primary"
-            )}
-            title="Rechtliches"
-          >
-            <ExternalLink className="h-5 w-5" />
-          </a>
-        )}
+        ) : null}
       </div>
     </aside>
   );
