@@ -165,6 +165,7 @@ const Kalender = () => {
       last_name: string | null;
       geo_lat: number | null;
       geo_lng: number | null;
+      zip: string | null;
     } | null;
   };
 
@@ -216,7 +217,7 @@ const Kalender = () => {
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       
       const clientResponse = await fetch(
-        `${supabaseUrl}/rest/v1/clients?select=id,first_name,last_name,geo_lat,geo_lng&id=in.(${ownerIds.map(id => `"${id}"`).join(",")})`,
+        `${supabaseUrl}/rest/v1/clients?select=id,first_name,last_name,geo_lat,geo_lng,zip&id=in.(${ownerIds.map(id => `"${id}"`).join(",")})`,
         {
           headers: {
             "apikey": supabaseKey,
@@ -231,6 +232,7 @@ const Kalender = () => {
         last_name: string | null;
         geo_lat: number | null;
         geo_lng: number | null;
+        zip: string | null;
       };
       
       let clients: ClientGeoData[] = [];

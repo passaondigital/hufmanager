@@ -1,18 +1,49 @@
-import { useEffect, useState, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { MapContainer, TileLayer, Marker, Popup, Polyline, Circle, useMap } from "react-leaflet";
 import L from "leaflet";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Navigation, Clock, MapPin, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Loader2, Navigation, Clock, MapPin, AlertCircle, GripVertical, RotateCcw, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 // Fix Leaflet default icon issue
 import "leaflet/dist/leaflet.css";
 
+// PLZ cluster colors
+const PLZ_COLORS = [
+  "hsl(25, 95%, 53%)",   // Orange (primary)
+  "hsl(217, 91%, 60%)",  // Blue
+  "hsl(142, 76%, 36%)",  // Green
+  "hsl(280, 70%, 50%)",  // Purple
+  "hsl(45, 93%, 47%)",   // Yellow
+  "hsl(0, 84%, 60%)",    // Red
+  "hsl(180, 70%, 45%)",  // Cyan
+  "hsl(330, 70%, 50%)",  // Pink
+];
+
 // Custom marker icons
-const createMarkerIcon = (color: string) => {
+const createMarkerIcon = (color: string, number?: number) => {
   return L.divIcon({
     className: "custom-marker",
     html: `
@@ -32,8 +63,8 @@ const createMarkerIcon = (color: string) => {
           transform: rotate(45deg);
           color: white;
           font-weight: bold;
-          font-size: 12px;
-        "></div>
+          font-size: 11px;
+        ">${number !== undefined ? number : ''}</div>
       </div>
     `,
     iconSize: [32, 32],
@@ -42,8 +73,6 @@ const createMarkerIcon = (color: string) => {
   });
 };
 
-const greenIcon = createMarkerIcon("hsl(142, 76%, 36%)");
-const orangeIcon = createMarkerIcon("hsl(25, 95%, 53%)");
 const userIcon = createMarkerIcon("hsl(217, 91%, 60%)");
 
 interface AppointmentWithLocation {
@@ -58,12 +87,13 @@ interface AppointmentWithLocation {
     last_name: string | null;
     geo_lat: number | null;
     geo_lng: number | null;
+    zip?: string | null;
   } | null;
 }
 
 interface RouteInfo {
-  distance: number; // in km
-  duration: number; // in minutes
+  distance: number;
+  duration: number;
 }
 
 interface TourMapViewProps {
@@ -71,6 +101,76 @@ interface TourMapViewProps {
   selectedDate: Date;
   isLoading?: boolean;
 }
+
+// Sortable appointment item
+const SortableAppointmentItem = ({ 
+  apt, 
+  index,
+  plzColor,
+}: { 
+  apt: AppointmentWithLocation; 
+  index: number;
+  plzColor: string;
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: apt.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const isCompleted = apt.status === "completed";
+  const clientName = [apt.clients?.first_name, apt.clients?.last_name]
+    .filter(Boolean)
+    .join(" ") || "Unbekannt";
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "flex items-center gap-2 p-2 rounded-lg border bg-card transition-all",
+        isDragging && "opacity-50 shadow-lg scale-105",
+        isCompleted && "opacity-60"
+      )}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </button>
+      
+      <div
+        className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+        style={{ backgroundColor: plzColor }}
+      >
+        {index + 1}
+      </div>
+      
+      <div className="flex-1 min-w-0">
+        <div className="font-medium text-sm truncate">{clientName}</div>
+        <div className="text-xs text-muted-foreground flex items-center gap-2">
+          <span>🐴 {apt.horses?.name || "?"}</span>
+          <span>•</span>
+          <span>{apt.time || "–"}</span>
+        </div>
+      </div>
+      
+      {isCompleted && (
+        <Badge variant="secondary" className="text-xs flex-shrink-0">✓</Badge>
+      )}
+    </div>
+  );
+};
 
 // Component to fit bounds when appointments change
 const FitBounds = ({ positions }: { positions: [number, number][] }) => {
@@ -121,36 +221,127 @@ export const TourMapView = ({
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
   const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
+  const [showPlzClusters, setShowPlzClusters] = useState(true);
+  
+  // Custom order state
+  const [orderedAppointments, setOrderedAppointments] = useState<AppointmentWithLocation[]>([]);
+  const [hasCustomOrder, setHasCustomOrder] = useState(false);
 
-  // Filter appointments with valid coordinates and sort by time
-  const validAppointments = useMemo(() => {
-    return appointments
+  // Initialize ordered appointments when appointments change
+  useEffect(() => {
+    const validApts = appointments
       .filter(apt => apt.clients?.geo_lat && apt.clients?.geo_lng)
       .sort((a, b) => {
         const timeA = a.time || "00:00";
         const timeB = b.time || "00:00";
         return timeA.localeCompare(timeB);
       });
+    setOrderedAppointments(validApts);
+    setHasCustomOrder(false);
   }, [appointments]);
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Handle drag end
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setOrderedAppointments((items) => {
+        const oldIndex = items.findIndex((i) => i.id === active.id);
+        const newIndex = items.findIndex((i) => i.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+      setHasCustomOrder(true);
+    }
+  }, []);
+
+  // Reset to time-based order
+  const resetOrder = useCallback(() => {
+    const sorted = [...orderedAppointments].sort((a, b) => {
+      const timeA = a.time || "00:00";
+      const timeB = b.time || "00:00";
+      return timeA.localeCompare(timeB);
+    });
+    setOrderedAppointments(sorted);
+    setHasCustomOrder(false);
+  }, [orderedAppointments]);
+
+  // Calculate PLZ clusters
+  const plzClusters = useMemo(() => {
+    const clusters: Record<string, { 
+      plz: string; 
+      appointments: AppointmentWithLocation[];
+      center: [number, number];
+      color: string;
+    }> = {};
+
+    orderedAppointments.forEach((apt) => {
+      if (!apt.clients?.geo_lat || !apt.clients?.geo_lng) return;
+      
+      // Extract first 2 digits of ZIP code (PLZ area)
+      const zip = apt.clients.zip || "";
+      const plzArea = zip.substring(0, 2) || "??";
+      
+      if (!clusters[plzArea]) {
+        const colorIndex = Object.keys(clusters).length % PLZ_COLORS.length;
+        clusters[plzArea] = {
+          plz: plzArea,
+          appointments: [],
+          center: [0, 0],
+          color: PLZ_COLORS[colorIndex],
+        };
+      }
+      
+      clusters[plzArea].appointments.push(apt);
+    });
+
+    // Calculate center for each cluster
+    Object.values(clusters).forEach((cluster) => {
+      const lats = cluster.appointments.map(a => a.clients!.geo_lat!);
+      const lngs = cluster.appointments.map(a => a.clients!.geo_lng!);
+      cluster.center = [
+        lats.reduce((a, b) => a + b, 0) / lats.length,
+        lngs.reduce((a, b) => a + b, 0) / lngs.length,
+      ];
+    });
+
+    return clusters;
+  }, [orderedAppointments]);
+
+  // Get PLZ color for an appointment
+  const getPlzColor = useCallback((apt: AppointmentWithLocation): string => {
+    const zip = apt.clients?.zip || "";
+    const plzArea = zip.substring(0, 2) || "??";
+    return plzClusters[plzArea]?.color || PLZ_COLORS[0];
+  }, [plzClusters]);
 
   // Get positions for polyline
   const routePositions = useMemo(() => {
     const positions: [number, number][] = [];
     
-    // Start with user location if available
     if (userLocation) {
       positions.push(userLocation);
     }
     
-    // Add appointment locations in chronological order
-    validAppointments.forEach(apt => {
+    orderedAppointments.forEach(apt => {
       if (apt.clients?.geo_lat && apt.clients?.geo_lng) {
         positions.push([apt.clients.geo_lat, apt.clients.geo_lng]);
       }
     });
     
     return positions;
-  }, [validAppointments, userLocation]);
+  }, [orderedAppointments, userLocation]);
 
   // Calculate route using OSRM
   useEffect(() => {
@@ -163,9 +354,8 @@ export const TourMapView = ({
       setIsCalculatingRoute(true);
       
       try {
-        // Build coordinates string for OSRM
         const coords = routePositions
-          .map(p => `${p[1]},${p[0]}`) // OSRM uses lng,lat
+          .map(p => `${p[1]},${p[0]}`)
           .join(";");
         
         const response = await fetch(
@@ -176,8 +366,8 @@ export const TourMapView = ({
           const data = await response.json();
           if (data.routes?.[0]) {
             setRouteInfo({
-              distance: Math.round(data.routes[0].distance / 100) / 10, // km with 1 decimal
-              duration: Math.round(data.routes[0].duration / 60), // minutes
+              distance: Math.round(data.routes[0].distance / 100) / 10,
+              duration: Math.round(data.routes[0].duration / 60),
             });
           }
         }
@@ -191,19 +381,17 @@ export const TourMapView = ({
     calculateRoute();
   }, [routePositions]);
 
-  // Default center (Germany)
   const defaultCenter: [number, number] = [51.1657, 10.4515];
   
-  // Calculate center based on appointments or user location
   const mapCenter = useMemo(() => {
-    if (validAppointments.length > 0) {
-      const first = validAppointments[0];
+    if (orderedAppointments.length > 0) {
+      const first = orderedAppointments[0];
       if (first.clients?.geo_lat && first.clients?.geo_lng) {
         return [first.clients.geo_lat, first.clients.geo_lng] as [number, number];
       }
     }
     return userLocation || defaultCenter;
-  }, [validAppointments, userLocation]);
+  }, [orderedAppointments, userLocation]);
 
   if (isLoading) {
     return (
@@ -221,19 +409,19 @@ export const TourMapView = ({
     <div className="space-y-4">
       {/* Stats Bar */}
       <div className="flex flex-wrap gap-3">
-        <Card className="flex-1 min-w-[140px]">
+        <Card className="flex-1 min-w-[120px]">
           <CardContent className="p-3 flex items-center gap-2">
             <MapPin className="h-4 w-4 text-primary" />
             <div>
               <div className="text-xs text-muted-foreground">Termine</div>
               <div className="font-semibold">
-                {validAppointments.length} von {appointments.length}
+                {orderedAppointments.length} von {appointments.length}
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="flex-1 min-w-[140px]">
+        <Card className="flex-1 min-w-[120px]">
           <CardContent className="p-3 flex items-center gap-2">
             <Navigation className="h-4 w-4 text-primary" />
             <div>
@@ -251,7 +439,7 @@ export const TourMapView = ({
           </CardContent>
         </Card>
         
-        <Card className="flex-1 min-w-[140px]">
+        <Card className="flex-1 min-w-[120px]">
           <CardContent className="p-3 flex items-center gap-2">
             <Clock className="h-4 w-4 text-primary" />
             <div>
@@ -264,6 +452,18 @@ export const TourMapView = ({
                 ) : (
                   "–"
                 )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="flex-1 min-w-[120px]">
+          <CardContent className="p-3 flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <div>
+              <div className="text-xs text-muted-foreground">PLZ-Gebiete</div>
+              <div className="font-semibold">
+                {Object.keys(plzClusters).length}
               </div>
             </div>
           </CardContent>
@@ -285,87 +485,196 @@ export const TourMapView = ({
         </div>
       )}
 
-      {/* Map */}
-      <Card className="overflow-hidden">
-        <CardContent className="p-0">
-          <div className="h-[500px] md:h-[600px]">
-            <MapContainer
-              center={mapCenter}
-              zoom={10}
-              className="h-full w-full z-0"
-              scrollWheelZoom={true}
+      {/* Main Layout: Sidebar + Map */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        {/* Sortable Appointments Sidebar */}
+        <Card className="lg:col-span-1">
+          <CardHeader className="p-3 pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium">Tour-Reihenfolge</CardTitle>
+              {hasCustomOrder && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetOrder}
+                  className="h-7 px-2 text-xs"
+                >
+                  <RotateCcw className="h-3 w-3 mr-1" />
+                  Reset
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Ziehe die Termine, um die Route zu optimieren
+            </p>
+          </CardHeader>
+          <CardContent className="p-2 pt-0">
+            <ScrollArea className="h-[450px] pr-2">
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={orderedAppointments.map(a => a.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-2">
+                    {orderedAppointments.map((apt, index) => (
+                      <SortableAppointmentItem
+                        key={apt.id}
+                        apt={apt}
+                        index={index}
+                        plzColor={getPlzColor(apt)}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+
+        {/* Map */}
+        <Card className="overflow-hidden lg:col-span-3">
+          <CardHeader className="p-3 pb-2 flex flex-row items-center justify-between">
+            <CardTitle className="text-sm font-medium">Karte</CardTitle>
+            <Button
+              variant={showPlzClusters ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setShowPlzClusters(!showPlzClusters)}
+              className="h-7 px-2 text-xs"
             >
-              {/* CartoDB Positron - clean, modern style */}
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-              />
-              
-              {/* Fit bounds to show all markers */}
-              {routePositions.length > 0 && (
-                <FitBounds positions={routePositions} />
-              )}
-              
-              {/* User location marker */}
-              <UserLocationMarker onLocationFound={(lat, lng) => setUserLocation([lat, lng])} />
-              
-              {/* Route polyline */}
-              {routePositions.length > 1 && (
-                <Polyline
-                  positions={routePositions}
-                  pathOptions={{
-                    color: "hsl(25, 95%, 53%)", // HufManager Orange
-                    weight: 4,
-                    opacity: 0.8,
-                    dashArray: "10, 10",
-                  }}
+              <Sparkles className="h-3 w-3 mr-1" />
+              PLZ-Cluster
+            </Button>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="h-[500px]">
+              <MapContainer
+                center={mapCenter}
+                zoom={10}
+                className="h-full w-full z-0"
+                scrollWheelZoom={true}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                  url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                 />
-              )}
-              
-              {/* Appointment markers */}
-              {validAppointments.map((apt, index) => {
-                if (!apt.clients?.geo_lat || !apt.clients?.geo_lng) return null;
                 
-                const isCompleted = apt.status === "completed";
-                const clientName = [apt.clients.first_name, apt.clients.last_name]
-                  .filter(Boolean)
-                  .join(" ") || "Unbekannt";
+                {routePositions.length > 0 && (
+                  <FitBounds positions={routePositions} />
+                )}
                 
-                return (
-                  <Marker
-                    key={apt.id}
-                    position={[apt.clients.geo_lat, apt.clients.geo_lng]}
-                    icon={isCompleted ? greenIcon : orangeIcon}
+                <UserLocationMarker onLocationFound={(lat, lng) => setUserLocation([lat, lng])} />
+                
+                {/* PLZ Cluster circles */}
+                {showPlzClusters && Object.values(plzClusters).map((cluster) => (
+                  <Circle
+                    key={cluster.plz}
+                    center={cluster.center}
+                    radius={3000}
+                    pathOptions={{
+                      color: cluster.color,
+                      fillColor: cluster.color,
+                      fillOpacity: 0.15,
+                      weight: 2,
+                      dashArray: "5, 5",
+                    }}
                   >
                     <Popup>
-                      <div className="min-w-[180px] space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Badge 
-                            variant={isCompleted ? "default" : "secondary"}
-                            className="text-xs"
-                          >
-                            {index + 1}. Stopp
-                          </Badge>
-                          <span className="text-xs font-medium">
-                            {apt.time || "–"} Uhr
-                          </span>
-                        </div>
-                        <div className="font-semibold">{clientName}</div>
-                        <div className="text-sm text-muted-foreground flex items-center gap-1">
-                          🐴 {apt.horses?.name || "Unbekannt"}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {apt.service_type || "Termin"}
+                      <div className="text-sm">
+                        <div className="font-semibold">PLZ-Gebiet {cluster.plz}xxx</div>
+                        <div className="text-muted-foreground">
+                          {cluster.appointments.length} Termin(e)
                         </div>
                       </div>
                     </Popup>
-                  </Marker>
-                );
-              })}
-            </MapContainer>
-          </div>
-        </CardContent>
-      </Card>
+                  </Circle>
+                ))}
+                
+                {/* Route polyline */}
+                {routePositions.length > 1 && (
+                  <Polyline
+                    positions={routePositions}
+                    pathOptions={{
+                      color: "hsl(25, 95%, 53%)",
+                      weight: 4,
+                      opacity: 0.8,
+                      dashArray: "10, 10",
+                    }}
+                  />
+                )}
+                
+                {/* Appointment markers with numbers */}
+                {orderedAppointments.map((apt, index) => {
+                  if (!apt.clients?.geo_lat || !apt.clients?.geo_lng) return null;
+                  
+                  const isCompleted = apt.status === "completed";
+                  const clientName = [apt.clients.first_name, apt.clients.last_name]
+                    .filter(Boolean)
+                    .join(" ") || "Unbekannt";
+                  
+                  const markerColor = isCompleted 
+                    ? "hsl(142, 76%, 36%)" 
+                    : getPlzColor(apt);
+                  
+                  return (
+                    <Marker
+                      key={apt.id}
+                      position={[apt.clients.geo_lat, apt.clients.geo_lng]}
+                      icon={createMarkerIcon(markerColor, index + 1)}
+                    >
+                      <Popup>
+                        <div className="min-w-[180px] space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Badge 
+                              variant={isCompleted ? "default" : "secondary"}
+                              className="text-xs"
+                            >
+                              {index + 1}. Stopp
+                            </Badge>
+                            <span className="text-xs font-medium">
+                              {apt.time || "–"} Uhr
+                            </span>
+                          </div>
+                          <div className="font-semibold">{clientName}</div>
+                          <div className="text-sm text-muted-foreground flex items-center gap-1">
+                            🐴 {apt.horses?.name || "Unbekannt"}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {apt.service_type || "Termin"}
+                          </div>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  );
+                })}
+              </MapContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* PLZ Legend */}
+      {showPlzClusters && Object.keys(plzClusters).length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {Object.values(plzClusters).map((cluster) => (
+            <Badge
+              key={cluster.plz}
+              variant="outline"
+              className="text-xs gap-1"
+              style={{ borderColor: cluster.color, color: cluster.color }}
+            >
+              <div
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: cluster.color }}
+              />
+              PLZ {cluster.plz}xxx ({cluster.appointments.length})
+            </Badge>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
