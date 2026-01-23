@@ -7,14 +7,16 @@ import {
   Download,
   Share2,
   RotateCcw,
-  Image as ImageIcon,
   Loader2,
   X,
   Check,
   Sparkles,
+  Save,
+  CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface HoofPhoto {
   position: "VL" | "VR" | "HL" | "HR";
@@ -42,12 +44,18 @@ export function HufCam({ horseName, horseId, onCollageGenerated }: HufCamProps) 
     HL: null,
     HR: null,
   });
+  const [savedPhotos, setSavedPhotos] = useState<Record<string, boolean>>({
+    VL: false,
+    VR: false,
+    HL: false,
+    HR: false,
+  });
   const [collageUrl, setCollageUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [activeUpload, setActiveUpload] = useState<string | null>(null);
   
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const handlePhotoCapture = (position: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -76,11 +84,86 @@ export function HufCam({ horseName, horseId, onCollageGenerated }: HufCamProps) 
 
   const removePhoto = (position: string) => {
     setPhotos(prev => ({ ...prev, [position]: null }));
+    setSavedPhotos(prev => ({ ...prev, [position]: false }));
     setCollageUrl(null);
   };
 
   const photoCount = Object.values(photos).filter(Boolean).length;
+  const savedCount = Object.values(savedPhotos).filter(Boolean).length;
   const canGenerateCollage = photoCount >= 2;
+  const canSave = photoCount > 0 && savedCount < photoCount;
+
+  // Convert data URL to Blob for upload
+  const dataUrlToBlob = (dataUrl: string): Blob => {
+    const arr = dataUrl.split(",");
+    const mime = arr[0].match(/:(.*?);/)?.[1] || "image/jpeg";
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+  };
+
+  // Upload photos to Supabase Storage and save to database
+  const savePhotosToSupabase = async () => {
+    if (!canSave) return;
+
+    setIsSaving(true);
+    const unsavedPositions = HOOF_POSITIONS.filter(
+      p => photos[p.position] && !savedPhotos[p.position]
+    );
+
+    try {
+      for (const { position, fullLabel } of unsavedPositions) {
+        const dataUrl = photos[position];
+        if (!dataUrl) continue;
+
+        const blob = dataUrlToBlob(dataUrl);
+        const fileName = `${horseId}/${Date.now()}_${position}.jpg`;
+
+        // Upload to storage
+        const { error: uploadError } = await supabase.storage
+          .from("hoof_photos")
+          .upload(fileName, blob, {
+            contentType: "image/jpeg",
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error(`Upload error for ${position}:`, uploadError);
+          toast.error(`Fehler beim Hochladen: ${fullLabel}`);
+          continue;
+        }
+
+        // Save to database
+        const { error: dbError } = await supabase.from("hoof_photos").insert({
+          horse_id: horseId,
+          photo_url: fileName,
+          hoof_position: position,
+          taken_at: new Date().toISOString(),
+        });
+
+        if (dbError) {
+          console.error(`Database error for ${position}:`, dbError);
+          toast.error(`Fehler beim Speichern: ${fullLabel}`);
+          continue;
+        }
+
+        setSavedPhotos(prev => ({ ...prev, [position]: true }));
+      }
+
+      toast.success("Fotos gespeichert!", {
+        description: `${unsavedPositions.length} Foto(s) mit ${horseName} verknüpft`,
+      });
+    } catch (error) {
+      console.error("Save error:", error);
+      toast.error("Fehler beim Speichern der Fotos");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const generateCollage = useCallback(async () => {
     if (!canGenerateCollage) return;
@@ -269,6 +352,7 @@ export function HufCam({ horseName, horseId, onCollageGenerated }: HufCamProps) 
 
   const resetAll = () => {
     setPhotos({ VL: null, VR: null, HL: null, HR: null });
+    setSavedPhotos({ VL: false, VR: false, HL: false, HR: false });
     setCollageUrl(null);
   };
 
@@ -307,9 +391,15 @@ export function HufCam({ horseName, horseId, onCollageGenerated }: HufCamProps) 
                     className="w-full h-full object-cover"
                   />
                   <Badge 
-                    className="absolute top-2 left-2 bg-primary text-primary-foreground font-bold"
+                    className={cn(
+                      "absolute top-2 left-2 font-bold",
+                      savedPhotos[position] 
+                        ? "bg-green-500 text-white" 
+                        : "bg-primary text-primary-foreground"
+                    )}
                   >
                     {label}
+                    {savedPhotos[position] && <CheckCircle2 className="h-3 w-3 ml-1" />}
                   </Badge>
                   <Button
                     variant="destructive"
@@ -320,7 +410,11 @@ export function HufCam({ horseName, horseId, onCollageGenerated }: HufCamProps) 
                     <X className="h-4 w-4" />
                   </Button>
                   <div className="absolute bottom-2 right-2">
-                    <Check className="h-5 w-5 text-green-500 drop-shadow-lg" />
+                    {savedPhotos[position] ? (
+                      <CheckCircle2 className="h-5 w-5 text-green-500 drop-shadow-lg" />
+                    ) : (
+                      <Check className="h-5 w-5 text-amber-500 drop-shadow-lg" />
+                    )}
                   </div>
                 </div>
               ) : (
@@ -351,24 +445,49 @@ export function HufCam({ horseName, horseId, onCollageGenerated }: HufCamProps) 
           ))}
         </div>
 
-        {/* Generate Button */}
-        <Button
-          className="w-full h-12"
-          disabled={!canGenerateCollage || isGenerating}
-          onClick={generateCollage}
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-              Erstelle Collage...
-            </>
-          ) : (
-            <>
-              <Sparkles className="h-5 w-5 mr-2" />
-              Collage erstellen
-            </>
-          )}
-        </Button>
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="flex-1 h-12"
+            disabled={!canSave || isSaving}
+            onClick={savePhotosToSupabase}
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                Speichern...
+              </>
+            ) : savedCount === photoCount && photoCount > 0 ? (
+              <>
+                <CheckCircle2 className="h-5 w-5 mr-2 text-green-500" />
+                Gespeichert
+              </>
+            ) : (
+              <>
+                <Save className="h-5 w-5 mr-2" />
+                Speichern
+              </>
+            )}
+          </Button>
+          <Button
+            className="flex-1 h-12"
+            disabled={!canGenerateCollage || isGenerating}
+            onClick={generateCollage}
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                Collage...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-5 w-5 mr-2" />
+                Collage
+              </>
+            )}
+          </Button>
+        </div>
 
         {/* Collage Preview */}
         {collageUrl && (
