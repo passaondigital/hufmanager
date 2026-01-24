@@ -40,6 +40,7 @@ import { SectionManager } from "@/components/landing/SectionManager";
 import { GalleryManager } from "@/components/management/GalleryManager";
 import { AVVSigningCard } from "@/components/settings/AVVSigningCard";
 import { PaymentSettingsCard } from "@/components/settings/PaymentSettingsCard";
+import { CompanyLocationCard } from "@/components/settings/CompanyLocationCard";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -570,6 +571,19 @@ const Management = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Company Location Card */}
+          {user && profile && (
+            <CompanyLocationCard
+              userId={user.id}
+              stableStreet={profile.stable_street}
+              stableZip={profile.stable_zip}
+              stableCity={profile.stable_city}
+              stableLatitude={profile.stable_latitude}
+              stableLongitude={profile.stable_longitude}
+              onUpdate={() => queryClient.invalidateQueries({ queryKey: ["profile", user.id] })}
+            />
+          )}
 
           {/* Google Calendar Integration */}
           <Card>
