@@ -979,11 +979,14 @@ export type Database = {
           end_time: string | null
           id: string
           notes: string | null
+          optimized_order: Json | null
           provider_id: string
           start_time: string | null
           status: string | null
           total_distance_km: number | null
+          tour_active_since: string | null
           tour_date: string
+          tour_ended_at: string | null
           updated_at: string | null
         }
         Insert: {
@@ -991,11 +994,14 @@ export type Database = {
           end_time?: string | null
           id?: string
           notes?: string | null
+          optimized_order?: Json | null
           provider_id: string
           start_time?: string | null
           status?: string | null
           total_distance_km?: number | null
+          tour_active_since?: string | null
           tour_date: string
+          tour_ended_at?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1003,11 +1009,14 @@ export type Database = {
           end_time?: string | null
           id?: string
           notes?: string | null
+          optimized_order?: Json | null
           provider_id?: string
           start_time?: string | null
           status?: string | null
           total_distance_km?: number | null
+          tour_active_since?: string | null
           tour_date?: string
+          tour_ended_at?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -3505,6 +3514,50 @@ export type Database = {
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tour_breadcrumbs: {
+        Row: {
+          accuracy: number | null
+          created_at: string
+          id: string
+          latitude: number
+          longitude: number
+          provider_id: string
+          timestamp: string
+          tour_date: string
+          tour_id: string | null
+        }
+        Insert: {
+          accuracy?: number | null
+          created_at?: string
+          id?: string
+          latitude: number
+          longitude: number
+          provider_id: string
+          timestamp?: string
+          tour_date: string
+          tour_id?: string | null
+        }
+        Update: {
+          accuracy?: number | null
+          created_at?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          provider_id?: string
+          timestamp?: string
+          tour_date?: string
+          tour_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tour_breadcrumbs_tour_id_fkey"
+            columns: ["tour_id"]
+            isOneToOne: false
+            referencedRelation: "daily_tours"
             referencedColumns: ["id"]
           },
         ]
