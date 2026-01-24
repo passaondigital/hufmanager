@@ -5,3 +5,5 @@ export { BreadcrumbsReplay, BreadcrumbsLayer } from "./BreadcrumbsReplay";
 export { TourPdfExport } from "./TourPdfExport";
 export { NearbyCustomersPanel, NearbyCustomersMarkers } from "./NearbyCustomersLayer";
 export { StableGroupPanel } from "./StableGroupPanel";
+export { FahrtenbuchExport } from "./FahrtenbuchExport";
+export { TourStatsPanel } from "./TourStatsPanel";

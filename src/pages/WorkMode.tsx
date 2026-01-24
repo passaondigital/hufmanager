@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Camera, Timer, Route, ClipboardList, Car, Map } from "lucide-react";
+import { Camera, Timer, Route, ClipboardList, Car, Map, BarChart3 } from "lucide-react";
 import { HufCamProStandalone } from "@/components/hufcam";
 import { VehicleManagement, MileageTracker, WorkTimer } from "@/components/workmode";
 import { TourMapView } from "@/components/calendar/TourMapView";
+import { FahrtenbuchExport, TourStatsPanel } from "@/components/tour-manager";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -170,7 +171,7 @@ const WorkMode = () => {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 h-auto">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7 h-auto">
           <TabsTrigger value="timer" className="flex flex-col gap-1 py-3">
             <Timer className="h-4 w-4" />
             <span className="text-xs">Zeit</span>
@@ -178,6 +179,10 @@ const WorkMode = () => {
           <TabsTrigger value="mileage" className="flex flex-col gap-1 py-3">
             <Route className="h-4 w-4" />
             <span className="text-xs">km-Tracker</span>
+          </TabsTrigger>
+          <TabsTrigger value="stats" className="flex flex-col gap-1 py-3">
+            <BarChart3 className="h-4 w-4" />
+            <span className="text-xs">Statistik</span>
           </TabsTrigger>
           <TabsTrigger value="tour" className="flex flex-col gap-1 py-3">
             <Map className="h-4 w-4" />
@@ -205,6 +210,13 @@ const WorkMode = () => {
         {/* Mileage Tab */}
         <TabsContent value="mileage" className="space-y-4">
           <MileageTracker />
+          <FahrtenbuchExport />
+        </TabsContent>
+
+        {/* Stats Tab */}
+        <TabsContent value="stats" className="space-y-4">
+          <TourStatsPanel />
+          <FahrtenbuchExport />
         </TabsContent>
 
         {/* Tour Map Tab */}
