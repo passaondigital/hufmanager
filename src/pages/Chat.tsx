@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Send, MessageSquare, User, Search, Plus, ArrowLeft, Paperclip, X, Loader2, FileText } from "lucide-react";
+import { Send, MessageSquare, User, Search, Plus, ArrowLeft, Paperclip, X, Loader2, FileText, CheckCheck } from "lucide-react";
 import { PushNotificationToggle } from "@/components/notifications/PushNotificationToggle";
 import { ChatAttachment, getFileType, getFileEmoji } from "@/components/chat/ChatAttachment";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
 import { ensureUserProfile } from "@/lib/ensureProfile";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Conversation {
   id: string;
@@ -51,6 +52,7 @@ interface Contact {
 export default function Chat() {
   const { user, role } = useAuth();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
@@ -69,6 +71,56 @@ export default function Chat() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  // Mark messages as read when selecting a conversation
+  const markConversationAsRead = async (conversationId: string) => {
+    if (!user) return;
+    
+    const { error } = await supabase
+      .from("messages")
+      .update({ is_read: true })
+      .eq("conversation_id", conversationId)
+      .neq("sender_id", user.id)
+      .eq("is_read", false);
+    
+    if (!error) {
+      // Invalidate the unread count query to update badges
+      queryClient.invalidateQueries({ queryKey: ["unread-messages-count"] });
+    }
+  };
+  
+  // Mark ALL messages as read (emergency button)
+  const markAllAsRead = async () => {
+    if (!user) return;
+    
+    // Get all conversations for this user
+    const { data: convs } = await supabase
+      .from("conversations")
+      .select("id")
+      .or(`provider_id.eq.${user.id},client_id.eq.${user.id}`);
+    
+    if (!convs?.length) return;
+    
+    const conversationIds = convs.map(c => c.id);
+    
+    const { error } = await supabase
+      .from("messages")
+      .update({ is_read: true })
+      .in("conversation_id", conversationIds)
+      .neq("sender_id", user.id)
+      .eq("is_read", false);
+    
+    if (!error) {
+      queryClient.invalidateQueries({ queryKey: ["unread-messages-count"] });
+      toast({ title: "Erledigt", description: "Alle Nachrichten wurden als gelesen markiert." });
+    }
+  };
+  
+  // Handle conversation selection
+  const handleSelectConversation = (conv: Conversation) => {
+    setSelectedConversation(conv);
+    markConversationAsRead(conv.id);
+  };
 
   // Handle URL parameters (from Anfragen -> Chat starten or notification click)
   useEffect(() => {
@@ -131,6 +183,7 @@ export default function Chat() {
         ...existingConv,
         other_user: profile || { full_name: 'Unbekannt', email: null }
       });
+      markConversationAsRead(existingConv.id);
     } else {
       // Create new conversation
       const isProvider = role === 'provider';
@@ -156,6 +209,7 @@ export default function Chat() {
           ...newConv,
           other_user: profile || { full_name: 'Unbekannt', email: null }
         });
+        markConversationAsRead(newConv.id);
         loadConversations();
       }
     }
@@ -290,6 +344,7 @@ export default function Chat() {
     const existing = conversations.find(c => c.client_id === contact.profile_id);
     if (existing) {
         setSelectedConversation(existing);
+        markConversationAsRead(existing.id);
         setIsNewChatMode(false);
         return;
     }
@@ -314,6 +369,7 @@ export default function Chat() {
             other_user: { full_name: contact.full_name, email: contact.email } 
         };
         setSelectedConversation(newConv);
+        markConversationAsRead(newConv.id);
         setIsNewChatMode(false);
     }
   };
@@ -530,6 +586,17 @@ export default function Chat() {
             </CardTitle>
             
             <div className="flex items-center gap-1">
+              {/* Mark all as read button */}
+              {!isNewChatMode && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={markAllAsRead}
+                  title="Alle als gelesen markieren"
+                >
+                  <CheckCheck className="h-5 w-5" />
+                </Button>
+              )}
               <PushNotificationToggle variant="ghost" size="icon" showLabel={false} />
               {/* DER NEUE PLUS BUTTON (nur wenn nicht im Auswahlmodus) */}
               {!isNewChatMode && role === 'provider' && (
@@ -587,7 +654,7 @@ export default function Chat() {
                 {filteredConversations.map((conv) => (
                   <button
                     key={conv.id}
-                    onClick={() => setSelectedConversation(conv)}
+                    onClick={() => handleSelectConversation(conv)}
                     className={cn(
                       "w-full p-3 text-left hover:bg-muted/50 flex gap-3 items-center transition-colors",
                       selectedConversation?.id === conv.id && "bg-muted"
