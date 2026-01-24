@@ -36,12 +36,15 @@ const WorkMode = () => {
     enabled: !!user?.id,
   });
 
-  // Fetch appointments for map
-  const { data: mapAppointments = [] } = useQuery({
-    queryKey: ["appointments-map-workmode", format(currentDate, "yyyy-MM-dd")],
+  // Fetch appointments for map with geo coordinates
+  const { data: mapAppointments = [], isLoading: isLoadingAppointments } = useQuery({
+    queryKey: ["appointments-map-workmode", format(currentDate, "yyyy-MM-dd"), user?.id],
     queryFn: async () => {
+      if (!user?.id) return [];
+      
       const dateStr = format(currentDate, "yyyy-MM-dd");
       
+      // Fetch appointments with horse data including location coordinates
       const { data: aptData, error } = await supabase
         .from("appointments")
         .select(`
@@ -50,58 +53,90 @@ const WorkMode = () => {
           time,
           status,
           service_type,
-          horses(id, name, owner_id)
+          horses!inner(
+            id, 
+            name, 
+            owner_id,
+            latitude,
+            longitude,
+            location_name
+          )
         `)
         .eq("date", dateStr)
+        .eq("provider_id", user.id)
         .order("time", { ascending: true });
       
       if (error || !aptData) return [];
       
+      // Get owner IDs to fetch contact info
       const ownerIds = [...new Set(
         aptData.map(apt => apt.horses?.owner_id).filter((id): id is string => !!id)
       )];
       
-      if (ownerIds.length === 0) {
-        return aptData.map(apt => ({
-          id: apt.id,
-          date: apt.date,
-          time: apt.time,
-          status: apt.status,
-          service_type: apt.service_type,
-          horses: apt.horses ? { name: apt.horses.name } : null,
-          clients: null,
-        }));
+      // Fetch contacts with geo data for these owners
+      const { data: contacts } = ownerIds.length > 0 
+        ? await supabase
+            .from("contacts")
+            .select("id, profile_id, full_name, zip_code, city, street")
+            .eq("provider_id", user.id)
+            .in("profile_id", ownerIds)
+        : { data: [] };
+      
+      // Also fetch profile names as fallback
+      const { data: profiles } = ownerIds.length > 0
+        ? await supabase
+            .from("profiles")
+            .select("id, full_name")
+            .in("id", ownerIds)
+        : { data: [] };
+      
+      interface ContactData { 
+        id: string; 
+        profile_id: string | null;
+        full_name: string; 
+        zip_code: string | null;
+        city: string | null;
+        street: string | null;
       }
-      
-      const { data: clients } = await supabase
-        .from("profiles")
-        .select("id, full_name")
-        .in("id", ownerIds);
-      
       interface ProfileData { id: string; full_name: string | null }
-      const clientArr = (clients || []) as ProfileData[];
-      const clientMap = Object.fromEntries(clientArr.map(c => [c.id, c]));
+      
+      const contactArr = (contacts || []) as ContactData[];
+      const profileArr = (profiles || []) as ProfileData[];
+      
+      const contactMap = Object.fromEntries(
+        contactArr.map(c => [c.profile_id, c])
+      );
+      const profileMap = Object.fromEntries(
+        profileArr.map(p => [p.id, p])
+      );
       
       return aptData.map(apt => {
-        const client = apt.horses?.owner_id ? clientMap[apt.horses.owner_id] : null;
+        const horse = apt.horses;
+        const contact = horse?.owner_id ? contactMap[horse.owner_id] : null;
+        const profile = horse?.owner_id ? profileMap[horse.owner_id] : null;
+        
+        // Prefer horse location coordinates, fallback to contact address for geocoding
+        const hasGeo = horse?.latitude && horse?.longitude;
+        
         return {
           id: apt.id,
           date: apt.date,
           time: apt.time,
           status: apt.status,
           service_type: apt.service_type,
-          horses: apt.horses ? { name: apt.horses.name } : null,
-          clients: client ? {
-            first_name: client.full_name?.split(" ")[0] || null,
-            last_name: client.full_name?.split(" ").slice(1).join(" ") || null,
-            geo_lat: null,
-            geo_lng: null,
-            zip: null,
-          } : null,
+          horses: horse ? { name: horse.name } : null,
+          clients: {
+            first_name: contact?.full_name?.split(" ")[0] || profile?.full_name?.split(" ")[0] || null,
+            last_name: contact?.full_name?.split(" ").slice(1).join(" ") || profile?.full_name?.split(" ").slice(1).join(" ") || null,
+            geo_lat: hasGeo ? horse.latitude : null,
+            geo_lng: hasGeo ? horse.longitude : null,
+            zip: contact?.zip_code || null,
+          },
+          location_name: horse?.location_name || contact?.city || null,
         };
       });
     },
-    enabled: activeTab === "tour",
+    enabled: activeTab === "tour" && !!user?.id,
   });
 
   const selectedHorse = horses.find(h => h.id === selectedHorseId);
@@ -161,7 +196,7 @@ const WorkMode = () => {
             <TourMapView
               appointments={mapAppointments}
               selectedDate={currentDate}
-              isLoading={false}
+              isLoading={isLoadingAppointments}
             />
           </div>
         </TabsContent>
