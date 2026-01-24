@@ -75,16 +75,29 @@ function useNewLeadsCount() {
   });
 }
 
-// Hook to get count of unread messages
+// Hook to get count of unread messages (only messages where I am recipient)
 function useUnreadMessagesCount() {
   const { user } = useAuth();
   return useQuery({
     queryKey: ["unread-messages-count", user?.id],
     queryFn: async () => {
       if (!user) return 0;
+      
+      // 1. Get all conversations where user is participant
+      const { data: conversations, error: convError } = await supabase
+        .from("conversations")
+        .select("id")
+        .or(`provider_id.eq.${user.id},client_id.eq.${user.id}`);
+      
+      if (convError || !conversations?.length) return 0;
+      
+      const conversationIds = conversations.map(c => c.id);
+      
+      // 2. Count unread messages in these conversations where I am NOT the sender
       const { count, error } = await supabase
         .from("messages")
         .select("*", { count: "exact", head: true })
+        .in("conversation_id", conversationIds)
         .eq("is_read", false)
         .neq("sender_id", user.id);
       
