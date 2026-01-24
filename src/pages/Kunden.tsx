@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   UserPlus,
 } from "lucide-react";
+import { ClientBadges } from "@/components/customers/ClientStatusBadges";
 import {
   Select,
   SelectContent,
@@ -289,6 +290,12 @@ const Kunden = () => {
                         {client.isVerified && (
                           <VerifiedConnectionBadge status="active" size="sm" />
                         )}
+                        {/* Zahlungsmoral & Kundenstatus Badges */}
+                        <ClientBadges 
+                          paymentRating={client.payment_rating}
+                          lifecycleStatus={client.lifecycle_status}
+                          size="sm"
+                        />
                         {client.has_logged_in ? (
                           <Badge className="bg-green-500/10 text-green-600 gap-1">
                             <CheckCircle className="h-3 w-3" />

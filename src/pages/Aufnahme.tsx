@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserPlus, PlusCircle, Send, Mail } from "lucide-react";
+import { UserPlus, PlusCircle, Send, Mail, Building2, User, CreditCard, Star } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -21,6 +21,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { LocationPicker } from "@/components/LocationPicker";
 import { AddressGeocoder } from "@/components/customers/AddressGeocoder";
 import { z } from "zod";
+import {
+  CLIENT_TYPE_OPTIONS,
+  LIFECYCLE_STATUS_OPTIONS,
+  PAYMENT_RATING_OPTIONS,
+  RELIABILITY_SCORE_OPTIONS,
+  HOLDING_TYPE_OPTIONS,
+  USAGE_TYPE_OPTIONS,
+  PERMISSION_OPTIONS,
+} from "@/components/horse-detail/types";
 
 import { DuplicateWarningDialog } from "@/components/customers/DuplicateWarningDialog";
 
@@ -63,35 +72,57 @@ const Aufnahme = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Customer form state
+  // Customer form state - ERWEITERT
   const [customerForm, setCustomerForm] = useState({
     firstName: "",
     lastName: "",
     email: "",
     phone: "",
+    phoneMobile: "",
+    phoneLandline: "",
     street: "",
+    houseNumber: "",
     zipCode: "",
     city: "",
+    state: "",
     notes: "",
     sendInvitation: true,
-    isBusiness: false,
-    vatId: "",
+    // Business-Logik
+    clientType: "private" as string,
+    lifecycleStatus: "new" as string,
+    paymentRating: "A" as string,
+    reliabilityScore: "" as string,
+    workingConditions: "",
+    orderAuthorization: false,
+    // Rechtliches
+    permissionsGranted: [] as string[],
+    // GPS
     geoLat: null as number | null,
     geoLng: null as number | null,
   });
 
-  // Horse form state
+  // Horse form state - ERWEITERT
   const [horseForm, setHorseForm] = useState({
     ownerId: "",
     name: "",
+    officialName: "",
     equineType: "horse",
     breed: "",
     birthYear: "",
     gender: "",
     color: "",
+    heightCm: "",
+    chipNumber: "",
+    // Haltung
+    holdingType: "",
+    usageType: "",
+    // Huf
+    shoeingStatus: false,
     hoofType: "",
     interval: "6",
+    healthIssuesGeneral: "",
     notes: "",
+    // GPS
     latitude: null as number | null,
     longitude: null as number | null,
     locationName: "",
@@ -128,39 +159,60 @@ const Aufnahme = () => {
     (c) => !c.has_logged_in && c.email
   );
 
-  // Create customer mutation
+  // Create customer mutation - ERWEITERT
   const createCustomer = useMutation({
     mutationFn: async (data: {
       full_name: string;
       email: string;
       phone: string;
       created_by_provider_id: string;
+      first_name?: string;
+      last_name?: string;
       street?: string;
+      house_number?: string;
       zip_code?: string;
       city?: string;
+      state?: string;
+      phone_mobile?: string;
+      phone_landline?: string;
       geo_lat?: number | null;
       geo_lng?: number | null;
-      is_business?: boolean;
-      vat_id?: string;
+      client_type?: string;
+      lifecycle_status?: string;
+      payment_rating?: string;
+      reliability_score?: number;
+      working_conditions?: string;
+      order_authorization?: boolean;
+      permissions_granted?: string[];
     }) => {
-      // Generate a UUID for the new profile
       const newId = crypto.randomUUID();
       
-      const { error } = await supabase.from("profiles").insert({
+      const { error } = await supabase.from("profiles").insert([{
         id: newId,
         full_name: data.full_name,
         email: data.email || null,
         phone: data.phone || null,
         created_by_provider_id: data.created_by_provider_id,
         has_logged_in: false,
+        first_name: data.first_name || null,
+        last_name: data.last_name || null,
         street: data.street || null,
+        house_number: data.house_number || null,
         zip_code: data.zip_code || null,
         city: data.city || null,
-        geo_lat: data.geo_lat || null,
-        geo_lng: data.geo_lng || null,
-        is_business: data.is_business || false,
-        vat_id: data.vat_id || null,
-      });
+        state: data.state || null,
+        phone_mobile: data.phone_mobile || null,
+        phone_landline: data.phone_landline || null,
+        latitude: data.geo_lat || null,
+        longitude: data.geo_lng || null,
+        client_type: (data.client_type as "private" | "commercial") || null,
+        lifecycle_status: (data.lifecycle_status as "new" | "active" | "archive") || null,
+        payment_rating: (data.payment_rating as "A" | "B" | "C" | "D") || null,
+        reliability_score: data.reliability_score || null,
+        working_conditions: data.working_conditions || null,
+        order_authorization: data.order_authorization || false,
+        permissions_granted: data.permissions_granted || null,
+      }]);
       if (error) throw error;
       return { id: newId, email: data.email, full_name: data.full_name };
     },
@@ -226,24 +278,32 @@ const Aufnahme = () => {
     },
   });
 
-  // Create horse mutation
+  // Create horse mutation - ERWEITERT
   const createHorse = useMutation({
     mutationFn: async (data: {
       owner_id: string;
       name: string;
+      official_name?: string;
       equine_type?: string;
       breed?: string;
       birth_year?: number;
       gender?: string;
       color?: string;
+      height_cm?: number;
+      chip_number?: string;
+      holding_type?: "box" | "open_stable" | "mixed" | "pasture";
+      usage_type?: "leisure" | "sport" | "western" | "dressage" | "jumping" | "breeding" | "therapy" | "school" | "retirement";
+      shoeing_status?: string;
       hoof_type?: string;
       shoeing_interval?: number;
+      health_issues_general?: string;
       special_notes?: string;
       latitude?: number;
       longitude?: number;
       location_name?: string;
+      is_new_horse?: boolean;
     }) => {
-      const { error } = await supabase.from("horses").insert(data);
+      const { error } = await supabase.from("horses").insert([data]);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -252,21 +312,7 @@ const Aufnahme = () => {
         title: "Pferd angelegt",
         description: "Das Pferd wurde erfolgreich erstellt.",
       });
-      setHorseForm({
-        ownerId: "",
-        name: "",
-        equineType: "horse",
-        breed: "",
-        birthYear: "",
-        gender: "",
-        color: "",
-        hoofType: "",
-        interval: "6",
-        notes: "",
-        latitude: null,
-        longitude: null,
-        locationName: "",
-      });
+      resetHorseForm();
     },
     onError: () => {
       toast({
@@ -276,6 +322,31 @@ const Aufnahme = () => {
       });
     },
   });
+
+  const resetHorseForm = () => {
+    setHorseForm({
+      ownerId: "",
+      name: "",
+      officialName: "",
+      equineType: "horse",
+      breed: "",
+      birthYear: "",
+      gender: "",
+      color: "",
+      heightCm: "",
+      chipNumber: "",
+      holdingType: "",
+      usageType: "",
+      shoeingStatus: false,
+      hoofType: "",
+      interval: "6",
+      healthIssuesGeneral: "",
+      notes: "",
+      latitude: null,
+      longitude: null,
+      locationName: "",
+    });
+  };
 
   const handleCreateCustomer = async () => {
     // Validate with zod schema
@@ -334,13 +405,24 @@ const Aufnahme = () => {
       email: validated.email || "",
       phone: validated.phone || "",
       created_by_provider_id: user.id,
+      first_name: customerForm.firstName || undefined,
+      last_name: customerForm.lastName || undefined,
       street: customerForm.street || undefined,
+      house_number: customerForm.houseNumber || undefined,
       zip_code: customerForm.zipCode || undefined,
       city: customerForm.city || undefined,
+      state: customerForm.state || undefined,
+      phone_mobile: customerForm.phoneMobile || undefined,
+      phone_landline: customerForm.phoneLandline || undefined,
       geo_lat: customerForm.geoLat,
       geo_lng: customerForm.geoLng,
-      is_business: customerForm.isBusiness,
-      vat_id: customerForm.vatId || undefined,
+      client_type: customerForm.clientType || undefined,
+      lifecycle_status: customerForm.lifecycleStatus || undefined,
+      payment_rating: customerForm.paymentRating || undefined,
+      reliability_score: customerForm.reliabilityScore ? Number(customerForm.reliabilityScore) : undefined,
+      working_conditions: customerForm.workingConditions || undefined,
+      order_authorization: customerForm.orderAuthorization,
+      permissions_granted: customerForm.permissionsGranted.length > 0 ? customerForm.permissionsGranted : undefined,
     });
   };
 
@@ -430,13 +512,22 @@ const Aufnahme = () => {
       lastName: "",
       email: "",
       phone: "",
+      phoneMobile: "",
+      phoneLandline: "",
       street: "",
+      houseNumber: "",
       zipCode: "",
       city: "",
+      state: "",
       notes: "",
       sendInvitation: true,
-      isBusiness: false,
-      vatId: "",
+      clientType: "private",
+      lifecycleStatus: "new",
+      paymentRating: "A",
+      reliabilityScore: "",
+      workingConditions: "",
+      orderAuthorization: false,
+      permissionsGranted: [],
       geoLat: null,
       geoLng: null,
     });
@@ -534,40 +625,114 @@ const Aufnahme = () => {
                 showMiniMap={true}
               />
 
-              {/* Business Customer Toggle */}
+              {/* Business-Logik Sektion */}
               <div className="space-y-4 p-4 bg-muted/50 rounded-lg border">
-                <div className="flex items-center space-x-3">
-                  <Checkbox
-                    id="isBusiness"
-                    checked={customerForm.isBusiness}
-                    onCheckedChange={(checked) =>
-                      setCustomerForm({ ...customerForm, isBusiness: checked as boolean })
-                    }
-                  />
-                  <div className="flex-1">
-                    <Label htmlFor="isBusiness" className="cursor-pointer font-medium">
-                      Ist Geschäftskunde (B2B)
-                    </Label>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      Aktivieren für Unternehmen, Reitställe, etc.
-                    </p>
+                <div className="flex items-center gap-2 mb-2">
+                  <CreditCard className="h-4 w-4 text-primary" />
+                  <Label className="font-semibold">Business-Infos</Label>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Kundentyp</Label>
+                    <Select
+                      value={customerForm.clientType}
+                      onValueChange={(v) => setCustomerForm({ ...customerForm, clientType: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CLIENT_TYPE_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Kundenstatus</Label>
+                    <Select
+                      value={customerForm.lifecycleStatus}
+                      onValueChange={(v) => setCustomerForm({ ...customerForm, lifecycleStatus: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LIFECYCLE_STATUS_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Zahlungsmoral</Label>
+                    <Select
+                      value={customerForm.paymentRating}
+                      onValueChange={(v) => setCustomerForm({ ...customerForm, paymentRating: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PAYMENT_RATING_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 
-                {customerForm.isBusiness && (
-                  <div className="space-y-2 pl-7">
-                    <Label htmlFor="vatId">USt-IdNr.</Label>
-                    <Input
-                      id="vatId"
-                      placeholder="DE123456789"
-                      value={customerForm.vatId}
-                      onChange={(e) => setCustomerForm({ ...customerForm, vatId: e.target.value })}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Umsatzsteuer-Identifikationsnummer für B2B-Rechnungen
-                    </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Zuverlässigkeit</Label>
+                    <Select
+                      value={customerForm.reliabilityScore}
+                      onValueChange={(v) => setCustomerForm({ ...customerForm, reliabilityScore: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Bewertung wählen..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {RELIABILITY_SCORE_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value.toString()}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                )}
+                  
+                  <div className="space-y-2">
+                    <Label>Arbeitsbedingungen</Label>
+                    <Input
+                      placeholder="z.B. Gut beleuchtet, befestigt..."
+                      value={customerForm.workingConditions}
+                      onChange={(e) => setCustomerForm({ ...customerForm, workingConditions: e.target.value })}
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3 pt-2">
+                  <Checkbox
+                    id="orderAuth"
+                    checked={customerForm.orderAuthorization}
+                    onCheckedChange={(checked) =>
+                      setCustomerForm({ ...customerForm, orderAuthorization: checked as boolean })
+                    }
+                  />
+                  <Label htmlFor="orderAuth" className="cursor-pointer">
+                    Auftragserteilung liegt vor
+                  </Label>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -793,23 +958,7 @@ const Aufnahme = () => {
               <div className="flex justify-end gap-3">
                 <Button
                   variant="outline"
-                  onClick={() =>
-                    setHorseForm({
-                      ownerId: "",
-                      name: "",
-                      equineType: "horse",
-                      breed: "",
-                      birthYear: "",
-                      gender: "",
-                      color: "",
-                      hoofType: "",
-                      interval: "6",
-                      notes: "",
-                      latitude: null,
-                      longitude: null,
-                      locationName: "",
-                    })
-                  }
+                  onClick={resetHorseForm}
                 >
                   Abbrechen
                 </Button>
