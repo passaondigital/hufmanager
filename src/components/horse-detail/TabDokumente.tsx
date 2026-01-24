@@ -8,6 +8,8 @@ import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { getStorageUrl, uploadFile } from "@/lib/storage";
+import { useStorageQuota, formatBytes } from "@/hooks/useStorageQuota";
+import { StorageQuotaCard } from "@/components/storage/StorageQuotaCard";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +33,9 @@ export function TabDokumente({ horseId, hoofPhotos, documents, onRefresh }: TabD
   const [deleteDoc, setDeleteDoc] = useState<HorseDocument | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Storage quota for this horse
+  const { checkQuota, trackUpload, removeUpload, usage, quota } = useStorageQuota("horse", horseId);
   
   // Cache for signed URLs
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
@@ -71,6 +76,17 @@ export function TabDokumente({ horseId, hoofPhotos, documents, onRefresh }: TabD
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Not authenticated");
 
+      // Check quota before upload
+      const quotaCheck = await checkQuota(file.size);
+      if (quotaCheck && !quotaCheck.allowed) {
+        if (quotaCheck.exceeds_max_file_size) {
+          throw new Error(`Datei zu groß. Maximum: ${formatBytes(quotaCheck.max_file_size)}`);
+        }
+        if (quotaCheck.would_exceed_quota) {
+          throw new Error(`Speicherplatz erschöpft. Verfügbar: ${formatBytes(quotaCheck.remaining)}`);
+        }
+      }
+
       const fileExt = file.name.split('.').pop();
       // Use UUID for unpredictable file names
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
@@ -79,6 +95,9 @@ export function TabDokumente({ horseId, hoofPhotos, documents, onRefresh }: TabD
       // Upload to storage
       const { path, error: uploadError } = await uploadFile('horse-documents', filePath, file);
       if (uploadError || !path) throw uploadError || new Error("Upload failed");
+
+      // Track storage usage
+      await trackUpload('horse-documents', filePath, file.size);
 
       // Save file path to database (not full URL)
       const { error: dbError } = await supabase
@@ -122,6 +141,9 @@ export function TabDokumente({ horseId, hoofPhotos, documents, onRefresh }: TabD
       // Delete from storage
       await supabase.storage.from('horse-documents').remove([filePath]);
 
+      // Remove from storage tracking
+      await removeUpload('horse-documents', deleteDoc.file_url);
+
       // Delete from database
       await supabase.from('horse_documents').delete().eq('id', deleteDoc.id);
 
@@ -140,6 +162,8 @@ export function TabDokumente({ horseId, hoofPhotos, documents, onRefresh }: TabD
 
   return (
     <div className="space-y-4">
+      {/* Storage Quota Display */}
+      <StorageQuotaCard entityType="horse" entityId={horseId} compact />
       {/* Upload Button */}
       <Card>
         <CardContent className="p-4">
@@ -153,7 +177,7 @@ export function TabDokumente({ horseId, hoofPhotos, documents, onRefresh }: TabD
           <Button 
             className="w-full" 
             onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
+            disabled={uploading || (usage && usage.remaining <= 0)}
           >
             {uploading ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -163,7 +187,7 @@ export function TabDokumente({ horseId, hoofPhotos, documents, onRefresh }: TabD
             Datei hochladen
           </Button>
           <p className="text-xs text-muted-foreground text-center mt-2">
-            Röntgenbilder, Befunde, Fotos (max. 10MB)
+            Röntgenbilder, Befunde, Fotos (max. {quota ? formatBytes(quota.maxFileSize) : "10MB"})
           </p>
         </CardContent>
       </Card>

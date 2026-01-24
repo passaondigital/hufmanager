@@ -21,11 +21,14 @@ import {
   X,
   Plus,
   Trash2,
-  Navigation
+  Navigation,
+  HardDrive
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { uploadFile, getStorageUrl } from "@/lib/storage";
+import { useStorageQuota, formatBytes } from "@/hooks/useStorageQuota";
+import { StorageQuotaIndicator } from "@/components/storage/StorageQuotaCard";
 
 interface MileageLog {
   id: string;
@@ -64,6 +67,9 @@ export function MileageTracker() {
   const [isUploading, setIsUploading] = useState(false);
   const [stops, setStops] = useState<TourStop[]>([]);
   const [newStopName, setNewStopName] = useState("");
+
+  // Storage quota for provider
+  const { checkQuota, trackUpload, usage, quota } = useStorageQuota("provider", user?.id || null);
 
   // Get current vehicle odometer
   const { data: vehicle } = useQuery({
@@ -229,9 +235,23 @@ export function MileageTracker() {
 
     setIsUploading(true);
     try {
+      // Check quota before upload
+      const quotaCheck = await checkQuota(file.size);
+      if (quotaCheck && !quotaCheck.allowed) {
+        if (quotaCheck.exceeds_max_file_size) {
+          throw new Error(`Datei zu groß. Maximum: ${formatBytes(quotaCheck.max_file_size)}`);
+        }
+        if (quotaCheck.would_exceed_quota) {
+          throw new Error(`Speicherplatz erschöpft. Verfügbar: ${formatBytes(quotaCheck.remaining)}`);
+        }
+      }
+
       const fileName = `mileage/${user!.id}/${Date.now()}_${type}.jpg`;
       const { path, error } = await uploadFile("expense-receipts", fileName, file);
       if (error || !path) throw error || new Error("Upload failed");
+      
+      // Track storage usage
+      await trackUpload("expense-receipts", fileName, file.size);
       
       if (type === "start") {
         setStartPhotoUrl(path);
@@ -240,8 +260,8 @@ export function MileageTracker() {
       }
       
       toast({ title: "Foto hochgeladen" });
-    } catch (error) {
-      toast({ title: "Upload fehlgeschlagen", variant: "destructive" });
+    } catch (error: any) {
+      toast({ title: "Upload fehlgeschlagen", description: error.message, variant: "destructive" });
     } finally {
       setIsUploading(false);
     }
@@ -559,9 +579,17 @@ export function MileageTracker() {
           </div>
 
           <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Camera className="h-4 w-4" />
-              Foto Tachostand (optional)
+            <Label className="flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Camera className="h-4 w-4" />
+                Foto Tachostand (optional)
+              </span>
+              {usage && (
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <HardDrive className="h-3 w-3" />
+                  max {formatBytes(quota?.maxFileSize || 0)}
+                </span>
+              )}
             </Label>
             <input
               ref={startPhotoRef}
