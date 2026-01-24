@@ -1,16 +1,18 @@
 import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import { AppHeader } from "./AppHeader";
 import { Menu, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/ThemeProvider";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
+import { HelpCenterFAB } from "@/components/help";
 
 export function AppLayout() {
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
@@ -79,6 +81,9 @@ export function AppLayout() {
       
       {/* Feedback Widget for bug reporting */}
       <FeedbackWidget />
+      
+      {/* Help Center FAB */}
+      <HelpCenterFAB currentRoute={location.pathname} />
     </div>
   );
 }
