@@ -17,6 +17,7 @@ import {
   Users,
   ShieldCheck,
   UserPlus,
+  X,
 } from "lucide-react";
 import { ClientBadges } from "@/components/customers/ClientStatusBadges";
 import {
@@ -38,6 +39,12 @@ import { PendingConnectionRequests } from "@/components/network/PendingConnectio
 import { ConnectionSearch } from "@/components/network/ConnectionSearch";
 import { VerifiedConnectionBadge } from "@/components/network/VerifiedConnectionBadge";
 import { Link2 } from "lucide-react";
+import { 
+  PAYMENT_RATING_OPTIONS, 
+  LIFECYCLE_STATUS_OPTIONS,
+  PaymentRating,
+  LifecycleStatus
+} from "@/components/horse-detail/types";
 
 const Kunden = () => {
   const { user } = useAuth();
@@ -45,6 +52,8 @@ const Kunden = () => {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("alle");
+  const [paymentFilter, setPaymentFilter] = useState<PaymentRating | "alle">("alle");
+  const [lifecycleFilter, setLifecycleFilter] = useState<LifecycleStatus | "alle">("alle");
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showAddHorseModal, setShowAddHorseModal] = useState(false);
@@ -147,11 +156,19 @@ const Kunden = () => {
       c.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.readable_id?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    if (statusFilter === "alle") return matchesSearch;
-    if (statusFilter === "aktiv") return matchesSearch && c.has_logged_in;
-    if (statusFilter === "eingeladen") return matchesSearch && c.invited_at && !c.has_logged_in;
-    if (statusFilter === "ausstehend") return matchesSearch && !c.invited_at && !c.has_logged_in;
-    return matchesSearch;
+    // Status filter
+    let matchesStatus = true;
+    if (statusFilter === "aktiv") matchesStatus = c.has_logged_in;
+    else if (statusFilter === "eingeladen") matchesStatus = c.invited_at && !c.has_logged_in;
+    else if (statusFilter === "ausstehend") matchesStatus = !c.invited_at && !c.has_logged_in;
+
+    // Payment rating filter
+    const matchesPayment = paymentFilter === "alle" || c.payment_rating === paymentFilter;
+
+    // Lifecycle status filter
+    const matchesLifecycle = lifecycleFilter === "alle" || c.lifecycle_status === lifecycleFilter;
+
+    return matchesSearch && matchesStatus && matchesPayment && matchesLifecycle;
   });
 
   // Get horses for a client
@@ -219,28 +236,91 @@ const Kunden = () => {
       )}
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Kunde suchen (Name, E-Mail, ID)..."
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Kunde suchen (Name, E-Mail, ID)..."
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[160px]">
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="alle">Alle Status</SelectItem>
+              <SelectItem value="aktiv">Aktiv</SelectItem>
+              <SelectItem value="eingeladen">Eingeladen</SelectItem>
+              <SelectItem value="ausstehend">Ausstehend</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {/* Payment Rating Filter */}
+          <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as PaymentRating | "alle")}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Zahlungsmoral" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="alle">Alle Ratings</SelectItem>
+              {PAYMENT_RATING_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  <span className={opt.textColor}>{opt.label}</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          {/* Lifecycle Status Filter */}
+          <Select value={lifecycleFilter} onValueChange={(v) => setLifecycleFilter(v as LifecycleStatus | "alle")}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Kundenstatus" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="alle">Alle Kunden</SelectItem>
+              {LIFECYCLE_STATUS_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]">
-            <Filter className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="alle">Alle Status</SelectItem>
-            <SelectItem value="aktiv">Aktiv</SelectItem>
-            <SelectItem value="eingeladen">Eingeladen</SelectItem>
-            <SelectItem value="ausstehend">Ausstehend</SelectItem>
-          </SelectContent>
-        </Select>
+        
+        {/* Active Filters Display */}
+        {(paymentFilter !== "alle" || lifecycleFilter !== "alle") && (
+          <div className="flex flex-wrap gap-2">
+            {paymentFilter !== "alle" && (
+              <Badge variant="secondary" className="gap-1">
+                Zahlungsmoral: {PAYMENT_RATING_OPTIONS.find(o => o.value === paymentFilter)?.label}
+                <button onClick={() => setPaymentFilter("alle")} className="ml-1 hover:text-destructive">
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {lifecycleFilter !== "alle" && (
+              <Badge variant="secondary" className="gap-1">
+                Status: {LIFECYCLE_STATUS_OPTIONS.find(o => o.value === lifecycleFilter)?.label}
+                <button onClick={() => setLifecycleFilter("alle")} className="ml-1 hover:text-destructive">
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 text-xs"
+              onClick={() => {
+                setPaymentFilter("alle");
+                setLifecycleFilter("alle");
+              }}
+            >
+              Alle Filter zurücksetzen
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Customer List */}

@@ -528,9 +528,18 @@ export function TourManager() {
           />
         )}
         
-        {/* PDF Export & Emergency Button */}
+        {/* Back Button & PDF Export & Emergency Button */}
         {user && (
           <div className="absolute top-4 right-4 z-[1000] flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="gap-2 bg-background/90 backdrop-blur-sm shadow-lg"
+              onClick={() => navigate("/dashboard")}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </Button>
             <EmergencyModeButton
               tourDate={selectedDate}
               appointmentIds={orderedAppointments
