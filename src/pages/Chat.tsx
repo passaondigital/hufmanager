@@ -574,6 +574,35 @@ export default function Chat() {
       } else if (data) {
         // Replace optimistic message with real one
         setMessages((prev) => prev.map(m => m.id === optimisticMessage.id ? data as Message : m));
+        
+        // Send push notification to recipient
+        const recipientId = role === 'provider' 
+          ? selectedConversation.client_id 
+          : selectedConversation.provider_id;
+        
+        // Get sender name for notification
+        const { data: senderProfile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        const senderName = senderProfile?.full_name || 'Jemand';
+        const notificationBody = messageContent.length > 100 
+          ? messageContent.substring(0, 100) + '...' 
+          : messageContent;
+        
+        // Send push notification (fire and forget - don't block UI)
+        supabase.functions.invoke('send-push-notification', {
+          body: {
+            user_id: recipientId,
+            title: `💬 Neue Nachricht von ${senderName}`,
+            body: notificationBody,
+            url: `/chat?startWith=${user.id}`,
+          }
+        }).catch(err => {
+          console.log('Push notification not sent (user may not have push enabled):', err);
+        });
       }
 
       // Zeitstempel der Konversation aktualisieren
