@@ -1582,33 +1582,43 @@ export type Database = {
       horses: {
         Row: {
           anamnesis_interval_months: number | null
+          birth_date: string | null
           birth_year: number | null
           breed: string | null
+          chip_number: string | null
           color: string | null
           contacts: Json | null
           created_at: string
           deleted_at: string | null
           discipline: string | null
+          documents_urls: string[] | null
           eqid: string | null
           equine_type: string | null
           feeding_notes: string | null
           gender: string | null
+          health_issues_general: string | null
           health_status: string | null
           height: string | null
+          height_cm: number | null
           holding_type: string | null
           hoof_data: Json | null
+          hoof_details: Json | null
           hoof_measurements: Json | null
           hoof_protection: string | null
           hoof_type: string | null
           housing: string | null
           id: string
+          is_new_horse: boolean | null
           last_anamnesis_date: string | null
+          last_appointment_date: string | null
           latitude: number | null
           location_name: string | null
           longitude: number | null
           medical_history: string | null
           name: string
+          next_appointment_due: string | null
           nickname: string | null
+          official_name: string | null
           organization_id: string | null
           owner_id: string
           photo_url: string | null
@@ -1617,38 +1627,50 @@ export type Database = {
           shoeing_interval: number | null
           shoeing_status: string | null
           special_notes: string | null
+          stable_address_gps: Json | null
           updated_at: string
           usage: string | null
+          usage_type: Database["public"]["Enums"]["usage_type"] | null
         }
         Insert: {
           anamnesis_interval_months?: number | null
+          birth_date?: string | null
           birth_year?: number | null
           breed?: string | null
+          chip_number?: string | null
           color?: string | null
           contacts?: Json | null
           created_at?: string
           deleted_at?: string | null
           discipline?: string | null
+          documents_urls?: string[] | null
           eqid?: string | null
           equine_type?: string | null
           feeding_notes?: string | null
           gender?: string | null
+          health_issues_general?: string | null
           health_status?: string | null
           height?: string | null
+          height_cm?: number | null
           holding_type?: string | null
           hoof_data?: Json | null
+          hoof_details?: Json | null
           hoof_measurements?: Json | null
           hoof_protection?: string | null
           hoof_type?: string | null
           housing?: string | null
           id?: string
+          is_new_horse?: boolean | null
           last_anamnesis_date?: string | null
+          last_appointment_date?: string | null
           latitude?: number | null
           location_name?: string | null
           longitude?: number | null
           medical_history?: string | null
           name: string
+          next_appointment_due?: string | null
           nickname?: string | null
+          official_name?: string | null
           organization_id?: string | null
           owner_id: string
           photo_url?: string | null
@@ -1657,38 +1679,50 @@ export type Database = {
           shoeing_interval?: number | null
           shoeing_status?: string | null
           special_notes?: string | null
+          stable_address_gps?: Json | null
           updated_at?: string
           usage?: string | null
+          usage_type?: Database["public"]["Enums"]["usage_type"] | null
         }
         Update: {
           anamnesis_interval_months?: number | null
+          birth_date?: string | null
           birth_year?: number | null
           breed?: string | null
+          chip_number?: string | null
           color?: string | null
           contacts?: Json | null
           created_at?: string
           deleted_at?: string | null
           discipline?: string | null
+          documents_urls?: string[] | null
           eqid?: string | null
           equine_type?: string | null
           feeding_notes?: string | null
           gender?: string | null
+          health_issues_general?: string | null
           health_status?: string | null
           height?: string | null
+          height_cm?: number | null
           holding_type?: string | null
           hoof_data?: Json | null
+          hoof_details?: Json | null
           hoof_measurements?: Json | null
           hoof_protection?: string | null
           hoof_type?: string | null
           housing?: string | null
           id?: string
+          is_new_horse?: boolean | null
           last_anamnesis_date?: string | null
+          last_appointment_date?: string | null
           latitude?: number | null
           location_name?: string | null
           longitude?: number | null
           medical_history?: string | null
           name?: string
+          next_appointment_due?: string | null
           nickname?: string | null
+          official_name?: string | null
           organization_id?: string | null
           owner_id?: string
           photo_url?: string | null
@@ -1697,8 +1731,10 @@ export type Database = {
           shoeing_interval?: number | null
           shoeing_status?: string | null
           special_notes?: string | null
+          stable_address_gps?: Json | null
           updated_at?: string
           usage?: string | null
+          usage_type?: Database["public"]["Enums"]["usage_type"] | null
         }
         Relationships: [
           {
@@ -2524,6 +2560,7 @@ export type Database = {
           cancellation_policy: string | null
           city: string | null
           client_status: string | null
+          client_type: Database["public"]["Enums"]["client_type"] | null
           company_name: string | null
           copecart_subscription_id: string | null
           country: string | null
@@ -2531,6 +2568,7 @@ export type Database = {
           created_by_provider_id: string | null
           currency: string | null
           deleted_at: string | null
+          digital_signature_url: string | null
           email: string | null
           emergency_contacts: Json | null
           feature_flags: Json | null
@@ -2540,6 +2578,7 @@ export type Database = {
           geo_lat: number | null
           geo_lng: number | null
           has_logged_in: boolean | null
+          house_number: string | null
           iban: string | null
           ical_token: string | null
           id: string
@@ -2550,16 +2589,27 @@ export type Database = {
           is_manually_managed: boolean | null
           is_suspended: boolean | null
           last_name: string | null
+          latitude: number | null
+          lifecycle_status:
+            | Database["public"]["Enums"]["lifecycle_status"]
+            | null
+          location_name: string | null
           logo_url: string | null
+          longitude: number | null
           mobile: string | null
           onboarding_completed: boolean | null
+          order_authorization: boolean | null
           org_role: Database["public"]["Enums"]["organization_role"] | null
           organization_id: string | null
           owner_name: string | null
           payment_rating: string | null
+          permissions_granted: Json | null
           phone: string | null
+          phone_landline: string | null
+          phone_mobile: string | null
           plan_override: string | null
           readable_id: string | null
+          reliability_score: number | null
           reminder_1h: boolean | null
           reminder_6h: boolean | null
           reminder_evening: boolean | null
@@ -2570,6 +2620,7 @@ export type Database = {
           stable_longitude: number | null
           stable_street: string | null
           stable_zip: string | null
+          state: string | null
           street: string | null
           subscription_plan: string | null
           subscription_status: string | null
@@ -2583,6 +2634,7 @@ export type Database = {
           vehicle_name: string | null
           vehicle_plate: string | null
           website: string | null
+          working_conditions: string | null
           zip_code: string | null
         }
         Insert: {
@@ -2596,6 +2648,7 @@ export type Database = {
           cancellation_policy?: string | null
           city?: string | null
           client_status?: string | null
+          client_type?: Database["public"]["Enums"]["client_type"] | null
           company_name?: string | null
           copecart_subscription_id?: string | null
           country?: string | null
@@ -2603,6 +2656,7 @@ export type Database = {
           created_by_provider_id?: string | null
           currency?: string | null
           deleted_at?: string | null
+          digital_signature_url?: string | null
           email?: string | null
           emergency_contacts?: Json | null
           feature_flags?: Json | null
@@ -2612,6 +2666,7 @@ export type Database = {
           geo_lat?: number | null
           geo_lng?: number | null
           has_logged_in?: boolean | null
+          house_number?: string | null
           iban?: string | null
           ical_token?: string | null
           id: string
@@ -2622,16 +2677,27 @@ export type Database = {
           is_manually_managed?: boolean | null
           is_suspended?: boolean | null
           last_name?: string | null
+          latitude?: number | null
+          lifecycle_status?:
+            | Database["public"]["Enums"]["lifecycle_status"]
+            | null
+          location_name?: string | null
           logo_url?: string | null
+          longitude?: number | null
           mobile?: string | null
           onboarding_completed?: boolean | null
+          order_authorization?: boolean | null
           org_role?: Database["public"]["Enums"]["organization_role"] | null
           organization_id?: string | null
           owner_name?: string | null
           payment_rating?: string | null
+          permissions_granted?: Json | null
           phone?: string | null
+          phone_landline?: string | null
+          phone_mobile?: string | null
           plan_override?: string | null
           readable_id?: string | null
+          reliability_score?: number | null
           reminder_1h?: boolean | null
           reminder_6h?: boolean | null
           reminder_evening?: boolean | null
@@ -2642,6 +2708,7 @@ export type Database = {
           stable_longitude?: number | null
           stable_street?: string | null
           stable_zip?: string | null
+          state?: string | null
           street?: string | null
           subscription_plan?: string | null
           subscription_status?: string | null
@@ -2655,6 +2722,7 @@ export type Database = {
           vehicle_name?: string | null
           vehicle_plate?: string | null
           website?: string | null
+          working_conditions?: string | null
           zip_code?: string | null
         }
         Update: {
@@ -2668,6 +2736,7 @@ export type Database = {
           cancellation_policy?: string | null
           city?: string | null
           client_status?: string | null
+          client_type?: Database["public"]["Enums"]["client_type"] | null
           company_name?: string | null
           copecart_subscription_id?: string | null
           country?: string | null
@@ -2675,6 +2744,7 @@ export type Database = {
           created_by_provider_id?: string | null
           currency?: string | null
           deleted_at?: string | null
+          digital_signature_url?: string | null
           email?: string | null
           emergency_contacts?: Json | null
           feature_flags?: Json | null
@@ -2684,6 +2754,7 @@ export type Database = {
           geo_lat?: number | null
           geo_lng?: number | null
           has_logged_in?: boolean | null
+          house_number?: string | null
           iban?: string | null
           ical_token?: string | null
           id?: string
@@ -2694,16 +2765,27 @@ export type Database = {
           is_manually_managed?: boolean | null
           is_suspended?: boolean | null
           last_name?: string | null
+          latitude?: number | null
+          lifecycle_status?:
+            | Database["public"]["Enums"]["lifecycle_status"]
+            | null
+          location_name?: string | null
           logo_url?: string | null
+          longitude?: number | null
           mobile?: string | null
           onboarding_completed?: boolean | null
+          order_authorization?: boolean | null
           org_role?: Database["public"]["Enums"]["organization_role"] | null
           organization_id?: string | null
           owner_name?: string | null
           payment_rating?: string | null
+          permissions_granted?: Json | null
           phone?: string | null
+          phone_landline?: string | null
+          phone_mobile?: string | null
           plan_override?: string | null
           readable_id?: string | null
+          reliability_score?: number | null
           reminder_1h?: boolean | null
           reminder_6h?: boolean | null
           reminder_evening?: boolean | null
@@ -2714,6 +2796,7 @@ export type Database = {
           stable_longitude?: number | null
           stable_street?: string | null
           stable_zip?: string | null
+          state?: string | null
           street?: string | null
           subscription_plan?: string | null
           subscription_status?: string | null
@@ -2727,6 +2810,7 @@ export type Database = {
           vehicle_name?: string | null
           vehicle_plate?: string | null
           website?: string | null
+          working_conditions?: string | null
           zip_code?: string | null
         }
         Relationships: [
@@ -4425,11 +4509,25 @@ export type Database = {
         | "canceled_by_provider"
         | "no_show"
       billing_type: "standard" | "flat_rate" | "series"
+      client_type: "private" | "commercial"
       contact_category: "client" | "partner" | "supplier" | "lead"
       equine_type: "horse" | "pony" | "donkey" | "mule" | "zebra"
       feature_status: "disabled" | "beta" | "early_access" | "public"
       help_article_role_access: "all" | "pid_only" | "kid_only"
+      holding_type: "box" | "open_stable" | "mixed" | "pasture"
+      lifecycle_status: "new" | "active" | "archive"
       organization_role: "admin" | "employee"
+      payment_rating: "A" | "B" | "C" | "D"
+      usage_type:
+        | "leisure"
+        | "sport"
+        | "western"
+        | "dressage"
+        | "jumping"
+        | "breeding"
+        | "therapy"
+        | "school"
+        | "retirement"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4568,11 +4666,26 @@ export const Constants = {
         "no_show",
       ],
       billing_type: ["standard", "flat_rate", "series"],
+      client_type: ["private", "commercial"],
       contact_category: ["client", "partner", "supplier", "lead"],
       equine_type: ["horse", "pony", "donkey", "mule", "zebra"],
       feature_status: ["disabled", "beta", "early_access", "public"],
       help_article_role_access: ["all", "pid_only", "kid_only"],
+      holding_type: ["box", "open_stable", "mixed", "pasture"],
+      lifecycle_status: ["new", "active", "archive"],
       organization_role: ["admin", "employee"],
+      payment_rating: ["A", "B", "C", "D"],
+      usage_type: [
+        "leisure",
+        "sport",
+        "western",
+        "dressage",
+        "jumping",
+        "breeding",
+        "therapy",
+        "school",
+        "retirement",
+      ],
     },
   },
 } as const
