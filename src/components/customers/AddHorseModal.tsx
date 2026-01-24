@@ -25,6 +25,12 @@ import { toast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { LocationPicker } from "@/components/LocationPicker";
 import { z } from "zod";
+import { 
+  HOLDING_TYPE_OPTIONS, 
+  USAGE_TYPE_OPTIONS,
+  HoldingType,
+  UsageType
+} from "@/components/horse-detail/types";
 
 const horseSchema = z.object({
   name: z.string().trim().min(1, "Pferdename ist erforderlich").max(100),
@@ -69,6 +75,11 @@ export function AddHorseModal({ customerId, customerName, open, onClose }: Props
     latitude: null as number | null,
     longitude: null as number | null,
     locationName: "",
+    // New fields
+    chip_number: "",
+    holding_type: "",
+    usage_type: "",
+    height_cm: "",
   });
 
   const resetForm = () => {
@@ -83,6 +94,10 @@ export function AddHorseModal({ customerId, customerName, open, onClose }: Props
       latitude: null,
       longitude: null,
       locationName: "",
+      chip_number: "",
+      holding_type: "",
+      usage_type: "",
+      height_cm: "",
     });
   };
 
@@ -99,6 +114,10 @@ export function AddHorseModal({ customerId, customerName, open, onClose }: Props
       latitude?: number;
       longitude?: number;
       location_name?: string;
+      chip_number?: string;
+      holding_type?: HoldingType;
+      usage_type?: UsageType;
+      height_cm?: number;
     }) => {
       const { error } = await supabase.from("horses").insert(data);
       if (error) throw error;
@@ -186,6 +205,10 @@ export function AddHorseModal({ customerId, customerName, open, onClose }: Props
       latitude: form.latitude || undefined,
       longitude: form.longitude || undefined,
       location_name: form.locationName || undefined,
+      chip_number: form.chip_number || undefined,
+      holding_type: (form.holding_type || undefined) as HoldingType | undefined,
+      usage_type: (form.usage_type || undefined) as UsageType | undefined,
+      height_cm: form.height_cm ? Number(form.height_cm) : undefined,
     });
   };
 
@@ -276,6 +299,71 @@ export function AddHorseModal({ customerId, customerName, open, onClose }: Props
                 value={form.color}
                 onChange={(e) => setForm({ ...form, color: e.target.value })}
               />
+            </div>
+          </div>
+
+          {/* Neue Felder: Haltung & Identifikation */}
+          <div className="pt-2 border-t">
+            <Label className="text-xs text-muted-foreground uppercase tracking-wide mb-2 block">Haltung & Identifikation</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="holding_type">Haltungsform</Label>
+                <Select
+                  value={form.holding_type}
+                  onValueChange={(v) => setForm({ ...form, holding_type: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Auswählen..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {HOLDING_TYPE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.icon} {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="usage_type">Nutzungsart</Label>
+                <Select
+                  value={form.usage_type}
+                  onValueChange={(v) => setForm({ ...form, usage_type: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Auswählen..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {USAGE_TYPE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mt-3">
+              <div className="space-y-2">
+                <Label htmlFor="chip_number">Chip-Nummer</Label>
+                <Input
+                  id="chip_number"
+                  placeholder="15-stellige ID"
+                  value={form.chip_number}
+                  onChange={(e) => setForm({ ...form, chip_number: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="height_cm">Stockmaß (cm)</Label>
+                <Input
+                  id="height_cm"
+                  type="number"
+                  placeholder="z.B. 165"
+                  value={form.height_cm}
+                  onChange={(e) => setForm({ ...form, height_cm: e.target.value })}
+                />
+              </div>
             </div>
           </div>
 
