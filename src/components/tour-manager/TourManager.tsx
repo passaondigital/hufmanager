@@ -32,6 +32,9 @@ import { cn } from "@/lib/utils";
 import { TourCard, type TourAppointment } from "./TourCard";
 import { TourControls } from "./TourControls";
 import { BreadcrumbsReplay, BreadcrumbsLayer } from "./BreadcrumbsReplay";
+import { TourPdfExport } from "./TourPdfExport";
+import { NearbyCustomersPanel, NearbyCustomersMarkers } from "./NearbyCustomersLayer";
+import { StableGroupPanel } from "./StableGroupPanel";
 import { QuickAddAppointmentFAB } from "@/components/tour/QuickAddAppointmentFAB";
 
 import "leaflet/dist/leaflet.css";
@@ -146,6 +149,12 @@ export function TourManager() {
   const [showBreadcrumbsReplay, setShowBreadcrumbsReplay] = useState(false);
   const [replayBreadcrumbs, setReplayBreadcrumbs] = useState<{ id: string; latitude: number; longitude: number; timestamp: string; accuracy: number | null }[]>([]);
   const [replayIndex, setReplayIndex] = useState(0);
+  
+  // Nearby customers layer state
+  const [nearbyCustomers, setNearbyCustomers] = useState<{ id: string; full_name: string; geo_lat: number; geo_lng: number; horse_count: number; street?: string; city?: string }[]>([]);
+  const [companyLocation, setCompanyLocation] = useState<{ lat: number; lng: number; address?: string } | null>(null);
+  const [nearbyRadiusKm, setNearbyRadiusKm] = useState(30);
+  const [showNearbyRadius, setShowNearbyRadius] = useState(true);
   
   // Handler for breadcrumbs replay changes
   const handleBreadcrumbsChange = (breadcrumbs: typeof replayBreadcrumbs, index: number) => {
@@ -492,6 +501,14 @@ export function TourManager() {
               currentIndex={replayIndex} 
             />
           )}
+          
+          {/* Nearby Customers Layer */}
+          <NearbyCustomersMarkers
+            customers={nearbyCustomers}
+            companyLocation={companyLocation}
+            radiusKm={nearbyRadiusKm}
+            showRadius={showNearbyRadius}
+          />
         </MapContainer>
 
         {/* Tour Controls Overlay */}
@@ -506,6 +523,41 @@ export function TourManager() {
             onOptimizeRoute={handleOptimizeRoute}
             onResetOrder={handleResetOrder}
             hasCustomOrder={hasCustomOrder}
+          />
+        )}
+        
+        {/* PDF Export Button */}
+        {user && (
+          <div className="absolute top-4 right-4 z-[1000] flex items-center gap-2">
+            <TourPdfExport
+              tourDate={selectedDate}
+              userId={user.id}
+              appointments={orderedAppointments}
+              routeInfo={routeInfo}
+            />
+          </div>
+        )}
+        
+        {/* Nearby Customers Panel */}
+        {user && (
+          <NearbyCustomersPanel
+            userId={user.id}
+            userLocation={userLocation}
+            excludeAppointmentClientIds={orderedAppointments.map(a => a.client?.id).filter((id): id is string => !!id)}
+            onCustomersChange={setNearbyCustomers}
+            onCompanyLocationChange={setCompanyLocation}
+            onRadiusChange={setNearbyRadiusKm}
+            onShowRadiusChange={setShowNearbyRadius}
+          />
+        )}
+        
+        {/* Stable Group Panel */}
+        {user && (
+          <StableGroupPanel
+            tourDate={selectedDate}
+            userId={user.id}
+            appointments={orderedAppointments}
+            onRefetch={() => refetch()}
           />
         )}
 
