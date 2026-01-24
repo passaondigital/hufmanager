@@ -26,11 +26,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, AlertCircle } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Plus, AlertCircle, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { TourCard, type TourAppointment } from "./TourCard";
 import { TourControls } from "./TourControls";
+import { BreadcrumbsReplay, BreadcrumbsLayer } from "./BreadcrumbsReplay";
 import { QuickAddAppointmentFAB } from "@/components/tour/QuickAddAppointmentFAB";
 
 import "leaflet/dist/leaflet.css";
@@ -142,6 +143,15 @@ export function TourManager() {
   const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
   const [orderedAppointments, setOrderedAppointments] = useState<TourAppointment[]>([]);
   const [hasCustomOrder, setHasCustomOrder] = useState(false);
+  const [showBreadcrumbsReplay, setShowBreadcrumbsReplay] = useState(false);
+  const [replayBreadcrumbs, setReplayBreadcrumbs] = useState<{ id: string; latitude: number; longitude: number; timestamp: string; accuracy: number | null }[]>([]);
+  const [replayIndex, setReplayIndex] = useState(0);
+  
+  // Handler for breadcrumbs replay changes
+  const handleBreadcrumbsChange = (breadcrumbs: typeof replayBreadcrumbs, index: number) => {
+    setReplayBreadcrumbs(breadcrumbs);
+    setReplayIndex(index);
+  };
 
   // DnD sensors
   const sensors = useSensors(
@@ -474,6 +484,14 @@ export function TourManager() {
               </Marker>
             );
           })}
+          
+          {/* Breadcrumbs Layer for Replay */}
+          {showBreadcrumbsReplay && replayBreadcrumbs.length > 0 && (
+            <BreadcrumbsLayer 
+              breadcrumbs={replayBreadcrumbs} 
+              currentIndex={replayIndex} 
+            />
+          )}
         </MapContainer>
 
         {/* Tour Controls Overlay */}
@@ -516,6 +534,16 @@ export function TourManager() {
           
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToNextDay}>
             <ChevronRight className="h-4 w-4" />
+          </Button>
+          
+          {/* History Button */}
+          <Button 
+            variant={showBreadcrumbsReplay ? "secondary" : "ghost"} 
+            size="icon" 
+            className="h-8 w-8 ml-1" 
+            onClick={() => setShowBreadcrumbsReplay(!showBreadcrumbsReplay)}
+          >
+            <History className="h-4 w-4" />
           </Button>
         </div>
 
@@ -595,6 +623,7 @@ export function TourManager() {
                           index={index}
                           userId={user?.id || ""}
                           onOpenChat={handleOpenChat}
+                          onStatusChange={() => refetch()}
                         />
                       ))}
                     </AnimatePresence>
@@ -605,6 +634,17 @@ export function TourManager() {
           </ScrollArea>
         </div>
       </motion.div>
+
+      {/* Breadcrumbs Replay Panel */}
+      {user && (
+        <BreadcrumbsReplay
+          tourDate={selectedDate}
+          userId={user.id}
+          isOpen={showBreadcrumbsReplay}
+          onClose={() => setShowBreadcrumbsReplay(false)}
+          onBreadcrumbsChange={handleBreadcrumbsChange}
+        />
+      )}
 
       {/* Quick Add FAB */}
       <QuickAddAppointmentFAB

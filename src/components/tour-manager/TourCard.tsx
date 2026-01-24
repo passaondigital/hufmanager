@@ -11,7 +11,9 @@ import {
   CheckCircle2,
   AlertTriangle,
   Send,
-  Car
+  Car,
+  Check,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +51,7 @@ interface TourCardProps {
   index: number;
   userId: string;
   onOpenChat?: (clientId: string) => void;
+  onStatusChange?: () => void;
   estimatedArrival?: string;
 }
 
@@ -90,9 +93,11 @@ export function TourCard({
   index, 
   userId,
   onOpenChat,
+  onStatusChange,
   estimatedArrival
 }: TourCardProps) {
   const [isSendingEta, setIsSendingEta] = useState(false);
+  const [isMarkingComplete, setIsMarkingComplete] = useState(false);
   
   const {
     attributes,
@@ -199,6 +204,28 @@ export function TourCard({
     }
   };
 
+  // Mark appointment as completed
+  const handleMarkComplete = async () => {
+    setIsMarkingComplete(true);
+    
+    try {
+      const { error } = await supabase
+        .from("appointments")
+        .update({ status: "completed" })
+        .eq("id", appointment.id);
+      
+      if (error) throw error;
+      
+      toast.success("Termin abgeschlossen!");
+      onStatusChange?.();
+    } catch (error) {
+      console.error("Error marking complete:", error);
+      toast.error("Status konnte nicht geändert werden");
+    } finally {
+      setIsMarkingComplete(false);
+    }
+  };
+
   // Open chat with client
   const handleOpenChat = () => {
     if (appointment.client?.id && onOpenChat) {
@@ -289,15 +316,41 @@ export function TourCard({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 pl-8 pt-1">
+          {isCompleted ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="h-8 gap-1.5 flex-1 bg-green-600/10 text-green-600 hover:bg-green-600/20"
+              disabled
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Abgeschlossen
+            </Button>
+          ) : (
+            <Button
+              variant="default"
+              size="sm"
+              className="h-8 gap-1.5 flex-1"
+              onClick={handleMarkComplete}
+              disabled={isMarkingComplete}
+            >
+              {isMarkingComplete ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Check className="h-3.5 w-3.5" />
+              )}
+              Fertig
+            </Button>
+          )}
+          
           <Button
-            variant="default"
+            variant="secondary"
             size="sm"
-            className="h-8 gap-1.5 flex-1"
+            className="h-8 gap-1.5"
             onClick={handleNavigate}
             disabled={!hasCoordinates}
           >
             <Navigation className="h-3.5 w-3.5" />
-            Navigieren
           </Button>
           
           <Button
@@ -315,7 +368,7 @@ export function TourCard({
             size="sm"
             className="h-8 gap-1.5"
             onClick={handleSendEta}
-            disabled={isSendingEta || !appointment.client?.id}
+            disabled={isSendingEta || !appointment.client?.id || isCompleted}
           >
             <Send className="h-3.5 w-3.5" />
             ETA
@@ -329,7 +382,7 @@ export function TourCard({
         "text-xs font-bold text-primary-foreground shadow-lg",
         isCompleted ? "bg-green-600" : "bg-primary"
       )}>
-        {index + 1}
+        {isCompleted ? <Check className="h-3 w-3" /> : index + 1}
       </div>
     </motion.div>
   );
