@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Camera, Timer, Route, ClipboardList, Car, Map } from "lucide-react";
 import { HufCamProStandalone } from "@/components/hufcam";
@@ -15,8 +16,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const WorkMode = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<string>("timer");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get("tab") || "timer";
+  const [activeTab, setActiveTab] = useState<string>(tabFromUrl);
   const [currentDate, setCurrentDate] = useState(new Date());
+  
+  // Sync tab with URL
+  useEffect(() => {
+    const urlTab = searchParams.get("tab") || "timer";
+    if (urlTab !== activeTab) {
+      setActiveTab(urlTab);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    setSearchParams({ tab: value });
+  };
+
   
   // Hufanalyse state
   const [selectedHorseId, setSelectedHorseId] = useState<string | null>(null);
@@ -152,7 +169,7 @@ const WorkMode = () => {
       </div>
 
       {/* Main Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 h-auto">
           <TabsTrigger value="timer" className="flex flex-col gap-1 py-3">
             <Timer className="h-4 w-4" />
