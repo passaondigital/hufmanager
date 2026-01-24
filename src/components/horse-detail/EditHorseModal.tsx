@@ -1,5 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { Horse, HEALTH_STATUS_OPTIONS, HOOF_PROTECTION_OPTIONS, USAGE_OPTIONS, HOUSING_OPTIONS, HoofMeasurements, HorseContacts } from "./types";
+import { 
+  Horse, 
+  HEALTH_STATUS_OPTIONS, 
+  HOOF_PROTECTION_OPTIONS, 
+  USAGE_OPTIONS, 
+  HOUSING_OPTIONS, 
+  HOLDING_TYPE_OPTIONS,
+  USAGE_TYPE_OPTIONS,
+  HoofMeasurements, 
+  HorseContacts,
+  HoldingType,
+  UsageType
+} from "./types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Camera } from "lucide-react";
@@ -23,18 +36,26 @@ interface EditHorseModalProps {
 const buildInitialForm = (h: Horse) => ({
   name: h.name,
   nickname: h.nickname || "",
+  official_name: h.official_name || "",
   breed: h.breed || "",
   birth_year: h.birth_year?.toString() || "",
+  birth_date: h.birth_date || "",
   gender: h.gender || "",
   color: h.color || "",
   height: h.height || "",
+  height_cm: h.height_cm?.toString() || "",
+  chip_number: h.chip_number || "",
   discipline: h.discipline || "",
   usage: h.usage || "",
   housing: h.housing || "",
+  holding_type: h.holding_type || "",
+  usage_type: h.usage_type || "",
   feeding_notes: h.feeding_notes || "",
   health_status: h.health_status || "healthy",
   medical_history: h.medical_history || "",
+  health_issues_general: h.health_issues_general || "",
   hoof_protection: h.hoof_protection || "barefoot",
+  shoeing_status: h.shoeing_status ?? false,
   shoeing_interval: h.shoeing_interval?.toString() || "6",
   special_notes: h.special_notes || "",
   hoof_vl: (h.hoof_measurements as HoofMeasurements)?.vl || "",
@@ -159,18 +180,26 @@ export function EditHorseModal({ horse, open, onClose, onSaved }: EditHorseModal
         .update({
           name: form.name.trim(),
           nickname: form.nickname.trim() || null,
+          official_name: form.official_name.trim() || null,
           breed: form.breed.trim() || null,
           birth_year: form.birth_year ? parseInt(form.birth_year) : null,
+          birth_date: form.birth_date || null,
           gender: form.gender || null,
           color: form.color.trim() || null,
           height: form.height.trim() || null,
+          height_cm: form.height_cm ? parseInt(form.height_cm) : null,
+          chip_number: form.chip_number.trim() || null,
           discipline: form.discipline.trim() || null,
           usage: form.usage || null,
           housing: form.housing || null,
+          holding_type: (form.holding_type || null) as HoldingType | null,
+          usage_type: (form.usage_type || null) as UsageType | null,
           feeding_notes: form.feeding_notes.trim() || null,
           health_status: form.health_status,
           medical_history: form.medical_history.trim() || null,
+          health_issues_general: form.health_issues_general.trim() || null,
           hoof_protection: form.hoof_protection,
+          shoeing_status: form.shoeing_status ? "true" : "false",
           shoeing_interval: form.shoeing_interval ? parseInt(form.shoeing_interval) : null,
           special_notes: form.special_notes.trim() || null,
           hoof_measurements: hoofMeasurements,
@@ -246,197 +275,295 @@ export function EditHorseModal({ horse, open, onClose, onSaved }: EditHorseModal
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* Sektion: Stammdaten */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Stammdaten</h3>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Name *</Label>
+                    <Input 
+                      value={form.name}
+                      onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Rufname</Label>
+                    <Input 
+                      value={form.nickname}
+                      onChange={e => setForm(f => ({ ...f, nickname: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                
                 <div>
-                  <Label>Name *</Label>
+                  <Label>Offizieller Name (Pass)</Label>
                   <Input 
-                    value={form.name}
-                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                    value={form.official_name}
+                    onChange={e => setForm(f => ({ ...f, official_name: e.target.value }))}
+                    placeholder="Name laut Equidenpass"
                   />
                 </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Rasse</Label>
+                    <Input 
+                      value={form.breed}
+                      onChange={e => setForm(f => ({ ...f, breed: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Geschlecht</Label>
+                    <Select value={form.gender} onValueChange={v => setForm(f => ({ ...f, gender: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Auswählen" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Stute">Stute</SelectItem>
+                        <SelectItem value="Wallach">Wallach</SelectItem>
+                        <SelectItem value="Hengst">Hengst</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Geburtsdatum</Label>
+                    <Input 
+                      type="date"
+                      value={form.birth_date}
+                      onChange={e => setForm(f => ({ ...f, birth_date: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Geburtsjahr</Label>
+                    <Input 
+                      type="number"
+                      value={form.birth_year}
+                      onChange={e => setForm(f => ({ ...f, birth_year: e.target.value }))}
+                      placeholder="z.B. 2015"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Farbe</Label>
+                    <Input 
+                      value={form.color}
+                      onChange={e => setForm(f => ({ ...f, color: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Stockmaß (cm)</Label>
+                    <Input 
+                      type="number"
+                      value={form.height_cm}
+                      onChange={e => setForm(f => ({ ...f, height_cm: e.target.value }))}
+                      placeholder="z.B. 165"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <Label>Rufname</Label>
+                  <Label>Chip-Nummer</Label>
                   <Input 
-                    value={form.nickname}
-                    onChange={e => setForm(f => ({ ...f, nickname: e.target.value }))}
+                    value={form.chip_number}
+                    onChange={e => setForm(f => ({ ...f, chip_number: e.target.value }))}
+                    placeholder="15-stellige Chip-ID"
                   />
                 </div>
               </div>
-              
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Rasse</Label>
-                  <Input 
-                    value={form.breed}
-                    onChange={e => setForm(f => ({ ...f, breed: e.target.value }))}
-                  />
+
+              {/* Sektion: Haltung & Nutzung */}
+              <div className="space-y-3 pt-4 border-t">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Haltung & Nutzung</h3>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Haltungsform</Label>
+                    <Select value={form.holding_type} onValueChange={v => setForm(f => ({ ...f, holding_type: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Auswählen" /></SelectTrigger>
+                      <SelectContent>
+                        {HOLDING_TYPE_OPTIONS.map(opt => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.icon} {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Nutzungsart</Label>
+                    <Select value={form.usage_type} onValueChange={v => setForm(f => ({ ...f, usage_type: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Auswählen" /></SelectTrigger>
+                      <SelectContent>
+                        {USAGE_TYPE_OPTIONS.map(opt => (
+                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div>
-                  <Label>Geburtsjahr</Label>
-                  <Input 
-                    type="number"
-                    value={form.birth_year}
-                    onChange={e => setForm(f => ({ ...f, birth_year: e.target.value }))}
-                  />
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Verwendung (alt)</Label>
+                    <Select value={form.usage} onValueChange={v => setForm(f => ({ ...f, usage: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Auswählen" /></SelectTrigger>
+                      <SelectContent>
+                        {USAGE_OPTIONS.map(opt => (
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Unterkunft (alt)</Label>
+                    <Select value={form.housing} onValueChange={v => setForm(f => ({ ...f, housing: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Auswählen" /></SelectTrigger>
+                      <SelectContent>
+                        {HOUSING_OPTIONS.map(opt => (
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Geschlecht</Label>
-                  <Select value={form.gender} onValueChange={v => setForm(f => ({ ...f, gender: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Auswählen" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Stute">Stute</SelectItem>
-                      <SelectItem value="Wallach">Wallach</SelectItem>
-                      <SelectItem value="Hengst">Hengst</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Farbe</Label>
-                  <Input 
-                    value={form.color}
-                    onChange={e => setForm(f => ({ ...f, color: e.target.value }))}
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Stockmaß (cm)</Label>
-                  <Input 
-                    value={form.height}
-                    onChange={e => setForm(f => ({ ...f, height: e.target.value }))}
-                  />
-                </div>
+                
                 <div>
                   <Label>Disziplin</Label>
                   <Input 
                     value={form.discipline}
                     onChange={e => setForm(f => ({ ...f, discipline: e.target.value }))}
-                    placeholder="z.B. Dressur, Springen"
+                    placeholder="z.B. Dressur, Springen, Western"
                   />
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3">
+                
                 <div>
-                  <Label>Verwendung</Label>
-                  <Select value={form.usage} onValueChange={v => setForm(f => ({ ...f, usage: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Auswählen" /></SelectTrigger>
-                    <SelectContent>
-                      {USAGE_OPTIONS.map(opt => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Fütterung / Besonderheiten</Label>
+                  <Textarea 
+                    value={form.feeding_notes}
+                    onChange={e => setForm(f => ({ ...f, feeding_notes: e.target.value }))}
+                    placeholder="z.B. Allergien, spezielle Fütterung..."
+                    rows={3}
+                  />
                 </div>
-                <div>
-                  <Label>Haltungsform</Label>
-                  <Select value={form.housing} onValueChange={v => setForm(f => ({ ...f, housing: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Auswählen" /></SelectTrigger>
-                    <SelectContent>
-                      {HOUSING_OPTIONS.map(opt => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div>
-                <Label>Fütterung / Besonderheiten</Label>
-                <Textarea 
-                  value={form.feeding_notes}
-                  onChange={e => setForm(f => ({ ...f, feeding_notes: e.target.value }))}
-                  placeholder="z.B. Allergien, spezielle Fütterung..."
-                  rows={3}
-                />
               </div>
             </TabsContent>
 
             <TabsContent value="health" className="mt-0 space-y-4">
-              <div>
-                <Label>Gesundheitsstatus</Label>
-                <Select value={form.health_status} onValueChange={v => setForm(f => ({ ...f, health_status: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {HEALTH_STATUS_OPTIONS.map(opt => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label>Anamnese / Vorgeschichte</Label>
-                <Textarea 
-                  value={form.medical_history}
-                  onChange={e => setForm(f => ({ ...f, medical_history: e.target.value }))}
-                  placeholder="Frühere Erkrankungen, OPs, Therapien..."
-                  rows={4}
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3">
+              {/* Sektion: Allgemein */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Allgemeiner Gesundheitsstatus</h3>
+                
                 <div>
-                  <Label>Hufschutz</Label>
-                  <Select value={form.hoof_protection} onValueChange={v => setForm(f => ({ ...f, hoof_protection: v }))}>
+                  <Label>Gesundheitsstatus</Label>
+                  <Select value={form.health_status} onValueChange={v => setForm(f => ({ ...f, health_status: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {HOOF_PROTECTION_OPTIONS.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.icon} {opt.label}
-                        </SelectItem>
+                      {HEALTH_STATUS_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
+                
                 <div>
-                  <Label>Intervall (Wochen)</Label>
-                  <Input 
-                    type="number"
-                    value={form.shoeing_interval}
-                    onChange={e => setForm(f => ({ ...f, shoeing_interval: e.target.value }))}
+                  <Label>Bekannte Gesundheitsprobleme</Label>
+                  <Textarea 
+                    value={form.health_issues_general}
+                    onChange={e => setForm(f => ({ ...f, health_issues_general: e.target.value }))}
+                    placeholder="z.B. Arthrose, Allergien, Stoffwechselprobleme..."
+                    rows={3}
+                  />
+                </div>
+                
+                <div>
+                  <Label>Anamnese / Vorgeschichte</Label>
+                  <Textarea 
+                    value={form.medical_history}
+                    onChange={e => setForm(f => ({ ...f, medical_history: e.target.value }))}
+                    placeholder="Frühere Erkrankungen, OPs, Therapien..."
+                    rows={4}
                   />
                 </div>
               </div>
-              
-              <div>
-                <Label>Hufmaße</Label>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  <Input 
-                    placeholder="VL (Vorne Links)"
-                    value={form.hoof_vl}
-                    onChange={e => setForm(f => ({ ...f, hoof_vl: e.target.value }))}
-                  />
-                  <Input 
-                    placeholder="VR (Vorne Rechts)"
-                    value={form.hoof_vr}
-                    onChange={e => setForm(f => ({ ...f, hoof_vr: e.target.value }))}
-                  />
-                  <Input 
-                    placeholder="HL (Hinten Links)"
-                    value={form.hoof_hl}
-                    onChange={e => setForm(f => ({ ...f, hoof_hl: e.target.value }))}
-                  />
-                  <Input 
-                    placeholder="HR (Hinten Rechts)"
-                    value={form.hoof_hr}
-                    onChange={e => setForm(f => ({ ...f, hoof_hr: e.target.value }))}
+
+              {/* Sektion: Huf-Status */}
+              <div className="space-y-3 pt-4 border-t">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Huf-Status</h3>
+                
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                  <div>
+                    <Label className="text-base font-medium">Beschlagen</Label>
+                    <p className="text-sm text-muted-foreground">Hat das Pferd aktuell Eisen?</p>
+                  </div>
+                  <Switch 
+                    checked={form.shoeing_status}
+                    onCheckedChange={v => setForm(f => ({ ...f, shoeing_status: v }))}
                   />
                 </div>
-              </div>
-              
-              <div>
-                <Label>Besonderheiten bei der Bearbeitung</Label>
-                <Textarea 
-                  value={form.special_notes}
-                  onChange={e => setForm(f => ({ ...f, special_notes: e.target.value }))}
-                  placeholder="Wichtige Hinweise für den Hufbearbeiter..."
-                  rows={3}
-                />
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Hufschutz-Art</Label>
+                    <Select value={form.hoof_protection} onValueChange={v => setForm(f => ({ ...f, hoof_protection: v }))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {HOOF_PROTECTION_OPTIONS.map(opt => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.icon} {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Bearbeitungs-Intervall (Wochen)</Label>
+                    <Input 
+                      type="number"
+                      value={form.shoeing_interval}
+                      onChange={e => setForm(f => ({ ...f, shoeing_interval: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label>Hufmaße</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <Input 
+                      placeholder="VL (Vorne Links)"
+                      value={form.hoof_vl}
+                      onChange={e => setForm(f => ({ ...f, hoof_vl: e.target.value }))}
+                    />
+                    <Input 
+                      placeholder="VR (Vorne Rechts)"
+                      value={form.hoof_vr}
+                      onChange={e => setForm(f => ({ ...f, hoof_vr: e.target.value }))}
+                    />
+                    <Input 
+                      placeholder="HL (Hinten Links)"
+                      value={form.hoof_hl}
+                      onChange={e => setForm(f => ({ ...f, hoof_hl: e.target.value }))}
+                    />
+                    <Input 
+                      placeholder="HR (Hinten Rechts)"
+                      value={form.hoof_hr}
+                      onChange={e => setForm(f => ({ ...f, hoof_hr: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label>Besonderheiten bei der Bearbeitung</Label>
+                  <Textarea 
+                    value={form.special_notes}
+                    onChange={e => setForm(f => ({ ...f, special_notes: e.target.value }))}
+                    placeholder="Wichtige Hinweise für den Hufbearbeiter..."
+                    rows={3}
+                  />
+                </div>
               </div>
             </TabsContent>
 
