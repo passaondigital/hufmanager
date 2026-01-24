@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -16,12 +18,21 @@ import {
   Sparkles,
   Loader2,
   ChevronRight,
+  FileText,
+  ClipboardList,
+  Image,
+  Calendar,
+  ExternalLink,
+  FolderOpen,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { HufCamSession } from "./HufCamSession";
 import { HufCamGalleryReport } from "./HufCamGalleryReport";
+import { format } from "date-fns";
+import { de } from "date-fns/locale";
+import { getStorageUrl } from "@/lib/storage";
 
 interface PhotoData {
   dataUrl: string;
@@ -92,6 +103,71 @@ export function HufCamProStandalone() {
     enabled: !!user?.id,
   });
 
+  // Fetch hoof analyses for selected horse
+  const { data: hoofAnalyses = [], isLoading: isLoadingAnalyses } = useQuery({
+    queryKey: ["horse-hoof-analyses", selectedHorseId],
+    queryFn: async () => {
+      if (!selectedHorseId) return [];
+      
+      const { data } = await supabase
+        .from("hoof_analyses")
+        .select("id, created_at, status, notes, recommendations")
+        .eq("horse_id", selectedHorseId)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      
+      return data || [];
+    },
+    enabled: !!selectedHorseId,
+  });
+
+  // Fetch documents for selected horse
+  const { data: documents = [], isLoading: isLoadingDocs } = useQuery({
+    queryKey: ["horse-documents-hufcam", selectedHorseId],
+    queryFn: async () => {
+      if (!selectedHorseId) return [];
+      
+      const { data } = await supabase
+        .from("horse_documents")
+        .select("id, file_name, file_url, file_type, category, created_at, notes")
+        .eq("horse_id", selectedHorseId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      
+      return data || [];
+    },
+    enabled: !!selectedHorseId,
+  });
+
+  // Fetch hoof photos for selected horse
+  const { data: hoofPhotos = [], isLoading: isLoadingPhotos } = useQuery({
+    queryKey: ["horse-hoof-photos", selectedHorseId],
+    queryFn: async () => {
+      if (!selectedHorseId) return [];
+      
+      const { data } = await supabase
+        .from("hoof_photos")
+        .select("id, photo_url, hoof_position, taken_at, notes")
+        .eq("horse_id", selectedHorseId)
+        .order("taken_at", { ascending: false })
+        .limit(20);
+      
+      // Get signed URLs for photos
+      if (data) {
+        const photosWithUrls = await Promise.all(
+          data.map(async (photo) => {
+            const url = await getStorageUrl("hoof_photos", photo.photo_url);
+            return { ...photo, signedUrl: url };
+          })
+        );
+        return photosWithUrls;
+      }
+      
+      return [];
+    },
+    enabled: !!selectedHorseId,
+  });
+
   const selectedHorse = horses.find((h: any) => h.id === selectedHorseId);
   const horseName = selectedHorse?.name || customHorseName || "Unbekanntes Pferd";
   const horseBreed = selectedHorse?.breed || undefined;
@@ -122,6 +198,11 @@ export function HufCamProStandalone() {
     setSessionNotes("");
     setSelectedHorseId(null);
     setCustomHorseName("");
+  };
+
+  const openDocument = async (fileUrl: string) => {
+    const url = await getStorageUrl("horse-documents", fileUrl);
+    if (url) window.open(url, "_blank");
   };
 
   if (isSessionActive) {
@@ -229,6 +310,174 @@ export function HufCamProStandalone() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Horse Documents & Analyses Panel - only show when horse is selected */}
+      {selectedHorseId && (
+        <Card className="mt-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <FolderOpen className="h-4 w-4 text-primary" />
+              Unterlagen: {selectedHorse?.name}
+            </CardTitle>
+            <CardDescription>
+              Analysebögen, Dokumente und Huf-Fotos dieses Pferdes
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="analyses" className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-3">
+                <TabsTrigger value="analyses" className="text-xs gap-1">
+                  <ClipboardList className="h-3 w-3" />
+                  Analysen ({hoofAnalyses.length})
+                </TabsTrigger>
+                <TabsTrigger value="photos" className="text-xs gap-1">
+                  <Image className="h-3 w-3" />
+                  Fotos ({hoofPhotos.length})
+                </TabsTrigger>
+                <TabsTrigger value="documents" className="text-xs gap-1">
+                  <FileText className="h-3 w-3" />
+                  Dokumente ({documents.length})
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Hoof Analyses Tab */}
+              <TabsContent value="analyses">
+                {isLoadingAnalyses ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : hoofAnalyses.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground text-sm">
+                    <ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    Noch keine Hufanalysen vorhanden
+                  </div>
+                ) : (
+                  <ScrollArea className="h-48">
+                    <div className="space-y-2">
+                      {hoofAnalyses.map((analysis) => (
+                        <div
+                          key={analysis.id}
+                          className="p-3 rounded-lg bg-muted/50 border flex items-center justify-between hover:bg-muted transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                              <ClipboardList className="h-4 w-4 text-primary" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">
+                                Hufanalyse-Bogen
+                              </p>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <Calendar className="h-3 w-3" />
+                                {format(new Date(analysis.created_at), "dd.MM.yyyy", { locale: de })}
+                              </div>
+                            </div>
+                          </div>
+                          <Badge 
+                            variant={analysis.status === "completed" ? "default" : "secondary"}
+                            className="text-xs"
+                          >
+                            {analysis.status === "completed" ? "Fertig" : "Entwurf"}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                )}
+              </TabsContent>
+
+              {/* Hoof Photos Tab */}
+              <TabsContent value="photos">
+                {isLoadingPhotos ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : hoofPhotos.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground text-sm">
+                    <Image className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    Noch keine Huf-Fotos vorhanden
+                  </div>
+                ) : (
+                  <ScrollArea className="h-48">
+                    <div className="grid grid-cols-4 gap-2">
+                      {hoofPhotos.map((photo: any) => (
+                        <div
+                          key={photo.id}
+                          className="relative aspect-square rounded-lg overflow-hidden border bg-muted cursor-pointer group"
+                          onClick={() => photo.signedUrl && window.open(photo.signedUrl, "_blank")}
+                        >
+                          <img
+                            src={photo.signedUrl || photo.photo_url}
+                            alt={photo.hoof_position || "Huf"}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <ExternalLink className="h-4 w-4 text-white" />
+                          </div>
+                          {photo.hoof_position && (
+                            <Badge 
+                              variant="secondary" 
+                              className="absolute bottom-1 left-1 text-[10px] px-1"
+                            >
+                              {photo.hoof_position}
+                            </Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                )}
+              </TabsContent>
+
+              {/* Documents Tab */}
+              <TabsContent value="documents">
+                {isLoadingDocs ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : documents.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground text-sm">
+                    <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    Noch keine Dokumente vorhanden
+                  </div>
+                ) : (
+                  <ScrollArea className="h-48">
+                    <div className="space-y-2">
+                      {documents.map((doc) => (
+                        <div
+                          key={doc.id}
+                          className="p-3 rounded-lg bg-muted/50 border flex items-center justify-between hover:bg-muted transition-colors cursor-pointer"
+                          onClick={() => openDocument(doc.file_url)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                              <FileText className="h-4 w-4 text-secondary-foreground" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium truncate max-w-[180px]">
+                                {doc.file_name}
+                              </p>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <Calendar className="h-3 w-3" />
+                                {format(new Date(doc.created_at), "dd.MM.yyyy", { locale: de })}
+                              </div>
+                            </div>
+                          </div>
+                          {doc.category && (
+                            <Badge variant="outline" className="text-xs">
+                              {doc.category}
+                            </Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Gallery Report Modal */}
       {sessionPhotos && (
