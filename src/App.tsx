@@ -62,6 +62,7 @@ import BlogPost from "@/pages/BlogPost";
 import Lager from "@/pages/Lager";
 import Ausgaben from "@/pages/Ausgaben";
 import WorkMode from "@/pages/WorkMode";
+import Tour from "@/pages/Tour";
 
 // Components
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
@@ -221,6 +222,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner" element={<GeldVerdienen />} />
               <Route path="/hufanalyse" element={<Hufanalyse />} />
               <Route path="/work-mode" element={<WorkMode />} />
+              <Route path="/tour" element={<Tour />} />
               <Route path="/ausgaben" element={<Ausgaben />} />
               <Route path="/rechnungen" element={<Rechnungen />} />
               <Route path="/lager" element={<Lager />} />
