@@ -3268,6 +3268,39 @@ export type Database = {
         }
         Relationships: []
       }
+      storage_usage: {
+        Row: {
+          bucket_name: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          file_path: string
+          file_size_bytes: number
+          id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          bucket_name: string
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          file_path: string
+          file_size_bytes?: number
+          id?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          bucket_name?: string
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          file_path?: string
+          file_size_bytes?: number
+          id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       subscription_links: {
         Row: {
           copecart_url: string
@@ -3999,6 +4032,14 @@ export type Database = {
         Args: { p_provider_id: string; p_token?: string }
         Returns: boolean
       }
+      check_storage_quota: {
+        Args: {
+          p_entity_id: string
+          p_entity_type: string
+          p_file_size_bytes: number
+        }
+        Returns: Json
+      }
       delete_client_cascade: {
         Args: { _client_id: string }
         Returns: undefined
@@ -4081,6 +4122,10 @@ export type Database = {
           id: string
           name: string
         }[]
+      }
+      get_storage_usage: {
+        Args: { p_entity_id: string; p_entity_type: string }
+        Returns: number
       }
       get_user_organization: { Args: { _user_id: string }; Returns: string }
       get_user_role: {
