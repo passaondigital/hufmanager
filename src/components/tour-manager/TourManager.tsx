@@ -36,6 +36,7 @@ import { TourPdfExport } from "./TourPdfExport";
 import { NearbyCustomersPanel, NearbyCustomersMarkers } from "./NearbyCustomersLayer";
 import { StableGroupPanel } from "./StableGroupPanel";
 import { QuickAddAppointmentFAB } from "@/components/tour/QuickAddAppointmentFAB";
+import { EmergencyModeButton } from "@/components/tour/EmergencyModeButton";
 
 import "leaflet/dist/leaflet.css";
 
@@ -526,9 +527,18 @@ export function TourManager() {
           />
         )}
         
-        {/* PDF Export Button */}
+        {/* PDF Export & Emergency Button */}
         {user && (
           <div className="absolute top-4 right-4 z-[1000] flex items-center gap-2">
+            <EmergencyModeButton
+              tourDate={selectedDate}
+              appointmentIds={orderedAppointments
+                .filter(a => a.status !== "completed")
+                .map(a => a.id)
+              }
+              onEmergencyStart={() => refetch()}
+              onEmergencyEnd={() => refetch()}
+            />
             <TourPdfExport
               tourDate={selectedDate}
               userId={user.id}
