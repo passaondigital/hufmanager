@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useProfileGuardian } from "@/hooks/useProfileGuardian";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
@@ -260,9 +260,21 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
 
 // Simple client layout wrapper
 function ClientLayout() {
+  const location = useLocation();
+  
+  // Dynamic import to avoid circular dependencies
+  const [HelpCenterFAB, setHelpCenterFAB] = useState<React.ComponentType<{ currentRoute?: string }> | null>(null);
+  
+  useEffect(() => {
+    import("@/components/help").then((mod) => {
+      setHelpCenterFAB(() => mod.HelpCenterFAB);
+    });
+  }, []);
+  
   return (
     <div className="min-h-screen bg-background">
       <Outlet />
+      {HelpCenterFAB && <HelpCenterFAB currentRoute={location.pathname} />}
     </div>
   );
 }

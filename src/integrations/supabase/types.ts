@@ -1218,6 +1218,54 @@ export type Database = {
         }
         Relationships: []
       }
+      help_articles: {
+        Row: {
+          call_to_action: string | null
+          category: string
+          content: string
+          created_at: string
+          hook: string | null
+          id: string
+          is_featured: boolean | null
+          role_access: Database["public"]["Enums"]["help_article_role_access"]
+          solution_steps: string[] | null
+          sort_order: number | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          call_to_action?: string | null
+          category: string
+          content: string
+          created_at?: string
+          hook?: string | null
+          id?: string
+          is_featured?: boolean | null
+          role_access?: Database["public"]["Enums"]["help_article_role_access"]
+          solution_steps?: string[] | null
+          sort_order?: number | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          call_to_action?: string | null
+          category?: string
+          content?: string
+          created_at?: string
+          hook?: string | null
+          id?: string
+          is_featured?: boolean | null
+          role_access?: Database["public"]["Enums"]["help_article_role_access"]
+          solution_steps?: string[] | null
+          sort_order?: number | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hoof_analyses: {
         Row: {
           appointment_id: string | null
@@ -4380,6 +4428,7 @@ export type Database = {
       contact_category: "client" | "partner" | "supplier" | "lead"
       equine_type: "horse" | "pony" | "donkey" | "mule" | "zebra"
       feature_status: "disabled" | "beta" | "early_access" | "public"
+      help_article_role_access: "all" | "pid_only" | "kid_only"
       organization_role: "admin" | "employee"
     }
     CompositeTypes: {
@@ -4522,6 +4571,7 @@ export const Constants = {
       contact_category: ["client", "partner", "supplier", "lead"],
       equine_type: ["horse", "pony", "donkey", "mule", "zebra"],
       feature_status: ["disabled", "beta", "early_access", "public"],
+      help_article_role_access: ["all", "pid_only", "kid_only"],
       organization_role: ["admin", "employee"],
     },
   },
