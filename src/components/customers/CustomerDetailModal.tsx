@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -36,6 +37,11 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   Mail,
   Phone,
   MapPin,
@@ -49,13 +55,28 @@ import {
   Building2,
   Check,
   X,
+  ChevronDown,
+  Star,
+  CreditCard,
+  UserCheck,
+  Briefcase,
 } from "lucide-react";
 import { ProviderHorseEditSheet } from "@/components/customers/ProviderHorseEditSheet";
 import { ClientInvoicesSection } from "@/components/invoices/ClientInvoicesSection";
+import { ClientBadges } from "@/components/customers/ClientStatusBadges";
 import { AddressGeocoder } from "@/components/customers/AddressGeocoder";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  PAYMENT_RATING_OPTIONS,
+  LIFECYCLE_STATUS_OPTIONS,
+  RELIABILITY_SCORE_OPTIONS,
+  CLIENT_TYPE_OPTIONS,
+  PaymentRating,
+  LifecycleStatus,
+  ClientType,
+} from "@/components/horse-detail/types";
 
 interface Horse {
   id: string;
@@ -72,11 +93,17 @@ interface Customer {
   id: string;
   readable_id?: string;
   full_name?: string;
+  first_name?: string;
+  last_name?: string;
   email?: string;
   phone?: string;
+  phone_mobile?: string;
+  phone_landline?: string;
   street?: string;
+  house_number?: string;
   zip_code?: string;
   city?: string;
+  state?: string;
   geo_lat?: number | null;
   geo_lng?: number | null;
   has_logged_in?: boolean;
@@ -84,6 +111,13 @@ interface Customer {
   created_at?: string;
   is_business?: boolean;
   vat_id?: string;
+  // New fields
+  client_type?: ClientType;
+  lifecycle_status?: LifecycleStatus;
+  payment_rating?: PaymentRating;
+  reliability_score?: number;
+  working_conditions?: string;
+  order_authorization?: boolean;
 }
 
 interface Props {
@@ -108,17 +142,31 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [horseToDelete, setHorseToDelete] = useState<Horse | null>(null);
   const [horseToEditId, setHorseToEditId] = useState<string | null>(null);
+  const [businessInfoOpen, setBusinessInfoOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     full_name: "",
+    first_name: "",
+    last_name: "",
     email: "",
     phone: "",
+    phone_mobile: "",
+    phone_landline: "",
     street: "",
+    house_number: "",
     zip_code: "",
     city: "",
+    state: "",
     geo_lat: null as number | null,
     geo_lng: null as number | null,
     is_business: false,
     vat_id: "",
+    // New fields
+    client_type: "" as ClientType | "",
+    lifecycle_status: "" as LifecycleStatus | "",
+    payment_rating: "" as PaymentRating | "",
+    reliability_score: null as number | null,
+    working_conditions: "",
+    order_authorization: false,
   });
 
   // Initialize edit form when customer changes
@@ -126,47 +174,59 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
     if (customer) {
       setEditForm({
         full_name: customer.full_name || "",
+        first_name: customer.first_name || "",
+        last_name: customer.last_name || "",
         email: customer.email || "",
         phone: customer.phone || "",
+        phone_mobile: customer.phone_mobile || "",
+        phone_landline: customer.phone_landline || "",
         street: customer.street || "",
+        house_number: customer.house_number || "",
         zip_code: customer.zip_code || "",
         city: customer.city || "",
+        state: customer.state || "",
         geo_lat: customer.geo_lat || null,
         geo_lng: customer.geo_lng || null,
         is_business: customer.is_business || false,
         vat_id: customer.vat_id || "",
+        client_type: customer.client_type || "",
+        lifecycle_status: customer.lifecycle_status || "",
+        payment_rating: customer.payment_rating || "",
+        reliability_score: customer.reliability_score || null,
+        working_conditions: customer.working_conditions || "",
+        order_authorization: customer.order_authorization || false,
       });
     }
   };
 
   // Update customer mutation
   const updateCustomer = useMutation({
-    mutationFn: async (data: { 
-      id: string; 
-      full_name: string; 
-      email: string; 
-      phone: string;
-      street: string;
-      zip_code: string;
-      city: string;
-      geo_lat: number | null;
-      geo_lng: number | null;
-      is_business: boolean;
-      vat_id: string;
-    }) => {
+    mutationFn: async (data: typeof editForm & { id: string }) => {
       const { error } = await supabase
         .from("profiles")
         .update({
           full_name: data.full_name,
+          first_name: data.first_name || null,
+          last_name: data.last_name || null,
           email: data.email || null,
           phone: data.phone || null,
+          phone_mobile: data.phone_mobile || null,
+          phone_landline: data.phone_landline || null,
           street: data.street || null,
+          house_number: data.house_number || null,
           zip_code: data.zip_code || null,
           city: data.city || null,
-          geo_lat: data.geo_lat,
-          geo_lng: data.geo_lng,
+          state: data.state || null,
+          latitude: data.geo_lat,
+          longitude: data.geo_lng,
           is_business: data.is_business,
           vat_id: data.vat_id || null,
+          client_type: data.client_type || null,
+          lifecycle_status: data.lifecycle_status || null,
+          payment_rating: data.payment_rating || null,
+          reliability_score: data.reliability_score,
+          working_conditions: data.working_conditions || null,
+          order_authorization: data.order_authorization,
         })
         .eq("id", data.id);
       if (error) throw error;
@@ -319,13 +379,34 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
 
               {isEditing ? (
                 <div className="grid gap-4">
+                  {/* Name */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Vorname</Label>
+                      <Input
+                        value={editForm.first_name}
+                        onChange={(e) => setEditForm({ ...editForm, first_name: e.target.value })}
+                        placeholder="Max"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Nachname</Label>
+                      <Input
+                        value={editForm.last_name}
+                        onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })}
+                        placeholder="Mustermann"
+                      />
+                    </div>
+                  </div>
                   <div className="space-y-2">
-                    <Label>Name</Label>
+                    <Label>Anzeigename</Label>
                     <Input
                       value={editForm.full_name}
                       onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
                     />
                   </div>
+
+                  {/* Kontakt */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>E-Mail</Label>
@@ -336,14 +417,22 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Telefon</Label>
+                      <Label>Telefon (Mobil)</Label>
                       <Input
-                        value={editForm.phone}
-                        onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                        value={editForm.phone_mobile || editForm.phone}
+                        onChange={(e) => setEditForm({ ...editForm, phone_mobile: e.target.value, phone: e.target.value })}
                       />
                     </div>
                   </div>
-                  {/* Address with Auto-Geocoding */}
+                  <div className="space-y-2">
+                    <Label>Telefon (Festnetz)</Label>
+                    <Input
+                      value={editForm.phone_landline}
+                      onChange={(e) => setEditForm({ ...editForm, phone_landline: e.target.value })}
+                    />
+                  </div>
+
+                  {/* Adresse */}
                   <AddressGeocoder
                     street={editForm.street}
                     zipCode={editForm.zip_code}
@@ -357,36 +446,159 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                     showMiniMap={true}
                   />
                   
-                  {/* Business Customer Toggle */}
-                  <div className="space-y-3 p-3 bg-muted/50 rounded-lg border">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        id="is_business"
-                        checked={editForm.is_business}
-                        onChange={(e) => setEditForm({ ...editForm, is_business: e.target.checked })}
-                        className="h-4 w-4 rounded border-border"
-                      />
-                      <Label htmlFor="is_business" className="cursor-pointer flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-primary" />
-                        Geschäftskunde (B2B)
-                      </Label>
-                    </div>
-                    
-                    {editForm.is_business && (
-                      <div className="space-y-2 pl-7">
-                        <Label>USt-IdNr.</Label>
-                        <Input
-                          placeholder="DE123456789"
-                          value={editForm.vat_id}
-                          onChange={(e) => setEditForm({ ...editForm, vat_id: e.target.value })}
+                  {/* Business-Infos (Collapsible) */}
+                  <Collapsible open={businessInfoOpen} onOpenChange={setBusinessInfoOpen}>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" className="w-full justify-between p-3 bg-muted/50 rounded-lg">
+                        <span className="flex items-center gap-2">
+                          <Briefcase className="h-4 w-4" />
+                          Business-Infos
+                        </span>
+                        <ChevronDown className={`h-4 w-4 transition-transform ${businessInfoOpen ? "rotate-180" : ""}`} />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-4 pt-4">
+                      {/* Kundentyp & Status */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-1">
+                            <UserCheck className="h-3 w-3" />
+                            Kundentyp
+                          </Label>
+                          <Select
+                            value={editForm.client_type}
+                            onValueChange={(v) => setEditForm({ ...editForm, client_type: v as ClientType })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Auswählen" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {CLIENT_TYPE_OPTIONS.map((opt) => (
+                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Kundenstatus</Label>
+                          <Select
+                            value={editForm.lifecycle_status}
+                            onValueChange={(v) => setEditForm({ ...editForm, lifecycle_status: v as LifecycleStatus })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Auswählen" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {LIFECYCLE_STATUS_OPTIONS.map((opt) => (
+                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Zahlungsmoral & Zuverlässigkeit */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-1">
+                            <CreditCard className="h-3 w-3" />
+                            Zahlungsmoral
+                          </Label>
+                          <Select
+                            value={editForm.payment_rating}
+                            onValueChange={(v) => setEditForm({ ...editForm, payment_rating: v as PaymentRating })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Auswählen" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PAYMENT_RATING_OPTIONS.map((opt) => (
+                                <SelectItem key={opt.value} value={opt.value}>
+                                  <span className={opt.textColor}>{opt.label}</span>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-1">
+                            <Star className="h-3 w-3" />
+                            Zuverlässigkeit
+                          </Label>
+                          <Select
+                            value={editForm.reliability_score?.toString() || ""}
+                            onValueChange={(v) => setEditForm({ ...editForm, reliability_score: v ? parseInt(v) : null })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Bewerten" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {RELIABILITY_SCORE_OPTIONS.map((opt) => (
+                                <SelectItem key={opt.value} value={opt.value.toString()}>{opt.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Arbeitsbedingungen */}
+                      <div className="space-y-2">
+                        <Label>Arbeitsbedingungen vor Ort</Label>
+                        <Textarea
+                          placeholder="z.B. Gut beleuchtet, befestigter Untergrund, matschig bei Regen..."
+                          value={editForm.working_conditions}
+                          onChange={(e) => setEditForm({ ...editForm, working_conditions: e.target.value })}
+                          rows={2}
                         />
                       </div>
-                    )}
-                  </div>
+
+                      {/* Auftragserteilung */}
+                      <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                        <input
+                          type="checkbox"
+                          id="order_auth"
+                          checked={editForm.order_authorization}
+                          onChange={(e) => setEditForm({ ...editForm, order_authorization: e.target.checked })}
+                          className="h-4 w-4 rounded border-border"
+                        />
+                        <Label htmlFor="order_auth" className="cursor-pointer">
+                          Auftragserteilung liegt vor
+                        </Label>
+                      </div>
+                      
+                      {/* Business Customer Toggle */}
+                      <div className="space-y-3 p-3 bg-muted/50 rounded-lg border">
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            id="is_business"
+                            checked={editForm.is_business}
+                            onChange={(e) => setEditForm({ ...editForm, is_business: e.target.checked })}
+                            className="h-4 w-4 rounded border-border"
+                          />
+                          <Label htmlFor="is_business" className="cursor-pointer flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-primary" />
+                            Geschäftskunde (B2B)
+                          </Label>
+                        </div>
+                        
+                        {editForm.is_business && (
+                          <div className="space-y-2 pl-7">
+                            <Label>USt-IdNr.</Label>
+                            <Input
+                              placeholder="DE123456789"
+                              value={editForm.vat_id}
+                              onChange={(e) => setEditForm({ ...editForm, vat_id: e.target.value })}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
+                  {/* Kontakt */}
                   <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                     {customer.email && (
                       <span className="flex items-center gap-1">
@@ -394,21 +606,53 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                         {customer.email}
                       </span>
                     )}
-                    {customer.phone && (
+                    {(customer.phone_mobile || customer.phone) && (
                       <span className="flex items-center gap-1">
                         <Phone className="h-4 w-4" />
-                        {customer.phone}
+                        {customer.phone_mobile || customer.phone}
+                      </span>
+                    )}
+                    {customer.phone_landline && (
+                      <span className="flex items-center gap-1 text-xs">
+                        (Festnetz: {customer.phone_landline})
                       </span>
                     )}
                   </div>
-                  
-                  {/* Business customer badge */}
-                  {customer.is_business && (
-                    <Badge variant="secondary" className="flex items-center gap-1 w-fit">
-                      <Building2 className="h-3 w-3" />
-                      Geschäftskunde
-                      {customer.vat_id && <span className="ml-1 font-mono text-xs">({customer.vat_id})</span>}
-                    </Badge>
+
+                  {/* Status Badges */}
+                  <div className="flex flex-wrap gap-2">
+                    <ClientBadges 
+                      paymentRating={customer.payment_rating}
+                      lifecycleStatus={customer.lifecycle_status}
+                      size="sm"
+                    />
+                    {customer.reliability_score && (
+                      <Badge variant="outline" className="gap-1">
+                        <Star className="h-3 w-3" />
+                        {RELIABILITY_SCORE_OPTIONS.find(o => o.value === customer.reliability_score)?.label || `${customer.reliability_score}/5`}
+                      </Badge>
+                    )}
+                    {customer.order_authorization && (
+                      <Badge variant="outline" className="gap-1 text-green-600 border-green-300">
+                        <Check className="h-3 w-3" />
+                        Auftragserteilung
+                      </Badge>
+                    )}
+                    {customer.is_business && (
+                      <Badge variant="secondary" className="flex items-center gap-1">
+                        <Building2 className="h-3 w-3" />
+                        B2B
+                        {customer.vat_id && <span className="ml-1 font-mono text-xs">({customer.vat_id})</span>}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Arbeitsbedingungen */}
+                  {customer.working_conditions && (
+                    <div className="text-sm p-2 bg-muted/50 rounded">
+                      <span className="text-muted-foreground">Arbeitsbedingungen:</span>{" "}
+                      {customer.working_conditions}
+                    </div>
                   )}
                   
                   {/* Address display with navigation & GPS status */}
@@ -417,9 +661,13 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <MapPin className="h-4 w-4" />
                         <span>
-                          {[customer.street, `${customer.zip_code || ''} ${customer.city || ''}`.trim()]
-                            .filter(Boolean)
-                            .join(', ')}
+                          {[
+                            customer.street && customer.house_number 
+                              ? `${customer.street} ${customer.house_number}` 
+                              : customer.street,
+                            `${customer.zip_code || ''} ${customer.city || ''}`.trim(),
+                            customer.state
+                          ].filter(Boolean).join(', ')}
                         </span>
                         {hasCompleteAddress && (
                           <Button
@@ -437,7 +685,7 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                       <div className="flex items-center gap-2">
                         {customer.geo_lat && customer.geo_lng ? (
                           <div className="flex items-center gap-1.5 text-xs">
-                            <div className="flex items-center justify-center w-4 h-4 rounded-full bg-green-100">
+                            <div className="flex items-center justify-center w-4 h-4 rounded-full bg-green-100 dark:bg-green-900/30">
                               <Check className="h-2.5 w-2.5 text-green-600" />
                             </div>
                             <span className="text-green-600">GPS verfügbar</span>
@@ -447,7 +695,7 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                           </div>
                         ) : (
                           <div className="flex items-center gap-1.5 text-xs">
-                            <div className="flex items-center justify-center w-4 h-4 rounded-full bg-amber-100">
+                            <div className="flex items-center justify-center w-4 h-4 rounded-full bg-amber-100 dark:bg-amber-900/30">
                               <X className="h-2.5 w-2.5 text-amber-600" />
                             </div>
                             <span className="text-amber-600">Kein GPS - Bearbeiten zum Ermitteln</span>

@@ -18,6 +18,8 @@ import {
   ShieldCheck,
   UserPlus,
   X,
+  Download,
+  FileSpreadsheet,
 } from "lucide-react";
 import { ClientBadges } from "@/components/customers/ClientStatusBadges";
 import {
@@ -27,6 +29,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -45,6 +54,7 @@ import {
   PaymentRating,
   LifecycleStatus
 } from "@/components/horse-detail/types";
+import { exportClientData } from "@/lib/customerExport";
 
 const Kunden = () => {
   const { user } = useAuth();
@@ -196,6 +206,21 @@ const Kunden = () => {
     queryClient.invalidateQueries({ queryKey: ["provider-horses"] });
   };
 
+  // Export handler
+  const handleExport = (type: "clients" | "horses" | "all") => {
+    if (clients.length === 0) {
+      toast({ title: "Keine Daten zum Exportieren", variant: "destructive" });
+      return;
+    }
+    exportClientData(clients, horses, type);
+    toast({ 
+      title: "Export gestartet", 
+      description: type === "all" 
+        ? "Kunden- und Pferdedaten werden heruntergeladen" 
+        : `${type === "clients" ? "Kundendaten" : "Pferdedaten"} werden heruntergeladen`
+    });
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
@@ -206,6 +231,31 @@ const Kunden = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          {/* Export Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Export</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExport("clients")}>
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Kunden exportieren (CSV)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("horses")}>
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Pferde exportieren (CSV)
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleExport("all")}>
+                <Download className="h-4 w-4 mr-2" />
+                Alle Daten exportieren
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
           <Button 
             variant="outline" 
             className="gap-2" 
