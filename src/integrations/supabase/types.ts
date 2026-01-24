@@ -245,12 +245,16 @@ export type Database = {
           created_at: string
           created_by: string | null
           date: string
+          estimated_duration_minutes: number | null
           id: string
           location_lat: number | null
           location_lng: number | null
           location_name: string | null
           notes: string | null
           organization_id: string | null
+          stable_address: string | null
+          stable_name: string | null
+          status: string | null
           title: string
           updated_at: string
         }
@@ -258,12 +262,16 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           date: string
+          estimated_duration_minutes?: number | null
           id?: string
           location_lat?: number | null
           location_lng?: number | null
           location_name?: string | null
           notes?: string | null
           organization_id?: string | null
+          stable_address?: string | null
+          stable_name?: string | null
+          status?: string | null
           title: string
           updated_at?: string
         }
@@ -271,12 +279,16 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           date?: string
+          estimated_duration_minutes?: number | null
           id?: string
           location_lat?: number | null
           location_lng?: number | null
           location_name?: string | null
           notes?: string | null
           organization_id?: string | null
+          stable_address?: string | null
+          stable_name?: string | null
+          status?: string | null
           title?: string
           updated_at?: string
         }
@@ -331,6 +343,7 @@ export type Database = {
       }
       appointments: {
         Row: {
+          added_during_tour: boolean | null
           assigned_to_user_id: string | null
           client_id: string | null
           completed_at: string | null
@@ -348,6 +361,7 @@ export type Database = {
           horse_id: string
           id: string
           is_confirmed_by_client: boolean | null
+          is_emergency: boolean | null
           is_internally_paid: boolean | null
           is_series_appointment: boolean | null
           location: string | null
@@ -362,11 +376,14 @@ export type Database = {
           signature_url: string | null
           signed_at: string | null
           signed_by_name: string | null
+          stable_group_id: string | null
           status: string | null
           time: string | null
+          tour_order: number | null
           updated_at: string
         }
         Insert: {
+          added_during_tour?: boolean | null
           assigned_to_user_id?: string | null
           client_id?: string | null
           completed_at?: string | null
@@ -384,6 +401,7 @@ export type Database = {
           horse_id: string
           id?: string
           is_confirmed_by_client?: boolean | null
+          is_emergency?: boolean | null
           is_internally_paid?: boolean | null
           is_series_appointment?: boolean | null
           location?: string | null
@@ -398,11 +416,14 @@ export type Database = {
           signature_url?: string | null
           signed_at?: string | null
           signed_by_name?: string | null
+          stable_group_id?: string | null
           status?: string | null
           time?: string | null
+          tour_order?: number | null
           updated_at?: string
         }
         Update: {
+          added_during_tour?: boolean | null
           assigned_to_user_id?: string | null
           client_id?: string | null
           completed_at?: string | null
@@ -420,6 +441,7 @@ export type Database = {
           horse_id?: string
           id?: string
           is_confirmed_by_client?: boolean | null
+          is_emergency?: boolean | null
           is_internally_paid?: boolean | null
           is_series_appointment?: boolean | null
           location?: string | null
@@ -434,8 +456,10 @@ export type Database = {
           signature_url?: string | null
           signed_at?: string | null
           signed_by_name?: string | null
+          stable_group_id?: string | null
           status?: string | null
           time?: string | null
+          tour_order?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -493,6 +517,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_stable_group_id_fkey"
+            columns: ["stable_group_id"]
+            isOneToOne: false
+            referencedRelation: "appointment_groups"
             referencedColumns: ["id"]
           },
         ]
@@ -941,6 +972,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      daily_tours: {
+        Row: {
+          created_at: string | null
+          end_time: string | null
+          id: string
+          notes: string | null
+          provider_id: string
+          start_time: string | null
+          status: string | null
+          total_distance_km: number | null
+          tour_date: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          provider_id: string
+          start_time?: string | null
+          status?: string | null
+          total_distance_km?: number | null
+          tour_date: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          provider_id?: string
+          start_time?: string | null
+          status?: string | null
+          total_distance_km?: number | null
+          tour_date?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       expenses: {
         Row: {
@@ -3439,6 +3509,67 @@ export type Database = {
           },
         ]
       }
+      tour_emergency_status: {
+        Row: {
+          created_at: string | null
+          emergency_appointment_id: string | null
+          ended_at: string | null
+          estimated_delay_minutes: number | null
+          id: string
+          notifications_sent: boolean | null
+          provider_id: string
+          reason: string | null
+          started_at: string | null
+          tour_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          emergency_appointment_id?: string | null
+          ended_at?: string | null
+          estimated_delay_minutes?: number | null
+          id?: string
+          notifications_sent?: boolean | null
+          provider_id: string
+          reason?: string | null
+          started_at?: string | null
+          tour_id: string
+        }
+        Update: {
+          created_at?: string | null
+          emergency_appointment_id?: string | null
+          ended_at?: string | null
+          estimated_delay_minutes?: number | null
+          id?: string
+          notifications_sent?: boolean | null
+          provider_id?: string
+          reason?: string | null
+          started_at?: string | null
+          tour_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tour_emergency_status_emergency_appointment_id_fkey"
+            columns: ["emergency_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tour_emergency_status_emergency_appointment_id_fkey"
+            columns: ["emergency_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "safe_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tour_emergency_status_tour_id_fkey"
+            columns: ["tour_id"]
+            isOneToOne: false
+            referencedRelation: "daily_tours"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_consents: {
         Row: {
           agreement_type: string
@@ -4046,6 +4177,16 @@ export type Database = {
       }
       delete_horse_safe: { Args: { _horse_id: string }; Returns: undefined }
       generate_random_id: { Args: { prefix: string }; Returns: string }
+      get_active_emergency_for_provider: {
+        Args: { p_provider_id: string }
+        Returns: {
+          estimated_delay_minutes: number
+          id: string
+          reason: string
+          started_at: string
+          tour_date: string
+        }[]
+      }
       get_horse_medical_data: {
         Args: { p_horse_id: string }
         Returns: {
