@@ -7,8 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Navigation, Clock, MapPin, AlertCircle, GripVertical, RotateCcw, Sparkles } from "lucide-react";
+import { Loader2, Navigation, Clock, MapPin, AlertCircle, GripVertical, RotateCcw, Sparkles, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EmergencyModeButton, QuickAddAppointmentFAB, StableGroupManager } from "@/components/tour";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DndContext,
   closestCenter,
@@ -407,9 +409,10 @@ export const TourMapView = ({
 
   return (
     <div className="space-y-4">
-      {/* Stats Bar */}
-      <div className="flex flex-wrap gap-3">
-        <Card className="flex-1 min-w-[120px]">
+      {/* Tour Controls Bar */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Stats Cards */}
+        <Card className="flex-1 min-w-[100px]">
           <CardContent className="p-3 flex items-center gap-2">
             <MapPin className="h-4 w-4 text-primary" />
             <div>
@@ -421,7 +424,7 @@ export const TourMapView = ({
           </CardContent>
         </Card>
         
-        <Card className="flex-1 min-w-[120px]">
+        <Card className="flex-1 min-w-[100px]">
           <CardContent className="p-3 flex items-center gap-2">
             <Navigation className="h-4 w-4 text-primary" />
             <div>
@@ -439,7 +442,7 @@ export const TourMapView = ({
           </CardContent>
         </Card>
         
-        <Card className="flex-1 min-w-[120px]">
+        <Card className="flex-1 min-w-[100px]">
           <CardContent className="p-3 flex items-center gap-2">
             <Clock className="h-4 w-4 text-primary" />
             <div>
@@ -457,18 +460,34 @@ export const TourMapView = ({
           </CardContent>
         </Card>
 
-        <Card className="flex-1 min-w-[120px]">
-          <CardContent className="p-3 flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <div>
-              <div className="text-xs text-muted-foreground">PLZ-Gebiete</div>
-              <div className="font-semibold">
-                {Object.keys(plzClusters).length}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Emergency Mode Button */}
+        <EmergencyModeButton
+          tourDate={selectedDate}
+          appointmentIds={orderedAppointments.map(a => a.id)}
+        />
       </div>
+
+      {/* Sammeltermine Tab Section */}
+      <Tabs defaultValue="tour" className="w-full">
+        <TabsList className="w-full grid grid-cols-2">
+          <TabsTrigger value="tour" className="gap-2">
+            <Navigation className="h-4 w-4" />
+            Tour-Ansicht
+          </TabsTrigger>
+          <TabsTrigger value="groups" className="gap-2">
+            <Building2 className="h-4 w-4" />
+            Sammeltermine
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="groups" className="mt-4">
+          <StableGroupManager selectedDate={selectedDate} />
+        </TabsContent>
+
+        <TabsContent value="tour" className="mt-4 space-y-4">
 
       {/* Warning for missing coordinates */}
       {appointmentsWithoutCoords.length > 0 && (
@@ -675,6 +694,14 @@ export const TourMapView = ({
           ))}
         </div>
       )}
+        </TabsContent>
+      </Tabs>
+
+      {/* Quick Add FAB */}
+      <QuickAddAppointmentFAB
+        tourDate={selectedDate}
+        currentAppointmentCount={appointments.length}
+      />
     </div>
   );
 };

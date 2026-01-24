@@ -7,7 +7,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LogOut, FileText, ChevronRight, Plus, Shield, Scissors, User, MessageSquare, Moon, Sun, Search } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { 
+  LogOut, FileText, ChevronRight, Plus, Shield, Scissors, User, 
+  MessageSquare, Moon, Sun, Bell, Camera, Heart, Calendar,
+  Sparkles, Star, TrendingUp, Clock
+} from "lucide-react";
 import { UnconfirmedAppointmentsBanner } from "@/components/UnconfirmedAppointmentsBanner";
 import { CreateHorseModal } from "@/components/horse-detail/CreateHorseModal";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
@@ -23,6 +28,8 @@ import { ConnectedProviderCard } from "@/components/client/ConnectedProviderCard
 import { PendingConnectionRequests } from "@/components/network/PendingConnectionRequests";
 import { ConnectionSearch } from "@/components/network/ConnectionSearch";
 import { MyConnectionRequests } from "@/components/network/MyConnectionRequests";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface Horse {
   id: string;
@@ -176,126 +183,217 @@ export default function ClientHome() {
         />
       )}
 
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="px-4 py-3 flex items-center justify-between">
-          <img 
-            src="/hufmanager-logo.png" 
-            alt="HufManager" 
-            className="h-8 w-auto"
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
+        {/* Modern Header with glassmorphism */}
+        <header className="sticky top-0 z-20 bg-background/70 backdrop-blur-xl border-b border-border/50">
+          <div className="px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img 
+                src="/hufmanager-logo.png" 
+                alt="HufManager" 
+                className="h-9 w-auto"
+              />
+              <Badge variant="secondary" className="text-xs font-medium hidden sm:flex">
+                <Sparkles className="h-3 w-3 mr-1" />
+                Pferdeportal
+              </Badge>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative"
+                onClick={() => navigate("/client-chat")}
+              >
+                <MessageSquare className="h-5 w-5" />
+                {/* Notification dot would go here */}
+              </Button>
+              <Button variant="ghost" size="icon" onClick={toggleTheme}>
+                {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </Button>
+              <Button variant="ghost" size="icon" onClick={handleLogout}>
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        <main className="px-4 py-6 max-w-lg mx-auto space-y-6 pb-24">
+          {/* Push Notification Banner */}
+          <PushNotificationBanner />
+
+          {/* Unconfirmed Appointments Banner */}
+          <UnconfirmedAppointmentsBanner />
+
+          {/* Hero Greeting with animation */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-2"
+          >
+            <h1 className="text-3xl font-bold text-foreground tracking-tight">
+              Hallo {firstName}! 👋
+            </h1>
+            <p className="text-muted-foreground text-lg">
+              Dein Pferdeportal auf einen Blick
+            </p>
+          </motion.div>
+
+          {/* Quick Stats Cards */}
+          {horses.length > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="grid grid-cols-3 gap-3"
+            >
+              <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-primary">{horses.length}</div>
+                  <div className="text-xs text-muted-foreground">Pferde</div>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+                <CardContent className="p-4 text-center">
+                  <Heart className="h-5 w-5 mx-auto text-green-600 mb-1" />
+                  <div className="text-xs text-muted-foreground">Gesund</div>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
+                <CardContent className="p-4 text-center">
+                  <Calendar className="h-5 w-5 mx-auto text-blue-600 mb-1" />
+                  <div className="text-xs text-muted-foreground">Termine</div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Emergency Vet Widget */}
+          {profile?.emergency_contacts && profile.emergency_contacts.length > 0 && (
+            <EmergencyVetWidget contacts={profile.emergency_contacts} />
+          )}
+
+          {/* Pending Connection Requests - Client needs to approve */}
+          <PendingConnectionRequests 
+            userType="client" 
+            onStatusChanged={fetchData}
           />
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={toggleTheme}>
-              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+
+          {/* My Sent Requests */}
+          <MyConnectionRequests />
+
+          {/* Connected Provider Card - show if provider connected */}
+          {hasProvider === true && <ConnectedProviderCard />}
+
+          {/* Provider Search - show if no provider connected */}
+          {hasProvider === false && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="space-y-4"
+            >
+              <Card className="border-dashed border-2 border-primary/30 bg-primary/5">
+                <CardContent className="p-6 text-center">
+                  <Sparkles className="h-10 w-10 mx-auto text-primary mb-3" />
+                  <h3 className="font-semibold text-lg mb-2">Verbinde dich mit deinem Hufbearbeiter</h3>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    Suche nach deinem Hufbearbeiter, um Termine zu buchen und deine Pferdeakten zu teilen.
+                  </p>
+                </CardContent>
+              </Card>
+              <ConnectionSearch 
+                searchType="provider" 
+                onConnectionRequested={fetchData}
+              />
+              <ProviderSelector onProviderConnected={fetchData} />
+            </motion.div>
+          )}
+
+          {/* Upcoming Appointments List */}
+          {user && <UpcomingAppointmentsList userId={user.id} />}
+
+          {/* Appointment Checklist Widget */}
+          {user && <AppointmentChecklistWidget userId={user.id} />}
+
+          {/* Service History Widget */}
+          {user && <ServiceHistoryWidget userId={user.id} />}
+
+          {/* Last Visit Widget */}
+          {user && <LastVisitWidget userId={user.id} />}
+
+          {/* Horses List - Modern Cards */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="space-y-4"
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                🐴 Meine Pferde
+                <Badge variant="secondary">{horses.length}</Badge>
+              </h2>
+              <Button 
+                variant="default"
+                size="sm"
+                className="gap-2 shadow-lg"
+                onClick={() => setShowCreateModal(true)}
+              >
+                <Plus className="h-4 w-4" />
+                Neues Pferd
+              </Button>
+            </div>
+          </motion.div>
+
+          {/* Quick Actions - Modern floating style */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="grid grid-cols-5 gap-2"
+          >
+            <Button 
+              variant="outline" 
+              className="h-16 flex-col gap-1 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-all"
+              onClick={() => navigate("/client-chat")}
+            >
+              <MessageSquare className="h-5 w-5 text-primary" />
+              <span className="text-[10px]">Chat</span>
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleLogout}>
-              <LogOut className="h-5 w-5" />
+            <Button 
+              variant="outline" 
+              className="h-16 flex-col gap-1 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-all"
+              onClick={() => navigate("/client-booking")}
+            >
+              <Scissors className="h-5 w-5 text-primary" />
+              <span className="text-[10px]">Buchen</span>
             </Button>
-          </div>
-        </div>
-      </header>
+            <Button 
+              variant="outline" 
+              className="h-16 flex-col gap-1 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-all"
+              onClick={() => navigate("/client-invoices")}
+            >
+              <FileText className="h-5 w-5 text-primary" />
+              <span className="text-[10px]">Rechnungen</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="h-16 flex-col gap-1 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-all"
+              onClick={() => navigate("/client-permissions")}
+            >
+              <Shield className="h-5 w-5 text-primary" />
+              <span className="text-[10px]">Daten</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="h-16 flex-col gap-1 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-all"
+              onClick={() => navigate("/client-profile")}
+            >
+              <User className="h-5 w-5 text-primary" />
+              <span className="text-[10px]">Profil</span>
+            </Button>
+          </motion.div>
 
-      <main className="px-4 py-6 max-w-lg mx-auto space-y-6">
-        {/* Push Notification Banner */}
-        <PushNotificationBanner />
-
-        {/* Unconfirmed Appointments Banner */}
-        <UnconfirmedAppointmentsBanner />
-
-        {/* Greeting */}
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-foreground">
-            Hallo {firstName}! 👋
-          </h1>
-          <p className="text-muted-foreground">
-            Hier sind deine Pferde
-          </p>
-        </div>
-
-        {/* Emergency Vet Widget */}
-        {profile?.emergency_contacts && profile.emergency_contacts.length > 0 && (
-          <EmergencyVetWidget contacts={profile.emergency_contacts} />
-        )}
-
-        {/* Pending Connection Requests - Client needs to approve */}
-        <PendingConnectionRequests 
-          userType="client" 
-          onStatusChanged={fetchData}
-        />
-
-        {/* My Sent Requests */}
-        <MyConnectionRequests />
-
-        {/* Connected Provider Card - show if provider connected */}
-        {hasProvider === true && <ConnectedProviderCard />}
-
-        {/* Provider Search - show if no provider connected */}
-        {hasProvider === false && (
-          <div className="space-y-4">
-            <ConnectionSearch 
-              searchType="provider" 
-              onConnectionRequested={fetchData}
-            />
-            <ProviderSelector onProviderConnected={fetchData} />
-          </div>
-        )}
-
-        {/* Upcoming Appointments List */}
-        {user && <UpcomingAppointmentsList userId={user.id} />}
-
-        {/* Appointment Checklist Widget */}
-        {user && <AppointmentChecklistWidget userId={user.id} />}
-
-        {/* Service History Widget */}
-        {user && <ServiceHistoryWidget userId={user.id} />}
-
-        {/* Last Visit Widget */}
-        {user && <LastVisitWidget userId={user.id} />}
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-          <Button 
-            variant="outline" 
-            className="h-16 flex-col gap-1"
-            onClick={() => navigate("/client-chat")}
-          >
-            <MessageSquare className="h-5 w-5 text-primary" />
-            <span className="text-xs">Chat</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-16 flex-col gap-1"
-            onClick={() => navigate("/client-booking")}
-          >
-            <Scissors className="h-5 w-5 text-primary" />
-            <span className="text-xs">Buchen</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-16 flex-col gap-1"
-            onClick={() => navigate("/client-invoices")}
-          >
-            <FileText className="h-5 w-5 text-primary" />
-            <span className="text-xs">Rechnungen</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-16 flex-col gap-1"
-            onClick={() => navigate("/client-permissions")}
-          >
-            <Shield className="h-5 w-5 text-primary" />
-            <span className="text-xs">Datenfreigabe</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-16 flex-col gap-1"
-            onClick={() => navigate("/client-profile")}
-          >
-            <User className="h-5 w-5 text-primary" />
-            <span className="text-xs">Mein Profil</span>
-          </Button>
-        </div>
 
         {/* Horses List */}
         <div className="space-y-3">
