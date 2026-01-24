@@ -218,6 +218,44 @@ export default function Chat() {
   useEffect(() => {
     if (!user) return;
     loadConversations();
+    
+    // Real-time subscription for new messages (updates unread counts immediately)
+    const messagesChannel = supabase
+      .channel("chat-unread-updates")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+        },
+        (payload) => {
+          const newMessage = payload.new as Message;
+          // If I'm not the sender, refresh to update unread counts
+          if (newMessage.sender_id !== user.id) {
+            loadConversations();
+            queryClient.invalidateQueries({ queryKey: ["unread-messages-count"] });
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+        },
+        () => {
+          // When messages are marked as read, refresh unread counts
+          loadConversations();
+          queryClient.invalidateQueries({ queryKey: ["unread-messages-count"] });
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(messagesChannel);
+    };
   }, [user, role]);
 
   const loadConversations = async () => {
@@ -239,10 +277,19 @@ export default function Chat() {
             .select("full_name, email")
             .eq("id", otherUserId)
             .maybeSingle();
+          
+          // Count unread messages in this conversation (where I'm not the sender)
+          const { count: unreadCount } = await supabase
+            .from("messages")
+            .select("*", { count: "exact", head: true })
+            .eq("conversation_id", conv.id)
+            .eq("is_read", false)
+            .neq("sender_id", user!.id);
 
           return {
             ...conv,
             other_user: profile || { full_name: "Unbekannt", email: null },
+            unread_count: unreadCount || 0,
           } as Conversation;
         })
       );
@@ -660,22 +707,39 @@ export default function Chat() {
                       selectedConversation?.id === conv.id && "bg-muted"
                     )}
                   >
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback>
-                        <User className="h-5 w-5" />
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="relative">
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback>
+                          <User className="h-5 w-5" />
+                        </AvatarFallback>
+                      </Avatar>
+                      {/* Unread indicator dot */}
+                      {(conv.unread_count ?? 0) > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-primary rounded-full border-2 border-background" />
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">
+                      <p className={cn(
+                        "text-sm truncate",
+                        (conv.unread_count ?? 0) > 0 ? "font-semibold" : "font-medium"
+                      )}>
                         {conv.other_user?.full_name || "Unbekannt"}
                       </p>
                       <p className="text-xs text-muted-foreground truncate">
                         {conv.subject || "Keine Betreff"}
                       </p>
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(conv.last_message_at), "dd.MM", { locale: de })}
-                    </span>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(conv.last_message_at), "dd.MM", { locale: de })}
+                      </span>
+                      {/* Unread count badge */}
+                      {(conv.unread_count ?? 0) > 0 && (
+                        <Badge variant="default" className="h-5 min-w-[20px] px-1.5 text-xs">
+                          {conv.unread_count}
+                        </Badge>
+                      )}
+                    </div>
                   </button>
                 ))}
                 {filteredConversations.length === 0 && !loading && (
