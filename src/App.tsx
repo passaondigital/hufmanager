@@ -12,10 +12,9 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PasswordRecoveryRedirect } from "@/components/auth/PasswordRecoveryRedirect";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { OfflineIndicator } from "@/components/offline/OfflineIndicator";
 import { AuthLoadingScreen } from "@/components/auth/AuthLoadingScreen";
 import { ProfileGuardianScreen } from "@/components/auth/ProfileGuardianScreen";
-import { createIDBPersister } from "@/lib/offline/persister";
+import { createIDBPersister, initImageSyncManager, QUERY_CACHE_MAX_AGE, STATIC_QUERY_KEYS } from "@/lib/offline";
 import { initSyncManager } from "@/lib/offline/syncManager";
 
 // Pages
@@ -78,23 +77,36 @@ function App() {
       new QueryClient({
         defaultOptions: {
           queries: {
-            gcTime: 1000 * 60 * 60 * 24, // 24 hours
-            staleTime: 1000 * 60 * 5, // 5 minutes
-            retry: 3,
+            gcTime: QUERY_CACHE_MAX_AGE, // 7 days
+            staleTime: 1000 * 60 * 5, // 5 minutes default
+            retry: (failureCount, error) => {
+              // Don't retry if offline
+              if (!navigator.onLine) return false;
+              return failureCount < 3;
+            },
             retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
             networkMode: "offlineFirst",
+            // Silent failures when offline - no error toasts
+            throwOnError: false,
           },
           mutations: {
             networkMode: "offlineFirst",
-            retry: 3,
+            retry: (failureCount, error) => {
+              if (!navigator.onLine) return false;
+              return failureCount < 3;
+            },
           },
         },
       })
   );
 
   useEffect(() => {
-    const cleanup = initSyncManager();
-    return cleanup;
+    const cleanupSync = initSyncManager();
+    const cleanupImageSync = initImageSyncManager();
+    return () => {
+      cleanupSync();
+      cleanupImageSync();
+    };
   }, []);
 
   return (
@@ -102,8 +114,14 @@ function App() {
       client={queryClient}
       persistOptions={{
         persister,
-        maxAge: 1000 * 60 * 60 * 24,
-        buster: "v1",
+        maxAge: QUERY_CACHE_MAX_AGE,
+        buster: "v2", // Increment when schema changes
+        dehydrateOptions: {
+          shouldDehydrateQuery: (query) => {
+            // Always persist queries for offline use
+            return query.state.status === "success";
+          },
+        },
       }}
     >
       <ThemeProvider defaultTheme="dark">
@@ -141,10 +159,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
         <PWAInstallPrompt />
         <VersionChecker />
         
-        {/* Global offline indicator */}
-        <div className="fixed top-2 left-1/2 -translate-x-1/2 z-50">
-          <OfflineIndicator />
-        </div>
+        
         
         <PasswordRecoveryRedirect>
           <Routes>

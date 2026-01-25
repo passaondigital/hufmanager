@@ -8,6 +8,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/ThemeProvider";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { ConnectionStatus } from "@/components/offline/ConnectionStatus";
 import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 import { HelpCenterFAB } from "@/components/help";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
@@ -52,8 +53,10 @@ export function AppLayout() {
             />
           </div>
           
-          {/* Mobile Actions - Search, Theme Toggle, Notifications */}
+          {/* Mobile Actions - Connection Status, Search, Theme Toggle, Notifications */}
           <div className="flex items-center gap-1">
+            {/* Connection Status - Mobile */}
+            <ConnectionStatus />
             {/* Mobile Search Button */}
             <Button
               variant="ghost"
