@@ -15,7 +15,9 @@ import { TabGesundheit } from "@/components/horse-detail/TabGesundheit";
 import { TabHufHistorie } from "@/components/horse-detail/TabHufHistorie";
 import { TabDokumente } from "@/components/horse-detail/TabDokumente";
 import { EditHorseModal } from "@/components/horse-detail/EditHorseModal";
-import type { Horse, Appointment, HoofPhoto, HorseDocument } from "@/components/horse-detail/types";
+import { HoofStatusGrid } from "@/components/horse-detail/HoofStatusGrid";
+import { HorseStammdatenCard } from "@/components/horse-detail/HorseStammdatenCard";
+import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
 
 export default function ClientHorseDetail() {
   const { id } = useParams<{ id: string }>();
@@ -122,6 +124,8 @@ export default function ClientHorseDetail() {
     );
   }
 
+  const latestAppointment = appointments[0];
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 pb-20">
       {/* Header */}
@@ -130,25 +134,20 @@ export default function ClientHorseDetail() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/client-home")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          
-          <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center overflow-hidden border shrink-0">
-            {horse.photo_url ? (
-              <img src={horse.photo_url} alt={horse.name} className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-lg">🐴</span>
-            )}
-          </div>
-          
-          <div className="flex-1 min-w-0">
-            <h1 className="font-semibold text-lg truncate">{horse.name}</h1>
-            <p className="text-xs text-muted-foreground truncate">
-              {horse.breed || "Pferd"} {horse.readable_id && `• ${horse.readable_id}`}
-            </p>
+          <div className="flex-1">
+            <HorseStammdatenCard horse={horse} compact />
           </div>
         </div>
       </header>
 
-      <main className="px-4 py-6 max-w-2xl mx-auto">
+      <main className="px-4 py-6 max-w-2xl mx-auto space-y-6">
+        {/* Hoof Status Grid - Prominent Section */}
+        <HoofStatusGrid
+          hoofDetails={horse.hoof_details as HoofDetails}
+          lastAppointmentDate={horse.last_appointment_date || latestAppointment?.date}
+          shoeingInterval={horse.shoeing_interval}
+          horseName={horse.name}
+        />
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="steckbrief" className="flex items-center gap-1.5">
