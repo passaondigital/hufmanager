@@ -65,6 +65,8 @@ import { ProviderHorseEditSheet } from "@/components/customers/ProviderHorseEdit
 import { ClientInvoicesSection } from "@/components/invoices/ClientInvoicesSection";
 import { ClientBadges } from "@/components/customers/ClientStatusBadges";
 import { AddressGeocoder } from "@/components/customers/AddressGeocoder";
+import { CustomerLocationMap, CustomerLocationPlaceholder } from "@/components/customers/CustomerLocationMap";
+import { CustomerQuickActions } from "@/components/customers/CustomerQuickActions";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -327,27 +329,69 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
 
   if (!customer) return null;
 
+  // Get payment rating info
+  const paymentRatingInfo = PAYMENT_RATING_OPTIONS.find(o => o.value === customer.payment_rating);
+
   return (
     <>
       <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <div className="flex items-center gap-3">
-              <DialogTitle className="text-xl">
-                {customer.full_name || "Kunde"}
-              </DialogTitle>
-              {customer.readable_id && (
-                <Badge variant="outline" className="font-mono text-xs">
-                  #{customer.readable_id}
+          {/* Enhanced Header with Payment Rating Badge */}
+          <DialogHeader className="pb-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <DialogTitle className="text-2xl font-bold">
+                  {customer.full_name || "Kunde"}
+                </DialogTitle>
+                {customer.readable_id && (
+                  <Badge variant="outline" className="font-mono text-xs">
+                    #{customer.readable_id}
+                  </Badge>
+                )}
+              </div>
+              {/* Payment Rating Badge - Prominent */}
+              {customer.payment_rating && paymentRatingInfo && (
+                <Badge 
+                  className={`text-sm px-3 py-1 font-bold ${
+                    customer.payment_rating === 'A' ? 'bg-green-500 text-white' :
+                    customer.payment_rating === 'B' ? 'bg-lime-500 text-white' :
+                    customer.payment_rating === 'C' ? 'bg-amber-500 text-white' :
+                    'bg-red-500 text-white'
+                  }`}
+                >
+                  <CreditCard className="h-4 w-4 mr-1" />
+                  Zahlungsmoral: {customer.payment_rating}
                 </Badge>
               )}
             </div>
             <DialogDescription>
-              Kundendetails und zugeordnete Pferde
+              Kunden-Dashboard mit allen Kontaktdaten und Pferden
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6 py-4">
+          <div className="space-y-4 py-4">
+            {/* Location Map */}
+            {customer.geo_lat && customer.geo_lng ? (
+              <CustomerLocationMap 
+                latitude={customer.geo_lat} 
+                longitude={customer.geo_lng}
+                customerName={customer.full_name || "Kunde"}
+              />
+            ) : (
+              <CustomerLocationPlaceholder />
+            )}
+
+            {/* Quick Actions - 4 große Buttons */}
+            <CustomerQuickActions
+              phone={customer.phone_mobile || customer.phone}
+              email={customer.email}
+              latitude={customer.geo_lat}
+              longitude={customer.geo_lng}
+              street={customer.street}
+              zipCode={customer.zip_code}
+              city={customer.city}
+            />
+
             {/* Customer Info Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">

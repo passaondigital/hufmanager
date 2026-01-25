@@ -12,6 +12,7 @@ import { ConnectionStatus } from "@/components/offline/ConnectionStatus";
 import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 import { HelpCenterFAB } from "@/components/help";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
+import { FeierabendWaechter } from "@/components/tracking/FeierabendWaechter";
 
 export function AppLayout() {
   const location = useLocation();
@@ -53,34 +54,40 @@ export function AppLayout() {
             />
           </div>
           
-          {/* Mobile Actions - Connection Status, Search, Theme Toggle, Notifications */}
-          <div className="flex items-center gap-1">
+          {/* Mobile Actions - Connection Status, Search, Feierabend, Theme Toggle, Notifications */}
+          <div className="flex items-center gap-0.5">
             {/* Connection Status - Mobile */}
             <ConnectionStatus />
+            
             {/* Mobile Search Button */}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setMobileSearchOpen(true)}
-              className="h-10 w-10"
+              className="h-9 w-9"
               aria-label="Suchen"
             >
-              <Search className="h-5 w-5 text-muted-foreground" />
+              <Search className="h-4 w-4 text-muted-foreground" />
             </Button>
             
+            {/* Feierabend-Wächter - Mobile */}
+            <FeierabendWaechter />
+            
+            {/* Theme Toggle */}
             <Button
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
-              className="h-10 w-10"
+              className="h-9 w-9"
               aria-label="Theme wechseln"
             >
               {theme === "dark" ? (
-                <Sun className="h-5 w-5 text-primary" />
+                <Sun className="h-4 w-4 text-primary" />
               ) : (
-                <Moon className="h-5 w-5 text-muted-foreground" />
+                <Moon className="h-4 w-4 text-muted-foreground" />
               )}
             </Button>
+            
             <NotificationBell />
           </div>
         </header>

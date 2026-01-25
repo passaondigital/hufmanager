@@ -7,7 +7,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Info, History, Image, Activity, FileText, ChevronDown, ChevronUp, Footprints, Camera } from "lucide-react";
 import { toast } from "sonner";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -20,7 +19,9 @@ import { TabHufHistorie } from "@/components/horse-detail/TabHufHistorie";
 import { EditHorseModal } from "@/components/horse-detail/EditHorseModal";
 import { LTZAnalysisHistory } from "@/components/hoof-analysis/LTZAnalysisHistory";
 import { HufCamPro } from "@/components/hufcam/HufCamPro";
-import type { Horse, Appointment, HoofPhoto, HorseDocument } from "@/components/horse-detail/types";
+import { HoofStatusGrid } from "@/components/horse-detail/HoofStatusGrid";
+import { HorseStammdatenCard } from "@/components/horse-detail/HorseStammdatenCard";
+import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
 
 interface OwnerProfile {
   id: string;
@@ -192,27 +193,23 @@ export default function ProviderHorseDetail() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header with back button and horse info */}
+      {/* Header with back button */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        
-        <Avatar className="h-12 w-12 ring-2 ring-border">
-          <AvatarImage src={horse.photo_url || undefined} alt={horse.name} />
-          <AvatarFallback className="bg-primary/10 text-primary text-lg font-semibold">
-            {horse.name.substring(0, 2).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        
-        <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-bold text-foreground truncate">{horse.name}</h1>
-          <p className="text-sm text-muted-foreground truncate">
-            {horse.breed || "Pferd"} {horse.readable_id && `• ${horse.readable_id}`}
-            {owner?.full_name && ` • Besitzer: ${owner.full_name}`}
-          </p>
+        <div className="flex-1">
+          <HorseStammdatenCard horse={horse} compact />
         </div>
       </div>
+
+      {/* Hoof Status Grid - NEW PROMINENT SECTION */}
+      <HoofStatusGrid
+        hoofDetails={horse.hoof_details as HoofDetails}
+        lastAppointmentDate={horse.last_appointment_date || latestAppointment?.date}
+        shoeingInterval={horse.shoeing_interval}
+        horseName={horse.name}
+      />
 
       {/* Quick Stats Card */}
       <Card className="border-border">
