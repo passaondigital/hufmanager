@@ -216,6 +216,14 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
     return location.pathname === basePath || location.pathname.startsWith(basePath + "/");
   };
 
+  // Check if any management route is active
+  const isManagementActive = () => {
+    return (
+      (isActive("/management") && (location.search.includes("profile") || location.search.includes("subscription"))) ||
+      isActive("/ausgaben")
+    );
+  };
+
   const toggleMenu = (number: number) => {
     setOpenMenus(prev => ({ ...prev, [number]: !prev[number] }));
   };
@@ -454,58 +462,81 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
           </NavLink>
         )}
 
-        {/* Management Header */}
-        {!collapsed && (
-          <p className="text-[10px] font-medium text-sidebar-foreground/40 uppercase tracking-wider px-2 pt-2 pb-1 flex items-center gap-1.5">
-            <Settings className="h-2.5 w-2.5" />
-            Management
-          </p>
-        )}
-        
-        {/* Kompakte Management Links */}
-        <div className="space-y-0.5">
-          <NavLink
-            to="/management?tab=profile"
-            onClick={onNavigate}
-            className={cn(
-              "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200",
-              isActive("/management") && location.search.includes("profile")
-                ? "bg-primary/10 text-primary"
-                : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-            )}
-          >
-            <User className={cn("h-3.5 w-3.5 flex-shrink-0", collapsed && "mx-auto")} />
-            {!collapsed && <span className="text-xs">Profil</span>}
-          </NavLink>
+        {/* Management - Collapsible mit Untermenüs */}
+        <Collapsible 
+          open={openMenus[-1] ?? isManagementActive()} 
+          onOpenChange={() => toggleMenu(-1)}
+        >
+          <CollapsibleTrigger asChild>
+            <button
+              className={cn(
+                "w-full flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-200",
+                isManagementActive()
+                  ? "bg-primary/10 text-primary"
+                  : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              )}
+            >
+              <Settings className={cn("h-4 w-4 flex-shrink-0", collapsed && "mx-auto")} />
+              {!collapsed && (
+                <>
+                  <span className="text-sm font-medium flex-1 text-left">Management</span>
+                  <ChevronDown className={cn(
+                    "h-3.5 w-3.5 transition-transform",
+                    openMenus[-1] && "rotate-180"
+                  )} />
+                </>
+              )}
+            </button>
+          </CollapsibleTrigger>
+          {!collapsed && (
+            <CollapsibleContent className="space-y-0.5 pt-1">
+              <NavLink
+                to="/management?tab=profile"
+                onClick={onNavigate}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200 ml-4",
+                  isActive("/management") && location.search.includes("profile")
+                    ? "bg-primary/10 text-primary"
+                    : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                )}
+              >
+                <User className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="text-xs">Profil</span>
+              </NavLink>
 
-          <NavLink
-            to="/ausgaben"
-            onClick={onNavigate}
-            className={cn(
-              "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200",
-              isActive("/ausgaben")
-                ? "bg-primary/10 text-primary"
-                : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-            )}
-          >
-            <Car className={cn("h-3.5 w-3.5 flex-shrink-0", collapsed && "mx-auto")} />
-            {!collapsed && <span className="text-xs">Fahrzeug & Ausgaben</span>}
-          </NavLink>
+              <NavLink
+                to="/ausgaben"
+                onClick={onNavigate}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200 ml-4",
+                  isActive("/ausgaben")
+                    ? "bg-primary/10 text-primary"
+                    : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                )}
+              >
+                <Car className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="text-xs">Fahrzeug & Ausgaben</span>
+              </NavLink>
 
-          <NavLink
-            to="/management?tab=subscription"
-            onClick={onNavigate}
-            className={cn(
-              "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200",
-              isActive("/management") && location.search.includes("subscription")
-                ? "bg-primary/10 text-primary"
-                : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-            )}
-          >
-            <CreditCard className={cn("h-3.5 w-3.5 flex-shrink-0", collapsed && "mx-auto")} />
-            {!collapsed && <span className="text-xs">Abo & Module</span>}
-          </NavLink>
+              <NavLink
+                to="/management?tab=subscription"
+                onClick={onNavigate}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200 ml-4",
+                  isActive("/management") && location.search.includes("subscription")
+                    ? "bg-primary/10 text-primary"
+                    : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                )}
+              >
+                <CreditCard className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="text-xs">Abo & Module</span>
+              </NavLink>
+            </CollapsibleContent>
+          )}
+        </Collapsible>
 
+        {/* Hilfe & Support + Logout - außerhalb von Management */}
+        <div className="space-y-0.5 pt-1">
           <NavLink
             to="/support"
             onClick={onNavigate}
