@@ -3650,6 +3650,33 @@ export type Database = {
           },
         ]
       }
+      system_settings: {
+        Row: {
+          is_forced: boolean
+          key: string
+          message: string | null
+          updated_at: string
+          updated_by: string | null
+          value: string
+        }
+        Insert: {
+          is_forced?: boolean
+          key: string
+          message?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          value: string
+        }
+        Update: {
+          is_forced?: boolean
+          key?: string
+          message?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       tour_breadcrumbs: {
         Row: {
           accuracy: number | null
