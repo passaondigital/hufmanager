@@ -17,6 +17,7 @@ import { toast } from "@/hooks/use-toast";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { FeierabendWaechter } from "@/components/tracking/FeierabendWaechter";
+import { ConnectionStatus } from "@/components/offline/ConnectionStatus";
 import { supabase } from "@/integrations/supabase/client";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 
@@ -102,6 +103,8 @@ export function AppHeader() {
         </div>
 
       <div className="flex items-center gap-2">
+        {/* Connection Status Indicator */}
+        <ConnectionStatus />
         {/* PWA Install Button (Desktop) */}
         {canInstall && !isInstalled && (
           <Button

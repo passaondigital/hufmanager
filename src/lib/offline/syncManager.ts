@@ -1,8 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getSyncQueue, removeFromSyncQueue, updateSyncActionRetry, SyncAction } from "./syncQueue";
+import { processOfflineImages } from "./imageSyncManager";
+import { MAX_SYNC_RETRIES } from "./offlineConfig";
 import { toast } from "sonner";
-
-const MAX_RETRIES = 3;
 
 /**
  * Process a single sync action
@@ -79,7 +79,7 @@ export async function processSyncQueue(): Promise<void> {
   let failCount = 0;
 
   for (const action of queue) {
-    if (action.retryCount >= MAX_RETRIES) {
+    if (action.retryCount >= MAX_SYNC_RETRIES) {
       console.warn(`Skipping action ${action.id} - max retries exceeded`);
       failCount++;
       continue;
