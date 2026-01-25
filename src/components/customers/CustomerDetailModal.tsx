@@ -63,6 +63,7 @@ import {
 } from "lucide-react";
 import { ProviderHorseEditSheet } from "@/components/customers/ProviderHorseEditSheet";
 import { ClientInvoicesSection } from "@/components/invoices/ClientInvoicesSection";
+import { ClientDocumentsTab } from "@/components/customers/ClientDocumentsTab";
 import { ClientBadges } from "@/components/customers/ClientStatusBadges";
 import { AddressGeocoder } from "@/components/customers/AddressGeocoder";
 import { CustomerLocationMap, CustomerLocationPlaceholder } from "@/components/customers/CustomerLocationMap";
@@ -756,15 +757,19 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
               </p>
             </div>
 
-            {/* Tabs for Horses and Invoices */}
+            {/* Tabs for Horses, Invoices, and Documents */}
             <Tabs defaultValue="horses" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="horses">
                   🐴 Pferde ({horses.length})
                 </TabsTrigger>
                 <TabsTrigger value="invoices">
                   <FileText className="h-4 w-4 mr-1" />
                   Rechnungen
+                </TabsTrigger>
+                <TabsTrigger value="documents">
+                  <FileText className="h-4 w-4 mr-1" />
+                  Dokumente
                 </TabsTrigger>
               </TabsList>
 
@@ -854,6 +859,13 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                   clientId={customer.id}
                   clientName={customer.full_name}
                   horses={horses.map(h => ({ id: h.id, name: h.name }))}
+                />
+              </TabsContent>
+
+              <TabsContent value="documents" className="mt-4">
+                <ClientDocumentsTab 
+                  clientId={customer.id}
+                  clientName={customer.full_name}
                 />
               </TabsContent>
             </Tabs>

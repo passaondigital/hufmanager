@@ -1,17 +1,21 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, CheckCircle, Footprints, Calendar } from "lucide-react";
+import { AlertTriangle, CheckCircle, Footprints, Calendar, CalendarPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { HoofDetails, HoofDetailEntry } from "./types";
 import { differenceInDays, addWeeks, format } from "date-fns";
 import { de } from "date-fns/locale";
+import { useNavigate } from "react-router-dom";
 
 interface HoofStatusGridProps {
   hoofDetails?: HoofDetails | null;
   lastAppointmentDate?: string | null;
   shoeingInterval?: number | null;
   horseName?: string;
+  horseId?: string;
+  onQuickBook?: () => void;
 }
 
 const HOOF_POSITIONS = [
@@ -44,7 +48,10 @@ export function HoofStatusGrid({
   lastAppointmentDate,
   shoeingInterval = 6,
   horseName,
+  horseId,
+  onQuickBook,
 }: HoofStatusGridProps) {
+  const navigate = useNavigate();
   // Calculate progress to next appointment
   const calculateProgress = () => {
     if (!lastAppointmentDate || !shoeingInterval) return null;
@@ -95,7 +102,7 @@ export function HoofStatusGrid({
       <CardContent className="space-y-4">
         {/* Interval Progress Bar */}
         {progressData && (
-          <div className="p-3 rounded-lg bg-muted/50 space-y-2">
+          <div className="p-3 rounded-lg bg-muted/50 space-y-3">
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -128,6 +135,25 @@ export function HoofStatusGrid({
                 Intervall: {shoeingInterval} Wochen
               </span>
             </div>
+            
+            {/* Quick Book Button - Only show when overdue */}
+            {progressData.isOverdue && (
+              <Button
+                size="sm"
+                className="w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                onClick={() => {
+                  if (onQuickBook) {
+                    onQuickBook();
+                  } else if (horseId) {
+                    // Navigate to calendar with horse pre-selected
+                    navigate(`/kalender?horse=${horseId}&action=new`);
+                  }
+                }}
+              >
+                <CalendarPlus className="h-4 w-4 mr-2" />
+                Schnelltermin buchen
+              </Button>
+            )}
           </div>
         )}
 
