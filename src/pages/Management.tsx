@@ -30,6 +30,7 @@ import {
   AlertTriangle,
   Star,
   Info,
+  Settings,
 } from "lucide-react";
 import { BusinessHoursEditor, defaultHours, type BusinessHours } from "@/components/BusinessHoursEditor";
 import { ReminderSettingsCard } from "@/components/ReminderSettingsCard";
@@ -40,6 +41,7 @@ import { SectionManager } from "@/components/landing/SectionManager";
 import { GalleryManager } from "@/components/management/GalleryManager";
 import { AVVSigningCard } from "@/components/settings/AVVSigningCard";
 import { PaymentSettingsCard } from "@/components/settings/PaymentSettingsCard";
+import { AppSettingsCard } from "@/components/settings/AppSettingsCard";
 import { CompanyLocationCard } from "@/components/settings/CompanyLocationCard";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -402,7 +404,7 @@ const Management = () => {
       )}
 
       <Tabs defaultValue="business" className="w-full">
-        <TabsList className="grid w-full max-w-4xl grid-cols-8">
+        <TabsList className="grid w-full max-w-4xl grid-cols-9">
           <TabsTrigger value="business" className="gap-2">
             <Building className="h-4 w-4" />
             <span className="hidden sm:inline">Geschäft</span>
@@ -437,6 +439,10 @@ const Management = () => {
           <TabsTrigger value="payment" className="gap-2">
             <CreditCard className="h-4 w-4" />
             <span className="hidden sm:inline">Zahlung</span>
+          </TabsTrigger>
+          <TabsTrigger value="app" className="gap-2">
+            <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline">App</span>
           </TabsTrigger>
         </TabsList>
 
@@ -887,6 +893,11 @@ Steuernummer: 12/345/67890
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* App Settings Tab */}
+        <TabsContent value="app" className="mt-6 space-y-6">
+          <AppSettingsCard />
         </TabsContent>
       </Tabs>
     </div>
