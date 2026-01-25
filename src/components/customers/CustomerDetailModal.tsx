@@ -68,6 +68,8 @@ import { ClientBadges } from "@/components/customers/ClientStatusBadges";
 import { AddressGeocoder } from "@/components/customers/AddressGeocoder";
 import { CustomerLocationMap, CustomerLocationPlaceholder } from "@/components/customers/CustomerLocationMap";
 import { CustomerQuickActions } from "@/components/customers/CustomerQuickActions";
+import { CustomerHorseCards } from "@/components/customers/CustomerHorseCards";
+import { CustomerGalleryPreview } from "@/components/customers/CustomerGalleryPreview";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -774,83 +776,21 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
               </TabsList>
 
               <TabsContent value="horses" className="space-y-4 mt-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-foreground">
-                    Zugeordnete Pferde
-                  </h3>
-                  <Button size="sm" onClick={() => onAddHorse(customer.id)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Pferd hinzufügen
-                  </Button>
-                </div>
-
-                {horses.length === 0 ? (
-                  <Card>
-                    <CardContent className="p-6 text-center text-muted-foreground">
-                      Diesem Kunden sind noch keine Pferde zugeordnet.
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="grid gap-3">
-                    {horses.map((horse) => (
-                      <Card
-                        key={horse.id}
-                        className="hover:shadow-md transition-shadow cursor-pointer"
-                        onClick={() => setHorseToEditId(horse.id)}
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium text-foreground">{horse.name}</span>
-                                  {horse.readable_id && (
-                                    <Badge variant="outline" className="font-mono text-xs">
-                                      #{horse.readable_id}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  {horse.equine_type && (
-                                    <span>{EQUINE_TYPE_LABELS[horse.equine_type] || horse.equine_type}</span>
-                                  )}
-                                  {horse.breed && <span>• {horse.breed}</span>}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              {horse.latitude && horse.longitude && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openNavigation(horse.latitude!, horse.longitude!);
-                                  }}
-                                  className="text-primary"
-                                >
-                                  <Navigation className="h-4 w-4 mr-1" />
-                                  Route
-                                </Button>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setHorseToDelete(horse);
-                                }}
-                                className="text-destructive hover:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                <CustomerHorseCards 
+                  horses={horses.map(h => ({
+                    ...h,
+                    photo_url: undefined, // Add if available
+                    last_appointment_date: undefined, // Add if available
+                    shoeing_interval: undefined, // Add if available
+                    hoof_details: undefined, // Add if available
+                  }))}
+                  onAddHorse={() => onAddHorse(customer.id)}
+                  onEditHorse={(horseId) => setHorseToEditId(horseId)}
+                />
+                
+                {/* Gallery Preview */}
+                {horses.length > 0 && (
+                  <CustomerGalleryPreview horseIds={horses.map(h => h.id)} />
                 )}
               </TabsContent>
 

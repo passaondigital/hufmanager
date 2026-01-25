@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/ThemeProvider";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ConnectionStatus } from "@/components/offline/ConnectionStatus";
-import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 import { HelpCenterFAB } from "@/components/help";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { FeierabendWaechter } from "@/components/tracking/FeierabendWaechter";
@@ -105,10 +104,7 @@ export function AppLayout() {
         </main>
       </div>
       
-      {/* Feedback Widget for bug reporting */}
-      <FeedbackWidget />
-      
-      {/* Help Center FAB */}
+      {/* Help Center FAB - only for help, not feedback */}
       <HelpCenterFAB currentRoute={location.pathname} />
     </div>
   );
