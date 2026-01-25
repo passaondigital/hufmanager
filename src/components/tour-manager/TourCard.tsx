@@ -274,9 +274,9 @@ export function TourCard({
             </Badge>
             
             {appointment.is_emergency && (
-              <Badge variant="destructive" className="text-xs gap-1">
+              <Badge variant="destructive" className="text-xs gap-1 bg-destructive text-destructive-foreground">
                 <AlertTriangle className="h-3 w-3" />
-                Notfall
+                <span className="font-semibold">Notfall</span>
               </Badge>
             )}
           </div>

@@ -35,31 +35,36 @@ import { BreadcrumbsReplay, BreadcrumbsLayer } from "./BreadcrumbsReplay";
 import { TourPdfExport } from "./TourPdfExport";
 import { NearbyCustomersPanel, NearbyCustomersMarkers } from "./NearbyCustomersLayer";
 import { StableGroupPanel } from "./StableGroupPanel";
-import { QuickAddAppointmentFAB } from "@/components/tour/QuickAddAppointmentFAB";
+// QuickAddAppointmentFAB removed - using central SpeedDialFAB
 import { EmergencyModeButton } from "@/components/tour/EmergencyModeButton";
 
 import "leaflet/dist/leaflet.css";
 
-// Dismissible warning component
-function DismissibleWarning({ count }: { count: number }) {
+// Bottom toast warning component - positioned at bottom, dismissible
+function BottomToastWarning({ count }: { count: number }) {
   const [dismissed, setDismissed] = useState(false);
   
   if (count === 0 || dismissed) return null;
   
   return (
-    <div className="absolute top-20 left-4 right-4 z-[1000] pointer-events-none">
-      <div className="bg-amber-500/90 text-white px-3 py-2 rounded-lg text-sm flex items-center gap-2 shadow-lg max-w-md mx-auto pointer-events-auto">
+    <motion.div
+      initial={{ y: 100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 100, opacity: 0 }}
+      className="fixed bottom-20 left-4 right-4 z-[500] flex justify-center pointer-events-none"
+    >
+      <div className="bg-destructive/95 text-destructive-foreground px-4 py-2.5 rounded-xl text-sm flex items-center gap-3 shadow-xl max-w-md pointer-events-auto backdrop-blur-sm">
         <AlertCircle className="h-4 w-4 flex-shrink-0" />
-        <span className="flex-1">{count} Termin(e) ohne Koordinaten</span>
+        <span className="flex-1 font-medium">{count} Termin(e) ohne Koordinaten</span>
         <button
           onClick={() => setDismissed(true)}
-          className="p-1 hover:bg-white/20 rounded transition-colors"
+          className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
           aria-label="Warnung schließen"
         >
           <X className="h-4 w-4" />
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 }
 const createMarkerIcon = (color: string, number: number, isCompleted: boolean) => {
@@ -458,12 +463,13 @@ export function TourManager() {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-background">
-      {/* Full-screen Map */}
-      <div className="flex-1 relative">
+      {/* Full-screen Map - z-index 0, controls higher */}
+      <div className="flex-1 relative z-0">
         <MapContainer
           center={defaultCenter}
           zoom={7}
-          className="h-full w-full z-0"
+          className="h-full w-full"
+          style={{ zIndex: 0 }}
           scrollWheelZoom={true}
           zoomControl={false}
         >
@@ -551,13 +557,13 @@ export function TourManager() {
           />
         )}
         
-        {/* Back Button - Top Left safe zone */}
+        {/* Back Button - Top Left safe zone - HIGHEST Z-INDEX */}
         {user && (
-          <div className="absolute top-4 left-4 z-[1000] flex items-center gap-2">
+          <div className="absolute top-4 left-4 z-[9999] flex items-center gap-2">
             <Button
               variant="secondary"
               size="sm"
-              className="gap-2 bg-background/90 backdrop-blur-sm shadow-lg"
+              className="gap-2 bg-background/95 backdrop-blur-md shadow-xl border border-border"
               onClick={() => navigate("/dashboard")}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -648,55 +654,77 @@ export function TourManager() {
           </Button>
         </div>
 
-        {/* Dismissible Warning for appointments without coordinates */}
-        <DismissibleWarning count={appointmentsWithoutCoords.length} />
       </div>
 
-      {/* Tour Cards Panel (Bottom on mobile, Left sidebar on desktop) - COLLAPSIBLE */}
+      {/* Bottom Toast Warning - positioned at bottom, not blocking header */}
+      <AnimatePresence>
+        <BottomToastWarning count={appointmentsWithoutCoords.length} />
+      </AnimatePresence>
+
+      {/* Tour Cards Panel - Bottom Drawer Style */}
       <motion.div
-        initial={{ y: 100 }}
-        animate={{ y: isPanelCollapsed ? 'calc(100% - 48px)' : 0 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        initial={{ y: '100%' }}
+        animate={{ y: isPanelCollapsed ? 'calc(100% - 56px)' : 0 }}
+        transition={{ type: 'spring', damping: 30, stiffness: 400 }}
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={0.1}
+        onDragEnd={(_, info) => {
+          if (info.offset.y > 50) {
+            setIsPanelCollapsed(true);
+          } else if (info.offset.y < -50) {
+            setIsPanelCollapsed(false);
+          }
+        }}
         className={cn(
-          "absolute z-[1000]",
-          // Mobile: bottom panel
+          "fixed z-[900]",
           "bottom-0 left-0 right-0",
-          isPanelCollapsed ? "max-h-12" : "max-h-[45vh]",
+          isPanelCollapsed ? "max-h-14" : "max-h-[50vh]",
           // Desktop: left sidebar
-          "lg:top-24 lg:bottom-4 lg:left-4 lg:right-auto lg:w-96 lg:max-h-none",
-          isPanelCollapsed && "lg:max-h-12 lg:top-auto lg:bottom-4"
+          "lg:absolute lg:top-24 lg:bottom-4 lg:left-4 lg:right-auto lg:w-96 lg:max-h-none",
+          isPanelCollapsed && "lg:max-h-14 lg:top-auto lg:bottom-4"
         )}
       >
         <div className={cn(
-          "bg-background/80 backdrop-blur-xl rounded-t-2xl lg:rounded-2xl shadow-2xl border-t lg:border",
-          "flex flex-col h-full"
+          "bg-background/95 backdrop-blur-xl rounded-t-3xl lg:rounded-2xl shadow-2xl border-t lg:border",
+          "flex flex-col h-full touch-pan-y"
         )}>
+          {/* Drag Handle */}
+          <div className="flex justify-center pt-2 lg:hidden">
+            <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full" />
+          </div>
+          
           {/* Collapsible Header with toggle */}
           <button
             onClick={() => setIsPanelCollapsed(!isPanelCollapsed)}
-            className="w-full px-4 py-2 border-b flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors"
+            className="w-full px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors"
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {isPanelCollapsed ? (
-                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                <ChevronUp className="h-5 w-5 text-muted-foreground" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <ChevronDown className="h-5 w-5 text-muted-foreground" />
               )}
-              <h2 className="font-semibold text-sm">
+              <h2 className="font-semibold">
                 {orderedAppointments.length} Termine
               </h2>
+              {routeInfo && (
+                <span className="text-xs text-muted-foreground">
+                  • {routeInfo.distance} km
+                </span>
+              )}
             </div>
             {!isPanelCollapsed && (
               <Button 
                 size="sm" 
-                variant="ghost" 
-                className="h-8 w-8 p-0"
+                variant="default"
+                className="h-9 px-4 gap-2"
                 onClick={(e) => {
                   e.stopPropagation();
-                  refetch();
+                  // Start tour action
                 }}
               >
-                <Plus className="h-4 w-4" />
+                Start
               </Button>
             )}
           </button>
@@ -755,12 +783,7 @@ export function TourManager() {
         />
       )}
 
-      {/* Quick Add FAB */}
-      <QuickAddAppointmentFAB
-        tourDate={selectedDate}
-        currentAppointmentCount={orderedAppointments.length}
-        onAppointmentAdded={() => refetch()}
-      />
+      {/* QuickAddAppointmentFAB removed - using SpeedDialFAB instead */}
     </div>
   );
 }
