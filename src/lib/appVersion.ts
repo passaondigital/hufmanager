@@ -4,7 +4,7 @@
  * WICHTIG: Diese Version bei jedem Deployment manuell hochzählen!
  * Format: MAJOR.MINOR.PATCH (z.B. 1.0.5)
  */
-export const CURRENT_APP_VERSION = '1.0.0';
+export const CURRENT_APP_VERSION = '1.0.1';
 
 /**
  * Clears all caches and forces a hard reload
