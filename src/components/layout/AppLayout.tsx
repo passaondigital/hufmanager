@@ -53,8 +53,8 @@ export function AppLayout() {
             />
           </div>
           
-          {/* Mobile Actions - Connection Status, Search, Feierabend, Theme Toggle, Notifications */}
-          <div className="flex items-center gap-0.5">
+          {/* Mobile Actions - with proper spacing for touch targets */}
+          <div className="flex items-center gap-1">
             {/* Connection Status - Mobile */}
             <ConnectionStatus />
             
@@ -63,10 +63,10 @@ export function AppLayout() {
               variant="ghost"
               size="icon"
               onClick={() => setMobileSearchOpen(true)}
-              className="h-9 w-9"
+              className="h-10 w-10 min-w-[40px]"
               aria-label="Suchen"
             >
-              <Search className="h-4 w-4 text-muted-foreground" />
+              <Search className="h-5 w-5 text-muted-foreground" />
             </Button>
             
             {/* Feierabend-Wächter - Mobile */}
@@ -77,13 +77,13 @@ export function AppLayout() {
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
-              className="h-9 w-9"
+              className="h-10 w-10 min-w-[40px]"
               aria-label="Theme wechseln"
             >
               {theme === "dark" ? (
-                <Sun className="h-4 w-4 text-primary" />
+                <Sun className="h-5 w-5 text-primary" />
               ) : (
-                <Moon className="h-4 w-4 text-muted-foreground" />
+                <Moon className="h-5 w-5 text-muted-foreground" />
               )}
             </Button>
             

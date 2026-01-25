@@ -341,3 +341,13 @@
 .ProseMirror a {
   @apply text-primary underline hover:text-primary/80;
 }
+
+/* Hide Lovable feedback button in production */
+#lovable-badge,
+.lovable-badge,
+[data-lovable-badge],
+lovable-badge {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
