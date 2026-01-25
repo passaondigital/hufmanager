@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Info, History, Image, Activity, FileText, ChevronDown, ChevronUp, Footprints, Camera } from "lucide-react";
+import { ArrowLeft, Info, History, Image, Activity, FileText, ChevronDown, ChevronUp, Footprints, Camera, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -21,6 +21,7 @@ import { LTZAnalysisHistory } from "@/components/hoof-analysis/LTZAnalysisHistor
 import { HufCamPro } from "@/components/hufcam/HufCamPro";
 import { HoofStatusGrid } from "@/components/horse-detail/HoofStatusGrid";
 import { HorseStammdatenCard } from "@/components/horse-detail/HorseStammdatenCard";
+import { HoofPhotoTimeline } from "@/components/horse-detail/HoofPhotoTimeline";
 import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
 
 interface OwnerProfile {
@@ -209,6 +210,7 @@ export default function ProviderHorseDetail() {
         lastAppointmentDate={horse.last_appointment_date || latestAppointment?.date}
         shoeingInterval={horse.shoeing_interval}
         horseName={horse.name}
+        horseId={horse.id}
       />
 
       {/* Quick Stats Card */}
@@ -280,7 +282,7 @@ export default function ProviderHorseDetail() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="historie" className="flex items-center gap-1.5">
             <History className="h-4 w-4" />
             <span className="hidden sm:inline">Historie</span>
@@ -289,9 +291,13 @@ export default function ProviderHorseDetail() {
             <Info className="h-4 w-4" />
             <span className="hidden sm:inline">Steckbrief</span>
           </TabsTrigger>
+          <TabsTrigger value="foto-timeline" className="flex items-center gap-1.5">
+            <Clock className="h-4 w-4" />
+            <span className="hidden sm:inline">Fotos</span>
+          </TabsTrigger>
           <TabsTrigger value="huf-doku" className="flex items-center gap-1.5">
             <Camera className="h-4 w-4" />
-            <span className="hidden sm:inline">Huf-Doku</span>
+            <span className="hidden sm:inline">HufCam</span>
           </TabsTrigger>
           <TabsTrigger value="huf-historie" className="flex items-center gap-1.5">
             <Footprints className="h-4 w-4" />
@@ -317,6 +323,10 @@ export default function ProviderHorseDetail() {
 
         <TabsContent value="steckbrief">
           <TabSteckbrief horse={horse} onEdit={() => setShowEditModal(true)} />
+        </TabsContent>
+
+        <TabsContent value="foto-timeline">
+          <HoofPhotoTimeline horseId={horse.id} horseName={horse.name} />
         </TabsContent>
 
         <TabsContent value="huf-doku">
