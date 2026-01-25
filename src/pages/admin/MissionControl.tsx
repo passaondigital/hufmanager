@@ -52,7 +52,8 @@ import {
   Eye,
   EyeOff,
   Megaphone,
-  Bug
+  Bug,
+  Download
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -64,6 +65,7 @@ import AdminBroadcastCard from "@/components/admin/AdminBroadcastCard";
 import AdminFeedbackViewer from "@/components/admin/AdminFeedbackViewer";
 import { useAdminActivityLog } from "@/hooks/useAdminActivityLog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { VersionManager } from "@/components/admin/VersionManager";
 
 // Horse icon fallback since lucide doesn't have it
 const Horse = () => (
@@ -1028,6 +1030,10 @@ export default function MissionControl() {
             <TabsTrigger value="tools" className="gap-2">
               <Megaphone className="w-4 h-4" />
               Tools
+            </TabsTrigger>
+            <TabsTrigger value="versions" className="gap-2">
+              <Download className="w-4 h-4" />
+              Versionen
             </TabsTrigger>
             <TabsTrigger value="rollout" className="gap-2">
               <Sparkles className="w-4 h-4" />
@@ -2019,6 +2025,24 @@ export default function MissionControl() {
               <AdminBroadcastCard />
               <AdminFeedbackViewer />
             </div>
+          </TabsContent>
+
+          <TabsContent value="versions" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Download className="h-5 w-5" />
+                  App Versions-Kontrolle
+                </CardTitle>
+                <CardDescription>
+                  Erzwinge Updates auf allen Client-Geräten durch Versions-Bumps.
+                  Die lokale Version ist in <code className="bg-muted px-1 rounded">src/lib/appVersion.ts</code> definiert.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <VersionManager />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="rollout" className="space-y-6">

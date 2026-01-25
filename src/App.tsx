@@ -67,6 +67,7 @@ import Tour from "@/pages/Tour";
 // Components
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
 import { PWAInstallPrompt } from "@/components/pwa/PWAInstallPrompt";
+import { VersionChecker } from "@/components/version/VersionChecker";
 
 // Create persister for IndexedDB storage
 const persister = createIDBPersister();
@@ -138,6 +139,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
         <Sonner />
         <AIChatWidget />
         <PWAInstallPrompt />
+        <VersionChecker />
         
         {/* Global offline indicator */}
         <div className="fixed top-2 left-1/2 -translate-x-1/2 z-50">
