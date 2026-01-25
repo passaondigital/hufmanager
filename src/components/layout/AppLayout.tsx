@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import { AppHeader } from "./AppHeader";
-import { Menu, Sun, Moon } from "lucide-react";
+import { Menu, Sun, Moon, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -10,10 +10,12 @@ import { useTheme } from "@/components/ThemeProvider";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 import { HelpCenterFAB } from "@/components/help";
+import { GlobalSearch } from "@/components/search/GlobalSearch";
 
 export function AppLayout() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -32,26 +34,37 @@ export function AppLayout() {
 
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
         {/* Mobile Header with Hamburger */}
-        <header className="lg:hidden h-16 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-4">
-          <div className="flex items-center gap-3">
+        <header className="lg:hidden h-16 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-3">
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setMobileMenuOpen(true)}
-              className="h-11 w-11"
+              className="h-10 w-10"
               aria-label="Menü öffnen"
             >
-              <Menu className="h-6 w-6" />
+              <Menu className="h-5 w-5" />
             </Button>
             <img 
               src="/hufmanager-logo.png" 
               alt="HufManager" 
-              className="h-8 w-auto"
+              className="h-7 w-auto"
             />
           </div>
           
-          {/* Mobile Actions */}
+          {/* Mobile Actions - Search, Theme Toggle, Notifications */}
           <div className="flex items-center gap-1">
+            {/* Mobile Search Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileSearchOpen(true)}
+              className="h-10 w-10"
+              aria-label="Suchen"
+            >
+              <Search className="h-5 w-5 text-muted-foreground" />
+            </Button>
+            
             <Button
               variant="ghost"
               size="icon"
@@ -68,6 +81,9 @@ export function AppLayout() {
             <NotificationBell />
           </div>
         </header>
+        
+        {/* Mobile GlobalSearch */}
+        <GlobalSearch open={mobileSearchOpen} onOpenChange={setMobileSearchOpen} />
 
         {/* Desktop Header - hidden on mobile */}
         <div className="hidden lg:block">
