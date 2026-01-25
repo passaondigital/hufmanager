@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Navigation, Clock, MapPin, AlertCircle, GripVertical, RotateCcw, Sparkles, Building2 } from "lucide-react";
+import { Loader2, Navigation, Clock, MapPin, AlertCircle, GripVertical, RotateCcw, Sparkles, Building2, X, ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmergencyModeButton, QuickAddAppointmentFAB, StableGroupManager } from "@/components/tour";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,6 +31,34 @@ import { CSS } from "@dnd-kit/utilities";
 
 // Fix Leaflet default icon issue
 import "leaflet/dist/leaflet.css";
+
+// Dismissible warning component for coordinates
+function DismissibleCoordinatesWarning({ appointments }: { appointments: AppointmentWithLocation[] }) {
+  const [dismissed, setDismissed] = useState(false);
+  
+  if (appointments.length === 0 || dismissed) return null;
+  
+  return (
+    <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-sm">
+      <AlertCircle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+      <div className="flex-1">
+        <span className="font-medium text-amber-600 dark:text-amber-400">
+          {appointments.length} Termin(e) ohne Koordinaten
+        </span>
+        <span className="text-muted-foreground ml-1">
+          – Bitte die Kundenadresse prüfen.
+        </span>
+      </div>
+      <button
+        onClick={() => setDismissed(true)}
+        className="p-1 hover:bg-amber-500/20 rounded transition-colors"
+        aria-label="Warnung schließen"
+      >
+        <X className="h-4 w-4 text-amber-500" />
+      </button>
+    </div>
+  );
+}
 
 // PLZ cluster colors
 const PLZ_COLORS = [
@@ -489,20 +517,8 @@ export const TourMapView = ({
 
         <TabsContent value="tour" className="mt-4 space-y-4">
 
-      {/* Warning for missing coordinates */}
-      {appointmentsWithoutCoords.length > 0 && (
-        <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-sm">
-          <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
-          <div>
-            <span className="font-medium text-amber-600 dark:text-amber-400">
-              {appointmentsWithoutCoords.length} Termin(e) ohne Koordinaten
-            </span>
-            <span className="text-muted-foreground ml-1">
-              – Bitte die Kundenadresse prüfen.
-            </span>
-          </div>
-        </div>
-      )}
+      {/* Dismissible Warning for missing coordinates */}
+      <DismissibleCoordinatesWarning appointments={appointmentsWithoutCoords} />
 
       {/* Main Layout: Sidebar + Map */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">

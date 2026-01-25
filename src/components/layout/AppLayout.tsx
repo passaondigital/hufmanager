@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/ThemeProvider";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ConnectionStatus } from "@/components/offline/ConnectionStatus";
-import { HelpCenterFAB } from "@/components/help";
+import { SpeedDialFAB } from "./SpeedDialFAB";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { FeierabendWaechter } from "@/components/tracking/FeierabendWaechter";
 
@@ -104,8 +104,8 @@ export function AppLayout() {
         </main>
       </div>
       
-      {/* Help Center FAB - only for help, not feedback */}
-      <HelpCenterFAB currentRoute={location.pathname} />
+      {/* Speed Dial FAB - unified action menu */}
+      <SpeedDialFAB />
     </div>
   );
 }
