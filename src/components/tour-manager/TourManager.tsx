@@ -26,7 +26,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, AlertCircle, History } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Plus, AlertCircle, History, X, ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { TourCard, type TourAppointment } from "./TourCard";
@@ -40,7 +40,28 @@ import { EmergencyModeButton } from "@/components/tour/EmergencyModeButton";
 
 import "leaflet/dist/leaflet.css";
 
-// Custom marker icon
+// Dismissible warning component
+function DismissibleWarning({ count }: { count: number }) {
+  const [dismissed, setDismissed] = useState(false);
+  
+  if (count === 0 || dismissed) return null;
+  
+  return (
+    <div className="absolute top-20 left-4 right-4 z-[1000] pointer-events-none">
+      <div className="bg-amber-500/90 text-white px-3 py-2 rounded-lg text-sm flex items-center gap-2 shadow-lg max-w-md mx-auto pointer-events-auto">
+        <AlertCircle className="h-4 w-4 flex-shrink-0" />
+        <span className="flex-1">{count} Termin(e) ohne Koordinaten</span>
+        <button
+          onClick={() => setDismissed(true)}
+          className="p-1 hover:bg-white/20 rounded transition-colors"
+          aria-label="Warnung schließen"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
 const createMarkerIcon = (color: string, number: number, isCompleted: boolean) => {
   const bgColor = isCompleted ? 'hsl(var(--chart-2))' : color;
   return L.divIcon({
@@ -153,6 +174,8 @@ export function TourManager() {
   
   // Nearby customers layer state
   const [nearbyCustomers, setNearbyCustomers] = useState<{ id: string; full_name: string; geo_lat: number; geo_lng: number; horse_count: number; street?: string; city?: string }[]>([]);
+  // Collapsible panel state for mobile
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
   const [companyLocation, setCompanyLocation] = useState<{ lat: number; lng: number; address?: string } | null>(null);
   const [nearbyRadiusKm, setNearbyRadiusKm] = useState(30);
   const [showNearbyRadius, setShowNearbyRadius] = useState(true);
@@ -528,9 +551,9 @@ export function TourManager() {
           />
         )}
         
-        {/* Back Button & PDF Export & Emergency Button */}
+        {/* Back Button - Top Left safe zone */}
         {user && (
-          <div className="absolute top-4 right-4 z-[1000] flex items-center gap-2">
+          <div className="absolute top-4 left-4 z-[1000] flex items-center gap-2">
             <Button
               variant="secondary"
               size="sm"
@@ -540,6 +563,18 @@ export function TourManager() {
               <ChevronLeft className="h-4 w-4" />
               <span className="hidden sm:inline">Dashboard</span>
             </Button>
+          </div>
+        )}
+        
+        {/* Emergency & PDF Export - Top Right safe zone (moved away from back button) */}
+        {user && (
+          <div className="absolute top-4 right-4 z-[1000] flex items-center gap-2">
+            <TourPdfExport
+              tourDate={selectedDate}
+              userId={user.id}
+              appointments={orderedAppointments}
+              routeInfo={routeInfo}
+            />
             <EmergencyModeButton
               tourDate={selectedDate}
               appointmentIds={orderedAppointments
@@ -548,12 +583,6 @@ export function TourManager() {
               }
               onEmergencyStart={() => refetch()}
               onEmergencyEnd={() => refetch()}
-            />
-            <TourPdfExport
-              tourDate={selectedDate}
-              userId={user.id}
-              appointments={orderedAppointments}
-              routeInfo={routeInfo}
             />
           </div>
         )}
@@ -619,91 +648,99 @@ export function TourManager() {
           </Button>
         </div>
 
-        {/* Warning for appointments without coordinates */}
-        {appointmentsWithoutCoords.length > 0 && (
-          <div className="absolute top-20 left-4 right-4 z-[1000] pointer-events-none">
-            <div className="bg-amber-500/90 text-white px-3 py-2 rounded-lg text-sm flex items-center gap-2 shadow-lg max-w-md mx-auto pointer-events-auto">
-              <AlertCircle className="h-4 w-4 flex-shrink-0" />
-              {appointmentsWithoutCoords.length} Termin(e) ohne Koordinaten
-            </div>
-          </div>
-        )}
+        {/* Dismissible Warning for appointments without coordinates */}
+        <DismissibleWarning count={appointmentsWithoutCoords.length} />
       </div>
 
-      {/* Tour Cards Panel (Bottom on mobile, Left sidebar on desktop) */}
+      {/* Tour Cards Panel (Bottom on mobile, Left sidebar on desktop) - COLLAPSIBLE */}
       <motion.div
         initial={{ y: 100 }}
-        animate={{ y: 0 }}
+        animate={{ y: isPanelCollapsed ? 'calc(100% - 48px)' : 0 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
         className={cn(
           "absolute z-[1000]",
           // Mobile: bottom panel
-          "bottom-0 left-0 right-0 max-h-[45vh]",
+          "bottom-0 left-0 right-0",
+          isPanelCollapsed ? "max-h-12" : "max-h-[45vh]",
           // Desktop: left sidebar
-          "lg:top-24 lg:bottom-4 lg:left-4 lg:right-auto lg:w-96 lg:max-h-none"
+          "lg:top-24 lg:bottom-4 lg:left-4 lg:right-auto lg:w-96 lg:max-h-none",
+          isPanelCollapsed && "lg:max-h-12 lg:top-auto lg:bottom-4"
         )}
       >
         <div className={cn(
           "bg-background/80 backdrop-blur-xl rounded-t-2xl lg:rounded-2xl shadow-2xl border-t lg:border",
           "flex flex-col h-full"
         )}>
-          {/* Drag handle for mobile */}
-          <div className="lg:hidden flex justify-center pt-2 pb-1">
-            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-          </div>
-
-          {/* Header */}
-          <div className="px-4 py-2 border-b flex items-center justify-between">
-            <h2 className="font-semibold text-sm">
-              {orderedAppointments.length} Termine
-            </h2>
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              className="h-8 w-8 p-0"
-              onClick={() => refetch()}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Sortable Cards */}
-          <ScrollArea className="flex-1 px-3 py-2">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
-              </div>
-            ) : orderedAppointments.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground text-sm">
-                Keine Termine für diesen Tag
-              </div>
-            ) : (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
+          {/* Collapsible Header with toggle */}
+          <button
+            onClick={() => setIsPanelCollapsed(!isPanelCollapsed)}
+            className="w-full px-4 py-2 border-b flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              {isPanelCollapsed ? (
+                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              )}
+              <h2 className="font-semibold text-sm">
+                {orderedAppointments.length} Termine
+              </h2>
+            </div>
+            {!isPanelCollapsed && (
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="h-8 w-8 p-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  refetch();
+                }}
               >
-                <SortableContext
-                  items={orderedAppointments.map(a => a.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="space-y-3 pb-4">
-                    <AnimatePresence>
-                      {orderedAppointments.map((apt, index) => (
-                        <TourCard
-                          key={apt.id}
-                          appointment={apt}
-                          index={index}
-                          userId={user?.id || ""}
-                          onOpenChat={handleOpenChat}
-                          onStatusChange={() => refetch()}
-                        />
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                </SortableContext>
-              </DndContext>
+                <Plus className="h-4 w-4" />
+              </Button>
             )}
-          </ScrollArea>
+          </button>
+
+          {/* Sortable Cards - Hidden when collapsed */}
+          {!isPanelCollapsed && (
+            <ScrollArea className="flex-1 px-3 py-2">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+                </div>
+              ) : orderedAppointments.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground text-sm">
+                  Keine Termine für diesen Tag
+                </div>
+              ) : (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={orderedAppointments.map(a => a.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-3 pb-4">
+                      <AnimatePresence>
+                        {orderedAppointments.map((apt, index) => (
+                          <TourCard
+                            key={apt.id}
+                            appointment={apt}
+                            index={index}
+                            userId={user?.id || ""}
+                            onOpenChat={handleOpenChat}
+                            onStatusChange={() => refetch()}
+                          />
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              )}
+            </ScrollArea>
+          )}
         </div>
       </motion.div>
 
