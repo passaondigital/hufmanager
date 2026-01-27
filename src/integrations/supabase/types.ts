@@ -302,6 +302,65 @@ export type Database = {
           },
         ]
       }
+      appointment_horses: {
+        Row: {
+          appointment_id: string
+          created_at: string
+          horse_id: string
+          id: string
+          notes: string | null
+          price: number | null
+          service_type: string | null
+        }
+        Insert: {
+          appointment_id: string
+          created_at?: string
+          horse_id: string
+          id?: string
+          notes?: string | null
+          price?: number | null
+          service_type?: string | null
+        }
+        Update: {
+          appointment_id?: string
+          created_at?: string
+          horse_id?: string
+          id?: string
+          notes?: string | null
+          price?: number | null
+          service_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_horses_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_horses_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "safe_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_horses_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_horses_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointment_reminders: {
         Row: {
           appointment_id: string
@@ -363,6 +422,7 @@ export type Database = {
           is_confirmed_by_client: boolean | null
           is_emergency: boolean | null
           is_internally_paid: boolean | null
+          is_multi_horse: boolean | null
           is_series_appointment: boolean | null
           location: string | null
           notes: string | null
@@ -403,6 +463,7 @@ export type Database = {
           is_confirmed_by_client?: boolean | null
           is_emergency?: boolean | null
           is_internally_paid?: boolean | null
+          is_multi_horse?: boolean | null
           is_series_appointment?: boolean | null
           location?: string | null
           notes?: string | null
@@ -443,6 +504,7 @@ export type Database = {
           is_confirmed_by_client?: boolean | null
           is_emergency?: boolean | null
           is_internally_paid?: boolean | null
+          is_multi_horse?: boolean | null
           is_series_appointment?: boolean | null
           location?: string | null
           notes?: string | null
@@ -1832,6 +1894,55 @@ export type Database = {
           },
         ]
       }
+      invoice_appointments: {
+        Row: {
+          appointment_id: string
+          created_at: string
+          id: string
+          invoice_id: string
+          line_amount: number | null
+          line_description: string | null
+        }
+        Insert: {
+          appointment_id: string
+          created_at?: string
+          id?: string
+          invoice_id: string
+          line_amount?: number | null
+          line_description?: string | null
+        }
+        Update: {
+          appointment_id?: string
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          line_amount?: number | null
+          line_description?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_appointments_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_appointments_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "safe_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_appointments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_items: {
         Row: {
           created_at: string | null
@@ -1879,6 +1990,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      invoice_number_counters: {
+        Row: {
+          created_at: string
+          id: string
+          last_number: number
+          provider_id: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_number?: number
+          provider_id: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_number?: number
+          provider_id?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
       }
       invoices: {
         Row: {
@@ -4388,6 +4526,10 @@ export type Database = {
         Returns: undefined
       }
       delete_horse_safe: { Args: { _horse_id: string }; Returns: undefined }
+      generate_invoice_number: {
+        Args: { p_provider_id: string }
+        Returns: string
+      }
       generate_random_id: { Args: { prefix: string }; Returns: string }
       get_active_emergency_for_provider: {
         Args: { p_provider_id: string }
