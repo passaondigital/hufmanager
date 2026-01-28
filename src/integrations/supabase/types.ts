@@ -712,7 +712,9 @@ export type Database = {
           copecart_customer_portal_url: string | null
           copecart_vendor_id: string | null
           created_at: string
+          currency: string | null
           custom_domain: string | null
+          default_vat_rate: number | null
           email: string | null
           gallery_images: Json | null
           hero_headline: string | null
@@ -732,6 +734,8 @@ export type Database = {
           section_order: Json | null
           stripe_public_key: string | null
           subdomain: string | null
+          swiss_rounding: boolean | null
+          tax_country: string | null
           tax_number: string | null
           terms: string | null
           terms_text: string | null
@@ -752,7 +756,9 @@ export type Database = {
           copecart_customer_portal_url?: string | null
           copecart_vendor_id?: string | null
           created_at?: string
+          currency?: string | null
           custom_domain?: string | null
+          default_vat_rate?: number | null
           email?: string | null
           gallery_images?: Json | null
           hero_headline?: string | null
@@ -772,6 +778,8 @@ export type Database = {
           section_order?: Json | null
           stripe_public_key?: string | null
           subdomain?: string | null
+          swiss_rounding?: boolean | null
+          tax_country?: string | null
           tax_number?: string | null
           terms?: string | null
           terms_text?: string | null
@@ -792,7 +800,9 @@ export type Database = {
           copecart_customer_portal_url?: string | null
           copecart_vendor_id?: string | null
           created_at?: string
+          currency?: string | null
           custom_domain?: string | null
+          default_vat_rate?: number | null
           email?: string | null
           gallery_images?: Json | null
           hero_headline?: string | null
@@ -812,6 +822,8 @@ export type Database = {
           section_order?: Json | null
           stripe_public_key?: string | null
           subdomain?: string | null
+          swiss_rounding?: boolean | null
+          tax_country?: string | null
           tax_number?: string | null
           terms?: string | null
           terms_text?: string | null

@@ -3,6 +3,14 @@ import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { 
+  TaxCountry, 
+  Currency, 
+  getDACHConfig, 
+  formatCurrencyDACH, 
+  applySwissRounding,
+  calculateVatFromGross 
+} from "./dachConfig";
 
 interface BusinessSettings {
   business_name: string | null;
@@ -18,6 +26,11 @@ interface BusinessSettings {
   tax_number: string | null;
   vat_id: string | null;
   paypal_link?: string | null;
+  // DACH tax settings
+  tax_country?: TaxCountry | null;
+  default_vat_rate?: number | null;
+  currency?: Currency | null;
+  swiss_rounding?: boolean | null;
 }
 
 interface ClientProfile {
@@ -105,11 +118,12 @@ async function tryLoadLogo(url: string): Promise<string | null> {
   }
 }
 
+// Legacy wrapper - will be replaced with context-aware formatting in generateInvoicePdf
+let _currentCurrency: Currency = 'EUR';
+let _swissRounding = false;
+
 function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency: "EUR",
-  }).format(amount);
+  return formatCurrencyDACH(amount, _currentCurrency, { swissRounding: _swissRounding });
 }
 
 // Parse invoice notes to extract line items
@@ -222,10 +236,23 @@ export async function generateInvoicePdf(
       .eq("user_id", providerId)
       .maybeSingle();
     
-    if (data) settings = data;
+    if (data) {
+      settings = {
+        ...data,
+        tax_country: (data.tax_country as TaxCountry) || 'DE',
+        currency: (data.currency as Currency) || 'EUR',
+      };
+    }
   } catch {
     // Use defaults
   }
+  
+  // Set global currency context for formatCurrency helper
+  const taxCountry = settings.tax_country || 'DE';
+  const dachConfig = getDACHConfig(taxCountry);
+  _currentCurrency = settings.currency || dachConfig.currency;
+  _swissRounding = settings.swiss_rounding ?? false;
+  const vatRate = settings.default_vat_rate ?? dachConfig.defaultVatRate;
 
   // Fetch customer VAT ID from contacts table (for B2B clients)
   let customerVatId: string | null = null;
@@ -501,39 +528,45 @@ export async function generateInvoicePdf(
   doc.setTextColor(COLORS.gray600.r, COLORS.gray600.g, COLORS.gray600.b);
   
   const isGewerbe = invoice.customer_type === "gewerbe";
-  const isKleinunternehmer = invoice.customer_type === "kleinunternehmer";
+  const isKleinunternehmer = invoice.customer_type === "kleinunternehmer" || vatRate === 0;
+  
+  // Apply Swiss rounding if enabled
+  let finalAmount = invoice.total_amount;
+  if (_swissRounding && _currentCurrency === 'CHF') {
+    finalAmount = applySwissRounding(finalAmount);
+  }
   
   if (isKleinunternehmer) {
-    // Kleinunternehmer: Keine MwSt. gemäß §19 UStG
+    // Kleinunternehmer: Keine MwSt.
     doc.text("Betrag:", totalBoxX, yPos);
-    doc.text(formatCurrency(invoice.total_amount), pageWidth - margin, yPos, { align: "right" });
+    doc.text(formatCurrency(finalAmount), pageWidth - margin, yPos, { align: "right" });
     
     yPos += 5;
     
     doc.setFontSize(8);
     doc.setTextColor(COLORS.gray500.r, COLORS.gray500.g, COLORS.gray500.b);
-    doc.text("Gemäß §19 UStG wird keine Umsatzsteuer berechnet.", totalBoxX, yPos);
+    doc.text(dachConfig.vatExemptLabel, totalBoxX, yPos);
   } else if (isGewerbe) {
     // Gewerbekunde: Netto-Rechnung
     doc.text("Nettobetrag:", totalBoxX, yPos);
-    doc.text(formatCurrency(invoice.total_amount), pageWidth - margin, yPos, { align: "right" });
+    doc.text(formatCurrency(finalAmount), pageWidth - margin, yPos, { align: "right" });
     
     yPos += 5;
     
-    doc.text("MwSt.:", totalBoxX, yPos);
+    doc.text(`${dachConfig.vatLabel}:`, totalBoxX, yPos);
     doc.setTextColor(COLORS.gray500.r, COLORS.gray500.g, COLORS.gray500.b);
     doc.text("nicht ausgewiesen (Reverse Charge)", pageWidth - margin, yPos, { align: "right" });
   } else {
-    // Privatkunde: Brutto mit MwSt
-    const netAmount = invoice.total_amount / 1.19;
-    const vatAmount = invoice.total_amount - netAmount;
+    // Privatkunde: Brutto mit MwSt - use actual VAT rate from settings
+    const { netAmount, vatAmount } = calculateVatFromGross(finalAmount, vatRate);
     
     doc.text("Nettobetrag:", totalBoxX, yPos);
     doc.text(formatCurrency(netAmount), pageWidth - margin, yPos, { align: "right" });
     
     yPos += 5;
     
-    doc.text("MwSt. (19%):", totalBoxX, yPos);
+    // Use country-specific VAT label
+    doc.text(`${dachConfig.vatLabel} (${vatRate}%):`, totalBoxX, yPos);
     doc.text(formatCurrency(vatAmount), pageWidth - margin, yPos, { align: "right" });
   }
   
@@ -552,7 +585,7 @@ export async function generateInvoicePdf(
   if (isKleinunternehmer) totalLabel = "Rechnungsbetrag:";
   
   doc.text(totalLabel, totalBoxX, yPos + 5);
-  doc.text(formatCurrency(invoice.total_amount), pageWidth - margin - 2, yPos + 5, { align: "right" });
+  doc.text(formatCurrency(finalAmount), pageWidth - margin - 2, yPos + 5, { align: "right" });
 
   yPos += 25;
 
