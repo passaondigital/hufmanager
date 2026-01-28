@@ -12,6 +12,7 @@ import { useOnboarding } from "@/hooks/useOnboarding";
 import { ProviderSetupWizard } from "@/components/onboarding/ProviderSetupWizard";
 import { PushNotificationBanner } from "@/components/notifications/PushNotificationBanner";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { DemoCalendarEntry } from "@/components/demo/DemoCalendarEntry";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -36,6 +37,9 @@ const Dashboard = () => {
       <div className="space-y-6">
       {/* Push Notification Banner */}
       <PushNotificationBanner />
+
+      {/* Demo Account Calendar Entry - only shows for demo user */}
+      <DemoCalendarEntry />
 
       {/* First Steps Checklist - Shows progress for new users */}
       <FirstStepsChecklist />
