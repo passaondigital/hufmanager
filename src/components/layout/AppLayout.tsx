@@ -12,6 +12,7 @@ import { ConnectionStatus } from "@/components/offline/ConnectionStatus";
 import { SpeedDialFAB } from "./SpeedDialFAB";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { FeierabendWaechter } from "@/components/tracking/FeierabendWaechter";
+import { DemoStickyBanner } from "@/components/demo/DemoStickyBanner";
 
 export function AppLayout() {
   const location = useLocation();
@@ -106,6 +107,9 @@ export function AppLayout() {
       
       {/* Speed Dial FAB - unified action menu */}
       <SpeedDialFAB />
+      
+      {/* Demo Account Sticky Banner */}
+      <DemoStickyBanner />
     </div>
   );
 }
