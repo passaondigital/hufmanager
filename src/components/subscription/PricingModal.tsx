@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Crown, Sparkles, Zap, ArrowRight, Gift } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDemoActivityTracker } from "@/hooks/useDemoActivityTracker";
 
 interface PricingModalProps {
   open: boolean;
@@ -81,7 +82,12 @@ export function PricingModal({
   currentPlan = null,
   showTrialBadge = true
 }: PricingModalProps) {
-  const handleSelectPlan = (checkoutUrl: string) => {
+  const { trackCopecartClick } = useDemoActivityTracker();
+
+  const handleSelectPlan = (planId: string, checkoutUrl: string) => {
+    // Track the click for demo analytics
+    trackCopecartClick(planId, checkoutUrl);
+    
     window.open(checkoutUrl, "_blank");
     onOpenChange(false);
   };
@@ -175,7 +181,7 @@ export function PricingModal({
                 </ul>
 
                 <Button
-                  onClick={() => handleSelectPlan(plan.checkoutUrl)}
+                  onClick={() => handleSelectPlan(plan.id, plan.checkoutUrl)}
                   className={cn(
                     "w-full h-12 text-base font-semibold gap-2",
                     plan.highlighted 
