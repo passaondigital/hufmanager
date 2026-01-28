@@ -13,6 +13,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import { AVVSigningCard } from "./AVVSigningCard";
+import { TaxCountryCard } from "./TaxCountryCard";
 import { uploadFile, getStorageUrl } from "@/lib/storage";
 
 interface LegalAgreement {
@@ -172,6 +173,9 @@ export function LegalSettings() {
 
   return (
     <div className="space-y-6">
+      {/* DACH Tax Country Selection */}
+      <TaxCountryCard />
+
       {/* Tax Information for ZUGFeRD / E-Invoicing */}
       <Card>
         <CardHeader>
