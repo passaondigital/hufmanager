@@ -66,6 +66,7 @@ import AdminFeedbackViewer from "@/components/admin/AdminFeedbackViewer";
 import { useAdminActivityLog } from "@/hooks/useAdminActivityLog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { VersionManager } from "@/components/admin/VersionManager";
+import { DemoAnalyticsDashboard } from "@/components/admin/DemoAnalyticsDashboard";
 
 // Horse icon fallback since lucide doesn't have it
 const Horse = () => (
@@ -1038,6 +1039,10 @@ export default function MissionControl() {
             <TabsTrigger value="rollout" className="gap-2">
               <Sparkles className="w-4 h-4" />
               Feature Rollout
+            </TabsTrigger>
+            <TabsTrigger value="demo" className="gap-2">
+              <Eye className="w-4 h-4" />
+              Demo Analytics
             </TabsTrigger>
           </TabsList>
 
@@ -2056,6 +2061,10 @@ export default function MissionControl() {
                 }
               }}
             />
+          </TabsContent>
+
+          <TabsContent value="demo" className="space-y-6">
+            <DemoAnalyticsDashboard />
           </TabsContent>
         </Tabs>
 

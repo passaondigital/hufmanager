@@ -1095,6 +1095,42 @@ export type Database = {
         }
         Relationships: []
       }
+      demo_activity_logs: {
+        Row: {
+          action_name: string | null
+          activity_type: string
+          copecart_plan: string | null
+          copecart_url: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          page_path: string | null
+          user_email: string
+        }
+        Insert: {
+          action_name?: string | null
+          activity_type: string
+          copecart_plan?: string | null
+          copecart_url?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          page_path?: string | null
+          user_email: string
+        }
+        Update: {
+          action_name?: string | null
+          activity_type?: string
+          copecart_plan?: string | null
+          copecart_url?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          page_path?: string | null
+          user_email?: string
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number

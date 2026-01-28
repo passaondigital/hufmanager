@@ -13,12 +13,16 @@ import { SpeedDialFAB } from "./SpeedDialFAB";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { FeierabendWaechter } from "@/components/tracking/FeierabendWaechter";
 import { DemoStickyBanner } from "@/components/demo/DemoStickyBanner";
+import { useDemoActivityTracker } from "@/hooks/useDemoActivityTracker";
 
 export function AppLayout() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  
+  // Initialize demo activity tracker for automatic page view tracking
+  useDemoActivityTracker();
 
   return (
     <div className="min-h-screen flex w-full bg-background">
