@@ -102,18 +102,20 @@ export function PricingModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto p-4 md:p-6">
         <DialogHeader className="text-center pb-4">
-          <DialogTitle className="text-2xl md:text-3xl font-bold">
+          <DialogTitle className="text-xl md:text-2xl lg:text-3xl font-bold">
             {title}
           </DialogTitle>
-          <DialogDescription className="text-base text-muted-foreground">
+          <DialogDescription className="text-sm md:text-base text-muted-foreground">
             {description}
           </DialogDescription>
         </DialogHeader>
 
+        {/* Mobile: Stack vertically, Desktop: Grid */}
         <div className={cn(
           "grid gap-4 py-4",
+          "grid-cols-1", // Always 1 column on mobile
           availablePlans.length === 3 ? "md:grid-cols-3" : 
           availablePlans.length === 2 ? "md:grid-cols-2 max-w-2xl mx-auto" :
           "max-w-md mx-auto"
@@ -183,7 +185,7 @@ export function PricingModal({
                 <Button
                   onClick={() => handleSelectPlan(plan.id, plan.checkoutUrl)}
                   className={cn(
-                    "w-full h-12 text-base font-semibold gap-2",
+                    "w-full min-h-[44px] h-12 text-base font-semibold gap-2",
                     plan.highlighted 
                       ? "bg-primary hover:bg-primary/90" 
                       : "bg-muted text-foreground hover:bg-muted/80"

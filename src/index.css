@@ -351,3 +351,129 @@ lovable-badge {
   visibility: hidden !important;
   pointer-events: none !important;
 }
+
+/* ============================================
+   MOBILE OPTIMIZATION UTILITIES
+   ============================================ */
+
+/* Safe area utilities for modern smartphones */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.px-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* Mobile container with standard padding */
+.mobile-container {
+  @apply px-4 py-4;
+}
+
+@media (min-width: 768px) {
+  .mobile-container {
+    @apply px-6 py-6;
+  }
+}
+
+/* Mobile-first text scaling */
+.text-responsive-h1 {
+  @apply text-2xl md:text-3xl lg:text-4xl font-bold;
+}
+
+.text-responsive-h2 {
+  @apply text-xl md:text-2xl lg:text-3xl font-semibold;
+}
+
+.text-responsive-h3 {
+  @apply text-lg md:text-xl lg:text-2xl font-medium;
+}
+
+/* Mobile-optimized button - minimum touch target 44px */
+.btn-mobile {
+  @apply min-h-[44px] w-full md:w-auto;
+}
+
+/* Mobile card view for tables */
+.table-card-mobile {
+  @apply block md:hidden;
+}
+
+.table-desktop {
+  @apply hidden md:block;
+}
+
+/* Bottom navigation spacer - add to main content */
+.pb-bottom-nav {
+  padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 1024px) {
+  .pb-bottom-nav {
+    padding-bottom: 0;
+  }
+}
+
+/* React Big Calendar Mobile Optimizations */
+@media (max-width: 767px) {
+  .calendar-container .rbc-toolbar {
+    @apply flex-col gap-2 p-3;
+  }
+  
+  .calendar-container .rbc-toolbar-label {
+    @apply text-base order-first w-full;
+  }
+  
+  .calendar-container .rbc-btn-group {
+    @apply flex flex-wrap justify-center gap-1;
+  }
+  
+  .calendar-container .rbc-toolbar button {
+    @apply text-xs px-2 py-1.5;
+  }
+  
+  .calendar-container .rbc-header {
+    @apply py-2 text-xs;
+  }
+  
+  .calendar-container .rbc-date-cell {
+    @apply text-xs p-1;
+  }
+  
+  .calendar-container .rbc-event {
+    @apply text-[10px] px-1 py-0.5;
+  }
+  
+  .calendar-container .rbc-agenda-view table {
+    @apply text-sm;
+  }
+  
+  .calendar-container .rbc-agenda-table td,
+  .calendar-container .rbc-agenda-table th {
+    @apply px-2 py-2;
+  }
+  
+  /* Force agenda view to be more readable on mobile */
+  .calendar-container .rbc-month-row {
+    @apply min-h-[60px];
+  }
+}
+
+/* Mobile grid utilities for stacking */
+.grid-stack-mobile {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4;
+}
+
+.grid-stack-mobile-2 {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-4;
+}
+
+/* Prevent horizontal overflow on mobile */
+.overflow-safe {
+  @apply overflow-x-hidden max-w-full;
+}

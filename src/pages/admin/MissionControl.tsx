@@ -946,18 +946,19 @@ export default function MissionControl() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4">
-        <div className="flex items-center justify-between mb-8">
+      <div className="container mx-auto py-4 md:py-8 px-4">
+        {/* Header - Mobile optimized */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 md:mb-8">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Shield className="w-8 h-8 text-primary" />
+            <h1 className="text-responsive-h2 flex items-center gap-2 md:gap-3">
+              <Shield className="w-6 h-6 md:w-8 md:h-8 text-primary" />
               Mission Control
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-muted-foreground text-sm mt-1">
               Provider-Management & Marktforschung
             </p>
           </div>
-          <Button variant="outline" onClick={() => navigate("/dashboard")}>
+          <Button variant="outline" className="min-h-[44px] w-full md:w-auto" onClick={() => navigate("/dashboard")}>
             Zurück
           </Button>
         </div>
@@ -1010,44 +1011,47 @@ export default function MissionControl() {
         {/* KPI Dashboard */}
         <MissionControlKPIs providers={providers} />
 
-        <Tabs defaultValue="providers" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="providers" className="gap-2">
-              <Users className="w-4 h-4" />
-              Provider ({providers.length})
-            </TabsTrigger>
-            <TabsTrigger value="stats" className="gap-2">
-              <Settings className="w-4 h-4" />
-              Statistiken
-            </TabsTrigger>
-            <TabsTrigger value="blog" className="gap-2">
-              <FileText className="w-4 h-4" />
-              Blog
-            </TabsTrigger>
-            <TabsTrigger value="activity" className="gap-2">
-              <ClipboardList className="w-4 h-4" />
-              Aktivität
-            </TabsTrigger>
-            <TabsTrigger value="tools" className="gap-2">
-              <Megaphone className="w-4 h-4" />
-              Tools
-            </TabsTrigger>
-            <TabsTrigger value="versions" className="gap-2">
-              <Download className="w-4 h-4" />
-              Versionen
-            </TabsTrigger>
-            <TabsTrigger value="rollout" className="gap-2">
-              <Sparkles className="w-4 h-4" />
-              Feature Rollout
-            </TabsTrigger>
-            <TabsTrigger value="demo" className="gap-2">
-              <Eye className="w-4 h-4" />
-              Demo Analytics
-            </TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="providers" className="space-y-4 md:space-y-6">
+          {/* Tabs - Horizontally scrollable on mobile */}
+          <div className="overflow-x-auto -mx-4 px-4 pb-2">
+            <TabsList className="inline-flex min-w-max">
+              <TabsTrigger value="providers" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <Users className="w-4 h-4" />
+                <span className="hidden md:inline">Provider</span> ({providers.length})
+              </TabsTrigger>
+              <TabsTrigger value="stats" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <Settings className="w-4 h-4" />
+                <span className="hidden md:inline">Statistiken</span>
+              </TabsTrigger>
+              <TabsTrigger value="blog" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <FileText className="w-4 h-4" />
+                <span className="hidden md:inline">Blog</span>
+              </TabsTrigger>
+              <TabsTrigger value="activity" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <ClipboardList className="w-4 h-4" />
+                <span className="hidden md:inline">Aktivität</span>
+              </TabsTrigger>
+              <TabsTrigger value="tools" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <Megaphone className="w-4 h-4" />
+                <span className="hidden md:inline">Tools</span>
+              </TabsTrigger>
+              <TabsTrigger value="versions" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <Download className="w-4 h-4" />
+                <span className="hidden md:inline">Versionen</span>
+              </TabsTrigger>
+              <TabsTrigger value="rollout" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <Sparkles className="w-4 h-4" />
+                <span className="hidden md:inline">Rollout</span>
+              </TabsTrigger>
+              <TabsTrigger value="demo" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <Eye className="w-4 h-4" />
+                <span className="hidden md:inline">Demo</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-          {/* Quick Links */}
-          <div className="ml-auto flex gap-2">
+          {/* Quick Links - Hidden on mobile, show in dropdown or collapsed */}
+          <div className="hidden md:flex ml-auto gap-2">
             <Button 
               variant="outline" 
               size="sm" 
@@ -1077,26 +1081,27 @@ export default function MissionControl() {
               onActionComplete={fetchProviders}
             />
 
-            {/* Action Bar */}
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-              <div className="relative flex-1 max-w-md">
+            {/* Action Bar - Mobile optimized */}
+            <div className="flex flex-col gap-3">
+              <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Suchen nach Name, PID, PLZ, Ort..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 min-h-[44px]"
                 />
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={fetchProviders} size="icon">
+                <Button variant="outline" onClick={fetchProviders} size="icon" className="min-h-[44px] min-w-[44px]">
                   <RefreshCw className="w-4 h-4" />
                 </Button>
                 <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button className="gap-2">
+                    <Button className="gap-2 flex-1 md:flex-none min-h-[44px]">
                       <UserPlus className="w-4 h-4" />
-                      Neuen Provider
+                      <span className="hidden sm:inline">Neuen Provider</span>
+                      <span className="sm:hidden">Neu</span>
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

@@ -110,7 +110,11 @@ const Kalender = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [isSendingReminders, setIsSendingReminders] = useState(false);
-  const [currentView, setCurrentView] = useState<typeof Views[keyof typeof Views]>(Views.WEEK);
+  // Mobile: Default to agenda view for better readability
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const [currentView, setCurrentView] = useState<typeof Views[keyof typeof Views]>(
+    isMobile ? Views.AGENDA : Views.WEEK
+  );
   const [currentDate, setCurrentDate] = useState(new Date());
   const [preselectedHorseId, setPreselectedHorseId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"calendar" | "map" | "hufcam">("calendar");
@@ -472,10 +476,10 @@ const Kalender = () => {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      {/* Header - Mobile optimized */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Kalender</h1>
+          <h1 className="text-responsive-h2 text-foreground">Kalender</h1>
           <p className="text-muted-foreground text-sm">
             Verwalten Sie Ihre Termine und Besuche
           </p>
@@ -484,16 +488,17 @@ const Kalender = () => {
           <Button
             variant="outline"
             size="sm"
-            className="gap-2"
+            className="gap-2 flex-1 md:flex-none min-h-[44px]"
             onClick={() => setIsSyncModalOpen(true)}
           >
             <Smartphone className="h-4 w-4" />
-            Mit Handy synchronisieren
+            <span className="hidden sm:inline">Mit Handy synchronisieren</span>
+            <span className="sm:hidden">Sync</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="gap-2"
+            className="gap-2 flex-1 md:flex-none min-h-[44px]"
             onClick={handleSendReminders}
             disabled={isSendingReminders}
           >
@@ -502,42 +507,43 @@ const Kalender = () => {
             ) : (
               <Mail className="h-4 w-4" />
             )}
-            Erinnerungen
+            <span className="hidden sm:inline">Erinnerungen</span>
           </Button>
           <Button
             size="sm"
-            className="gap-2"
+            className="gap-2 flex-1 md:flex-none min-h-[44px]"
             onClick={() => {
               setSelectedDate(new Date());
               setIsFormOpen(true);
             }}
           >
             <Plus className="h-4 w-4" />
-            Neuer Termin
+            <span className="hidden sm:inline">Neuer Termin</span>
+            <span className="sm:hidden">Neu</span>
           </Button>
         </div>
       </div>
 
       {/* Tabs for Calendar and Map View */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "calendar" | "map" | "hufcam")}>
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <TabsList>
-            <TabsTrigger value="calendar" className="gap-2">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <TabsList className="w-full md:w-auto overflow-x-auto">
+            <TabsTrigger value="calendar" className="gap-2 flex-1 md:flex-none min-h-[44px]">
               <CalendarDays className="h-4 w-4" />
-              Kalender
+              <span className="hidden sm:inline">Kalender</span>
             </TabsTrigger>
-            <TabsTrigger value="map" className="gap-2">
+            <TabsTrigger value="map" className="gap-2 flex-1 md:flex-none min-h-[44px]">
               <MapIcon className="h-4 w-4" />
-              Karten-Ansicht
+              <span className="hidden sm:inline">Karten-Ansicht</span>
             </TabsTrigger>
-            <TabsTrigger value="hufcam" className="gap-2">
+            <TabsTrigger value="hufcam" className="gap-2 flex-1 md:flex-none min-h-[44px]">
               <Camera className="h-4 w-4" />
-              HufCam Pro
+              <span className="hidden sm:inline">HufCam Pro</span>
             </TabsTrigger>
           </TabsList>
           
-          {/* Legend */}
-          <div className="flex flex-wrap gap-2">
+          {/* Legend - Hidden on mobile, scroll on tablet */}
+          <div className="hidden md:flex flex-wrap gap-2">
             {Object.entries(SERVICE_COLORS).map(([type, colors]) => (
               <Badge
                 key={type}
@@ -553,10 +559,10 @@ const Kalender = () => {
         {/* Calendar View */}
         <TabsContent value="calendar" className="mt-4">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-            {/* Main Calendar */}
+            {/* Main Calendar - Responsive height */}
             <Card className="overflow-hidden lg:col-span-3">
               <CardContent className="p-0">
-                <div className="h-[700px] calendar-container">
+                <div className="h-[450px] md:h-[600px] lg:h-[700px] calendar-container">
                   <DnDCalendar
                     localizer={localizer}
                     events={events}
@@ -579,7 +585,7 @@ const Kalender = () => {
                     timeslots={2}
                     min={new Date(0, 0, 0, 6, 0)} // 6 AM
                     max={new Date(0, 0, 0, 21, 0)} // 9 PM
-                    defaultView={Views.WEEK}
+                    defaultView={isMobile ? Views.AGENDA : Views.WEEK}
                     views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
                     popup
                     tooltipAccessor={() => ""} // Disable default tooltip (we use custom)
@@ -589,8 +595,8 @@ const Kalender = () => {
               </CardContent>
             </Card>
 
-            {/* Nearby Due Clients Sidebar */}
-            <div className="space-y-4">
+            {/* Nearby Due Clients Sidebar - Hidden on mobile, shown below on tablet */}
+            <div className="hidden md:block space-y-4">
               <NearbyDueClientsPanel
                 selectedDate={selectedDate || currentDate}
                 onSelectHorse={(horseId) => {
@@ -606,18 +612,19 @@ const Kalender = () => {
         {/* Map View */}
         <TabsContent value="map" className="mt-4">
           <div className="space-y-4">
-            {/* Date Navigation for Map */}
+            {/* Date Navigation for Map - Mobile optimized */}
             <Card>
-              <CardContent className="p-3 flex items-center justify-between gap-4">
+              <CardContent className="p-3 flex flex-col md:flex-row items-center justify-between gap-3">
                 <Button
                   variant="outline"
                   size="sm"
+                  className="w-full md:w-auto min-h-[44px]"
                   onClick={() => setCurrentDate(new Date(currentDate.getTime() - 86400000))}
                 >
                   ← Vorheriger Tag
                 </Button>
-                <div className="text-center">
-                  <div className="font-semibold">
+                <div className="text-center order-first md:order-none">
+                  <div className="font-semibold text-sm md:text-base">
                     {format(currentDate, "EEEE, dd. MMMM yyyy", { locale: de })}
                   </div>
                   <div className="text-xs text-muted-foreground">
@@ -627,6 +634,7 @@ const Kalender = () => {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="w-full md:w-auto min-h-[44px]"
                   onClick={() => setCurrentDate(new Date(currentDate.getTime() + 86400000))}
                 >
                   Nächster Tag →

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import { AppHeader } from "./AppHeader";
+import { MobileBottomNav } from "./MobileBottomNav";
 import { Menu, Sun, Moon, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -25,7 +26,7 @@ export function AppLayout() {
   useDemoActivityTracker();
 
   return (
-    <div className="min-h-screen flex w-full bg-background">
+    <div className="min-h-screen flex w-full bg-background overflow-safe">
       {/* Desktop Sidebar - hidden on mobile */}
       <div className="hidden lg:block">
         <AppSidebar />
@@ -40,7 +41,10 @@ export function AppLayout() {
 
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
         {/* Mobile Header with Hamburger */}
-        <header className="lg:hidden h-16 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-3">
+        <header 
+          className="lg:hidden h-14 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-3 pt-safe"
+          style={{ paddingTop: "max(env(safe-area-inset-top), 0px)" }}
+        >
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
@@ -104,13 +108,19 @@ export function AppLayout() {
           <AppHeader />
         </div>
 
-        <main className="flex-1 overflow-auto p-4 lg:p-6">
+        {/* Main content with bottom nav spacing on mobile */}
+        <main className="flex-1 overflow-auto p-4 lg:p-6 pb-bottom-nav">
           <Outlet />
         </main>
       </div>
       
-      {/* Speed Dial FAB - unified action menu */}
-      <SpeedDialFAB />
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav />
+      
+      {/* Speed Dial FAB - hidden on mobile (replaced by bottom nav) */}
+      <div className="hidden lg:block">
+        <SpeedDialFAB />
+      </div>
       
       {/* Demo Account Sticky Banner */}
       <DemoStickyBanner />
