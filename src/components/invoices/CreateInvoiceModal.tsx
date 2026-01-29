@@ -19,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Tooltip,
@@ -28,10 +27,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Car, MapPin, Plus, Trash2, Eye, Package, Info, PenTool } from "lucide-react";
+import { Loader2, Car, MapPin, Plus, Trash2, Eye, Package, Info, Sparkles } from "lucide-react";
 import { z } from "zod";
 import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
 import { SignaturePad } from "@/components/signature/SignaturePad";
+import { useInvoiceNumber } from "@/hooks/useInvoiceNumber";
 
 // Haversine formula to calculate distance between two coordinates
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -119,6 +119,7 @@ export function CreateInvoiceModal({
   preSelectedHorseId 
 }: CreateInvoiceModalProps) {
   const { user } = useAuth();
+  const { generateNextNumber, previewNextNumber, loading: invoiceNumberLoading } = useInvoiceNumber(user?.id);
   const [loading, setLoading] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [horses, setHorses] = useState<Horse[]>([]);
@@ -132,6 +133,7 @@ export function CreateInvoiceModal({
   const [flatAmount, setFlatAmount] = useState<string>("");
   const [flatDescription, setFlatDescription] = useState<string>("Anfahrtspauschale");
   const [calculatedTravelCost, setCalculatedTravelCost] = useState<number>(0);
+  const [nextInvoiceNumberPreview, setNextInvoiceNumberPreview] = useState<string>("");
   
   // Inventory state
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
@@ -276,14 +278,17 @@ export function CreateInvoiceModal({
     fetchData();
   }, [open, user, dataLoaded]);
 
-  // Reset dataLoaded when modal closes
+  // Reset dataLoaded when modal closes and load next invoice number preview
   useEffect(() => {
     if (!open) {
       // Delay reset to avoid flash on next open
       const timer = setTimeout(() => setDataLoaded(false), 300);
       return () => clearTimeout(timer);
+    } else {
+      // Load next invoice number preview when modal opens
+      previewNextNumber().then(setNextInvoiceNumberPreview);
     }
-  }, [open]);
+  }, [open, previewNextNumber]);
 
   // Calculate travel cost when km changes or mode changes
   useEffect(() => {
@@ -559,14 +564,20 @@ export function CreateInvoiceModal({
         }
       }
       
-      // Step 1: Create the invoice
+      // Step 1: Generate invoice number if not provided
+      let finalInvoiceNumber = formData.invoice_number;
+      if (!finalInvoiceNumber) {
+        finalInvoiceNumber = await generateNextNumber();
+      }
+      
+      // Step 2: Create the invoice
       const { data: insertedInvoice, error: invoiceError } = await supabase
         .from("invoices")
         .insert({
           client_id: formData.client_id,
           provider_id: user?.id,
           horse_id: formData.horse_id || null,
-          invoice_number: formData.invoice_number || null,
+          invoice_number: finalInvoiceNumber,
           issue_date: formData.issue_date,
           due_date: formData.due_date || null,
           total_amount: calculatedTotal,
@@ -767,14 +778,35 @@ export function CreateInvoiceModal({
 
       {/* Invoice Number */}
       <div className="space-y-2">
-        <Label htmlFor="invoice_number">Rechnungsnummer</Label>
-        <Input
-          id="invoice_number"
-          value={formData.invoice_number}
-          onChange={(e) => setFormData(prev => ({ ...prev, invoice_number: e.target.value }))}
-          placeholder="z.B. RE-2024-001"
-          maxLength={50}
-        />
+        <Label htmlFor="invoice_number" className="flex items-center gap-2">
+          Rechnungsnummer
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-3.5 w-3.5 text-muted-foreground hover:text-primary cursor-help transition-colors" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs">
+                <p>Leer lassen für automatische Nummerierung ({nextInvoiceNumberPreview || "RE-YYYY-XXXX"})</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </Label>
+        <div className="flex gap-2">
+          <Input
+            id="invoice_number"
+            value={formData.invoice_number}
+            onChange={(e) => setFormData(prev => ({ ...prev, invoice_number: e.target.value }))}
+            placeholder={nextInvoiceNumberPreview || "Automatisch generiert"}
+            maxLength={50}
+            className="flex-1"
+          />
+          {!formData.invoice_number && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 rounded-md">
+              <Sparkles className="h-3 w-3 text-primary" />
+              Auto
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Dates */}
