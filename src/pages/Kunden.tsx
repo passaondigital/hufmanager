@@ -222,19 +222,20 @@ const Kunden = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-6 animate-fade-in">
+      {/* Header - Mobile optimized */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Kunden</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-responsive-h2 text-foreground">Kunden</h1>
+          <p className="text-muted-foreground text-sm mt-1">
             {clients.length} verifizierte Verbindungen • {totalHorses} Pferde
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {/* Export Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" className="gap-2 min-h-[44px] flex-1 md:flex-none">
                 <Download className="h-4 w-4" />
                 <span className="hidden sm:inline">Export</span>
               </Button>
@@ -258,13 +259,13 @@ const Kunden = () => {
           
           <Button 
             variant="outline" 
-            className="gap-2" 
+            className="gap-2 min-h-[44px] flex-1 md:flex-none" 
             onClick={() => setShowLinkUserModal(true)}
           >
             <Link2 className="h-4 w-4" />
             <span className="hidden sm:inline">App-Nutzer verknüpfen</span>
           </Button>
-          <Button className="gap-2" onClick={() => navigate("/aufnahme")}>
+          <Button className="gap-2 min-h-[44px] flex-1 md:flex-none" onClick={() => navigate("/aufnahme")}>
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Neuer Kunde</span>
           </Button>
@@ -285,58 +286,63 @@ const Kunden = () => {
         />
       )}
 
-      {/* Filters */}
+      {/* Filters - Mobile optimized */}
       <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1 max-w-md">
+        <div className="flex flex-col gap-3">
+          {/* Search - Always full width on mobile */}
+          <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Kunde suchen (Name, E-Mail, ID)..."
-              className="pl-10"
+              className="pl-10 min-h-[44px]"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[160px]">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="alle">Alle Status</SelectItem>
-              <SelectItem value="aktiv">Aktiv</SelectItem>
-              <SelectItem value="eingeladen">Eingeladen</SelectItem>
-              <SelectItem value="ausstehend">Ausstehend</SelectItem>
-            </SelectContent>
-          </Select>
           
-          {/* Payment Rating Filter */}
-          <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as PaymentRating | "alle")}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Zahlungsmoral" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="alle">Alle Ratings</SelectItem>
-              {PAYMENT_RATING_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  <span className={opt.textColor}>{opt.label}</span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          {/* Lifecycle Status Filter */}
-          <Select value={lifecycleFilter} onValueChange={(v) => setLifecycleFilter(v as LifecycleStatus | "alle")}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Kundenstatus" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="alle">Alle Kunden</SelectItem>
-              {LIFECYCLE_STATUS_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Filters - Grid on mobile, flex on desktop */}
+          <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="min-h-[44px]">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="alle">Alle Status</SelectItem>
+                <SelectItem value="aktiv">Aktiv</SelectItem>
+                <SelectItem value="eingeladen">Eingeladen</SelectItem>
+                <SelectItem value="ausstehend">Ausstehend</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {/* Payment Rating Filter */}
+            <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as PaymentRating | "alle")}>
+              <SelectTrigger className="min-h-[44px]">
+                <SelectValue placeholder="Zahlung" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="alle">Alle Ratings</SelectItem>
+                {PAYMENT_RATING_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    <span className={opt.textColor}>{opt.label}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Lifecycle Status Filter */}
+            <Select value={lifecycleFilter} onValueChange={(v) => setLifecycleFilter(v as LifecycleStatus | "alle")}>
+              <SelectTrigger className="min-h-[44px] col-span-2 md:col-span-1">
+                <SelectValue placeholder="Kundenstatus" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="alle">Alle Kunden</SelectItem>
+                {LIFECYCLE_STATUS_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         
         {/* Active Filters Display */}

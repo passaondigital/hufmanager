@@ -183,9 +183,12 @@ export default function ClientHome() {
         />
       )}
 
-      <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
-        {/* Modern Header with glassmorphism */}
-        <header className="sticky top-0 z-20 bg-background/70 backdrop-blur-xl border-b border-border/50">
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20 overflow-safe">
+        {/* Modern Header with glassmorphism + safe area */}
+        <header 
+          className="sticky top-0 z-20 bg-background/70 backdrop-blur-xl border-b border-border/50"
+          style={{ paddingTop: "max(env(safe-area-inset-top), 0.5rem)" }}
+        >
           <div className="px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <img 
@@ -202,23 +205,23 @@ export default function ClientHome() {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="relative"
+                className="relative h-10 w-10 min-w-[40px]"
                 onClick={() => navigate("/client-chat")}
               >
                 <MessageSquare className="h-5 w-5" />
-                {/* Notification dot would go here */}
               </Button>
-              <Button variant="ghost" size="icon" onClick={toggleTheme}>
+              <Button variant="ghost" size="icon" className="h-10 w-10 min-w-[40px]" onClick={toggleTheme}>
                 {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
-              <Button variant="ghost" size="icon" onClick={handleLogout}>
+              <Button variant="ghost" size="icon" className="h-10 w-10 min-w-[40px]" onClick={handleLogout}>
                 <LogOut className="h-5 w-5" />
               </Button>
             </div>
           </div>
         </header>
 
-        <main className="px-4 py-6 max-w-lg mx-auto space-y-6 pb-24">
+        {/* Main content with safe bottom padding */}
+        <main className="px-4 py-6 max-w-lg mx-auto space-y-6 pb-safe" style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom, 0px))" }}>
           {/* Push Notification Banner */}
           <PushNotificationBanner />
 
@@ -231,10 +234,10 @@ export default function ClientHome() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-2"
           >
-            <h1 className="text-3xl font-bold text-foreground tracking-tight">
+            <h1 className="text-responsive-h2 text-foreground tracking-tight">
               Hallo {firstName}! 👋
             </h1>
-            <p className="text-muted-foreground text-lg">
+            <p className="text-muted-foreground text-base md:text-lg">
               Dein Pferdeportal auf einen Blick
             </p>
           </motion.div>
@@ -345,52 +348,52 @@ export default function ClientHome() {
             </div>
           </motion.div>
 
-          {/* Quick Actions - Modern floating style */}
+          {/* Quick Actions - Mobile optimized grid */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="grid grid-cols-5 gap-2"
+            className="grid grid-cols-5 gap-1.5 sm:gap-2"
           >
             <Button 
               variant="outline" 
-              className="h-16 flex-col gap-1 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-all"
+              className="h-14 sm:h-16 flex-col gap-1 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-all min-h-[44px]"
               onClick={() => navigate("/client-chat")}
             >
-              <MessageSquare className="h-5 w-5 text-primary" />
-              <span className="text-[10px]">Chat</span>
+              <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              <span className="text-[9px] sm:text-[10px]">Chat</span>
             </Button>
             <Button 
               variant="outline" 
-              className="h-16 flex-col gap-1 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-all"
+              className="h-14 sm:h-16 flex-col gap-1 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-all min-h-[44px]"
               onClick={() => navigate("/client-booking")}
             >
-              <Scissors className="h-5 w-5 text-primary" />
-              <span className="text-[10px]">Buchen</span>
+              <Scissors className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              <span className="text-[9px] sm:text-[10px]">Buchen</span>
             </Button>
             <Button 
               variant="outline" 
-              className="h-16 flex-col gap-1 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-all"
+              className="h-14 sm:h-16 flex-col gap-1 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-all min-h-[44px]"
               onClick={() => navigate("/client-invoices")}
             >
-              <FileText className="h-5 w-5 text-primary" />
-              <span className="text-[10px]">Rechnungen</span>
+              <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              <span className="text-[9px] sm:text-[10px]">Rechnung</span>
             </Button>
             <Button 
               variant="outline" 
-              className="h-16 flex-col gap-1 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-all"
+              className="h-14 sm:h-16 flex-col gap-1 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-all min-h-[44px]"
               onClick={() => navigate("/client-permissions")}
             >
-              <Shield className="h-5 w-5 text-primary" />
-              <span className="text-[10px]">Daten</span>
+              <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              <span className="text-[9px] sm:text-[10px]">Daten</span>
             </Button>
             <Button 
               variant="outline" 
-              className="h-16 flex-col gap-1 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-all"
+              className="h-14 sm:h-16 flex-col gap-1 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-all min-h-[44px]"
               onClick={() => navigate("/client-profile")}
             >
-              <User className="h-5 w-5 text-primary" />
-              <span className="text-[10px]">Profil</span>
+              <User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              <span className="text-[9px] sm:text-[10px]">Profil</span>
             </Button>
           </motion.div>
 
