@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, FileText, Eye, Download, Search, Loader2, Mail, CheckCircle2, CreditCard } from "lucide-react";
+import { ArrowLeft, FileText, Eye, Download, Search, Loader2, Mail, CreditCard } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -77,8 +77,6 @@ export default function ClientInvoices() {
   const [pdfTitle, setPdfTitle] = useState("");
   const [pdfFileName, setPdfFileName] = useState("");
   const [generatingPdfFor, setGeneratingPdfFor] = useState<string | null>(null);
-  const [invoiceToMarkPaid, setInvoiceToMarkPaid] = useState<Invoice | null>(null);
-  const [updatingStatusFor, setUpdatingStatusFor] = useState<string | null>(null);
 
   const fetchData = async () => {
     if (!user) return;
@@ -281,33 +279,6 @@ export default function ClientInvoices() {
     }
   };
 
-  const handleMarkAsPaid = async () => {
-    if (!invoiceToMarkPaid) return;
-    
-    setUpdatingStatusFor(invoiceToMarkPaid.id);
-    try {
-      const { error } = await supabase
-        .from("invoices")
-        .update({ status: "paid" })
-        .eq("id", invoiceToMarkPaid.id);
-
-      if (error) throw error;
-
-      toast({ title: "Status aktualisiert", description: "Rechnung als bezahlt markiert." });
-      fetchData(); // Refresh data
-    } catch (error) {
-      console.error("Failed to update status:", error);
-      toast({
-        title: "Fehler",
-        description: "Status konnte nicht geändert werden.",
-        variant: "destructive",
-      });
-    } finally {
-      setUpdatingStatusFor(null);
-      setInvoiceToMarkPaid(null);
-    }
-  };
-
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -414,7 +385,7 @@ export default function ClientInvoices() {
                       )}
                     </div>
                     <div className="flex flex-col gap-2">
-                      {generatingPdfFor === invoice.id || sendingEmailFor === invoice.id || updatingStatusFor === invoice.id ? (
+                      {generatingPdfFor === invoice.id || sendingEmailFor === invoice.id ? (
                         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                       ) : (
                         <>
@@ -445,17 +416,6 @@ export default function ClientInvoices() {
                           >
                             <Mail className="h-4 w-4" />
                           </Button>
-                          {invoice.status !== "paid" && !invoice.payment_link && (
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
-                              onClick={() => setInvoiceToMarkPaid(invoice)}
-                              title="Als bezahlt markieren"
-                            >
-                              <CheckCircle2 className="h-4 w-4" />
-                            </Button>
-                          )}
                         </>
                       )}
                     </div>
@@ -475,27 +435,6 @@ export default function ClientInvoices() {
         title={pdfTitle}
         fileName={pdfFileName}
       />
-
-      {/* Mark as Paid Confirmation */}
-      <AlertDialog open={!!invoiceToMarkPaid} onOpenChange={() => setInvoiceToMarkPaid(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Rechnung als bezahlt markieren?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Möchten Sie die Rechnung <strong>{invoiceToMarkPaid?.invoice_number || "ohne Nummer"}</strong> als bezahlt markieren?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleMarkAsPaid}
-              className="bg-green-600 text-white hover:bg-green-700"
-            >
-              Als bezahlt markieren
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
