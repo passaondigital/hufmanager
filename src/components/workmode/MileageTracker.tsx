@@ -49,6 +49,7 @@ interface TourStop {
   notes?: string;
   photoUrl?: string;
   timestamp: string;
+  arrivalTime?: string; // Formatted arrival time (HH:mm)
 }
 
 export function MileageTracker() {
@@ -131,10 +132,12 @@ export function MileageTracker() {
     enabled: !!user?.id,
   });
 
-  const saveStops = async (logId: string, currentStops: TourStop[]) => {
+  const saveStops = async (logId: string, currentStops: TourStop[], startTime?: string, endTime?: string) => {
     const routeData = JSON.stringify({
       stops: currentStops,
       purpose: purpose || activeLog?.purpose || "",
+      startTime: startTime || format(new Date(), "HH:mm"),
+      endTime: endTime || null,
     });
     
     await supabase
@@ -145,9 +148,18 @@ export function MileageTracker() {
 
   const startTourMutation = useMutation({
     mutationFn: async () => {
-      const routeData = stops.length > 0 
-        ? JSON.stringify({ stops, purpose })
-        : purpose;
+      const startTime = format(new Date(), "HH:mm");
+      const stopsWithTimes = stops.map(s => ({
+        ...s,
+        arrivalTime: format(new Date(s.timestamp), "HH:mm"),
+      }));
+      
+      const routeData = JSON.stringify({ 
+        stops: stopsWithTimes, 
+        purpose,
+        startTime,
+        endTime: null,
+      });
         
       const { error } = await supabase.from("vehicle_mileage_logs").insert({
         provider_id: user!.id,
@@ -187,7 +199,21 @@ export function MileageTracker() {
       if (!activeLog) return;
       
       const distance = endOdometer - activeLog.odometer_start;
-      const routeData = JSON.stringify({ stops, purpose: activeLog.purpose || "" });
+      const endTime = format(new Date(), "HH:mm");
+      
+      // Get start time from existing data
+      let startTime = "";
+      try {
+        const parsed = JSON.parse(activeLog.route_description || "{}");
+        startTime = parsed.startTime || "";
+      } catch {}
+      
+      const routeData = JSON.stringify({ 
+        stops, 
+        purpose: activeLog.purpose || "",
+        startTime,
+        endTime,
+      });
       
       const { error } = await supabase
         .from("vehicle_mileage_logs")
@@ -301,10 +327,12 @@ export function MileageTracker() {
   const addStop = async () => {
     if (!newStopName.trim()) return;
     
+    const now = new Date();
     const newStop: TourStop = {
       id: crypto.randomUUID(),
       name: newStopName.trim(),
-      timestamp: new Date().toISOString(),
+      timestamp: now.toISOString(),
+      arrivalTime: format(now, "HH:mm"),
     };
     
     const updatedStops = [...stops, newStop];
@@ -313,7 +341,7 @@ export function MileageTracker() {
     
     if (activeLog) {
       await saveStops(activeLog.id, updatedStops);
-      toast({ title: "Stop hinzugefügt", description: newStop.name });
+      toast({ title: "Stop hinzugefügt", description: `${newStop.name} um ${newStop.arrivalTime}` });
     }
   };
 

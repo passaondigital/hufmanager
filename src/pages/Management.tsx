@@ -43,6 +43,7 @@ import { AVVSigningCard } from "@/components/settings/AVVSigningCard";
 import { PaymentSettingsCard } from "@/components/settings/PaymentSettingsCard";
 import { AppSettingsCard } from "@/components/settings/AppSettingsCard";
 import { CompanyLocationCard } from "@/components/settings/CompanyLocationCard";
+import { TutorialSettingsCard } from "@/components/settings/TutorialSettingsCard";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -898,6 +899,7 @@ Steuernummer: 12/345/67890
         {/* App Settings Tab */}
         <TabsContent value="app" className="mt-6 space-y-6">
           <AppSettingsCard />
+          <TutorialSettingsCard />
         </TabsContent>
       </Tabs>
     </div>
