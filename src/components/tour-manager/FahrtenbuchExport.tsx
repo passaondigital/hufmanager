@@ -217,30 +217,50 @@ export function FahrtenbuchExport() {
     return gpsTrips.filter((trip) => !manualDates.has(trip.date));
   }, [mileageLogs, gpsTrips]);
 
-  // Parse route stops from JSON
-  const parseRouteStops = (routeDesc: string | null): string => {
-    if (!routeDesc) return "";
+  // Parse route stops from JSON with times
+  const parseRouteStops = (routeDesc: string | null): { route: string; times: string } => {
+    if (!routeDesc) return { route: "", times: "" };
     try {
       const parsed = JSON.parse(routeDesc);
       
-      // New format: { stops: [...], purpose: "..." }
-      if (parsed && typeof parsed === "object" && Array.isArray(parsed.stops)) {
-        if (parsed.stops.length === 0) {
-          return parsed.purpose || "";
+      // New format: { stops: [...], purpose: "...", startTime, endTime }
+      if (parsed && typeof parsed === "object") {
+        const startTime = parsed.startTime || "";
+        const endTime = parsed.endTime || "";
+        const times = startTime && endTime ? `${startTime} - ${endTime}` : startTime || "";
+        
+        if (Array.isArray(parsed.stops) && parsed.stops.length > 0) {
+          const stopsWithTimes = parsed.stops.map((s: { name?: string; arrivalTime?: string }) => {
+            const name = s.name || "";
+            const time = s.arrivalTime ? ` (${s.arrivalTime})` : "";
+            return `${name}${time}`;
+          }).filter(Boolean);
+          
+          return { 
+            route: stopsWithTimes.join(" → ") || parsed.purpose || "",
+            times 
+          };
         }
-        return parsed.stops.map((s: { name?: string }) => s.name || "").filter(Boolean).join(" → ");
+        
+        return { route: parsed.purpose || "", times };
       }
       
       // Old format: direct array of stops
       if (Array.isArray(parsed)) {
-        return parsed.map((s: { name?: string }) => s.name || "").filter(Boolean).join(" → ");
+        const route = parsed.map((s: { name?: string }) => s.name || "").filter(Boolean).join(" → ");
+        return { route, times: "" };
       }
       
-      return routeDesc;
+      return { route: routeDesc, times: "" };
     } catch {
       // Not JSON, just a plain string description
-      return routeDesc;
+      return { route: routeDesc, times: "" };
     }
+  };
+
+  // Legacy string-only version for backwards compatibility
+  const parseRouteStopsString = (routeDesc: string | null): string => {
+    return parseRouteStops(routeDesc).route;
   };
 
   // Export to CSV
@@ -262,14 +282,16 @@ export function FahrtenbuchExport() {
         "Gefahrene km",
         "Fahrtanlass/Zweck",
         "Route/Reiseziel",
+        "Uhrzeit",
         "Quelle"
       ];
 
       const rows: string[][] = [];
 
-      // Add manual entries
+      // Add manual entries with times
       mileageLogs.forEach((log) => {
         const distance = calculateDistance(log);
+        const { route, times } = parseRouteStops(log.route_description);
         rows.push([
           format(new Date(log.log_date), "dd.MM.yyyy"),
           log.vehicle?.brand || "Unbekannt",
@@ -278,7 +300,8 @@ export function FahrtenbuchExport() {
           log.odometer_end?.toFixed(0) || "",
           distance.toFixed(1),
           log.purpose || "Geschäftlich",
-          parseRouteStops(log.route_description),
+          route || "—",
+          times || "—",
           "Manuell"
         ]);
       });
@@ -315,6 +338,7 @@ export function FahrtenbuchExport() {
         "",
         (totalManualKm + missingManualEntries.reduce((s, t) => s + t.distanceKm, 0)).toFixed(1),
         `${totalManualTrips + missingManualEntries.length} Fahrten`,
+        "",
         "",
         ""
       ]);
@@ -417,16 +441,18 @@ export function FahrtenbuchExport() {
       // Prepare table data
       const tableData: string[][] = [];
 
-      // Manual entries
+      // Manual entries with times
       mileageLogs.forEach((log) => {
         const distance = calculateDistance(log);
+        const { route, times } = parseRouteStops(log.route_description);
         tableData.push([
           format(new Date(log.log_date), "dd.MM.yyyy"),
+          times || "—",
           log.odometer_start?.toFixed(0) || "—",
           log.odometer_end?.toFixed(0) || "—",
           distance.toFixed(1),
           log.purpose || "Geschäftlich",
-          parseRouteStops(log.route_description) || "—"
+          route || "—"
         ]);
       });
 
@@ -434,11 +460,12 @@ export function FahrtenbuchExport() {
       missingManualEntries.forEach((trip) => {
         tableData.push([
           format(new Date(trip.date), "dd.MM.yyyy"),
+          `${trip.startTime} - ${trip.endTime}`,
           "GPS",
           "GPS",
           trip.distanceKm.toFixed(1),
           "Geschäftlich",
-          `${trip.startTime} - ${trip.endTime} (GPS)`
+          "(GPS-Route)"
         ]);
       });
 
@@ -455,7 +482,7 @@ export function FahrtenbuchExport() {
       // Table
       autoTable(doc, {
         startY: 72,
-        head: [["Nr.", "Datum", "km Start", "km Ende", "Strecke", "Zweck", "Route/Ziel"]],
+        head: [["Nr.", "Datum", "Uhrzeit", "km Start", "km Ende", "Strecke", "Zweck", "Route/Ziel"]],
         body: numberedData,
         theme: "striped",
         headStyles: {
@@ -469,11 +496,12 @@ export function FahrtenbuchExport() {
         columnStyles: {
           0: { cellWidth: 10 },
           1: { cellWidth: 22 },
-          2: { cellWidth: 20 },
-          3: { cellWidth: 20 },
+          2: { cellWidth: 22 },
+          3: { cellWidth: 18 },
           4: { cellWidth: 18 },
-          5: { cellWidth: 30 },
-          6: { cellWidth: "auto" },
+          5: { cellWidth: 16 },
+          6: { cellWidth: 28 },
+          7: { cellWidth: "auto" },
         },
         margin: { left: 14, right: 14 },
       });
