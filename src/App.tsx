@@ -62,6 +62,7 @@ import Lager from "@/pages/Lager";
 import Ausgaben from "@/pages/Ausgaben";
 import WorkMode from "@/pages/WorkMode";
 import Tour from "@/pages/Tour";
+import Team from "@/pages/Team";
 
 // Components
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
@@ -245,6 +246,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/ausgaben" element={<Ausgaben />} />
               <Route path="/rechnungen" element={<Rechnungen />} />
               <Route path="/lager" element={<Lager />} />
+              <Route path="/team" element={<Team />} />
               <Route path="/support" element={<Support />} />
               <Route path="/abo-matrix" element={<AboMatrix />} />
               {/* Provider Horse Detail - Direct Access */}
