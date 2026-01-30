@@ -926,7 +926,7 @@ export default function MissionControl() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => navigate("/dashboard")} className="w-full">
+            <Button onClick={() => navigate("/")} className="w-full">
               Zurück zum Dashboard
             </Button>
           </CardContent>
@@ -958,7 +958,7 @@ export default function MissionControl() {
               Provider-Management & Marktforschung
             </p>
           </div>
-          <Button variant="outline" className="min-h-[44px] w-full md:w-auto" onClick={() => navigate("/dashboard")}>
+          <Button variant="outline" className="min-h-[44px] w-full md:w-auto" onClick={() => navigate("/")}>
             Zurück
           </Button>
         </div>

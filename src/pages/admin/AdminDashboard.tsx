@@ -93,7 +93,7 @@ export default function AdminDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => navigate("/dashboard")} className="w-full">
+            <Button onClick={() => navigate("/")} className="w-full">
               Zurück zum Dashboard
             </Button>
           </CardContent>
@@ -165,7 +165,7 @@ export default function AdminDashboard() {
           <Button
             variant="ghost"
             className="w-full justify-start text-muted-foreground"
-            onClick={() => navigate("/dashboard")}
+            onClick={() => navigate("/")}
           >
             ← Zurück zum Dashboard
           </Button>
