@@ -347,6 +347,13 @@ export function FahrtenbuchExport() {
 
   // Export to PDF (official tax format)
   const handleExportPDF = async () => {
+    if (isExporting) return; // Prevent double-click
+    
+    if (mileageLogs.length === 0 && gpsTrips.length === 0) {
+      toast.error("Keine Fahrten für diesen Monat vorhanden");
+      return;
+    }
+    
     setIsExporting(true);
     
     // Debug log to verify data before export
