@@ -49,6 +49,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Collapsible,
@@ -138,6 +139,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
   const { data: newLeadsCount = 0 } = useNewLeadsCount();
   const { data: unreadMessagesCount = 0 } = useUnreadMessagesCount();
   const { role, user } = useAuth();
+  const { isFeatureVisible } = useSubscription();
   
   const isAdmin = role === "admin";
   const canSeeAboMatrix = user?.email && STEALTH_EMAILS.includes(user.email);
@@ -201,10 +203,10 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
     },
   ];
 
-  // Erweiterungen - Locked Add-ons
+  // Erweiterungen - Addon modules (locked based on feature flags)
   const addonItems = [
-    { title: "Lager", icon: Warehouse, locked: true },
-    { title: "Mitarbeiter", icon: UsersRound, locked: true },
+    { title: "Lager", icon: Warehouse, locked: !isFeatureVisible('beta_features'), url: "/lager" },
+    { title: "Mitarbeiter", icon: UsersRound, locked: !isFeatureVisible('module_team'), url: "/team" },
   ];
 
   // Check if a submenu contains the active route
@@ -332,24 +334,45 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
     );
   };
 
-  // Locked addon item
-  const LockedAddonItem = ({ item }: { item: { title: string; icon: React.ComponentType<{ className?: string }>; locked: boolean } }) => (
-    <button
-      onClick={() => handleLockedClick(item.title)}
-      className={cn(
-        "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 min-h-[48px]",
-        "text-sidebar-foreground/40 hover:bg-sidebar-accent/50 cursor-not-allowed"
-      )}
-    >
-      <item.icon className={cn("h-5 w-5 flex-shrink-0 opacity-50", collapsed && "mx-auto")} />
-      {!collapsed && (
-        <>
-          <span className="font-medium text-[15px] opacity-50">{item.title}</span>
-          <Lock className="ml-auto h-4 w-4 opacity-50" />
-        </>
-      )}
-    </button>
-  );
+  // Addon item (locked or unlocked based on feature flags)
+  const AddonItem = ({ item }: { item: { title: string; icon: React.ComponentType<{ className?: string }>; locked: boolean; url: string } }) => {
+    if (item.locked) {
+      return (
+        <button
+          onClick={() => handleLockedClick(item.title)}
+          className={cn(
+            "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 min-h-[48px]",
+            "text-sidebar-foreground/40 hover:bg-sidebar-accent/50 cursor-not-allowed"
+          )}
+        >
+          <item.icon className={cn("h-5 w-5 flex-shrink-0 opacity-50", collapsed && "mx-auto")} />
+          {!collapsed && (
+            <>
+              <span className="font-medium text-[15px] opacity-50">{item.title}</span>
+              <Lock className="ml-auto h-4 w-4 opacity-50" />
+            </>
+          )}
+        </button>
+      );
+    }
+    
+    // Unlocked - show as regular navigation item
+    return (
+      <NavLink
+        to={item.url}
+        onClick={onNavigate}
+        className={cn(
+          "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 min-h-[48px]",
+          isActive(item.url)
+            ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/30"
+            : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+        )}
+      >
+        <item.icon className={cn("h-5 w-5 flex-shrink-0", collapsed && "mx-auto")} />
+        {!collapsed && <span className="font-medium text-[15px]">{item.title}</span>}
+      </NavLink>
+    );
+  };
 
   return (
     <aside
@@ -430,7 +453,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
             </p>
           )}
           {addonItems.map((item) => (
-            <LockedAddonItem key={item.title} item={item} />
+            <AddonItem key={item.title} item={item} />
           ))}
         </div>
       </ScrollArea>
