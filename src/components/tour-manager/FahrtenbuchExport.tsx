@@ -20,6 +20,7 @@ interface MileageLog {
   odometer_end: number | null;
   purpose: string | null;
   route_description: string | null;
+  status?: string;
   vehicle: {
     license_plate: string;
     brand: string | null;
@@ -94,14 +95,25 @@ export function FahrtenbuchExport() {
           odometer_end,
           purpose,
           route_description,
+          status,
           vehicle:provider_vehicles(license_plate, brand)
         `)
         .eq("provider_id", user.id)
+        .eq("status", "completed")
         .gte("log_date", start)
         .lte("log_date", end)
         .order("log_date", { ascending: true });
 
       if (error) throw error;
+      
+      // Debug log to verify data
+      console.log("[Fahrtenbuch] Loaded logs:", data?.map(l => ({
+        date: l.log_date,
+        start: l.odometer_start,
+        end: l.odometer_end,
+        distance: (l.odometer_end || 0) - (l.odometer_start || 0)
+      })));
+      
       return (data || []) as MileageLog[];
     },
     enabled: !!user?.id,
@@ -209,14 +221,26 @@ export function FahrtenbuchExport() {
   const parseRouteStops = (routeDesc: string | null): string => {
     if (!routeDesc) return "";
     try {
-      const stops = JSON.parse(routeDesc);
-      if (Array.isArray(stops)) {
-        return stops.map((s: { name?: string }) => s.name || "").filter(Boolean).join(" → ");
+      const parsed = JSON.parse(routeDesc);
+      
+      // New format: { stops: [...], purpose: "..." }
+      if (parsed && typeof parsed === "object" && Array.isArray(parsed.stops)) {
+        if (parsed.stops.length === 0) {
+          return parsed.purpose || "";
+        }
+        return parsed.stops.map((s: { name?: string }) => s.name || "").filter(Boolean).join(" → ");
       }
+      
+      // Old format: direct array of stops
+      if (Array.isArray(parsed)) {
+        return parsed.map((s: { name?: string }) => s.name || "").filter(Boolean).join(" → ");
+      }
+      
+      return routeDesc;
     } catch {
+      // Not JSON, just a plain string description
       return routeDesc;
     }
-    return routeDesc;
   };
 
   // Export to CSV
@@ -324,6 +348,15 @@ export function FahrtenbuchExport() {
   // Export to PDF (official tax format)
   const handleExportPDF = async () => {
     setIsExporting(true);
+    
+    // Debug log to verify data before export
+    console.log("[Fahrtenbuch PDF] Exporting logs:", mileageLogs.map(l => ({
+      date: l.log_date,
+      start: l.odometer_start,
+      end: l.odometer_end,
+      distance: calculateDistance(l),
+      route: l.route_description?.substring(0, 50)
+    })));
 
     try {
       // Fetch business data
