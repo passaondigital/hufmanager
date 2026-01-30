@@ -564,7 +564,7 @@ export function TourManager() {
               variant="secondary"
               size="sm"
               className="gap-2 bg-background/95 backdrop-blur-md shadow-xl border border-border"
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate("/")}
             >
               <ChevronLeft className="h-4 w-4" />
               <span className="hidden sm:inline">Dashboard</span>
