@@ -168,6 +168,8 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/update-password" element={<UpdatePassword />} />
+             {/* Legacy/alias route */}
+             <Route path="/dashboard" element={<Navigate to="/" replace />} />
             
             {/* Landingpages für Hufbearbeiter (z.B. hufmanager.de/p/max-mustermann) */}
             <Route path="/p/:slug" element={<ProviderLanding />} />
