@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { CountrySelectionStep } from './CountrySelectionStep';
+import { TaxCountry, getDACHConfig, getCurrencyForCountry } from '@/lib/dachConfig';
 
 interface ProviderSetupWizardProps {
   onComplete: () => void;
@@ -18,6 +20,9 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Step 0: Country Selection (NEW)
+  const [taxCountry, setTaxCountry] = useState<TaxCountry>('DE');
   
   // Step 1: Business Name
   const [businessName, setBusinessName] = useState('');
@@ -30,16 +35,18 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
   const [ownerName, setOwnerName] = useState('');
   const [ownerPhone, setOwnerPhone] = useState('');
 
-  const totalSteps = 3;
+  const totalSteps = 4; // Now 4 steps
   const progress = ((currentStep + 1) / totalSteps) * 100;
 
   const canProceed = () => {
     switch (currentStep) {
       case 0:
-        return businessName.trim().length >= 2;
+        return true; // Country always valid (has default)
       case 1:
-        return defaultPrice.trim().length > 0 && !isNaN(parseFloat(defaultPrice));
+        return businessName.trim().length >= 2;
       case 2:
+        return defaultPrice.trim().length > 0 && !isNaN(parseFloat(defaultPrice));
+      case 3:
         return horseName.trim().length >= 2 && ownerName.trim().length >= 2;
       default:
         return false;
@@ -59,23 +66,34 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
     
     setIsSubmitting(true);
     
+    const config = getDACHConfig(taxCountry);
+    const currency = getCurrencyForCountry(taxCountry);
+    
     try {
-      // Step 1: Save Business Name
+      // Step 0+1: Save Country + Business Name to business_settings
       const { data: existingSettings } = await supabase
         .from('business_settings')
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
 
+      const settingsPayload = {
+        business_name: businessName.trim(),
+        tax_country: taxCountry,
+        currency: currency,
+        default_vat_rate: config.defaultVatRate,
+        swiss_rounding: taxCountry === 'CH',
+      };
+
       if (existingSettings) {
         await supabase
           .from('business_settings')
-          .update({ business_name: businessName.trim() })
+          .update(settingsPayload)
           .eq('user_id', user.id);
       } else {
         await supabase
           .from('business_settings')
-          .insert({ user_id: user.id, business_name: businessName.trim() });
+          .insert({ user_id: user.id, ...settingsPayload });
       }
 
       // Step 2: Create Default Service (Ausschneiden)
@@ -148,7 +166,17 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
     }
   };
 
+  // Get currency symbol for current country
+  const currencySymbol = taxCountry === 'CH' ? 'CHF' : '€';
+
   const steps = [
+    // Step 0: Country Selection (NEW)
+    <CountrySelectionStep 
+      key="country" 
+      value={taxCountry} 
+      onChange={setTaxCountry} 
+    />,
+
     // Step 1: Business Name
     <div key="business" className="space-y-6">
       <div className="text-center space-y-2">
@@ -191,7 +219,7 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
       </div>
 
       <div className="space-y-3">
-        <Label htmlFor="defaultPrice" className="text-base">Preis in Euro</Label>
+        <Label htmlFor="defaultPrice" className="text-base">Preis in {currencySymbol}</Label>
         <div className="relative">
           <Input
             id="defaultPrice"
@@ -200,9 +228,9 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
             value={defaultPrice}
             onChange={(e) => setDefaultPrice(e.target.value)}
             placeholder="z.B. 45"
-            className="h-14 text-lg pl-8"
+            className="h-14 text-lg pl-12"
           />
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{currencySymbol}</span>
         </div>
         <p className="text-sm text-muted-foreground">
           Du kannst später weitere Services hinzufügen
@@ -337,7 +365,7 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
 
         {/* Step Indicators */}
         <div className="flex justify-center gap-3 mt-6">
-          {[0, 1, 2].map((step) => (
+          {[0, 1, 2, 3].map((step) => (
             <div
               key={step}
               className={cn(

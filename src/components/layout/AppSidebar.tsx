@@ -116,6 +116,7 @@ interface SubMenuItem {
   icon: React.ComponentType<{ className?: string }>;
   badge?: number;
   description?: string;
+  isBeta?: boolean;
 }
 
 interface MainMenuItem {
@@ -181,7 +182,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       icon: Calendar,
       subItems: [
         { title: "Kalender", url: "/kalender", icon: Calendar, description: "Termine planen" },
-        { title: "Tour Manager", url: "/tour", icon: Map, description: "High-End Routenplanung" },
+        { title: "Tour Manager", url: "/tour", icon: Map, description: "High-End Routenplanung", isBeta: true },
         { title: "Zeit-Tracking", url: "/work-mode?tab=timer", icon: Timer, description: "Arbeitszeit erfassen" },
         { title: "km-Tracker", url: "/work-mode?tab=mileage", icon: Route, description: "Fahrten dokumentieren" },
         { title: "HufCam Pro", url: "/work-mode?tab=hufcam", icon: Camera, description: "Foto-Dokumentation" },
@@ -259,8 +260,16 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
     >
       <item.icon className="h-4 w-4 flex-shrink-0" />
       <span className="text-sm">{item.title}</span>
+      {item.isBeta && (
+        <Badge variant="secondary" className="ml-auto text-[10px] px-1.5 py-0 bg-orange-500/10 text-orange-500 border-orange-500/30">
+          Beta
+        </Badge>
+      )}
       {item.badge !== undefined && item.badge > 0 && (
-        <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+        <span className={cn(
+          "bg-destructive text-destructive-foreground text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center",
+          !item.isBeta && "ml-auto"
+        )}>
           {item.badge}
         </span>
       )}
