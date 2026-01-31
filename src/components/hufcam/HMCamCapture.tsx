@@ -7,17 +7,17 @@ import { HoofViewSelector } from "./HoofViewSelector";
 import { CameraGuideOverlay } from "./CameraGuideOverlay";
 import { useDeviceOrientation } from "@/hooks/useDeviceOrientation";
 
-interface HufCamLiteCaptureProps {
+interface HMCamCaptureProps {
   onPhotoCapture: (dataUrl: string, view: HoofView) => void;
   onCancel?: () => void;
   className?: string;
 }
 
-export function HufCamLiteCapture({ 
+export function HMCamCapture({ 
   onPhotoCapture, 
   onCancel,
   className 
-}: HufCamLiteCaptureProps) {
+}: HMCamCaptureProps) {
   const [selectedView, setSelectedView] = useState<HoofView | null>(null);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
