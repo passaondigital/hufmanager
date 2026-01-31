@@ -28,6 +28,13 @@ export function CameraGuideOverlay({
 
   return (
     <div className="absolute inset-0 pointer-events-none z-10">
+      {/* HM-CAM Branding Label */}
+      <div className="absolute top-4 left-4 px-2 py-1 rounded bg-black/60 backdrop-blur-sm">
+        <span className="text-xs font-bold text-white tracking-wider">
+          HM-CAM
+        </span>
+      </div>
+
       {/* SVG Guide Overlay */}
       <svg 
         className="w-full h-full" 
