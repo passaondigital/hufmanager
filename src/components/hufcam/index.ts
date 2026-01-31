@@ -3,8 +3,8 @@ export { HufCamSession } from "./HufCamSession";
 export { HufCamGalleryReport } from "./HufCamGalleryReport";
 export { HufCamProStandalone } from "./HufCamProStandalone";
 
-// New Guide System for HufCam Lite
-export { HufCamLiteCapture } from "./HufCamLiteCapture";
+// HM-CAM (HufManager Cam) Guide System
+export { HMCamCapture } from "./HMCamCapture";
 export { HoofViewSelector } from "./HoofViewSelector";
 export { CameraGuideOverlay } from "./CameraGuideOverlay";
 export { HOOF_VIEW_CONFIGS } from "./types";
