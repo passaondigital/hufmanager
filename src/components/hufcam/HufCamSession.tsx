@@ -156,8 +156,13 @@ export function HufCamSession({
     }
   }, [photos, notes, currentHoofIndex, currentViewIndex, horseId]);
 
-  // Initialize camera
+  // Initialize camera - use ref to avoid re-renders causing flickering
+  const cameraStreamRef = useRef<MediaStream | null>(null);
+
   const startCamera = useCallback(async () => {
+    // Prevent starting if already active
+    if (cameraStreamRef.current) return;
+    
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -166,6 +171,7 @@ export function HufCamSession({
           height: { ideal: 1080 },
         },
       });
+      cameraStreamRef.current = stream;
       setCameraStream(stream);
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -182,19 +188,27 @@ export function HufCamSession({
   }, []);
 
   const stopCamera = useCallback(() => {
-    if (cameraStream) {
-      cameraStream.getTracks().forEach(track => track.stop());
+    if (cameraStreamRef.current) {
+      cameraStreamRef.current.getTracks().forEach(track => track.stop());
+      cameraStreamRef.current = null;
       setCameraStream(null);
       setIsCameraReady(false);
     }
-  }, [cameraStream]);
+  }, []);
 
+  // Start camera only once when in camera mode - stable deps to prevent flickering
   useEffect(() => {
     if (captureMode === "camera") {
       startCamera();
     }
-    return () => stopCamera();
-  }, [captureMode, startCamera, stopCamera]);
+    return () => {
+      // Cleanup on unmount
+      if (cameraStreamRef.current) {
+        cameraStreamRef.current.getTracks().forEach(track => track.stop());
+        cameraStreamRef.current = null;
+      }
+    };
+  }, [captureMode]); // Remove startCamera from deps to prevent re-triggering
 
   // Capture photo with burn-in metadata
   const capturePhoto = useCallback(async () => {
