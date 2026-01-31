@@ -201,7 +201,7 @@ export function LandingContactForm({ providerId, providerName, primaryColor = "#
             ) : (
               <>
                 <Send className="h-4 w-4" />
-                Anfrage mit HM-CAM senden
+                Nachricht senden
               </>
             )}
           </Button>

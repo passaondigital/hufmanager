@@ -29,6 +29,7 @@ import { ConnectedProviderCard } from "@/components/client/ConnectedProviderCard
 import { PendingConnectionRequests } from "@/components/network/PendingConnectionRequests";
 import { ConnectionSearch } from "@/components/network/ConnectionSearch";
 import { MyConnectionRequests } from "@/components/network/MyConnectionRequests";
+import { HMCamModal } from "@/components/hufcam";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -65,6 +66,7 @@ export default function ClientHome() {
   const [showConnectionSearch, setShowConnectionSearch] = useState(false);
   const [showMandatoryHorseModal, setShowMandatoryHorseModal] = useState(false);
   const [isFirstLogin, setIsFirstLogin] = useState(false);
+  const [showHMCamModal, setShowHMCamModal] = useState(false);
 
   const fetchData = async () => {
     if (!user) return;
@@ -360,10 +362,7 @@ export default function ClientHome() {
             <Button 
               variant="default" 
               className="h-20 sm:h-24 flex-col gap-1.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg min-h-[44px] col-span-3"
-              onClick={() => {
-                // TODO: Open HM-CAM capture modal
-                toast.info("HM-CAM wird geladen...");
-              }}
+              onClick={() => setShowHMCamModal(true)}
             >
               <Camera className="h-6 w-6 sm:h-7 sm:w-7" />
               <span className="text-sm sm:text-base font-semibold">HM-CAM starten</span>
@@ -504,6 +503,17 @@ export default function ClientHome() {
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onCreated={handleHorseCreated}
+      />
+      
+      {/* HM-CAM Modal */}
+      <HMCamModal
+        open={showHMCamModal}
+        onOpenChange={setShowHMCamModal}
+        onComplete={(photos) => {
+          console.log("HM-CAM photos captured:", photos);
+          toast.success(`${photos.length} Huf-Foto${photos.length > 1 ? "s" : ""} aufgenommen!`);
+        }}
+        mode="client"
       />
       </div>
     </>
