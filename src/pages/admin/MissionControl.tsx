@@ -2224,8 +2224,8 @@ export default function MissionControl() {
 
         {/* Edit User Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
+          <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle>Provider bearbeiten</DialogTitle>
               <DialogDescription>
                 {selectedProvider?.full_name} ({selectedProvider?.email})
@@ -2233,15 +2233,15 @@ export default function MissionControl() {
             </DialogHeader>
 
             {selectedProvider && (
-              <Tabs defaultValue="subscription" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
+              <Tabs defaultValue="subscription" className="w-full flex-1 flex flex-col min-h-0">
+                <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
                   <TabsTrigger value="profile">Profil</TabsTrigger>
                   <TabsTrigger value="subscription">Abo & Plan</TabsTrigger>
                   <TabsTrigger value="features">Features</TabsTrigger>
                   <TabsTrigger value="danger">Sperren</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="profile" className="space-y-4 mt-4">
+                <TabsContent value="profile" className="space-y-4 mt-4 flex-1 overflow-y-auto pr-2">
                   <p className="text-sm text-muted-foreground mb-4">
                     Business-Daten und Landingpage-Einstellungen.
                   </p>
@@ -2348,7 +2348,7 @@ export default function MissionControl() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="subscription" className="space-y-4 mt-4">
+                <TabsContent value="subscription" className="space-y-4 mt-4 flex-1 overflow-y-auto pr-2">
                   <div className="space-y-2">
                     <Label>Plan Override</Label>
                     <Select value={editPlanOverride} onValueChange={setEditPlanOverride}>
@@ -2381,7 +2381,7 @@ export default function MissionControl() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="features" className="space-y-4 mt-4">
+                <TabsContent value="features" className="space-y-4 mt-4 flex-1 overflow-y-auto pr-2">
                   <ProviderFeatureEditor
                     featureStatuses={editFeatureStatuses}
                     onFeatureStatusChange={(key, status) => {
@@ -2399,7 +2399,7 @@ export default function MissionControl() {
                   />
                 </TabsContent>
 
-                <TabsContent value="danger" className="space-y-4 mt-4">
+                <TabsContent value="danger" className="space-y-4 mt-4 flex-1 overflow-y-auto pr-2">
                   {selectedProvider.is_suspended ? (
                     <div className="space-y-4">
                       <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
@@ -2532,7 +2532,7 @@ export default function MissionControl() {
               </Tabs>
             )}
 
-            <DialogFooter className="mt-4">
+            <DialogFooter className="mt-4 flex-shrink-0 border-t pt-4">
               <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
                 Abbrechen
               </Button>
