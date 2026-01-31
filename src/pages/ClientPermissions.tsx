@@ -46,11 +46,12 @@ export default function ClientPermissions() {
   const fetchGrants = async () => {
     setLoading(true);
     
-    // Fetch grants with provider info
+    // Fetch grants with provider info - require BOTH status='active' AND is_active=true
     const { data: grantsData, error } = await supabase
       .from('access_grants')
       .select('*')
       .eq('client_id', user?.id)
+      .eq('status', 'active')
       .eq('is_active', true);
 
     if (error) {
