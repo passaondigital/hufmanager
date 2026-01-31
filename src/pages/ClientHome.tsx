@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { useTheme } from "@/components/ThemeProvider";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -353,8 +354,22 @@ export default function ClientHome() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="grid grid-cols-5 gap-1.5 sm:gap-2"
+            className="grid grid-cols-3 gap-2 sm:gap-3"
           >
+            {/* HM-CAM Primary Button */}
+            <Button 
+              variant="default" 
+              className="h-20 sm:h-24 flex-col gap-1.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg min-h-[44px] col-span-3"
+              onClick={() => {
+                // TODO: Open HM-CAM capture modal
+                toast.info("HM-CAM wird geladen...");
+              }}
+            >
+              <Camera className="h-6 w-6 sm:h-7 sm:w-7" />
+              <span className="text-sm sm:text-base font-semibold">HM-CAM starten</span>
+              <span className="text-[9px] sm:text-[10px] opacity-80">HufManager Cam Technology</span>
+            </Button>
+            
             <Button 
               variant="outline" 
               className="h-14 sm:h-16 flex-col gap-1 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-all min-h-[44px]"
