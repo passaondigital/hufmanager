@@ -158,10 +158,12 @@ export function HufCamSession({
 
   // Initialize camera - use ref to avoid re-renders causing flickering
   const cameraStreamRef = useRef<MediaStream | null>(null);
+  const isStartingCamera = useRef(false);
 
   const startCamera = useCallback(async () => {
-    // Prevent starting if already active
-    if (cameraStreamRef.current) return;
+    // Prevent multiple simultaneous starts
+    if (cameraStreamRef.current || isStartingCamera.current) return;
+    isStartingCamera.current = true;
     
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -171,19 +173,36 @@ export function HufCamSession({
           height: { ideal: 1080 },
         },
       });
+      
+      // Double check we didn't already get a stream while waiting
+      if (cameraStreamRef.current) {
+        stream.getTracks().forEach(track => track.stop());
+        isStartingCamera.current = false;
+        return;
+      }
+      
       cameraStreamRef.current = stream;
       setCameraStream(stream);
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play();
-          setIsCameraReady(true);
+          videoRef.current?.play().then(() => {
+            setIsCameraReady(true);
+            isStartingCamera.current = false;
+          }).catch((err) => {
+            console.error("Video play error:", err);
+            isStartingCamera.current = false;
+          });
         };
+      } else {
+        isStartingCamera.current = false;
       }
     } catch (err) {
       console.error("Camera error:", err);
       toast.error("Kamera nicht verfügbar. Nutze den Upload-Modus.");
       setCaptureMode("upload");
+      isStartingCamera.current = false;
     }
   }, []);
 
@@ -194,21 +213,30 @@ export function HufCamSession({
       setCameraStream(null);
       setIsCameraReady(false);
     }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    isStartingCamera.current = false;
   }, []);
 
   // Start camera only once when in camera mode - stable deps to prevent flickering
   useEffect(() => {
     if (captureMode === "camera") {
-      startCamera();
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        startCamera();
+      }, 100);
+      return () => clearTimeout(timer);
     }
     return () => {
-      // Cleanup on unmount
+      // Cleanup on unmount or mode change
       if (cameraStreamRef.current) {
         cameraStreamRef.current.getTracks().forEach(track => track.stop());
         cameraStreamRef.current = null;
       }
+      isStartingCamera.current = false;
     };
-  }, [captureMode]); // Remove startCamera from deps to prevent re-triggering
+  }, [captureMode, startCamera]);
 
   // Capture photo with burn-in metadata
   const capturePhoto = useCallback(async () => {
