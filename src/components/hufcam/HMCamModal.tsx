@@ -59,6 +59,7 @@ export function HMCamModal({ open, onOpenChange, onComplete, mode = "client", ho
               <span className="text-primary font-bold">HM-CAM</span>
               <span className="text-xs font-normal text-muted-foreground">HufManager Cam</span>
             </DialogTitle>
+            <p className="text-[12px] text-muted-foreground mt-2">Speed‑Mode aktiv: Taschenlampe & automatische Aufhellung bei schwachem Licht.</p>
           </DialogHeader>
 
           {/* Captured Photos Preview */}
