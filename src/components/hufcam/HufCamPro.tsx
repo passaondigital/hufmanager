@@ -306,15 +306,10 @@ export function HufCamPro({
     ctx.fillText("HufManager", canvas.width - padding, canvas.height - fontSize * 0.8);
 
     const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
-    
-    // Upload to DB
-    const success = await uploadAndSavePhoto(dataUrl, currentHoof.position, currentAngle.id);
-    
-    if (success) {
-      // Auto-advance after short delay
-      setTimeout(advanceToNext, 300);
-    }
-  }, [isCameraReady, horseName, currentHoof, currentAngle, uploadAndSavePhoto, advanceToNext]);
+
+    // Upload to DB - NO auto-advance, user clicks "Weiter"
+    await uploadAndSavePhoto(dataUrl, currentHoof.position, currentAngle.id);
+  }, [isCameraReady, horseName, currentHoof, currentAngle, uploadAndSavePhoto]);
 
   // Handle file upload from gallery
   const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -331,13 +326,9 @@ export function HufCamPro({
     const reader = new FileReader();
     reader.onload = async (event) => {
       const dataUrl = event.target?.result as string;
-      
-      // Upload to DB
-      const success = await uploadAndSavePhoto(dataUrl, currentHoof.position, currentAngle.id);
-      
-      if (success) {
-        setTimeout(advanceToNext, 300);
-      }
+
+      // Upload to DB - NO auto-advance, user clicks "Weiter"
+      await uploadAndSavePhoto(dataUrl, currentHoof.position, currentAngle.id);
     };
     reader.onerror = () => {
       toast.error("Fehler beim Laden des Bildes");
@@ -805,7 +796,7 @@ export function HufCamPro({
               )}
 
               {currentPhoto?.dataUrl ? (
-                /* Photo Preview */
+                /* Photo Preview with Action Buttons */
                 <>
                   <img
                     src={currentPhoto.dataUrl}
@@ -820,10 +811,53 @@ export function HufCamPro({
                   >
                     <X className="h-4 w-4" />
                   </Button>
-                  <Badge className="absolute top-3 left-3 bg-primary">
+                  <Badge className="absolute top-3 left-3 bg-green-500">
                     <Check className="h-3 w-3 mr-1" />
-                    Gespeichert
+                    {photoCount}/{totalSteps}
                   </Badge>
+
+                  {/* Action Buttons overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                    <div className="flex items-center justify-center gap-3">
+                      {photoCount >= totalSteps ? (
+                        /* All 20 photos done - show Collage button */
+                        <Button
+                          size="lg"
+                          className="h-14 px-8 bg-green-500 hover:bg-green-600 text-white gap-2"
+                          onClick={generateCollage}
+                          disabled={isGenerating}
+                        >
+                          {isGenerating ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-5 w-5" />
+                          )}
+                          Jetzt Collage erstellen!
+                        </Button>
+                      ) : currentStep === totalSteps ? (
+                        /* Last photo position - show Collage option */
+                        <Button
+                          size="lg"
+                          className="h-14 px-6 bg-primary text-white gap-2"
+                          onClick={generateCollage}
+                          disabled={isGenerating || photoCount < 1}
+                        >
+                          <Sparkles className="h-5 w-5" />
+                          Collage ({photoCount})
+                        </Button>
+                      ) : (
+                        /* Not last photo - show Weiter button */
+                        <Button
+                          size="lg"
+                          className="h-14 px-8 bg-primary text-white gap-2"
+                          onClick={advanceToNext}
+                        >
+                          Weiter
+                          <ChevronRight className="h-5 w-5" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </>
               ) : isCameraActive && !cameraError ? (
                 /* Live Camera View */
