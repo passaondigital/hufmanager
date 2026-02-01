@@ -20,17 +20,14 @@ import {
   Sparkles,
   ChevronRight,
   ChevronLeft,
-  Eye,
-  Footprints,
-  CircleDot,
-  Target,
-  Grid3X3,
   Upload,
+  ImageIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
-// Hoof positions in wizard order
+// Hoof positions
 const HOOF_POSITIONS = [
   { position: "VL", label: "VL", fullLabel: "Vorne Links" },
   { position: "VR", label: "VR", fullLabel: "Vorne Rechts" },
@@ -40,18 +37,25 @@ const HOOF_POSITIONS = [
 
 // Photo angles per hoof
 const PHOTO_ANGLES = [
-  { id: "dorsal", label: "Dorsal", icon: Eye, description: "Ansicht von vorne" },
-  { id: "lateral", label: "Lateral", icon: Target, description: "Seitenansicht" },
-  { id: "sole", label: "Sohle", icon: Footprints, description: "Ansicht von unten" },
-  { id: "frog", label: "Strahl/Ballen", icon: CircleDot, description: "Strahl & Ballen" },
+  { id: "dorsal", label: "Dorsal" },
+  { id: "lateral", label: "Lateral" },
+  { id: "sole", label: "Sohle" },
+  { id: "frog", label: "Strahl" },
+  { id: "palmar", label: "Palmar" },
 ] as const;
 
 type HoofPosition = typeof HOOF_POSITIONS[number]["position"];
 type PhotoAngle = typeof PHOTO_ANGLES[number]["id"];
 
+interface PhotoData {
+  dataUrl: string;
+  dbId?: string;
+  url?: string;
+}
+
 interface HoofPhotos {
   [key: string]: {
-    [angle: string]: string | null;
+    [angle: string]: PhotoData | null;
   };
 }
 
@@ -83,12 +87,12 @@ export function HufCamPro({
     });
     return initial;
   });
-  const [showGuides, setShowGuides] = useState(true);
   const [collageUrl, setCollageUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   
-  // Camera state
-  const [captureMode, setCaptureMode] = useState<"camera" | "upload">("camera");
+  // Camera state - simplified
+  const [isCameraActive, setIsCameraActive] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
 
@@ -108,20 +112,23 @@ export function HufCamPro({
     return count + Object.values(hoofPhotos).filter(Boolean).length;
   }, 0);
 
-  const currentPhoto = photos[currentHoof.position][currentAngle.id];
+  const currentPhoto = photos[currentHoof.position]?.[currentAngle.id];
 
-  // Start camera stream
+  // Start camera - SIMPLE constraints, no frameRate!
   const startCamera = useCallback(async () => {
-    if (streamRef.current) return; // Already active
+    if (streamRef.current) {
+      // Already have a stream
+      setIsCameraReady(true);
+      return;
+    }
     
     try {
       setCameraError(null);
+      setIsCameraReady(false);
+      
+      // SIMPLE constraints - NO frameRate to prevent flickering
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: "environment",
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-        },
+        video: { facingMode: "environment" },
         audio: false,
       });
 
@@ -129,20 +136,24 @@ export function HufCamPro({
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        // Wait for video to be ready
         videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play().then(() => {
-            setIsCameraReady(true);
-          }).catch(console.error);
+          videoRef.current?.play()
+            .then(() => setIsCameraReady(true))
+            .catch((e) => {
+              console.error("Play error:", e);
+              setCameraError("Kamera konnte nicht gestartet werden");
+            });
         };
       }
     } catch (error) {
       console.error("Camera error:", error);
-      setCameraError("Kamera nicht verfügbar");
-      setCaptureMode("upload");
+      setCameraError("Kamera nicht verfügbar - nutze Upload");
+      setIsCameraActive(false);
     }
   }, []);
 
-  // Stop camera stream
+  // Stop camera
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
@@ -154,9 +165,9 @@ export function HufCamPro({
     setIsCameraReady(false);
   }, []);
 
-  // Start camera when wizard opens in camera mode
+  // Camera lifecycle
   useEffect(() => {
-    if (isWizardOpen && captureMode === "camera" && !currentPhoto) {
+    if (isWizardOpen && isCameraActive && !currentPhoto) {
       startCamera();
     }
     return () => {
@@ -164,10 +175,104 @@ export function HufCamPro({
         stopCamera();
       }
     };
-  }, [isWizardOpen, captureMode, currentPhoto, startCamera, stopCamera]);
+  }, [isWizardOpen, isCameraActive, currentPhoto, startCamera, stopCamera]);
+
+  // Upload photo to Supabase storage and save to DB
+  const uploadAndSavePhoto = useCallback(async (
+    dataUrl: string, 
+    position: HoofPosition, 
+    angle: PhotoAngle
+  ): Promise<boolean> => {
+    setIsUploading(true);
+    
+    try {
+      // Convert dataUrl to blob
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      
+      // Generate unique filename
+      const timestamp = Date.now();
+      const fileName = `${horseId}/${position}_${angle}_${timestamp}.jpg`;
+      
+      // Upload to storage bucket
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("hoof_photos")
+        .upload(fileName, blob, {
+          contentType: "image/jpeg",
+          upsert: true,
+        });
+      
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        toast.error("Upload fehlgeschlagen");
+        return false;
+      }
+      
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from("hoof_photos")
+        .getPublicUrl(fileName);
+      
+      // Save to database
+      const { data: dbData, error: dbError } = await supabase
+        .from("hoof_photos")
+        .insert({
+          horse_id: horseId,
+          hoof_position: `${position}_${angle}`,
+          photo_url: fileName,
+          url: publicUrl,
+          file_path: fileName,
+          taken_at: new Date().toISOString(),
+        })
+        .select("id")
+        .single();
+      
+      if (dbError) {
+        console.error("DB error:", dbError);
+        toast.error("Speichern fehlgeschlagen");
+        return false;
+      }
+      
+      // Update local state with DB info
+      setPhotos((prev) => ({
+        ...prev,
+        [position]: {
+          ...prev[position],
+          [angle]: {
+            dataUrl,
+            dbId: dbData.id,
+            url: publicUrl,
+          },
+        },
+      }));
+      
+      toast.success("Foto gespeichert!", { duration: 1500 });
+      return true;
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Fehler beim Upload");
+      return false;
+    } finally {
+      setIsUploading(false);
+    }
+  }, [horseId]);
+
+  // Auto-advance to next position
+  const advanceToNext = useCallback(() => {
+    if (currentAngleIndex < PHOTO_ANGLES.length - 1) {
+      setCurrentAngleIndex((prev) => prev + 1);
+    } else if (currentHoofIndex < HOOF_POSITIONS.length - 1) {
+      setCurrentHoofIndex((prev) => prev + 1);
+      setCurrentAngleIndex(0);
+      toast.info(`Weiter zu: ${HOOF_POSITIONS[currentHoofIndex + 1].fullLabel}`);
+    } else {
+      // All done!
+      toast.success("Alle 20 Fotos aufgenommen!");
+    }
+  }, [currentAngleIndex, currentHoofIndex]);
 
   // Capture photo from camera
-  const capturePhotoFromCamera = useCallback(() => {
+  const capturePhoto = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current || !isCameraReady) return;
 
     const video = videoRef.current;
@@ -201,34 +306,18 @@ export function HufCamPro({
     ctx.fillText("HufManager", canvas.width - padding, canvas.height - fontSize * 0.8);
 
     const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
-    savePhoto(dataUrl);
-  }, [isCameraReady, horseName, currentHoof, currentAngle]);
-
-  // Save photo and auto-advance
-  const savePhoto = useCallback((dataUrl: string) => {
-    setPhotos((prev) => ({
-      ...prev,
-      [currentHoof.position]: {
-        ...prev[currentHoof.position],
-        [currentAngle.id]: dataUrl,
-      },
-    }));
     
-    toast.success("Foto aufgenommen!", { duration: 1500 });
+    // Upload to DB
+    const success = await uploadAndSavePhoto(dataUrl, currentHoof.position, currentAngle.id);
     
-    // Auto-advance after short delay
-    setTimeout(() => {
-      if (currentAngleIndex < PHOTO_ANGLES.length - 1) {
-        setCurrentAngleIndex((prev) => prev + 1);
-      } else if (currentHoofIndex < HOOF_POSITIONS.length - 1) {
-        setCurrentHoofIndex((prev) => prev + 1);
-        setCurrentAngleIndex(0);
-        toast.info(`Weiter zu: ${HOOF_POSITIONS[currentHoofIndex + 1].fullLabel}`);
-      }
-    }, 400);
-  }, [currentHoof.position, currentAngle.id, currentAngleIndex, currentHoofIndex]);
+    if (success) {
+      // Auto-advance after short delay
+      setTimeout(advanceToNext, 300);
+    }
+  }, [isCameraReady, horseName, currentHoof, currentAngle, uploadAndSavePhoto, advanceToNext]);
 
-  const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle file upload from gallery
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -237,21 +326,32 @@ export function HufCamPro({
       return;
     }
 
+    setIsUploading(true);
+    
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const dataUrl = event.target?.result as string;
-      savePhoto(dataUrl);
+      
+      // Upload to DB
+      const success = await uploadAndSavePhoto(dataUrl, currentHoof.position, currentAngle.id);
+      
+      if (success) {
+        setTimeout(advanceToNext, 300);
+      }
     };
     reader.onerror = () => {
       toast.error("Fehler beim Laden des Bildes");
+      setIsUploading(false);
     };
     reader.readAsDataURL(file);
 
+    // Reset input
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
-  };
+  }, [currentHoof.position, currentAngle.id, uploadAndSavePhoto, advanceToNext]);
 
+  // Navigation
   const goBack = () => {
     if (currentAngleIndex > 0) {
       setCurrentAngleIndex((prev) => prev - 1);
@@ -275,7 +375,16 @@ export function HufCamPro({
     setCurrentAngleIndex(0);
   };
 
-  const removeCurrentPhoto = () => {
+  // Remove current photo
+  const removeCurrentPhoto = useCallback(async () => {
+    const photo = photos[currentHoof.position]?.[currentAngle.id];
+    if (!photo) return;
+    
+    // Remove from DB if saved
+    if (photo.dbId) {
+      await supabase.from("hoof_photos").delete().eq("id", photo.dbId);
+    }
+    
     setPhotos((prev) => ({
       ...prev,
       [currentHoof.position]: {
@@ -283,8 +392,11 @@ export function HufCamPro({
         [currentAngle.id]: null,
       },
     }));
-  };
+    
+    toast.info("Foto entfernt");
+  }, [photos, currentHoof.position, currentAngle.id]);
 
+  // Generate collage
   const generateCollage = useCallback(async () => {
     if (photoCount < 4) {
       toast.error("Mindestens 4 Fotos erforderlich");
@@ -325,11 +437,7 @@ export function HufCamPro({
       ctx.fillText(`🐴 ${horseName}`, padding + 10, 48);
 
       const now = new Date();
-      const dateStr = now.toLocaleDateString("de-DE", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
+      const dateStr = now.toLocaleDateString("de-DE");
       ctx.font = "16px sans-serif";
       ctx.fillStyle = "#888888";
       ctx.textAlign = "right";
@@ -338,9 +446,9 @@ export function HufCamPro({
       // Collect all photos
       const allPhotos: { position: string; angle: string; dataUrl: string }[] = [];
       Object.entries(photos).forEach(([position, angles]) => {
-        Object.entries(angles).forEach(([angle, dataUrl]) => {
-          if (dataUrl) {
-            allPhotos.push({ position, angle, dataUrl });
+        Object.entries(angles).forEach(([angle, photoData]) => {
+          if (photoData?.dataUrl) {
+            allPhotos.push({ position, angle, dataUrl: photoData.dataUrl });
           }
         });
       });
@@ -394,7 +502,6 @@ export function HufCamPro({
           ctx.restore();
 
           // Position label
-          const labelText = `${photo.position}`;
           ctx.fillStyle = "rgba(244, 123, 32, 0.95)";
           const labelWidth = 44;
           const labelHeight = 28;
@@ -405,7 +512,7 @@ export function HufCamPro({
           ctx.fillStyle = "#ffffff";
           ctx.font = "bold 14px sans-serif";
           ctx.textAlign = "center";
-          ctx.fillText(labelText, x + 8 + labelWidth / 2, y + 8 + labelHeight / 2 + 5);
+          ctx.fillText(photo.position, x + 8 + labelWidth / 2, y + 8 + labelHeight / 2 + 5);
 
           // Angle label
           ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
@@ -435,9 +542,7 @@ export function HufCamPro({
       onCollageGenerated?.(dataUrl);
       onPhotosComplete?.(photos);
       setIsWizardOpen(false);
-      toast.success("Collage erstellt!", {
-        description: `${allPhotos.length} Fotos zusammengefügt`,
-      });
+      toast.success("Collage erstellt!");
     } catch (error) {
       console.error("Error generating collage:", error);
       toast.error("Fehler beim Erstellen der Collage");
@@ -466,14 +571,12 @@ export function HufCamPro({
         await navigator.share({
           files: [file],
           title: `${horseName} - Huf-Dokumentation`,
-          text: `Huf-Dokumentation für ${horseName} #HufManager`,
         });
       } else {
         downloadCollage();
       }
     } catch (error) {
       if ((error as Error).name !== "AbortError") {
-        toast.error("Teilen fehlgeschlagen");
         downloadCollage();
       }
     }
@@ -496,6 +599,12 @@ export function HufCamPro({
   const closeWizard = () => {
     stopCamera();
     setIsWizardOpen(false);
+    setIsCameraActive(false);
+  };
+
+  const openWizard = () => {
+    setIsWizardOpen(true);
+    setIsCameraActive(true);
   };
 
   return (
@@ -516,7 +625,7 @@ export function HufCamPro({
           {/* Start Wizard Button */}
           <Button
             className="w-full h-14 text-lg gap-3"
-            onClick={() => setIsWizardOpen(true)}
+            onClick={openWizard}
           >
             <Camera className="h-6 w-6" />
             Huf-Doku starten
@@ -536,8 +645,8 @@ export function HufCamPro({
                       hoofPhotoCount > 0 ? "border-primary/50" : "border-border"
                     )}
                   >
-                    {firstPhoto ? (
-                      <img src={firstPhoto} alt={label} className="w-full h-full object-cover" />
+                    {firstPhoto?.dataUrl ? (
+                      <img src={firstPhoto.dataUrl} alt={label} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full bg-muted flex items-center justify-center">
                         <span className="text-sm text-muted-foreground">{label}</span>
@@ -660,22 +769,21 @@ export function HufCamPro({
             <h3 className="text-xl font-bold text-foreground">
               {currentHoof.fullLabel}
             </h3>
-            <div className="flex items-center justify-center gap-2 mt-2 text-muted-foreground">
-              <currentAngle.icon className="h-4 w-4" />
-              <span>{currentAngle.label}</span>
-              <span className="text-xs">({currentAngle.description})</span>
-            </div>
+            <p className="text-muted-foreground mt-1">
+              {currentAngle.label} ({currentStep}/{totalSteps})
+            </p>
           </div>
 
           {/* Photo/Camera Area */}
           <div className="px-4 pb-4 flex-1 overflow-hidden">
+            {/* Hidden file input */}
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
               capture="environment"
               className="hidden"
-              onChange={handlePhotoCapture}
+              onChange={handleFileUpload}
             />
             <canvas ref={canvasRef} className="hidden" />
 
@@ -683,46 +791,41 @@ export function HufCamPro({
               className={cn(
                 "relative aspect-square rounded-xl border-2 overflow-hidden",
                 "flex items-center justify-center transition-all",
-                currentPhoto
-                  ? "border-primary/50 bg-card"
-                  : "border-border bg-black"
+                currentPhoto ? "border-primary/50 bg-card" : "border-border bg-black"
               )}
             >
-              {currentPhoto ? (
+              {/* Loading overlay */}
+              {isUploading && (
+                <div className="absolute inset-0 bg-black/60 z-50 flex items-center justify-center">
+                  <div className="text-center text-white">
+                    <Loader2 className="h-10 w-10 animate-spin mx-auto mb-2" />
+                    <p>Wird hochgeladen...</p>
+                  </div>
+                </div>
+              )}
+
+              {currentPhoto?.dataUrl ? (
                 /* Photo Preview */
                 <>
                   <img
-                    src={currentPhoto}
+                    src={currentPhoto.dataUrl}
                     alt={`${currentHoof.label} ${currentAngle.label}`}
                     className="w-full h-full object-cover"
                   />
-                  {showGuides && (
-                    <div className="absolute inset-0 pointer-events-none">
-                      <div className="absolute top-1/2 left-0 right-0 h-px bg-primary/30" />
-                      <div className="absolute left-1/2 top-0 bottom-0 w-px bg-primary/30" />
-                      <div className="absolute top-1/3 left-0 right-0 h-px bg-white/20" />
-                      <div className="absolute top-2/3 left-0 right-0 h-px bg-white/20" />
-                      <div className="absolute left-1/3 top-0 bottom-0 w-px bg-white/20" />
-                      <div className="absolute left-2/3 top-0 bottom-0 w-px bg-white/20" />
-                    </div>
-                  )}
                   <Button
                     variant="destructive"
                     size="icon"
                     className="absolute top-3 right-3"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeCurrentPhoto();
-                    }}
+                    onClick={removeCurrentPhoto}
                   >
                     <X className="h-4 w-4" />
                   </Button>
                   <Badge className="absolute top-3 left-3 bg-primary">
                     <Check className="h-3 w-3 mr-1" />
-                    {currentHoof.label} - {currentAngle.label}
+                    Gespeichert
                   </Badge>
                 </>
-              ) : captureMode === "camera" ? (
+              ) : isCameraActive && !cameraError ? (
                 /* Live Camera View */
                 <>
                   <video
@@ -733,131 +836,80 @@ export function HufCamPro({
                     className="w-full h-full object-cover"
                   />
                   
-                  {/* Camera Guide Overlay */}
-                  {showGuides && isCameraReady && (
-                    <div className="absolute inset-0 pointer-events-none">
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-32 h-32 border-2 border-primary/50 rounded-lg" />
-                      </div>
-                      <div className="absolute bottom-20 left-0 right-0 flex justify-center">
-                        <div className="bg-black/60 px-4 py-2 rounded-full">
-                          <p className="text-white text-sm flex items-center gap-2">
-                            <currentAngle.icon className="h-4 w-4" />
-                            {currentAngle.description}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   {/* Camera Loading */}
-                  {!isCameraReady && !cameraError && (
+                  {!isCameraReady && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black">
                       <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                    </div>
-                  )}
-
-                  {/* Camera Error */}
-                  {cameraError && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 p-4 text-center">
-                      <Camera className="h-12 w-12 text-muted-foreground mb-3" />
-                      <p className="text-sm text-muted-foreground mb-3">{cameraError}</p>
-                      <Button size="sm" variant="secondary" onClick={startCamera}>
-                        Erneut versuchen
-                      </Button>
                     </div>
                   )}
 
                   {/* Camera Controls */}
                   <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
                     <div className="flex items-center justify-center gap-4">
+                      {/* Upload from Gallery */}
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-white"
-                        onClick={() => setShowGuides(!showGuides)}
+                        className="text-white h-12 w-12"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
                       >
-                        <Grid3X3 className={cn("h-6 w-6", showGuides && "text-primary")} />
+                        <ImageIcon className="h-6 w-6" />
                       </Button>
 
+                      {/* Capture Button */}
                       <Button
                         size="lg"
                         className="h-16 w-16 rounded-full bg-white hover:bg-gray-100 text-black shadow-lg"
-                        onClick={capturePhotoFromCamera}
-                        disabled={!isCameraReady}
+                        onClick={capturePhoto}
+                        disabled={!isCameraReady || isUploading}
                       >
                         <Camera className="h-8 w-8" />
                       </Button>
 
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-white"
-                        onClick={() => {
-                          stopCamera();
-                          setCaptureMode("upload");
-                        }}
-                      >
-                        <Upload className="h-6 w-6" />
-                      </Button>
+                      {/* Placeholder for symmetry */}
+                      <div className="w-12" />
                     </div>
                   </div>
                 </>
               ) : (
-                /* Upload Mode */
+                /* Upload Mode / Camera Error */
                 <div 
-                  className="w-full h-full flex flex-col items-center justify-center gap-3 p-6 cursor-pointer hover:bg-muted/20 transition-colors"
+                  className="w-full h-full flex flex-col items-center justify-center gap-4 p-6 cursor-pointer hover:bg-muted/20 transition-colors"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  {showGuides && (
-                    <div className="absolute inset-8 border-2 border-dashed border-primary/20 rounded-lg pointer-events-none">
-                      <div className="absolute inset-4 border border-primary/10 rounded-full" />
-                    </div>
-                  )}
-                  <Camera className="h-16 w-16 text-muted-foreground" />
+                  <Upload className="h-16 w-16 text-muted-foreground" />
                   <div className="text-center">
                     <p className="font-medium text-foreground">
                       {currentHoof.label} - {currentAngle.label}
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Tippe zum Fotografieren
+                      {cameraError || "Tippe zum Fotografieren"}
                     </p>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCaptureMode("camera");
-                    }}
-                  >
-                    <Camera className="h-4 w-4 mr-2" />
-                    Live-Kamera nutzen
-                  </Button>
+                  {cameraError && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCameraError(null);
+                        setIsCameraActive(true);
+                        startCamera();
+                      }}
+                    >
+                      <Camera className="h-4 w-4 mr-2" />
+                      Kamera erneut versuchen
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* Guide Toggle (when photo exists) */}
-            {currentPhoto && (
-              <div className="flex items-center justify-center mt-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowGuides(!showGuides)}
-                  className={cn(showGuides && "text-primary")}
-                >
-                  <Target className="h-4 w-4 mr-2" />
-                  Hilfslinien {showGuides ? "an" : "aus"}
-                </Button>
-              </div>
-            )}
-
             {/* Angle Selection Pills */}
             <div className="flex justify-center gap-1 mt-4 flex-wrap">
               {PHOTO_ANGLES.map((angle, index) => {
-                const hasPhoto = !!photos[currentHoof.position][angle.id];
+                const hasPhoto = !!photos[currentHoof.position]?.[angle.id];
                 const isActive = index === currentAngleIndex;
                 return (
                   <Button
@@ -870,7 +922,6 @@ export function HufCamPro({
                     )}
                     onClick={() => setCurrentAngleIndex(index)}
                   >
-                    <angle.icon className="h-3 w-3 mr-1" />
                     {angle.label}
                     {hasPhoto && (
                       <Check className="h-3 w-3 ml-1 text-green-500" />
