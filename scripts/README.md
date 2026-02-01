@@ -32,9 +32,10 @@ Metrics & Monitoring
 - Der Daemon-Modus (`WORKER_MODE=daemon`) startet einen HTTP-Endpunkt auf `METRICS_PORT` (standard 9464) unter `/metrics` für Prometheus.
 - Optional: Setze `SENTRY_DSN` um Fehler automatisch an Sentry zu senden.
 
-GitHub Actions
+GitHub Actions & Deployment
 
-Eine Beispiel-Workflow-Datei ist unter `.github/workflows/run-collage-worker.yml` enthalten. Setze die Secrets `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` und optional `SENTRY_DSN` in den Repo-Secrets.
+- Eine Beispiel-Workflow-Datei ist unter `.github/workflows/run-collage-worker.yml` enthalten. Setze die Secrets `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` und optional `SENTRY_DSN` in den Repo-Secrets.
+- Für Deployment zu lovable.dev findest du ein Beispiel-Manifest unter `deploy/lovable.service.yml` und einen Deploy-Workflow unter `.github/workflows/deploy-to-lovable.yml`.
 
 Hinweise
 - Nutze den Service-Role Key **nur** auf dem Server (nicht im Browser).
