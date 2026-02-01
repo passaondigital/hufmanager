@@ -187,11 +187,29 @@ export function HufCamSession({
       setCameraStream(stream);
 
       if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+        // Set event handler BEFORE setting srcObject
         videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play();
-          setIsCameraReady(true);
+          if (videoRef.current) {
+            videoRef.current.play()
+              .then(() => {
+                setIsCameraReady(true);
+              })
+              .catch((err) => {
+                console.error("Video play error:", err);
+                // Still mark as ready - user can tap to play on iOS
+                setIsCameraReady(true);
+              });
+          }
         };
+
+        videoRef.current.srcObject = stream;
+
+        // Fallback: if metadata already loaded, try to play
+        if (videoRef.current.readyState >= 1) {
+          videoRef.current.play()
+            .then(() => setIsCameraReady(true))
+            .catch(() => setIsCameraReady(true));
+        }
       }
     } catch (err) {
       console.error("Camera error:", err);
@@ -202,20 +220,27 @@ export function HufCamSession({
 
   // Start/stop camera based on capture mode
   useEffect(() => {
-    if (captureMode === "camera") {
-      startCamera();
-    } else {
-      stopCamera();
-    }
+    let mounted = true;
+
+    const initCamera = async () => {
+      if (captureMode === "camera" && mounted) {
+        await startCamera();
+      } else if (mounted) {
+        stopCamera();
+      }
+    };
+
+    initCamera();
 
     return () => {
+      mounted = false;
       // Cleanup on unmount
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
       }
     };
-  }, [captureMode]); // Only depend on captureMode, not on callbacks
+  }, [captureMode, startCamera, stopCamera]);
 
   // Capture photo with burn-in metadata
   const capturePhoto = useCallback(async () => {
@@ -518,7 +543,7 @@ export function HufCamSession({
           </div>
         ) : captureMode === "camera" ? (
           /* Camera View */
-          <div className="h-full relative">
+          <div className="h-full relative bg-black">
             <video
               ref={videoRef}
               autoPlay
@@ -527,6 +552,25 @@ export function HufCamSession({
               className="w-full h-full object-cover"
             />
             <canvas ref={canvasRef} className="hidden" />
+
+            {/* Loading indicator while camera initializes */}
+            {!isCameraReady && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+                <div className="text-center text-white">
+                  <Loader2 className="h-12 w-12 animate-spin mx-auto mb-3" />
+                  <p className="text-sm">Kamera wird gestartet...</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-4 text-white/70"
+                    onClick={() => setCaptureMode("upload")}
+                  >
+                    <ArrowUpFromLine className="h-4 w-4 mr-2" />
+                    Upload stattdessen nutzen
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Alignment Guide Overlay */}
             {showGuides && (
