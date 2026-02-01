@@ -398,8 +398,8 @@ export function HufCamPro({
 
   // Generate collage
   const generateCollage = useCallback(async () => {
-    if (photoCount < 4) {
-      toast.error("Mindestens 4 Fotos erforderlich");
+    if (photoCount < 1) {
+      toast.error("Mindestens 1 Foto erforderlich");
       return;
     }
 
@@ -664,7 +664,7 @@ export function HufCamPro({
           )}
 
           {/* Generate Collage */}
-          {photoCount >= 4 && !collageUrl && (
+          {photoCount >= 1 && !collageUrl && (
             <Button
               className="w-full"
               variant="secondary"
@@ -943,10 +943,10 @@ export function HufCamPro({
               Zurück
             </Button>
 
-            {photoCount >= 4 ? (
+            {photoCount >= 1 ? (
               <Button
                 onClick={generateCollage}
-                disabled={isGenerating}
+                disabled={photoCount < 1 || isGenerating}
                 className="gap-2"
               >
                 {isGenerating ? (

@@ -116,6 +116,11 @@ export function HufCamSession({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Use refs to prevent flickering and race conditions
+  const streamRef = useRef<MediaStream | null>(null);
+  const isStartingCamera = useRef(false);
+  const isMounted = useRef(true);
+
   const currentHoof = HOOF_POSITIONS[currentHoofIndex];
   const currentView = VIEW_ANGLES[currentViewIndex];
   const totalSteps = HOOF_POSITIONS.length * VIEW_ANGLES.length;
@@ -156,15 +161,20 @@ export function HufCamSession({
     }
   }, [photos, notes, currentHoofIndex, currentViewIndex, horseId]);
 
-  // Initialize camera - use ref to avoid re-renders causing flickering
-  const cameraStreamRef = useRef<MediaStream | null>(null);
-  const isStartingCamera = useRef(false);
+  // Track mounted state
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
+  // Initialize camera
   const startCamera = useCallback(async () => {
     // Prevent multiple simultaneous starts
-    if (cameraStreamRef.current || isStartingCamera.current) return;
+    if (streamRef.current || isStartingCamera.current) return;
     isStartingCamera.current = true;
-    
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -173,70 +183,94 @@ export function HufCamSession({
           height: { ideal: 1080 },
         },
       });
-      
-      // Double check we didn't already get a stream while waiting
-      if (cameraStreamRef.current) {
+
+      // Check if component unmounted or another stream started
+      if (!isMounted.current || streamRef.current) {
         stream.getTracks().forEach(track => track.stop());
         isStartingCamera.current = false;
         return;
       }
-      
-      cameraStreamRef.current = stream;
+
+      streamRef.current = stream;
       setCameraStream(stream);
-      
+
       if (videoRef.current) {
+        // Set srcObject first
         videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play().then(() => {
-            setIsCameraReady(true);
-            isStartingCamera.current = false;
-          }).catch((err) => {
-            console.error("Video play error:", err);
-            isStartingCamera.current = false;
-          });
+
+        // Handle video ready state
+        const handleCanPlay = () => {
+          if (videoRef.current && isMounted.current) {
+            videoRef.current.play()
+              .then(() => {
+                if (isMounted.current) {
+                  setIsCameraReady(true);
+                }
+              })
+              .catch((err) => {
+                console.error("Video play error:", err);
+                // Still mark as ready on iOS where autoplay may be blocked
+                if (isMounted.current) {
+                  setIsCameraReady(true);
+                }
+              });
+          }
         };
-      } else {
-        isStartingCamera.current = false;
+
+        // Try immediate play if already ready
+        if (videoRef.current.readyState >= 3) {
+          handleCanPlay();
+        } else {
+          videoRef.current.oncanplay = handleCanPlay;
+        }
       }
     } catch (err) {
       console.error("Camera error:", err);
-      toast.error("Kamera nicht verfügbar. Nutze den Upload-Modus.");
-      setCaptureMode("upload");
+      if (isMounted.current) {
+        toast.error("Kamera nicht verfügbar. Nutze den Upload-Modus.");
+        setCaptureMode("upload");
+      }
+    } finally {
       isStartingCamera.current = false;
     }
   }, []);
 
   const stopCamera = useCallback(() => {
-    if (cameraStreamRef.current) {
-      cameraStreamRef.current.getTracks().forEach(track => track.stop());
-      cameraStreamRef.current = null;
-      setCameraStream(null);
-      setIsCameraReady(false);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     }
     if (videoRef.current) {
       videoRef.current.srcObject = null;
+      videoRef.current.oncanplay = null;
     }
+    setCameraStream(null);
+    setIsCameraReady(false);
     isStartingCamera.current = false;
   }, []);
 
-  // Start camera only once when in camera mode - stable deps to prevent flickering
+  // Start camera when in camera mode
   useEffect(() => {
     if (captureMode === "camera") {
       // Small delay to ensure DOM is ready
       const timer = setTimeout(() => {
-        startCamera();
+        if (isMounted.current) {
+          startCamera();
+        }
       }, 100);
       return () => clearTimeout(timer);
+    } else {
+      stopCamera();
     }
+
     return () => {
-      // Cleanup on unmount or mode change
-      if (cameraStreamRef.current) {
-        cameraStreamRef.current.getTracks().forEach(track => track.stop());
-        cameraStreamRef.current = null;
+      // Cleanup on unmount
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
       }
-      isStartingCamera.current = false;
     };
-  }, [captureMode, startCamera]);
+  }, [captureMode, startCamera, stopCamera]);
 
   // Capture photo with burn-in metadata
   const capturePhoto = useCallback(async () => {
@@ -257,7 +291,7 @@ export function HufCamSession({
     // Burn-in metadata overlay
     const padding = 20;
     const fontSize = Math.max(16, Math.floor(canvas.width / 50));
-    
+
     // Semi-transparent background strip at bottom
     ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
     ctx.fillRect(0, canvas.height - fontSize * 2.5, canvas.width, fontSize * 2.5);
@@ -266,11 +300,11 @@ export function HufCamSession({
     ctx.fillStyle = "#ffffff";
     ctx.font = `bold ${fontSize}px sans-serif`;
     ctx.textAlign = "left";
-    
+
     const dateStr = new Date().toLocaleDateString("de-DE");
     const timeStr = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
     const metaText = `${horseName} | ${currentHoof.id}-${currentView.id} | ${dateStr} ${timeStr}`;
-    
+
     ctx.fillText(metaText, padding, canvas.height - fontSize * 0.8);
 
     // HufManager branding
@@ -503,7 +537,7 @@ export function HufCamSession({
                 alt={`${currentHoof.id}-${currentView.id}`}
                 className="w-full h-full object-contain bg-black"
               />
-              
+
               {/* Analysis Badge */}
               {currentPhoto.analysis && (
                 <div className={cn(
@@ -539,7 +573,7 @@ export function HufCamSession({
           </div>
         ) : captureMode === "camera" ? (
           /* Camera View */
-          <div className="h-full relative">
+          <div className="h-full relative bg-black">
             <video
               ref={videoRef}
               autoPlay
@@ -549,8 +583,27 @@ export function HufCamSession({
             />
             <canvas ref={canvasRef} className="hidden" />
 
+            {/* Loading indicator while camera initializes */}
+            {!isCameraReady && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+                <div className="text-center text-white">
+                  <Loader2 className="h-12 w-12 animate-spin mx-auto mb-3" />
+                  <p className="text-sm">Kamera wird gestartet...</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-4 text-white/70"
+                    onClick={() => setCaptureMode("upload")}
+                  >
+                    <ArrowUpFromLine className="h-4 w-4 mr-2" />
+                    Upload stattdessen nutzen
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* Alignment Guide Overlay */}
-            {showGuides && (
+            {showGuides && isCameraReady && (
               <div className="absolute inset-0 pointer-events-none">
                 {/* Center crosshair */}
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -570,40 +623,42 @@ export function HufCamSession({
             )}
 
             {/* Camera Controls */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-              <div className="flex items-center justify-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-white"
-                  onClick={() => setShowGuides(!showGuides)}
-                >
-                  <Grid3X3 className={cn("h-6 w-6", showGuides && "text-primary")} />
-                </Button>
+            {isCameraReady && (
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                <div className="flex items-center justify-center gap-4">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-white"
+                    onClick={() => setShowGuides(!showGuides)}
+                  >
+                    <Grid3X3 className={cn("h-6 w-6", showGuides && "text-primary")} />
+                  </Button>
 
-                <Button
-                  size="lg"
-                  className="h-16 w-16 rounded-full"
-                  onClick={capturePhoto}
-                  disabled={!isCameraReady || isAnalyzing}
-                >
-                  {isAnalyzing ? (
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                  ) : (
-                    <Camera className="h-8 w-8" />
-                  )}
-                </Button>
+                  <Button
+                    size="lg"
+                    className="h-16 w-16 rounded-full"
+                    onClick={capturePhoto}
+                    disabled={!isCameraReady || isAnalyzing}
+                  >
+                    {isAnalyzing ? (
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                    ) : (
+                      <Camera className="h-8 w-8" />
+                    )}
+                  </Button>
 
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-white"
-                  onClick={() => setCaptureMode("upload")}
-                >
-                  <ArrowUpFromLine className="h-6 w-6" />
-                </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-white"
+                    onClick={() => setCaptureMode("upload")}
+                  >
+                    <ArrowUpFromLine className="h-6 w-6" />
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         ) : (
           /* Upload Mode */
@@ -625,7 +680,7 @@ export function HufCamSession({
                 <h3 className="font-semibold text-lg">{currentView.label}</h3>
                 <p className="text-muted-foreground">{currentView.description}</p>
               </div>
-              
+
               <div className="space-y-2">
                 <Button
                   className="w-full"
@@ -694,22 +749,27 @@ export function HufCamSession({
             })}
           </div>
 
-          {photoCount >= 4 ? (
-            <Button size="sm" onClick={handleComplete}>
-              <Sparkles className="h-4 w-4 mr-1" />
-              Fertig ({photoCount})
-            </Button>
-          ) : (
+          {/* Always show both buttons for clarity */}
+          {!(currentHoofIndex === HOOF_POSITIONS.length - 1 && currentViewIndex === VIEW_ANGLES.length - 1) && (
             <Button
               variant="outline"
               size="sm"
               onClick={goNext}
-              disabled={currentHoofIndex === HOOF_POSITIONS.length - 1 && currentViewIndex === VIEW_ANGLES.length - 1}
             >
               Weiter
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           )}
+
+          <Button
+            size="sm"
+            onClick={handleComplete}
+            disabled={photoCount < 1}
+            variant={photoCount >= 4 ? "default" : "secondary"}
+          >
+            <Sparkles className="h-4 w-4 mr-1" />
+            {photoCount >= 4 ? `Fertig (${photoCount})` : `Fotos: ${photoCount}`}
+          </Button>
         </div>
       </div>
     </div>

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { cn } from "@/lib/utils";
 import { HoofView, HOOF_VIEW_CONFIGS } from "./types";
 
@@ -8,11 +9,11 @@ interface CameraGuideOverlayProps {
   requiresLevel: boolean;
 }
 
-export function CameraGuideOverlay({ 
-  view, 
-  isLevel, 
+export const CameraGuideOverlay = memo(function CameraGuideOverlay({
+  view,
+  isLevel,
   tiltAngle,
-  requiresLevel 
+  requiresLevel
 }: CameraGuideOverlayProps) {
   const config = HOOF_VIEW_CONFIGS.find(c => c.id === view);
   if (!config || config.guideType === "none") return null;
@@ -79,7 +80,7 @@ export function CameraGuideOverlay({
       )}
     </div>
   );
-}
+});
 
 // T-Guide: Horizontal bottom line + Vertical center line
 function TGuide({ lineColor }: { lineColor: string }) {
@@ -203,31 +204,31 @@ function TargetGuide({ lineColor }: { lineColor: string }) {
   );
 }
 
-// Bubble Level indicator
-function BubbleLevel({ isLevel, tiltAngle }: { isLevel: boolean; tiltAngle: number }) {
+// Bubble Level indicator - memoized to prevent flickering
+const BubbleLevel = memo(function BubbleLevel({ isLevel, tiltAngle }: { isLevel: boolean; tiltAngle: number }) {
   // Calculate bubble offset (clamped to visible range)
   const maxOffset = 12;
   const offset = Math.min(Math.max((tiltAngle / 15) * maxOffset, -maxOffset), maxOffset);
 
   return (
     <div className="absolute top-4 right-4 flex flex-col items-center gap-1">
-      <div 
+      <div
         className={cn(
           "w-10 h-10 rounded-full border-2 flex items-center justify-center relative overflow-hidden",
-          isLevel 
-            ? "border-green-500 bg-green-500/10" 
+          isLevel
+            ? "border-green-500 bg-green-500/10"
             : "border-red-500 bg-red-500/10"
         )}
       >
         {/* Level ring */}
-        <div 
+        <div
           className={cn(
             "w-6 h-6 rounded-full border-2 border-dashed",
             isLevel ? "border-green-400" : "border-red-400"
           )}
         />
         {/* Bubble */}
-        <div 
+        <div
           className={cn(
             "absolute w-3 h-3 rounded-full transition-all duration-150",
             isLevel ? "bg-green-500" : "bg-red-500"
@@ -237,7 +238,7 @@ function BubbleLevel({ isLevel, tiltAngle }: { isLevel: boolean; tiltAngle: numb
           }}
         />
       </div>
-      <span 
+      <span
         className={cn(
           "text-[10px] font-bold",
           isLevel ? "text-green-500" : "text-red-500"
@@ -247,4 +248,4 @@ function BubbleLevel({ isLevel, tiltAngle }: { isLevel: boolean; tiltAngle: numb
       </span>
     </div>
   );
-}
+});
