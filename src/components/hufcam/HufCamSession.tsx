@@ -663,11 +663,11 @@ export function HufCamSession({
         ) : (
           /* Upload Mode */
           <div className="h-full flex flex-col items-center justify-center p-6">
+            {/* NO capture attribute to allow gallery selection */}
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
               className="hidden"
               onChange={handleFileUpload}
             />

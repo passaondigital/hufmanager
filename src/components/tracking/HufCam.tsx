@@ -358,12 +358,11 @@ export function HufCam({ horseName, horseId, onCollageGenerated }: HufCamProps) 
       </CardHeader>
       
       <CardContent className="space-y-4">
-        {/* Hidden file input for gallery upload */}
+        {/* Hidden file input for gallery upload - NO capture to allow gallery selection */}
         <input
           ref={fileInputRef}
           type="file"
           accept="image/*"
-          capture="environment"
           className="hidden"
           onChange={handleFileUpload}
         />
