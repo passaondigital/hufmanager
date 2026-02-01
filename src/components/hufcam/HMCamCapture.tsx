@@ -39,15 +39,17 @@ export function HMCamCapture({
     ? HOOF_VIEW_CONFIGS.find(c => c.id === selectedView) 
     : null;
 
-  // Start camera stream
+  // Request orientation permission once on mount (for iOS)
+  useEffect(() => {
+    if (isOrientationSupported && !hasOrientationPermission) {
+      requestOrientationPermission();
+    }
+  }, [isOrientationSupported, hasOrientationPermission, requestOrientationPermission]);
+
+  // Start camera stream - no orientation dependencies to prevent restarts
   const startCamera = useCallback(async () => {
     try {
       setCameraError(null);
-      
-      // Request orientation permission on iOS
-      if (isOrientationSupported && !hasOrientationPermission) {
-        await requestOrientationPermission();
-      }
 
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -59,7 +61,7 @@ export function HMCamCapture({
       });
 
       streamRef.current = stream;
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
@@ -73,7 +75,7 @@ export function HMCamCapture({
           : "Kamera konnte nicht gestartet werden."
       );
     }
-  }, [isOrientationSupported, hasOrientationPermission, requestOrientationPermission]);
+  }, []);
 
   // Stop camera stream
   const stopCamera = useCallback(() => {

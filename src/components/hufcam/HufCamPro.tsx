@@ -306,15 +306,10 @@ export function HufCamPro({
     ctx.fillText("HufManager", canvas.width - padding, canvas.height - fontSize * 0.8);
 
     const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
-    
-    // Upload to DB
-    const success = await uploadAndSavePhoto(dataUrl, currentHoof.position, currentAngle.id);
-    
-    if (success) {
-      // Auto-advance after short delay
-      setTimeout(advanceToNext, 300);
-    }
-  }, [isCameraReady, horseName, currentHoof, currentAngle, uploadAndSavePhoto, advanceToNext]);
+
+    // Upload to DB - NO auto-advance, user clicks "Weiter"
+    await uploadAndSavePhoto(dataUrl, currentHoof.position, currentAngle.id);
+  }, [isCameraReady, horseName, currentHoof, currentAngle, uploadAndSavePhoto]);
 
   // Handle file upload from gallery
   const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -331,13 +326,9 @@ export function HufCamPro({
     const reader = new FileReader();
     reader.onload = async (event) => {
       const dataUrl = event.target?.result as string;
-      
-      // Upload to DB
-      const success = await uploadAndSavePhoto(dataUrl, currentHoof.position, currentAngle.id);
-      
-      if (success) {
-        setTimeout(advanceToNext, 300);
-      }
+
+      // Upload to DB - NO auto-advance, user clicks "Weiter"
+      await uploadAndSavePhoto(dataUrl, currentHoof.position, currentAngle.id);
     };
     reader.onerror = () => {
       toast.error("Fehler beim Laden des Bildes");
@@ -398,8 +389,8 @@ export function HufCamPro({
 
   // Generate collage
   const generateCollage = useCallback(async () => {
-    if (photoCount < 4) {
-      toast.error("Mindestens 4 Fotos erforderlich");
+    if (photoCount < 1) {
+      toast.error("Mindestens 1 Foto erforderlich");
       return;
     }
 
@@ -664,7 +655,7 @@ export function HufCamPro({
           )}
 
           {/* Generate Collage */}
-          {photoCount >= 4 && !collageUrl && (
+          {photoCount >= 1 && !collageUrl && (
             <Button
               className="w-full"
               variant="secondary"
@@ -776,12 +767,11 @@ export function HufCamPro({
 
           {/* Photo/Camera Area */}
           <div className="px-4 pb-4 flex-1 overflow-hidden">
-            {/* Hidden file input */}
+            {/* Hidden file input - NO capture attribute to allow gallery selection */}
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
               className="hidden"
               onChange={handleFileUpload}
             />
@@ -805,7 +795,7 @@ export function HufCamPro({
               )}
 
               {currentPhoto?.dataUrl ? (
-                /* Photo Preview */
+                /* Photo Preview with Action Buttons */
                 <>
                   <img
                     src={currentPhoto.dataUrl}
@@ -820,10 +810,53 @@ export function HufCamPro({
                   >
                     <X className="h-4 w-4" />
                   </Button>
-                  <Badge className="absolute top-3 left-3 bg-primary">
+                  <Badge className="absolute top-3 left-3 bg-green-500">
                     <Check className="h-3 w-3 mr-1" />
-                    Gespeichert
+                    {photoCount}/{totalSteps}
                   </Badge>
+
+                  {/* Action Buttons overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                    <div className="flex items-center justify-center gap-3">
+                      {photoCount >= totalSteps ? (
+                        /* All 20 photos done - show Collage button */
+                        <Button
+                          size="lg"
+                          className="h-14 px-8 bg-green-500 hover:bg-green-600 text-white gap-2"
+                          onClick={generateCollage}
+                          disabled={isGenerating}
+                        >
+                          {isGenerating ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-5 w-5" />
+                          )}
+                          Jetzt Collage erstellen!
+                        </Button>
+                      ) : currentStep === totalSteps ? (
+                        /* Last photo position - show Collage option */
+                        <Button
+                          size="lg"
+                          className="h-14 px-6 bg-primary text-white gap-2"
+                          onClick={generateCollage}
+                          disabled={isGenerating || photoCount < 1}
+                        >
+                          <Sparkles className="h-5 w-5" />
+                          Collage ({photoCount})
+                        </Button>
+                      ) : (
+                        /* Not last photo - show Weiter button */
+                        <Button
+                          size="lg"
+                          className="h-14 px-8 bg-primary text-white gap-2"
+                          onClick={advanceToNext}
+                        >
+                          Weiter
+                          <ChevronRight className="h-5 w-5" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </>
               ) : isCameraActive && !cameraError ? (
                 /* Live Camera View */
@@ -874,34 +907,52 @@ export function HufCamPro({
                 </>
               ) : (
                 /* Upload Mode / Camera Error */
-                <div 
-                  className="w-full h-full flex flex-col items-center justify-center gap-4 p-6 cursor-pointer hover:bg-muted/20 transition-colors"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload className="h-16 w-16 text-muted-foreground" />
-                  <div className="text-center">
-                    <p className="font-medium text-foreground">
+                <div className="w-full h-full flex flex-col items-center justify-center gap-4 p-6">
+                  <div className="text-center mb-2">
+                    <p className="font-bold text-lg text-foreground">
                       {currentHoof.label} - {currentAngle.label}
                     </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {cameraError || "Tippe zum Fotografieren"}
-                    </p>
+                    {cameraError && (
+                      <p className="text-sm text-amber-500 mt-1">
+                        {cameraError}
+                      </p>
+                    )}
                   </div>
-                  {cameraError && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCameraError(null);
-                        setIsCameraActive(true);
-                        startCamera();
-                      }}
-                    >
-                      <Camera className="h-4 w-4 mr-2" />
-                      Kamera erneut versuchen
-                    </Button>
-                  )}
+
+                  {/* Upload from Gallery - Primary Button */}
+                  <Button
+                    size="lg"
+                    className="h-16 px-8 gap-3 bg-primary"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                  >
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                        Wird hochgeladen...
+                      </>
+                    ) : (
+                      <>
+                        <ImageIcon className="h-6 w-6" />
+                        Foto aus Galerie wählen
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Retry Camera Button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setCameraError(null);
+                      setIsCameraActive(true);
+                      startCamera();
+                    }}
+                    disabled={isUploading}
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    Kamera erneut versuchen
+                  </Button>
                 </div>
               )}
             </div>
@@ -943,10 +994,10 @@ export function HufCamPro({
               Zurück
             </Button>
 
-            {photoCount >= 4 ? (
+            {photoCount >= 1 ? (
               <Button
                 onClick={generateCollage}
-                disabled={isGenerating}
+                disabled={photoCount < 1 || isGenerating}
                 className="gap-2"
               >
                 {isGenerating ? (

@@ -96,8 +96,8 @@ export function HufCamGalleryReport({
 
   // Generate Instagram-ready collage
   const generateCollage = useCallback(async () => {
-    if (photoCount < 4) {
-      toast.error("Mindestens 4 Fotos erforderlich");
+    if (photoCount < 1) {
+      toast.error("Mindestens 1 Foto erforderlich");
       return;
     }
 
@@ -429,7 +429,7 @@ export function HufCamGalleryReport({
                 <Button
                   className="col-span-2"
                   onClick={generateCollage}
-                  disabled={isGeneratingCollage || photoCount < 4}
+                  disabled={isGeneratingCollage || photoCount < 1}
                 >
                   {isGeneratingCollage ? (
                     <>
