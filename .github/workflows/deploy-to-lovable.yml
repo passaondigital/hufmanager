@@ -1,0 +1,44 @@
+name: Deploy to lovable.dev
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Trigger lovable.dev deploy (HTTP API)
+        env:
+          LOVABLE_TOKEN: ${{ secrets.LOVABLE_TOKEN }}
+          LOVABLE_APP_ID: ${{ secrets.LOVABLE_APP_ID }}
+          IMAGE: ghcr.io/passaondigital/hufmanager-collage-worker:latest
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$LOVABLE_TOKEN" ] || [ -z "$LOVABLE_APP_ID" ]; then
+            echo "Missing LOVABLE_TOKEN or LOVABLE_APP_ID; aborting deploy."; exit 1;
+          fi
+
+          echo "Calling lovable.dev API to deploy image $IMAGE..."
+          # Beispiel-API call; passe URL / Payload an das tatsächliche lovable.dev API an
+          curl -sS -X POST "https://api.lovable.dev/apps/${LOVABLE_APP_ID}/deploy" \
+            -H "Authorization: Bearer $LOVABLE_TOKEN" \
+            -F "image=$IMAGE" \
+            -F "env[SUPABASE_URL]=$SUPABASE_URL" \
+            -F "env[SUPABASE_SERVICE_ROLE_KEY]=$SUPABASE_SERVICE_ROLE_KEY" \
+            -o /tmp/deploy-resp.json || (echo "Deploy API call failed"; cat /tmp/deploy-resp.json; exit 1)
+
+          echo "Deploy request submitted. Response:"; cat /tmp/deploy-resp.json
+
+      - name: Wait for a short period (allow rollout)
+        run: sleep 10
+
+      - name: Show last 200 lines of deployment logs (if API provided a logs endpoint)
+        run: |
+          echo "If the platform exposes logs via API, add a step here to fetch them."
