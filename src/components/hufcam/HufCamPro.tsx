@@ -767,12 +767,11 @@ export function HufCamPro({
 
           {/* Photo/Camera Area */}
           <div className="px-4 pb-4 flex-1 overflow-hidden">
-            {/* Hidden file input */}
+            {/* Hidden file input - NO capture attribute to allow gallery selection */}
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
               className="hidden"
               onChange={handleFileUpload}
             />
@@ -908,34 +907,52 @@ export function HufCamPro({
                 </>
               ) : (
                 /* Upload Mode / Camera Error */
-                <div 
-                  className="w-full h-full flex flex-col items-center justify-center gap-4 p-6 cursor-pointer hover:bg-muted/20 transition-colors"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload className="h-16 w-16 text-muted-foreground" />
-                  <div className="text-center">
-                    <p className="font-medium text-foreground">
+                <div className="w-full h-full flex flex-col items-center justify-center gap-4 p-6">
+                  <div className="text-center mb-2">
+                    <p className="font-bold text-lg text-foreground">
                       {currentHoof.label} - {currentAngle.label}
                     </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {cameraError || "Tippe zum Fotografieren"}
-                    </p>
+                    {cameraError && (
+                      <p className="text-sm text-amber-500 mt-1">
+                        {cameraError}
+                      </p>
+                    )}
                   </div>
-                  {cameraError && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCameraError(null);
-                        setIsCameraActive(true);
-                        startCamera();
-                      }}
-                    >
-                      <Camera className="h-4 w-4 mr-2" />
-                      Kamera erneut versuchen
-                    </Button>
-                  )}
+
+                  {/* Upload from Gallery - Primary Button */}
+                  <Button
+                    size="lg"
+                    className="h-16 px-8 gap-3 bg-primary"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                  >
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                        Wird hochgeladen...
+                      </>
+                    ) : (
+                      <>
+                        <ImageIcon className="h-6 w-6" />
+                        Foto aus Galerie wählen
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Retry Camera Button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setCameraError(null);
+                      setIsCameraActive(true);
+                      startCamera();
+                    }}
+                    disabled={isUploading}
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    Kamera erneut versuchen
+                  </Button>
                 </div>
               )}
             </div>
