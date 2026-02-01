@@ -27,9 +27,14 @@ Docker
 - Run:
   docker run -e SUPABASE_URL=... -e SUPABASE_SERVICE_ROLE_KEY=... hufmanager-collage-worker
 
+Metrics & Monitoring
+
+- Der Daemon-Modus (`WORKER_MODE=daemon`) startet einen HTTP-Endpunkt auf `METRICS_PORT` (standard 9464) unter `/metrics` für Prometheus.
+- Optional: Setze `SENTRY_DSN` um Fehler automatisch an Sentry zu senden.
+
 GitHub Actions
 
-Eine Beispiel-Workflow-Datei ist unter `.github/workflows/collage-worker.yml` enthalten. Setze die Secrets `SUPABASE_URL` und `SUPABASE_SERVICE_ROLE_KEY` in den Repo-Secrets.
+Eine Beispiel-Workflow-Datei ist unter `.github/workflows/run-collage-worker.yml` enthalten. Setze die Secrets `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` und optional `SENTRY_DSN` in den Repo-Secrets.
 
 Hinweise
 - Nutze den Service-Role Key **nur** auf dem Server (nicht im Browser).

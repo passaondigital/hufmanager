@@ -5,11 +5,14 @@
   "main": "generate-collages.js",
   "scripts": {
     "start": "node generate-collages.js",
+    "start:daemon": "WORKER_MODE=daemon node generate-collages.js",
     "run-once": "node generate-collages.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.23.0",
-    "sharp": "^0.32.0"
+    "sharp": "^0.32.0",
+    "prom-client": "^14.0.0",
+    "@sentry/node": "^8.0.0"
   },
   "engines": {
     "node": ">=18"

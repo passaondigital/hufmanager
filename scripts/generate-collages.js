@@ -12,6 +12,22 @@
 const { createClient } = require('@supabase/supabase-js');
 const sharp = require('sharp');
 
+// Optional telemetry
+let Sentry;
+if (process.env.SENTRY_DSN) {
+  Sentry = require('@sentry/node');
+  Sentry.init({ dsn: process.env.SENTRY_DSN });
+}
+
+// Prometheus metrics (optional)
+const client = require('prom-client');
+const collectDefaultMetrics = client.collectDefaultMetrics;
+collectDefaultMetrics({ timeout: 5000 });
+const processedJobs = new client.Counter({ name: 'collage_jobs_processed_total', help: 'Total processed jobs' });
+const failedJobs = new client.Counter({ name: 'collage_jobs_failed_total', help: 'Total failed jobs' });
+const jobDuration = new client.Histogram({ name: 'collage_job_duration_seconds', help: 'Duration of job processing', buckets: [0.5, 1, 2, 5, 10, 30, 60] });
+const lastRun = new client.Gauge({ name: 'collage_worker_last_run_timestamp', help: 'Last run timestamp (epoch seconds)' });
+
 const MAX_JOBS_PER_RUN = Number(process.env.MAX_JOBS_PER_RUN || 5);
 const POLL_INTERVAL_MS = Number(process.env.POLL_INTERVAL_MS || 60_000);
 const MAX_BACKOFF_MS = Number(process.env.MAX_BACKOFF_MS || 5 * 60_000);
@@ -118,8 +134,11 @@ async function processJobsOnce(supabase) {
       await supabase.from('collage_jobs').update({ status: 'done', processed_at: new Date().toISOString(), result_file_path: path }).eq('id', job.id);
 
       console.log('Job completed', job.id);
+      processedJobs.inc();
     } catch (err) {
       console.error('Job failed', job.id, err);
+      failedJobs.inc();
+      if (Sentry) Sentry.captureException(err);
       await supabase.from('collage_jobs').update({ status: 'failed', error: String(err) }).eq('id', job.id);
     }
   }
@@ -128,7 +147,22 @@ async function processJobsOnce(supabase) {
 }
 
 async function runDaemon(supabase) {
-  console.log('Starting daemon worker: poll interval', POLL_INTERVAL_MS, 'ms');
+  const METRICS_PORT = Number(process.env.METRICS_PORT || 9464);
+  console.log('Starting daemon worker: poll interval', POLL_INTERVAL_MS, 'ms, metrics on', METRICS_PORT);
+
+  // Start metrics HTTP endpoint
+  const http = require('http');
+  const server = http.createServer(async (req, res) => {
+    if (req.url === '/metrics') {
+      res.setHeader('Content-Type', client.register.contentType);
+      res.end(await client.register.metrics());
+    } else {
+      res.statusCode = 200;
+      res.end('ok');
+    }
+  });
+  server.listen(METRICS_PORT);
+
   let backoff = 1000;
   let stopped = false;
 
@@ -137,7 +171,12 @@ async function runDaemon(supabase) {
 
   while (!stopped) {
     try {
+      const start = Date.now();
       const processed = await processJobsOnce(supabase);
+      const dur = (Date.now() - start) / 1000;
+      jobDuration.observe(dur);
+      lastRun.set(Math.floor(Date.now() / 1000));
+
       if (processed === 0) {
         // no work, regular sleep
         await sleep(POLL_INTERVAL_MS);
@@ -147,11 +186,13 @@ async function runDaemon(supabase) {
       backoff = 1000; // reset
     } catch (err) {
       console.error('Daemon error, backing off', err);
+      if (Sentry) Sentry.captureException(err);
       await sleep(backoff);
       backoff = Math.min(backoff * 2, MAX_BACKOFF_MS);
     }
   }
 
+  server.close();
   console.log('Daemon exiting');
 }
 
