@@ -11,6 +11,8 @@ import { getStorageUrl } from "@/lib/storage";
 import { format, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { getStorageUrl } from "@/lib/storage";
+import { toast } from "sonner";
 
 interface HoofPhoto {
   id: string;
@@ -117,6 +119,54 @@ export function HoofPhotoTimeline({ horseId, horseName }: HoofPhotoTimelineProps
     );
   }
 
+  // Download helper
+  const fetchAndDownload = async (url: string, filename: string) => {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error('Download failed', err);
+      toast.error('Download fehlgeschlagen');
+    }
+  };
+
+  const downloadCollage = async (photo: HoofPhoto) => {
+    const url = await getStorageUrl('hoof_photos', photo.file_path || photo.photo_url);
+    if (!url) return toast.error('URL nicht verfügbar');
+    await fetchAndDownload(url, `collage_${photo.horse_id}_${photo.id}.jpg`);
+    toast.success('Collage heruntergeladen');
+  };
+
+  const downloadAllCollages = async () => {
+    try {
+      const { data: collages = [], error } = await supabase
+        .from('hoof_photos')
+        .select('*')
+        .eq('horse_id', horseId)
+        .eq('notes', 'collage')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      if (collages.length === 0) return toast.info('Keine Collagen gefunden');
+
+      toast.info(`Lade ${collages.length} Collage${collages.length > 1 ? 'n' : ''} herunter...`);
+      for (const c of collages) {
+        const url = await getStorageUrl('hoof_photos', c.file_path || c.photo_url);
+        if (url) await fetchAndDownload(url, `collage_${c.horse_id}_${c.id}.jpg`);
+      }
+      toast.success('Alle Collagen heruntergeladen');
+    } catch (err) {
+      console.error('Download all collages failed', err);
+      toast.error('Fehler beim Herunterladen der Collagen');
+    }
+  };
+
   return (
     <>
       <Card>
@@ -127,6 +177,9 @@ export function HoofPhotoTimeline({ horseId, horseName }: HoofPhotoTimelineProps
             <Badge variant="secondary" className="ml-auto">
               {photos.length} Fotos
             </Badge>
+            <Button variant="ghost" size="sm" onClick={downloadAllCollages} className="ml-2">
+              Alle Collagen herunterladen
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -207,7 +260,17 @@ export function HoofPhotoTimeline({ horseId, horseName }: HoofPhotoTimelineProps
             )}
             
             {selectedPhoto && (
-              <LightboxImage photo={selectedPhoto} />
+              <div>
+                <div className="p-4 pb-0 flex items-center gap-2">
+                  <div className="flex-1" />
+                  {selectedPhoto.notes === 'collage' && (
+                    <Button className="mr-2" onClick={() => downloadCollage(selectedPhoto)}>
+                      Collage herunterladen
+                    </Button>
+                  )}
+                </div>
+                <LightboxImage photo={selectedPhoto} />
+              </div>
             )}
           </div>
 
