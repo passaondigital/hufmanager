@@ -1,0 +1,17 @@
+{
+  "name": "hufmanager-collage-worker",
+  "version": "0.1.0",
+  "private": true,
+  "main": "generate-collages.js",
+  "scripts": {
+    "start": "node generate-collages.js",
+    "run-once": "node generate-collages.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.23.0",
+    "sharp": "^0.32.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
