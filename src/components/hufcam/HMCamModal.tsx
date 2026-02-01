@@ -16,9 +16,10 @@ interface HMCamModalProps {
   onOpenChange: (open: boolean) => void;
   onComplete?: (photos: CapturedPhoto[]) => void;
   mode?: "client" | "provider";
+  horseId?: string; // optional horse to attach uploads to
 }
 
-export function HMCamModal({ open, onOpenChange, onComplete, mode = "client" }: HMCamModalProps) {
+export function HMCamModal({ open, onOpenChange, onComplete, mode = "client", horseId }: HMCamModalProps) {
   const [capturedPhotos, setCapturedPhotos] = useState<CapturedPhoto[]>([]);
   const [showSummary, setShowSummary] = useState(false);
 
@@ -91,20 +92,19 @@ export function HMCamModal({ open, onOpenChange, onComplete, mode = "client" }: 
           <HMCamCapture
             onPhotoCapture={handlePhotoCapture}
             onCancel={handleClose}
+            horseId={horseId}
           />
 
           {/* Action Buttons */}
-          {capturedPhotos.length > 0 && (
-            <div className="flex gap-2 mt-4 pt-4 border-t">
-              <Button variant="outline" onClick={handleClose} className="flex-1">
-                Abbrechen
-              </Button>
-              <Button onClick={handleComplete} className="flex-1 gap-2">
-                <Check className="h-4 w-4" />
-                {capturedPhotos.length} Foto{capturedPhotos.length > 1 ? "s" : ""} speichern
-              </Button>
-            </div>
-          )}
+          <div className="flex gap-2 mt-4 pt-4 border-t">
+            <Button variant="outline" onClick={handleClose} className="flex-1">
+              Abbrechen
+            </Button>
+            <Button onClick={handleComplete} className="flex-1 gap-2">
+              <Check className="h-4 w-4" />
+              {capturedPhotos.length} Foto{capturedPhotos.length > 1 ? "s" : ""} speichern
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

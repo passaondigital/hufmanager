@@ -6,17 +6,22 @@ import { HoofView, HOOF_VIEW_CONFIGS } from "./types";
 import { HoofViewSelector } from "./HoofViewSelector";
 import { CameraGuideOverlay } from "./CameraGuideOverlay";
 import { useDeviceOrientation } from "@/hooks/useDeviceOrientation";
+import { supabase } from "@/integrations/supabase/client";
+import { uploadFile } from "@/lib/storage";
+import { toast } from "sonner";
 
 interface HMCamCaptureProps {
   onPhotoCapture: (dataUrl: string, view: HoofView) => void;
   onCancel?: () => void;
   className?: string;
+  horseId?: string; // optional - if provided, photo will be saved to that horse
 }
 
 export function HMCamCapture({ 
   onPhotoCapture, 
   onCancel,
-  className 
+  className,
+  horseId,
 }: HMCamCaptureProps) {
   const [selectedView, setSelectedView] = useState<HoofView | null>(null);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
@@ -24,7 +29,8 @@ export function HMCamCapture({
   const [cameraError, setCameraError] = useState<string | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  // remove canvas-based capture flow and keep a hidden file input for fast uploads
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   
   const { 
@@ -86,27 +92,72 @@ export function HMCamCapture({
     setIsCameraActive(false);
   }, []);
 
-  // Capture photo
-  const capturePhoto = useCallback(() => {
-    if (!videoRef.current || !canvasRef.current) return;
+  // Trigger file input so mobile camera UI or file picker opens.
+  const triggerFileInput = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
 
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    
-    ctx.drawImage(video, 0, 0);
-    
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
-    setCapturedPhoto(dataUrl);
-    stopCamera();
-  }, [stopCamera]);
+  // Handle file selection: upload immediately and save DB record
+  const handleFileSelected = useCallback(async (file?: File) => {
+    if (!file) return;
+    try {
+      const fileExt = file.name.split('.').pop() || 'jpg';
+      const filename = `${selectedView || 'unknown'}_${Date.now()}.${fileExt}`;
+      const path = `hoof_photos/${filename}`;
 
-  // Confirm captured photo
+      // Show a quick preview using an object URL
+      const previewUrl = URL.createObjectURL(file);
+      setCapturedPhoto(previewUrl);
+      // Stop camera to reduce CPU/bandwidth
+      stopCamera();
+
+      // Upload to supabase storage (bucket: hoof_photos)
+      const { path: uploadedPath, error: uploadErr } = await uploadFile('hoof_photos', path, file, { upsert: true });
+      if (uploadErr || !uploadedPath) {
+        console.error('Upload failed', uploadErr);
+        toast.error('Upload fehlgeschlagen');
+        return;
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage.from('hoof_photos').getPublicUrl(uploadedPath);
+      const publicUrl = urlData.publicUrl;
+
+      // Save a DB record if horseId is available
+      // Use photo_url (required) and also set file_path
+      if (horseId) {
+        const { error: dbError } = await supabase.from('hoof_photos').insert({
+          horse_id: horseId,
+          photo_url: publicUrl,
+          file_path: uploadedPath,
+        });
+
+        if (dbError) {
+          console.error('DB insert failed', dbError);
+          toast.error('Foto konnte nicht in DB gespeichert werden');
+          // still call onPhotoCapture with the public URL so the UI remains responsive
+        }
+      } else {
+        // If no horseId provided, warn but continue (user can assign later)
+        toast.warning('Kein Pferd ausgewählt. Foto wurde hochgeladen, aber nicht zugeordnet.');
+      }
+
+      // Notify parent with the public URL (so modal shows the uploaded image)
+      if (selectedView) {
+        onPhotoCapture(publicUrl, selectedView);
+      } else {
+        // fallback to generic view
+        onPhotoCapture(publicUrl, (HOOF_VIEW_CONFIGS[0]?.id as HoofView) || ('vl' as HoofView));
+      }
+
+      toast.success('Foto hochgeladen');
+    } catch (error) {
+      console.error('Error handling selected file', error);
+      toast.error('Fehler beim Verarbeiten des Fotos');
+    }
+  }, [onPhotoCapture, selectedView, stopCamera, horseId]);
+
+  // Confirm captured photo (keeps the previous API but now expects publicUrls)
   const confirmPhoto = useCallback(() => {
     if (capturedPhoto && selectedView) {
       onPhotoCapture(capturedPhoto, selectedView);
@@ -117,9 +168,13 @@ export function HMCamCapture({
 
   // Retake photo
   const retakePhoto = useCallback(() => {
+    // release any object URL
+    if (capturedPhoto && capturedPhoto.startsWith('blob:')) {
+      URL.revokeObjectURL(capturedPhoto);
+    }
     setCapturedPhoto(null);
     startCamera();
-  }, [startCamera]);
+  }, [startCamera, capturedPhoto]);
 
   // Reset to view selection
   const resetToViewSelection = useCallback(() => {
@@ -141,6 +196,15 @@ export function HMCamCapture({
       startCamera();
     }
   }, [selectedView, isCameraActive, capturedPhoto, startCamera]);
+
+  // Handle native file input changes
+  const onFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    handleFileSelected(file);
+    // Reset input so the same file can be selected again if needed
+    e.currentTarget.value = "";
+  }, [handleFileSelected]);
 
   return (
     <div className={cn("flex flex-col", className)}>
@@ -175,8 +239,15 @@ export function HMCamCapture({
             className="absolute inset-0 w-full h-full object-cover"
           />
           
-          {/* Hidden canvas for capture */}
-          <canvas ref={canvasRef} className="hidden" />
+          {/* Hidden file input for fast camera capture / gallery pick */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={onFileChange}
+          />
 
           {/* Guide Overlay */}
           {isCameraActive && viewConfig && (
@@ -215,8 +286,7 @@ export function HMCamCapture({
             <Button
               size="icon"
               className="h-16 w-16 rounded-full bg-white hover:bg-gray-100 text-black shadow-lg"
-              onClick={capturePhoto}
-              disabled={!isCameraActive}
+              onClick={triggerFileInput}
             >
               <Camera className="h-7 w-7" />
             </Button>
