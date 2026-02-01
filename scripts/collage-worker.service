@@ -1,0 +1,16 @@
+[Unit]
+Description=HufManager Collage Worker (Docker)
+After=network.target docker.service
+
+[Service]
+EnvironmentFile=/etc/hufmanager/collage.env
+Restart=always
+RestartSec=10
+ExecStartPre=-/usr/bin/docker rm -f hufmanager-collage
+ExecStart=/usr/bin/docker run --rm --name hufmanager-collage \
+  --env-file /etc/hufmanager/collage.env \
+  ghcr.io/<org>/hufmanager-collage-worker:latest
+ExecStop=/usr/bin/docker stop hufmanager-collage
+
+[Install]
+WantedBy=multi-user.target
