@@ -115,6 +115,7 @@ export function HufCamSession({
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const currentHoof = HOOF_POSITIONS[currentHoofIndex];
   const currentView = VIEW_ANGLES[currentViewIndex];
@@ -156,8 +157,23 @@ export function HufCamSession({
     }
   }, [photos, notes, currentHoofIndex, currentViewIndex, horseId]);
 
+  // Stop camera - uses ref to avoid dependency issues
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setCameraStream(null);
+    setIsCameraReady(false);
+  }, []);
+
   // Initialize camera
   const startCamera = useCallback(async () => {
+    // Stop any existing stream first
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -166,7 +182,10 @@ export function HufCamSession({
           height: { ideal: 1080 },
         },
       });
+
+      streamRef.current = stream;
       setCameraStream(stream);
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.onloadedmetadata = () => {
@@ -181,20 +200,22 @@ export function HufCamSession({
     }
   }, []);
 
-  const stopCamera = useCallback(() => {
-    if (cameraStream) {
-      cameraStream.getTracks().forEach(track => track.stop());
-      setCameraStream(null);
-      setIsCameraReady(false);
-    }
-  }, [cameraStream]);
-
+  // Start/stop camera based on capture mode
   useEffect(() => {
     if (captureMode === "camera") {
       startCamera();
+    } else {
+      stopCamera();
     }
-    return () => stopCamera();
-  }, [captureMode, startCamera, stopCamera]);
+
+    return () => {
+      // Cleanup on unmount
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+    };
+  }, [captureMode]); // Only depend on captureMode, not on callbacks
 
   // Capture photo with burn-in metadata
   const capturePhoto = useCallback(async () => {
@@ -652,22 +673,27 @@ export function HufCamSession({
             })}
           </div>
 
-          {photoCount >= 4 ? (
-            <Button size="sm" onClick={handleComplete}>
-              <Sparkles className="h-4 w-4 mr-1" />
-              Fertig ({photoCount})
-            </Button>
-          ) : (
+          {/* Always show both buttons for clarity */}
+          {!(currentHoofIndex === HOOF_POSITIONS.length - 1 && currentViewIndex === VIEW_ANGLES.length - 1) && (
             <Button
               variant="outline"
               size="sm"
               onClick={goNext}
-              disabled={currentHoofIndex === HOOF_POSITIONS.length - 1 && currentViewIndex === VIEW_ANGLES.length - 1}
             >
               Weiter
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           )}
+
+          <Button
+            size="sm"
+            onClick={handleComplete}
+            disabled={photoCount < 1}
+            variant={photoCount >= 4 ? "default" : "secondary"}
+          >
+            <Sparkles className="h-4 w-4 mr-1" />
+            {photoCount >= 4 ? `Fertig (${photoCount})` : `Fotos: ${photoCount}`}
+          </Button>
         </div>
       </div>
     </div>
