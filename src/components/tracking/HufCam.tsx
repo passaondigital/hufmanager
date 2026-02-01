@@ -1,28 +1,21 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Camera,
-  Download,
-  Share2,
+  ImagePlus,
   RotateCcw,
   Loader2,
   X,
-  Check,
   Sparkles,
-  Save,
-  CheckCircle2,
+  Video,
+  VideoOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 
-interface HoofPhoto {
-  position: "VL" | "VR" | "HL" | "HR";
-  label: string;
-  dataUrl: string | null;
-}
+type HoofPosition = "VL" | "VR" | "HL" | "HR";
 
 interface HufCamProps {
   horseName: string;
@@ -30,7 +23,7 @@ interface HufCamProps {
   onCollageGenerated?: (collageDataUrl: string) => void;
 }
 
-const HOOF_POSITIONS: { position: HoofPhoto["position"]; label: string; fullLabel: string }[] = [
+const HOOF_POSITIONS: { position: HoofPosition; label: string; fullLabel: string }[] = [
   { position: "VL", label: "VL", fullLabel: "Vorne Links" },
   { position: "VR", label: "VR", fullLabel: "Vorne Rechts" },
   { position: "HL", label: "HL", fullLabel: "Hinten Links" },
@@ -38,26 +31,132 @@ const HOOF_POSITIONS: { position: HoofPhoto["position"]; label: string; fullLabe
 ];
 
 export function HufCam({ horseName, horseId, onCollageGenerated }: HufCamProps) {
-  const [photos, setPhotos] = useState<Record<string, string | null>>({
+  // Photos state - simple Record for the 4 hoofs
+  const [photos, setPhotos] = useState<Record<HoofPosition, string | null>>({
     VL: null,
     VR: null,
     HL: null,
     HR: null,
   });
-  const [savedPhotos, setSavedPhotos] = useState<Record<string, boolean>>({
-    VL: false,
-    VR: false,
-    HL: false,
-    HR: false,
-  });
-  const [collageUrl, setCollageUrl] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [activeUpload, setActiveUpload] = useState<string | null>(null);
   
-  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  // Camera state
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [isCameraLoading, setIsCameraLoading] = useState(false);
+  const [selectedHoof, setSelectedHoof] = useState<HoofPosition>("VL");
+  const [isGeneratingCollage, setIsGeneratingCollage] = useState(false);
+  
+  // Refs
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handlePhotoCapture = (position: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+    };
+  }, []);
+
+  // Start camera - SIMPLE constraints, no frameRate forcing
+  const startCamera = useCallback(async () => {
+    if (streamRef.current) return; // Already running
+    
+    setIsCameraLoading(true);
+    
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "environment",
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          // NO frameRate constraint - let browser decide to avoid flickering
+        },
+        audio: false,
+      });
+      
+      streamRef.current = stream;
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        // Wait for video to be ready
+        await new Promise<void>((resolve) => {
+          if (videoRef.current) {
+            videoRef.current.onloadedmetadata = () => resolve();
+          }
+        });
+        await videoRef.current.play();
+      }
+      
+      setIsCameraActive(true);
+    } catch (error) {
+      console.error("Camera error:", error);
+      toast.error("Kamera konnte nicht gestartet werden", {
+        description: "Bitte Berechtigungen prüfen oder Galerie-Upload nutzen.",
+      });
+    } finally {
+      setIsCameraLoading(false);
+    }
+  }, []);
+
+  // Stop camera
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraActive(false);
+  }, []);
+
+  // Capture photo from video stream
+  const capturePhoto = useCallback(() => {
+    if (!videoRef.current || !canvasRef.current || !isCameraActive) {
+      toast.error("Kamera nicht bereit");
+      return;
+    }
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    
+    if (!ctx) return;
+
+    // Set canvas size to video size
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Draw video frame to canvas
+    ctx.drawImage(video, 0, 0);
+    
+    // Get data URL
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+    
+    // Save to selected hoof slot
+    setPhotos(prev => ({ ...prev, [selectedHoof]: dataUrl }));
+    
+    toast.success(`${selectedHoof} Foto aufgenommen!`);
+    
+    // Auto-advance to next empty slot
+    const positions: HoofPosition[] = ["VL", "VR", "HL", "HR"];
+    const currentIndex = positions.indexOf(selectedHoof);
+    for (let i = 1; i <= 4; i++) {
+      const nextIndex = (currentIndex + i) % 4;
+      const nextPosition = positions[nextIndex];
+      if (!photos[nextPosition]) {
+        setSelectedHoof(nextPosition);
+        break;
+      }
+    }
+  }, [isCameraActive, selectedHoof, photos]);
+
+  // Handle file upload (gallery fallback)
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -66,295 +165,183 @@ export function HufCam({ horseName, horseId, onCollageGenerated }: HufCamProps) 
       return;
     }
 
-    setActiveUpload(position);
-
     const reader = new FileReader();
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
-      setPhotos(prev => ({ ...prev, [position]: dataUrl }));
-      setActiveUpload(null);
-      setCollageUrl(null); // Reset collage when new photo is added
-    };
-    reader.onerror = () => {
-      toast.error("Fehler beim Laden des Bildes");
-      setActiveUpload(null);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const removePhoto = (position: string) => {
-    setPhotos(prev => ({ ...prev, [position]: null }));
-    setSavedPhotos(prev => ({ ...prev, [position]: false }));
-    setCollageUrl(null);
-  };
-
-  const photoCount = Object.values(photos).filter(Boolean).length;
-  const savedCount = Object.values(savedPhotos).filter(Boolean).length;
-  const canGenerateCollage = photoCount >= 2;
-  const canSave = photoCount > 0 && savedCount < photoCount;
-
-  // Convert data URL to Blob for upload
-  const dataUrlToBlob = (dataUrl: string): Blob => {
-    const arr = dataUrl.split(",");
-    const mime = arr[0].match(/:(.*?);/)?.[1] || "image/jpeg";
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
-    }
-    return new Blob([u8arr], { type: mime });
-  };
-
-  // Upload photos to Supabase Storage and save to database
-  const savePhotosToSupabase = async () => {
-    if (!canSave) return;
-
-    setIsSaving(true);
-    const unsavedPositions = HOOF_POSITIONS.filter(
-      p => photos[p.position] && !savedPhotos[p.position]
-    );
-
-    try {
-      for (const { position, fullLabel } of unsavedPositions) {
-        const dataUrl = photos[position];
-        if (!dataUrl) continue;
-
-        const blob = dataUrlToBlob(dataUrl);
-        const fileName = `${horseId}/${Date.now()}_${position}.jpg`;
-
-        // Upload to storage
-        const { error: uploadError } = await supabase.storage
-          .from("hoof_photos")
-          .upload(fileName, blob, {
-            contentType: "image/jpeg",
-            upsert: false,
-          });
-
-        if (uploadError) {
-          console.error(`Upload error for ${position}:`, uploadError);
-          toast.error(`Fehler beim Hochladen: ${fullLabel}`);
-          continue;
+      setPhotos(prev => ({ ...prev, [selectedHoof]: dataUrl }));
+      toast.success(`${selectedHoof} Foto hochgeladen!`);
+      
+      // Auto-advance to next empty slot
+      const positions: HoofPosition[] = ["VL", "VR", "HL", "HR"];
+      const currentIndex = positions.indexOf(selectedHoof);
+      for (let i = 1; i <= 4; i++) {
+        const nextIndex = (currentIndex + i) % 4;
+        const nextPosition = positions[nextIndex];
+        if (!photos[nextPosition]) {
+          setSelectedHoof(nextPosition);
+          break;
         }
-
-        // Save to database
-        const { error: dbError } = await supabase.from("hoof_photos").insert({
-          horse_id: horseId,
-          photo_url: fileName,
-          hoof_position: position,
-          taken_at: new Date().toISOString(),
-        });
-
-        if (dbError) {
-          console.error(`Database error for ${position}:`, dbError);
-          toast.error(`Fehler beim Speichern: ${fullLabel}`);
-          continue;
-        }
-
-        setSavedPhotos(prev => ({ ...prev, [position]: true }));
       }
+    };
+    reader.onerror = () => toast.error("Fehler beim Laden des Bildes");
+    reader.readAsDataURL(file);
+    
+    // Reset input so same file can be selected again
+    e.target.value = "";
+  }, [selectedHoof, photos]);
 
-      toast.success("Fotos gespeichert!", {
-        description: `${unsavedPositions.length} Foto(s) mit ${horseName} verknüpft`,
-      });
-    } catch (error) {
-      console.error("Save error:", error);
-      toast.error("Fehler beim Speichern der Fotos");
-    } finally {
-      setIsSaving(false);
+  // Trigger file input click
+  const triggerFileUpload = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  // Remove photo from slot
+  const removePhoto = useCallback((position: HoofPosition) => {
+    setPhotos(prev => ({ ...prev, [position]: null }));
+    setSelectedHoof(position);
+  }, []);
+
+  // Select hoof slot
+  const selectHoof = useCallback((position: HoofPosition) => {
+    setSelectedHoof(position);
+    // If camera not active, start it
+    if (!isCameraActive && !isCameraLoading) {
+      startCamera();
     }
-  };
+  }, [isCameraActive, isCameraLoading, startCamera]);
 
+  // Generate collage
   const generateCollage = useCallback(async () => {
-    if (!canGenerateCollage) return;
+    const filledPhotos = Object.values(photos).filter(Boolean);
+    if (filledPhotos.length < 2) {
+      toast.error("Mindestens 2 Fotos benötigt");
+      return;
+    }
 
-    setIsGenerating(true);
+    setIsGeneratingCollage(true);
+    toast.info("Collage wird generiert...");
 
     try {
-      // Create canvas
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("Canvas context not available");
 
-      // Collage dimensions (Instagram square)
-      const collageSize = 1080;
+      // 1080x1080 Instagram square
+      const size = 1080;
       const padding = 20;
       const headerHeight = 80;
       const footerHeight = 60;
-      const photoAreaHeight = collageSize - headerHeight - footerHeight;
       
-      canvas.width = collageSize;
-      canvas.height = collageSize;
+      canvas.width = size;
+      canvas.height = size;
 
-      // Background gradient
-      const gradient = ctx.createLinearGradient(0, 0, 0, collageSize);
+      // Dark gradient background
+      const gradient = ctx.createLinearGradient(0, 0, 0, size);
       gradient.addColorStop(0, "#1a1a1a");
       gradient.addColorStop(1, "#0d0d0d");
       ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, collageSize, collageSize);
+      ctx.fillRect(0, 0, size, size);
 
       // Header with horse name
       ctx.fillStyle = "#F47B20";
-      ctx.font = "bold 36px 'Outfit', sans-serif";
+      ctx.font = "bold 36px sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText(horseName, collageSize / 2, 50);
+      ctx.fillText(horseName, size / 2, 50);
 
-      // Get photos that exist
-      const existingPhotos = HOOF_POSITIONS
-        .filter(p => photos[p.position])
-        .map(p => ({ ...p, dataUrl: photos[p.position]! }));
+      // Load images and draw in 2x2 grid
+      const positions: HoofPosition[] = ["VL", "VR", "HL", "HR"];
+      const gridSize = (size - padding * 3) / 2;
+      const photoAreaTop = headerHeight;
 
-      // Calculate grid layout
-      const cols = existingPhotos.length <= 2 ? existingPhotos.length : 2;
-      const rows = Math.ceil(existingPhotos.length / cols);
-      const photoWidth = (collageSize - padding * (cols + 1)) / cols;
-      const photoHeight = (photoAreaHeight - padding * (rows + 1)) / rows;
+      for (let i = 0; i < positions.length; i++) {
+        const pos = positions[i];
+        const photoData = photos[pos];
+        const col = i % 2;
+        const row = Math.floor(i / 2);
+        const x = padding + col * (gridSize + padding);
+        const y = photoAreaTop + padding + row * (gridSize + padding);
 
-      // Load and draw photos
-      const loadImage = (src: string): Promise<HTMLImageElement> => {
-        return new Promise((resolve, reject) => {
-          const img = new Image();
-          img.crossOrigin = "anonymous";
-          img.onload = () => resolve(img);
-          img.onerror = reject;
-          img.src = src;
-        });
-      };
+        // Draw slot background
+        ctx.fillStyle = "#2a2a2a";
+        ctx.fillRect(x, y, gridSize, gridSize);
 
-      for (let i = 0; i < existingPhotos.length; i++) {
-        const photo = existingPhotos[i];
-        const col = i % cols;
-        const row = Math.floor(i / cols);
-        
-        const x = padding + col * (photoWidth + padding);
-        const y = headerHeight + padding + row * (photoHeight + padding);
-
-        try {
-          const img = await loadImage(photo.dataUrl);
+        if (photoData) {
+          // Load and draw image
+          const img = await loadImage(photoData);
           
-          // Draw rounded rectangle background
-          ctx.fillStyle = "#2a2a2a";
-          roundRect(ctx, x, y, photoWidth, photoHeight, 12);
-          ctx.fill();
-
           // Calculate crop to fill (cover)
           const imgAspect = img.width / img.height;
-          const boxAspect = photoWidth / photoHeight;
-          
+          const boxAspect = 1; // Square
           let sx = 0, sy = 0, sw = img.width, sh = img.height;
           
           if (imgAspect > boxAspect) {
-            sw = img.height * boxAspect;
+            sw = img.height;
             sx = (img.width - sw) / 2;
           } else {
-            sh = img.width / boxAspect;
+            sh = img.width;
             sy = (img.height - sh) / 2;
           }
 
-          // Clip to rounded rectangle
-          ctx.save();
-          roundRect(ctx, x, y, photoWidth, photoHeight, 12);
-          ctx.clip();
-          ctx.drawImage(img, sx, sy, sw, sh, x, y, photoWidth, photoHeight);
-          ctx.restore();
-
-          // Position label
-          ctx.fillStyle = "rgba(244, 123, 32, 0.9)";
-          const labelWidth = 50;
-          const labelHeight = 30;
-          roundRect(ctx, x + 10, y + 10, labelWidth, labelHeight, 6);
-          ctx.fill();
-          
-          ctx.fillStyle = "#ffffff";
-          ctx.font = "bold 16px 'Outfit', sans-serif";
-          ctx.textAlign = "center";
-          ctx.fillText(photo.label, x + 10 + labelWidth / 2, y + 10 + labelHeight / 2 + 5);
-
-        } catch (err) {
-          console.error("Error loading image:", err);
+          ctx.drawImage(img, sx, sy, sw, sh, x, y, gridSize, gridSize);
         }
+
+        // Position label
+        ctx.fillStyle = "rgba(244, 123, 32, 0.9)";
+        ctx.fillRect(x + 10, y + 10, 50, 30);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 16px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(pos, x + 35, y + 30);
       }
 
-      // Footer with timestamp and branding
+      // Footer with timestamp
       const now = new Date();
-      const timestamp = now.toLocaleDateString("de-DE", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
-      const time = now.toLocaleTimeString("de-DE", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-
+      const timestamp = now.toLocaleDateString("de-DE") + " • " + 
+                        now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+      
       ctx.fillStyle = "#666666";
-      ctx.font = "16px 'Outfit', sans-serif";
+      ctx.font = "16px sans-serif";
       ctx.textAlign = "left";
-      ctx.fillText(`📅 ${timestamp} • ${time}`, padding, collageSize - 25);
+      ctx.fillText(`📅 ${timestamp}`, padding, size - 25);
 
       ctx.textAlign = "right";
       ctx.fillStyle = "#F47B20";
-      ctx.font = "bold 16px 'Outfit', sans-serif";
-      ctx.fillText("HufManager.de", collageSize - padding, collageSize - 25);
+      ctx.font = "bold 16px sans-serif";
+      ctx.fillText("HufManager.de", size - padding, size - 25);
 
-      // Convert to data URL
       const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
-      setCollageUrl(dataUrl);
       onCollageGenerated?.(dataUrl);
+      
       toast.success("Collage erstellt!", {
-        description: "Bereit zum Teilen auf Social Media",
+        description: "Bereit zum Teilen",
       });
-
     } catch (error) {
-      console.error("Error generating collage:", error);
+      console.error("Collage error:", error);
       toast.error("Fehler beim Erstellen der Collage");
     } finally {
-      setIsGenerating(false);
+      setIsGeneratingCollage(false);
     }
-  }, [photos, horseName, canGenerateCollage, onCollageGenerated]);
+  }, [photos, horseName, onCollageGenerated]);
 
-  const downloadCollage = () => {
-    if (!collageUrl) return;
-
-    const link = document.createElement("a");
-    link.download = `${horseName.replace(/\s+/g, "_")}_Hufe_${new Date().toISOString().split("T")[0]}.jpg`;
-    link.href = collageUrl;
-    link.click();
-    toast.success("Collage heruntergeladen");
+  // Helper to load image
+  const loadImage = (src: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
   };
 
-  const shareCollage = async () => {
-    if (!collageUrl) return;
-
-    try {
-      // Convert data URL to blob
-      const response = await fetch(collageUrl);
-      const blob = await response.blob();
-      const file = new File([blob], `${horseName}_Hufe.jpg`, { type: "image/jpeg" });
-
-      if (navigator.share && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: `${horseName} - Huf-Dokumentation`,
-          text: `Huf-Dokumentation für ${horseName} #HufManager`,
-        });
-      } else {
-        // Fallback: copy to clipboard or download
-        downloadCollage();
-      }
-    } catch (error) {
-      if ((error as Error).name !== "AbortError") {
-        toast.error("Teilen fehlgeschlagen");
-        downloadCollage();
-      }
-    }
-  };
-
-  const resetAll = () => {
+  // Reset all
+  const resetAll = useCallback(() => {
     setPhotos({ VL: null, VR: null, HL: null, HR: null });
-    setSavedPhotos({ VL: false, VR: false, HL: false, HR: false });
-    setCollageUrl(null);
-  };
+    setSelectedHoof("VL");
+    stopCamera();
+  }, [stopCamera]);
+
+  const photoCount = Object.values(photos).filter(Boolean).length;
+  const canGenerateCollage = photoCount >= 2;
 
   return (
     <Card className="border-primary/20 bg-card">
@@ -369,157 +356,166 @@ export function HufCam({ horseName, horseId, onCollageGenerated }: HufCamProps) 
           </Badge>
         </div>
       </CardHeader>
+      
       <CardContent className="space-y-4">
-        {/* Photo Grid */}
+        {/* Hidden file input for gallery upload */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={handleFileUpload}
+        />
+        
+        {/* Hidden canvas for photo capture */}
+        <canvas ref={canvasRef} className="hidden" />
+
+        {/* Camera View */}
+        <div className="relative aspect-[4/3] bg-black rounded-xl overflow-hidden">
+          <video
+            ref={videoRef}
+            playsInline
+            muted
+            autoPlay
+            className={cn(
+              "w-full h-full object-cover",
+              !isCameraActive && "hidden"
+            )}
+          />
+          
+          {/* Placeholder when camera inactive */}
+          {!isCameraActive && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted/50">
+              {isCameraLoading ? (
+                <Loader2 className="h-12 w-12 text-primary animate-spin" />
+              ) : (
+                <>
+                  <VideoOff className="h-12 w-12 text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">Kamera inaktiv</p>
+                </>
+              )}
+            </div>
+          )}
+          
+          {/* Selected hoof indicator */}
+          {isCameraActive && (
+            <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground">
+              Aufnahme für: {selectedHoof}
+            </Badge>
+          )}
+        </div>
+
+        {/* Camera Controls */}
+        <div className="flex gap-2">
+          {!isCameraActive ? (
+            <Button
+              onClick={startCamera}
+              disabled={isCameraLoading}
+              className="flex-1 h-12"
+            >
+              {isCameraLoading ? (
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              ) : (
+                <Video className="h-5 w-5 mr-2" />
+              )}
+              Kamera starten
+            </Button>
+          ) : (
+            <>
+              <Button
+                onClick={capturePhoto}
+                className="flex-1 h-12 bg-primary hover:bg-primary/90"
+              >
+                <Camera className="h-5 w-5 mr-2" />
+                Foto aufnehmen
+              </Button>
+              <Button
+                variant="outline"
+                onClick={stopCamera}
+                className="h-12"
+              >
+                <VideoOff className="h-5 w-5" />
+              </Button>
+            </>
+          )}
+          
+          {/* Gallery Upload Button - ALWAYS visible */}
+          <Button
+            variant="outline"
+            onClick={triggerFileUpload}
+            className="h-12"
+          >
+            <ImagePlus className="h-5 w-5" />
+          </Button>
+        </div>
+
+        {/* Hoof Grid - ALWAYS visible */}
         <div className="grid grid-cols-2 gap-3">
           {HOOF_POSITIONS.map(({ position, label, fullLabel }) => (
-            <div key={position} className="relative">
-              <input
-                ref={el => fileInputRefs.current[position] = el}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={handlePhotoCapture(position)}
-              />
-              
+            <div
+              key={position}
+              onClick={() => !photos[position] && selectHoof(position)}
+              className={cn(
+                "relative aspect-square rounded-xl overflow-hidden border-2 transition-all cursor-pointer",
+                selectedHoof === position && !photos[position]
+                  ? "border-primary ring-2 ring-primary/30"
+                  : photos[position]
+                  ? "border-green-500/50"
+                  : "border-dashed border-border hover:border-primary/50"
+              )}
+            >
               {photos[position] ? (
-                <div className="relative aspect-square rounded-xl overflow-hidden border-2 border-primary/30 bg-card">
-                  <img 
-                    src={photos[position]!} 
+                <>
+                  <img
+                    src={photos[position]!}
                     alt={fullLabel}
                     className="w-full h-full object-cover"
                   />
-                  <Badge 
-                    className={cn(
-                      "absolute top-2 left-2 font-bold",
-                      savedPhotos[position] 
-                        ? "bg-green-500 text-white" 
-                        : "bg-primary text-primary-foreground"
-                    )}
-                  >
+                  <Badge className="absolute top-2 left-2 bg-green-500 text-white">
                     {label}
-                    {savedPhotos[position] && <CheckCircle2 className="h-3 w-3 ml-1" />}
                   </Badge>
                   <Button
                     variant="destructive"
                     size="icon"
                     className="absolute top-2 right-2 h-7 w-7"
-                    onClick={() => removePhoto(position)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removePhoto(position);
+                    }}
                   >
                     <X className="h-4 w-4" />
                   </Button>
-                  <div className="absolute bottom-2 right-2">
-                    {savedPhotos[position] ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-500 drop-shadow-lg" />
-                    ) : (
-                      <Check className="h-5 w-5 text-amber-500 drop-shadow-lg" />
-                    )}
-                  </div>
-                </div>
+                </>
               ) : (
-                <button
-                  onClick={() => fileInputRefs.current[position]?.click()}
-                  disabled={activeUpload === position}
-                  className={cn(
-                    "w-full aspect-square rounded-xl border-2 border-dashed transition-all",
-                    "flex flex-col items-center justify-center gap-2",
-                    "hover:border-primary hover:bg-primary/5",
-                    activeUpload === position 
-                      ? "border-primary bg-primary/10" 
-                      : "border-border bg-muted/30"
-                  )}
-                >
-                  {activeUpload === position ? (
-                    <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                  ) : (
-                    <>
-                      <Camera className="h-8 w-8 text-muted-foreground" />
-                      <span className="text-sm font-medium text-muted-foreground">{label}</span>
-                      <span className="text-xs text-muted-foreground/70">{fullLabel}</span>
-                    </>
-                  )}
-                </button>
+                <div className="flex flex-col items-center justify-center h-full bg-muted/30">
+                  <Camera className="h-8 w-8 text-muted-foreground mb-1" />
+                  <span className="text-sm font-medium text-muted-foreground">{label}</span>
+                  <span className="text-xs text-muted-foreground/70">{fullLabel}</span>
+                </div>
               )}
             </div>
           ))}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            className="flex-1 h-12"
-            disabled={!canSave || isSaving}
-            onClick={savePhotosToSupabase}
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                Speichern...
-              </>
-            ) : savedCount === photoCount && photoCount > 0 ? (
-              <>
-                <CheckCircle2 className="h-5 w-5 mr-2 text-green-500" />
-                Gespeichert
-              </>
-            ) : (
-              <>
-                <Save className="h-5 w-5 mr-2" />
-                Speichern
-              </>
-            )}
-          </Button>
-          <Button
-            className="flex-1 h-12"
-            disabled={!canGenerateCollage || isGenerating}
-            onClick={generateCollage}
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                Collage...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-5 w-5 mr-2" />
-                Collage
-              </>
-            )}
-          </Button>
-        </div>
-
-        {/* Collage Preview */}
-        {collageUrl && (
-          <div className="space-y-3 pt-2 border-t border-border">
-            <p className="text-sm font-medium text-muted-foreground">Fertige Collage</p>
-            <div className="relative rounded-xl overflow-hidden border border-border">
-              <img 
-                src={collageUrl} 
-                alt="Huf-Collage"
-                className="w-full"
-              />
-            </div>
-            
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={downloadCollage}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Download
-              </Button>
-              <Button
-                className="flex-1"
-                onClick={shareCollage}
-              >
-                <Share2 className="h-4 w-4 mr-2" />
-                Teilen
-              </Button>
-            </div>
-          </div>
-        )}
+        {/* Collage Button */}
+        <Button
+          onClick={generateCollage}
+          disabled={!canGenerateCollage || isGeneratingCollage}
+          className="w-full h-12"
+        >
+          {isGeneratingCollage ? (
+            <>
+              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              Collage wird erstellt...
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-5 w-5 mr-2" />
+              Collage erstellen ({photoCount}/4)
+            </>
+          )}
+        </Button>
 
         {/* Reset Button */}
         {photoCount > 0 && (
@@ -536,26 +532,4 @@ export function HufCam({ horseName, horseId, onCollageGenerated }: HufCamProps) 
       </CardContent>
     </Card>
   );
-}
-
-// Helper function for rounded rectangles
-function roundRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number
-) {
-  ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.lineTo(x + width - radius, y);
-  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-  ctx.lineTo(x + width, y + height - radius);
-  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-  ctx.lineTo(x + radius, y + height);
-  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-  ctx.lineTo(x, y + radius);
-  ctx.quadraticCurveTo(x, y, x + radius, y);
-  ctx.closePath();
 }
