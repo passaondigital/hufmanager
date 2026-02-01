@@ -1580,32 +1580,38 @@ export type Database = {
         Row: {
           appointment_id: string | null
           created_at: string
+          file_path: string | null
           hoof_position: string | null
           horse_id: string
           id: string
           notes: string | null
           photo_url: string
           taken_at: string | null
+          url: string | null
         }
         Insert: {
           appointment_id?: string | null
           created_at?: string
+          file_path?: string | null
           hoof_position?: string | null
           horse_id: string
           id?: string
           notes?: string | null
           photo_url: string
           taken_at?: string | null
+          url?: string | null
         }
         Update: {
           appointment_id?: string | null
           created_at?: string
+          file_path?: string | null
           hoof_position?: string | null
           horse_id?: string
           id?: string
           notes?: string | null
           photo_url?: string
           taken_at?: string | null
+          url?: string | null
         }
         Relationships: [
           {
