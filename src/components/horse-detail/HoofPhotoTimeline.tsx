@@ -87,6 +87,68 @@ export function HoofPhotoTimeline({ horseId, horseName }: HoofPhotoTimelineProps
     setSelectedPhoto(photo);
   };
 
+  // Manual check & create collages for all positions
+  const checkAndCreateAllCollages = async () => {
+    const positions = ['vl','vr','hl','hr'];
+    try {
+      toast.info('Prüfe Collagen...');
+      for (const pos of positions) {
+        const { data: photosForPos = [], error } = await supabase
+          .from('hoof_photos')
+          .select('*')
+          .eq('horse_id', horseId)
+          .eq('hoof_position', pos)
+          .not('notes', 'eq', 'collage')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        if (photosForPos.length >= 4 && photosForPos.length % 4 === 0) {
+          // Create a collage client-side using latest 4
+          const latest4 = photosForPos.slice(0,4);
+
+          // get signed urls
+          const signedUrls = await Promise.all(latest4.map(async (p: any) => getStorageUrl('hoof_photos', p.file_path || p.photo_url)));
+
+          // fetch blobs and images
+          const loadImageFromUrl = async (src: string) => {
+            const res = await fetch(src);
+            const blob = await res.blob();
+            const objUrl = URL.createObjectURL(blob);
+            const img = await new Promise<HTMLImageElement>((resImg, rejImg) => {
+              const i = new Image(); i.onload = () => resImg(i); i.onerror = rejImg; i.src = objUrl;
+            });
+            URL.revokeObjectURL(objUrl);
+            return img;
+          };
+
+          const images = await Promise.all(signedUrls.map(s => loadImageFromUrl(s as string)));
+
+          const size = 2048; const canvas = document.createElement('canvas'); canvas.width = size; canvas.height = size; const ctx = canvas.getContext('2d'); if (!ctx) continue;
+          const half = size / 2;
+          for (let i = 0; i < 4; i++) {
+            const img = images[i]; const x = (i % 2) * half; const y = Math.floor(i / 2) * half; const ratio = Math.max(half / img.width, half / img.height); const w = img.width * ratio; const h = img.height * ratio; const dx = x + (half - w) / 2; const dy = y + (half - h) / 2; ctx.drawImage(img, dx, dy, w, h);
+          }
+
+          const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve as any, 'image/jpeg', 0.9));
+          if (!blob) continue;
+
+          const filename = `collage_${horseId}_${pos}_${Date.now()}.jpg`;
+          const path = `hoof_photos/collages/${filename}`;
+          const { path: uploadedPath, error: uploadErr } = await uploadFile('hoof_photos', path, blob, { upsert: true });
+          if (uploadErr || !uploadedPath) continue;
+          const { data: urlData } = supabase.storage.from('hoof_photos').getPublicUrl(uploadedPath);
+          const publicUrl = urlData.publicUrl;
+          await supabase.from('hoof_photos').insert({ horse_id: horseId, photo_url: publicUrl, file_path: uploadedPath, hoof_position: pos, notes: 'collage', taken_at: new Date().toISOString() });
+          toast.success(`Collage für ${pos.toUpperCase()} erstellt`);
+        }
+      }
+      // refresh query
+      queryClient.invalidateQueries(['hoof-photos-timeline', horseId]);
+    } catch (err) {
+      console.error('Check/create collages failed', err);
+      toast.error('Fehler beim Prüfen / Erstellen von Collagen');
+    }
+  };
+
   const navigateLightbox = (direction: "prev" | "next") => {
     const newIndex = direction === "prev" 
       ? (lightboxIndex - 1 + photos.length) % photos.length
@@ -179,6 +241,9 @@ export function HoofPhotoTimeline({ horseId, horseName }: HoofPhotoTimelineProps
             </Badge>
             <Button variant="ghost" size="sm" onClick={downloadAllCollages} className="ml-2">
               Alle Collagen herunterladen
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => checkAndCreateAllCollages()} className="ml-2">
+              Collagen prüfen & erstellen
             </Button>
           </CardTitle>
         </CardHeader>

@@ -264,16 +264,28 @@ export function HMCamCapture({
         })
       );
 
-      // Load images
-      const loadImage = (src: string) => new Promise<HTMLImageElement>((res, rej) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => res(img);
-        img.onerror = rej;
-        img.src = src || '';
-      });
+      // Load images via fetch -> blob -> objectURL to avoid CORS issues on mobile
+      const loadImageFromUrl = async (src: string) => {
+        try {
+          const res = await fetch(src, { mode: 'cors' });
+          const blob = await res.blob();
+          const objUrl = URL.createObjectURL(blob);
+          const img = await new Promise<HTMLImageElement>((resImg, rejImg) => {
+            const i = new Image();
+            i.onload = () => resImg(i);
+            i.onerror = rejImg;
+            i.src = objUrl;
+          });
+          // revoke object URL after loading
+          URL.revokeObjectURL(objUrl);
+          return img;
+        } catch (err) {
+          console.error('Failed to load image for collage via fetch:', err);
+          throw err;
+        }
+      };
 
-      const images = await Promise.all(signedUrls.map(s => loadImage(s as string)));
+      const images = await Promise.all(signedUrls.map(s => loadImageFromUrl(s as string)));
 
       const size = 2048;
       const canvas = document.createElement('canvas');
@@ -329,6 +341,7 @@ export function HMCamCapture({
       }
     } catch (err) {
       console.error('Collage creation failed', err);
+      toast.error('Collage konnte nicht erstellt werden (siehe Konsole)');
     }
   }, []);
 
