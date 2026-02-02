@@ -89,7 +89,7 @@ export function HufCamPro({
   });
   const [collageUrl, setCollageUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const [pendingUploads, setPendingUploads] = useState(0); // Track background uploads
   
   // Camera state - simplified
   const [isCameraActive, setIsCameraActive] = useState(false);
@@ -177,84 +177,71 @@ export function HufCamPro({
     };
   }, [isWizardOpen, isCameraActive, currentPhoto, startCamera, stopCamera]);
 
-  // Upload photo to Supabase storage and save to DB
-  const uploadAndSavePhoto = useCallback(async (
-    dataUrl: string, 
-    position: HoofPosition, 
+  // SCHNELLFEUER-MODUS: Save locally FIRST, upload to cloud in BACKGROUND
+  const savePhotoLocally = useCallback((
+    dataUrl: string,
+    position: HoofPosition,
     angle: PhotoAngle
-  ): Promise<boolean> => {
-    setIsUploading(true);
-    
-    try {
-      // Convert dataUrl to blob
-      const response = await fetch(dataUrl);
-      const blob = await response.blob();
-      
-      // Generate unique filename
-      const timestamp = Date.now();
-      const fileName = `${horseId}/${position}_${angle}_${timestamp}.jpg`;
-      
-      // Upload to storage bucket
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("hoof_photos")
-        .upload(fileName, blob, {
-          contentType: "image/jpeg",
-          upsert: true,
-        });
-      
-      if (uploadError) {
-        console.error("Upload error:", uploadError);
-        toast.error("Upload fehlgeschlagen");
-        return false;
-      }
-      
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from("hoof_photos")
-        .getPublicUrl(fileName);
-      
-      // Save to database
-      const { data: dbData, error: dbError } = await supabase
-        .from("hoof_photos")
-        .insert({
-          horse_id: horseId,
-          hoof_position: `${position}_${angle}`,
-          photo_url: fileName,
-          url: publicUrl,
-          file_path: fileName,
-          taken_at: new Date().toISOString(),
-        })
-        .select("id")
-        .single();
-      
-      if (dbError) {
-        console.error("DB error:", dbError);
-        toast.error("Speichern fehlgeschlagen");
-        return false;
-      }
-      
-      // Update local state with DB info
-      setPhotos((prev) => ({
-        ...prev,
-        [position]: {
-          ...prev[position],
-          [angle]: {
-            dataUrl,
-            dbId: dbData.id,
+  ) => {
+    // INSTANT: Update local state immediately - no waiting!
+    setPhotos((prev) => ({
+      ...prev,
+      [position]: {
+        ...prev[position],
+        [angle]: { dataUrl },
+      },
+    }));
+  }, []);
+
+  // Background upload - fire and forget, doesn't block UI
+  const uploadToCloudInBackground = useCallback((
+    dataUrl: string,
+    position: HoofPosition,
+    angle: PhotoAngle
+  ) => {
+    setPendingUploads(prev => prev + 1);
+
+    // Fire and forget - upload runs in background
+    (async () => {
+      try {
+        const response = await fetch(dataUrl);
+        const blob = await response.blob();
+        const timestamp = Date.now();
+        const fileName = `${horseId}/${position}_${angle}_${timestamp}.jpg`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("hoof_photos")
+          .upload(fileName, blob, { contentType: "image/jpeg", upsert: true });
+
+        if (!uploadError) {
+          const { data: { publicUrl } } = supabase.storage
+            .from("hoof_photos")
+            .getPublicUrl(fileName);
+
+          await supabase.from("hoof_photos").insert({
+            horse_id: horseId,
+            hoof_position: `${position}_${angle}`,
+            photo_url: fileName,
             url: publicUrl,
-          },
-        },
-      }));
-      
-      toast.success("Foto gespeichert!", { duration: 1500 });
-      return true;
-    } catch (error) {
-      console.error("Upload error:", error);
-      toast.error("Fehler beim Upload");
-      return false;
-    } finally {
-      setIsUploading(false);
-    }
+            file_path: fileName,
+            taken_at: new Date().toISOString(),
+          });
+
+          // Update local state with cloud URL
+          setPhotos((prev) => ({
+            ...prev,
+            [position]: {
+              ...prev[position],
+              [angle]: { ...prev[position]?.[angle], url: publicUrl },
+            },
+          }));
+        }
+      } catch (err) {
+        console.error("Background upload failed:", err);
+      } finally {
+        setPendingUploads(prev => Math.max(0, prev - 1));
+      }
+    })();
   }, [horseId]);
 
   // Auto-advance to next position
@@ -271,14 +258,20 @@ export function HufCamPro({
     }
   }, [currentAngleIndex, currentHoofIndex]);
 
-  // Capture photo from camera
-  const capturePhoto = useCallback(async () => {
+  // Capture photo from camera - SCHNELLFEUER-MODUS!
+  const capturePhoto = useCallback(() => {
     if (!videoRef.current || !canvasRef.current || !isCameraReady) return;
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+
+    // Capture current position before any state changes
+    const capturePosition = currentHoof.position;
+    const captureAngle = currentAngle.id;
+    const captureHoofLabel = currentHoof.label;
+    const captureAngleLabel = currentAngle.label;
 
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
@@ -287,18 +280,18 @@ export function HufCamPro({
     // Burn-in metadata
     const padding = 20;
     const fontSize = Math.max(16, Math.floor(canvas.width / 50));
-    
+
     ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
     ctx.fillRect(0, canvas.height - fontSize * 2.5, canvas.width, fontSize * 2.5);
 
     ctx.fillStyle = "#ffffff";
     ctx.font = `bold ${fontSize}px sans-serif`;
     ctx.textAlign = "left";
-    
+
     const dateStr = new Date().toLocaleDateString("de-DE");
     const timeStr = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
-    const metaText = `${horseName} | ${currentHoof.label}-${currentAngle.label} | ${dateStr} ${timeStr}`;
-    
+    const metaText = `${horseName} | ${captureHoofLabel}-${captureAngleLabel} | ${dateStr} ${timeStr}`;
+
     ctx.fillText(metaText, padding, canvas.height - fontSize * 0.8);
 
     ctx.fillStyle = "#F47B20";
@@ -307,9 +300,15 @@ export function HufCamPro({
 
     const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
 
-    // Upload to DB - NO auto-advance, user clicks "Weiter"
-    await uploadAndSavePhoto(dataUrl, currentHoof.position, currentAngle.id);
-  }, [isCameraReady, horseName, currentHoof, currentAngle, uploadAndSavePhoto]);
+    // INSTANT: Save locally first (no waiting!)
+    savePhotoLocally(dataUrl, capturePosition, captureAngle);
+
+    // Upload in background (fire and forget)
+    uploadToCloudInBackground(dataUrl, capturePosition, captureAngle);
+
+    // AUTO-ADVANCE immediately to next position!
+    advanceToNext();
+  }, [isCameraReady, horseName, currentHoof, currentAngle, savePhotoLocally, uploadToCloudInBackground, advanceToNext]);
 
   // Handle file upload from gallery
   const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
