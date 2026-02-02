@@ -310,8 +310,8 @@ export function HufCamPro({
     advanceToNext();
   }, [isCameraReady, horseName, currentHoof, currentAngle, savePhotoLocally, uploadToCloudInBackground, advanceToNext]);
 
-  // Handle file upload from gallery
-  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle file upload from gallery - SCHNELLFEUER-MODUS!
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -320,18 +320,25 @@ export function HufCamPro({
       return;
     }
 
-    setIsUploading(true);
-    
+    // Capture current position before any state changes
+    const capturePosition = currentHoof.position;
+    const captureAngle = currentAngle.id;
+
     const reader = new FileReader();
-    reader.onload = async (event) => {
+    reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
 
-      // Upload to DB - NO auto-advance, user clicks "Weiter"
-      await uploadAndSavePhoto(dataUrl, currentHoof.position, currentAngle.id);
+      // INSTANT: Save locally first (no waiting!)
+      savePhotoLocally(dataUrl, capturePosition, captureAngle);
+
+      // Upload in background (fire and forget)
+      uploadToCloudInBackground(dataUrl, capturePosition, captureAngle);
+
+      // AUTO-ADVANCE immediately to next position!
+      advanceToNext();
     };
     reader.onerror = () => {
       toast.error("Fehler beim Laden des Bildes");
-      setIsUploading(false);
     };
     reader.readAsDataURL(file);
 
@@ -339,7 +346,7 @@ export function HufCamPro({
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
-  }, [currentHoof.position, currentAngle.id, uploadAndSavePhoto, advanceToNext]);
+  }, [currentHoof.position, currentAngle.id, savePhotoLocally, uploadToCloudInBackground, advanceToNext]);
 
   // Navigation
   const goBack = () => {
@@ -783,13 +790,11 @@ export function HufCamPro({
                 currentPhoto ? "border-primary/50 bg-card" : "border-border bg-black"
               )}
             >
-              {/* Loading overlay */}
-              {isUploading && (
-                <div className="absolute inset-0 bg-black/60 z-50 flex items-center justify-center">
-                  <div className="text-center text-white">
-                    <Loader2 className="h-10 w-10 animate-spin mx-auto mb-2" />
-                    <p>Wird hochgeladen...</p>
-                  </div>
+              {/* Background upload indicator - non-blocking */}
+              {pendingUploads > 0 && (
+                <div className="absolute top-3 right-3 z-50 flex items-center gap-2 bg-black/70 rounded-full px-3 py-1.5">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <span className="text-xs text-white">{pendingUploads} uploading...</span>
                 </div>
               )}
 
@@ -884,8 +889,7 @@ export function HufCamPro({
                         size="icon"
                         className="text-white h-12 w-12"
                         onClick={() => fileInputRef.current?.click()}
-                        disabled={isUploading}
-                      >
+                                              >
                         <ImageIcon className="h-6 w-6" />
                       </Button>
 
@@ -894,7 +898,7 @@ export function HufCamPro({
                         size="lg"
                         className="h-16 w-16 rounded-full bg-white hover:bg-gray-100 text-black shadow-lg"
                         onClick={capturePhoto}
-                        disabled={!isCameraReady || isUploading}
+                        disabled={!isCameraReady}
                       >
                         <Camera className="h-8 w-8" />
                       </Button>
@@ -923,19 +927,9 @@ export function HufCamPro({
                     size="lg"
                     className="h-16 px-8 gap-3 bg-primary"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
                   >
-                    {isUploading ? (
-                      <>
-                        <Loader2 className="h-6 w-6 animate-spin" />
-                        Wird hochgeladen...
-                      </>
-                    ) : (
-                      <>
-                        <ImageIcon className="h-6 w-6" />
-                        Foto aus Galerie wählen
-                      </>
-                    )}
+                    <ImageIcon className="h-6 w-6" />
+                    Foto aus Galerie wählen
                   </Button>
 
                   {/* Retry Camera Button */}
@@ -947,8 +941,7 @@ export function HufCamPro({
                       setIsCameraActive(true);
                       startCamera();
                     }}
-                    disabled={isUploading}
-                  >
+                                      >
                     <Camera className="h-4 w-4 mr-2" />
                     Kamera erneut versuchen
                   </Button>
