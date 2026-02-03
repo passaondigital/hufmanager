@@ -1,3 +1,4 @@
+export { HufCamPro } from "./HufCamPro";
 export { HufCamGalleryReport } from "./HufCamGalleryReport";
 
 // HM-CAM (HufManager Cam) Guide System
