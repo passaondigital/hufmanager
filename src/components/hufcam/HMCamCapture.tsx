@@ -1,12 +1,15 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Camera, RotateCcw, Check, X, Image as ImageIcon, Zap, ZapOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { HoofView, HOOF_VIEW_CONFIGS } from "./types";
 import { HoofViewSelector } from "./HoofViewSelector";
 import { CameraGuideOverlay } from "./CameraGuideOverlay";
 import { useDeviceOrientation } from "@/hooks/useDeviceOrientation";
 import { supabase } from "@/integrations/supabase/client";
+import { uploadFile } from "@/lib/storage";
 import { toast } from "sonner";
 
 interface HMCamCaptureProps {
@@ -25,6 +28,7 @@ export function HMCamCapture({
   // --- STATE ---
   const [selectedView, setSelectedView] = useState<HoofView | null>(null);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [isAiEnabled, setIsAiEnabled] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
   const [hasTorch, setHasTorch] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -37,25 +41,29 @@ export function HMCamCapture({
   // Orientation (Wasserwaage)
   const { tiltAngle, isLevel } = useDeviceOrientation();
 
-  // --- KAMERA LOGIK (STABIL - Keine FrameRate) ---
+  // --- KAMERA LOGIK (STABIL) ---
   const startCamera = useCallback(async () => {
     try {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(t => t.stop());
       }
 
-      // Einfachste Constraints für Stabilität
-      const stream = await navigator.mediaDevices.getUserMedia({
+      // Einfache Constraints für Stabilität, keine FrameRate
+      const constraints: MediaStreamConstraints = {
         audio: false,
-        video: { facingMode: 'environment' }
-      });
+        video: isAiEnabled 
+          ? { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
+          : { facingMode: 'environment' }
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
       streamRef.current = stream;
 
-      // Check ob Blitz verfügbar
+      // Check Torch
       const track = stream.getVideoTracks()[0];
       const capabilities = track.getCapabilities?.() as MediaTrackCapabilities & { torch?: boolean };
       setHasTorch(!!capabilities?.torch);
@@ -64,7 +72,7 @@ export function HMCamCapture({
       console.error("Kamera Fehler:", err);
       toast.error("Kamera konnte nicht gestartet werden.");
     }
-  }, []);
+  }, [isAiEnabled]);
 
   useEffect(() => {
     if (!capturedPhoto) {
@@ -77,148 +85,113 @@ export function HMCamCapture({
 
   // --- TORCH TOGGLE ---
   const toggleTorch = useCallback(async () => {
+    if (!streamRef.current) return;
+    const track = streamRef.current.getVideoTracks()[0];
     try {
-      const track = streamRef.current?.getVideoTracks()[0];
-      if (track) {
-        await track.applyConstraints({
-          advanced: [{ torch: !isTorchOn } as MediaTrackConstraintSet]
-        });
-        setIsTorchOn(!isTorchOn);
-      }
+      await track.applyConstraints({ 
+        advanced: [{ torch: !isTorchOn } as MediaTrackConstraintSet] 
+      });
+      setIsTorchOn(!isTorchOn);
     } catch (err) {
-      console.error("Torch Fehler:", err);
+      toast.error("Blitz nicht verfügbar");
     }
   }, [isTorchOn]);
 
   // --- FOTO AUFNEHMEN ---
   const capturePhoto = useCallback(() => {
-    if (!videoRef.current || !selectedView) return;
+    if (!videoRef.current || !selectedView) {
+      toast.error("Bitte erst eine Ansicht wählen!");
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    const ctx = canvas.getContext("2d");
     
-    const video = videoRef.current;
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    
-    ctx.drawImage(video, 0, 0);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-    setCapturedPhoto(dataUrl);
+    if (ctx) {
+      ctx.drawImage(videoRef.current, 0, 0);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+      setCapturedPhoto(dataUrl);
+    }
   }, [selectedView]);
 
-  // --- SPEICHERN & UPLOAD ---
-  const savePhoto = useCallback(async () => {
-    if (!capturedPhoto || !selectedView) return;
+  // --- UPLOAD PROCESS ---
+  const processAndUpload = useCallback(async (fileOrBlob: File | Blob) => {
+    if (!selectedView) return;
     
     setIsUploading(true);
-    
     try {
-      // Upload zu Supabase wenn horseId vorhanden
+      const timestamp = Date.now();
+      const fileName = `${timestamp}.jpg`;
+      const filePath = `uploads/${horseId || 'temp'}/${fileName}`;
+      
+      // 1. Storage Upload
+      const { path, error: uploadErr } = await uploadFile('hoof_photos', filePath, fileOrBlob);
+      if (uploadErr) throw uploadErr;
+
+      // 2. Public URL
+      const { data: { publicUrl } } = supabase.storage.from('hoof_photos').getPublicUrl(path!);
+
+      // 3. Datenbank
       if (horseId) {
-        const blob = await (await fetch(capturedPhoto)).blob();
-        const fileName = `${horseId}/${selectedView}_${Date.now()}.jpg`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('hoof_photos')
-          .upload(fileName, blob, { contentType: 'image/jpeg' });
-        
-        if (uploadError) throw uploadError;
-
-        // In DB speichern
-        const { data: urlData } = supabase.storage
-          .from('hoof_photos')
-          .getPublicUrl(fileName);
-
         await supabase.from('hoof_photos').insert({
           horse_id: horseId,
-          photo_url: urlData.publicUrl,
+          photo_url: publicUrl,
+          file_path: path,
           hoof_position: selectedView,
-          taken_at: new Date().toISOString(),
+          notes: isAiEnabled ? "ai_capture" : "live_capture",
+          taken_at: new Date().toISOString()
         });
       }
-      
-      // Callback aufrufen
-      onPhotoCapture(capturedPhoto, selectedView);
+
+      onPhotoCapture(publicUrl, selectedView);
       toast.success("Foto gespeichert!");
       
-      // Reset für nächstes Foto
+      // Reset
       setCapturedPhoto(null);
       setSelectedView(null);
-      
+
     } catch (err) {
-      console.error("Upload Fehler:", err);
-      toast.error("Speichern fehlgeschlagen");
+      console.error(err);
+      toast.error("Speichern fehlgeschlagen.");
     } finally {
       setIsUploading(false);
     }
-  }, [capturedPhoto, selectedView, horseId, onPhotoCapture]);
+  }, [selectedView, horseId, isAiEnabled, onPhotoCapture]);
 
   // --- GALERIE UPLOAD ---
   const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !selectedView) return;
-    
-    setIsUploading(true);
-    
-    try {
-      // Bild als DataURL lesen
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const dataUrl = event.target?.result as string;
-        
-        if (horseId) {
-          const fileName = `${horseId}/${selectedView}_${Date.now()}.jpg`;
-          
-          const { error: uploadError } = await supabase.storage
-            .from('hoof_photos')
-            .upload(fileName, file, { contentType: file.type });
-          
-          if (!uploadError) {
-            const { data: urlData } = supabase.storage
-              .from('hoof_photos')
-              .getPublicUrl(fileName);
-
-            await supabase.from('hoof_photos').insert({
-              horse_id: horseId,
-              photo_url: urlData.publicUrl,
-              hoof_position: selectedView,
-              taken_at: new Date().toISOString(),
-            });
-          }
-        }
-        
-        onPhotoCapture(dataUrl, selectedView);
-        toast.success("Foto hochgeladen!");
-        setSelectedView(null);
-        setIsUploading(false);
-      };
-      reader.readAsDataURL(file);
-      
-    } catch (err) {
-      console.error("Upload Fehler:", err);
-      toast.error("Upload fehlgeschlagen");
-      setIsUploading(false);
+    if (file && selectedView) {
+      await processAndUpload(file);
+    } else if (!selectedView) {
+      toast.error("Bitte erst Ansicht wählen!");
     }
-    
-    // Input zurücksetzen
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  }, [selectedView, horseId, onPhotoCapture]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }, [selectedView, processAndUpload]);
 
-  // --- RETAKE ---
+  // --- CONFIRM / RETAKE ---
+  const confirmPhoto = useCallback(async () => {
+    if (capturedPhoto) {
+      const res = await fetch(capturedPhoto);
+      const blob = await res.blob();
+      await processAndUpload(blob);
+    }
+  }, [capturedPhoto, processAndUpload]);
+
   const retakePhoto = useCallback(() => {
     setCapturedPhoto(null);
+    setIsUploading(false);
   }, []);
 
-  // Aktueller View Config
+  // Current View Config
   const currentViewConfig = selectedView 
     ? HOOF_VIEW_CONFIGS.find(v => v.id === selectedView)
     : null;
 
   return (
-    <div className={cn("flex flex-col gap-4", className)}>
+    <div className={cn("flex flex-col gap-3", className)}>
       {/* Hidden File Input */}
       <input
         ref={fileInputRef}
@@ -229,6 +202,32 @@ export function HMCamCapture({
         onChange={handleFileUpload}
       />
 
+      {/* Top Bar: AI Toggle + Torch */}
+      <div className="flex items-center justify-between px-2">
+        <div className="flex items-center gap-2">
+          <Switch 
+            id="ai-mode" 
+            checked={isAiEnabled} 
+            onCheckedChange={setIsAiEnabled}
+            disabled={!!capturedPhoto}
+          />
+          <Label htmlFor="ai-mode" className="text-xs font-medium">
+            {isAiEnabled ? "AI AKTIV" : "LIVE CAM"}
+          </Label>
+        </div>
+        
+        {hasTorch && !capturedPhoto && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTorch}
+            className="h-8 w-8"
+          >
+            {isTorchOn ? <ZapOff className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
+          </Button>
+        )}
+      </div>
+
       {/* View Selector */}
       {!capturedPhoto && (
         <HoofViewSelector
@@ -237,17 +236,9 @@ export function HMCamCapture({
         />
       )}
 
-      {/* Kamera / Vorschau */}
+      {/* Viewfinder / Preview */}
       <div className="relative aspect-[4/3] bg-black rounded-lg overflow-hidden">
-        {capturedPhoto ? (
-          // Review Screen
-          <img 
-            src={capturedPhoto} 
-            alt="Aufgenommenes Foto" 
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          // Live Kamera
+        {!capturedPhoto ? (
           <>
             <video
               ref={videoRef}
@@ -257,8 +248,8 @@ export function HMCamCapture({
               className="w-full h-full object-cover"
             />
             
-            {/* Guide Overlay */}
-            {selectedView && currentViewConfig && (
+            {/* Guide Overlay (nur bei AI Modus) */}
+            {isAiEnabled && selectedView && currentViewConfig && (
               <CameraGuideOverlay
                 view={selectedView}
                 isLevel={isLevel}
@@ -267,74 +258,83 @@ export function HMCamCapture({
               />
             )}
             
-            {/* Hint */}
-            {currentViewConfig && (
+            {/* Hint (nur wenn keine Guides) */}
+            {!isAiEnabled && currentViewConfig && (
               <div className="absolute bottom-2 left-2 right-2 bg-black/60 text-white text-xs p-2 rounded">
                 {currentViewConfig.hint}
               </div>
             )}
           </>
+        ) : (
+          <img 
+            src={capturedPhoto} 
+            alt="Aufgenommenes Foto" 
+            className="w-full h-full object-cover"
+          />
         )}
       </div>
 
-      {/* Buttons */}
-      {capturedPhoto ? (
-        // Review Buttons
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={retakePhoto}
-            className="flex-1 gap-2"
-          >
-            <RotateCcw className="h-4 w-4" />
-            Wiederholen
-          </Button>
-          <Button 
-            onClick={savePhoto}
-            disabled={isUploading}
-            className="flex-1 gap-2"
-          >
-            <Check className="h-4 w-4" />
-            {isUploading ? "Speichert..." : "Speichern"}
-          </Button>
-        </div>
-      ) : (
-        // Capture Buttons
-        <div className="flex gap-2">
-          {/* Torch Button */}
-          {hasTorch && (
+      {/* Action Buttons */}
+      <div className="flex gap-2">
+        {capturedPhoto ? (
+          // Review Mode
+          <>
+            <Button 
+              variant="outline" 
+              onClick={retakePhoto}
+              disabled={isUploading}
+              className="flex-1 gap-2"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Nochmal
+            </Button>
+            <Button 
+              onClick={confirmPhoto}
+              disabled={isUploading}
+              className="flex-1 gap-2"
+            >
+              {isUploading ? "Speichert..." : "Speichern"}
+              {!isUploading && <Check className="h-4 w-4" />}
+            </Button>
+          </>
+        ) : (
+          // Capture Mode
+          <>
+            {/* Galerie */}
             <Button
               variant="outline"
               size="icon"
-              onClick={toggleTorch}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading || !selectedView}
             >
-              {isTorchOn ? <ZapOff className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
+              <ImageIcon className="h-4 w-4" />
             </Button>
-          )}
-          
-          {/* Galerie Button */}
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={!selectedView}
-          >
-            <ImageIcon className="h-4 w-4" />
-          </Button>
-          
-          {/* Capture Button */}
-          <Button
-            onClick={capturePhoto}
-            disabled={!selectedView}
-            className="flex-1 gap-2"
-          >
-            <Camera className="h-4 w-4" />
-            Foto aufnehmen
-          </Button>
-        </div>
-      )}
+            
+            {/* Auslöser */}
+            <Button
+              onClick={capturePhoto}
+              disabled={!selectedView || isUploading}
+              className="flex-1 gap-2"
+            >
+              <Camera className="h-4 w-4" />
+              Aufnehmen
+            </Button>
+            
+            {/* Abbrechen */}
+            {onCancel && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={onCancel}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </>
+        )}
+      </div>
       
-      {/* Keine View gewählt Hinweis */}
+      {/* Hinweis */}
       {!selectedView && !capturedPhoto && (
         <p className="text-xs text-muted-foreground text-center">
           Wähle zuerst eine Huf-Ansicht aus
