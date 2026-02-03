@@ -1,0 +1,24 @@
+# Beispiel-Deploy-Manifest für lovable.dev (Template)
+# Passe die Felder an dein lovable.dev-Konto an.
+app:
+  name: hufmanager-collage-worker
+  image: ghcr.io/passaondigital/hufmanager-collage-worker:latest
+  type: service
+  mode: daemon # alternatives: cron
+  env:
+    SUPABASE_URL: ${SUPABASE_URL}
+    SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+    WORKER_MODE: daemon
+    METRICS_PORT: 9464
+  resources:
+    cpu: 0.5
+    mem: 512M
+  healthcheck:
+    path: /metrics
+    interval: 60s
+    timeout: 10s
+  # Optional: set restart policy, concurrency, etc.
+
+# Hinweis:
+# - Ersetze ${...} durch die Secrets/Umgebungsvariablen in der lovable.dev-Weboberfläche.
+# - Manche PaaS verwenden eigene Manifest-Formate. Verwende dieses Template als Ausgangspunkt.

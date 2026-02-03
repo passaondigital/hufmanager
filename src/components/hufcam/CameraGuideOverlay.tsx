@@ -42,6 +42,8 @@ export const CameraGuideOverlay = memo(function CameraGuideOverlay({
         viewBox="0 0 100 100" 
         preserveAspectRatio="none"
         style={{ filter: shadowFilter }}
+        aria-hidden="true"
+        role="presentation"
       >
         {config.guideType === "t-guide" && (
           <TGuide lineColor={lineColor} />
@@ -67,7 +69,7 @@ export const CameraGuideOverlay = memo(function CameraGuideOverlay({
           )}
         >
           {requiresLevel && !isLevel ? (
-            <span>⚠️ Bitte Handy senkrecht halten! ({Math.round(tiltAngle)}° Neigung)</span>
+            <span aria-live="polite" aria-atomic="true">⚠️ Bitte Handy senkrecht halten! ({Math.round(tiltAngle)}° Neigung)</span>
           ) : (
             <span>{config.hint}</span>
           )}
@@ -85,7 +87,7 @@ export const CameraGuideOverlay = memo(function CameraGuideOverlay({
 // T-Guide: Horizontal bottom line + Vertical center line
 function TGuide({ lineColor }: { lineColor: string }) {
   return (
-    <g>
+    <g aria-hidden="true" role="presentation">
       {/* Horizontal ground line (bottom third) */}
       <line 
         x1="0" y1="75" 
@@ -119,7 +121,7 @@ function TGuide({ lineColor }: { lineColor: string }) {
 // L-Guide: Horizontal bottom line + Vertical edge line
 function LGuide({ lineColor }: { lineColor: string }) {
   return (
-    <g>
+    <g aria-hidden="true" role="presentation">
       {/* Horizontal ground line */}
       <line 
         x1="0" y1="85" 
@@ -158,7 +160,7 @@ function LGuide({ lineColor }: { lineColor: string }) {
 // Target-Guide: Crosshair + Dashed circle
 function TargetGuide({ lineColor }: { lineColor: string }) {
   return (
-    <g>
+    <g aria-hidden="true" role="presentation">
       {/* Crosshair - Horizontal */}
       <line 
         x1="35" y1="50" 
@@ -211,7 +213,7 @@ const BubbleLevel = memo(function BubbleLevel({ isLevel, tiltAngle }: { isLevel:
   const offset = Math.min(Math.max((tiltAngle / 15) * maxOffset, -maxOffset), maxOffset);
 
   return (
-    <div className="absolute top-4 right-4 flex flex-col items-center gap-1">
+    <div className="absolute top-4 right-4 flex flex-col items-center gap-1 pointer-events-none">
       <div
         className={cn(
           "w-10 h-10 rounded-full border-2 flex items-center justify-center relative overflow-hidden",
@@ -230,12 +232,13 @@ const BubbleLevel = memo(function BubbleLevel({ isLevel, tiltAngle }: { isLevel:
         {/* Bubble */}
         <div
           className={cn(
-            "absolute w-3 h-3 rounded-full transition-all duration-150",
+            "absolute w-3 h-3 rounded-full transition-all duration-150 motion-reduce:transition-none will-change-transform",
             isLevel ? "bg-green-500" : "bg-red-500"
           )}
           style={{
             transform: `translate(${offset}px, ${offset * 0.5}px)`,
           }}
+          aria-hidden="false"
         />
       </div>
       <span
@@ -243,8 +246,11 @@ const BubbleLevel = memo(function BubbleLevel({ isLevel, tiltAngle }: { isLevel:
           "text-[10px] font-bold",
           isLevel ? "text-green-500" : "text-red-500"
         )}
+        aria-live="polite"
+        aria-atomic="true"
+        role="status"
       >
-        {Math.round(tiltAngle)}°
+        {isLevel ? "Level" : `${Math.round(tiltAngle)}°`}
       </span>
     </div>
   );
