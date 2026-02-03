@@ -1,8 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Camera, RotateCcw, Check, X, Image as ImageIcon, Zap, ZapOff } from "lucide-react";
+import { Camera, RotateCcw, Check, X, Image as ImageIcon, Zap, ZapOff, Wand2, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { HoofView, HOOF_VIEW_CONFIGS } from "./types";
 import { HoofViewSelector } from "./HoofViewSelector";
@@ -11,6 +9,8 @@ import { useDeviceOrientation } from "@/hooks/useDeviceOrientation";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadFile } from "@/lib/storage";
 import { toast } from "sonner";
+
+type CaptureMode = "ai" | "live" | "gallery";
 
 interface HMCamCaptureProps {
   onPhotoCapture: (dataUrl: string, view: HoofView) => void;
@@ -26,32 +26,36 @@ export function HMCamCapture({
   horseId,
 }: HMCamCaptureProps) {
   // --- STATE ---
+  const [captureMode, setCaptureMode] = useState<CaptureMode>("live");
   const [selectedView, setSelectedView] = useState<HoofView | null>(null);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
-  const [isAiEnabled, setIsAiEnabled] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
   const [hasTorch, setHasTorch] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [cameraActive, setCameraActive] = useState(false);
   
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Orientation (Wasserwaage)
+  // Orientation (nur für AI Modus)
   const { tiltAngle, isLevel } = useDeviceOrientation();
 
-  // --- KAMERA LOGIK (STABIL) ---
+  // --- KAMERA LOGIK ---
   const startCamera = useCallback(async () => {
+    if (captureMode === "gallery") return;
+    
     try {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(t => t.stop());
       }
 
-      // Einfache Constraints für Stabilität, keine FrameRate
+      // AI Modus: Höhere Auflösung für Details
+      // Live Modus: Einfachste Settings für Stabilität
       const constraints: MediaStreamConstraints = {
         audio: false,
-        video: isAiEnabled 
+        video: captureMode === "ai" 
           ? { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
           : { facingMode: 'environment' }
       };
@@ -62,6 +66,7 @@ export function HMCamCapture({
         videoRef.current.srcObject = stream;
       }
       streamRef.current = stream;
+      setCameraActive(true);
 
       // Check Torch
       const track = stream.getVideoTracks()[0];
@@ -71,17 +76,25 @@ export function HMCamCapture({
     } catch (err) {
       console.error("Kamera Fehler:", err);
       toast.error("Kamera konnte nicht gestartet werden.");
+      setCameraActive(false);
     }
-  }, [isAiEnabled]);
+  }, [captureMode]);
+
+  const stopCamera = useCallback(() => {
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+    setCameraActive(false);
+    setIsTorchOn(false);
+  }, []);
 
   useEffect(() => {
-    if (!capturedPhoto) {
+    if (!capturedPhoto && captureMode !== "gallery") {
       startCamera();
+    } else if (captureMode === "gallery") {
+      stopCamera();
     }
-    return () => {
-      streamRef.current?.getTracks().forEach(t => t.stop());
-    };
-  }, [capturedPhoto, startCamera]);
+    return () => stopCamera();
+  }, [captureMode, capturedPhoto, startCamera, stopCamera]);
 
   // --- TORCH TOGGLE ---
   const toggleTorch = useCallback(async () => {
@@ -116,7 +129,7 @@ export function HMCamCapture({
     }
   }, [selectedView]);
 
-  // --- UPLOAD PROCESS ---
+  // --- UPLOAD PROCESS (Zentral für alle Modi) ---
   const processAndUpload = useCallback(async (fileOrBlob: File | Blob) => {
     if (!selectedView) return;
     
@@ -126,21 +139,21 @@ export function HMCamCapture({
       const fileName = `${timestamp}.jpg`;
       const filePath = `uploads/${horseId || 'temp'}/${fileName}`;
       
-      // 1. Storage Upload
+      // Storage Upload
       const { path, error: uploadErr } = await uploadFile('hoof_photos', filePath, fileOrBlob);
       if (uploadErr) throw uploadErr;
 
-      // 2. Public URL
+      // Public URL
       const { data: { publicUrl } } = supabase.storage.from('hoof_photos').getPublicUrl(path!);
 
-      // 3. Datenbank
+      // Datenbank
       if (horseId) {
         await supabase.from('hoof_photos').insert({
           horse_id: horseId,
           photo_url: publicUrl,
           file_path: path,
           hoof_position: selectedView,
-          notes: isAiEnabled ? "ai_capture" : "live_capture",
+          notes: `${captureMode}_capture`,
           taken_at: new Date().toISOString()
         });
       }
@@ -158,7 +171,7 @@ export function HMCamCapture({
     } finally {
       setIsUploading(false);
     }
-  }, [selectedView, horseId, isAiEnabled, onPhotoCapture]);
+  }, [selectedView, horseId, captureMode, onPhotoCapture]);
 
   // --- GALERIE UPLOAD ---
   const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -202,31 +215,55 @@ export function HMCamCapture({
         onChange={handleFileUpload}
       />
 
-      {/* Top Bar: AI Toggle + Torch */}
-      <div className="flex items-center justify-between px-2">
-        <div className="flex items-center gap-2">
-          <Switch 
-            id="ai-mode" 
-            checked={isAiEnabled} 
-            onCheckedChange={setIsAiEnabled}
-            disabled={!!capturedPhoto}
-          />
-          <Label htmlFor="ai-mode" className="text-xs font-medium">
-            {isAiEnabled ? "AI AKTIV" : "LIVE CAM"}
-          </Label>
-        </div>
-        
-        {hasTorch && !capturedPhoto && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTorch}
-            className="h-8 w-8"
-          >
-            {isTorchOn ? <ZapOff className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
-          </Button>
-        )}
+      {/* Mode Selector - 3 Optionen */}
+      <div className="flex gap-1 p-1 bg-muted rounded-lg">
+        <button
+          onClick={() => setCaptureMode("ai")}
+          disabled={!!capturedPhoto}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-xs font-medium transition-all",
+            captureMode === "ai" 
+              ? "bg-primary text-primary-foreground shadow-sm" 
+              : "hover:bg-background/50"
+          )}
+        >
+          <Wand2 className="h-3.5 w-3.5" />
+          <span>AI Kamera</span>
+        </button>
+        <button
+          onClick={() => setCaptureMode("live")}
+          disabled={!!capturedPhoto}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-xs font-medium transition-all",
+            captureMode === "live" 
+              ? "bg-primary text-primary-foreground shadow-sm" 
+              : "hover:bg-background/50"
+          )}
+        >
+          <Video className="h-3.5 w-3.5" />
+          <span>Live Cam</span>
+        </button>
+        <button
+          onClick={() => setCaptureMode("gallery")}
+          disabled={!!capturedPhoto}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-xs font-medium transition-all",
+            captureMode === "gallery" 
+              ? "bg-primary text-primary-foreground shadow-sm" 
+              : "hover:bg-background/50"
+          )}
+        >
+          <ImageIcon className="h-3.5 w-3.5" />
+          <span>Galerie</span>
+        </button>
       </div>
+
+      {/* Mode Description */}
+      <p className="text-[11px] text-muted-foreground text-center px-2">
+        {captureMode === "ai" && "Mit Hilfslinien & Wasserwaage für optimale Aufnahmen"}
+        {captureMode === "live" && "Schnelle Aufnahme ohne Analyse – maximale Stabilität"}
+        {captureMode === "gallery" && "Foto aus Galerie hochladen – ohne Analyse"}
+      </p>
 
       {/* View Selector */}
       {!capturedPhoto && (
@@ -236,9 +273,31 @@ export function HMCamCapture({
         />
       )}
 
-      {/* Viewfinder / Preview */}
+      {/* Viewfinder / Preview / Gallery Placeholder */}
       <div className="relative aspect-[4/3] bg-black rounded-lg overflow-hidden">
-        {!capturedPhoto ? (
+        {capturedPhoto ? (
+          // Review Mode
+          <img 
+            src={capturedPhoto} 
+            alt="Aufgenommenes Foto" 
+            className="w-full h-full object-cover"
+          />
+        ) : captureMode === "gallery" ? (
+          // Gallery Mode Placeholder
+          <div 
+            className="w-full h-full flex flex-col items-center justify-center gap-4 bg-muted/50 cursor-pointer hover:bg-muted/70 transition-colors"
+            onClick={() => selectedView ? fileInputRef.current?.click() : toast.error("Bitte erst Ansicht wählen!")}
+          >
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <ImageIcon className="h-8 w-8 text-primary" />
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-medium">Foto aus Galerie wählen</p>
+              <p className="text-xs text-muted-foreground">Tippen zum Öffnen</p>
+            </div>
+          </div>
+        ) : (
+          // Camera Mode (AI or Live)
           <>
             <video
               ref={videoRef}
@@ -248,8 +307,8 @@ export function HMCamCapture({
               className="w-full h-full object-cover"
             />
             
-            {/* Guide Overlay (nur bei AI Modus) */}
-            {isAiEnabled && selectedView && currentViewConfig && (
+            {/* AI Mode: Guide Overlay */}
+            {captureMode === "ai" && selectedView && currentViewConfig && (
               <CameraGuideOverlay
                 view={selectedView}
                 isLevel={isLevel}
@@ -258,26 +317,32 @@ export function HMCamCapture({
               />
             )}
             
-            {/* Hint (nur wenn keine Guides) */}
-            {!isAiEnabled && currentViewConfig && (
+            {/* Live Mode: Simple Hint */}
+            {captureMode === "live" && currentViewConfig && (
               <div className="absolute bottom-2 left-2 right-2 bg-black/60 text-white text-xs p-2 rounded">
                 {currentViewConfig.hint}
               </div>
             )}
+            
+            {/* Torch Button (Top Right) */}
+            {hasTorch && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTorch}
+                className="absolute top-2 right-2 h-10 w-10 bg-black/40 hover:bg-black/60 text-white"
+              >
+                {isTorchOn ? <ZapOff className="h-5 w-5" /> : <Zap className="h-5 w-5" />}
+              </Button>
+            )}
           </>
-        ) : (
-          <img 
-            src={capturedPhoto} 
-            alt="Aufgenommenes Foto" 
-            className="w-full h-full object-cover"
-          />
         )}
       </div>
 
       {/* Action Buttons */}
       <div className="flex gap-2">
         {capturedPhoto ? (
-          // Review Mode
+          // Review Buttons
           <>
             <Button 
               variant="outline" 
@@ -297,20 +362,26 @@ export function HMCamCapture({
               {!isUploading && <Check className="h-4 w-4" />}
             </Button>
           </>
-        ) : (
-          // Capture Mode
+        ) : captureMode === "gallery" ? (
+          // Gallery Button
           <>
-            {/* Galerie */}
             <Button
-              variant="outline"
-              size="icon"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => selectedView ? fileInputRef.current?.click() : toast.error("Bitte erst Ansicht wählen!")}
               disabled={isUploading || !selectedView}
+              className="flex-1 gap-2"
             >
               <ImageIcon className="h-4 w-4" />
+              Foto auswählen
             </Button>
-            
-            {/* Auslöser */}
+            {onCancel && (
+              <Button variant="outline" size="icon" onClick={onCancel}>
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </>
+        ) : (
+          // Camera Buttons (AI or Live)
+          <>
             <Button
               onClick={capturePhoto}
               disabled={!selectedView || isUploading}
@@ -319,14 +390,8 @@ export function HMCamCapture({
               <Camera className="h-4 w-4" />
               Aufnehmen
             </Button>
-            
-            {/* Abbrechen */}
             {onCancel && (
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={onCancel}
-              >
+              <Button variant="outline" size="icon" onClick={onCancel}>
                 <X className="h-4 w-4" />
               </Button>
             )}
@@ -334,10 +399,10 @@ export function HMCamCapture({
         )}
       </div>
       
-      {/* Hinweis */}
+      {/* Hinweis wenn keine View gewählt */}
       {!selectedView && !capturedPhoto && (
         <p className="text-xs text-muted-foreground text-center">
-          Wähle zuerst eine Huf-Ansicht aus
+          ↑ Wähle zuerst eine Huf-Ansicht aus
         </p>
       )}
     </div>
