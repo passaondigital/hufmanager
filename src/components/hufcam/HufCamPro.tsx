@@ -75,6 +75,7 @@ interface HufCamProProps {
   eqid?: string;
   pid?: string;
   onComplete?: () => void;
+  onCollageGenerated?: (collageUrl: string) => void;
 }
 
 // =============================================================================
@@ -148,7 +149,7 @@ export function HufCamPro({
 
       // Check torch support
       const track = stream.getVideoTracks()[0];
-      const capabilities = track.getCapabilities?.();
+      const capabilities = track.getCapabilities?.() as any;
       setTorchSupported(!!capabilities?.torch);
 
       if (videoRef.current) {
@@ -797,7 +798,7 @@ export function HufCamPro({
                   {/* AI Mode Overlay */}
                   {captureMode === "ai" && isCameraReady && (
                     <CameraGuideOverlay
-                      view="frontal"
+                      view="dorsal"
                       isLevel={isLevel}
                       tiltAngle={tiltAngle}
                       requiresLevel={true}
