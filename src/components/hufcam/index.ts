@@ -1,5 +1,8 @@
 export { HufCamPro } from "./HufCamPro";
 export { HufCamGalleryReport } from "./HufCamGalleryReport";
+export { HMCamCapture } from "./HMCamCapture";
+export { HMCamModal } from "./HMCamModal";
+export { HufCamProStandalone } from "./HufCamProStandalone";
 
 // HM-CAM (HufManager Cam) Guide System
 export { HoofViewSelector } from "./HoofViewSelector";
