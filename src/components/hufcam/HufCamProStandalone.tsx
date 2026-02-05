@@ -24,7 +24,7 @@ export function HufCamProStandalone() {
   const [horses, setHorses] = useState<HorseOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch horses on mount
+  // Fetch horses on mount - provider sees horses via appointments
   useEffect(() => {
     async function fetchHorses() {
       if (!user?.id) {
@@ -33,15 +33,31 @@ export function HufCamProStandalone() {
       }
       
       try {
-        // Use any to avoid deep type instantiation error
-        const query: any = supabase.from("horses");
-        const { data, error } = await query
-          .select("id, name, breed")
+        // Providers see horses they have access to via appointments
+        const query: any = supabase.from("appointments");
+        const { data: appointmentData, error: appointmentError } = await query
+          .select("horse:horses(id, name, breed)")
           .eq("provider_id", user.id)
-          .order("name");
+          .not("horse", "is", null);
         
-        if (error) throw error;
-        setHorses((data || []) as HorseOption[]);
+        if (appointmentError) throw appointmentError;
+        
+        // Extract unique horses from appointments
+        const horseMap = new Map<string, HorseOption>();
+        (appointmentData || []).forEach((apt: any) => {
+          if (apt.horse && apt.horse.id) {
+            horseMap.set(apt.horse.id, {
+              id: apt.horse.id,
+              name: apt.horse.name,
+              breed: apt.horse.breed,
+            });
+          }
+        });
+        
+        const uniqueHorses = Array.from(horseMap.values())
+          .sort((a, b) => a.name.localeCompare(b.name));
+        
+        setHorses(uniqueHorses);
       } catch (err) {
         console.error("Failed to fetch horses:", err);
       } finally {
