@@ -24,7 +24,7 @@ export function HufCamProStandalone() {
   const [horses, setHorses] = useState<HorseOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch horses on mount - provider sees horses via appointments
+  // Fetch horses on mount - provider sees horses via appointments AND access_grants
   useEffect(() => {
     async function fetchHorses() {
       if (!user?.id) {
@@ -33,19 +33,16 @@ export function HufCamProStandalone() {
       }
       
       try {
-        // Providers see horses they have access to via appointments
-        const query: any = supabase.from("appointments");
-        const { data: appointmentData, error: appointmentError } = await query
-          .select("horse:horses(id, name, breed)")
-          .eq("provider_id", user.id)
-          .not("horse", "is", null);
-        
-        if (appointmentError) throw appointmentError;
-        
-        // Extract unique horses from appointments
         const horseMap = new Map<string, HorseOption>();
+        
+        // Source 1: Horses from appointments
+        const { data: appointmentData } = await supabase
+          .from("appointments")
+          .select("horse:horses!inner(id, name, breed)")
+          .eq("provider_id", user.id);
+        
         (appointmentData || []).forEach((apt: any) => {
-          if (apt.horse && apt.horse.id) {
+          if (apt.horse?.id) {
             horseMap.set(apt.horse.id, {
               id: apt.horse.id,
               name: apt.horse.name,
@@ -53,6 +50,33 @@ export function HufCamProStandalone() {
             });
           }
         });
+        
+        // Source 2: Horses from active client connections (access_grants)
+        const { data: grantData } = await supabase
+          .from("access_grants")
+          .select("client_id")
+          .eq("provider_id", user.id)
+          .eq("status", "active")
+          .eq("is_active", true);
+        
+        if (grantData && grantData.length > 0) {
+          const clientIds = grantData.map(g => g.client_id);
+          const { data: clientHorses } = await supabase
+            .from("horses")
+            .select("id, name, breed")
+            .in("owner_id", clientIds)
+            .is("deleted_at", null);
+          
+          (clientHorses || []).forEach((horse: any) => {
+            if (horse.id && !horseMap.has(horse.id)) {
+              horseMap.set(horse.id, {
+                id: horse.id,
+                name: horse.name,
+                breed: horse.breed,
+              });
+            }
+          });
+        }
         
         const uniqueHorses = Array.from(horseMap.values())
           .sort((a, b) => a.name.localeCompare(b.name));
