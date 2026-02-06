@@ -186,14 +186,10 @@ export function HoofPhotoTimeline({ horseId, horseName }: HoofPhotoTimelineProps
         throw new Error('Upload fehlgeschlagen');
       }
 
-      // Get public URL
-      const { data: urlData } = supabase.storage.from('hoof_photos').getPublicUrl(uploadedPath);
-      const publicUrl = urlData.publicUrl;
-
-      // Save to database
+      // Save file path (not full URL) to database - getStorageUrl will create signed URLs
       const { error: dbErr } = await supabase.from('hoof_photos').insert({
         horse_id: horseId,
-        photo_url: publicUrl,
+        photo_url: uploadedPath,  // Store path, not full URL
         hoof_position: 'all',
         notes: 'collage',
         taken_at: new Date().toISOString(),

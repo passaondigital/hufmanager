@@ -291,14 +291,14 @@ serve(async (req: Request) => {
           type: "magiclink",
           email: email,
           options: {
-            redirectTo: "https://hufmanager.lovable.app/auth",
+            redirectTo: "https://hufmanager.de/auth",
           },
         });
 
         if (linkError) {
           console.error("Error generating magic link:", linkError);
         } else {
-          const magicLinkUrl = linkData.properties?.action_link || "https://hufmanager.lovable.app/auth";
+          const magicLinkUrl = linkData.properties?.action_link || "https://hufmanager.de/auth";
           const planDisplayName = getPlanDisplayName(planOverride);
           
           // Escape all user-controlled data

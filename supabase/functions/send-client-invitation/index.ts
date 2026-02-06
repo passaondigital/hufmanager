@@ -112,7 +112,7 @@ serve(async (req: Request): Promise<Response> => {
     console.log("=========================");
 
     // Generate app URL (use origin from request or fallback)
-    const origin = req.headers.get("origin") || "https://hufmanager.lovable.app";
+    const origin = req.headers.get("origin") || "https://hufmanager.de";
     const loginUrl = `${origin}/auth`;
 
     // Escape all user-controlled data

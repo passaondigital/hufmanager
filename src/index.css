@@ -342,14 +342,20 @@
   @apply text-primary underline hover:text-primary/80;
 }
 
-/* Hide Lovable feedback button in production */
+/* Hide external platform badges in production */
 #lovable-badge,
 .lovable-badge,
 [data-lovable-badge],
-lovable-badge {
+lovable-badge,
+[data-edit-in-lovable],
+.edit-in-lovable {
   display: none !important;
   visibility: hidden !important;
   pointer-events: none !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
 }
 
 /* ============================================
