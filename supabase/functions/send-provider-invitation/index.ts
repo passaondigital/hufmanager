@@ -100,7 +100,7 @@ serve(async (req: Request): Promise<Response> => {
       type: "magiclink",
       email: email,
       options: {
-        redirectTo: "https://hufmanager.lovable.app/auth",
+        redirectTo: "https://hufmanager.de/auth",
       },
     });
 
@@ -113,7 +113,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // The magic link URL
-    const magicLinkUrl = linkData.properties?.action_link || "https://hufmanager.lovable.app/auth";
+    const magicLinkUrl = linkData.properties?.action_link || "https://hufmanager.de/auth";
     console.log("Generated magic link for provider invitation");
 
     // Determine plan display name

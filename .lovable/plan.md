@@ -1,54 +1,42 @@
 
-# Plan: Lovable-Branding vollständig aus der Suchmaschinen-Darstellung entfernen
+# Status: Abgeschlossen ✅
 
-## Hintergrund
-Google zeigt in den Suchergebnissen das Lovable-Favicon an, weil die aktuelle `favicon.ico`-Datei noch das Lovable-Standard-Icon enthält. Zusätzlich gibt es Meta-Tags, die auf die lovable.app-Domain verweisen.
+## Durchgeführte Änderungen (06.02.2026)
 
-## Notwendige Änderungen
+### 1. Lovable-Branding vollständig entfernt
+- **index.html**: Favicon-Referenz auf `/icon-32.png` und `/icon-16.png` geändert (HufManager-Icons)
+- **index.html**: `og:url` von `hufmanager.lovable.app` auf `hufmanager.de` geändert
+- **index.css**: CSS-Selektoren erweitert, um alle Lovable-Badge-Varianten auszublenden
+- **public/favicon.ico**: Datei gelöscht (nutzt jetzt PNG-Icons)
 
-### 1. Neue favicon.ico-Datei erstellen/bereitstellen
-**Problem:** Die Datei `/public/favicon.ico` enthält das Lovable-Icon.
-**Lösung:** Eine neue favicon.ico-Datei mit dem HufManager-Logo muss bereitgestellt werden.
+### 2. Edge Functions aktualisiert
+Alle Redirect-URLs in Edge Functions von `hufmanager.lovable.app` auf `hufmanager.de` geändert:
+- `supabase/functions/admin-create-user/index.ts`
+- `supabase/functions/send-client-invitation/index.ts`
+- `supabase/functions/send-provider-invitation/index.ts`
+- `supabase/functions/copecart-webhook/index.ts`
 
-**Wichtig:** Du musst mir ein eigenes HufManager-Favicon als Bilddatei hochladen oder eine URL zu einem passenden Icon geben. Ich kann dann die Datei ersetzen.
+### 3. 404-Fehler in Pferdeakten behoben
+- **Problem**: `HoofPhotoTimeline.tsx` speicherte volle Public-URLs statt Dateipfade bei Collagen
+- **Lösung**: Code geändert, um nur den Dateipfad zu speichern (`uploadedPath` statt `publicUrl`)
+- Die `getStorageUrl()` Funktion erstellt dann korrekt signierte URLs beim Abrufen
 
----
-
-### 2. Open Graph URL anpassen (index.html)
-**Datei:** `index.html`
-
-**Änderung:**
-```html
-<!-- Vorher -->
-<meta property="og:url" content="https://hufmanager.lovable.app" />
-
-<!-- Nachher - mit Custom Domain wenn vorhanden -->
-<meta property="og:url" content="https://hufmanager.de" />
-```
-
-Falls du keine eigene Domain hast, kann die Zeile auch entfernt werden - sie ist optional.
-
----
-
-### 3. Twitter URL (optional, falls Custom Domain vorhanden)
-Die Twitter-Tags sind bereits korrekt auf "HufManager" gesetzt.
+### 4. Mission Control Status
+Mission Control ist bereits auf dem neuesten Stand mit:
+- 8 Tabs: Provider, Statistiken, Blog, Aktivität, Tools, Versionen, Rollout, Demo
+- KPI Dashboard mit Provider-Statistiken
+- Feature Rollout Dashboard
+- Demo Analytics Dashboard
+- Bulk Actions für Provider-Management
+- Activity Logging
+- Feature Flags System (4-Tier: disabled, beta, early_access, public)
 
 ---
 
-## Was bereits funktioniert
-- CSS versteckt den Lovable-Badge vollständig
-- PWA-Icons sind alle mit HufManager-Branding
-- Apple Touch Icon ist korrekt
-- `lovable-tagger` läuft nur im Development-Mode
+## Was noch aussteht (optional)
+- Google Search Console: URL prüfen → Indexierung beantragen (für schnellere Favicon-Aktualisierung)
+- Custom Domain `hufmanager.de` muss korrekt konfiguriert sein
 
----
-
-## Nach der Umsetzung
-Google aktualisiert Favicons nicht sofort. Es kann **2-4 Wochen** dauern, bis Google das neue Favicon übernimmt. Du kannst den Prozess beschleunigen, indem du:
-1. Die Google Search Console verwendest (URL prüfen → Indexierung beantragen)
-2. Die Sitemap erneut einreichst
-
----
-
-## Nächster Schritt
-Bitte lade ein HufManager-Favicon hoch (idealerweise als .ico, .png oder .svg). Dann ersetze ich die aktuelle Datei und passe die Meta-Tags an.
+## Technische Hinweise
+- Google braucht 2-4 Wochen, um das neue Favicon zu cachen
+- Edge Functions wurden deployed
