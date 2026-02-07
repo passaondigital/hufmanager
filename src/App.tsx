@@ -251,6 +251,8 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/abo-matrix" element={<AboMatrix />} />
               {/* Provider Horse Detail - Direct Access */}
               <Route path="/horse/:id" element={<ProviderHorseDetail />} />
+              {/* German alias for horse detail */}
+              <Route path="/pferd/:id" element={<ProviderHorseDetail />} />
             </Route>
 
             {/* --- 3. CLIENT (PFERDEBESITZER) ROUTES --- */}
