@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Info, History, Image, Activity, Footprints, FileText, Clock } from "lucide-react";
+import { ArrowLeft, Info, History, Image, Activity, Footprints, FileText, Clock, Ruler } from "lucide-react";
 import { toast } from "sonner";
 
 import { TabSteckbrief } from "@/components/horse-detail/TabSteckbrief";
@@ -18,7 +18,8 @@ import { EditHorseModal } from "@/components/horse-detail/EditHorseModal";
 import { HoofStatusGrid } from "@/components/horse-detail/HoofStatusGrid";
 import { HorseStammdatenCard } from "@/components/horse-detail/HorseStammdatenCard";
 import { HoofPhotoTimeline } from "@/components/horse-detail/HoofPhotoTimeline";
-import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
+import { HufMesser } from "@/components/hufmesser";
+import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails, HoofMeasurements } from "@/components/horse-detail/types";
 
 export default function ClientHorseDetail() {
   const { id } = useParams<{ id: string }>();
@@ -151,10 +152,14 @@ export default function ClientHorseDetail() {
           horseId={horse.id}
         />
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="steckbrief" className="flex items-center gap-1.5">
               <Info className="h-4 w-4" />
               <span className="hidden sm:inline">Steckbrief</span>
+            </TabsTrigger>
+            <TabsTrigger value="hufmesser" className="flex items-center gap-1.5">
+              <Ruler className="h-4 w-4" />
+              <span className="hidden sm:inline">HufMesser</span>
             </TabsTrigger>
             <TabsTrigger value="historie" className="flex items-center gap-1.5">
               <History className="h-4 w-4" />
@@ -184,6 +189,15 @@ export default function ClientHorseDetail() {
 
           <TabsContent value="steckbrief">
             <TabSteckbrief horse={horse} onEdit={() => setShowEditModal(true)} />
+          </TabsContent>
+
+          <TabsContent value="hufmesser">
+            <HufMesser
+              horseId={horse.id}
+              horseName={horse.name}
+              existingMeasurements={horse.hoof_measurements as HoofMeasurements}
+              onSaved={fetchHorseData}
+            />
           </TabsContent>
 
           <TabsContent value="historie">

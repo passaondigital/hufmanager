@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Info, History, Image, Activity, FileText, ChevronDown, ChevronUp, Footprints, Camera, Clock } from "lucide-react";
+import { ArrowLeft, Info, History, Image, Activity, FileText, ChevronDown, ChevronUp, Footprints, Camera, Clock, Ruler } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -22,7 +22,8 @@ import { HufCamPro } from "@/components/hufcam/HufCamPro";
 import { HoofStatusGrid } from "@/components/horse-detail/HoofStatusGrid";
 import { HorseStammdatenCard } from "@/components/horse-detail/HorseStammdatenCard";
 import { HoofPhotoTimeline } from "@/components/horse-detail/HoofPhotoTimeline";
-import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
+import { HufMesser } from "@/components/hufmesser";
+import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails, HoofMeasurements } from "@/components/horse-detail/types";
 
 interface OwnerProfile {
   id: string;
@@ -282,7 +283,7 @@ export default function ProviderHorseDetail() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="historie" className="flex items-center gap-1.5">
             <History className="h-4 w-4" />
             <span className="hidden sm:inline">Historie</span>
@@ -290,6 +291,10 @@ export default function ProviderHorseDetail() {
           <TabsTrigger value="steckbrief" className="flex items-center gap-1.5">
             <Info className="h-4 w-4" />
             <span className="hidden sm:inline">Steckbrief</span>
+          </TabsTrigger>
+          <TabsTrigger value="hufmesser" className="flex items-center gap-1.5">
+            <Ruler className="h-4 w-4" />
+            <span className="hidden sm:inline">HufMesser</span>
           </TabsTrigger>
           <TabsTrigger value="foto-timeline" className="flex items-center gap-1.5">
             <Clock className="h-4 w-4" />
@@ -323,6 +328,15 @@ export default function ProviderHorseDetail() {
 
         <TabsContent value="steckbrief">
           <TabSteckbrief horse={horse} onEdit={() => setShowEditModal(true)} />
+        </TabsContent>
+
+        <TabsContent value="hufmesser">
+          <HufMesser
+            horseId={horse.id}
+            horseName={horse.name}
+            existingMeasurements={horse.hoof_measurements as HoofMeasurements}
+            onSaved={fetchHorseData}
+          />
         </TabsContent>
 
         <TabsContent value="foto-timeline">
