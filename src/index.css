@@ -35,7 +35,7 @@
     --input: 40 20% 88%;
     --ring: 26 90% 54%;
 
-    --radius: 0.75rem;
+    --radius: 0.375rem;
 
     /* Custom tokens */
     --copper: 26 90% 54%;
@@ -53,9 +53,9 @@
     
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 hsl(30 10% 15% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(30 10% 15% / 0.08), 0 2px 4px -2px hsl(30 10% 15% / 0.05);
-    --shadow-lg: 0 10px 15px -3px hsl(30 10% 15% / 0.1), 0 4px 6px -4px hsl(30 10% 15% / 0.05);
-    --shadow-glow: 0 0 20px hsl(26 90% 54% / 0.25);
+    --shadow-md: 0 2px 4px -1px hsl(30 10% 15% / 0.06);
+    --shadow-lg: 0 4px 8px -2px hsl(30 10% 15% / 0.08);
+    --shadow-glow: none;
 
     --sidebar-background: 0 0% 7%;
     --sidebar-foreground: 0 0% 90%;
@@ -99,8 +99,7 @@
     --input: 0 0% 20%;
     --ring: 26 90% 54%;
 
-    /* Dark mode shadows with orange glow */
-    --shadow-glow: 0 0 25px hsl(26 90% 54% / 0.3);
+    --shadow-glow: none;
 
     --sidebar-background: 0 0% 5%;
     --sidebar-foreground: 0 0% 90%;
@@ -125,78 +124,43 @@
 }
 
 @layer utilities {
+  /* Gradient utilities kept for backward compat but flattened */
   .gradient-primary {
-    background: var(--gradient-primary);
+    background: hsl(var(--primary));
   }
-  
+
   .gradient-accent {
-    background: var(--gradient-accent);
+    background: hsl(var(--accent));
   }
-  
+
   .gradient-warm {
-    background: var(--gradient-warm);
+    background: hsl(var(--background));
   }
-  
+
   .shadow-glow {
-    box-shadow: var(--shadow-glow);
+    box-shadow: none;
   }
-  
+
+  /* Minimal fade-in kept, other animations removed */
   .animate-fade-in {
-    animation: fadeIn 0.5s ease-out;
+    /* no-op: animation removed for cleaner UI */
   }
-  
+
   .animate-slide-up {
-    animation: slideUp 0.4s ease-out;
+    /* no-op */
   }
-  
+
   .animate-slide-in-left {
-    animation: slideInLeft 0.3s ease-out;
+    /* no-op */
   }
 
-  /* Logo glow for dark backgrounds */
   .logo-glow {
-    filter: drop-shadow(0 0 8px hsl(0 0% 100% / 0.3));
-  }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from { 
-    opacity: 0; 
-    transform: translateY(10px); 
-  }
-  to { 
-    opacity: 1; 
-    transform: translateY(0); 
-  }
-}
-
-@keyframes slideInLeft {
-  from { 
-    opacity: 0; 
-    transform: translateX(-10px); 
-  }
-  to { 
-    opacity: 1; 
-    transform: translateX(0); 
-  }
-}
-
-@keyframes pulseSlow {
-  0%, 100% { 
-    opacity: 1; 
-  }
-  50% { 
-    opacity: 0.7; 
+    /* removed glow */
   }
 }
 
 .animate-pulse-slow {
-  animation: pulseSlow 2s ease-in-out infinite;
+  /* no-op: removed infinite animation */
 }
 
 /* React Big Calendar Custom Styles */

@@ -46,9 +46,9 @@ export function ServiceCard({
   };
 
   return (
-    <Card className="group flex flex-col border-2 transition-all duration-300 hover:border-primary/30 hover:shadow-xl">
+    <Card className="flex flex-col border">
       <CardHeader className="text-center pb-2">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform group-hover:scale-110">
+        <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
           {IconComponent}
         </div>
         <CardTitle className="text-xl">{title}</CardTitle>

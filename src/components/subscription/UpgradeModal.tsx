@@ -6,7 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Crown, Sparkles, ArrowUpRight } from "lucide-react";
+import { Lock, ArrowUpRight } from "lucide-react";
 
 interface UpgradeModalProps {
   open: boolean;
@@ -23,58 +23,42 @@ export function UpgradeModal({ open, onOpenChange, featureName }: UpgradeModalPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md text-center">
-        <DialogHeader className="items-center">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-            <Crown className="h-8 w-8 text-primary" />
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center mb-2">
+            <Lock className="h-5 w-5 text-muted-foreground" />
           </div>
-          <DialogTitle className="text-2xl">Upgrade erforderlich</DialogTitle>
-          <DialogDescription className="text-base">
-            <span className="font-semibold text-foreground">{featureName}</span> ist Teil des Profi-Pakets.
+          <DialogTitle className="text-xl">Upgrade erforderlich</DialogTitle>
+          <DialogDescription className="text-sm">
+            <span className="font-semibold text-foreground">{featureName}</span> ist im Profi-Paket verf\u00fcgbar.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-6 space-y-4">
-          <div className="bg-muted/50 rounded-lg p-4 text-left space-y-3">
-            <p className="font-medium flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              Im Profi-Paket enthalten:
+        <div className="py-4 space-y-4">
+          <div className="rounded-lg border border-border p-4 text-left space-y-3">
+            <p className="text-sm font-medium text-foreground">
+              Enthaltene Funktionen im Profi-Paket:
             </p>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                GPS-Navigation zum Stall
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                KI-Assistent für Hufpflege-Fragen
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                Automatische Termin-Erinnerungen
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                Erweiterte Analyse & Statistiken
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                MemberHorse Academy Zugang
-              </li>
+            <ul className="space-y-1.5 text-sm text-muted-foreground">
+              <li>GPS-Navigation zum Stall</li>
+              <li>KI-Assistent f\u00fcr Hufpflege-Fragen</li>
+              <li>Automatische Termin-Erinnerungen</li>
+              <li>Erweiterte Analyse & Statistiken</li>
+              <li>MemberHorse Academy Zugang</li>
             </ul>
           </div>
 
-          <Button onClick={handleUpgrade} className="w-full h-12 text-base gap-2">
-            Jetzt upgraden
-            <ArrowUpRight className="h-5 w-5" />
+          <Button onClick={handleUpgrade} className="w-full h-12 text-sm gap-2">
+            Upgrade ansehen
+            <ArrowUpRight className="h-4 w-4" />
           </Button>
-          
-          <Button 
-            variant="ghost" 
+
+          <Button
+            variant="ghost"
             onClick={() => onOpenChange(false)}
             className="w-full text-muted-foreground"
           >
-            Später
+            Zur\u00fcck
           </Button>
         </div>
       </DialogContent>

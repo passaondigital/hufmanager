@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { X, Sparkles } from "lucide-react";
+import { X, Monitor } from "lucide-react";
 import { PricingModal } from "@/components/subscription/PricingModal";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -21,28 +21,27 @@ export function DemoStickyBanner() {
     <>
       <div className={cn(
         "fixed bottom-0 left-0 right-0 z-50",
-        "bg-primary",
-        "border-t border-primary/20 shadow-lg shadow-primary/20"
+        "bg-card",
+        "border-t border-border"
       )}>
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="hidden sm:flex h-10 w-10 rounded-full bg-white/20 items-center justify-center">
-                <Sparkles className="h-5 w-5 text-white" />
+              <div className="hidden sm:flex h-8 w-8 rounded-md bg-muted items-center justify-center">
+                <Monitor className="h-4 w-4 text-muted-foreground" />
               </div>
-              <div className="text-white">
-                <p className="font-semibold text-sm sm:text-base">
-                  Du nutzt den Demo-Account
+              <div>
+                <p className="font-semibold text-sm sm:text-base text-foreground">
+                  Demo-Modus
                 </p>
-                <p className="text-xs sm:text-sm text-white/80">
-                  Erstelle jetzt deinen eigenen Account und starte 14 Tage kostenlos!
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Du siehst einen Beispiel-Account mit Testdaten.
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Button
                 onClick={() => setIsPricingOpen(true)}
-                className="bg-white text-primary hover:bg-white/90 font-semibold whitespace-nowrap"
                 size="sm"
               >
                 Eigenen Account erstellen
@@ -50,7 +49,7 @@ export function DemoStickyBanner() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-white hover:bg-white/20 h-8 w-8"
+                className="h-8 w-8"
                 onClick={() => setIsDismissed(true)}
               >
                 <X className="h-4 w-4" />
@@ -63,9 +62,10 @@ export function DemoStickyBanner() {
       <PricingModal
         open={isPricingOpen}
         onOpenChange={setIsPricingOpen}
-        title="Wähle dein Paket & starte 14 Tage kostenlos!"
-        description="Erstelle deinen eigenen HufManager Account und digitalisiere dein Business."
+        title="Bereit f\u00fcr deinen eigenen HufManager?"
+        description="\u00dcbernimm deine Daten aus der Demo und arbeite im eigenen Account."
         showTrialBadge={true}
+        isDemoContext={true}
       />
     </>
   );
