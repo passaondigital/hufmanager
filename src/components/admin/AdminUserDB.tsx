@@ -35,7 +35,7 @@ interface UserData {
   email: string | null;
   full_name: string | null;
   readable_id: string | null;
-  role: "provider" | "client" | "admin";
+  role: "provider" | "client" | "admin" | "employee";
   subscription_status: string | null;
   subscription_plan: string | null;
   plan_override: string | null;

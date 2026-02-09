@@ -63,6 +63,8 @@ import Ausgaben from "@/pages/Ausgaben";
 import WorkMode from "@/pages/WorkMode";
 import Tour from "@/pages/Tour";
 import Team from "@/pages/Team";
+import EmployeeDashboard from "@/pages/EmployeeDashboard";
+import EmployeeInvite from "@/pages/EmployeeInvite";
 
 // Components
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
@@ -271,6 +273,20 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client-profile" element={<ClientProfile />} />
               <Route path="/client-chat" element={<ClientChat />} />
             </Route>
+
+            {/* --- 4. EMPLOYEE (MITARBEITER) ROUTES --- */}
+            {/* Employee invite - public route */}
+            <Route path="/employee-invite" element={<EmployeeInvite />} />
+            
+            {/* Employee dashboard - protected */}
+            <Route
+              path="/employee"
+              element={
+                <ProtectedRoute allowedRoles={["employee"]}>
+                  <EmployeeDashboard />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Fallback für alles andere */}
             <Route path="*" element={<NotFound />} />
