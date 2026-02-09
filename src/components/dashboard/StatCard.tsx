@@ -33,8 +33,8 @@ export function StatCard({
     <div
       onClick={handleClick}
       className={cn(
-        "bg-card rounded-xl border border-border p-6 hover:shadow-lg transition-shadow duration-300 animate-fade-in",
-        navigateTo && "cursor-pointer hover:border-primary/50"
+        "bg-card rounded-lg border border-border p-6",
+        navigateTo && "cursor-pointer hover:bg-muted/50"
       )}
     >
       <div className="flex items-start justify-between">
@@ -56,7 +56,7 @@ export function StatCard({
         </div>
         <div
           className={cn(
-            "p-3 rounded-xl",
+            "p-2 rounded-md",
             iconColor === "primary" && "bg-primary/10",
             iconColor === "accent" && "bg-accent/10",
             iconColor === "muted" && "bg-muted"

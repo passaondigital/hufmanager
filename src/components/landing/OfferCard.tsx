@@ -82,7 +82,7 @@ export const OfferCard = ({
   const billing = billingType || "einmalig";
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col">
+    <Card className="overflow-hidden h-full flex flex-col">
       {/* Media Section */}
       {mediaUrl && (
         <div className="relative aspect-video bg-muted">

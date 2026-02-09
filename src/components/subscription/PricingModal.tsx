@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Crown, Sparkles, Zap, ArrowRight, Gift } from "lucide-react";
+import { Check, Crown, Sparkles, Zap, ArrowRight, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDemoActivityTracker } from "@/hooks/useDemoActivityTracker";
 
@@ -18,15 +18,16 @@ interface PricingModalProps {
   description?: string;
   currentPlan?: string | null;
   showTrialBadge?: boolean;
+  isDemoContext?: boolean;
 }
 
 const PRICING_PLANS = [
   {
     id: "starter",
-    name: "Anfänger",
+    name: "Anf\u00e4nger",
     price: "19",
     period: "pro Monat",
-    description: "Perfekt für den Einstieg",
+    description: "Grundfunktionen f\u00fcr Einzelbetriebe",
     features: [
       "Kalender & Termine",
       "Kundenverwaltung",
@@ -42,25 +43,25 @@ const PRICING_PLANS = [
     name: "Fortgeschritten",
     price: "49",
     period: "pro Monat",
-    description: "Für wachsende Betriebe",
+    description: "Erweitert um Navigation, Erinnerungen, Chat",
     features: [
-      "Alles aus Anfänger",
+      "Alles aus Anf\u00e4nger",
       "GPS-Navigation zum Stall",
       "Automatische Erinnerungen",
       "Kunden-Chat",
-      "Prioritäts-Support",
+      "Priorit\u00e4ts-Support",
     ],
     checkoutUrl: "https://copecart.com/products/ec500b5e/checkout",
     icon: Sparkles,
     highlighted: true,
-    badge: "Beliebt",
+    badge: "Meistgew\u00e4hlt",
   },
   {
     id: "pro",
     name: "Profi",
     price: "99",
     period: "pro Monat",
-    description: "Das Komplettpaket",
+    description: "Alle Funktionen inkl. KI und Academy",
     features: [
       "Alles aus Fortgeschritten",
       "KI-Assistent",
@@ -74,27 +75,28 @@ const PRICING_PLANS = [
   },
 ];
 
-export function PricingModal({ 
-  open, 
-  onOpenChange, 
-  title = "Wähle dein Paket & starte 14 Tage kostenlos!",
-  description = "Starte jetzt mit HufManager und digitalisiere dein Hufbearbeiter-Business.",
+export function PricingModal({
+  open,
+  onOpenChange,
+  title = "Pakete & Preise",
+  description = "W\u00e4hle das passende Paket f\u00fcr deinen Betrieb.",
   currentPlan = null,
-  showTrialBadge = true
+  showTrialBadge = true,
+  isDemoContext = false,
 }: PricingModalProps) {
   const { trackCopecartClick } = useDemoActivityTracker();
 
   const handleSelectPlan = (planId: string, checkoutUrl: string) => {
     // Track the click for demo analytics
     trackCopecartClick(planId, checkoutUrl);
-    
+
     window.open(checkoutUrl, "_blank");
     onOpenChange(false);
   };
 
   // Filter plans based on current plan for upgrade view
-  const availablePlans = currentPlan 
-    ? PRICING_PLANS.filter(plan => {
+  const availablePlans = currentPlan
+    ? PRICING_PLANS.filter((plan) => {
         const planOrder = ["starter", "advanced", "pro"];
         return planOrder.indexOf(plan.id) > planOrder.indexOf(currentPlan);
       })
@@ -104,7 +106,7 @@ export function PricingModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto p-4 md:p-6">
         <DialogHeader className="text-center pb-4">
-          <DialogTitle className="text-xl md:text-2xl lg:text-3xl font-bold">
+          <DialogTitle className="text-xl md:text-2xl font-bold">
             {title}
           </DialogTitle>
           <DialogDescription className="text-sm md:text-base text-muted-foreground">
@@ -112,87 +114,104 @@ export function PricingModal({
           </DialogDescription>
         </DialogHeader>
 
+        {/* Demo context hint */}
+        {isDemoContext && (
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+            <Info className="h-4 w-4 shrink-0" />
+            <span>Du verl\u00e4sst jetzt den Demo-Modus. Dein eigener Account wird separat angelegt.</span>
+          </div>
+        )}
+
         {/* Mobile: Stack vertically, Desktop: Grid */}
-        <div className={cn(
-          "grid gap-4 py-4",
-          "grid-cols-1", // Always 1 column on mobile
-          availablePlans.length === 3 ? "md:grid-cols-3" : 
-          availablePlans.length === 2 ? "md:grid-cols-2 max-w-2xl mx-auto" :
-          "max-w-md mx-auto"
-        )}>
+        <div
+          className={cn(
+            "grid gap-4 py-4",
+            "grid-cols-1",
+            availablePlans.length === 3
+              ? "md:grid-cols-3"
+              : availablePlans.length === 2
+              ? "md:grid-cols-2 max-w-2xl mx-auto"
+              : "max-w-md mx-auto"
+          )}
+        >
           {availablePlans.map((plan) => {
             const PlanIcon = plan.icon;
-            
+
             return (
               <div
                 key={plan.id}
                 className={cn(
-                  "relative flex flex-col rounded-2xl border-2 p-6 transition-all duration-300",
+                  "relative flex flex-col rounded-lg border p-6",
                   plan.highlighted
-                    ? "border-primary bg-primary/5 shadow-lg shadow-primary/20 scale-[1.02]"
-                    : "border-border bg-card hover:border-primary/50"
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-card"
                 )}
               >
-                {/* Popular Badge */}
+                {/* Badge */}
                 {plan.badge && (
-                  <Badge 
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3 py-1"
-                  >
+                  <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3 py-0.5">
                     {plan.badge}
                   </Badge>
                 )}
 
                 <div className="text-center mb-4">
-                  <div className={cn(
-                    "w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center",
-                    plan.highlighted 
-                      ? "bg-primary text-primary-foreground" 
-                      : "bg-muted text-muted-foreground"
-                  )}>
-                    <PlanIcon className="h-7 w-7" />
+                  <div
+                    className={cn(
+                      "w-10 h-10 rounded-md mx-auto mb-3 flex items-center justify-center",
+                      plan.highlighted
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    <PlanIcon className="h-5 w-5" />
                   </div>
-                  <h3 className="text-xl font-bold text-foreground">{plan.name}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {plan.name}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {plan.description}
+                  </p>
                 </div>
 
                 <div className="text-center mb-4">
-                  <span className="text-4xl font-bold text-foreground">{plan.price}€</span>
-                  <span className="text-muted-foreground ml-1">/{plan.period}</span>
+                  <span className="text-3xl font-bold text-foreground">
+                    {plan.price}\u20ac
+                  </span>
+                  <span className="text-muted-foreground ml-1 text-sm">
+                    /{plan.period}
+                  </span>
                 </div>
 
                 {/* Trial Badge */}
                 {showTrialBadge && (
                   <div className="flex justify-center mb-4">
-                    <Badge variant="secondary" className="gap-1.5 bg-accent/20 text-accent-foreground border-accent/30">
-                      <Gift className="h-3.5 w-3.5" />
+                    <Badge variant="secondary" className="gap-1.5">
                       14 Tage kostenlos testen
                     </Badge>
                   </div>
                 )}
 
-                <ul className="space-y-3 mb-6 flex-grow">
+                <ul className="space-y-2 mb-6 flex-grow">
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-start gap-2 text-sm">
-                      <Check className={cn(
-                        "h-4 w-4 mt-0.5 shrink-0",
-                        plan.highlighted ? "text-primary" : "text-muted-foreground"
-                      )} />
+                      <Check className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
                       <span className="text-foreground">{feature}</span>
                     </li>
                   ))}
                 </ul>
 
                 <Button
-                  onClick={() => handleSelectPlan(plan.id, plan.checkoutUrl)}
+                  onClick={() =>
+                    handleSelectPlan(plan.id, plan.checkoutUrl)
+                  }
                   className={cn(
-                    "w-full min-h-[44px] h-12 text-base font-semibold gap-2",
-                    plan.highlighted 
-                      ? "bg-primary hover:bg-primary/90" 
-                      : "bg-muted text-foreground hover:bg-muted/80"
+                    "w-full min-h-[44px] h-12 text-sm font-semibold gap-2"
                   )}
                   variant={plan.highlighted ? "default" : "secondary"}
                 >
-                  Jetzt starten
+                  {isDemoContext
+                    ? "Demo verlassen & eigenen Account anlegen"
+                    : "Paket w\u00e4hlen"}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -201,7 +220,7 @@ export function PricingModal({
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          Die Abrechnung erfolgt sicher über Copecart. Monatlich kündbar.
+          Abrechnung \u00fcber Copecart. Monatlich k\u00fcndbar.
         </p>
       </DialogContent>
     </Dialog>

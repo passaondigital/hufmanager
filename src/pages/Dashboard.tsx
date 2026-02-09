@@ -49,10 +49,10 @@ const Dashboard = () => {
 
       {/* Welcome Section */}
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-        <div className="animate-fade-in">
-          <h1 className="text-2xl font-bold text-foreground">Willkommen zurück, {displayName}!</h1>
-          <p className="text-muted-foreground mt-1">
-            Hier ist ein Überblick über Ihr Geschäft heute.
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">{displayName}</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Tagesübersicht
           </p>
         </div>
         <div className="lg:w-96">
@@ -64,7 +64,7 @@ const Dashboard = () => {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-card rounded-xl border border-border p-6 flex items-center justify-center h-32">
+            <div key={i} className="bg-card rounded-lg border border-border p-6 flex items-center justify-center h-32">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ))}
