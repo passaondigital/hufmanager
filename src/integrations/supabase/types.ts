@@ -1131,6 +1131,493 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_assignments: {
+        Row: {
+          allowed_actions: Json | null
+          appointment_id: string | null
+          assigned_at: string
+          assigned_by: string | null
+          check_in_location_lat: number | null
+          check_in_location_lng: number | null
+          check_in_time: string | null
+          check_out_location_lat: number | null
+          check_out_location_lng: number | null
+          check_out_time: string | null
+          created_at: string
+          employee_id: string
+          id: string
+          instructions: string | null
+          provider_id: string
+          review_notes: string | null
+          review_status: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          allowed_actions?: Json | null
+          appointment_id?: string | null
+          assigned_at?: string
+          assigned_by?: string | null
+          check_in_location_lat?: number | null
+          check_in_location_lng?: number | null
+          check_in_time?: string | null
+          check_out_location_lat?: number | null
+          check_out_location_lng?: number | null
+          check_out_time?: string | null
+          created_at?: string
+          employee_id: string
+          id?: string
+          instructions?: string | null
+          provider_id: string
+          review_notes?: string | null
+          review_status?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          allowed_actions?: Json | null
+          appointment_id?: string | null
+          assigned_at?: string
+          assigned_by?: string | null
+          check_in_location_lat?: number | null
+          check_in_location_lng?: number | null
+          check_in_time?: string | null
+          check_out_location_lat?: number | null
+          check_out_location_lng?: number | null
+          check_out_time?: string | null
+          created_at?: string
+          employee_id?: string
+          id?: string
+          instructions?: string | null
+          provider_id?: string
+          review_notes?: string | null
+          review_status?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_assignments_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_assignments_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "safe_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_assignments_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_assignments_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_assignments_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_assignments_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_type: string
+          created_at: string
+          employee_id: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          ip_address: string | null
+          new_values: Json | null
+          old_values: Json | null
+          provider_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_type: string
+          created_at?: string
+          employee_id?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          provider_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_type?: string
+          created_at?: string
+          employee_id?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          provider_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_audit_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_audit_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_audit_log_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_audit_log_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_audit_log_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_availability: {
+        Row: {
+          created_at: string
+          employee_id: string
+          end_date: string
+          end_time: string | null
+          id: string
+          notes: string | null
+          provider_id: string
+          requested_at: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          start_date: string
+          start_time: string | null
+          status: string
+          type: string
+          updated_at: string
+          weekdays: number[] | null
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          end_date: string
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          provider_id: string
+          requested_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          start_date: string
+          start_time?: string | null
+          status?: string
+          type: string
+          updated_at?: string
+          weekdays?: number[] | null
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          end_date?: string
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          provider_id?: string
+          requested_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          start_date?: string
+          start_time?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+          weekdays?: number[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_availability_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_availability_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_availability_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_availability_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_availability_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_documentation: {
+        Row: {
+          assignment_id: string
+          created_at: string
+          employee_id: string
+          id: string
+          materials_used: Json | null
+          notes: string | null
+          photo_urls: string[] | null
+          provider_id: string
+          status: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          assignment_id: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          materials_used?: Json | null
+          notes?: string | null
+          photo_urls?: string[] | null
+          provider_id: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assignment_id?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          materials_used?: Json | null
+          notes?: string | null
+          photo_urls?: string[] | null
+          provider_id?: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_documentation_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "employee_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_documentation_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_documentation_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_documentation_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_profiles: {
+        Row: {
+          avatar_url: string | null
+          can_apply_hoof_protection: boolean | null
+          can_work_alone: boolean | null
+          can_work_sensitive_clients: boolean | null
+          contract_end_date: string | null
+          contract_pdf_url: string | null
+          contract_start_date: string | null
+          created_at: string
+          custom_permissions: Json | null
+          email: string
+          employment_type: Database["public"]["Enums"]["employment_type"]
+          full_name: string
+          id: string
+          invitation_accepted_at: string | null
+          invitation_sent_at: string | null
+          invitation_token: string | null
+          notes: string | null
+          organization_id: string | null
+          phone: string | null
+          provider_id: string
+          role: Database["public"]["Enums"]["employee_role"]
+          status: Database["public"]["Enums"]["employee_status"]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          can_apply_hoof_protection?: boolean | null
+          can_work_alone?: boolean | null
+          can_work_sensitive_clients?: boolean | null
+          contract_end_date?: string | null
+          contract_pdf_url?: string | null
+          contract_start_date?: string | null
+          created_at?: string
+          custom_permissions?: Json | null
+          email: string
+          employment_type?: Database["public"]["Enums"]["employment_type"]
+          full_name: string
+          id?: string
+          invitation_accepted_at?: string | null
+          invitation_sent_at?: string | null
+          invitation_token?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          phone?: string | null
+          provider_id: string
+          role?: Database["public"]["Enums"]["employee_role"]
+          status?: Database["public"]["Enums"]["employee_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          can_apply_hoof_protection?: boolean | null
+          can_work_alone?: boolean | null
+          can_work_sensitive_clients?: boolean | null
+          contract_end_date?: string | null
+          contract_pdf_url?: string | null
+          contract_start_date?: string | null
+          created_at?: string
+          custom_permissions?: Json | null
+          email?: string
+          employment_type?: Database["public"]["Enums"]["employment_type"]
+          full_name?: string
+          id?: string
+          invitation_accepted_at?: string | null
+          invitation_sent_at?: string | null
+          invitation_token?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          phone?: string | null
+          provider_id?: string
+          role?: Database["public"]["Enums"]["employee_role"]
+          status?: Database["public"]["Enums"]["employee_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_profiles_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_profiles_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expenses: {
         Row: {
           amount: number
@@ -4595,6 +5082,7 @@ export type Database = {
           tour_date: string
         }[]
       }
+      get_employee_profile_id: { Args: { _user_id: string }; Returns: string }
       get_horse_medical_data: {
         Args: { p_horse_id: string }
         Returns: {
@@ -4701,6 +5189,10 @@ export type Database = {
         Returns: Json
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_employee_of_provider: {
+        Args: { _provider_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_master_admin: { Args: never; Returns: boolean }
       is_org_admin: { Args: { _user_id: string }; Returns: boolean }
       is_org_member: {
@@ -4722,7 +5214,7 @@ export type Database = {
       validate_magic_link: { Args: { slug_input: string }; Returns: Json }
     }
     Enums: {
-      app_role: "provider" | "client" | "admin"
+      app_role: "provider" | "client" | "admin" | "employee"
       appointment_status:
         | "scheduled"
         | "confirmed"
@@ -4734,6 +5226,9 @@ export type Database = {
       billing_type: "standard" | "flat_rate" | "series"
       client_type: "private" | "commercial"
       contact_category: "client" | "partner" | "supplier" | "lead"
+      employee_role: "view" | "employee" | "team_lead"
+      employee_status: "active" | "sick" | "vacation" | "suspended" | "inactive"
+      employment_type: "employee" | "contractor"
       equine_type: "horse" | "pony" | "donkey" | "mule" | "zebra"
       feature_status: "disabled" | "beta" | "early_access" | "public"
       help_article_role_access: "all" | "pid_only" | "kid_only"
@@ -4878,7 +5373,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["provider", "client", "admin"],
+      app_role: ["provider", "client", "admin", "employee"],
       appointment_status: [
         "scheduled",
         "confirmed",
@@ -4891,6 +5386,9 @@ export const Constants = {
       billing_type: ["standard", "flat_rate", "series"],
       client_type: ["private", "commercial"],
       contact_category: ["client", "partner", "supplier", "lead"],
+      employee_role: ["view", "employee", "team_lead"],
+      employee_status: ["active", "sick", "vacation", "suspended", "inactive"],
+      employment_type: ["employee", "contractor"],
       equine_type: ["horse", "pony", "donkey", "mule", "zebra"],
       feature_status: ["disabled", "beta", "early_access", "public"],
       help_article_role_access: ["all", "pid_only", "kid_only"],
