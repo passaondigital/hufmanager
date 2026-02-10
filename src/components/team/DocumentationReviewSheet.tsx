@@ -24,7 +24,7 @@ interface DocumentationReviewSheetProps {
   documentation: {
     id: string;
     notes: string | null;
-    photos: string[] | null;
+    photo_urls: string[] | null;
     materials_used: any[] | null;
     status: string;
     submitted_at: string | null;
@@ -113,13 +113,13 @@ export function DocumentationReviewSheet({
 
         <div className="space-y-6 py-4">
           {/* Photos */}
-          {documentation.photos && documentation.photos.length > 0 && (
+          {documentation.photo_urls && documentation.photo_urls.length > 0 && (
             <div>
               <Label className="mb-2 block">
-                Fotos ({documentation.photos.length})
+                Fotos ({documentation.photo_urls.length})
               </Label>
               <div className="grid grid-cols-2 gap-2">
-                {documentation.photos.map((url, i) => (
+                {documentation.photo_urls.map((url, i) => (
                   <div key={i} className="aspect-square rounded-lg overflow-hidden border">
                     <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
                   </div>
