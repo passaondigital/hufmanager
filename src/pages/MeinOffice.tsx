@@ -5,7 +5,8 @@ import type { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, LayoutTemplate, FolderOpen } from "lucide-react";
+import { FolderOpen, LayoutTemplate, FileText, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { OfficeTemplate, OfficeDocument, DocumentBlock } from "@/components/office/types";
 import { PRESET_TEMPLATES } from "@/components/office/presets";
 import { TemplateGallery } from "@/components/office/TemplateGallery";
@@ -52,7 +53,7 @@ export default function MeinOffice() {
     enabled: !!user,
   });
 
-  // Fetch horses for assignment
+  // Fetch horses
   const { data: horses = [] } = useQuery({
     queryKey: ["office-horses", user?.id],
     queryFn: async () => {
@@ -66,7 +67,7 @@ export default function MeinOffice() {
     enabled: !!user,
   });
 
-  // Save document mutation
+  // Save document
   const saveMutation = useMutation({
     mutationFn: async (doc: Partial<OfficeDocument>) => {
       if (!user) throw new Error("Nicht angemeldet");
@@ -80,22 +81,12 @@ export default function MeinOffice() {
         status: doc.status || "draft",
         template_id: doc.template_id || null,
       };
-
       if (doc.id) {
-        const { data, error } = await supabase
-          .from("office_documents")
-          .update(payload)
-          .eq("id", doc.id)
-          .select()
-          .single();
+        const { data, error } = await supabase.from("office_documents").update(payload).eq("id", doc.id).select().single();
         if (error) throw error;
         return data;
       } else {
-        const { data, error } = await supabase
-          .from("office_documents")
-          .insert(payload)
-          .select()
-          .single();
+        const { data, error } = await supabase.from("office_documents").insert(payload).select().single();
         if (error) throw error;
         return data;
       }
@@ -103,14 +94,14 @@ export default function MeinOffice() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["office-documents"] });
       setEditingDoc({ ...editingDoc, id: data.id } as OfficeDocument);
-      toast({ title: "Gespeichert", description: "Dokument wurde gespeichert." });
+      toast({ title: "✓ Gespeichert" });
     },
-    onError: (err) => {
+    onError: () => {
       toast({ title: "Fehler", description: "Speichern fehlgeschlagen.", variant: "destructive" });
     },
   });
 
-  // Save template mutation
+  // Save template
   const saveTemplateMutation = useMutation({
     mutationFn: async (tmpl: Partial<OfficeTemplate>) => {
       if (!user) throw new Error("Nicht angemeldet");
@@ -129,7 +120,7 @@ export default function MeinOffice() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["office-templates"] });
-      toast({ title: "Vorlage gespeichert" });
+      toast({ title: "✓ Vorlage gespeichert" });
     },
   });
 
@@ -157,7 +148,6 @@ export default function MeinOffice() {
     },
   });
 
-  // Create from preset
   const handleCreateFromPreset = useCallback((index: number) => {
     const preset = PRESET_TEMPLATES[index];
     setEditingDoc({
@@ -168,19 +158,15 @@ export default function MeinOffice() {
     setView("editor");
   }, []);
 
-  // Create blank
   const handleCreateBlank = useCallback(() => {
     setEditingDoc({
       title: "Neues Dokument",
-      blocks: [
-        { id: crypto.randomUUID(), type: "heading", value: "", headingLevel: 1 },
-      ],
+      blocks: [{ id: crypto.randomUUID(), type: "heading", value: "", headingLevel: 1 }],
       status: "draft",
     });
     setView("editor");
   }, []);
 
-  // Create from user template
   const handleUseTemplate = useCallback((template: OfficeTemplate) => {
     setEditingDoc({
       title: template.name,
@@ -192,13 +178,11 @@ export default function MeinOffice() {
     setView("editor");
   }, []);
 
-  // Open existing document
   const handleOpenDocument = useCallback((doc: OfficeDocument) => {
     setEditingDoc(doc);
     setView("editor");
   }, []);
 
-  // Duplicate template
   const handleDuplicateTemplate = useCallback((template: OfficeTemplate) => {
     saveTemplateMutation.mutate({
       name: template.name + " (Kopie)",
@@ -209,19 +193,24 @@ export default function MeinOffice() {
     });
   }, [saveTemplateMutation]);
 
-  // PDF export
+  const handleSaveAsTemplate = useCallback(() => {
+    if (!editingDoc) return;
+    saveTemplateMutation.mutate({
+      name: editingDoc.title || "Meine Vorlage",
+      category: "eigene",
+      blocks: JSON.parse(JSON.stringify(editingDoc.blocks || [])),
+      branding: editingDoc.branding,
+    });
+  }, [editingDoc, saveTemplateMutation]);
+
   const handleExportPdf = useCallback(async (doc?: Partial<OfficeDocument>) => {
     const target = doc || editingDoc;
     if (!target) return;
     try {
-      const pdf = await exportDocumentToPdf(
-        target.title || "Dokument",
-        target.blocks || [],
-        target.branding
-      );
+      const pdf = await exportDocumentToPdf(target.title || "Dokument", target.blocks || [], target.branding);
       pdf.save(`${target.title || "Dokument"}.pdf`);
-      toast({ title: "PDF exportiert" });
-    } catch (err) {
+      toast({ title: "✓ PDF exportiert" });
+    } catch {
       toast({ title: "PDF-Fehler", description: "Export fehlgeschlagen.", variant: "destructive" });
     }
   }, [editingDoc]);
@@ -236,7 +225,9 @@ export default function MeinOffice() {
           onSave={() => saveMutation.mutate(editingDoc)}
           onExportPdf={() => handleExportPdf()}
           onBack={() => setView("list")}
+          onSaveAsTemplate={handleSaveAsTemplate}
           saving={saveMutation.isPending}
+          horses={horses}
         />
       </div>
     );
@@ -245,11 +236,20 @@ export default function MeinOffice() {
   // List view
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Mein Office</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Dokumente, Vorlagen und Formulare für deinen Arbeitsalltag
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <FileText className="h-6 w-6 text-primary" />
+            Mein Office
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Dokumente, Vorlagen und Formulare für deinen Arbeitsalltag
+          </p>
+        </div>
+        <Button onClick={handleCreateBlank} className="gap-2 shrink-0">
+          <Plus className="h-4 w-4" />
+          <span className="hidden sm:inline">Neues Dokument</span>
+        </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -257,6 +257,9 @@ export default function MeinOffice() {
           <TabsTrigger value="documents" className="gap-2">
             <FolderOpen className="h-4 w-4" />
             Dokumente
+            {documents.length > 0 && (
+              <span className="ml-1 text-xs bg-muted px-1.5 py-0.5 rounded-full">{documents.length}</span>
+            )}
           </TabsTrigger>
           <TabsTrigger value="templates" className="gap-2">
             <LayoutTemplate className="h-4 w-4" />
