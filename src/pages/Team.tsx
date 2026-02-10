@@ -1,70 +1,149 @@
-import { Users, Lock, Sparkles } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { Loader2, UserPlus, UsersRound, ClipboardCheck, FileCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EmployeeList } from "@/components/team/EmployeeList";
+import { AssignmentTable } from "@/components/team/AssignmentTable";
+import { InviteEmployeeDialog } from "@/components/team/InviteEmployeeDialog";
+import { AssignAppointmentDialog } from "@/components/team/AssignAppointmentDialog";
+import { DocumentationReviewCard } from "@/components/team/DocumentationReviewCard";
+import { useEmployees } from "@/hooks/useEmployees";
+import { useAssignments } from "@/hooks/useAssignments";
+import { usePendingDocumentation } from "@/hooks/useDocumentation";
 
 const Team = () => {
-  const navigate = useNavigate();
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
+
+  const { data: employees = [], isLoading: loadingEmployees } = useEmployees();
+  const { data: assignments = [], isLoading: loadingAssignments } = useAssignments();
+  const { data: pendingDocs = [], isLoading: loadingDocs } = usePendingDocumentation();
+
+  const activeEmployees = employees.filter((e) => e.status === "active");
+  const pendingAssignments = assignments.filter(
+    (a) => !["completed", "cancelled"].includes(a.status)
+  );
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-4xl">
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-          <Users className="h-8 w-8 text-primary" />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Team</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Mitarbeiter, Zuweisungen und Dokumentation verwalten
+          </p>
         </div>
-        <h1 className="text-3xl font-bold mb-2">Team-Verwaltung</h1>
-        <p className="text-muted-foreground">
-          Verwalte dein Team und weise Termine zu
-        </p>
-        <Badge variant="secondary" className="mt-2 bg-orange-500/10 text-orange-500 border-orange-500/30">
-          <Sparkles className="h-3 w-3 mr-1" />
-          Coming Soon
-        </Badge>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setAssignOpen(true)}>
+            <ClipboardCheck className="h-4 w-4 mr-2" />
+            Termin zuweisen
+          </Button>
+          <Button size="sm" onClick={() => setInviteOpen(true)}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Mitarbeiter hinzuf\u00fcgen
+          </Button>
+        </div>
       </div>
 
-      <Card className="border-dashed">
-        <CardHeader className="text-center">
-          <CardTitle className="flex items-center justify-center gap-2">
-            <Lock className="h-5 w-5 text-muted-foreground" />
-            Modul in Entwicklung
-          </CardTitle>
-          <CardDescription>
-            Die Team-Verwaltung wird bald verfügbar sein
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 text-sm text-muted-foreground">
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-              <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
-              <div>
-                <p className="font-medium text-foreground">Mitarbeiter hinzufügen</p>
-                <p>Lade Teammitglieder ein und verwalte ihre Rollen</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-              <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
-              <div>
-                <p className="font-medium text-foreground">Termine zuweisen</p>
-                <p>Weise Termine einzelnen Mitarbeitern zu</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-              <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
-              <div>
-                <p className="font-medium text-foreground">Team-Kalender</p>
-                <p>Gemeinsamer Kalender für alle Teammitglieder</p>
-              </div>
-            </div>
-          </div>
+      {/* Stats row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="border rounded-lg p-4">
+          <p className="text-sm text-muted-foreground">Aktive Mitarbeiter</p>
+          <p className="text-2xl font-bold text-foreground">
+            {loadingEmployees ? "\u2013" : activeEmployees.length}
+          </p>
+        </div>
+        <div className="border rounded-lg p-4">
+          <p className="text-sm text-muted-foreground">Offene Zuweisungen</p>
+          <p className="text-2xl font-bold text-foreground">
+            {loadingAssignments ? "\u2013" : pendingAssignments.length}
+          </p>
+        </div>
+        <div className="border rounded-lg p-4">
+          <p className="text-sm text-muted-foreground">Zu pr\u00fcfen</p>
+          <p className="text-2xl font-bold text-foreground">
+            {loadingDocs ? "\u2013" : pendingDocs.length}
+          </p>
+        </div>
+        <div className="border rounded-lg p-4">
+          <p className="text-sm text-muted-foreground">Gesamt (inkl. inaktiv)</p>
+          <p className="text-2xl font-bold text-foreground">
+            {loadingEmployees ? "\u2013" : employees.length}
+          </p>
+        </div>
+      </div>
 
-          <div className="pt-4 flex justify-center">
-            <Button variant="outline" onClick={() => navigate("/")}>
-              Zurück zum Dashboard
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Tabs */}
+      <Tabs defaultValue="employees">
+        <TabsList>
+          <TabsTrigger value="employees" className="gap-1.5">
+            <UsersRound className="h-4 w-4" />
+            Mitarbeiter
+          </TabsTrigger>
+          <TabsTrigger value="assignments" className="gap-1.5">
+            <ClipboardCheck className="h-4 w-4" />
+            Zuweisungen
+            {pendingAssignments.length > 0 && (
+              <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0">
+                {pendingAssignments.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="approvals" className="gap-1.5">
+            <FileCheck className="h-4 w-4" />
+            Freigaben
+            {pendingDocs.length > 0 && (
+              <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0">
+                {pendingDocs.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="employees" className="mt-4">
+          {loadingEmployees ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <EmployeeList employees={employees} />
+          )}
+        </TabsContent>
+
+        <TabsContent value="assignments" className="mt-4">
+          {loadingAssignments ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <AssignmentTable assignments={assignments} />
+          )}
+        </TabsContent>
+
+        <TabsContent value="approvals" className="mt-4">
+          {loadingDocs ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : pendingDocs.length === 0 ? (
+            <div className="border rounded-lg p-8 text-center text-muted-foreground text-sm">
+              Keine ausstehenden Freigaben.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {pendingDocs.map((doc) => (
+                <DocumentationReviewCard key={doc.id} item={doc} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* Dialogs */}
+      <InviteEmployeeDialog open={inviteOpen} onOpenChange={setInviteOpen} />
+      <AssignAppointmentDialog open={assignOpen} onOpenChange={setAssignOpen} />
     </div>
   );
 };
