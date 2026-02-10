@@ -60,7 +60,7 @@ const roleConfig: Record<EmployeeRole, { label: string; icon: typeof Eye }> = {
 };
 
 export function EmployeeList() {
-  const { employees, isLoading, deleteEmployee, sendInvitation } = useEmployees();
+  const { employees, isLoading, deleteEmployee, updateEmployee, sendInvitation } = useEmployees();
   const [search, setSearch] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
@@ -223,7 +223,7 @@ export function EmployeeList() {
                         {employee.status === "active" && (
                           <DropdownMenuItem
                             onClick={() =>
-                              deleteEmployee.mutate(employee.id)
+                              updateEmployee.mutate({ id: employee.id, data: { status: "suspended" } })
                             }
                           >
                             <UserX className="h-4 w-4 mr-2" />

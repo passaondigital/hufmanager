@@ -1454,6 +1454,9 @@ export type Database = {
           notes: string | null
           photo_urls: string[] | null
           provider_id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           status: string
           submitted_at: string | null
           updated_at: string
@@ -1467,6 +1470,9 @@ export type Database = {
           notes?: string | null
           photo_urls?: string[] | null
           provider_id: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
           submitted_at?: string | null
           updated_at?: string
@@ -1480,6 +1486,9 @@ export type Database = {
           notes?: string | null
           photo_urls?: string[] | null
           provider_id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
           submitted_at?: string | null
           updated_at?: string

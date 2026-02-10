@@ -15,10 +15,11 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useAuth } from "@/hooks/useAuth";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus, CheckCircle, Wrench, Crown, Eye } from "lucide-react";
+import { Loader2, UserPlus, CheckCircle, Wrench, Crown, Eye, AlertTriangle } from "lucide-react";
+import { format } from "date-fns";
 
 interface AssignEmployeeModalProps {
   open: boolean;
@@ -44,6 +45,28 @@ export function AssignEmployeeModal({
   const { employees, isLoading } = useEmployees();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [instructions, setInstructions] = useState("");
+
+  // Fetch active absences to filter unavailable employees
+  const { data: absences } = useQuery({
+    queryKey: ["employee-absences-active", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const today = format(new Date(), "yyyy-MM-dd");
+      const { data, error } = await supabase
+        .from("employee_availability")
+        .select("employee_id, type")
+        .eq("provider_id", user.id)
+        .eq("status", "approved")
+        .in("type", ["vacation", "sick"])
+        .lte("start_date", today)
+        .gte("end_date", today);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id && open,
+  });
+
+  const absentEmployeeIds = new Set(absences?.map((a) => a.employee_id) || []);
 
   const activeEmployees = employees.filter((e) => e.status === "active");
 
@@ -112,13 +135,17 @@ export function AssignEmployeeModal({
                 {activeEmployees.map((emp) => {
                   const RoleIcon = roleIcons[emp.role] || Wrench;
                   const isSelected = selectedEmployeeId === emp.id;
+                  const isAbsent = absentEmployeeIds.has(emp.id);
                   return (
                     <button
                       key={emp.id}
                       type="button"
-                      onClick={() => setSelectedEmployeeId(emp.id)}
+                      onClick={() => !isAbsent && setSelectedEmployeeId(emp.id)}
+                      disabled={isAbsent}
                       className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors text-left ${
-                        isSelected
+                        isAbsent
+                          ? "border-border opacity-50 cursor-not-allowed"
+                          : isSelected
                           ? "border-primary bg-primary/5"
                           : "border-border hover:border-primary/30"
                       }`}
@@ -134,8 +161,14 @@ export function AssignEmployeeModal({
                           <span>{emp.role === "employee" ? "Mitarbeiter" : emp.role === "team_lead" ? "Teamleiter" : "Ansicht"}</span>
                         </div>
                       </div>
-                      {isSelected && <CheckCircle className="h-5 w-5 text-primary" />}
-                      {emp.can_work_alone && (
+                      {isAbsent && (
+                        <Badge variant="outline" className="text-xs text-orange-500 border-orange-500/30">
+                          <AlertTriangle className="h-3 w-3 mr-1" />
+                          Abwesend
+                        </Badge>
+                      )}
+                      {!isAbsent && isSelected && <CheckCircle className="h-5 w-5 text-primary" />}
+                      {emp.can_work_alone && !isAbsent && (
                         <Badge variant="secondary" className="text-xs">Allein</Badge>
                       )}
                     </button>

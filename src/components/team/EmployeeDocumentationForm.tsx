@@ -112,7 +112,7 @@ export function EmployeeDocumentationForm({
         employee_id: employeeId,
         provider_id: providerId,
         notes: notes || null,
-        photos: photoUrls.length > 0 ? photoUrls : null,
+        photo_urls: photoUrls.length > 0 ? photoUrls : null,
         materials_used: materialsUsed.length > 0 ? materialsUsed : null,
         status: "submitted",
         submitted_at: new Date().toISOString(),
