@@ -3068,6 +3068,122 @@ export type Database = {
         }
         Relationships: []
       }
+      office_documents: {
+        Row: {
+          blocks: Json
+          branding: Json | null
+          contact_id: string | null
+          created_at: string
+          horse_id: string | null
+          id: string
+          pdf_url: string | null
+          provider_id: string
+          status: string
+          template_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          blocks?: Json
+          branding?: Json | null
+          contact_id?: string | null
+          created_at?: string
+          horse_id?: string | null
+          id?: string
+          pdf_url?: string | null
+          provider_id: string
+          status?: string
+          template_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          blocks?: Json
+          branding?: Json | null
+          contact_id?: string | null
+          created_at?: string
+          horse_id?: string | null
+          id?: string
+          pdf_url?: string | null
+          provider_id?: string
+          status?: string
+          template_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "office_documents_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "office_documents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "office_documents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "office_documents_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "office_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      office_templates: {
+        Row: {
+          blocks: Json
+          branding: Json | null
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          is_preset: boolean
+          name: string
+          provider_id: string
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          blocks?: Json
+          branding?: Json | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_preset?: boolean
+          name: string
+          provider_id: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          blocks?: Json
+          branding?: Json | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_preset?: boolean
+          name?: string
+          provider_id?: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       organizations: {
         Row: {
           created_at: string

@@ -66,6 +66,7 @@ import Team from "@/pages/Team";
 import EmployeeDashboard from "@/pages/EmployeeDashboard";
 import EmployeeInvite from "@/pages/EmployeeInvite";
 import EmployeeTour from "@/pages/EmployeeTour";
+import MeinOffice from "@/pages/MeinOffice";
 
 // Components
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
@@ -250,6 +251,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/rechnungen" element={<Rechnungen />} />
               <Route path="/lager" element={<Lager />} />
               <Route path="/team" element={<Team />} />
+              <Route path="/mein-office" element={<MeinOffice />} />
               <Route path="/support" element={<Support />} />
               <Route path="/abo-matrix" element={<AboMatrix />} />
               {/* Provider Horse Detail - Direct Access */}

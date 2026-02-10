@@ -206,6 +206,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 
   // Erweiterungen - Addon modules (locked based on feature flags)
   const addonItems = [
+    { title: "Mein Office", icon: FileText, locked: false, url: "/mein-office" },
     { title: "Lager", icon: Warehouse, locked: !isFeatureVisible('beta_features'), url: "/lager" },
     { title: "Mitarbeiter", icon: UsersRound, locked: !isFeatureVisible('module_team'), url: "/team" },
   ];
