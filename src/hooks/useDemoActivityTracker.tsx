@@ -5,6 +5,15 @@ import { supabase } from "@/integrations/supabase/client";
 
 const DEMO_EMAIL = "hufbearbeiter.hufmanager@gmail.com";
 
+// DSGVO: Hash email to anonymize tracking data
+async function hashEmail(email: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(email + "huf_salt_2024");
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return "anon_" + hashArray.slice(0, 8).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
 export function useDemoActivityTracker() {
   const { user } = useAuth();
   const location = useLocation();
@@ -17,13 +26,14 @@ export function useDemoActivityTracker() {
     if (!isDemoUser || !user?.email) return;
 
     try {
+      // DSGVO: Use anonymized hash instead of plain email
+      const anonymizedId = await hashEmail(user.email);
       await supabase.from("demo_activity_logs").insert({
-        user_email: user.email,
+        user_email: anonymizedId,
         activity_type: "page_view",
         page_path: path,
         metadata: {
           timestamp: new Date().toISOString(),
-          user_agent: navigator.userAgent,
         },
       });
     } catch (error) {
@@ -36,8 +46,9 @@ export function useDemoActivityTracker() {
     if (!isDemoUser || !user?.email) return;
 
     try {
+      const anonymizedId = await hashEmail(user.email);
       await supabase.from("demo_activity_logs").insert({
-        user_email: user.email,
+        user_email: anonymizedId,
         activity_type: "action",
         action_name: actionName,
         page_path: location.pathname,
@@ -56,8 +67,9 @@ export function useDemoActivityTracker() {
     if (!isDemoUser || !user?.email) return;
 
     try {
+      const anonymizedId = await hashEmail(user.email);
       await supabase.from("demo_activity_logs").insert({
-        user_email: user.email,
+        user_email: anonymizedId,
         activity_type: "copecart_click",
         copecart_plan: plan,
         copecart_url: url,

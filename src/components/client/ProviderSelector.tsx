@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
 import { UserPlus, Check, Loader2 } from "lucide-react";
+import { DataProcessingConsentDialog } from "./DataProcessingConsentDialog";
 
 interface Provider {
   id: string;
@@ -25,7 +26,10 @@ export function ProviderSelector({ onProviderConnected }: ProviderSelectorProps)
   const [connectedProviders, setConnectedProviders] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState<string | null>(null);
-
+  const [consentDialog, setConsentDialog] = useState<{ open: boolean; provider: Provider | null }>({
+    open: false,
+    provider: null,
+  });
   useEffect(() => {
     if (!user) return;
     fetchProviders();
@@ -75,6 +79,10 @@ export function ProviderSelector({ onProviderConnected }: ProviderSelectorProps)
     setLoading(false);
   };
 
+  const requestConnection = (provider: Provider) => {
+    setConsentDialog({ open: true, provider });
+  };
+
   const connectToProvider = async (providerId: string) => {
     if (!user) return;
     setConnecting(providerId);
@@ -114,6 +122,16 @@ export function ProviderSelector({ onProviderConnected }: ProviderSelectorProps)
           });
 
         if (error) throw error;
+
+        // DSGVO: Log consent in client_consents
+        await supabase.from("client_consents").insert({
+          client_id: user.id,
+          provider_id: providerId,
+          consent_type: "data_processing",
+          version: "1.0",
+          ip_address: null,
+          user_agent: navigator.userAgent,
+        });
       }
 
       setConnectedProviders(prev => [...prev, providerId]);
@@ -217,7 +235,7 @@ export function ProviderSelector({ onProviderConnected }: ProviderSelectorProps)
               ) : (
                 <Button 
                   size="sm"
-                  onClick={() => connectToProvider(provider.id)}
+                  onClick={() => requestConnection(provider)}
                   disabled={isConnecting}
                 >
                   {isConnecting ? (
@@ -231,6 +249,19 @@ export function ProviderSelector({ onProviderConnected }: ProviderSelectorProps)
           );
         })}
       </CardContent>
+
+      {/* DSGVO Consent Dialog */}
+      <DataProcessingConsentDialog
+        open={consentDialog.open}
+        onOpenChange={(open) => setConsentDialog({ ...consentDialog, open })}
+        providerName={consentDialog.provider?.full_name || "Hufbearbeiter"}
+        onConsent={() => {
+          if (consentDialog.provider) {
+            connectToProvider(consentDialog.provider.id);
+          }
+          setConsentDialog({ open: false, provider: null });
+        }}
+      />
     </Card>
   );
 }
