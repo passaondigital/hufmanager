@@ -99,56 +99,20 @@ const EmployeeInvite = () => {
     setSubmitting(true);
 
     try {
-      // Create user account
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: employee.email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/employee`,
-          data: {
-            full_name: employee.full_name,
-            role: "employee",
-          },
-        },
+      // Use edge function to create account server-side (avoids FK timing issues)
+      const { data, error } = await supabase.functions.invoke("accept-employee-invitation", {
+        body: { token, password },
       });
 
-      if (authError) throw authError;
+      if (error) throw new Error(error.message || "Konto konnte nicht erstellt werden");
+      if (data?.error) throw new Error(data.error);
 
-      if (authData.user) {
-        // Update employee profile with user_id and mark invitation as accepted
-        const { error: updateError } = await supabase
-          .from("employee_profiles")
-          .update({
-            user_id: authData.user.id,
-            invitation_accepted_at: new Date().toISOString(),
-            invitation_token: null, // Clear token after use
-            status: "active",
-          })
-          .eq("id", employee.id);
+      toast({
+        title: "Konto erstellt!",
+        description: "Du kannst dich jetzt anmelden.",
+      });
 
-        if (updateError) throw updateError;
-
-        // Add employee role
-        const { error: roleError } = await supabase
-          .from("user_roles")
-          .insert({
-            user_id: authData.user.id,
-            role: "employee",
-          });
-
-        if (roleError) {
-          console.error("Role assignment error:", roleError);
-          // Don't throw - profile is created, role can be fixed later
-        }
-
-        toast({
-          title: "Konto erstellt!",
-          description: "Du kannst dich jetzt anmelden.",
-        });
-
-        // Redirect to login
-        navigate("/auth?message=account_created");
-      }
+      navigate("/auth?message=account_created");
     } catch (err: any) {
       console.error("Error accepting invitation:", err);
       toast({
