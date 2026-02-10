@@ -24,6 +24,7 @@ interface FeatureFlags {
   module_network: boolean;
   module_analytics: boolean;
   beta_features: boolean;
+  module_office: boolean;
 }
 
 const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
@@ -35,6 +36,7 @@ const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   module_network: true,
   module_analytics: true,
   beta_features: false,
+  module_office: false,
 };
 
 const DEFAULT_FEATURE_STATUSES: FeatureStatuses = {
@@ -47,6 +49,7 @@ const DEFAULT_FEATURE_STATUSES: FeatureStatuses = {
   module_analytics: 'public',
   beta_features: 'disabled',
   module_team: 'disabled',
+  module_office: 'disabled',
 };
 
 interface SubscriptionContextType {

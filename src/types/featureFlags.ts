@@ -10,7 +10,8 @@ export type FeatureKey =
   | 'module_network' 
   | 'module_analytics' 
   | 'beta_features'
-  | 'module_team';
+  | 'module_team'
+  | 'module_office';
 
 export interface FeatureStatuses {
   module_invoicing?: FeatureStatus;
@@ -22,6 +23,7 @@ export interface FeatureStatuses {
   module_analytics?: FeatureStatus;
   beta_features?: FeatureStatus;
   module_team?: FeatureStatus;
+  module_office?: FeatureStatus;
 }
 
 export interface FeatureDefinition {
@@ -42,6 +44,7 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
   { key: 'module_analytics', name: 'Analytics', description: 'Analyse und Statistiken', defaultStatus: 'public' },
   { key: 'beta_features', name: 'Beta Features', description: 'Zugang zu neuen Testfunktionen', defaultStatus: 'disabled' },
   { key: 'module_team', name: 'Team / Mitarbeiter', description: 'Mitarbeiterverwaltung', defaultStatus: 'disabled' },
+  { key: 'module_office', name: 'Mein Office', description: 'Dokumente, Formulare & Vorlagen', defaultStatus: 'disabled' },
 ];
 
 // Status display configuration
