@@ -5208,6 +5208,10 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      is_team_lead_for_provider: {
+        Args: { _provider_id: string; _user_id: string }
+        Returns: boolean
+      }
       provider_can_manage_client_horses: {
         Args: { _client_id: string; _provider_id: string }
         Returns: boolean
