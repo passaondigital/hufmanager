@@ -75,7 +75,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Get the app URL from environment or use default
-    const appUrl = Deno.env.get("APP_URL") || "https://hufmanager.lovable.app";
+    const appUrl = Deno.env.get("APP_URL") || "https://app.hufmanager.de";
     const invitationLink = `${appUrl}/employee-invite?token=${invitationToken}`;
 
     // For now, we'll log the invitation link (email sending can be added later)
