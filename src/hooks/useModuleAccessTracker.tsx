@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 
-type ModuleKey = "module_invoicing" | "module_chat" | "module_maps" | "module_academy" | "module_hufanalyse" | "module_network" | "module_analytics" | "beta_features";
+type ModuleKey = "module_invoicing" | "module_chat" | "module_maps" | "module_academy" | "module_hufanalyse" | "module_network" | "module_analytics" | "beta_features" | "module_office";
 
 const MODULE_LABELS: Record<ModuleKey, string> = {
   module_invoicing: "Rechnungen",
@@ -14,6 +14,7 @@ const MODULE_LABELS: Record<ModuleKey, string> = {
   module_network: "Netzwerk",
   module_analytics: "Analytics",
   beta_features: "Beta-Features",
+  module_office: "Mein Office",
 };
 
 /**
