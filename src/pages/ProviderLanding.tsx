@@ -9,6 +9,7 @@ import { LandingContactForm } from "@/components/landing/LandingContactForm";
 import { ServiceCard } from "@/components/landing/ServiceCard";
 import { BeforeAfterGallery } from "@/components/landing/BeforeAfterGallery";
 import { LegalFooter } from "@/components/landing/LegalFooter";
+import { CookieConsentBanner } from "@/components/landing/CookieConsentBanner";
 import { IntakeStatusBadge } from "@/components/landing/IntakeStatusBadge";
 import { ServiceInquiryModal } from "@/components/landing/ServiceInquiryModal";
 import { GallerySection } from "@/components/landing/GallerySection";
@@ -556,6 +557,9 @@ const ProviderLanding = () => {
         providerId={settings.user_id}
         primaryColor={primaryColor}
       />
+
+      {/* DSGVO Cookie Consent Banner */}
+      <CookieConsentBanner primaryColor={primaryColor} />
     </div>
   );
 };
