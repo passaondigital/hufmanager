@@ -11,10 +11,11 @@ async function processSyncAction(action: SyncAction): Promise<boolean> {
   try {
     const { type, table, data } = action;
     
-    // Type-safe table access
+    // Type-safe table access – must stay in sync with OFFLINE_MUTATION_TABLES
     const validTables = [
       "appointments", "horses", "contacts", "hoof_photos", 
-      "horse_documents", "invoices", "leads", "messages"
+      "horse_documents", "invoices", "leads", "messages",
+      "hoof_analyses", "vehicle_mileage_logs"
     ] as const;
     
     if (!validTables.includes(table as any)) {

@@ -557,9 +557,9 @@ export function TourManager() {
           />
         )}
         
-        {/* Back Button - Top Left safe zone - HIGHEST Z-INDEX */}
+        {/* Back Button - Top Left safe zone – must sit BELOW TourControls row */}
         {user && (
-          <div className="absolute top-4 left-4 z-[9999] flex items-center gap-2">
+          <div className="absolute top-20 left-4 z-[500] flex items-center gap-2">
             <Button
               variant="secondary"
               size="sm"
@@ -714,14 +714,16 @@ export function TourManager() {
                 </span>
               )}
             </div>
-            {!isPanelCollapsed && (
+            {!isPanelCollapsed && user && (
               <Button 
                 size="sm" 
                 variant="default"
                 className="h-9 px-4 gap-2"
                 onClick={(e) => {
                   e.stopPropagation();
-                  // Start tour action
+                  // Delegate to TourControls handleStartTour via the existing overlay button
+                  const startBtn = document.querySelector('[data-tour-start]') as HTMLButtonElement;
+                  if (startBtn) startBtn.click();
                 }}
               >
                 Start
@@ -788,15 +790,5 @@ export function TourManager() {
   );
 }
 
-// Haversine distance
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
-}
+// Re-export shared utility used locally
+import { haversineDistance as calculateDistance } from "@/lib/geo";

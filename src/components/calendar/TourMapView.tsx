@@ -226,12 +226,18 @@ const UserLocationMarker = ({
   const [position, setPosition] = useState<[number, number] | null>(null);
   
   useEffect(() => {
-    map.locate({ setView: false, maxZoom: 13 });
+    if (!("geolocation" in navigator)) return;
     
-    map.on("locationfound", (e) => {
-      setPosition([e.latlng.lat, e.latlng.lng]);
-      onLocationFound(e.latlng.lat, e.latlng.lng);
-    });
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        setPosition([pos.coords.latitude, pos.coords.longitude]);
+        onLocationFound(pos.coords.latitude, pos.coords.longitude);
+      },
+      (err) => console.error("Geolocation error:", err),
+      { enableHighAccuracy: true, maximumAge: 30000 }
+    );
+    
+    return () => navigator.geolocation.clearWatch(watchId);
   }, [map, onLocationFound]);
   
   return position ? (
