@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient, UseMutationOptions } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addToSyncQueue } from "@/lib/offline/syncQueue";
 import { OfflineMutationTable, OFFLINE_MUTATION_TABLES } from "@/lib/offline/offlineConfig";
 import { supabase } from "@/integrations/supabase/client";
@@ -150,8 +150,6 @@ export function useOfflineQuery<T>(
     staleTime?: number;
   }
 ) {
-  const { useQuery } = require("@tanstack/react-query");
-  
   return useQuery({
     queryKey,
     queryFn,
