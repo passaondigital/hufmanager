@@ -65,6 +65,7 @@ import Tour from "@/pages/Tour";
 import Team from "@/pages/Team";
 import EmployeeDashboard from "@/pages/EmployeeDashboard";
 import EmployeeInvite from "@/pages/EmployeeInvite";
+import EmployeeTour from "@/pages/EmployeeTour";
 
 // Components
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
@@ -284,6 +285,14 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               element={
                 <ProtectedRoute allowedRoles={["employee"]}>
                   <EmployeeDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/employee/tour"
+              element={
+                <ProtectedRoute allowedRoles={["employee"]}>
+                  <EmployeeTour />
                 </ProtectedRoute>
               }
             />

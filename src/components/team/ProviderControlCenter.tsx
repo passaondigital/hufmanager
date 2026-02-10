@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DocumentationReviewSheet } from "./DocumentationReviewSheet";
 import {
   Users,
   UserCheck,
@@ -28,6 +30,7 @@ import { Link } from "react-router-dom";
 export function ProviderControlCenter() {
   const { user } = useAuth();
   const { employees, isLoading: employeesLoading } = useEmployees();
+  const [reviewingDoc, setReviewingDoc] = useState<any>(null);
 
   // Fetch today's assignments
   const { data: todayAssignments, isLoading: assignmentsLoading } = useQuery({
@@ -281,7 +284,7 @@ export function ProviderControlCenter() {
                         von {doc.employee?.full_name}
                       </p>
                     </div>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => setReviewingDoc(doc)}>
                       Prüfen
                     </Button>
                   </div>
@@ -358,6 +361,14 @@ export function ProviderControlCenter() {
           )}
         </CardContent>
       </Card>
+      {/* Documentation Review Sheet */}
+      {reviewingDoc && (
+        <DocumentationReviewSheet
+          open={!!reviewingDoc}
+          onOpenChange={(open) => !open && setReviewingDoc(null)}
+          documentation={reviewingDoc}
+        />
+      )}
     </div>
   );
 }
