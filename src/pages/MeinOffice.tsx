@@ -161,7 +161,7 @@ export default function MeinOffice() {
   const handleCreateBlank = useCallback(() => {
     setEditingDoc({
       title: "Neues Dokument",
-      blocks: [{ id: crypto.randomUUID(), type: "heading", value: "", headingLevel: 1 }],
+      blocks: [{ id: crypto.randomUUID(), type: "heading", value: "", headingLevel: 1 as const }],
       status: "draft",
     });
     setView("editor");

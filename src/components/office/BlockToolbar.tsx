@@ -7,7 +7,7 @@ import {
   Type, AlignLeft, TextCursorInput, AlignJustify,
   CheckSquare, ListChecks, ChevronDown, CalendarDays,
   Clock, Hash, Table, PenTool, ImagePlus, PenLine,
-  Tag, StickyNote, Minus, Plus,
+  Tag, StickyNote, Minus, Plus, MoveVertical, Square,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -29,6 +29,8 @@ const BLOCK_ICONS: Record<BlockType, React.ComponentType<{ className?: string }>
   placeholder: Tag,
   note: StickyNote,
   separator: Minus,
+  spacer: MoveVertical,
+  box: Square,
 };
 
 const BLOCK_GROUPS: { label: string; types: BlockType[] }[] = [
@@ -36,7 +38,7 @@ const BLOCK_GROUPS: { label: string; types: BlockType[] }[] = [
   { label: "Eingabe", types: ["input", "textarea", "number", "date", "time"] },
   { label: "Auswahl", types: ["checkbox", "checklist", "dropdown"] },
   { label: "Medien", types: ["image", "drawing", "signature"] },
-  { label: "Struktur", types: ["table", "placeholder", "separator"] },
+  { label: "Struktur", types: ["table", "placeholder", "separator", "spacer", "box"] },
 ];
 
 interface BlockToolbarProps {

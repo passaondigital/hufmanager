@@ -15,7 +15,24 @@ export type BlockType =
   | "signature"
   | "placeholder"
   | "note"
-  | "separator";
+  | "separator"
+  | "spacer"
+  | "box";
+
+export type TextAlign = "left" | "center" | "right";
+
+export interface BlockStyle {
+  textAlign?: TextAlign;
+  textColor?: string;
+  bgColor?: string;
+  borderColor?: string;
+  borderWidth?: number;
+  borderRadius?: number;
+  padding?: number;
+  fontSize?: number;
+  bold?: boolean;
+  italic?: boolean;
+}
 
 export interface BlockOption {
   label: string;
@@ -41,9 +58,11 @@ export interface DocumentBlock {
   imageUrl?: string;
   signatureDataUrl?: string;
   drawingDataUrl?: string;
-  placeholderKey?: string; // e.g. "horse_name", "client_name", "date"
+  placeholderKey?: string;
   headingLevel?: 1 | 2 | 3;
   required?: boolean;
+  style?: BlockStyle;
+  spacerHeight?: number;
 }
 
 export interface DocumentBranding {
@@ -53,6 +72,11 @@ export interface DocumentBranding {
   headingColor?: string;
   lineColor?: string;
   backgroundColor?: string;
+  companyName?: string;
+  companyAddress?: string;
+  companyPhone?: string;
+  companyEmail?: string;
+  footerText?: string;
 }
 
 export interface OfficeTemplate {
@@ -111,4 +135,23 @@ export const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
   placeholder: "Platzhalter",
   note: "Notizfeld",
   separator: "Trennlinie",
+  spacer: "Abstandhalter",
+  box: "Inhaltsbox",
 };
+
+export const FONT_OPTIONS = [
+  { value: "system", label: "System (Standard)" },
+  { value: "serif", label: "Serif (klassisch)" },
+  { value: "mono", label: "Monospace (technisch)" },
+] as const;
+
+export const COLOR_PRESETS = [
+  { value: "", label: "Standard" },
+  { value: "#1a1a1a", label: "Schwarz" },
+  { value: "#374151", label: "Dunkelgrau" },
+  { value: "#92400e", label: "Kupfer" },
+  { value: "#1e40af", label: "Blau" },
+  { value: "#166534", label: "Grün" },
+  { value: "#9333ea", label: "Lila" },
+  { value: "#dc2626", label: "Rot" },
+] as const;

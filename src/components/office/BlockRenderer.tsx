@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
-import { DocumentBlock, PLACEHOLDER_KEYS } from "./types";
+import { DocumentBlock, BlockStyle, PLACEHOLDER_KEYS } from "./types";
+import { BlockStyleEditor } from "./BlockStyleEditor";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,7 +10,8 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
-import { Trash2, GripVertical, ImagePlus, Copy, Settings2, Plus, X } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Trash2, GripVertical, ImagePlus, Copy, Settings2, Plus, X, Paintbrush } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SignatureCanvas from "react-signature-canvas";
 
@@ -27,6 +29,21 @@ export function BlockRenderer({ block, onChange, onDelete, onDuplicate, onInsert
   const sigRef = useRef<SignatureCanvas>(null);
   const drawRef = useRef<SignatureCanvas>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showStyleEditor, setShowStyleEditor] = useState(false);
+
+  const blockStyle = block.style || {};
+  const styleObj: React.CSSProperties = {
+    textAlign: blockStyle.textAlign,
+    color: blockStyle.textColor || undefined,
+    backgroundColor: blockStyle.bgColor || undefined,
+    borderWidth: blockStyle.borderWidth ? `${blockStyle.borderWidth}px` : undefined,
+    borderColor: blockStyle.borderColor || undefined,
+    borderStyle: blockStyle.borderWidth ? "solid" : undefined,
+    borderRadius: blockStyle.borderRadius ? `${blockStyle.borderRadius}px` : undefined,
+    padding: blockStyle.padding ? `${blockStyle.padding}px` : undefined,
+    fontWeight: blockStyle.bold ? "bold" : undefined,
+    fontStyle: blockStyle.italic ? "italic" : undefined,
+  };
 
   const updateValue = (value: string) => onChange({ ...block, value });
 
@@ -144,6 +161,22 @@ export function BlockRenderer({ block, onChange, onDelete, onDuplicate, onInsert
               <GripVertical className="h-4 w-4 text-muted-foreground" />
             </div>
             {settingsPopover}
+            {/* Style editor */}
+            <Popover open={showStyleEditor} onOpenChange={setShowStyleEditor}>
+              <PopoverTrigger asChild>
+                <button className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded" title="Formatierung">
+                  <Paintbrush className="h-3.5 w-3.5" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 p-3" side="left" align="start">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Formatierung</p>
+                <BlockStyleEditor
+                  style={block.style || {}}
+                  onChange={(s) => onChange({ ...block, style: s })}
+                  showTextOptions={!["separator", "image", "signature", "drawing", "spacer"].includes(block.type)}
+                />
+              </PopoverContent>
+            </Popover>
             {onDuplicate && (
               <button onClick={onDuplicate} className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded" title="Duplizieren">
                 <Copy className="h-3.5 w-3.5" />
@@ -154,7 +187,7 @@ export function BlockRenderer({ block, onChange, onDelete, onDuplicate, onInsert
             </button>
           </div>
         )}
-        <div className="flex-1 min-w-0">{children}</div>
+        <div className="flex-1 min-w-0" style={styleObj}>{children}</div>
       </div>
       {/* Insert-between button */}
       {editable && onInsertAfter && (
@@ -601,7 +634,48 @@ export function BlockRenderer({ block, onChange, onDelete, onDuplicate, onInsert
     case "separator":
       return wrapper(
         <div className="py-2">
-          <Separator />
+          <Separator className={blockStyle.borderColor ? "" : ""} style={blockStyle.borderColor ? { backgroundColor: blockStyle.borderColor } : undefined} />
+        </div>
+      );
+
+    case "spacer":
+      return wrapper(
+        <div style={{ height: `${block.spacerHeight || 24}px` }}>
+          {editable && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground/50">
+              <span>↕ {block.spacerHeight || 24}px</span>
+              <Slider
+                value={[block.spacerHeight || 24]}
+                min={8}
+                max={120}
+                step={8}
+                onValueChange={([v]) => onChange({ ...block, spacerHeight: v })}
+                className="w-24"
+              />
+            </div>
+          )}
+        </div>
+      );
+
+    case "box":
+      return wrapper(
+        <div
+          className="rounded-lg border p-4"
+          style={{
+            borderColor: blockStyle.borderColor || "hsl(var(--border))",
+            backgroundColor: blockStyle.bgColor || undefined,
+          }}
+        >
+          {editable ? (
+            <Textarea
+              value={block.value || ""}
+              onChange={(e) => onChange({ ...block, value: e.target.value })}
+              placeholder="Inhaltsbox – Text eingeben..."
+              className="bg-transparent border-none p-0 text-sm min-h-[60px] resize-y focus-visible:ring-0"
+            />
+          ) : (
+            <p className="text-sm whitespace-pre-wrap">{block.value}</p>
+          )}
         </div>
       );
 

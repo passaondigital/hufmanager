@@ -2,12 +2,14 @@ import { useState, useCallback } from "react";
 import { DocumentBlock, BlockType, OfficeDocument, DocumentBranding } from "./types";
 import { BlockRenderer } from "./BlockRenderer";
 import { BlockToolbar } from "./BlockToolbar";
+import { BrandingPanel } from "./BrandingPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Save, FileDown, ArrowLeft, CheckCircle2, FileEdit, BookTemplate, Undo2 } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Save, FileDown, ArrowLeft, CheckCircle2, FileEdit, BookTemplate, Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   DndContext,
@@ -86,6 +88,7 @@ export function DocumentEditor({
   horses,
 }: DocumentEditorProps) {
   const blocks = doc.blocks || [];
+  const branding = doc.branding || {};
   const [insertAtIndex, setInsertAtIndex] = useState<number | null>(null);
 
   const sensors = useSensors(
@@ -129,6 +132,8 @@ export function DocumentEditor({
       ...(type === "table" && { rows: 3, cols: 3, tableData: Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => ({ value: "" }))) }),
       ...(type === "dropdown" && { options: [{ label: "Option 1", value: "option_1" }, { label: "Option 2", value: "option_2" }] }),
       ...(type === "placeholder" && { placeholderKey }),
+      ...(type === "spacer" && { spacerHeight: 24 }),
+      ...(type === "box" && { value: "", style: { borderWidth: 1, borderColor: "#e5e7eb", padding: 12 } }),
     };
     const newBlocks = [...blocks];
     if (atIndex !== undefined) {
@@ -144,13 +149,20 @@ export function DocumentEditor({
     onChange({ ...doc, status: doc.status === "completed" ? "draft" : "completed" });
   }, [doc, onChange]);
 
+  const updateBranding = useCallback((newBranding: DocumentBranding) => {
+    onChange({ ...doc, branding: newBranding });
+  }, [doc, onChange]);
+
   const blockCount = blocks.length;
   const filledCount = blocks.filter(b => {
-    if (b.type === "separator" || b.type === "placeholder") return true;
+    if (b.type === "separator" || b.type === "placeholder" || b.type === "spacer") return true;
     if (b.type === "checkbox") return b.label;
     if (b.type === "checklist") return (b.checklistItems?.length ?? 0) > 0;
     return b.value || b.imageUrl || b.signatureDataUrl || b.drawingDataUrl;
   }).length;
+
+  // Font class for document preview
+  const fontClass = branding.fontFamily === "serif" ? "font-serif" : branding.fontFamily === "mono" ? "font-mono" : "";
 
   return (
     <div className="flex flex-col h-full">
@@ -195,6 +207,31 @@ export function DocumentEditor({
               </SelectContent>
             </Select>
           )}
+
+          {/* Branding panel */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-8 w-8">
+                    <Palette className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Design & Branding</TooltipContent>
+              </Tooltip>
+            </SheetTrigger>
+            <SheetContent className="w-80 sm:w-96 overflow-auto">
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2">
+                  <Palette className="h-5 w-5 text-primary" />
+                  Design & Branding
+                </SheetTitle>
+              </SheetHeader>
+              <div className="mt-4">
+                <BrandingPanel branding={branding} onChange={updateBranding} />
+              </div>
+            </SheetContent>
+          </Sheet>
 
           {onSaveAsTemplate && (
             <Tooltip>
@@ -241,7 +278,25 @@ export function DocumentEditor({
       <div className="flex-1 overflow-auto p-4 lg:p-8 bg-muted/20">
         <div className="max-w-3xl mx-auto">
           {/* Document "paper" */}
-          <div className="bg-card border rounded-xl shadow-sm p-6 lg:p-10 min-h-[600px]">
+          <div
+            className={cn("bg-card border rounded-xl shadow-sm p-6 lg:p-10 min-h-[600px]", fontClass)}
+            style={{ backgroundColor: branding.backgroundColor || undefined }}
+          >
+            {/* Logo preview in document */}
+            {branding.logoUrl && (
+              <div className="flex items-center gap-3 mb-4 pb-4 border-b" style={{ borderColor: branding.lineColor || undefined }}>
+                <img src={branding.logoUrl} alt="Logo" className="h-10 object-contain" />
+                {branding.companyName && (
+                  <div>
+                    <div className="text-sm font-semibold" style={{ color: branding.primaryColor || undefined }}>{branding.companyName}</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {[branding.companyAddress, branding.companyPhone, branding.companyEmail].filter(Boolean).join(" · ")}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
                 {blocks.map((block, index) => (
@@ -282,6 +337,13 @@ export function DocumentEditor({
                 <p className="text-sm text-muted-foreground max-w-xs">
                   Klicke auf „Baustein hinzufügen", um dein Dokument zu erstellen.
                 </p>
+              </div>
+            )}
+
+            {/* Footer preview */}
+            {branding.footerText && (
+              <div className="mt-8 pt-3 border-t text-[10px] text-muted-foreground text-center" style={{ borderColor: branding.lineColor || undefined }}>
+                {branding.footerText}
               </div>
             )}
           </div>
