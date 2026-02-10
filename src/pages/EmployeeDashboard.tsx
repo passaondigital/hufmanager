@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { EmployeeDocumentationForm } from "@/components/team/EmployeeDocumentationForm";
+import { EmployeeAvailabilityManager } from "@/components/team/EmployeeAvailabilityManager";
 import {
   MapPin,
   Clock,
@@ -22,15 +24,18 @@ import {
   Calendar,
   User,
   Briefcase,
+  Route,
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { Link } from "react-router-dom";
 
 const EmployeeDashboard = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: profile, isLoading: profileLoading } = useEmployeeProfile();
+  const [docAssignment, setDocAssignment] = useState<any>(null);
 
   // Fetch today's assignments
   const { data: assignments, isLoading: assignmentsLoading } = useQuery({
@@ -219,6 +224,22 @@ const EmployeeDashboard = () => {
 
       {/* Content */}
       <div className="max-w-lg mx-auto px-4 -mt-4 pb-8 space-y-4">
+        {/* Quick Actions */}
+        <Link to="/employee/tour">
+          <Card className="bg-primary/5 border-primary/20 hover:border-primary/40 transition-colors cursor-pointer">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Route className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="font-semibold text-sm">Meine Tour</p>
+                  <p className="text-xs text-muted-foreground">Tagesroute mit Navigation</p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </CardContent>
+          </Card>
+        </Link>
+
         {/* Today's Stats */}
         <div className="grid grid-cols-3 gap-3">
           <Card className="bg-card">
@@ -340,13 +361,13 @@ const EmployeeDashboard = () => {
                       )}
                       {isActive && (
                         <>
-                          <Button variant="outline" className="flex-1">
-                            <Camera className="h-4 w-4 mr-2" />
-                            Fotos
-                          </Button>
-                          <Button variant="outline" className="flex-1">
+                          <Button
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => setDocAssignment(assignment)}
+                          >
                             <FileText className="h-4 w-4 mr-2" />
-                            Notizen
+                            Doku
                           </Button>
                           <Button
                             variant="default"
@@ -365,7 +386,35 @@ const EmployeeDashboard = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Availability */}
+        {profile && (
+          <Card>
+            <CardContent className="pt-6">
+              <EmployeeAvailabilityManager
+                employeeId={profile.id}
+                providerId={profile.provider_id}
+                isEmployeeView
+              />
+            </CardContent>
+          </Card>
+        )}
       </div>
+
+      {/* Documentation Form */}
+      {docAssignment && profile && (
+        <EmployeeDocumentationForm
+          open={!!docAssignment}
+          onOpenChange={(open) => !open && setDocAssignment(null)}
+          assignmentId={docAssignment.id}
+          providerId={profile.provider_id}
+          employeeId={profile.id}
+          appointmentInfo={{
+            horseName: docAssignment.appointment?.horse?.name,
+            clientName: docAssignment.appointment?.client?.full_name,
+          }}
+        />
+      )}
     </div>
   );
 };
