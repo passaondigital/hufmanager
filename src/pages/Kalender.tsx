@@ -24,6 +24,7 @@ import {
   CheckCircle2,
   CalendarDays,
   MapIcon,
+  UserPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +36,7 @@ import { CalendarSyncModal } from "@/components/calendar/CalendarSyncModal";
 import { AppointmentTooltip } from "@/components/calendar/AppointmentTooltip";
 import { NearbyDueClientsPanel } from "@/components/calendar/NearbyDueClientsPanel";
 import { TourMapView } from "@/components/calendar/TourMapView";
+import { AssignEmployeeModal } from "@/components/team/AssignEmployeeModal";
 
 // Import CSS for react-big-calendar
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -118,6 +120,9 @@ const Kalender = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [appointmentToDelete, setAppointmentToDelete] = useState<string | null>(null);
   const [icalToken, setIcalToken] = useState<string | null>(null);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [assignAppointmentId, setAssignAppointmentId] = useState<string | null>(null);
+  const [assignAppointmentInfo, setAssignAppointmentInfo] = useState<{ horseName?: string; clientName?: string; date?: string; time?: string } | undefined>();
 
   // Fetch appointments with client data for map
   const { data: appointments = [], isLoading } = useQuery({
@@ -245,10 +250,23 @@ const Kalender = () => {
     setIsFormOpen(true);
   }, []);
 
-  // Handle event select (edit appointment)
+  // Handle event select (show details + assign option)
   const handleSelectEvent = useCallback((event: CalendarEvent) => {
     setSelectedEvent(event);
+    setAssignAppointmentId(event.id);
+    setAssignAppointmentInfo({
+      horseName: event.title,
+      clientName: event.resource.clients
+        ? `${event.resource.clients.first_name || ""} ${event.resource.clients.last_name || ""}`.trim()
+        : undefined,
+      date: format(event.start, "dd.MM.yyyy"),
+      time: event.resource.time || undefined,
+    });
   }, []);
+
+  const handleOpenAssignModal = useCallback(() => {
+    if (assignAppointmentId) setAssignModalOpen(true);
+  }, [assignAppointmentId]);
 
   // Handle event drop (drag & drop reschedule)
   const handleEventDrop = useCallback(async ({ event, start }: EventInteractionArgs<CalendarEvent>) => {
@@ -364,7 +382,21 @@ const Kalender = () => {
                     className="rounded-lg"
                     components={{
                       event: ({ event }) => (
-                        <AppointmentTooltip appointment={event.resource}>
+                        <AppointmentTooltip
+                          appointment={event.resource}
+                          onAssign={(id) => {
+                            setAssignAppointmentId(id);
+                            setAssignAppointmentInfo({
+                              horseName: event.title,
+                              clientName: event.resource.clients
+                                ? `${event.resource.clients.first_name || ""} ${event.resource.clients.last_name || ""}`.trim()
+                                : undefined,
+                              date: format(event.start, "dd.MM.yyyy"),
+                              time: event.resource.time || undefined,
+                            });
+                            setAssignModalOpen(true);
+                          }}
+                        >
                           <div className="px-1 py-0.5 text-xs truncate">
                             {event.resource.is_confirmed_by_client && (
                               <CheckCircle2 className="h-3 w-3 inline mr-1" />
@@ -418,6 +450,16 @@ const Kalender = () => {
         onClose={() => setIsSyncModalOpen(false)}
         icalToken={icalToken}
       />
+
+      {/* Assign Employee Modal */}
+      {assignAppointmentId && (
+        <AssignEmployeeModal
+          open={assignModalOpen}
+          onOpenChange={setAssignModalOpen}
+          appointmentId={assignAppointmentId}
+          appointmentInfo={assignAppointmentInfo}
+        />
+      )}
 
       {/* Delete Confirmation */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

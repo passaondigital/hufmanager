@@ -4,7 +4,8 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Clock, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MapPin, Clock, CheckCircle2, UserPlus } from "lucide-react";
 
 interface AppointmentTooltipProps {
   children: React.ReactNode;
@@ -22,9 +23,10 @@ interface AppointmentTooltipProps {
       breed: string | null;
     } | null;
   };
+  onAssign?: (appointmentId: string) => void;
 }
 
-export function AppointmentTooltip({ children, appointment }: AppointmentTooltipProps) {
+export function AppointmentTooltip({ children, appointment, onAssign }: AppointmentTooltipProps) {
   return (
     <HoverCard openDelay={200} closeDelay={100}>
       <HoverCardTrigger asChild>{children}</HoverCardTrigger>
@@ -71,6 +73,23 @@ export function AppointmentTooltip({ children, appointment }: AppointmentTooltip
                 ? `${appointment.notes.substring(0, 100)}...` 
                 : appointment.notes}
             </p>
+          )}
+
+          {onAssign && (
+            <div className="border-t border-border pt-2 mt-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full text-xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAssign(appointment.id);
+                }}
+              >
+                <UserPlus className="h-3 w-3 mr-1" />
+                Mitarbeiter zuweisen
+              </Button>
+            </div>
           )}
         </div>
       </HoverCardContent>
