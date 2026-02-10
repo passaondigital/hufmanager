@@ -46,6 +46,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { UsageMeter } from "@/components/subscription/UsageMeter";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -455,6 +456,9 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
           {addonItems.map((item) => (
             <AddonItem key={item.title} item={item} />
           ))}
+          
+          {/* Usage Meter */}
+          <UsageMeter collapsed={collapsed} />
         </div>
       </ScrollArea>
 

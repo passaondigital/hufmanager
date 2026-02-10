@@ -6,61 +6,132 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Lock, ArrowUpRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Lock, Check, ArrowRight, Sparkles, Crown, Zap } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useSubscription } from "@/hooks/useSubscription";
 
 interface UpgradeModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   featureName: string;
+  requiredPlan?: "advanced" | "pro";
 }
 
-export function UpgradeModal({ open, onOpenChange, featureName }: UpgradeModalProps) {
-  const handleUpgrade = () => {
-    // Open Copecart upgrade page - could be configured via business settings
-    window.open("https://hufmanager.de/upgrade", "_blank");
-    onOpenChange(false);
-  };
+const PLANS = [
+  {
+    id: "starter",
+    name: "Anfänger",
+    price: "19",
+    icon: Zap,
+    features: ["Kalender & Termine", "Kundenverwaltung", "Digitale Pferdeakte"],
+    checkoutUrl: "https://copecart.com/products/9bb65569/checkout",
+  },
+  {
+    id: "advanced",
+    name: "Fortgeschritten",
+    price: "49",
+    icon: Sparkles,
+    badge: "Empfohlen",
+    features: ["Alles aus Anfänger", "GPS-Navigation", "Erinnerungen", "Kunden-Chat"],
+    checkoutUrl: "https://copecart.com/products/ec500b5e/checkout",
+  },
+  {
+    id: "pro",
+    name: "Profi",
+    price: "99",
+    icon: Crown,
+    features: ["Alles aus Fortgeschritten", "KI-Assistent", "Academy", "Team-Management"],
+    checkoutUrl: "https://copecart.com/products/483bbb5b/checkout",
+  },
+];
+
+const PLAN_ORDER = ["starter", "advanced", "pro"];
+
+export function UpgradeModal({ open, onOpenChange, featureName, requiredPlan = "pro" }: UpgradeModalProps) {
+  const { plan } = useSubscription();
+
+  // Show only plans above current
+  const currentIndex = plan ? PLAN_ORDER.indexOf(plan) : -1;
+  const requiredIndex = PLAN_ORDER.indexOf(requiredPlan);
+  const upgradePlans = PLANS.filter((_, i) => i > currentIndex && i >= requiredIndex);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center mb-2">
-            <Lock className="h-5 w-5 text-muted-foreground" />
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
+            <Lock className="h-6 w-6 text-primary" />
           </div>
-          <DialogTitle className="text-xl">Upgrade erforderlich</DialogTitle>
+          <DialogTitle className="text-xl">
+            {featureName} freischalten
+          </DialogTitle>
           <DialogDescription className="text-sm">
-            <span className="font-semibold text-foreground">{featureName}</span> ist im Profi-Paket verf\u00fcgbar.
+            Diese Funktion ist ab dem{" "}
+            <span className="font-semibold text-foreground">
+              {requiredPlan === "advanced" ? "Fortgeschritten" : "Profi"}
+            </span>-Paket verfügbar.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-4 space-y-4">
-          <div className="rounded-lg border border-border p-4 text-left space-y-3">
-            <p className="text-sm font-medium text-foreground">
-              Enthaltene Funktionen im Profi-Paket:
-            </p>
-            <ul className="space-y-1.5 text-sm text-muted-foreground">
-              <li>GPS-Navigation zum Stall</li>
-              <li>KI-Assistent f\u00fcr Hufpflege-Fragen</li>
-              <li>Automatische Termin-Erinnerungen</li>
-              <li>Erweiterte Analyse & Statistiken</li>
-              <li>MemberHorse Academy Zugang</li>
-            </ul>
-          </div>
+        <div className="space-y-3 py-4">
+          {upgradePlans.map((p) => {
+            const Icon = p.icon;
+            const isHighlighted = p.id === requiredPlan || (upgradePlans.length === 1);
 
-          <Button onClick={handleUpgrade} className="w-full h-12 text-sm gap-2">
-            Upgrade ansehen
-            <ArrowUpRight className="h-4 w-4" />
-          </Button>
+            return (
+              <div
+                key={p.id}
+                className={cn(
+                  "rounded-lg border p-4 space-y-3",
+                  isHighlighted ? "border-primary bg-primary/5" : "border-border"
+                )}
+              >
+                {p.badge && (
+                  <Badge className="bg-primary text-primary-foreground text-[10px]">
+                    {p.badge}
+                  </Badge>
+                )}
 
-          <Button
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            className="w-full text-muted-foreground"
-          >
-            Zur\u00fcck
-          </Button>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-4 w-4 text-primary" />
+                    <span className="font-semibold text-foreground">{p.name}</span>
+                  </div>
+                  <div>
+                    <span className="text-xl font-bold text-foreground">{p.price}€</span>
+                    <span className="text-xs text-muted-foreground">/Monat</span>
+                  </div>
+                </div>
+
+                <ul className="grid grid-cols-2 gap-1">
+                  {p.features.map((f, i) => (
+                    <li key={i} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Check className="h-3 w-3 text-primary shrink-0" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+
+                <Button
+                  onClick={() => {
+                    window.open(p.checkoutUrl, "_blank");
+                    onOpenChange(false);
+                  }}
+                  className="w-full h-11 text-sm gap-2"
+                  variant={isHighlighted ? "default" : "secondary"}
+                >
+                  Jetzt upgraden
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            );
+          })}
         </div>
+
+        <p className="text-center text-xs text-muted-foreground">
+          14 Tage kostenlos testen · Monatlich kündbar · Abrechnung über CopeCart
+        </p>
       </DialogContent>
     </Dialog>
   );

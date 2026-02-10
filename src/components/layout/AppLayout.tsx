@@ -14,6 +14,7 @@ import { SpeedDialFAB } from "./SpeedDialFAB";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { FeierabendWaechter } from "@/components/tracking/FeierabendWaechter";
 import { DemoStickyBanner } from "@/components/demo/DemoStickyBanner";
+import { TrialCountdownBanner } from "@/components/subscription/TrialCountdownBanner";
 import { useDemoActivityTracker } from "@/hooks/useDemoActivityTracker";
 
 export function AppLayout() {
@@ -107,6 +108,9 @@ export function AppLayout() {
         <div className="hidden lg:block">
           <AppHeader />
         </div>
+
+        {/* Trial Countdown Banner */}
+        <TrialCountdownBanner />
 
         {/* Main content with bottom nav spacing on mobile */}
         <main className="flex-1 overflow-auto p-4 lg:p-6 pb-bottom-nav">
