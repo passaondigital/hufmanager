@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { CanvasBlock as CanvasBlockType, MIN_BLOCK_SIZE } from "./types";
 import { CanvasBlockContent } from "./CanvasBlockContent";
 import { cn } from "@/lib/utils";
-import { Lock } from "lucide-react";
+import { Lock, Unlock } from "lucide-react";
 
 interface CanvasBlockProps {
   block: CanvasBlockType;
@@ -136,10 +136,16 @@ export function CanvasBlockComponent({ block, onChange, isSelected, onSelect, sc
         />
       ))}
 
-      {/* Type label */}
+      {/* Type label + lock toggle */}
       {isSelected && (
         <div className="absolute -top-5 left-0 flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-medium whitespace-nowrap">
-          {isLocked && <Lock className="h-2.5 w-2.5" />}
+          <button
+            onClick={(e) => { e.stopPropagation(); onChange({ ...block, locked: !block.locked }); }}
+            className="hover:opacity-70 transition-opacity"
+            title={isLocked ? "Entsperren" : "Fixieren"}
+          >
+            {isLocked ? <Lock className="h-2.5 w-2.5" /> : <Unlock className="h-2.5 w-2.5" />}
+          </button>
           {block.label || block.type}
         </div>
       )}
