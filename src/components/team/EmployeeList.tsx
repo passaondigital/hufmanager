@@ -38,7 +38,12 @@ import {
   Eye,
   Wrench,
   Crown,
+  Copy,
+  Clock,
+  LogIn,
+  Download,
 } from "lucide-react";
+import { useToast as useToastShadcn } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AddEmployeeModal } from "./AddEmployeeModal";
 import { EditEmployeeSheet } from "./EditEmployeeSheet";
@@ -61,10 +66,18 @@ const roleConfig: Record<EmployeeRole, { label: string; icon: typeof Eye }> = {
 
 export function EmployeeList() {
   const { employees, isLoading, deleteEmployee, updateEmployee, sendInvitation } = useEmployees();
+  const { toast } = useToastShadcn();
   const [search, setSearch] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Employee | null>(null);
+
+  const copyInviteLink = (employee: Employee) => {
+    if (!employee.invitation_token) return;
+    const link = `${window.location.origin}/employee-invite?token=${employee.invitation_token}`;
+    navigator.clipboard.writeText(link);
+    toast({ title: "Link kopiert", description: "Einladungslink wurde in die Zwischenablage kopiert." });
+  };
 
   const filteredEmployees = employees.filter(
     (emp) =>
@@ -185,7 +198,7 @@ export function EmployeeList() {
                           <RoleIcon className="h-3 w-3 mr-1" />
                           {role.label}
                         </Badge>
-                        {employee.can_work_alone && (
+                         {employee.can_work_alone && (
                           <Badge variant="secondary" className="text-xs">
                             Alleinarbeit
                           </Badge>
@@ -193,6 +206,33 @@ export function EmployeeList() {
                         {employee.contract_start_date && (
                           <span className="text-xs text-muted-foreground hidden md:inline">
                             seit {format(new Date(employee.contract_start_date), "MMM yyyy", { locale: de })}
+                          </span>
+                        )}
+                      </div>
+                      {/* Invitation / Login Status */}
+                      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
+                        {employee.status === "inactive" && employee.invitation_sent_at && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            Einladung gesendet: {format(new Date(employee.invitation_sent_at), "dd.MM.yyyy", { locale: de })}
+                          </span>
+                        )}
+                        {employee.status === "inactive" && !employee.invitation_sent_at && (
+                          <span className="flex items-center gap-1 text-amber-600">
+                            <Mail className="h-3 w-3" />
+                            Einladung noch nicht gesendet
+                          </span>
+                        )}
+                        {employee.invitation_accepted_at && (
+                          <span className="flex items-center gap-1 text-green-600">
+                            <LogIn className="h-3 w-3" />
+                            Angenommen: {format(new Date(employee.invitation_accepted_at), "dd.MM.yyyy", { locale: de })}
+                          </span>
+                        )}
+                        {employee.user_id && (
+                          <span className="flex items-center gap-1 text-green-600">
+                            <UserCheck className="h-3 w-3" />
+                            App-Zugang aktiv
                           </span>
                         )}
                       </div>
@@ -211,13 +251,21 @@ export function EmployeeList() {
                           Bearbeiten
                         </DropdownMenuItem>
                         {employee.status === "inactive" && (
-                          <DropdownMenuItem
-                            onClick={() => sendInvitation.mutate(employee.id)}
-                            disabled={sendInvitation.isPending}
-                          >
-                            <Send className="h-4 w-4 mr-2" />
-                            Einladung senden
-                          </DropdownMenuItem>
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => sendInvitation.mutate(employee.id)}
+                              disabled={sendInvitation.isPending}
+                            >
+                              <Send className="h-4 w-4 mr-2" />
+                              {employee.invitation_sent_at ? "Einladung erneut senden" : "Einladung senden"}
+                            </DropdownMenuItem>
+                            {employee.invitation_token && (
+                              <DropdownMenuItem onClick={() => copyInviteLink(employee)}>
+                                <Copy className="h-4 w-4 mr-2" />
+                                Einladungslink kopieren
+                              </DropdownMenuItem>
+                            )}
+                          </>
                         )}
                         <DropdownMenuSeparator />
                         {employee.status === "active" && (

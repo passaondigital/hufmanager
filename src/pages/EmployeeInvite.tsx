@@ -35,46 +35,28 @@ const EmployeeInvite = () => {
       return;
     }
 
-    // Fetch employee by invitation token
+    // Validate token via edge function (no direct DB access needed)
     const fetchEmployee = async () => {
       try {
-        const { data, error } = await supabase
-          .from("employee_profiles")
-          .select("id, full_name, email, provider:profiles!employee_profiles_provider_id_fkey(full_name)")
-          .eq("invitation_token", token)
-          .is("invitation_accepted_at", null)
-          .single();
+        const { data, error: fnError } = await supabase.functions.invoke("validate-employee-invitation", {
+          body: { token },
+        });
 
-        if (error || !data) {
-          setError("Einladung ungültig oder bereits verwendet");
+        if (fnError) throw new Error(fnError.message || "Fehler beim Laden");
+        if (data?.error) {
+          setError(data.error);
           return;
-        }
-
-        // Check if invitation is expired (7 days)
-        const profile = await supabase
-          .from("employee_profiles")
-          .select("invitation_sent_at")
-          .eq("id", data.id)
-          .single();
-
-        if (profile.data?.invitation_sent_at) {
-          const sentAt = new Date(profile.data.invitation_sent_at);
-          const expiresAt = new Date(sentAt.getTime() + 7 * 24 * 60 * 60 * 1000);
-          if (new Date() > expiresAt) {
-            setError("Diese Einladung ist abgelaufen. Bitte fordere eine neue an.");
-            return;
-          }
         }
 
         setEmployee({
           id: data.id,
           full_name: data.full_name,
           email: data.email,
-          provider_name: (data.provider as { full_name: string })?.full_name || "Unbekannt",
+          provider_name: data.provider_name,
         });
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error fetching invitation:", err);
-        setError("Fehler beim Laden der Einladung");
+        setError(err.message || "Fehler beim Laden der Einladung");
       } finally {
         setLoading(false);
       }
@@ -99,7 +81,6 @@ const EmployeeInvite = () => {
     setSubmitting(true);
 
     try {
-      // Use edge function to create account server-side (avoids FK timing issues)
       const { data, error } = await supabase.functions.invoke("accept-employee-invitation", {
         body: { token, password },
       });
