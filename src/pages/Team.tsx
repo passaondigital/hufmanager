@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmployeeList, ProviderControlCenter } from "@/components/team";
-import { Users, LayoutDashboard, UserPlus, Calendar, FileCheck, Clock } from "lucide-react";
+import { AbsenceManagement } from "@/components/team/AbsenceManagement";
+import { MaterialAssignment } from "@/components/team/MaterialAssignment";
+import { Users, LayoutDashboard, CalendarOff, Package } from "lucide-react";
 
 const TeamPage = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -17,7 +18,7 @@ const TeamPage = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-2xl grid-cols-4">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <LayoutDashboard className="h-4 w-4" />
             <span className="hidden sm:inline">Übersicht</span>
@@ -25,6 +26,14 @@ const TeamPage = () => {
           <TabsTrigger value="employees" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Mitarbeiter</span>
+          </TabsTrigger>
+          <TabsTrigger value="absences" className="flex items-center gap-2">
+            <CalendarOff className="h-4 w-4" />
+            <span className="hidden sm:inline">Abwesenheiten</span>
+          </TabsTrigger>
+          <TabsTrigger value="material" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            <span className="hidden sm:inline">Material</span>
           </TabsTrigger>
         </TabsList>
 
@@ -34,6 +43,14 @@ const TeamPage = () => {
 
         <TabsContent value="employees" className="space-y-6">
           <EmployeeList />
+        </TabsContent>
+
+        <TabsContent value="absences" className="space-y-6">
+          <AbsenceManagement />
+        </TabsContent>
+
+        <TabsContent value="material" className="space-y-6">
+          <MaterialAssignment />
         </TabsContent>
       </Tabs>
     </div>

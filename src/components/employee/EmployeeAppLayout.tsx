@@ -29,13 +29,20 @@ import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/ThemeProvider";
 import { Loader2 } from "lucide-react";
 
-const bottomNavItems = [
-  { icon: Home, label: "Home", path: "/employee" },
-  { icon: Route, label: "Tour", path: "/employee/tour" },
-  { icon: Camera, label: "HufCam", path: "/employee/hufcam" },
-  { icon: Notebook, label: "Notizbuch", path: "/employee/notizbuch" },
-  { icon: User, label: "Profil", path: "/employee/profil" },
-];
+const getBottomNavItems = (permissions: Record<string, boolean>) => {
+  const items = [
+    { icon: Home, label: "Home", path: "/employee" },
+  ];
+  if (permissions.can_use_tour_manager || permissions.can_use_maps) {
+    items.push({ icon: Route, label: "Tour", path: "/employee/tour" });
+  }
+  items.push(
+    { icon: Camera, label: "HufCam", path: "/employee/hufcam" },
+    { icon: Notebook, label: "Notizbuch", path: "/employee/notizbuch" },
+    { icon: User, label: "Profil", path: "/employee/profil" },
+  );
+  return items;
+};
 
 interface SidebarItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -44,19 +51,26 @@ interface SidebarItem {
   badge?: string;
 }
 
-const sidebarItems: SidebarItem[] = [
-  { icon: Home, label: "Dashboard", path: "/employee" },
-  { icon: Route, label: "Meine Tour", path: "/employee/tour" },
-  { icon: Clock, label: "Zeiterfassung", path: "/employee/timer" },
-  { icon: Camera, label: "HufCam Pro", path: "/employee/hufcam" },
-  { icon: ClipboardList, label: "Hufanalyse", path: "/employee/analyse" },
-  { icon: MessageSquare, label: "Chat", path: "/employee/chat" },
-  { icon: Package, label: "Material", path: "/employee/material" },
-  { icon: CalendarOff, label: "Abwesenheiten", path: "/employee/abwesenheiten" },
-  { icon: FileText, label: "Vertrag", path: "/employee/vertrag" },
-  { icon: Notebook, label: "Mein Notizbuch", path: "/employee/notizbuch" },
-  { icon: User, label: "Profil", path: "/employee/profil" },
-];
+const getSidebarItems = (permissions: Record<string, boolean>): SidebarItem[] => {
+  const items: SidebarItem[] = [
+    { icon: Home, label: "Dashboard", path: "/employee" },
+  ];
+  if (permissions.can_use_tour_manager || permissions.can_use_maps) {
+    items.push({ icon: Route, label: "Meine Tour", path: "/employee/tour" });
+  }
+  items.push(
+    { icon: Clock, label: "Zeiterfassung", path: "/employee/timer" },
+    { icon: Camera, label: "HufCam Pro", path: "/employee/hufcam" },
+    { icon: ClipboardList, label: "Hufanalyse", path: "/employee/analyse" },
+    { icon: MessageSquare, label: "Chat", path: "/employee/chat" },
+    { icon: Package, label: "Material", path: "/employee/material" },
+    { icon: CalendarOff, label: "Abwesenheiten", path: "/employee/abwesenheiten" },
+    { icon: FileText, label: "Vertrag", path: "/employee/vertrag" },
+    { icon: Notebook, label: "Mein Notizbuch", path: "/employee/notizbuch" },
+    { icon: User, label: "Profil", path: "/employee/profil" },
+  );
+  return items;
+};
 
 export function EmployeeAppLayout() {
   const location = useLocation();
@@ -72,6 +86,10 @@ export function EmployeeAppLayout() {
 
   const getInitials = (name: string) =>
     name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+
+  const customPerms = profile?.custom_permissions || {};
+  const bottomNavItems = getBottomNavItems(customPerms as Record<string, boolean>);
+  const sidebarItems = getSidebarItems(customPerms as Record<string, boolean>);
 
   if (isLoading) {
     return (
