@@ -184,7 +184,7 @@ export function TourManager() {
   
   // Nearby customers layer state
   const [nearbyCustomers, setNearbyCustomers] = useState<{ id: string; full_name: string; geo_lat: number; geo_lng: number; horse_count: number; street?: string; city?: string }[]>([]);
-  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(true); // Default collapsed for field use
   const [companyLocation, setCompanyLocation] = useState<{ lat: number; lng: number; address?: string } | null>(null);
   const [nearbyRadiusKm, setNearbyRadiusKm] = useState(30);
   const [showNearbyRadius, setShowNearbyRadius] = useState(true);
@@ -206,6 +206,8 @@ export function TourManager() {
   // Fetch appointments for the selected date
   const { data: appointmentsData = [], isLoading, refetch } = useQuery({
     queryKey: ["tour-appointments", format(selectedDate, "yyyy-MM-dd"), user?.id],
+    staleTime: 5 * 60 * 1000, // 5min cache for offline resilience
+    gcTime: 30 * 60 * 1000, // Keep in cache 30min
     queryFn: async () => {
       if (!user?.id) return [];
       

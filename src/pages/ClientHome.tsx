@@ -22,6 +22,7 @@ import { UpcomingAppointmentsList } from "@/components/client/UpcomingAppointmen
 import { LastVisitWidget } from "@/components/client/LastVisitWidget";
 import { EmergencyVetWidget } from "@/components/client/EmergencyVetWidget";
 import { AppointmentChecklistWidget } from "@/components/client/AppointmentChecklistWidget";
+import { ProviderTourStatusWidget } from "@/components/client/ProviderTourStatusWidget";
 import { PushNotificationBanner } from "@/components/notifications/PushNotificationBanner";
 import { ServiceHistoryWidget } from "@/components/client/ServiceHistoryWidget";
 import { ProviderSelector } from "@/components/client/ProviderSelector";
@@ -230,6 +231,9 @@ export default function ClientHome() {
 
           {/* Unconfirmed Appointments Banner */}
           <UnconfirmedAppointmentsBanner />
+
+          {/* Live Tour Status - shows when provider is on tour */}
+          {user && <ProviderTourStatusWidget userId={user.id} />}
 
           {/* Hero Greeting with animation */}
           <motion.div 
