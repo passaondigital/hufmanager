@@ -4318,6 +4318,13 @@ export type Database = {
             referencedRelation: "reviews"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "review_reactions_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "safe_reviews"
+            referencedColumns: ["id"]
+          },
         ]
       }
       reviews: {
@@ -5192,6 +5199,39 @@ export type Database = {
         }
         Relationships: []
       }
+      safe_feedbacks: {
+        Row: {
+          created_at: string | null
+          customer_name: string | null
+          id: string | null
+          is_featured: boolean | null
+          provider_id: string | null
+          rating: number | null
+          source: string | null
+          text: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_name?: string | null
+          id?: string | null
+          is_featured?: boolean | null
+          provider_id?: string | null
+          rating?: number | null
+          source?: string | null
+          text?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_name?: string | null
+          id?: string | null
+          is_featured?: boolean | null
+          provider_id?: string | null
+          rating?: number | null
+          source?: string | null
+          text?: string | null
+        }
+        Relationships: []
+      }
       safe_horses: {
         Row: {
           anamnesis_interval_months: number | null
@@ -5321,6 +5361,54 @@ export type Database = {
           full_name?: string | null
           id?: string | null
           readable_id?: string | null
+        }
+        Relationships: []
+      }
+      safe_reviews: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          id: string | null
+          is_approved: boolean | null
+          is_visible: boolean | null
+          proof_image_url: string | null
+          provider_id: string | null
+          rating: number | null
+          reactions: Json | null
+          reviewer_name: string | null
+          source: string | null
+          text: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_approved?: boolean | null
+          is_visible?: boolean | null
+          proof_image_url?: string | null
+          provider_id?: string | null
+          rating?: number | null
+          reactions?: Json | null
+          reviewer_name?: string | null
+          source?: string | null
+          text?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_approved?: boolean | null
+          is_visible?: boolean | null
+          proof_image_url?: string | null
+          provider_id?: string | null
+          rating?: number | null
+          reactions?: Json | null
+          reviewer_name?: string | null
+          source?: string | null
+          text?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
