@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Plus, X, Copy, Settings2, Lock, Unlock, Palette, Type } from "lucide-react";
+import { GraphicLibraryPicker } from "./GraphicLibraryPicker";
 
 interface PropertiesPanelProps {
   block: CanvasBlock | null;
@@ -290,16 +291,24 @@ export function PropertiesPanel({ block, onChange, onDelete, onDuplicate }: Prop
 
       {/* Graphic type */}
       {block.type === "graphic" && (
-        <div className="space-y-1">
+        <div className="space-y-2">
           <Label className="text-xs">Grafik-Typ</Label>
-          <Select value={block.graphicType || "horse-side"} onValueChange={(v) => update({ graphicType: v as GraphicType })}>
-            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {(Object.entries(GRAPHIC_TYPE_LABELS) as [GraphicType, string][]).map(([k, v]) => (
-                <SelectItem key={k} value={k} className="text-xs">{v}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <GraphicLibraryPicker
+            currentType={block.graphicType}
+            currentCustomUrl={block.imageUrl}
+            onSelectSystem={(type) => update({ graphicType: type, imageUrl: undefined })}
+            onSelectCustom={(url) => update({ imageUrl: url, graphicType: undefined })}
+          />
+          {block.graphicType && (
+            <p className="text-[10px] text-muted-foreground">
+              Aktuell: {GRAPHIC_TYPE_LABELS[block.graphicType]}
+            </p>
+          )}
+          {block.imageUrl && (
+            <p className="text-[10px] text-muted-foreground">
+              Aktuell: Eigene Grafik
+            </p>
+          )}
         </div>
       )}
 

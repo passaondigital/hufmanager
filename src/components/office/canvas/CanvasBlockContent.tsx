@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { ImagePlus, Trash2, X } from "lucide-react";
 import SignatureCanvas from "react-signature-canvas";
-import graphicHorseSide from "@/assets/graphic-horse-side.png";
+import { GraphicAnnotationBlock } from "./GraphicAnnotationBlock";
 
 interface CanvasBlockContentProps {
   block: CanvasBlock;
@@ -247,30 +247,7 @@ export function CanvasBlockContent({ block, onChange, scale }: CanvasBlockConten
       );
 
     case "graphic":
-      return (
-        <div className="flex flex-col h-full p-2">
-          {block.label && <label className="text-[10px] font-semibold text-muted-foreground mb-1 truncate">{block.label}</label>}
-          <div className="flex-1 min-h-0 relative border rounded bg-white overflow-hidden">
-            <GraphicSvg type={block.graphicType || "horse-side"} />
-            {/* Annotation overlay */}
-            <div className="absolute inset-0">
-              <SignatureCanvas
-                penColor="#dc2626"
-                minWidth={1.5}
-                maxWidth={2.5}
-                canvasProps={{
-                  className: "w-full h-full",
-                  style: { width: "100%", height: "100%" },
-                }}
-                onEnd={() => {
-                  // Could capture annotation
-                }}
-              />
-            </div>
-          </div>
-          <span className="text-[8px] text-muted-foreground mt-0.5">{GRAPHIC_TYPE_LABELS[block.graphicType || "horse-side"]} – Rot markieren</span>
-        </div>
-      );
+      return <GraphicAnnotationBlock block={block} onChange={onChange} scale={scale} />;
 
     case "auto-info": {
       const infoType = block.autoInfoType || "datum";
@@ -296,61 +273,3 @@ export function CanvasBlockContent({ block, onChange, scale }: CanvasBlockConten
   }
 }
 
-// Simple anatomical SVG graphics
-function GraphicSvg({ type }: { type: GraphicType }) {
-  const common = "w-full h-full p-2";
-
-  switch (type) {
-    case "horse-side":
-      return <img src={graphicHorseSide} alt="Pferd Seitenansicht" className={common + " object-contain"} />;
-    case "hoof-bottom":
-      return (
-        <svg viewBox="0 0 300 280" className={common} fill="none" stroke="#94a3b8" strokeWidth="1.5">
-          <ellipse cx="150" cy="140" rx="100" ry="110" strokeWidth="2" />
-          {/* Frog / Strahl */}
-          <path d="M150 60 L120 180 L150 200 L180 180 Z" strokeWidth="1" />
-          {/* Sole areas */}
-          <path d="M90 120 Q100 100 120 90" strokeDasharray="3 2" />
-          <path d="M210 120 Q200 100 180 90" strokeDasharray="3 2" />
-          <text x="150" y="270" textAnchor="middle" fontSize="10" fill="#94a3b8" stroke="none">Hufsohle</text>
-        </svg>
-      );
-    case "hoof-side":
-      return (
-        <svg viewBox="0 0 300 280" className={common} fill="none" stroke="#94a3b8" strokeWidth="1.5">
-          <path d="M80 60 Q90 40 120 30 Q160 20 180 40 L190 80 Q200 120 200 160 L210 200 Q215 230 200 250 L60 250 Q50 230 60 200 L65 160 Q65 120 70 80 Z" strokeWidth="2" />
-          {/* Coronet band */}
-          <path d="M75 80 Q130 60 190 80" strokeDasharray="3 2" />
-          {/* Ground */}
-          <line x1="40" y1="252" x2="240" y2="252" strokeDasharray="4 2" stroke="#d1d5db" />
-          <text x="140" y="270" textAnchor="middle" fontSize="10" fill="#94a3b8" stroke="none">Huf seitlich</text>
-        </svg>
-      );
-    case "hooves-all":
-      return (
-        <svg viewBox="0 0 400 300" className={common} fill="none" stroke="#94a3b8" strokeWidth="1.5">
-          {/* 4 small hooves */}
-          {[{ x: 60, y: 20, l: "VL" }, { x: 220, y: 20, l: "VR" }, { x: 60, y: 160, l: "HL" }, { x: 220, y: 160, l: "HR" }].map((h) => (
-            <g key={h.l}>
-              <ellipse cx={h.x + 60} cy={h.y + 55} rx={50} ry={50} />
-              <path d={`M${h.x + 60} ${h.y + 20} L${h.x + 45} ${h.y + 80} L${h.x + 60} ${h.y + 90} L${h.x + 75} ${h.y + 80} Z`} strokeWidth="0.8" />
-              <text x={h.x + 60} y={h.y + 118} textAnchor="middle" fontSize="11" fill="#64748b" stroke="none" fontWeight="600">{h.l}</text>
-            </g>
-          ))}
-        </svg>
-      );
-    case "horse-leg":
-      return (
-        <svg viewBox="0 0 200 300" className={common} fill="none" stroke="#94a3b8" strokeWidth="1.5">
-          <path d="M80 20 Q75 10 90 5 Q110 5 115 15 L120 40 Q125 80 120 120 L115 160 Q110 180 108 200 L105 230 Q102 250 95 265 L80 270 Q70 265 75 250 L80 230 Q82 210 85 190 L88 160 Q90 140 88 120 L85 80 Q82 50 80 20 Z" strokeWidth="2" />
-          {/* Joints */}
-          <ellipse cx="100" cy="120" rx="15" ry="8" strokeDasharray="2 2" />
-          <ellipse cx="98" cy="200" rx="12" ry="6" strokeDasharray="2 2" />
-          <line x1="60" y1="272" x2="130" y2="272" strokeDasharray="4 2" stroke="#d1d5db" />
-          <text x="100" y="292" textAnchor="middle" fontSize="10" fill="#94a3b8" stroke="none">Vorderbein</text>
-        </svg>
-      );
-    default:
-      return null;
-  }
-}
