@@ -5,14 +5,20 @@ import {
   Square, 
   Sparkles, 
   RotateCcw,
-  Navigation,
   Clock,
   MapPin,
   Loader2,
-  Route
+  Route,
+  MoreHorizontal
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -72,7 +78,7 @@ export function TourControls({
     checkActiveTour();
   }, [tourDate, userId]);
 
-  // Track location when tour is active
+  // Track location when tour is active (single watcher – no duplicate)
   useEffect(() => {
     if (!isTourActive || !tourId) return;
     
@@ -82,7 +88,6 @@ export function TourControls({
     const trackLocation = async (position: GeolocationPosition) => {
       const { latitude, longitude, accuracy } = position.coords;
       
-      // Only track if moved significantly (>100m) or first position
       if (lastTrackedPosition) {
         const distance = calculateDistance(
           lastTrackedPosition.lat, 
@@ -90,7 +95,7 @@ export function TourControls({
           latitude,
           longitude
         );
-        if (distance < 0.1) return; // Less than 100m
+        if (distance < 0.1) return;
       }
       
       lastTrackedPosition = { lat: latitude, lng: longitude };
@@ -113,18 +118,10 @@ export function TourControls({
       );
     }
     
-    // Also track every 5 minutes as fallback
-    const intervalId = setInterval(() => {
-      if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(trackLocation);
-      }
-    }, 5 * 60 * 1000);
-    
     return () => {
       if (watchId !== null) {
         navigator.geolocation.clearWatch(watchId);
       }
-      clearInterval(intervalId);
     };
   }, [isTourActive, tourId, userId, tourDate]);
 
@@ -132,7 +129,6 @@ export function TourControls({
     const dateStr = format(tourDate, "yyyy-MM-dd");
     
     try {
-      // Create or update daily tour
       const { data: existing } = await supabase
         .from("daily_tours")
         .select("id")
@@ -198,9 +194,8 @@ export function TourControls({
     
     setIsOptimizing(true);
     
-    // Simple nearest neighbor optimization
     try {
-      await new Promise(resolve => setTimeout(resolve, 500)); // Visual feedback
+      await new Promise(resolve => setTimeout(resolve, 500));
       onOptimizeRoute();
       toast.success("Route optimiert!");
     } finally {
@@ -208,7 +203,6 @@ export function TourControls({
     }
   };
 
-  // Calculate elapsed time
   const getElapsedTime = () => {
     if (!tourStartTime) return "--:--";
     const diff = Date.now() - tourStartTime.getTime();
@@ -218,36 +212,33 @@ export function TourControls({
   };
 
   return (
-    <div className="absolute top-4 left-4 right-4 z-[1000] pointer-events-none">
-      <div className="flex flex-wrap items-start gap-2 pointer-events-auto">
+    <div className="absolute top-4 left-4 z-[400] pointer-events-none">
+      <div className="flex items-center gap-2 pointer-events-auto">
         {/* Tour Start/Stop Button */}
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
+        <Button
+          size="default"
+          variant={isTourActive ? "destructive" : "default"}
+          className={cn(
+            "gap-2 shadow-lg h-10",
+            isTourActive && "animate-pulse"
+          )}
+          onClick={isTourActive ? handleStopTour : handleStartTour}
+          data-tour-start={!isTourActive ? "true" : undefined}
         >
-          <Button
-            size="lg"
-            variant={isTourActive ? "destructive" : "default"}
-            className={cn(
-              "gap-2 shadow-lg h-12 px-6",
-              isTourActive && "animate-pulse"
-            )}
-            onClick={isTourActive ? handleStopTour : handleStartTour}
-            data-tour-start={!isTourActive ? "true" : undefined}
-          >
-            {isTourActive ? (
-              <>
-                <Square className="h-5 w-5" />
-                Tour beenden
-              </>
-            ) : (
-              <>
-                <Play className="h-5 w-5" />
-                Tour starten
-              </>
-            )}
-          </Button>
-        </motion.div>
+          {isTourActive ? (
+            <>
+              <Square className="h-4 w-4" />
+              <span className="hidden sm:inline">Tour beenden</span>
+              <span className="sm:hidden">Stop</span>
+            </>
+          ) : (
+            <>
+              <Play className="h-4 w-4" />
+              <span className="hidden sm:inline">Tour starten</span>
+              <span className="sm:hidden">Start</span>
+            </>
+          )}
+        </Button>
 
         {/* Live Stats (when tour active) */}
         <AnimatePresence>
@@ -256,87 +247,127 @@ export function TourControls({
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="flex items-center gap-2"
             >
               <Badge 
                 variant="secondary" 
-                className="h-12 px-4 text-sm gap-2 bg-background/90 backdrop-blur-sm shadow-lg"
+                className="h-10 px-3 text-sm gap-2 bg-background/90 backdrop-blur-sm shadow-lg"
               >
                 <div className="w-2 h-2 rounded-full bg-green-600 animate-pulse" />
-                LIVE • {getElapsedTime()}
+                {getElapsedTime()}
               </Badge>
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+    </div>
+  );
+}
 
-        {/* Spacer */}
-        <div className="flex-1" />
+// Separate stats bar — positioned at top-right, below emergency buttons
+export function TourStatsBar({
+  routeInfo,
+  isCalculatingRoute,
+  completedCount,
+  totalCount,
+  hasCustomOrder,
+  onOptimizeRoute,
+  onResetOrder,
+  userLocation,
+}: {
+  routeInfo: { distance: number; duration: number } | null;
+  isCalculatingRoute: boolean;
+  completedCount: number;
+  totalCount: number;
+  hasCustomOrder: boolean;
+  onOptimizeRoute: () => void;
+  onResetOrder: () => void;
+  userLocation: [number, number] | null;
+}) {
+  const [isOptimizing, setIsOptimizing] = useState(false);
 
-        {/* Stats Panel */}
-        <div className="flex items-center gap-2">
-          {/* Progress */}
-          <Badge 
-            variant="outline" 
-            className="h-10 px-3 gap-2 bg-background/90 backdrop-blur-sm shadow-lg"
-          >
-            <MapPin className="h-4 w-4 text-primary" />
-            {completedCount}/{totalCount}
-          </Badge>
+  const handleOptimize = async () => {
+    if (!userLocation) {
+      toast.error("Standort wird benötigt für Optimierung");
+      return;
+    }
+    setIsOptimizing(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      onOptimizeRoute();
+      toast.success("Route optimiert!");
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
 
-          {/* Distance */}
-          <Badge 
-            variant="outline" 
-            className="h-10 px-3 gap-2 bg-background/90 backdrop-blur-sm shadow-lg"
-          >
-            {isCalculatingRoute ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Route className="h-4 w-4 text-primary" />
-            )}
-            {routeInfo ? `${routeInfo.distance} km` : "-- km"}
-          </Badge>
+  return (
+    <div className="absolute bottom-[calc(50vh+8px)] lg:bottom-auto lg:top-16 left-4 z-[300] pointer-events-none">
+      <div className="flex items-center gap-1.5 pointer-events-auto">
+        {/* Progress */}
+        <Badge 
+          variant="outline" 
+          className="h-8 px-2 gap-1.5 bg-background/90 backdrop-blur-sm shadow-lg text-xs"
+        >
+          <MapPin className="h-3.5 w-3.5 text-primary" />
+          {completedCount}/{totalCount}
+        </Badge>
 
-          {/* Duration */}
-          <Badge 
-            variant="outline" 
-            className="h-10 px-3 gap-2 bg-background/90 backdrop-blur-sm shadow-lg hidden sm:flex"
-          >
-            <Clock className="h-4 w-4 text-primary" />
-            {routeInfo 
-              ? `${Math.floor(routeInfo.duration / 60)}h ${routeInfo.duration % 60}m`
-              : "--:--"
-            }
-          </Badge>
-        </div>
+        {/* Distance */}
+        <Badge 
+          variant="outline" 
+          className="h-8 px-2 gap-1.5 bg-background/90 backdrop-blur-sm shadow-lg text-xs"
+        >
+          {isCalculatingRoute ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Route className="h-3.5 w-3.5 text-primary" />
+          )}
+          {routeInfo ? `${routeInfo.distance} km` : "—"}
+        </Badge>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2">
-          {hasCustomOrder && (
+        {/* Duration - hidden on small */}
+        <Badge 
+          variant="outline" 
+          className="h-8 px-2 gap-1.5 bg-background/90 backdrop-blur-sm shadow-lg text-xs hidden md:flex"
+        >
+          <Clock className="h-3.5 w-3.5 text-primary" />
+          {routeInfo 
+            ? `${Math.floor(routeInfo.duration / 60)}h ${routeInfo.duration % 60}m`
+            : "—"
+          }
+        </Badge>
+
+        {/* Optimize / Reset in dropdown for clean UI */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
               size="icon"
-              className="h-10 w-10 bg-background/90 backdrop-blur-sm shadow-lg"
-              onClick={onResetOrder}
+              className="h-8 w-8 bg-background/90 backdrop-blur-sm shadow-lg"
             >
-              <RotateCcw className="h-4 w-4" />
+              <Sparkles className="h-3.5 w-3.5" />
             </Button>
-          )}
-          
-          <Button
-            variant="secondary"
-            size="default"
-            className="h-10 gap-2 bg-background/90 backdrop-blur-sm shadow-lg"
-            onClick={handleOptimize}
-            disabled={isOptimizing || !userLocation}
-          >
-            {isOptimizing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Sparkles className="h-4 w-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem
+              onClick={handleOptimize}
+              disabled={isOptimizing || !userLocation}
+            >
+              {isOptimizing ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Sparkles className="h-4 w-4 mr-2" />
+              )}
+              Route optimieren
+            </DropdownMenuItem>
+            {hasCustomOrder && (
+              <DropdownMenuItem onClick={onResetOrder}>
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Zurücksetzen
+              </DropdownMenuItem>
             )}
-            Optimieren
-          </Button>
-        </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

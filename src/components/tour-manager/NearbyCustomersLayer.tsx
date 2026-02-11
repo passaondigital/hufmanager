@@ -341,7 +341,7 @@ export function NearbyCustomersPanel({
   const isLoading = isLoadingCompany || isLoadingCustomers;
 
   return (
-    <div className="absolute top-16 right-4 z-[1000]">
+    <div className="absolute top-16 right-4 z-[300]">
       {/* Toggle Button */}
       <Button
         variant={isVisible ? "secondary" : "outline"}
