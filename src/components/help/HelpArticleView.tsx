@@ -237,11 +237,15 @@ ${article.call_to_action || "(Kein CTA definiert)"}
                 /\*\*(.+?)\*\*/g,
                 '<strong class="font-semibold">$1</strong>'
               );
+              const sanitized = DOMPurify.sanitize(formattedText, {
+                ALLOWED_TAGS: ['strong', 'em', 'b', 'i'],
+                ALLOWED_ATTR: ['class'],
+              });
 
               return (
                 <p
                   key={index}
-                  dangerouslySetInnerHTML={{ __html: formattedText }}
+                  dangerouslySetInnerHTML={{ __html: sanitized }}
                 />
               );
             })}
