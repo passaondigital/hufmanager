@@ -5478,6 +5478,16 @@ export type Database = {
         Args: { subdomain_input: string }
         Returns: Json
       }
+      get_public_feedbacks: {
+        Args: { provider_id_input: string }
+        Returns: {
+          customer_name: string
+          id: string
+          is_featured: boolean
+          rating: number
+          text: string
+        }[]
+      }
       get_public_offers: {
         Args: { provider_id_input: string }
         Returns: {

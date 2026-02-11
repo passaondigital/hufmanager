@@ -167,25 +167,15 @@ const ProviderLanding = () => {
           setServices(publicServices.slice(0, 6) as Service[]);
         }
 
-        // Fetch featured feedbacks - only from THIS provider
+        // Fetch featured feedbacks via secure RPC
         const { data: feedbackData } = await supabase
-          .from('feedbacks')
-          .select('id, customer_name, rating, text, is_featured')
-          .eq('provider_id', typedBusinessData.user_id)
-          .eq('is_featured', true)
-          .limit(5);
+          .rpc('get_public_feedbacks', { provider_id_input: typedBusinessData.user_id });
 
         if (feedbackData) setFeedbacks(feedbackData);
 
-        // Fetch approved and visible reviews with new fields
+        // Fetch approved and visible reviews via secure RPC
         const { data: reviewsData } = await supabase
-          .from('reviews')
-          .select('id, reviewer_name, rating, text, created_at, source, proof_image_url, reactions, category')
-          .eq('provider_id', typedBusinessData.user_id)
-          .eq('is_approved', true)
-          .eq('is_visible', true)
-          .order('created_at', { ascending: false })
-          .limit(10);
+          .rpc('get_public_reviews', { provider_id_input: typedBusinessData.user_id });
 
         if (reviewsData) setReviews(reviewsData as Review[]);
 
