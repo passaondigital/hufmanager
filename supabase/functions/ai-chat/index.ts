@@ -76,11 +76,37 @@ serve(async (req) => {
     }
 
     const { messages } = await req.json();
-    
-    // Validate message length
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage && lastMessage.content && lastMessage.content.length > 5000) {
-      return new Response(JSON.stringify({ error: "Nachricht zu lang (max. 5000 Zeichen)" }), {
+
+    // Validate messages array
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return new Response(JSON.stringify({ error: "Ungültige Nachrichtenliste" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Limit conversation history size
+    if (messages.length > 50) {
+      return new Response(JSON.stringify({ error: "Zu viele Nachrichten (max. 50)" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate total conversation size and individual message lengths
+    let totalSize = 0;
+    for (const msg of messages) {
+      const len = msg?.content?.length || 0;
+      if (len > 5000) {
+        return new Response(JSON.stringify({ error: "Nachricht zu lang (max. 5000 Zeichen)" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      totalSize += len;
+    }
+    if (totalSize > 50000) {
+      return new Response(JSON.stringify({ error: "Gesamte Konversation zu groß" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
