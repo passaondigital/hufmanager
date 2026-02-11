@@ -67,6 +67,16 @@ import EmployeeDashboard from "@/pages/EmployeeDashboard";
 import EmployeeInvite from "@/pages/EmployeeInvite";
 import EmployeeTour from "@/pages/EmployeeTour";
 import MeinOffice from "@/pages/MeinOffice";
+import { EmployeeAppLayout } from "@/components/employee/EmployeeAppLayout";
+import EmployeeNotizbuch from "@/pages/employee/EmployeeNotizbuch";
+import EmployeeProfil from "@/pages/employee/EmployeeProfil";
+import EmployeeMaterial from "@/pages/employee/EmployeeMaterial";
+import EmployeeAbwesenheiten from "@/pages/employee/EmployeeAbwesenheiten";
+import EmployeeVertrag from "@/pages/employee/EmployeeVertrag";
+import EmployeeTimer from "@/pages/employee/EmployeeTimer";
+import EmployeeHufCam from "@/pages/employee/EmployeeHufCam";
+import EmployeeAnalyse from "@/pages/employee/EmployeeAnalyse";
+import EmployeeChat from "@/pages/employee/EmployeeChat";
 
 // Components
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
@@ -281,23 +291,26 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             {/* Employee invite - public route */}
             <Route path="/employee-invite" element={<EmployeeInvite />} />
             
-            {/* Employee dashboard - protected */}
+            {/* Employee app - protected with EmployeeAppLayout */}
             <Route
-              path="/employee"
               element={
                 <ProtectedRoute allowedRoles={["employee"]}>
-                  <EmployeeDashboard />
+                  <EmployeeAppLayout />
                 </ProtectedRoute>
               }
-            />
-            <Route
-              path="/employee/tour"
-              element={
-                <ProtectedRoute allowedRoles={["employee"]}>
-                  <EmployeeTour />
-                </ProtectedRoute>
-              }
-            />
+            >
+              <Route path="/employee" element={<EmployeeDashboard />} />
+              <Route path="/employee/tour" element={<EmployeeTour />} />
+              <Route path="/employee/timer" element={<EmployeeTimer />} />
+              <Route path="/employee/hufcam" element={<EmployeeHufCam />} />
+              <Route path="/employee/analyse" element={<EmployeeAnalyse />} />
+              <Route path="/employee/chat" element={<EmployeeChat />} />
+              <Route path="/employee/material" element={<EmployeeMaterial />} />
+              <Route path="/employee/abwesenheiten" element={<EmployeeAbwesenheiten />} />
+              <Route path="/employee/vertrag" element={<EmployeeVertrag />} />
+              <Route path="/employee/notizbuch" element={<EmployeeNotizbuch />} />
+              <Route path="/employee/profil" element={<EmployeeProfil />} />
+            </Route>
 
             {/* Fallback für alles andere */}
             <Route path="*" element={<NotFound />} />

@@ -92,43 +92,31 @@ const EmployeeTour = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="space-y-4 animate-fade-in">
       {/* Header */}
-      <div className="bg-primary text-primary-foreground p-4">
-        <div className="max-w-lg mx-auto">
-          <div className="flex items-center gap-3 mb-2">
-            <Link to="/employee">
-              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary-foreground/10">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="font-semibold text-lg">Meine Tour</h1>
-              <p className="text-sm opacity-80">
-                {format(new Date(), "EEEE, d. MMMM", { locale: de })} • {remaining.length} offen
-              </p>
+      <div>
+        <h1 className="text-xl font-bold">Meine Tour</h1>
+        <p className="text-sm text-muted-foreground">
+          {format(new Date(), "EEEE, d. MMMM", { locale: de })} • {remaining.length} offen
+        </p>
+        {/* Progress bar */}
+        {assignments && assignments.length > 0 && (
+          <div className="mt-3">
+            <div className="flex justify-between text-xs mb-1 text-muted-foreground">
+              <span>{completed.length} erledigt</span>
+              <span>{assignments.length} gesamt</span>
+            </div>
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full transition-all"
+                style={{ width: `${(completed.length / assignments.length) * 100}%` }}
+              />
             </div>
           </div>
-          {/* Progress bar */}
-          {assignments && assignments.length > 0 && (
-            <div className="mt-3">
-              <div className="flex justify-between text-xs mb-1 opacity-80">
-                <span>{completed.length} erledigt</span>
-                <span>{assignments.length} gesamt</span>
-              </div>
-              <div className="h-2 bg-primary-foreground/20 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary-foreground/80 rounded-full transition-all"
-                  style={{ width: `${(completed.length / assignments.length) * 100}%` }}
-                />
-              </div>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
-      {/* Tour Stops */}
-      <div className="max-w-lg mx-auto px-4 py-4 space-y-3">
+      <div className="space-y-3">
         {remaining.length === 0 && completed.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <Navigation className="h-10 w-10 mx-auto mb-3 opacity-50" />

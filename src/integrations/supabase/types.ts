@@ -1131,6 +1131,90 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_absence_requests: {
+        Row: {
+          created_at: string
+          employee_id: string
+          end_date: string
+          id: string
+          notes: string | null
+          provider_id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          start_date: string
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          end_date: string
+          id?: string
+          notes?: string | null
+          provider_id: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          start_date: string
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          end_date?: string
+          id?: string
+          notes?: string | null
+          provider_id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          start_date?: string
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_absence_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_absence_requests_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_absence_requests_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_absence_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_absence_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_assignments: {
         Row: {
           allowed_actions: Json | null
@@ -1517,6 +1601,73 @@ export type Database = {
           },
           {
             foreignKeyName: "employee_documentation_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_material_assignments: {
+        Row: {
+          assigned_at: string
+          created_at: string
+          employee_id: string
+          id: string
+          material_category: string | null
+          material_name: string
+          notes: string | null
+          provider_id: string
+          quantity_assigned: number
+          quantity_used: number
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          material_category?: string | null
+          material_name: string
+          notes?: string | null
+          provider_id: string
+          quantity_assigned?: number
+          quantity_used?: number
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          material_category?: string | null
+          material_name?: string
+          notes?: string | null
+          provider_id?: string
+          quantity_assigned?: number
+          quantity_used?: number
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_material_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_material_assignments_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_material_assignments_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "safe_provider_profiles"
