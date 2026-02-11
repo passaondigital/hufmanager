@@ -33,9 +33,17 @@ export interface CanvasBlock {
   y: number;
   width: number;
   height: number;
+  locked?: boolean;
   label?: string;
   value?: string;
   placeholder?: string;
+  // Style
+  fontSize?: number;
+  fontFamily?: string;
+  textColor?: string;
+  bgColor?: string;
+  borderColor?: string;
+  opacity?: number;
   // Dropdown / Checkbox
   options?: { label: string; value: string }[];
   checkboxItems?: { id: string; label: string; checked: boolean }[];
@@ -80,12 +88,31 @@ export interface CanvasDocument {
 export interface CanvasBranding {
   logoUrl?: string;
   primaryColor?: string;
+  headingColor?: string;
+  fontFamily?: string;
   companyName?: string;
   companyAddress?: string;
   companyPhone?: string;
   companyEmail?: string;
   footerText?: string;
 }
+
+export const FONT_OPTIONS = [
+  { value: "system-ui", label: "System (Standard)" },
+  { value: "'Open Sans', sans-serif", label: "Open Sans" },
+  { value: "'Roboto', sans-serif", label: "Roboto" },
+  { value: "'Lora', serif", label: "Lora (Serif)" },
+  { value: "'Playfair Display', serif", label: "Playfair Display" },
+  { value: "'Source Sans 3', sans-serif", label: "Source Sans 3" },
+  { value: "'Merriweather', serif", label: "Merriweather" },
+  { value: "'Fira Sans', sans-serif", label: "Fira Sans" },
+] as const;
+
+export const COLOR_PRESETS = [
+  "#F47B20", "#1a1a1a", "#374151", "#1e40af",
+  "#166534", "#9333ea", "#dc2626", "#92400e",
+  "#0891b2", "#be185d",
+];
 
 export interface CanvasTemplate {
   id: string;

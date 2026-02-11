@@ -1,7 +1,8 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import { CanvasBlock as CanvasBlockType, MIN_BLOCK_SIZE } from "./types";
 import { CanvasBlockContent } from "./CanvasBlockContent";
 import { cn } from "@/lib/utils";
+import { Lock } from "lucide-react";
 
 interface CanvasBlockProps {
   block: CanvasBlockType;
@@ -20,15 +21,18 @@ export function CanvasBlockComponent({ block, onChange, isSelected, onSelect, sc
   const dragStart = useRef<{ x: number; y: number; blockX: number; blockY: number } | null>(null);
   const resizeStart = useRef<{ x: number; y: number; w: number; h: number; bx: number; by: number; handle: ResizeHandle } | null>(null);
 
+  const isLocked = !!block.locked;
+
   // Drag handlers
   const handleDragStart = useCallback((e: React.PointerEvent) => {
+    if (isLocked) return;
     if ((e.target as HTMLElement).dataset.handle) return;
     e.stopPropagation();
     onSelect();
     setIsDragging(true);
     dragStart.current = { x: e.clientX, y: e.clientY, blockX: block.x, blockY: block.y };
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-  }, [block.x, block.y, onSelect]);
+  }, [block.x, block.y, onSelect, isLocked]);
 
   const handleDragMove = useCallback((e: React.PointerEvent) => {
     if (isDragging && dragStart.current) {
@@ -64,13 +68,14 @@ export function CanvasBlockComponent({ block, onChange, isSelected, onSelect, sc
   }, []);
 
   const handleResizeStart = useCallback((e: React.PointerEvent, handle: ResizeHandle) => {
+    if (isLocked) return;
     e.stopPropagation();
     e.preventDefault();
     onSelect();
     setIsResizing(true);
     resizeStart.current = { x: e.clientX, y: e.clientY, w: block.width, h: block.height, bx: block.x, by: block.y, handle };
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-  }, [block, onSelect]);
+  }, [block, onSelect, isLocked]);
 
   const handleCorners: { handle: ResizeHandle; className: string }[] = [
     { handle: "nw", className: "-top-1 -left-1 cursor-nw-resize" },
@@ -88,6 +93,8 @@ export function CanvasBlockComponent({ block, onChange, isSelected, onSelect, sc
           ? "border-primary shadow-md ring-1 ring-primary/30 z-20"
           : "border-border/50 hover:border-border z-10",
         isDragging && "opacity-80 cursor-grabbing",
+        isLocked && "cursor-default",
+        isLocked && isSelected && "border-amber-500/60 ring-1 ring-amber-500/20",
       )}
       style={{
         left: block.x,
@@ -102,12 +109,22 @@ export function CanvasBlockComponent({ block, onChange, isSelected, onSelect, sc
       onClick={(e) => { e.stopPropagation(); onSelect(); }}
     >
       {/* Block content */}
-      <div className="w-full h-full overflow-hidden bg-card/80 rounded">
+      <div
+        className="w-full h-full overflow-hidden rounded"
+        style={{
+          backgroundColor: block.bgColor || undefined,
+          borderColor: block.borderColor || undefined,
+          opacity: block.opacity != null ? block.opacity / 100 : undefined,
+          fontFamily: block.fontFamily || undefined,
+          color: block.textColor || undefined,
+          fontSize: block.fontSize ? `${block.fontSize}px` : undefined,
+        }}
+      >
         <CanvasBlockContent block={block} onChange={onChange} scale={scale} />
       </div>
 
-      {/* Resize handles */}
-      {isSelected && handleCorners.map(({ handle, className }) => (
+      {/* Resize handles (not when locked) */}
+      {isSelected && !isLocked && handleCorners.map(({ handle, className }) => (
         <div
           key={handle}
           data-handle="true"
@@ -121,7 +138,8 @@ export function CanvasBlockComponent({ block, onChange, isSelected, onSelect, sc
 
       {/* Type label */}
       {isSelected && (
-        <div className="absolute -top-5 left-0 text-[9px] px-1 py-0.5 rounded bg-primary text-primary-foreground font-medium whitespace-nowrap">
+        <div className="absolute -top-5 left-0 flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-medium whitespace-nowrap">
+          {isLocked && <Lock className="h-2.5 w-2.5" />}
           {block.label || block.type}
         </div>
       )}

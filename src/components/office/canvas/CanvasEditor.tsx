@@ -7,6 +7,7 @@ import {
 import { CanvasBlockComponent } from "./CanvasBlock";
 import { EditorToolbar } from "./EditorToolbar";
 import { PropertiesPanel } from "./PropertiesPanel";
+import { CanvasBrandingPanel } from "./CanvasBrandingPanel";
 import type { CanvasBlockType } from "./types";
 
 interface CanvasEditorProps {
@@ -20,10 +21,13 @@ interface CanvasEditorProps {
 
 const LS_KEY_PREFIX = "hm_office_autosave_";
 
+type PanelTab = "properties" | "branding";
+
 export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onBack, saving }: CanvasEditorProps) {
   const [zoom, setZoom] = useState(0.85);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [hasUnsaved, setHasUnsaved] = useState(false);
+  const [panelTab, setPanelTab] = useState<PanelTab>("properties");
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -49,11 +53,8 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
       const saved = localStorage.getItem(key);
       if (saved) {
         const parsed = JSON.parse(saved) as CanvasDocument;
-        // Only restore if newer
         if (parsed.blocks && parsed.blocks.length > 0) {
-          // Check if localStorage version is different
           if (JSON.stringify(parsed.blocks) !== JSON.stringify(doc.blocks)) {
-            // Could prompt user, for now auto-restore
             onChange(parsed);
           }
         }
@@ -67,7 +68,6 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
 
   const handleAddBlock = useCallback((type: CanvasBlockType) => {
     const size = DEFAULT_BLOCK_SIZES[type];
-    // Place in center of visible area
     const newBlock: CanvasBlock = {
       id: crypto.randomUUID(),
       type,
@@ -97,6 +97,7 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
     };
     onChange({ ...doc, blocks: [...doc.blocks, newBlock] });
     setSelectedBlockId(newBlock.id);
+    setPanelTab("properties");
   }, [doc, onChange]);
 
   const handleBlockChange = useCallback((updated: CanvasBlock) => {
@@ -108,6 +109,8 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
 
   const handleDeleteBlock = useCallback(() => {
     if (!selectedBlockId) return;
+    const block = doc.blocks.find((b) => b.id === selectedBlockId);
+    if (block?.locked) return; // Can't delete locked blocks
     onChange({ ...doc, blocks: doc.blocks.filter((b) => b.id !== selectedBlockId) });
     setSelectedBlockId(null);
   }, [doc, onChange, selectedBlockId]);
@@ -119,15 +122,20 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
       id: crypto.randomUUID(),
       x: selectedBlock.x + 20,
       y: selectedBlock.y + 20,
+      locked: false, // Duplicates are always unlocked
     };
     onChange({ ...doc, blocks: [...doc.blocks, clone] });
     setSelectedBlockId(clone.id);
   }, [doc, onChange, selectedBlock]);
 
+  const handleToggleLock = useCallback(() => {
+    if (!selectedBlock) return;
+    handleBlockChange({ ...selectedBlock, locked: !selectedBlock.locked });
+  }, [selectedBlock, handleBlockChange]);
+
   const handleSave = useCallback(() => {
     onSave();
     setHasUnsaved(false);
-    // Clear localStorage after successful save
     const key = LS_KEY_PREFIX + (doc.id || "new");
     try { localStorage.removeItem(key); } catch { /* ignore */ }
   }, [onSave, doc.id]);
@@ -150,10 +158,15 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
         e.preventDefault();
         handleSave();
       }
+      // Ctrl+L to toggle lock
+      if ((e.metaKey || e.ctrlKey) && e.key === "l") {
+        e.preventDefault();
+        handleToggleLock();
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [selectedBlockId, handleDeleteBlock, handleSave]);
+  }, [selectedBlockId, handleDeleteBlock, handleSave, handleToggleLock]);
 
   // Mouse wheel zoom
   useEffect(() => {
@@ -172,6 +185,10 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
     return () => container.removeEventListener("wheel", handler);
   }, []);
 
+  const handleBrandingChange = useCallback((branding: CanvasBranding) => {
+    onChange({ ...doc, branding });
+  }, [doc, onChange]);
+
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
@@ -189,6 +206,8 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
         status={doc.status}
         onToggleStatus={() => onChange({ ...doc, status: doc.status === "completed" ? "draft" : "completed" })}
         hasUnsaved={hasUnsaved}
+        onToggleBranding={() => setPanelTab(panelTab === "branding" ? "properties" : "branding")}
+        brandingActive={panelTab === "branding"}
       />
 
       {/* Main area: Canvas + Properties */}
@@ -200,6 +219,7 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
           onClick={handleCanvasClick}
         >
           <div
+            data-canvas-export="true"
             className="relative bg-white shadow-xl rounded-sm border border-border/30"
             style={{
               width: CANVAS_WIDTH,
@@ -207,6 +227,7 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
               transform: `scale(${zoom})`,
               transformOrigin: "top center",
               marginBottom: CANVAS_HEIGHT * (zoom - 1),
+              fontFamily: doc.branding?.fontFamily || undefined,
             }}
           >
             {/* Grid lines (subtle) */}
@@ -219,6 +240,20 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
               <rect width="100%" height="100%" fill="url(#grid)" />
             </svg>
 
+            {/* Branding header (logo + company) */}
+            {(doc.branding?.logoUrl || doc.branding?.companyName) && (
+              <div className="absolute top-0 left-0 right-0 flex items-center gap-3 px-4 pt-3 pointer-events-none z-[5]" style={{ color: doc.branding?.headingColor || undefined }}>
+                {doc.branding?.logoUrl && (
+                  <img src={doc.branding.logoUrl} alt="" className="h-8 object-contain" />
+                )}
+                {doc.branding?.companyName && (
+                  <span className="text-xs font-semibold" style={{ color: doc.branding?.headingColor || doc.branding?.primaryColor || undefined }}>
+                    {doc.branding.companyName}
+                  </span>
+                )}
+              </div>
+            )}
+
             {/* Blocks */}
             {doc.blocks.map((block) => (
               <CanvasBlockComponent
@@ -226,7 +261,7 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
                 block={block}
                 onChange={handleBlockChange}
                 isSelected={selectedBlockId === block.id}
-                onSelect={() => setSelectedBlockId(block.id)}
+                onSelect={() => { setSelectedBlockId(block.id); setPanelTab("properties"); }}
                 scale={zoom}
               />
             ))}
@@ -248,17 +283,38 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
           </div>
         </div>
 
-        {/* Properties Panel */}
-        <div className="w-64 border-l bg-card shrink-0 hidden lg:block">
-          <div className="px-3 py-2 border-b">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Eigenschaften</span>
+        {/* Properties / Branding Panel */}
+        <div className="w-64 border-l bg-card shrink-0 hidden lg:flex flex-col">
+          {/* Panel tabs */}
+          <div className="flex border-b shrink-0">
+            <button
+              onClick={() => setPanelTab("properties")}
+              className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${panelTab === "properties" ? "text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Eigenschaften
+            </button>
+            <button
+              onClick={() => setPanelTab("branding")}
+              className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${panelTab === "branding" ? "text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Branding
+            </button>
           </div>
-          <PropertiesPanel
-            block={selectedBlock}
-            onChange={handleBlockChange}
-            onDelete={handleDeleteBlock}
-            onDuplicate={handleDuplicateBlock}
-          />
+          <div className="flex-1 overflow-auto">
+            {panelTab === "properties" ? (
+              <PropertiesPanel
+                block={selectedBlock}
+                onChange={handleBlockChange}
+                onDelete={handleDeleteBlock}
+                onDuplicate={handleDuplicateBlock}
+              />
+            ) : (
+              <CanvasBrandingPanel
+                branding={doc.branding || {}}
+                onChange={handleBrandingChange}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
