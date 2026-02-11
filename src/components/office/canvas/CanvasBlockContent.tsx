@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { ImagePlus, Trash2, X } from "lucide-react";
 import SignatureCanvas from "react-signature-canvas";
+import graphicHorseSide from "@/assets/graphic-horse-side.png";
 
 interface CanvasBlockContentProps {
   block: CanvasBlock;
@@ -301,22 +302,7 @@ function GraphicSvg({ type }: { type: GraphicType }) {
 
   switch (type) {
     case "horse-side":
-      return (
-        <svg viewBox="0 0 400 300" className={common} fill="none" stroke="#94a3b8" strokeWidth="1.5">
-          {/* Simple horse side silhouette */}
-          <path d="M80 180 Q60 140 70 100 Q75 80 90 75 L100 60 Q105 50 115 55 L120 65 Q130 60 140 65 L135 80 Q150 85 160 90 Q200 95 240 100 Q280 105 300 110 Q320 115 330 130 Q340 145 335 160 L330 180" strokeWidth="2" />
-          {/* Legs */}
-          <line x1="120" y1="180" x2="115" y2="260" /><line x1="115" y1="260" x2="110" y2="280" />
-          <line x1="160" y1="180" x2="155" y2="260" /><line x1="155" y1="260" x2="150" y2="280" />
-          <line x1="280" y1="180" x2="275" y2="260" /><line x1="275" y1="260" x2="270" y2="280" />
-          <line x1="310" y1="180" x2="305" y2="260" /><line x1="305" y1="260" x2="300" y2="280" />
-          {/* Tail */}
-          <path d="M335 130 Q360 120 370 140 Q375 160 360 170" />
-          {/* Ground */}
-          <line x1="60" y1="282" x2="380" y2="282" strokeDasharray="4 2" stroke="#d1d5db" />
-          <text x="200" y="296" textAnchor="middle" fontSize="10" fill="#94a3b8" stroke="none">Seitenansicht</text>
-        </svg>
-      );
+      return <img src={graphicHorseSide} alt="Pferd Seitenansicht" className={common + " object-contain"} />;
     case "hoof-bottom":
       return (
         <svg viewBox="0 0 300 280" className={common} fill="none" stroke="#94a3b8" strokeWidth="1.5">
