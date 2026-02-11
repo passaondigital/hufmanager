@@ -33,10 +33,10 @@ export function DemoCalendarEntry() {
 
             <div className="flex-1 min-w-0">
               <h4 className="font-medium text-foreground text-sm">
-                Bereit f\u00fcr deinen eigenen HufManager?
+                Bereit für deinen eigenen HufManager?
               </h4>
               <p className="text-xs text-muted-foreground mt-0.5">
-                \u00dcbernimm deine Daten aus der Demo und arbeite im eigenen Account.
+                Übernimm deine Daten aus der Demo und arbeite im eigenen Account.
               </p>
             </div>
 
@@ -48,8 +48,8 @@ export function DemoCalendarEntry() {
       <PricingModal
         open={isPricingOpen}
         onOpenChange={setIsPricingOpen}
-        title="Bereit f\u00fcr deinen eigenen HufManager?"
-        description="\u00dcbernimm deine Daten aus der Demo und arbeite im eigenen Account."
+        title="Bereit für deinen eigenen HufManager?"
+        description="Übernimm deine Daten aus der Demo und arbeite im eigenen Account."
         showTrialBadge={true}
         isDemoContext={true}
       />

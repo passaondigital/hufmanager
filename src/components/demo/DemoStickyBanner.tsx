@@ -62,8 +62,8 @@ export function DemoStickyBanner() {
       <PricingModal
         open={isPricingOpen}
         onOpenChange={setIsPricingOpen}
-        title="Bereit f\u00fcr deinen eigenen HufManager?"
-        description="\u00dcbernimm deine Daten aus der Demo und arbeite im eigenen Account."
+        title="Bereit für deinen eigenen HufManager?"
+        description="Übernimm deine Daten aus der Demo und arbeite im eigenen Account."
         showTrialBadge={true}
         isDemoContext={true}
       />

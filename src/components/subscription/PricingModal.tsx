@@ -24,10 +24,10 @@ interface PricingModalProps {
 const PRICING_PLANS = [
   {
     id: "starter",
-    name: "Anf\u00e4nger",
+    name: "Anfänger",
     price: "19",
     period: "pro Monat",
-    description: "Grundfunktionen f\u00fcr Einzelbetriebe",
+    description: "Grundfunktionen für Einzelbetriebe",
     features: [
       "Kalender & Termine",
       "Kundenverwaltung",
@@ -45,16 +45,16 @@ const PRICING_PLANS = [
     period: "pro Monat",
     description: "Erweitert um Navigation, Erinnerungen, Chat",
     features: [
-      "Alles aus Anf\u00e4nger",
+      "Alles aus Anfänger",
       "GPS-Navigation zum Stall",
       "Automatische Erinnerungen",
       "Kunden-Chat",
-      "Priorit\u00e4ts-Support",
+      "Prioritäts-Support",
     ],
     checkoutUrl: "https://copecart.com/products/ec500b5e/checkout",
     icon: Sparkles,
     highlighted: true,
-    badge: "Meistgew\u00e4hlt",
+    badge: "Meistgewählt",
   },
   {
     id: "pro",
@@ -79,7 +79,7 @@ export function PricingModal({
   open,
   onOpenChange,
   title = "Pakete & Preise",
-  description = "W\u00e4hle das passende Paket f\u00fcr deinen Betrieb.",
+  description = "Wähle das passende Paket für deinen Betrieb.",
   currentPlan = null,
   showTrialBadge = true,
   isDemoContext = false,
@@ -118,7 +118,7 @@ export function PricingModal({
         {isDemoContext && (
           <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
             <Info className="h-4 w-4 shrink-0" />
-            <span>Du verl\u00e4sst jetzt den Demo-Modus. Dein eigener Account wird separat angelegt.</span>
+            <span>Du verlässt jetzt den Demo-Modus. Dein eigener Account wird separat angelegt.</span>
           </div>
         )}
 
@@ -175,7 +175,7 @@ export function PricingModal({
 
                 <div className="text-center mb-4">
                   <span className="text-3xl font-bold text-foreground">
-                    {plan.price}\u20ac
+                    {plan.price}€
                   </span>
                   <span className="text-muted-foreground ml-1 text-sm">
                     /{plan.period}
@@ -211,7 +211,7 @@ export function PricingModal({
                 >
                   {isDemoContext
                     ? "Demo verlassen & eigenen Account anlegen"
-                    : "Paket w\u00e4hlen"}
+                    : "Paket wählen"}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -220,7 +220,7 @@ export function PricingModal({
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          Abrechnung \u00fcber Copecart. Monatlich k\u00fcndbar.
+          Abrechnung über Copecart. Monatlich kündbar.
         </p>
       </DialogContent>
     </Dialog>

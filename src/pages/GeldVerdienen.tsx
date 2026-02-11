@@ -16,7 +16,7 @@ import {
 const GeldVerdienen = () => {
   const [referrals, setReferrals] = useState([5]);
 
-  // 20% Provision auf 49\u20ac Abo = 9,80\u20ac pro Monat pro Kollege
+  // 20% Provision auf 49€ Abo = 9,80€ pro Monat pro Kollege
   const commissionPerReferral = 9.80;
   const monthlyEarnings = referrals[0] * commissionPerReferral;
   const hufManagerCost = 49;
@@ -38,8 +38,8 @@ const GeldVerdienen = () => {
         </h1>
 
         <p className="text-sm text-muted-foreground max-w-2xl">
-          Empfiehl HufManager an Kollegen. F\u00fcr jede Anmeldung \u00fcber deinen Link
-          erh\u00e4ltst du 20\u00a0% Provision auf das Abo \u2013 monatlich, solange der Account aktiv ist.
+          Empfiehl HufManager an Kollegen. Für jede Anmeldung über deinen Link
+          erhältst du 20&nbsp;% Provision auf das Abo – monatlich, solange der Account aktiv ist.
         </p>
 
         <Button
@@ -60,7 +60,7 @@ const GeldVerdienen = () => {
             Provisionsrechner
           </CardTitle>
           <CardDescription>
-            Hochrechnung auf Basis von 20\u00a0% auf das Fortgeschritten-Abo (49\u00a0\u20ac/Monat)
+            Hochrechnung auf Basis von 20&nbsp;% auf das Fortgeschritten-Abo (49&nbsp;€/Monat)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -88,13 +88,13 @@ const GeldVerdienen = () => {
             <div className="flex justify-between items-center px-4 py-3">
               <span className="text-sm text-muted-foreground">Monatliche Provision</span>
               <span className="text-sm font-semibold text-foreground">
-                {monthlyEarnings.toFixed(2)}\u00a0\u20ac
+                {monthlyEarnings.toFixed(2)}&nbsp;€
               </span>
             </div>
             <div className="flex justify-between items-center px-4 py-3">
               <span className="text-sm text-muted-foreground">Dein HufManager-Abo</span>
               <span className="text-sm font-semibold text-foreground">
-                \u2212{hufManagerCost.toFixed(2)}\u00a0\u20ac
+                −{hufManagerCost.toFixed(2)}&nbsp;€
               </span>
             </div>
             <div className="flex justify-between items-center px-4 py-3 bg-muted/30">
@@ -102,7 +102,7 @@ const GeldVerdienen = () => {
                 {netProfit >= 0 ? 'Netto-Verdienst' : 'Differenz'}
               </span>
               <span className={`text-sm font-bold ${netProfit >= 0 ? 'text-foreground' : 'text-muted-foreground'}`}>
-                {netProfit >= 0 ? '+' : ''}{netProfit.toFixed(2)}\u00a0\u20ac
+                {netProfit >= 0 ? '+' : ''}{netProfit.toFixed(2)}&nbsp;€
               </span>
             </div>
           </div>
@@ -110,7 +110,7 @@ const GeldVerdienen = () => {
           {referrals[0] >= 5 && (
             <p className="text-sm text-muted-foreground text-center">
               Ab {referrals[0]} Empfehlungen deckt die Provision dein Abo.
-              {netProfit > 0 && ` Verbleibend: ${netProfit.toFixed(2)}\u00a0\u20ac/Monat.`}
+              {netProfit > 0 && ` Verbleibend: ${netProfit.toFixed(2)}\u00a0€/Monat.`}
             </p>
           )}
         </CardContent>
@@ -139,7 +139,7 @@ const GeldVerdienen = () => {
               </div>
               <h3 className="text-sm font-medium text-foreground mb-1">Wiederkehrende Provision</h3>
               <p className="text-xs text-muted-foreground">
-                Du erh\u00e4ltst monatlich 20\u00a0%, solange der geworbene Kollege sein Abo nutzt.
+                Du erhältst monatlich 20&nbsp;%, solange der geworbene Kollege sein Abo nutzt.
               </p>
             </CardContent>
           </Card>
@@ -151,7 +151,7 @@ const GeldVerdienen = () => {
               </div>
               <h3 className="text-sm font-medium text-foreground mb-1">Transparente Abrechnung</h3>
               <p className="text-xs text-muted-foreground">
-                Provisionen werden \u00fcber Copecart abgerechnet und monatlich ausgezahlt.
+                Provisionen werden über Copecart abgerechnet und monatlich ausgezahlt.
               </p>
             </CardContent>
           </Card>
@@ -161,7 +161,7 @@ const GeldVerdienen = () => {
       {/* Bottom CTA */}
       <div className="border-t border-border pt-6 text-center">
         <p className="text-sm text-muted-foreground mb-4 max-w-lg mx-auto">
-          Registrierung als Partner \u00fcber Copecart. Kein eigenes Abo erforderlich.
+          Registrierung als Partner über Copecart. Kein eigenes Abo erforderlich.
         </p>
         <Button
           onClick={() => window.open(affiliateUrl, '_blank')}
