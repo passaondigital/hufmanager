@@ -56,6 +56,7 @@ export function EditEmployeeSheet({ employee, open, onOpenChange }: EditEmployee
     can_work_alone: employee.can_work_alone,
     can_apply_hoof_protection: employee.can_apply_hoof_protection,
     can_work_sensitive_clients: employee.can_work_sensitive_clients,
+    custom_permissions: employee.custom_permissions || {},
     notes: employee.notes || "",
   });
 
@@ -73,6 +74,7 @@ export function EditEmployeeSheet({ employee, open, onOpenChange }: EditEmployee
         can_work_alone: formData.can_work_alone,
         can_apply_hoof_protection: formData.can_apply_hoof_protection,
         can_work_sensitive_clients: formData.can_work_sensitive_clients,
+        custom_permissions: formData.custom_permissions,
         notes: formData.notes || undefined,
       },
     });
@@ -248,6 +250,36 @@ export function EditEmployeeSheet({ employee, open, onOpenChange }: EditEmployee
                   }
                 />
               </div>
+            </div>
+
+            {/* Custom Permissions (App features) */}
+            <div className="mt-4 space-y-3">
+              <h4 className="font-medium text-sm">App-Module freischalten</h4>
+              <p className="text-xs text-muted-foreground mb-2">
+                Steuere welche Module der Mitarbeiter in seiner App sieht.
+              </p>
+              
+              {[
+                { key: "can_use_maps", label: "Maps / Navigation", desc: "Kartenansicht und Navigation zu Terminen" },
+                { key: "can_use_tour_manager", label: "Tour-Manager", desc: "Erweiterte Tourenplanung und -optimierung" },
+                { key: "can_chat_clients", label: "Kundenchat", desc: "Im Namen des Betriebs mit Kunden chatten" },
+              ].map((perm) => (
+                <div key={perm.key} className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>{perm.label}</Label>
+                    <p className="text-xs text-muted-foreground">{perm.desc}</p>
+                  </div>
+                  <Switch
+                    checked={formData.custom_permissions[perm.key] || false}
+                    onCheckedChange={(checked) =>
+                      setFormData({
+                        ...formData,
+                        custom_permissions: { ...formData.custom_permissions, [perm.key]: checked },
+                      })
+                    }
+                  />
+                </div>
+              ))}
             </div>
 
             {/* Role-based permissions info */}

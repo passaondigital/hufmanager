@@ -1,10 +1,14 @@
+import { useState } from "react";
 import { useEmployeeProfile } from "@/hooks/useEmployees";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
 import {
   User,
   Mail,
@@ -15,13 +19,29 @@ import {
   LogOut,
   CheckCircle,
   XCircle,
+  Key,
+  Loader2,
+  Download,
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 const EmployeeProfil = () => {
   const { signOut } = useAuth();
   const { data: profile } = useEmployeeProfile();
+  const { toast } = useToast();
+  const [showPwDialog, setShowPwDialog] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPw, setChangingPw] = useState(false);
 
   if (!profile) return null;
 
@@ -42,6 +62,35 @@ const EmployeeProfil = () => {
     { label: "Hufschutz anbringen", value: profile.can_apply_hoof_protection },
     { label: "Sensible Kunden", value: profile.can_work_sensitive_clients },
   ];
+
+  const customPerms = profile.custom_permissions || {};
+  const appPermissions = [
+    { label: "Maps / Navigation", value: customPerms.can_use_maps },
+    { label: "Tour-Manager", value: customPerms.can_use_tour_manager },
+    { label: "Kundenchat", value: customPerms.can_chat_clients },
+  ];
+
+  const handlePasswordChange = async () => {
+    if (newPassword.length < 6) {
+      toast({ title: "Fehler", description: "Mindestens 6 Zeichen erforderlich.", variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Fehler", description: "Passwörter stimmen nicht überein.", variant: "destructive" });
+      return;
+    }
+    setChangingPw(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setChangingPw(false);
+    if (error) {
+      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Passwort geändert", description: "Dein Passwort wurde erfolgreich aktualisiert." });
+      setShowPwDialog(false);
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+  };
 
   return (
     <div className="space-y-4 animate-fade-in max-w-lg mx-auto">
@@ -113,13 +162,71 @@ const EmployeeProfil = () => {
               )}
             </div>
           ))}
+          <Separator className="my-2" />
+          <p className="text-xs font-medium text-muted-foreground mb-1">App-Module</p>
+          {appPermissions.map((p) => (
+            <div key={p.label} className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">{p.label}</span>
+              {p.value ? (
+                <CheckCircle className="h-4 w-4 text-primary" />
+              ) : (
+                <XCircle className="h-4 w-4 text-muted-foreground/50" />
+              )}
+            </div>
+          ))}
         </CardContent>
       </Card>
+
+      {/* PWA Install */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3 mb-2">
+            <Download className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">App installieren</span>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            Installiere die MitarbeiterApp auf deinem Gerät für schnellen Zugriff.
+          </p>
+          <PWAInstallButton />
+        </CardContent>
+      </Card>
+
+      {/* Password change */}
+      <Button variant="outline" className="w-full gap-2" onClick={() => setShowPwDialog(true)}>
+        <Key className="h-4 w-4" />
+        Passwort ändern
+      </Button>
 
       <Button variant="destructive" className="w-full gap-2" onClick={() => signOut()}>
         <LogOut className="h-4 w-4" />
         Abmelden
       </Button>
+
+      {/* Password Change Dialog */}
+      <Dialog open={showPwDialog} onOpenChange={setShowPwDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Passwort ändern</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Neues Passwort</label>
+              <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Mind. 6 Zeichen" />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Passwort bestätigen</label>
+              <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Passwort wiederholen" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPwDialog(false)}>Abbrechen</Button>
+            <Button onClick={handlePasswordChange} disabled={changingPw || !newPassword}>
+              {changingPw && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Ändern
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
