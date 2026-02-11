@@ -4,6 +4,7 @@ import { RecentCustomers } from "@/components/dashboard/RecentCustomers";
 import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointments";
 import { OverdueAssessmentsWidget } from "@/components/dashboard/OverdueAssessmentsWidget";
 import { DueAppointmentsWidget } from "@/components/dashboard/DueAppointmentsWidget";
+import { SmartTourSuggestionWidget } from "@/components/dashboard/SmartTourSuggestionWidget";
 import { RecentHorsesWidget } from "@/components/dashboard/RecentHorsesWidget";
 import { ShareInviteLinkCard } from "@/components/invite/ShareInviteLinkCard";
 import { FirstStepsChecklist } from "@/components/dashboard/FirstStepsChecklist";
@@ -124,6 +125,9 @@ const Dashboard = () => {
 
       {/* Intelligent Recall - Due Appointments */}
       <DueAppointmentsWidget />
+
+      {/* Smart Tour Suggestions - PLZ grouped recalls */}
+      <SmartTourSuggestionWidget />
 
       {/* Smart Suggestions - Overdue Assessments */}
       <OverdueAssessmentsWidget />
