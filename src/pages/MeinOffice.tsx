@@ -7,12 +7,12 @@ import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FolderOpen, LayoutTemplate, FileText, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { OfficeTemplate, OfficeDocument, DocumentBlock } from "@/components/office/types";
-import { PRESET_TEMPLATES } from "@/components/office/presets";
-import { TemplateGallery } from "@/components/office/TemplateGallery";
-import { DocumentList } from "@/components/office/DocumentList";
-import { DocumentEditor } from "@/components/office/DocumentEditor";
-import { exportDocumentToPdf } from "@/components/office/pdfExport";
+import { CanvasDocument, CanvasBlock } from "@/components/office/canvas/types";
+import { CanvasEditor } from "@/components/office/canvas/CanvasEditor";
+import { FARRIER_TEMPLATES } from "@/components/office/canvas/templates";
+import { exportCanvasToPdf } from "@/components/office/canvas/canvasPdfExport";
+import { CanvasDocumentList } from "@/components/office/canvas/CanvasDocumentList";
+import { CanvasTemplateGallery } from "@/components/office/canvas/CanvasTemplateGallery";
 
 type ViewMode = "list" | "editor";
 
@@ -21,24 +21,9 @@ export default function MeinOffice() {
   const queryClient = useQueryClient();
   const [view, setView] = useState<ViewMode>("list");
   const [activeTab, setActiveTab] = useState("documents");
-  const [editingDoc, setEditingDoc] = useState<Partial<OfficeDocument> | null>(null);
+  const [editingDoc, setEditingDoc] = useState<CanvasDocument | null>(null);
 
-  // Fetch templates
-  const { data: templates = [] } = useQuery({
-    queryKey: ["office-templates", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("office_templates")
-        .select("*")
-        .eq("provider_id", user!.id)
-        .order("sort_order");
-      if (error) throw error;
-      return (data || []) as unknown as OfficeTemplate[];
-    },
-    enabled: !!user,
-  });
-
-  // Fetch documents
+  // Fetch documents from Supabase
   const { data: documents = [] } = useQuery({
     queryKey: ["office-documents", user?.id],
     queryFn: async () => {
@@ -48,28 +33,26 @@ export default function MeinOffice() {
         .eq("provider_id", user!.id)
         .order("updated_at", { ascending: false });
       if (error) throw error;
-      return (data || []) as unknown as OfficeDocument[];
+      return (data || []).map((d) => ({
+        id: d.id,
+        provider_id: d.provider_id,
+        title: d.title,
+        blocks: (d.blocks as unknown as CanvasBlock[]) || [],
+        branding: d.branding as unknown as CanvasDocument["branding"],
+        horse_id: d.horse_id || undefined,
+        contact_id: d.contact_id || undefined,
+        status: (d.status || "draft") as "draft" | "completed",
+        template_id: d.template_id || undefined,
+        created_at: d.created_at,
+        updated_at: d.updated_at,
+      })) as CanvasDocument[];
     },
     enabled: !!user,
   });
 
-  // Fetch horses
-  const { data: horses = [] } = useQuery({
-    queryKey: ["office-horses", user?.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("horses")
-        .select("id, name")
-        .is("deleted_at", null)
-        .order("name");
-      return data || [];
-    },
-    enabled: !!user,
-  });
-
-  // Save document
+  // Save document mutation
   const saveMutation = useMutation({
-    mutationFn: async (doc: Partial<OfficeDocument>) => {
+    mutationFn: async (doc: CanvasDocument) => {
       if (!user) throw new Error("Nicht angemeldet");
       const payload = {
         provider_id: user.id,
@@ -93,7 +76,7 @@ export default function MeinOffice() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["office-documents"] });
-      setEditingDoc({ ...editingDoc, id: data.id } as OfficeDocument);
+      if (editingDoc) setEditingDoc({ ...editingDoc, id: data.id });
       toast({ title: "✓ Gespeichert" });
     },
     onError: () => {
@@ -101,30 +84,7 @@ export default function MeinOffice() {
     },
   });
 
-  // Save template
-  const saveTemplateMutation = useMutation({
-    mutationFn: async (tmpl: Partial<OfficeTemplate>) => {
-      if (!user) throw new Error("Nicht angemeldet");
-      const payload = {
-        provider_id: user.id,
-        name: tmpl.name || "Meine Vorlage",
-        description: tmpl.description || null,
-        category: tmpl.category || "eigene",
-        blocks: JSON.parse(JSON.stringify(tmpl.blocks || [])) as Json,
-        branding: JSON.parse(JSON.stringify(tmpl.branding || {})) as Json,
-        is_preset: false,
-      };
-      const { data, error } = await supabase.from("office_templates").insert(payload).select().single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["office-templates"] });
-      toast({ title: "✓ Vorlage gespeichert" });
-    },
-  });
-
-  // Delete document
+  // Delete document mutation
   const deleteDocMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("office_documents").delete().eq("id", id);
@@ -136,38 +96,8 @@ export default function MeinOffice() {
     },
   });
 
-  // Delete template
-  const deleteTemplateMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("office_templates").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["office-templates"] });
-      toast({ title: "Vorlage gelöscht" });
-    },
-  });
-
-  const handleCreateFromPreset = useCallback((index: number) => {
-    const preset = PRESET_TEMPLATES[index];
-    setEditingDoc({
-      title: preset.name,
-      blocks: JSON.parse(JSON.stringify(preset.blocks)),
-      status: "draft",
-    });
-    setView("editor");
-  }, []);
-
-  const handleCreateBlank = useCallback(() => {
-    setEditingDoc({
-      title: "Neues Dokument",
-      blocks: [{ id: crypto.randomUUID(), type: "heading", value: "", headingLevel: 1 as const }],
-      status: "draft",
-    });
-    setView("editor");
-  }, []);
-
-  const handleUseTemplate = useCallback((template: OfficeTemplate) => {
+  const handleCreateFromTemplate = useCallback((templateIndex: number) => {
+    const template = FARRIER_TEMPLATES[templateIndex];
     setEditingDoc({
       title: template.name,
       blocks: JSON.parse(JSON.stringify(template.blocks)),
@@ -178,36 +108,25 @@ export default function MeinOffice() {
     setView("editor");
   }, []);
 
-  const handleOpenDocument = useCallback((doc: OfficeDocument) => {
+  const handleCreateBlank = useCallback(() => {
+    setEditingDoc({
+      title: "Neues Dokument",
+      blocks: [],
+      status: "draft",
+    });
+    setView("editor");
+  }, []);
+
+  const handleOpenDocument = useCallback((doc: CanvasDocument) => {
     setEditingDoc(doc);
     setView("editor");
   }, []);
 
-  const handleDuplicateTemplate = useCallback((template: OfficeTemplate) => {
-    saveTemplateMutation.mutate({
-      name: template.name + " (Kopie)",
-      description: template.description,
-      category: template.category,
-      blocks: JSON.parse(JSON.stringify(template.blocks)),
-      branding: template.branding,
-    });
-  }, [saveTemplateMutation]);
-
-  const handleSaveAsTemplate = useCallback(() => {
-    if (!editingDoc) return;
-    saveTemplateMutation.mutate({
-      name: editingDoc.title || "Meine Vorlage",
-      category: "eigene",
-      blocks: JSON.parse(JSON.stringify(editingDoc.blocks || [])),
-      branding: editingDoc.branding,
-    });
-  }, [editingDoc, saveTemplateMutation]);
-
-  const handleExportPdf = useCallback(async (doc?: Partial<OfficeDocument>) => {
+  const handleExportPdf = useCallback(async (doc?: CanvasDocument) => {
     const target = doc || editingDoc;
     if (!target) return;
     try {
-      const pdf = await exportDocumentToPdf(target.title || "Dokument", target.blocks || [], target.branding);
+      const pdf = await exportCanvasToPdf(target);
       pdf.save(`${target.title || "Dokument"}.pdf`);
       toast({ title: "✓ PDF exportiert" });
     } catch {
@@ -218,16 +137,14 @@ export default function MeinOffice() {
   // Editor view
   if (view === "editor" && editingDoc) {
     return (
-      <div className="h-[calc(100vh-8rem)]">
-        <DocumentEditor
+      <div className="h-[calc(100vh-4rem)] lg:h-[calc(100vh-8rem)]">
+        <CanvasEditor
           document={editingDoc}
           onChange={setEditingDoc}
           onSave={() => saveMutation.mutate(editingDoc)}
           onExportPdf={() => handleExportPdf()}
           onBack={() => setView("list")}
-          onSaveAsTemplate={handleSaveAsTemplate}
           saving={saveMutation.isPending}
-          horses={horses}
         />
       </div>
     );
@@ -243,7 +160,7 @@ export default function MeinOffice() {
             Mein Office
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Dokumente, Vorlagen und Formulare für deinen Arbeitsalltag
+            PDF-Baukasten für Hufbearbeiter – Vorlagen, Protokolle & Formulare
           </p>
         </div>
         <Button onClick={handleCreateBlank} className="gap-2 shrink-0">
@@ -268,23 +185,18 @@ export default function MeinOffice() {
         </TabsList>
 
         <TabsContent value="documents" className="mt-6">
-          <DocumentList
+          <CanvasDocumentList
             documents={documents}
             onOpenDocument={handleOpenDocument}
             onDeleteDocument={(id) => deleteDocMutation.mutate(id)}
             onExportPdf={(doc) => handleExportPdf(doc)}
-            horses={horses}
           />
         </TabsContent>
 
         <TabsContent value="templates" className="mt-6">
-          <TemplateGallery
-            templates={templates}
-            onSelectTemplate={handleUseTemplate}
-            onCreateFromPreset={handleCreateFromPreset}
+          <CanvasTemplateGallery
+            onSelectTemplate={handleCreateFromTemplate}
             onCreateBlank={handleCreateBlank}
-            onDuplicateTemplate={handleDuplicateTemplate}
-            onDeleteTemplate={(id) => deleteTemplateMutation.mutate(id)}
           />
         </TabsContent>
       </Tabs>
