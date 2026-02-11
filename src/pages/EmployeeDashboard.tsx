@@ -183,62 +183,30 @@ const EmployeeDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-primary text-primary-foreground p-4 pb-8">
-        <div className="max-w-lg mx-auto">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10 border-2 border-primary-foreground/20">
-                <AvatarImage src={profile.avatar_url || undefined} />
-                <AvatarFallback className="bg-primary-foreground/20 text-primary-foreground">
-                  {getInitials(profile.full_name)}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-semibold">{profile.full_name}</p>
-                <p className="text-sm opacity-80">
-                  {profile.role === "employee"
-                    ? "Mitarbeiter"
-                    : profile.role === "team_lead"
-                    ? "Teamleiter"
-                    : "Assistent"}
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-primary-foreground hover:bg-primary-foreground/10"
-              onClick={() => signOut()}
-            >
-              Abmelden
-            </Button>
-          </div>
-          <div className="flex items-center gap-2 text-sm opacity-80">
-            <Calendar className="h-4 w-4" />
-            <span>{format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}</span>
-          </div>
-        </div>
+    <div className="space-y-4 animate-fade-in">
+      {/* Header Stats */}
+      <div>
+        <h1 className="text-xl font-bold">Dashboard</h1>
+        <p className="text-sm text-muted-foreground">
+          {format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}
+        </p>
       </div>
 
-      {/* Content */}
-      <div className="max-w-lg mx-auto px-4 -mt-4 pb-8 space-y-4">
-        {/* Quick Actions */}
-        <Link to="/employee/tour">
-          <Card className="bg-primary/5 border-primary/20 hover:border-primary/40 transition-colors cursor-pointer">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Route className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="font-semibold text-sm">Meine Tour</p>
-                  <p className="text-xs text-muted-foreground">Tagesroute mit Navigation</p>
-                </div>
+      {/* Quick Actions */}
+      <Link to="/employee/tour">
+        <Card className="bg-primary/5 border-primary/20 hover:border-primary/40 transition-colors cursor-pointer">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Route className="h-5 w-5 text-primary" />
+              <div>
+                <p className="font-semibold text-sm">Meine Tour</p>
+                <p className="text-xs text-muted-foreground">Tagesroute mit Navigation</p>
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            </CardContent>
-          </Card>
-        </Link>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </CardContent>
+        </Card>
+      </Link>
 
         {/* Today's Stats */}
         <div className="grid grid-cols-3 gap-3">
@@ -399,7 +367,6 @@ const EmployeeDashboard = () => {
             </CardContent>
           </Card>
         )}
-      </div>
 
       {/* Documentation Form */}
       {docAssignment && profile && (
