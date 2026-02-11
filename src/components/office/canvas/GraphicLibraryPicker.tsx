@@ -87,16 +87,52 @@ export function GraphicLibraryPicker({ currentType, currentCustomUrl, onSelectSy
   const [customGraphics, setCustomGraphics] = useState<CustomGraphic[]>(loadCustomGraphics);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const applyWatermark = (dataUrl: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0);
+
+        // Watermark settings
+        const fontSize = Math.max(12, Math.min(img.width, img.height) * 0.035);
+        ctx.font = `${fontSize}px 'Outfit', system-ui, sans-serif`;
+        ctx.fillStyle = "rgba(244, 123, 32, 0.18)";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        // Diagonal repeated watermark
+        ctx.save();
+        ctx.translate(img.width / 2, img.height / 2);
+        ctx.rotate(-Math.PI / 6);
+        const spacing = fontSize * 4;
+        for (let y = -img.height; y < img.height; y += spacing) {
+          for (let x = -img.width; x < img.width; x += spacing * 2.5) {
+            ctx.fillText("HufManager", x, y);
+          }
+        }
+        ctx.restore();
+
+        resolve(canvas.toDataURL("image/png"));
+      };
+      img.src = dataUrl;
+    });
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
+      const watermarked = await applyWatermark(reader.result as string);
       const newGraphic: CustomGraphic = {
         id: crypto.randomUUID(),
         name: file.name.replace(/\.[^.]+$/, ""),
-        dataUrl: reader.result as string,
+        dataUrl: watermarked,
         createdAt: new Date().toISOString(),
       };
       const updated = [...customGraphics, newGraphic];
