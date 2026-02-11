@@ -46,9 +46,10 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
   }, [doc]);
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount – only for existing docs (with id), never for new/template docs
   useEffect(() => {
-    const key = LS_KEY_PREFIX + (doc.id || "new");
+    if (!doc.id) return; // New docs & templates: don't overwrite with stale localStorage
+    const key = LS_KEY_PREFIX + doc.id;
     try {
       const saved = localStorage.getItem(key);
       if (saved) {
@@ -284,7 +285,7 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
         </div>
 
         {/* Properties / Branding Panel */}
-        <div className="w-64 border-l bg-card shrink-0 hidden lg:flex flex-col">
+        <div className="w-64 border-l bg-card shrink-0 hidden md:flex flex-col">
           {/* Panel tabs */}
           <div className="flex border-b shrink-0">
             <button
