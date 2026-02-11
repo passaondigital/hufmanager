@@ -50,7 +50,7 @@ export function usePushNotifications() {
 
       try {
         const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.getSubscription();
+        const subscription = await (registration as any).pushManager.getSubscription();
         setIsSubscribed(!!subscription);
       } catch (error) {
         console.error('Error checking push subscription:', error);
@@ -108,7 +108,7 @@ export function usePushNotifications() {
 
       // Subscribe to push with VAPID key for proper authentication
       console.log('Subscribing to push notifications...');
-      const subscription = await registration.pushManager.subscribe({
+      const subscription = await (registration as any).pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
@@ -157,7 +157,7 @@ export function usePushNotifications() {
 
     try {
       const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
+      const subscription = await (registration as any).pushManager.getSubscription();
 
       if (subscription) {
         await subscription.unsubscribe();
