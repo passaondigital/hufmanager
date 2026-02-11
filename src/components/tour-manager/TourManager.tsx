@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
 import L from "leaflet";
@@ -26,21 +26,26 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, AlertCircle, History, X, ChevronUp, ChevronDown } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, AlertCircle, History, X, ChevronUp, ChevronDown, FileText, Siren } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { TourCard, type TourAppointment } from "./TourCard";
-import { TourControls } from "./TourControls";
+import { TourControls, TourStatsBar } from "./TourControls";
 import { BreadcrumbsReplay, BreadcrumbsLayer } from "./BreadcrumbsReplay";
 import { TourPdfExport } from "./TourPdfExport";
 import { NearbyCustomersPanel, NearbyCustomersMarkers } from "./NearbyCustomersLayer";
 import { StableGroupPanel } from "./StableGroupPanel";
-// QuickAddAppointmentFAB removed - using central SpeedDialFAB
 import { EmergencyModeButton } from "@/components/tour/EmergencyModeButton";
 
 import "leaflet/dist/leaflet.css";
 
-// Bottom toast warning component - positioned at bottom, dismissible
+// Bottom toast warning component
 function BottomToastWarning({ count }: { count: number }) {
   const [dismissed, setDismissed] = useState(false);
   
@@ -67,6 +72,7 @@ function BottomToastWarning({ count }: { count: number }) {
     </motion.div>
   );
 }
+
 const createMarkerIcon = (color: string, number: number, isCompleted: boolean) => {
   const bgColor = isCompleted ? 'hsl(var(--chart-2))' : color;
   return L.divIcon({
@@ -130,13 +136,12 @@ const MapBoundsHandler = ({
   return null;
 };
 
-// User location tracker
+// Single user location tracker (no duplicate watchers)
 const UserLocationTracker = ({ 
   onLocationFound 
 }: { 
   onLocationFound: (lat: number, lng: number) => void;
 }) => {
-  const map = useMap();
   const [position, setPosition] = useState<[number, number] | null>(null);
   
   useEffect(() => {
@@ -153,7 +158,7 @@ const UserLocationTracker = ({
     );
     
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [map, onLocationFound]);
+  }, [onLocationFound]);
   
   return position ? (
     <Marker position={position} icon={userLocationIcon}>
@@ -179,13 +184,14 @@ export function TourManager() {
   
   // Nearby customers layer state
   const [nearbyCustomers, setNearbyCustomers] = useState<{ id: string; full_name: string; geo_lat: number; geo_lng: number; horse_count: number; street?: string; city?: string }[]>([]);
-  // Collapsible panel state for mobile
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
   const [companyLocation, setCompanyLocation] = useState<{ lat: number; lng: number; address?: string } | null>(null);
   const [nearbyRadiusKm, setNearbyRadiusKm] = useState(30);
   const [showNearbyRadius, setShowNearbyRadius] = useState(true);
   
-  // Handler for breadcrumbs replay changes
+  // Debounce timer for OSRM
+  const routeDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+  
   const handleBreadcrumbsChange = (breadcrumbs: typeof replayBreadcrumbs, index: number) => {
     setReplayBreadcrumbs(breadcrumbs);
     setReplayIndex(index);
@@ -205,7 +211,6 @@ export function TourManager() {
       
       const dateStr = format(selectedDate, "yyyy-MM-dd");
       
-      // Fetch appointments with horses and contacts
       const { data: aptData, error } = await supabase
         .from("appointments")
         .select(`
@@ -232,12 +237,10 @@ export function TourManager() {
       
       if (error || !aptData) return [];
 
-      // Get unique owner IDs
       const ownerIds = [...new Set(
         aptData.map(apt => apt.horses?.owner_id).filter((id): id is string => !!id)
       )];
 
-      // Fetch contacts for these owners
       const { data: contacts } = ownerIds.length > 0 
         ? await supabase
             .from("contacts")
@@ -246,7 +249,6 @@ export function TourManager() {
             .in("profile_id", ownerIds)
         : { data: [] };
       
-      // Fetch profiles as fallback
       const { data: profiles } = ownerIds.length > 0
         ? await supabase
             .from("profiles")
@@ -261,7 +263,6 @@ export function TourManager() {
         (profiles || []).map(p => [p.id, p])
       );
 
-      // Group horses by appointment
       const groupedByApt: Record<string, TourAppointment> = {};
       
       aptData.forEach(apt => {
@@ -307,7 +308,6 @@ export function TourManager() {
     enabled: !!user?.id,
   });
 
-  // Initialize ordered appointments when data changes
   useEffect(() => {
     setOrderedAppointments(appointmentsData);
     setHasCustomOrder(false);
@@ -330,14 +330,16 @@ export function TourManager() {
     return positions;
   }, [orderedAppointments, userLocation]);
 
-  // Calculate route using OSRM
+  // Calculate route using OSRM — DEBOUNCED (800ms)
   useEffect(() => {
-    const calculateRoute = async () => {
-      if (routePositions.length < 2) {
-        setRouteInfo(null);
-        return;
-      }
+    if (routePositions.length < 2) {
+      setRouteInfo(null);
+      return;
+    }
 
+    if (routeDebounceRef.current) clearTimeout(routeDebounceRef.current);
+    
+    routeDebounceRef.current = setTimeout(async () => {
       setIsCalculatingRoute(true);
       
       try {
@@ -360,12 +362,13 @@ export function TourManager() {
       } finally {
         setIsCalculatingRoute(false);
       }
-    };
+    }, 800);
 
-    calculateRoute();
+    return () => {
+      if (routeDebounceRef.current) clearTimeout(routeDebounceRef.current);
+    };
   }, [routePositions]);
 
-  // Handle drag end
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
 
@@ -379,7 +382,6 @@ export function TourManager() {
     }
   }, []);
 
-  // Optimize route (nearest neighbor)
   const handleOptimizeRoute = useCallback(() => {
     if (!userLocation || orderedAppointments.length < 2) return;
     
@@ -389,7 +391,6 @@ export function TourManager() {
     
     if (appointmentsWithCoords.length < 2) return;
     
-    // Nearest neighbor algorithm
     const optimized: TourAppointment[] = [];
     const remaining = [...appointmentsWithCoords];
     let currentPos = userLocation;
@@ -414,7 +415,6 @@ export function TourManager() {
       currentPos = [nearest.client!.geo_lat!, nearest.client!.geo_lng!];
     }
     
-    // Add back appointments without coords at the end
     const withoutCoords = orderedAppointments.filter(
       a => !a.client?.geo_lat || !a.client?.geo_lng
     );
@@ -423,7 +423,6 @@ export function TourManager() {
     setHasCustomOrder(true);
   }, [userLocation, orderedAppointments]);
 
-  // Reset to time-based order
   const handleResetOrder = useCallback(() => {
     const sorted = [...orderedAppointments].sort((a, b) => {
       const timeA = a.time || "00:00";
@@ -434,7 +433,6 @@ export function TourManager() {
     setHasCustomOrder(false);
   }, [orderedAppointments]);
 
-  // Navigate date
   const goToPreviousDay = () => {
     const newDate = new Date(selectedDate);
     newDate.setDate(newDate.getDate() - 1);
@@ -447,12 +445,11 @@ export function TourManager() {
     setSelectedDate(newDate);
   };
 
-  // Open chat with client
   const handleOpenChat = (clientId: string) => {
     navigate(`/chat?startWith=${clientId}`);
   };
 
-  const defaultCenter: [number, number] = [51.1657, 10.4515]; // Germany center
+  const defaultCenter: [number, number] = [51.1657, 10.4515];
   
   const appointmentsWithCoords = orderedAppointments.filter(
     a => a.client?.geo_lat && a.client?.geo_lng
@@ -461,9 +458,11 @@ export function TourManager() {
     a => !a.client?.geo_lat || !a.client?.geo_lng
   );
 
+  const completedCount = orderedAppointments.filter(a => a.status === "completed").length;
+
   return (
     <div className="fixed inset-0 flex flex-col bg-background">
-      {/* Full-screen Map - z-index 0, controls higher */}
+      {/* Full-screen Map */}
       <div className="flex-1 relative z-0">
         <MapContainer
           center={defaultCenter}
@@ -473,7 +472,6 @@ export function TourManager() {
           scrollWheelZoom={true}
           zoomControl={false}
         >
-          {/* Fallback: https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png */}
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png"
@@ -525,7 +523,7 @@ export function TourManager() {
             );
           })}
           
-          {/* Breadcrumbs Layer for Replay */}
+          {/* Breadcrumbs Layer */}
           {showBreadcrumbsReplay && replayBreadcrumbs.length > 0 && (
             <BreadcrumbsLayer 
               breadcrumbs={replayBreadcrumbs} 
@@ -542,7 +540,8 @@ export function TourManager() {
           />
         </MapContainer>
 
-        {/* Tour Controls Overlay */}
+        {/* ===== MAP OVERLAY CONTROLS ===== */}
+        {/* Layer 1 (z-400): Tour Start/Stop – top-left */}
         {user && (
           <TourControls
             tourDate={selectedDate}
@@ -556,14 +555,14 @@ export function TourManager() {
             hasCustomOrder={hasCustomOrder}
           />
         )}
-        
-        {/* Back Button - Top Left safe zone – must sit BELOW TourControls row */}
+
+        {/* Layer 2 (z-400): Back button – below tour controls */}
         {user && (
-          <div className="absolute top-20 left-4 z-[500] flex items-center gap-2">
+          <div className="absolute top-16 left-4 z-[400]">
             <Button
               variant="secondary"
               size="sm"
-              className="gap-2 bg-background/95 backdrop-blur-md shadow-xl border border-border"
+              className="gap-2 bg-background/95 backdrop-blur-md shadow-xl border border-border h-8"
               onClick={() => navigate("/")}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -572,28 +571,121 @@ export function TourManager() {
           </div>
         )}
         
-        {/* Emergency & PDF Export - Top Right safe zone (moved away from back button) */}
+        {/* Layer 3 (z-400): Date Navigation – top-center */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[400] flex items-center gap-1 bg-background/90 backdrop-blur-sm rounded-full shadow-lg p-1">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToPreviousDay}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" className="h-8 px-2 gap-1.5 text-xs sm:text-sm sm:px-3 sm:gap-2">
+                <CalendarDays className="h-4 w-4" />
+                <span className="hidden sm:inline">{format(selectedDate, "EEE, dd. MMM", { locale: de })}</span>
+                <span className="sm:hidden">{format(selectedDate, "dd.MM.", { locale: de })}</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => date && setSelectedDate(date)}
+                locale={de}
+              />
+            </PopoverContent>
+          </Popover>
+          
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToNextDay}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          
+          <Button 
+            variant={showBreadcrumbsReplay ? "secondary" : "ghost"} 
+            size="icon" 
+            className="h-8 w-8" 
+            onClick={() => setShowBreadcrumbsReplay(!showBreadcrumbsReplay)}
+          >
+            <History className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Layer 4 (z-400): Actions menu – top-right (combined Export + Emergency + Kunden) */}
         {user && (
-          <div className="absolute top-4 right-4 z-[1000] flex items-center gap-2">
-            <TourPdfExport
-              tourDate={selectedDate}
-              userId={user.id}
-              appointments={orderedAppointments}
-              routeInfo={routeInfo}
-            />
-            <EmergencyModeButton
-              tourDate={selectedDate}
-              appointmentIds={orderedAppointments
-                .filter(a => a.status !== "completed")
-                .map(a => a.id)
-              }
-              onEmergencyStart={() => refetch()}
-              onEmergencyEnd={() => refetch()}
-            />
+          <div className="absolute top-4 right-4 z-[400] flex items-center gap-1.5">
+            {/* Desktop: show individual buttons. Mobile: combine in dropdown */}
+            <div className="hidden sm:flex items-center gap-1.5">
+              <TourPdfExport
+                tourDate={selectedDate}
+                userId={user.id}
+                appointments={orderedAppointments}
+                routeInfo={routeInfo}
+              />
+              <EmergencyModeButton
+                tourDate={selectedDate}
+                appointmentIds={orderedAppointments
+                  .filter(a => a.status !== "completed")
+                  .map(a => a.id)
+                }
+                onEmergencyStart={() => refetch()}
+                onEmergencyEnd={() => refetch()}
+              />
+            </div>
+            
+            {/* Mobile: dropdown menu for actions */}
+            <div className="sm:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 bg-background/90 backdrop-blur-sm shadow-lg"
+                  >
+                    <Siren className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <div className="p-0">
+                      <TourPdfExport
+                        tourDate={selectedDate}
+                        userId={user.id}
+                        appointments={orderedAppointments}
+                        routeInfo={routeInfo}
+                      />
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <div className="p-0">
+                      <EmergencyModeButton
+                        tourDate={selectedDate}
+                        appointmentIds={orderedAppointments
+                          .filter(a => a.status !== "completed")
+                          .map(a => a.id)
+                        }
+                        onEmergencyStart={() => refetch()}
+                        onEmergencyEnd={() => refetch()}
+                      />
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         )}
         
-        {/* Nearby Customers Panel */}
+        {/* Layer 5 (z-300): Stats bar – adaptive position */}
+        <TourStatsBar
+          routeInfo={routeInfo}
+          isCalculatingRoute={isCalculatingRoute}
+          completedCount={completedCount}
+          totalCount={orderedAppointments.length}
+          hasCustomOrder={hasCustomOrder}
+          onOptimizeRoute={handleOptimizeRoute}
+          onResetOrder={handleResetOrder}
+          userLocation={userLocation}
+        />
+        
+        {/* Layer 6 (z-300): Nearby Customers - right side below actions */}
         {user && (
           <NearbyCustomersPanel
             userId={user.id}
@@ -615,53 +707,14 @@ export function TourManager() {
             onRefetch={() => refetch()}
           />
         )}
-
-        {/* Date Navigation */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-1 bg-background/90 backdrop-blur-sm rounded-full shadow-lg p-1">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToPreviousDay}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" className="h-8 px-3 gap-2">
-                <CalendarDays className="h-4 w-4" />
-                {format(selectedDate, "EEE, dd. MMM", { locale: de })}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="center">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => date && setSelectedDate(date)}
-                locale={de}
-              />
-            </PopoverContent>
-          </Popover>
-          
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToNextDay}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          
-          {/* History Button */}
-          <Button 
-            variant={showBreadcrumbsReplay ? "secondary" : "ghost"} 
-            size="icon" 
-            className="h-8 w-8 ml-1" 
-            onClick={() => setShowBreadcrumbsReplay(!showBreadcrumbsReplay)}
-          >
-            <History className="h-4 w-4" />
-          </Button>
-        </div>
-
       </div>
 
-      {/* Bottom Toast Warning - positioned at bottom, not blocking header */}
+      {/* Bottom Toast Warning */}
       <AnimatePresence>
         <BottomToastWarning count={appointmentsWithoutCoords.length} />
       </AnimatePresence>
 
-      {/* Tour Cards Panel - Bottom Drawer Style */}
+      {/* Tour Cards Panel - Bottom Drawer */}
       <motion.div
         initial={{ y: '100%' }}
         animate={{ y: isPanelCollapsed ? 'calc(100% - 56px)' : 0 }}
@@ -679,7 +732,7 @@ export function TourManager() {
         className={cn(
           "fixed z-[900]",
           "bottom-0 left-0 right-0",
-          isPanelCollapsed ? "max-h-14" : "max-h-[50vh]",
+          isPanelCollapsed ? "max-h-14" : "max-h-[45vh]",
           // Desktop: left sidebar
           "lg:absolute lg:top-24 lg:bottom-4 lg:left-4 lg:right-auto lg:w-96 lg:max-h-none",
           isPanelCollapsed && "lg:max-h-14 lg:top-auto lg:bottom-4"
@@ -694,7 +747,7 @@ export function TourManager() {
             <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full" />
           </div>
           
-          {/* Collapsible Header with toggle */}
+          {/* Collapsible Header */}
           <button
             onClick={() => setIsPanelCollapsed(!isPanelCollapsed)}
             className="w-full px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors"
@@ -721,7 +774,6 @@ export function TourManager() {
                 className="h-9 px-4 gap-2"
                 onClick={(e) => {
                   e.stopPropagation();
-                  // Delegate to TourControls handleStartTour via the existing overlay button
                   const startBtn = document.querySelector('[data-tour-start]') as HTMLButtonElement;
                   if (startBtn) startBtn.click();
                 }}
@@ -731,7 +783,7 @@ export function TourManager() {
             )}
           </button>
 
-          {/* Sortable Cards - Hidden when collapsed */}
+          {/* Sortable Cards */}
           {!isPanelCollapsed && (
             <ScrollArea className="flex-1 px-3 py-2">
               {isLoading ? (
@@ -784,11 +836,8 @@ export function TourManager() {
           onBreadcrumbsChange={handleBreadcrumbsChange}
         />
       )}
-
-      {/* QuickAddAppointmentFAB removed - using SpeedDialFAB instead */}
     </div>
   );
 }
 
-// Re-export shared utility used locally
 import { haversineDistance as calculateDistance } from "@/lib/geo";
