@@ -1,10 +1,11 @@
-import { CanvasBlock, CanvasBlockType, BLOCK_TYPE_LABELS, GraphicType, AutoInfoType, GRAPHIC_TYPE_LABELS, AUTO_INFO_LABELS } from "./types";
+import { CanvasBlock, CanvasBlockType, BLOCK_TYPE_LABELS, GraphicType, AutoInfoType, GRAPHIC_TYPE_LABELS, AUTO_INFO_LABELS, FONT_OPTIONS, COLOR_PRESETS } from "./types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Plus, X, Copy, Settings2 } from "lucide-react";
+import { Trash2, Plus, X, Copy, Settings2, Lock, Unlock, Palette, Type } from "lucide-react";
 
 interface PropertiesPanelProps {
   block: CanvasBlock | null;
@@ -31,6 +32,15 @@ export function PropertiesPanel({ block, onChange, onDelete, onDuplicate }: Prop
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-primary">{BLOCK_TYPE_LABELS[block.type]}</span>
         <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={() => update({ locked: !block.locked })}
+            title={block.locked ? "Entsperren" : "Fixieren"}
+          >
+            {block.locked ? <Lock className="h-3 w-3 text-amber-500" /> : <Unlock className="h-3 w-3" />}
+          </Button>
           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onDuplicate}>
             <Copy className="h-3 w-3" />
           </Button>
@@ -39,6 +49,14 @@ export function PropertiesPanel({ block, onChange, onDelete, onDuplicate }: Prop
           </Button>
         </div>
       </div>
+
+      {/* Lock indicator */}
+      {block.locked && (
+        <div className="flex items-center gap-2 p-2 rounded-md bg-amber-500/10 border border-amber-500/20">
+          <Lock className="h-3.5 w-3.5 text-amber-500" />
+          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Element fixiert – Position & Größe gesperrt</span>
+        </div>
+      )}
 
       {/* Label */}
       <div className="space-y-1">
@@ -57,11 +75,11 @@ export function PropertiesPanel({ block, onChange, onDelete, onDuplicate }: Prop
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-0.5">
             <span className="text-[10px] text-muted-foreground">X</span>
-            <Input type="number" value={Math.round(block.x)} onChange={(e) => update({ x: Number(e.target.value) })} className="h-7 text-xs" />
+            <Input type="number" value={Math.round(block.x)} onChange={(e) => update({ x: Number(e.target.value) })} className="h-7 text-xs" disabled={block.locked} />
           </div>
           <div className="space-y-0.5">
             <span className="text-[10px] text-muted-foreground">Y</span>
-            <Input type="number" value={Math.round(block.y)} onChange={(e) => update({ y: Number(e.target.value) })} className="h-7 text-xs" />
+            <Input type="number" value={Math.round(block.y)} onChange={(e) => update({ y: Number(e.target.value) })} className="h-7 text-xs" disabled={block.locked} />
           </div>
         </div>
       </div>
@@ -72,13 +90,111 @@ export function PropertiesPanel({ block, onChange, onDelete, onDuplicate }: Prop
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-0.5">
             <span className="text-[10px] text-muted-foreground">Breite</span>
-            <Input type="number" value={Math.round(block.width)} onChange={(e) => update({ width: Number(e.target.value) })} className="h-7 text-xs" />
+            <Input type="number" value={Math.round(block.width)} onChange={(e) => update({ width: Number(e.target.value) })} className="h-7 text-xs" disabled={block.locked} />
           </div>
           <div className="space-y-0.5">
             <span className="text-[10px] text-muted-foreground">Höhe</span>
-            <Input type="number" value={Math.round(block.height)} onChange={(e) => update({ height: Number(e.target.value) })} className="h-7 text-xs" />
+            <Input type="number" value={Math.round(block.height)} onChange={(e) => update({ height: Number(e.target.value) })} className="h-7 text-xs" disabled={block.locked} />
           </div>
         </div>
+      </div>
+
+      {/* Style: Font */}
+      {["text", "textarea", "checkbox", "dropdown", "scale", "date", "auto-info"].includes(block.type) && (
+        <>
+          <div className="h-px bg-border" />
+          <div className="space-y-2">
+            <Label className="text-xs flex items-center gap-1.5">
+              <Type className="h-3 w-3" /> Schriftart
+            </Label>
+            <Select value={block.fontFamily || "system-ui"} onValueChange={(v) => update({ fontFamily: v === "system-ui" ? undefined : v })}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {FONT_OPTIONS.map((f) => (
+                  <SelectItem key={f.value} value={f.value} className="text-xs" style={{ fontFamily: f.value }}>{f.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs">Schriftgröße</Label>
+            <Input type="number" value={block.fontSize || 12} onChange={(e) => update({ fontSize: Number(e.target.value) || undefined })} className="h-7 text-xs" min={8} max={48} />
+          </div>
+        </>
+      )}
+
+      {/* Style: Colors */}
+      <div className="h-px bg-border" />
+      <div className="space-y-2">
+        <Label className="text-xs flex items-center gap-1.5">
+          <Palette className="h-3 w-3" /> Farben
+        </Label>
+        
+        {/* Text color */}
+        {["text", "textarea", "checkbox", "dropdown", "scale", "date", "auto-info"].includes(block.type) && (
+          <div className="space-y-1">
+            <span className="text-[10px] text-muted-foreground">Textfarbe</span>
+            <div className="flex items-center gap-1.5">
+              <div className="flex gap-0.5 flex-wrap flex-1">
+                <button
+                  onClick={() => update({ textColor: undefined })}
+                  className={`h-5 w-5 rounded-full border-2 transition-all ${!block.textColor ? "border-primary scale-110" : "border-border"}`}
+                  title="Standard"
+                >
+                  <span className="text-[7px] text-muted-foreground flex items-center justify-center">∅</span>
+                </button>
+                {COLOR_PRESETS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => update({ textColor: c })}
+                    className={`h-5 w-5 rounded-full border-2 transition-all ${block.textColor === c ? "border-primary scale-110" : "border-border"}`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
+              <Input type="color" value={block.textColor || "#000000"} onChange={(e) => update({ textColor: e.target.value })} className="h-6 w-8 p-0 border-none cursor-pointer" />
+            </div>
+          </div>
+        )}
+
+        {/* Background color */}
+        <div className="space-y-1">
+          <span className="text-[10px] text-muted-foreground">Hintergrund</span>
+          <div className="flex items-center gap-1.5">
+            <div className="flex gap-0.5 flex-wrap flex-1">
+              <button
+                onClick={() => update({ bgColor: undefined })}
+                className={`h-5 w-5 rounded-full border-2 transition-all ${!block.bgColor ? "border-primary scale-110" : "border-border"}`}
+                title="Transparent"
+              >
+                <span className="text-[7px] text-muted-foreground flex items-center justify-center">∅</span>
+              </button>
+              {["#ffffff", "#f3f4f6", "#fef3c7", "#dbeafe", "#dcfce7", "#fce7f3", "#f3e8ff"].map((c) => (
+                <button
+                  key={c}
+                  onClick={() => update({ bgColor: c })}
+                  className={`h-5 w-5 rounded-full border-2 transition-all ${block.bgColor === c ? "border-primary scale-110" : "border-border"}`}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+            </div>
+            <Input type="color" value={block.bgColor || "#ffffff"} onChange={(e) => update({ bgColor: e.target.value })} className="h-6 w-8 p-0 border-none cursor-pointer" />
+          </div>
+        </div>
+      </div>
+
+      {/* Opacity */}
+      <div className="space-y-1">
+        <Label className="text-xs">Deckkraft ({block.opacity ?? 100}%)</Label>
+        <Slider
+          value={[block.opacity ?? 100]}
+          onValueChange={([v]) => update({ opacity: v === 100 ? undefined : v })}
+          min={20}
+          max={100}
+          step={5}
+          className="py-1"
+        />
       </div>
 
       {/* Placeholder */}

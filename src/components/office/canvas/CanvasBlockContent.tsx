@@ -179,10 +179,13 @@ export function CanvasBlockContent({ block, onChange, scale }: CanvasBlockConten
               </button>
             </div>
           ) : (
-            <div className="flex-1 min-h-0 border rounded bg-white relative">
+            <div className="flex-1 min-h-0 border-2 border-dashed border-muted-foreground/30 rounded bg-white relative">
               <SignatureCanvas
                 ref={sigRef}
-                penColor="black"
+                penColor="#111827"
+                minWidth={2}
+                maxWidth={4}
+                velocityFilterWeight={0.7}
                 canvasProps={{
                   className: "w-full h-full",
                   style: { width: "100%", height: "100%" },

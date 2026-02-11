@@ -5,8 +5,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import {
   Plus, Type, AlignJustify, CheckSquare, ChevronDown,
   Star, CalendarDays, ImagePlus, PenLine, PenTool,
-  Bone, Info, ZoomIn, ZoomOut, Undo2, Redo2, Save,
-  FileDown, ArrowLeft, FileEdit, CheckCircle2,
+  Bone, Info, ZoomIn, ZoomOut, Save,
+  FileDown, ArrowLeft, FileEdit, CheckCircle2, Palette,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -45,12 +45,15 @@ interface EditorToolbarProps {
   status: "draft" | "completed";
   onToggleStatus: () => void;
   hasUnsaved?: boolean;
+  onToggleBranding?: () => void;
+  brandingActive?: boolean;
 }
 
 export function EditorToolbar({
   onAddBlock, onSave, onExportPdf, onBack,
   zoom, onZoomIn, onZoomOut, saving,
   title, onTitleChange, status, onToggleStatus, hasUnsaved,
+  onToggleBranding, brandingActive,
 }: EditorToolbarProps) {
   const [toolsOpen, setToolsOpen] = useState(false);
 
@@ -121,6 +124,18 @@ export function EditorToolbar({
           </div>
         </PopoverContent>
       </Popover>
+
+      {onToggleBranding && (
+        <Button
+          variant={brandingActive ? "default" : "outline"}
+          size="sm"
+          className="gap-1.5 h-8 text-xs shrink-0"
+          onClick={onToggleBranding}
+        >
+          <Palette className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Branding</span>
+        </Button>
+      )}
 
       <div className="h-5 w-px bg-border mx-1 shrink-0" />
 
