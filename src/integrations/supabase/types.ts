@@ -835,6 +835,36 @@ export type Database = {
         }
         Relationships: []
       }
+      businesses: {
+        Row: {
+          address: string | null
+          contact_email: string | null
+          created_at: string
+          id: string
+          name: string | null
+          owner_id: string | null
+          readable_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          contact_email?: string | null
+          created_at?: string
+          id?: string
+          name?: string | null
+          owner_id?: string | null
+          readable_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          contact_email?: string | null
+          created_at?: string
+          id?: string
+          name?: string | null
+          owner_id?: string | null
+          readable_id?: string | null
+        }
+        Relationships: []
+      }
       client_consents: {
         Row: {
           client_id: string
@@ -5037,6 +5067,22 @@ export type Database = {
       }
     }
     Views: {
+      agent_data_hub: {
+        Row: {
+          eqid: string | null
+          gps_daten: Json | null
+          kid: string | null
+          kunden_name: string | null
+          kunden_telefon: string | null
+          pferdename: string | null
+          pid: string | null
+          profi_name: string | null
+          stall_name: string | null
+          termin_datum: string | null
+          termin_zeit: string | null
+        }
+        Relationships: []
+      }
       safe_appointments: {
         Row: {
           completed_at: string | null
