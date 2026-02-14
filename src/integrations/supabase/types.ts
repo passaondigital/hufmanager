@@ -1161,6 +1161,65 @@ export type Database = {
         }
         Relationships: []
       }
+      ecosystem_apps: {
+        Row: {
+          api_endpoint: string | null
+          app_name: string
+          id: string
+          is_active: boolean | null
+        }
+        Insert: {
+          api_endpoint?: string | null
+          app_name: string
+          id?: string
+          is_active?: boolean | null
+        }
+        Update: {
+          api_endpoint?: string | null
+          app_name?: string
+          id?: string
+          is_active?: boolean | null
+        }
+        Relationships: []
+      }
+      ecosystem_links: {
+        Row: {
+          app_id: string | null
+          created_at: string | null
+          global_id: string
+          id: string
+          permissions: Json | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          app_id?: string | null
+          created_at?: string | null
+          global_id: string
+          id?: string
+          permissions?: Json | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          app_id?: string | null
+          created_at?: string | null
+          global_id?: string
+          id?: string
+          permissions?: Json | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ecosystem_links_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "ecosystem_apps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_absence_requests: {
         Row: {
           created_at: string
