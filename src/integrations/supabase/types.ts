@@ -1185,30 +1185,45 @@ export type Database = {
       ecosystem_links: {
         Row: {
           app_id: string | null
+          app_key: string | null
+          connected_at: string | null
           created_at: string | null
+          data_sharing_enabled: boolean | null
+          external_id: string | null
           global_id: string
           id: string
           permissions: Json | null
           status: string | null
-          user_id: string | null
+          updated_at: string | null
+          user_id: string
         }
         Insert: {
           app_id?: string | null
+          app_key?: string | null
+          connected_at?: string | null
           created_at?: string | null
+          data_sharing_enabled?: boolean | null
+          external_id?: string | null
           global_id: string
           id?: string
           permissions?: Json | null
           status?: string | null
-          user_id?: string | null
+          updated_at?: string | null
+          user_id: string
         }
         Update: {
           app_id?: string | null
+          app_key?: string | null
+          connected_at?: string | null
           created_at?: string | null
+          data_sharing_enabled?: boolean | null
+          external_id?: string | null
           global_id?: string
           id?: string
           permissions?: Json | null
           status?: string | null
-          user_id?: string | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: [
           {
