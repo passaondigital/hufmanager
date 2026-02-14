@@ -209,6 +209,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
     { title: "Mein Office", icon: FileText, locked: !isFeatureVisible('module_office'), url: "/mein-office" },
     { title: "Lager", icon: Warehouse, locked: !isFeatureVisible('beta_features'), url: "/lager" },
     { title: "Mitarbeiter", icon: UsersRound, locked: !isFeatureVisible('module_team'), url: "/team" },
+    { title: "Ecosystem", icon: Globe, locked: false, url: "/ecosystem" },
   ];
 
   // Check if a submenu contains the active route

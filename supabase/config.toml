@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.send-provider-invitation]
 verify_jwt = true
+
+[functions.check-ecosystem]
+verify_jwt = false
