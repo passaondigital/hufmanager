@@ -32,7 +32,8 @@ import {
   Fuel,
   GraduationCap,
   Wrench,
-  Receipt
+  Receipt,
+  ArrowLeft
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -41,6 +42,7 @@ import { cn } from "@/lib/utils";
 interface AddExpenseModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onBack?: () => void;
 }
 
 const CATEGORIES = [
@@ -51,7 +53,7 @@ const CATEGORIES = [
   { value: "sonstiges", label: "Sonstiges", icon: Receipt },
 ] as const;
 
-export function AddExpenseModal({ isOpen, onClose }: AddExpenseModalProps) {
+export function AddExpenseModal({ isOpen, onClose, onBack }: AddExpenseModalProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -155,7 +157,14 @@ export function AddExpenseModal({ isOpen, onClose }: AddExpenseModalProps) {
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Neue Ausgabe erfassen</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            {onBack && (
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onBack}>
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
+            Manuell erfassen
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
