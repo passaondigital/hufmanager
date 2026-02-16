@@ -26,6 +26,7 @@ import {
   Upload,
   Loader2,
   ScanLine,
+  ArrowLeft,
   CheckCircle2,
   AlertTriangle,
   Euro,
@@ -48,6 +49,7 @@ import { motion, AnimatePresence } from "framer-motion";
 interface ReceiptScannerProps {
   isOpen: boolean;
   onClose: () => void;
+  onBack?: () => void;
 }
 
 interface ScanResult {
@@ -87,7 +89,7 @@ const DOC_TYPE_LABELS: Record<string, string> = {
   sonstiges: "Sonstiger Beleg",
 };
 
-export function ReceiptScanner({ isOpen, onClose }: ReceiptScannerProps) {
+export function ReceiptScanner({ isOpen, onClose, onBack }: ReceiptScannerProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -255,8 +257,13 @@ export function ReceiptScanner({ isOpen, onClose }: ReceiptScannerProps) {
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
+            {onBack && (
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onBack}>
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
             <ScanLine className="h-5 w-5 text-primary" />
-            Intelligenter Beleg-Scanner
+            Intelligente Belegerfassung
           </DialogTitle>
         </DialogHeader>
 
