@@ -202,6 +202,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       subItems: [
         { title: "Rechnungen", url: "/rechnungen", icon: Receipt, description: "Rechnungen & Export" },
         { title: "Ausgaben & Belege", url: "/ausgaben", icon: Wallet, description: "Kosten & Belege scannen" },
+        { title: "Buchhaltung", url: "/buchhaltung", icon: FileText, description: "EÜR, USt-VA, DATEV & StB" },
         { title: "GuV-Übersicht", url: "/guv", icon: Scale, description: "Gewinn- & Verlustrechnung" },
         { title: "Betriebszahlen", url: "/analyse", icon: TrendingUp, description: "Charts & Stats" },
       ]
