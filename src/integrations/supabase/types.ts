@@ -2449,6 +2449,7 @@ export type Database = {
       horses: {
         Row: {
           anamnesis_interval_months: number | null
+          app_source: string | null
           birth_date: string | null
           birth_year: number | null
           breed: string | null
@@ -2501,6 +2502,7 @@ export type Database = {
         }
         Insert: {
           anamnesis_interval_months?: number | null
+          app_source?: string | null
           birth_date?: string | null
           birth_year?: number | null
           breed?: string | null
@@ -2553,6 +2555,7 @@ export type Database = {
         }
         Update: {
           anamnesis_interval_months?: number | null
+          app_source?: string | null
           birth_date?: string | null
           birth_year?: number | null
           breed?: string | null
@@ -3628,6 +3631,7 @@ export type Database = {
           currency: string | null
           deleted_at: string | null
           digital_signature_url: string | null
+          ecosystem_id: string | null
           email: string | null
           emergency_contacts: Json | null
           feature_flags: Json | null
@@ -3638,6 +3642,7 @@ export type Database = {
           geo_lng: number | null
           has_logged_in: boolean | null
           house_number: string | null
+          hufiai_training_consent: boolean | null
           iban: string | null
           ical_token: string | null
           id: string
@@ -3667,6 +3672,7 @@ export type Database = {
           phone_landline: string | null
           phone_mobile: string | null
           plan_override: string | null
+          preferred_app_theme: string | null
           readable_id: string | null
           reliability_score: number | null
           reminder_1h: boolean | null
@@ -3716,6 +3722,7 @@ export type Database = {
           currency?: string | null
           deleted_at?: string | null
           digital_signature_url?: string | null
+          ecosystem_id?: string | null
           email?: string | null
           emergency_contacts?: Json | null
           feature_flags?: Json | null
@@ -3726,6 +3733,7 @@ export type Database = {
           geo_lng?: number | null
           has_logged_in?: boolean | null
           house_number?: string | null
+          hufiai_training_consent?: boolean | null
           iban?: string | null
           ical_token?: string | null
           id: string
@@ -3755,6 +3763,7 @@ export type Database = {
           phone_landline?: string | null
           phone_mobile?: string | null
           plan_override?: string | null
+          preferred_app_theme?: string | null
           readable_id?: string | null
           reliability_score?: number | null
           reminder_1h?: boolean | null
@@ -3804,6 +3813,7 @@ export type Database = {
           currency?: string | null
           deleted_at?: string | null
           digital_signature_url?: string | null
+          ecosystem_id?: string | null
           email?: string | null
           emergency_contacts?: Json | null
           feature_flags?: Json | null
@@ -3814,6 +3824,7 @@ export type Database = {
           geo_lng?: number | null
           has_logged_in?: boolean | null
           house_number?: string | null
+          hufiai_training_consent?: boolean | null
           iban?: string | null
           ical_token?: string | null
           id?: string
@@ -3843,6 +3854,7 @@ export type Database = {
           phone_landline?: string | null
           phone_mobile?: string | null
           plan_override?: string | null
+          preferred_app_theme?: string | null
           readable_id?: string | null
           reliability_score?: number | null
           reminder_1h?: boolean | null

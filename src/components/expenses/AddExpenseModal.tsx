@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { Camera as CameraIcon } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -64,6 +65,7 @@ export function AddExpenseModal({ isOpen, onClose }: AddExpenseModalProps) {
   const [uploading, setUploading] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const resetForm = () => {
     setAmount("");
@@ -242,6 +244,14 @@ export function AddExpenseModal({ isOpen, onClose }: AddExpenseModalProps) {
               className="hidden"
               onChange={handleFileChange}
             />
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleFileChange}
+            />
             {receiptUrl ? (
               <div className="relative inline-block">
                 <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
@@ -258,24 +268,33 @@ export function AddExpenseModal({ isOpen, onClose }: AddExpenseModalProps) {
                 </div>
               </div>
             ) : (
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-              >
-                {uploading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Hochladen...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="h-4 w-4 mr-2" />
-                    Beleg hochladen
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => cameraInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  {uploading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Hochladen...
+                    </>
+                  ) : (
+                    <>
+                      <CameraIcon className="h-4 w-4 mr-2" />
+                      Beleg scannen
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  <Upload className="h-4 w-4" />
+                </Button>
+              </div>
             )}
           </div>
 
