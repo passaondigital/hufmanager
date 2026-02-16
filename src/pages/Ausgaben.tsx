@@ -25,12 +25,14 @@ import {
   MoreHorizontal,
   Trash2,
   Repeat,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ScanLine
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { de } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { AddExpenseModal } from "@/components/expenses/AddExpenseModal";
+import { ReceiptScanner } from "@/components/expenses/ReceiptScanner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,6 +76,7 @@ export default function Ausgaben() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const now = new Date();
@@ -171,10 +174,20 @@ export default function Ausgaben() {
           <h1 className="text-2xl font-bold text-foreground">Ausgaben</h1>
           <p className="text-muted-foreground">Verwalte deine Betriebskosten</p>
         </div>
-        <Button onClick={() => setShowAddModal(true)} className="bg-[#F47B20] hover:bg-[#F47B20]/90">
-          <Plus className="h-4 w-4 mr-2" />
-          Neue Ausgabe
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowScanner(true)}
+            className="gap-2"
+          >
+            <ScanLine className="h-4 w-4" />
+            <span className="hidden sm:inline">Beleg scannen</span>
+          </Button>
+          <Button onClick={() => setShowAddModal(true)} className="bg-[#F47B20] hover:bg-[#F47B20]/90">
+            <Plus className="h-4 w-4 mr-2" />
+            Neue Ausgabe
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -351,6 +364,12 @@ export default function Ausgaben() {
       <AddExpenseModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
+      />
+
+      {/* Receipt Scanner */}
+      <ReceiptScanner
+        isOpen={showScanner}
+        onClose={() => setShowScanner(false)}
       />
 
       {/* Delete Confirmation */}
