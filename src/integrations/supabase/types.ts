@@ -722,6 +722,7 @@ export type Database = {
           id: string
           impressum_text: string | null
           imprint: string | null
+          ki_features_enabled: boolean
           logo_url: string | null
           owner_name: string | null
           paypal_link: string | null
@@ -766,6 +767,7 @@ export type Database = {
           id?: string
           impressum_text?: string | null
           imprint?: string | null
+          ki_features_enabled?: boolean
           logo_url?: string | null
           owner_name?: string | null
           paypal_link?: string | null
@@ -810,6 +812,7 @@ export type Database = {
           id?: string
           impressum_text?: string | null
           imprint?: string | null
+          ki_features_enabled?: boolean
           logo_url?: string | null
           owner_name?: string | null
           paypal_link?: string | null

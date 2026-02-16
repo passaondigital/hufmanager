@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Plus, X, User, PawPrint, Calendar, MessageCircle, LifeBuoy, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useKiSettings } from "@/hooks/useKiSettings";
 
 interface SpeedDialItem {
   id: string;
@@ -16,6 +17,7 @@ export function SpeedDialFAB() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [expandedSubMenu, setExpandedSubMenu] = useState<string | null>(null);
+  const { kiEnabled } = useKiSettings();
 
   const quickStartItems: SpeedDialItem[] = [
     {
@@ -51,7 +53,7 @@ export function SpeedDialFAB() {
   ];
 
   const mainItems: SpeedDialItem[] = [
-    {
+    ...(kiEnabled ? [{
       id: "hufi",
       label: "Hufi fragen",
       icon: <MessageCircle className="h-5 w-5" />,
@@ -59,7 +61,7 @@ export function SpeedDialFAB() {
         navigate("/chat");
         setIsOpen(false);
       },
-    },
+    }] : []),
     {
       id: "help",
       label: "Hilfe",
