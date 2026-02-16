@@ -547,17 +547,17 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
               </NavLink>
 
               <NavLink
-                to="/ausgaben"
+                to="/management?tab=fleet"
                 onClick={onNavigate}
                 className={cn(
                   "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200 ml-4",
-                  isActive("/ausgaben")
+                  isActive("/management") && location.search.includes("fleet")
                     ? "bg-primary/10 text-primary"
                     : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                 )}
               >
                 <Car className="h-3.5 w-3.5 flex-shrink-0" />
-                <span className="text-xs">Fahrzeug & Ausgaben</span>
+                <span className="text-xs">Fuhrpark</span>
               </NavLink>
 
               <NavLink
