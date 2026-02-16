@@ -39,6 +39,8 @@ import {
   Timer,
   Route,
   Map,
+  Wallet,
+  Scale,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -198,7 +200,9 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       title: "Analyse", 
       icon: BarChart3,
       subItems: [
-        { title: "Finanzen", url: "/rechnungen", icon: Receipt, description: "Rechnungen & Export" },
+        { title: "Rechnungen", url: "/rechnungen", icon: Receipt, description: "Rechnungen & Export" },
+        { title: "Ausgaben & Belege", url: "/ausgaben", icon: Wallet, description: "Kosten & Belege scannen" },
+        { title: "GuV-Übersicht", url: "/guv", icon: Scale, description: "Gewinn- & Verlustrechnung" },
         { title: "Betriebszahlen", url: "/analyse", icon: TrendingUp, description: "Charts & Stats" },
       ]
     },
