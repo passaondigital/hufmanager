@@ -42,6 +42,7 @@ import { GalleryManager } from "@/components/management/GalleryManager";
 import { AVVSigningCard } from "@/components/settings/AVVSigningCard";
 import { PaymentSettingsCard } from "@/components/settings/PaymentSettingsCard";
 import { AppSettingsCard } from "@/components/settings/AppSettingsCard";
+import { KiSettingsCard } from "@/components/settings/KiSettingsCard";
 import { CompanyLocationCard } from "@/components/settings/CompanyLocationCard";
 import { TutorialSettingsCard } from "@/components/settings/TutorialSettingsCard";
 import { supabase } from "@/integrations/supabase/client";
@@ -899,6 +900,7 @@ Steuernummer: 12/345/67890
         {/* App Settings Tab */}
         <TabsContent value="app" className="mt-6 space-y-6">
           <AppSettingsCard />
+          <KiSettingsCard />
           <TutorialSettingsCard />
         </TabsContent>
       </Tabs>

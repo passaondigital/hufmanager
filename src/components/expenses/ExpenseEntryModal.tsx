@@ -10,6 +10,7 @@ import { PenLine, ScanLine, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AddExpenseModal } from "./AddExpenseModal";
 import { ReceiptScanner } from "./ReceiptScanner";
+import { useKiSettings } from "@/hooks/useKiSettings";
 
 interface ExpenseEntryModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ type EntryMode = "choose" | "manual" | "scan";
 
 export function ExpenseEntryModal({ isOpen, onClose }: ExpenseEntryModalProps) {
   const [mode, setMode] = useState<EntryMode>("choose");
+  const { kiEnabled } = useKiSettings();
 
   const handleClose = () => {
     setMode("choose");
@@ -84,24 +86,26 @@ export function ExpenseEntryModal({ isOpen, onClose }: ExpenseEntryModalProps) {
                 </div>
               </Button>
 
-              {/* AI Scan */}
-              <Button
-                variant="outline"
-                className="h-auto p-5 flex items-start gap-4 justify-start text-left border-primary/30 hover:border-primary/60"
-                onClick={() => setMode("scan")}
-              >
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <ScanLine className="h-6 w-6 text-primary" />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-foreground">Intelligente Belegerfassung</span>
+              {/* AI Scan - only shown when KI features are enabled */}
+              {kiEnabled && (
+                <Button
+                  variant="outline"
+                  className="h-auto p-5 flex items-start gap-4 justify-start text-left border-primary/30 hover:border-primary/60"
+                  onClick={() => setMode("scan")}
+                >
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <ScanLine className="h-6 w-6 text-primary" />
                   </div>
-                  <span className="text-xs text-muted-foreground block">
-                    Beleg fotografieren – KI erkennt Betrag, Datum & Kategorie automatisch
-                  </span>
-                </div>
-              </Button>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-foreground">Intelligente Belegerfassung</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground block">
+                      Beleg fotografieren – KI erkennt Betrag, Datum & Kategorie automatisch
+                    </span>
+                  </div>
+                </Button>
+              )}
             </div>
           </motion.div>
         </AnimatePresence>
