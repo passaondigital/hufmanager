@@ -11,6 +11,7 @@ import {
   applySwissRounding,
   calculateVatFromGross 
 } from "./dachConfig";
+import { addSwissQrBillToInvoice } from "./swissQrBill";
 
 interface BusinessSettings {
   business_name: string | null;
@@ -757,6 +758,60 @@ export async function generateInvoicePdf(
   doc.setFontSize(7);
   doc.setTextColor(COLORS.gray400.r, COLORS.gray400.g, COLORS.gray400.b);
   doc.text("Seite 1 von 1", pageWidth / 2, pageHeight - 8, { align: "center" });
+
+  // ============================================================================
+  // SWISS QR-BILL - Add QR payment slip for Swiss invoices
+  // ============================================================================
+  if (taxCountry === 'CH' && settings.iban) {
+    try {
+      // Parse creditor address
+      const addressParts = (settings.address || "").split("\n").map(l => l.trim()).filter(Boolean);
+      const creditorStreet = addressParts[0] || "";
+      const creditorCityLine = addressParts[1] || "";
+      const creditorZipMatch = creditorCityLine.match(/^(\d{4})\s+(.+)$/);
+
+      // Parse debtor address
+      const debtorStreet = enrichedClientProfile?.stable_street || "";
+      const debtorZip = enrichedClientProfile?.stable_zip || enrichedClientProfile?.zip_code || "";
+      const debtorCity = enrichedClientProfile?.stable_city || enrichedClientProfile?.city || "";
+
+      // Add a second page for the QR-Bill
+      doc.addPage();
+
+      await addSwissQrBillToInvoice(doc, {
+        creditorName: settings.business_name || settings.owner_name || "Hufbearbeitung",
+        creditorStreet,
+        creditorZip: creditorZipMatch?.[1] || "",
+        creditorCity: creditorZipMatch?.[2] || "",
+        creditorCountry: "CH",
+        iban: settings.iban,
+        amount: finalAmount,
+        currency: (_currentCurrency as "CHF" | "EUR") || "CHF",
+        debtorName: enrichedClientProfile?.full_name || undefined,
+        debtorStreet: debtorStreet || undefined,
+        debtorZip: debtorZip || undefined,
+        debtorCity: debtorCity || undefined,
+        debtorCountry: "CH",
+        referenceType: "NON",
+        additionalInfo: invoiceNumber,
+      });
+
+      // Update page count
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7);
+        doc.setTextColor(COLORS.gray400.r, COLORS.gray400.g, COLORS.gray400.b);
+        // Only show page numbers on non-QR pages
+        if (i < totalPages) {
+          doc.text(`Seite ${i} von ${totalPages}`, pageWidth / 2, pageHeight - 8, { align: "center" });
+        }
+      }
+    } catch (err) {
+      console.error("Swiss QR-Bill generation failed:", err);
+      // Continue without QR bill - invoice is still valid
+    }
+  }
 
   return doc.output("blob");
 }
