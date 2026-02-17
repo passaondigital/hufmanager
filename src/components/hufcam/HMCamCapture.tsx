@@ -5,7 +5,9 @@ import { cn } from "@/lib/utils";
 import { HoofView, HOOF_VIEW_CONFIGS } from "./types";
 import { HoofViewSelector } from "./HoofViewSelector";
 import { CameraGuideOverlay } from "./CameraGuideOverlay";
+import { FocusEffectControls } from "./FocusEffectControls";
 import { useDeviceOrientation } from "@/hooks/useDeviceOrientation";
+import { usePhotoFocusEffect, type FocusIntensity } from "@/hooks/usePhotoFocusEffect";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -51,6 +53,9 @@ export function HMCamCapture({
   const [hasTorch, setHasTorch] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
+  const [focusIntensity, setFocusIntensity] = useState<FocusIntensity>("light");
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
+  const [isApplyingEffect, setIsApplyingEffect] = useState(false);
   
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -59,6 +64,24 @@ export function HMCamCapture({
   
   // Orientation (für Option A - AI Mode)
   const { tiltAngle, isLevel } = useDeviceOrientation();
+  const { applyEffect } = usePhotoFocusEffect();
+
+  // Apply focus effect whenever capturedPhoto or intensity changes
+  useEffect(() => {
+    if (!capturedPhoto) {
+      setPreviewPhoto(null);
+      return;
+    }
+    let cancelled = false;
+    setIsApplyingEffect(true);
+    applyEffect(capturedPhoto, focusIntensity).then((result) => {
+      if (!cancelled) {
+        setPreviewPhoto(result);
+        setIsApplyingEffect(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [capturedPhoto, focusIntensity, applyEffect]);
 
   // --- KAMERA STARTEN ---
   const startCamera = useCallback(async () => {
@@ -227,13 +250,13 @@ export function HMCamCapture({
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, [selectedView, processAndUpload]);
 
-  // --- BESTÄTIGEN ---
+  // --- BESTÄTIGEN (mit Fokus-Effekt) ---
   const confirmPhoto = useCallback(async () => {
-    if (!capturedPhoto) return;
-    const res = await fetch(capturedPhoto);
+    if (!previewPhoto) return;
+    const res = await fetch(previewPhoto);
     const blob = await res.blob();
     await processAndUpload(blob);
-  }, [capturedPhoto, processAndUpload]);
+  }, [previewPhoto, processAndUpload]);
 
   // --- WIEDERHOLEN ---
   const retakePhoto = useCallback(() => {
@@ -342,12 +365,23 @@ export function HMCamCapture({
         ) : (
           // VORSCHAU des aufgenommenen Fotos
           <img
-            src={capturedPhoto}
+            src={previewPhoto || capturedPhoto}
             alt="Aufgenommenes Foto"
             className="w-full h-full object-cover"
           />
         )}
       </div>
+
+      {/* --- FOKUS-EFFEKT CONTROLS (nur bei Vorschau) --- */}
+      {capturedPhoto && (
+        <div className="px-3 py-2 bg-black/80 flex justify-center">
+          <FocusEffectControls
+            intensity={focusIntensity}
+            onChange={setFocusIntensity}
+            isProcessing={isApplyingEffect}
+          />
+        </div>
+      )}
 
       {/* --- ANSICHT WÄHLEN --- */}
       {!capturedPhoto && (
