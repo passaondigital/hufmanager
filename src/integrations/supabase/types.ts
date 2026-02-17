@@ -718,12 +718,14 @@ export type Database = {
           email: string | null
           gallery_images: Json | null
           hero_headline: string | null
+          hero_image_url: string | null
           iban: string | null
           id: string
           impressum_text: string | null
           imprint: string | null
           ki_features_enabled: boolean
           logo_url: string | null
+          meta_description: string | null
           owner_name: string | null
           paypal_link: string | null
           phone: string | null
@@ -733,6 +735,10 @@ export type Database = {
           reminder_intervals: Json | null
           reviews_layout: string | null
           section_order: Json | null
+          social_facebook: string | null
+          social_instagram: string | null
+          social_tiktok: string | null
+          social_website: string | null
           stripe_public_key: string | null
           subdomain: string | null
           swiss_rounding: boolean | null
@@ -763,12 +769,14 @@ export type Database = {
           email?: string | null
           gallery_images?: Json | null
           hero_headline?: string | null
+          hero_image_url?: string | null
           iban?: string | null
           id?: string
           impressum_text?: string | null
           imprint?: string | null
           ki_features_enabled?: boolean
           logo_url?: string | null
+          meta_description?: string | null
           owner_name?: string | null
           paypal_link?: string | null
           phone?: string | null
@@ -778,6 +786,10 @@ export type Database = {
           reminder_intervals?: Json | null
           reviews_layout?: string | null
           section_order?: Json | null
+          social_facebook?: string | null
+          social_instagram?: string | null
+          social_tiktok?: string | null
+          social_website?: string | null
           stripe_public_key?: string | null
           subdomain?: string | null
           swiss_rounding?: boolean | null
@@ -808,12 +820,14 @@ export type Database = {
           email?: string | null
           gallery_images?: Json | null
           hero_headline?: string | null
+          hero_image_url?: string | null
           iban?: string | null
           id?: string
           impressum_text?: string | null
           imprint?: string | null
           ki_features_enabled?: boolean
           logo_url?: string | null
+          meta_description?: string | null
           owner_name?: string | null
           paypal_link?: string | null
           phone?: string | null
@@ -823,6 +837,10 @@ export type Database = {
           reminder_intervals?: Json | null
           reviews_layout?: string | null
           section_order?: Json | null
+          social_facebook?: string | null
+          social_instagram?: string | null
+          social_tiktok?: string | null
+          social_website?: string | null
           stripe_public_key?: string | null
           subdomain?: string | null
           swiss_rounding?: boolean | null

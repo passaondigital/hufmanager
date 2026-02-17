@@ -31,6 +31,8 @@ import { PendingConnectionRequests } from "@/components/network/PendingConnectio
 import { ConnectionSearch } from "@/components/network/ConnectionSearch";
 import { MyConnectionRequests } from "@/components/network/MyConnectionRequests";
 import { HMCamModal } from "@/components/hufcam";
+import { HorseIntervalReminderWidget } from "@/components/client/HorseIntervalReminderWidget";
+import { PostAppointmentReviewPrompt } from "@/components/client/PostAppointmentReviewPrompt";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -231,6 +233,12 @@ export default function ClientHome() {
 
           {/* Unconfirmed Appointments Banner */}
           <UnconfirmedAppointmentsBanner />
+
+          {/* Post-Appointment Review Prompt */}
+          <PostAppointmentReviewPrompt />
+
+          {/* Interval Reminders */}
+          <HorseIntervalReminderWidget />
 
           {/* Live Tour Status - shows when provider is on tour */}
           {user && <ProviderTourStatusWidget userId={user.id} />}
