@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
+import { OnMyWayButton } from "./OnMyWayButton";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { 
@@ -418,16 +419,13 @@ export function TourCard({
               <MessageCircle className="h-4 w-4" />
             </Button>
             
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-11 gap-1.5 min-h-[44px]"
-              onClick={handleSendEta}
-              disabled={isSendingEta || !appointment.client?.id || isCompleted}
-            >
-              <Send className="h-4 w-4" />
-              ETA
-            </Button>
+            {!isCompleted && (
+              <OnMyWayButton
+                appointment={appointment}
+                userLocation={null}
+                routeDurationMinutes={null}
+              />
+            )}
           </div>
           
           {/* Swipe hint - only shown on first use */}
