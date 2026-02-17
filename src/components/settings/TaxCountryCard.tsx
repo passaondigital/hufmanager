@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Globe, Loader2, Save, Info } from "lucide-react";
+import { Globe, Loader2, Save, Info, AlertTriangle, QrCode } from "lucide-react";
 import {
   TaxCountry,
   COUNTRY_OPTIONS,
@@ -197,24 +197,66 @@ export function TaxCountryCard() {
           </div>
         </div>
 
-        {/* Swiss Rounding Option */}
+        {/* Swiss Features */}
         {isSwiss && (
-          <div className="flex items-center justify-between rounded-lg border p-4 bg-muted/30">
-            <div className="space-y-0.5">
-              <Label htmlFor="swiss_rounding" className="font-medium">
-                Rappen-Rundung
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Beträge auf 5 Rappen runden (0.05 CHF)
-              </p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between rounded-lg border p-4 bg-muted/30">
+              <div className="space-y-0.5">
+                <Label htmlFor="swiss_rounding" className="font-medium">
+                  Rappen-Rundung
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Beträge auf 5 Rappen runden (0.05 CHF)
+                </p>
+              </div>
+              <Switch
+                id="swiss_rounding"
+                checked={settings.swiss_rounding}
+                onCheckedChange={(checked) =>
+                  setSettings({ ...settings, swiss_rounding: checked })
+                }
+              />
             </div>
-            <Switch
-              id="swiss_rounding"
-              checked={settings.swiss_rounding}
-              onCheckedChange={(checked) =>
-                setSettings({ ...settings, swiss_rounding: checked })
-              }
-            />
+
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+              <div className="flex items-start gap-3">
+                <QrCode className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">QR-Rechnung aktiv</p>
+                  <p className="text-xs text-muted-foreground">
+                    Deine Rechnungen enthalten automatisch einen Swiss QR-Zahlteil. 
+                    Stelle sicher, dass deine IBAN in den Geschäftseinstellungen hinterlegt ist.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Austria RKSV Notice */}
+        {settings.tax_country === 'AT' && (
+          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-destructive">
+                  Hinweis zur Registrierkassenpflicht (RKSV)
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  HufManager ist ein Praxis- und Rechnungstool – <strong>keine zertifizierte Registrierkasse</strong> im Sinne der RKSV. 
+                  Für Barverkäufe über 0 € benötigst du eine separate, BMF-zertifizierte Kassenlösung. 
+                  Rechnungen per Überweisung/Bankeinzug sind von der RKSV nicht betroffen.
+                </p>
+                <a 
+                  href="https://www.bmf.gv.at/themen/steuern/selbststaendige-unternehmer/registrierkassen.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-primary underline hover:no-underline inline-block mt-1"
+                >
+                  Mehr Infos auf bmf.gv.at →
+                </a>
+              </div>
+            </div>
           </div>
         )}
 
