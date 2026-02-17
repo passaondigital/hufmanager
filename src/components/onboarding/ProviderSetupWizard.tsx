@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, Sparkles, Building2, Euro, Plus, Check, Loader2 } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Sparkles, Building2, Euro, Plus, Check, Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,20 +34,25 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
   const [horseName, setHorseName] = useState('');
   const [ownerName, setOwnerName] = useState('');
   const [ownerPhone, setOwnerPhone] = useState('');
+  
+  // Step 4: Impressum (Gatekeeper for Landing Page)
+  const [impressumText, setImpressumText] = useState('');
 
-  const totalSteps = 4; // Now 4 steps
+  const totalSteps = 5;
   const progress = ((currentStep + 1) / totalSteps) * 100;
 
   const canProceed = () => {
     switch (currentStep) {
       case 0:
-        return true; // Country always valid (has default)
+        return true;
       case 1:
         return businessName.trim().length >= 2;
       case 2:
         return defaultPrice.trim().length > 0 && !isNaN(parseFloat(defaultPrice));
       case 3:
         return horseName.trim().length >= 2 && ownerName.trim().length >= 2;
+      case 4:
+        return impressumText.trim().length >= 20;
       default:
         return false;
     }
@@ -83,6 +88,7 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
         currency: currency,
         default_vat_rate: config.defaultVatRate,
         swiss_rounding: taxCountry === 'CH',
+        impressum_text: impressumText.trim(),
       };
 
       if (existingSettings) {
@@ -288,6 +294,35 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
         </div>
       </div>
     </div>,
+
+    // Step 4: Impressum (Gatekeeper)
+    <div key="impressum" className="space-y-6">
+      <div className="text-center space-y-2">
+        <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+          <FileText className="h-8 w-8 text-primary" />
+        </div>
+        <h2 className="text-2xl font-bold text-foreground">
+          Impressum hinterlegen
+        </h2>
+        <p className="text-muted-foreground">
+          Pflichtangabe für deine öffentliche Seite (DSGVO)
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        <Label htmlFor="impressumText" className="text-base">Impressum</Label>
+        <textarea
+          id="impressumText"
+          value={impressumText}
+          onChange={(e) => setImpressumText(e.target.value)}
+          placeholder={"Max Mustermann\nMusterstraße 1\n12345 Musterstadt\nTel: 0123 456789\nE-Mail: info@example.de"}
+          className="w-full min-h-[140px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        />
+        <p className="text-xs text-muted-foreground">
+          Mindestens: Name, Anschrift, E-Mail. Ohne Impressum bleibt dein Profil offline.
+        </p>
+      </div>
+    </div>,
   ];
 
   return (
@@ -365,7 +400,7 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
 
         {/* Step Indicators */}
         <div className="flex justify-center gap-3 mt-6">
-          {[0, 1, 2, 3].map((step) => (
+          {[0, 1, 2, 3, 4].map((step) => (
             <div
               key={step}
               className={cn(

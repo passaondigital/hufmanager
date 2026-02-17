@@ -41,6 +41,7 @@ export function FirstStepsChecklist() {
   const navigate = useNavigate();
   const [checklistState, setChecklistState] = useState({
     businessSetup: false,
+    impressumSetup: false,
     firstService: false,
     firstClient: false,
     firstHorse: false,
@@ -63,7 +64,7 @@ export function FirstStepsChecklist() {
       // Check business settings
       const { data: businessData } = await supabase
         .from("business_settings")
-        .select("business_name")
+        .select("business_name, impressum_text")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -104,6 +105,7 @@ export function FirstStepsChecklist() {
 
       setChecklistState({
         businessSetup: !!businessData?.business_name,
+        impressumSetup: !!(businessData?.impressum_text && businessData.impressum_text.trim().length > 0),
         firstService: (servicesData?.length ?? 0) > 0,
         firstClient: (clientsData?.length ?? 0) > 0,
         firstHorse: (horsesData?.length ?? 0) > 0,
@@ -126,6 +128,15 @@ export function FirstStepsChecklist() {
       completed: checklistState.businessSetup,
       action: () => navigate("/services"),
       actionLabel: "Einrichten",
+    },
+    {
+      id: "impressumSetup",
+      title: "Impressum hinterlegen",
+      description: "Pflichtangabe für deine öffentliche Seite (DSGVO)",
+      icon: FileText,
+      completed: checklistState.impressumSetup,
+      action: () => navigate("/management"),
+      actionLabel: "Hinterlegen",
     },
     {
       id: "firstService",
