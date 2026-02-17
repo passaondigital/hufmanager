@@ -1,42 +1,68 @@
 
-# Status: Abgeschlossen ✅
+# Fokus-Effekt fuer HM-CAM: Vignette und Hintergrund-Blur
 
-## Durchgeführte Änderungen (06.02.2026)
+## Was wird gebaut?
+Ein optionaler "Fokus-Modus" fuer die HM-CAM, der nach dem Fotografieren einen professionellen Vignette-Effekt auf das Bild anwendet. Die Bildraender werden abgedunkelt und leicht unscharf, wodurch das zentrale Motiv (der Huf) visuell hervorgehoben wird.
 
-### 1. Lovable-Branding vollständig entfernt
-- **index.html**: Favicon-Referenz auf `/icon-32.png` und `/icon-16.png` geändert (HufManager-Icons)
-- **index.html**: `og:url` von `hufmanager.lovable.app` auf `hufmanager.de` geändert
-- **index.css**: CSS-Selektoren erweitert, um alle Lovable-Badge-Varianten auszublenden
-- **public/favicon.ico**: Datei gelöscht (nutzt jetzt PNG-Icons)
+## Warum kein echter Portrait-Modus?
+Echte Hintergrund-Segmentierung (wie beim iPhone) erfordert Machine-Learning-Modelle, die auf bestimmte Motive trainiert sind. Fuer Pferdehufe existiert kein solches Modell, und ein generisches wuerde unzuverlaessige Ergebnisse liefern -- das widerspricht der "Stability First"-Philosophie der HM-CAM.
 
-### 2. Edge Functions aktualisiert
-Alle Redirect-URLs in Edge Functions von `hufmanager.lovable.app` auf `hufmanager.de` geändert:
-- `supabase/functions/admin-create-user/index.ts`
-- `supabase/functions/send-client-invitation/index.ts`
-- `supabase/functions/send-provider-invitation/index.ts`
-- `supabase/functions/copecart-webhook/index.ts`
+## Loesung: Canvas-basierter Radial-Fokus-Effekt
 
-### 3. 404-Fehler in Pferdeakten behoben
-- **Problem**: `HoofPhotoTimeline.tsx` speicherte volle Public-URLs statt Dateipfade bei Collagen
-- **Lösung**: Code geändert, um nur den Dateipfad zu speichern (`uploadedPath` statt `publicUrl`)
-- Die `getStorageUrl()` Funktion erstellt dann korrekt signierte URLs beim Abrufen
+### Effekt-Beschreibung
+- Kreisfoermiger Fokusbereich in der Bildmitte (ca. 60% des Bildes) bleibt unberuehrt
+- Uebergangszone: sanfter Gradient von klar zu Effekt
+- Randbereich: leichte Abdunklung (Vignette) + optionaler Weichzeichner (Gaussian Blur)
+- Ergebnis: Professioneller Look, Blick wird auf den Huf gelenkt
 
-### 4. Mission Control Status
-Mission Control ist bereits auf dem neuesten Stand mit:
-- 8 Tabs: Provider, Statistiken, Blog, Aktivität, Tools, Versionen, Rollout, Demo
-- KPI Dashboard mit Provider-Statistiken
-- Feature Rollout Dashboard
-- Demo Analytics Dashboard
-- Bulk Actions für Provider-Management
-- Activity Logging
-- Feature Flags System (4-Tier: disabled, beta, early_access, public)
+### Technische Umsetzung
 
----
+**1. Neuer Hook: `usePhotoFocusEffect.ts`**
+- Nimmt ein Canvas/Image und wendet den Effekt an
+- Nutzt `CanvasRenderingContext2D` mit `radialGradient` fuer die Vignette
+- Optionaler StackBlur-Algorithmus (rein clientseitig, keine externe Lib) fuer den Weichzeichner am Rand
+- Konfigurierbare Intensitaet (leicht/mittel/stark)
 
-## Was noch aussteht (optional)
-- Google Search Console: URL prüfen → Indexierung beantragen (für schnellere Favicon-Aktualisierung)
-- Custom Domain `hufmanager.de` muss korrekt konfiguriert sein
+**2. Aenderung in `HMCamCapture.tsx`**
+- Neuer State: `focusEffectEnabled` (Toggle-Button im Vorschau-Modus)
+- Nach dem Capture und VOR dem Bestaetigen: Effekt wird auf das Canvas angewendet
+- Der Nutzer sieht die Vorschau mit Effekt und kann ihn ein-/ausschalten
+- Beim Speichern wird das Bild MIT Effekt hochgeladen (wenn aktiviert)
 
-## Technische Hinweise
-- Google braucht 2-4 Wochen, um das neue Favicon zu cachen
-- Edge Functions wurden deployed
+**3. UI-Erweiterung: Fokus-Toggle**
+- Kleiner Button in der Vorschau-Ansicht (nach Foto-Aufnahme)
+- Icon: Kreissymbol (Target/Focus)
+- Drei Stufen: Aus / Leicht / Stark
+- Default: "Leicht" (dezenter Profi-Look)
+
+### Ablauf
+
+```text
+Foto aufnehmen
+      |
+      v
+Vorschau anzeigen
+      |
+      v
+[Fokus: Aus] [Fokus: Leicht] [Fokus: Stark]
+      |
+      v
+Nutzer waehlt Stufe (Live-Vorschau)
+      |
+      v
+"Speichern" -> Effekt wird eingebrannt -> Upload
+```
+
+### Dateien
+
+| Datei | Aenderung |
+|-------|-----------|
+| `src/hooks/usePhotoFocusEffect.ts` | Neu: Canvas-basierter Vignette/Blur-Effekt |
+| `src/components/hufcam/FocusEffectControls.tsx` | Neu: Toggle-UI (Aus/Leicht/Stark) |
+| `src/components/hufcam/HMCamCapture.tsx` | Erweitert: Effekt in Vorschau und Speicher-Logik integrieren |
+
+### Wichtig
+- Kein externes ML-Modell, keine zusaetzliche Bibliothek
+- Rein Canvas-basiert = funktioniert offline, schnell, zuverlaessig
+- Effekt wird nur auf das gespeicherte Bild angewendet, nicht auf den Live-Stream (Stabilitaet)
+- Respektiert die "Stability First"-Philosophie: Der Effekt ist optional und greift nie in den Aufnahmeprozess ein
