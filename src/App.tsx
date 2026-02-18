@@ -58,6 +58,7 @@ import SubmitReview from "@/pages/SubmitReview";
 import AboMatrix from "@/pages/AboMatrix";
 import Blog from "@/pages/Blog";
 import BlogPost from "@/pages/BlogPost";
+import Glossar from "@/pages/Glossar";
 import Lager from "@/pages/Lager";
 import Ausgaben from "@/pages/Ausgaben";
 import GuV from "@/pages/GuV";
@@ -202,6 +203,9 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             {/* Öffentliche Blog-Seiten */}
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
+            
+            {/* Öffentliches Glossar */}
+            <Route path="/glossar" element={<Glossar />} />
             
             {/* Admin Mission Control - nur für Admins */}
             <Route path="/admin/mission-control" element={
