@@ -2100,6 +2100,48 @@ export type Database = {
         }
         Relationships: []
       }
+      glossary_entries: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          icon: string | null
+          id: string
+          is_published: boolean
+          related_terms: string[] | null
+          sort_order: number | null
+          tags: string[] | null
+          term: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description: string
+          icon?: string | null
+          id?: string
+          is_published?: boolean
+          related_terms?: string[] | null
+          sort_order?: number | null
+          tags?: string[] | null
+          term: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          icon?: string | null
+          id?: string
+          is_published?: boolean
+          related_terms?: string[] | null
+          sort_order?: number | null
+          tags?: string[] | null
+          term?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       help_articles: {
         Row: {
           call_to_action: string | null

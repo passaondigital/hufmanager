@@ -67,6 +67,7 @@ import { useAdminActivityLog } from "@/hooks/useAdminActivityLog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { VersionManager } from "@/components/admin/VersionManager";
 import { DemoAnalyticsDashboard } from "@/components/admin/DemoAnalyticsDashboard";
+import { AdminGlossaryManager } from "@/components/admin/AdminGlossaryManager";
 
 // Horse icon fallback since lucide doesn't have it
 const Horse = () => (
@@ -1046,6 +1047,10 @@ export default function MissionControl() {
               <TabsTrigger value="demo" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
                 <Eye className="w-4 h-4" />
                 <span className="hidden md:inline">Demo</span>
+              </TabsTrigger>
+              <TabsTrigger value="glossary" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <FileText className="w-4 h-4" />
+                <span className="hidden md:inline">Glossar</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -2070,6 +2075,10 @@ export default function MissionControl() {
 
           <TabsContent value="demo" className="space-y-6">
             <DemoAnalyticsDashboard />
+          </TabsContent>
+
+          <TabsContent value="glossary" className="space-y-6">
+            <AdminGlossaryManager />
           </TabsContent>
         </Tabs>
 
