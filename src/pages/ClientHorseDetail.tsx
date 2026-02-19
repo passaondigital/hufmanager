@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Info, History, Image, Activity, Footprints, FileText, Clock } from "lucide-react";
+import { ArrowLeft, Info, History, Image, Activity, Footprints, FileText, Clock, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { TabSteckbrief } from "@/components/horse-detail/TabSteckbrief";
@@ -18,6 +18,7 @@ import { EditHorseModal } from "@/components/horse-detail/EditHorseModal";
 import { HoofStatusGrid } from "@/components/horse-detail/HoofStatusGrid";
 import { HorseStammdatenCard } from "@/components/horse-detail/HorseStammdatenCard";
 import { HoofPhotoTimeline } from "@/components/horse-detail/HoofPhotoTimeline";
+import { HorsePartnerPanel } from "@/components/horse-detail/HorsePartnerPanel";
 import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
 
 export default function ClientHorseDetail() {
@@ -151,7 +152,7 @@ export default function ClientHorseDetail() {
           horseId={horse.id}
         />
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="steckbrief" className="flex items-center gap-1.5">
               <Info className="h-4 w-4" />
               <span className="hidden sm:inline">Steckbrief</span>
@@ -179,6 +180,10 @@ export default function ClientHorseDetail() {
             <TabsTrigger value="gesundheit" className="flex items-center gap-1.5">
               <Activity className="h-4 w-4" />
               <span className="hidden sm:inline">Gesundheit</span>
+            </TabsTrigger>
+            <TabsTrigger value="partner" className="flex items-center gap-1.5">
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Partner</span>
             </TabsTrigger>
           </TabsList>
 
@@ -216,6 +221,10 @@ export default function ClientHorseDetail() {
               horse={horse} 
               onEdit={() => setShowEditModal(true)}
             />
+          </TabsContent>
+
+          <TabsContent value="partner">
+            <HorsePartnerPanel horseId={horse.id} horseName={horse.name} inviterRole="client" />
           </TabsContent>
         </Tabs>
       </main>

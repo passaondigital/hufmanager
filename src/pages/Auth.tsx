@@ -80,12 +80,24 @@ export default function Auth() {
   // Check for admin redirect parameter
   const redirectTo = searchParams.get("redirect");
   
+  // Check for partner invite mode from URL
+  const urlMode = searchParams.get("mode");
+  const urlEmail = searchParams.get("email");
+  const urlRole = searchParams.get("role");
+
   // Store invite_code in sessionStorage for use after auth callback
   useEffect(() => {
     if (inviteCode) {
       sessionStorage.setItem("huf_invite_code", inviteCode);
     }
-  }, [inviteCode]);
+    // Pre-fill partner signup from invite link
+    if (urlRole === "partner") {
+      setSelectedRole("provider"); // doesn't matter, partner signup bypasses role selector
+    }
+    if (urlEmail) {
+      setSignupEmail(decodeURIComponent(urlEmail));
+    }
+  }, [inviteCode, urlRole, urlEmail]);
 
   // Redirect if already logged in
   if (!authLoading && user && role) {
@@ -119,6 +131,32 @@ export default function Auth() {
     setLoading(true);
     const { error } = await signIn(loginEmail, loginPassword);
     setLoading(false);
+
+    if (!error) {
+      // After successful login, process partner invite token
+      const partnerToken = sessionStorage.getItem("partner_invite_token");
+      if (partnerToken) {
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          const userId = sessionData?.session?.user?.id;
+          if (userId) {
+            const { error: acceptError } = await supabase.rpc("accept_partner_invitation", {
+              p_token: partnerToken,
+              p_user_id: userId,
+            });
+            if (acceptError) {
+              console.error("Error accepting partner invite:", acceptError);
+            } else {
+              toast.success("Partner-Einladung angenommen!");
+            }
+          }
+        } catch (err) {
+          console.error("Error processing partner token:", err);
+        } finally {
+          sessionStorage.removeItem("partner_invite_token");
+        }
+      }
+    }
 
     if (error) {
       // Check if account is suspended
@@ -165,7 +203,9 @@ export default function Auth() {
     setLoading(true);
     
     try {
-      const { error } = await signUp(signupEmail, signupPassword, signupName, selectedRole);
+      // If coming from partner invite, use 'partner' role
+      const signupRole = urlRole === "partner" ? "partner" : selectedRole;
+      const { error } = await signUp(signupEmail, signupPassword, signupName, signupRole as "provider" | "client" | "partner");
       
       if (error) {
         console.error("Signup error:", error);
@@ -189,6 +229,12 @@ export default function Auth() {
         // If invite code was provided, store it so useAuth hook can process it
         if (inviteCode) {
           sessionStorage.setItem("huf_invite_code", inviteCode);
+        }
+        // Process partner invite token after signup completes
+        const partnerToken = sessionStorage.getItem("partner_invite_token");
+        if (partnerToken) {
+          // Token will be processed after email confirmation + login
+          // Keep it in sessionStorage
         }
         toast.success("Registrierung erfolgreich! Bitte bestätigen Sie Ihre E-Mail.");
       }

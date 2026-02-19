@@ -102,11 +102,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Defer role fetching with setTimeout
         if (session?.user) {
-          setTimeout(() => {
+          setTimeout(async () => {
             fetchUserRole(session.user.id).then(setRole);
             // Process invite code on sign in
             if (event === "SIGNED_IN") {
               processInviteCode(session.user.id);
+              // Process partner invite token if present
+              const partnerToken = sessionStorage.getItem("partner_invite_token");
+              if (partnerToken) {
+                try {
+                  await supabase.rpc("accept_partner_invitation", {
+                    p_token: partnerToken,
+                    p_user_id: session.user.id,
+                  });
+                  console.log("Partner invitation accepted via auth callback");
+                } catch (err) {
+                  console.error("Error accepting partner invite:", err);
+                } finally {
+                  sessionStorage.removeItem("partner_invite_token");
+                }
+              }
             }
           }, 0);
         } else {

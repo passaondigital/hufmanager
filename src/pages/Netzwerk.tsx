@@ -17,8 +17,10 @@ import {
   Trash2,
   Edit,
   UserPlus,
+  Stethoscope,
 } from "lucide-react";
 import { PartnerInvitations } from "@/components/netzwerk/PartnerInvitations";
+import { FachpartnerTab } from "@/components/netzwerk/FachpartnerTab";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -187,6 +189,10 @@ const Netzwerk = () => {
             <Briefcase className="h-4 w-4" />
             Partner ({partners.length})
           </TabsTrigger>
+          <TabsTrigger value="fachpartner" className="gap-2">
+            <Stethoscope className="h-4 w-4" />
+            Fachpartner
+          </TabsTrigger>
           <TabsTrigger value="supplier" className="gap-2">
             <Truck className="h-4 w-4" />
             Lieferanten ({suppliers.length})
@@ -227,6 +233,10 @@ const Netzwerk = () => {
               ))
             )}
           </div>
+        </TabsContent>
+
+        <TabsContent value="fachpartner" className="mt-4">
+          <FachpartnerTab />
         </TabsContent>
 
         <TabsContent value="supplier" className="mt-4">
