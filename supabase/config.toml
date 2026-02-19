@@ -54,6 +54,9 @@ verify_jwt = true
 [functions.check-ecosystem]
 verify_jwt = false
 
+[functions.ecosystem-webhook]
+verify_jwt = false
+
 [functions.morning-briefing]
 verify_jwt = false
 
