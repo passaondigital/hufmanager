@@ -59,6 +59,8 @@ export type Database = {
           granted_at: string
           id: string
           is_active: boolean | null
+          partner_email: string | null
+          partner_name: string | null
           provider_id: string
           request_message: string | null
           requested_at: string | null
@@ -75,6 +77,8 @@ export type Database = {
           granted_at?: string
           id?: string
           is_active?: boolean | null
+          partner_email?: string | null
+          partner_name?: string | null
           provider_id: string
           request_message?: string | null
           requested_at?: string | null
@@ -91,6 +95,8 @@ export type Database = {
           granted_at?: string
           id?: string
           is_active?: boolean | null
+          partner_email?: string | null
+          partner_name?: string | null
           provider_id?: string
           request_message?: string | null
           requested_at?: string | null
@@ -5653,6 +5659,10 @@ export type Database = {
         }[]
       }
       get_or_assign_provider_for_client: { Args: never; Returns: string }
+      get_partner_shared_data: {
+        Args: { p_partner_email: string }
+        Returns: Json
+      }
       get_provider_business_settings: {
         Args: { p_provider_id: string }
         Returns: {
