@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, LogOut, Settings, Sun, Moon, Download, Copy, Check, Search } from "lucide-react";
+import { User, LogOut, Settings, Sun, Moon, Download, Copy, Check, Search, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -20,15 +20,23 @@ import { FeierabendWaechter } from "@/components/tracking/FeierabendWaechter";
 import { ConnectionStatus } from "@/components/offline/ConnectionStatus";
 import { supabase } from "@/integrations/supabase/client";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
+import { useAutoflowMode, AutoflowMode } from "@/hooks/useAutoflowMode";
 
 export function AppHeader() {
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { canInstall, isInstalled, promptInstall } = usePWAInstall();
+  const { mode, updateMode, loading: autoflowLoading, MODE_LABELS } = useAutoflowMode();
   const [readableId, setReadableId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+
+  const modeColors: Record<AutoflowMode, string> = {
+    basis: "text-blue-500",
+    plus: "text-amber-500",
+    premium: "text-emerald-500",
+  };
 
   useEffect(() => {
     const fetchReadableId = async () => {
@@ -105,6 +113,40 @@ export function AppHeader() {
       <div className="flex items-center gap-2">
         {/* Connection Status Indicator */}
         <ConnectionStatus />
+        {/* AutoFlow Quick Toggle */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-11 w-11 relative" title={`AutoFlow ${MODE_LABELS[mode]}`}>
+              <Zap className={`h-5 w-5 ${modeColors[mode]}`} />
+              {mode === "premium" && (
+                <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-emerald-500" />
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52 bg-card border-border">
+            <DropdownMenuLabel className="text-foreground text-xs">AutoFlow Modus</DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-border" />
+            {(["basis", "plus", "premium"] as AutoflowMode[]).map((m) => (
+              <DropdownMenuItem
+                key={m}
+                onClick={() => updateMode(m)}
+                className={`h-10 cursor-pointer flex items-center gap-2 ${mode === m ? "bg-accent" : ""}`}
+              >
+                <Zap className={`h-4 w-4 ${modeColors[m]}`} />
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-foreground">{MODE_LABELS[m]}</span>
+                </div>
+                {mode === m && <Check className="h-3.5 w-3.5 ml-auto text-primary" />}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator className="bg-border" />
+            <DropdownMenuItem onClick={() => navigate("/autoflow")} className="h-10 cursor-pointer text-xs text-muted-foreground">
+              <Settings className="h-3.5 w-3.5 mr-2" />
+              AutoFlow konfigurieren
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         {/* PWA Install Button (Desktop) */}
         {canInstall && !isInstalled && (
           <Button
