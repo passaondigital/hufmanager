@@ -19,6 +19,7 @@ import { initSyncManager } from "@/lib/offline/syncManager";
 
 // Pages
 import Dashboard from "@/pages/Dashboard";
+import Index from "@/pages/Index";
 import Anfragen from "@/pages/Anfragen";
 import Angebote from "@/pages/Angebote";
 import Aufnahme from "@/pages/Aufnahme";
@@ -202,7 +203,10 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/update-password" element={<UpdatePassword />} />
              {/* Legacy/alias route */}
-             <Route path="/dashboard" element={<Navigate to="/" replace />} />
+             <Route path="/dashboard" element={<Navigate to="/home" replace />} />
+            
+            {/* Domain-basierte Weiche: www.hufmanager.de → LP, app.hufmanager.de → Dashboard */}
+            <Route path="/" element={<Index />} />
             
             {/* Landingpages für Hufbearbeiter (z.B. hufmanager.de/p/max-mustermann) */}
             <Route path="/p/:slug" element={<ProviderLanding />} />
@@ -264,7 +268,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
                 </ProtectedRoute>
               }
             >
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/home" element={<Dashboard />} />
               <Route path="/anfragen" element={<Anfragen />} />
               <Route path="/angebote" element={<Angebote />} />
               <Route path="/aufnahme" element={<Aufnahme />} />

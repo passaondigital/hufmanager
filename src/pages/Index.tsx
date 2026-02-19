@@ -1,7 +1,17 @@
 import { Navigate } from "react-router-dom";
+import WebsiteHome from "@/pages/website/WebsiteHome";
+
+const LANDING_HOSTS = ["www.hufmanager.de", "hufmanager.de", "hufmanager.lovable.app"];
 
 const Index = () => {
-  return <Navigate to="/" replace />;
+  const hostname = window.location.hostname;
+  
+  if (LANDING_HOSTS.includes(hostname)) {
+    return <WebsiteHome />;
+  }
+  
+  // app.hufmanager.de or preview → Dashboard
+  return <Navigate to="/home" replace />;
 };
 
 export default Index;
