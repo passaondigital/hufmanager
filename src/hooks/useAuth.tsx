@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-type UserRole = "provider" | "client" | "admin" | "employee" | null;
+type UserRole = "provider" | "client" | "admin" | "employee" | "partner" | null;
 
 interface AuthContextType {
   user: User | null;
@@ -12,7 +12,7 @@ interface AuthContextType {
   isPasswordRecovery: boolean;
   clearPasswordRecovery: () => void;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string, role?: "provider" | "client") => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string, role?: "provider" | "client" | "partner") => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -174,7 +174,7 @@ const signIn = async (email: string, password: string) => {
     return { error: null };
   };
 
-  const signUp = async (email: string, password: string, fullName: string, role: "provider" | "client" = "client") => {
+  const signUp = async (email: string, password: string, fullName: string, role: "provider" | "client" | "partner" = "client") => {
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({

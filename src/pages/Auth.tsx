@@ -89,12 +89,14 @@ export default function Auth() {
 
   // Redirect if already logged in
   if (!authLoading && user && role) {
-    // If there's a redirect parameter, use it
     if (redirectTo) {
       return <Navigate to={redirectTo} replace />;
     }
     if (role === "provider") {
       return <Navigate to="/" replace />;
+    }
+    if (role === "partner") {
+      return <Navigate to="/partner-home" replace />;
     }
     return <Navigate to="/client-home" replace />;
   }

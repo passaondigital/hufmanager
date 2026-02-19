@@ -72,6 +72,7 @@ import MeinOffice from "@/pages/MeinOffice";
 import Ecosystem from "@/pages/Ecosystem";
 import Buchhaltung from "@/pages/Buchhaltung";
 import { EmployeeAppLayout } from "@/components/employee/EmployeeAppLayout";
+import { PartnerAppLayout } from "@/components/partner/PartnerAppLayout";
 import EmployeeNotizbuch from "@/pages/employee/EmployeeNotizbuch";
 import EmployeeProfil from "@/pages/employee/EmployeeProfil";
 import EmployeeMaterial from "@/pages/employee/EmployeeMaterial";
@@ -81,6 +82,12 @@ import EmployeeTimer from "@/pages/employee/EmployeeTimer";
 import EmployeeHufCam from "@/pages/employee/EmployeeHufCam";
 import EmployeeAnalyse from "@/pages/employee/EmployeeAnalyse";
 import EmployeeChat from "@/pages/employee/EmployeeChat";
+import PartnerHome from "@/pages/partner/PartnerHome";
+import PartnerHorseView from "@/pages/partner/PartnerHorseView";
+import PartnerNotes from "@/pages/partner/PartnerNotes";
+import PartnerChat from "@/pages/partner/PartnerChat";
+import PartnerProfile from "@/pages/partner/PartnerProfile";
+import PartnerInvite from "@/pages/PartnerInvite";
 
 // Components
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
@@ -195,6 +202,9 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             
             {/* Einladungs-Links für Kunden */}
             <Route path="/connect/:slug" element={<ConnectForm />} />
+            
+            {/* Partner-Einladung (öffentlich) */}
+            <Route path="/partner-invite/:token" element={<PartnerInvite />} />
             
             {/* Öffentliche Review-Seite */}
             <Route path="/submit-review" element={<SubmitReview />} />
@@ -320,6 +330,22 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/employee/vertrag" element={<EmployeeVertrag />} />
               <Route path="/employee/notizbuch" element={<EmployeeNotizbuch />} />
               <Route path="/employee/profil" element={<EmployeeProfil />} />
+            </Route>
+
+            {/* --- 5. PARTNER (FACHPARTNER) ROUTES --- */}
+            <Route
+              element={
+                <ProtectedRoute allowedRoles={["partner"]}>
+                  <PartnerAppLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/partner-home" element={<PartnerHome />} />
+              <Route path="/partner-horse/:id" element={<PartnerHorseView />} />
+              <Route path="/partner-horses" element={<PartnerHome />} />
+              <Route path="/partner-notes" element={<PartnerNotes />} />
+              <Route path="/partner-chat" element={<PartnerChat />} />
+              <Route path="/partner-profile" element={<PartnerProfile />} />
             </Route>
 
             {/* Fallback für alles andere */}
