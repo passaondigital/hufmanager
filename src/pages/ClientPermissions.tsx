@@ -6,9 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Shield, Eye, Heart, Calendar, UserX, AlertTriangle } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { ArrowLeft, Shield, Eye, Heart, Calendar, UserX, AlertTriangle, Stethoscope, Footprints, FileText } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { getPartnerTypeConfig } from "@/lib/partnerTypes";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,12 +38,15 @@ export default function ClientPermissions() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [grants, setGrants] = useState<AccessGrant[]>([]);
+  const [partnerAccess, setPartnerAccess] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [revokeGrant, setRevokeGrant] = useState<AccessGrant | null>(null);
+  const [revokePartnerId, setRevokePartnerId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
     fetchGrants();
+    fetchPartnerAccess();
   }, [user]);
 
   const fetchGrants = async () => {
@@ -83,6 +89,73 @@ export default function ClientPermissions() {
     }
 
     setLoading(false);
+  };
+
+  const fetchPartnerAccess = async () => {
+    if (!user) return;
+    // Fetch all horse_partner_access for horses owned by this client
+    const { data: horses } = await supabase
+      .from("horses")
+      .select("id, name")
+      .eq("owner_id", user.id)
+      .is("deleted_at", null);
+
+    if (!horses || horses.length === 0) {
+      setPartnerAccess([]);
+      return;
+    }
+
+    const horseIds = horses.map(h => h.id);
+    const { data: access } = await supabase
+      .from("horse_partner_access")
+      .select("*")
+      .in("horse_id", horseIds)
+      .eq("status", "active")
+      .eq("is_active", true);
+
+    const enriched = (access || []).map(a => ({
+      ...a,
+      horse_name: horses.find(h => h.id === a.horse_id)?.name || "Unbekannt",
+    }));
+
+    setPartnerAccess(enriched);
+  };
+
+  const revokePartnerAccess = async () => {
+    if (!revokePartnerId) return;
+    const { error } = await supabase
+      .from("horse_partner_access")
+      .update({ status: "revoked", is_active: false, revoked_at: new Date().toISOString() })
+      .eq("id", revokePartnerId);
+
+    if (error) {
+      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Fachpartner-Zugriff entzogen" });
+      setPartnerAccess(prev => prev.filter(p => p.id !== revokePartnerId));
+    }
+    setRevokePartnerId(null);
+  };
+
+  const updatePartnerPermission = async (
+    accessId: string,
+    field: string,
+    value: boolean
+  ) => {
+    const { error } = await supabase
+      .from("horse_partner_access")
+      .update({ [field]: value })
+      .eq("id", accessId);
+
+    if (error) {
+      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    setPartnerAccess(prev => prev.map(p =>
+      p.id === accessId ? { ...p, [field]: value } : p
+    ));
+    toast({ title: "Berechtigung aktualisiert" });
   };
 
   const updatePermission = async (
@@ -284,6 +357,111 @@ export default function ClientPermissions() {
           </div>
         )}
 
+        {/* Fachpartner Section */}
+        <Separator className="my-2" />
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Stethoscope className="h-5 w-5 text-primary" />
+            <h2 className="font-semibold text-foreground text-lg">Fachpartner-Zugriffe</h2>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Tierärzte, Therapeuten und andere Fachpartner, die Zugriff auf deine Pferde haben.
+          </p>
+
+          {partnerAccess.length === 0 ? (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <Stethoscope className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-muted-foreground text-sm">
+                  Keine aktiven Fachpartner-Zugriffe
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            partnerAccess.map((access) => {
+              const typeConfig = getPartnerTypeConfig(access.partner_type);
+              return (
+                <Card key={access.id}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <typeConfig.icon className={`h-4 w-4 ${typeConfig.color}`} />
+                        <div>
+                          <span className="text-foreground">{access.partner_name || access.partner_email}</span>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <Badge variant="outline" className="text-xs">{typeConfig.label}</Badge>
+                            <Badge variant="secondary" className="text-xs">🐴 {access.horse_name}</Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                        <Label className="text-sm">Basisdaten</Label>
+                      </div>
+                      <Switch
+                        checked={access.can_view_basic}
+                        onCheckedChange={(v) => updatePartnerPermission(access.id, "can_view_basic", v)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Footprints className="h-4 w-4 text-muted-foreground" />
+                        <Label className="text-sm">Huf-Historie</Label>
+                      </div>
+                      <Switch
+                        checked={access.can_view_hoof_history}
+                        onCheckedChange={(v) => updatePartnerPermission(access.id, "can_view_hoof_history", v)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Heart className="h-4 w-4 text-muted-foreground" />
+                        <Label className="text-sm">Medizinische Daten</Label>
+                      </div>
+                      <Switch
+                        checked={access.can_view_medical}
+                        onCheckedChange={(v) => updatePartnerPermission(access.id, "can_view_medical", v)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <Label className="text-sm">Behandlungsnotizen</Label>
+                      </div>
+                      <Switch
+                        checked={access.can_add_treatment_notes}
+                        onCheckedChange={(v) => updatePartnerPermission(access.id, "can_add_treatment_notes", v)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <Label className="text-sm">Termine erstellen</Label>
+                      </div>
+                      <Switch
+                        checked={access.can_create_appointments}
+                        onCheckedChange={(v) => updatePartnerPermission(access.id, "can_create_appointments", v)}
+                      />
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="w-full mt-2 text-destructive border-destructive/30 hover:bg-destructive/10"
+                      onClick={() => setRevokePartnerId(access.id)}
+                    >
+                      <UserX className="h-4 w-4 mr-2" />
+                      Zugriff entziehen
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
+        </div>
+
         {/* DSGVO Notice */}
         <Card className="border-dashed bg-muted/30">
           <CardContent className="p-4 text-xs text-muted-foreground">
@@ -323,6 +501,31 @@ export default function ClientPermissions() {
             <AlertDialogCancel>Abbrechen</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleRevoke}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Ja, Zugriff entziehen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Partner Revoke Confirmation */}
+      <AlertDialog open={!!revokePartnerId} onOpenChange={() => setRevokePartnerId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Fachpartner-Zugriff entziehen?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Der Fachpartner verliert sofort den Zugriff auf die Pferdedaten. 
+              Diese Aktion kann nicht rückgängig gemacht werden.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={revokePartnerAccess}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Ja, Zugriff entziehen
