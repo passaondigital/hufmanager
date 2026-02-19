@@ -21,9 +21,46 @@ serve(async (req: Request): Promise<Response> => {
     const body = await req.json().catch(() => ({}));
     const { type, provider_id, appointment_id, data: notifyData } = body;
 
-    if (!type || !provider_id) {
+    if (!type) {
       return new Response(
-        JSON.stringify({ error: "type and provider_id required" }),
+        JSON.stringify({ error: "type required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Handle "all" providers for cron-based calls
+    if (provider_id === "all" && type === "feedback_request") {
+      const { data: allSettings } = await supabase
+        .from("autoflow_settings")
+        .select("provider_id")
+        .eq("auto_feedback_enabled", true);
+
+      let totalSent = 0;
+      for (const s of allSettings || []) {
+        try {
+          const res = await fetch(`${supabaseUrl}/functions/v1/autoflow-customer-notify`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify({ type: "feedback_request", provider_id: s.provider_id }),
+          });
+          const result = await res.json();
+          totalSent += result.sent || 0;
+        } catch (e) {
+          console.error(`[autoflow-customer-notify] Failed for provider ${s.provider_id}:`, e);
+        }
+      }
+      return new Response(
+        JSON.stringify({ message: "All providers processed", sent: totalSent }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!provider_id) {
+      return new Response(
+        JSON.stringify({ error: "provider_id required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
