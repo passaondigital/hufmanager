@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: ("provider" | "client" | "admin" | "employee")[];
+  allowedRoles?: ("provider" | "client" | "admin" | "employee" | "partner")[];
 }
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
@@ -52,6 +52,9 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     }
     if (role === "employee") {
       return <Navigate to="/employee" replace />;
+    }
+    if (role === "partner") {
+      return <Navigate to="/partner-home" replace />;
     }
     return <Navigate to="/" replace />;
   }

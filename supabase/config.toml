@@ -62,3 +62,6 @@ verify_jwt = false
 
 [functions.escalate-unconfirmed]
 verify_jwt = false
+
+[functions.send-partner-invitation]
+verify_jwt = true

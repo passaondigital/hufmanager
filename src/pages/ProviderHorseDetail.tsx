@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Info, History, Image, Activity, FileText, ChevronDown, ChevronUp, Footprints, Camera, Clock } from "lucide-react";
+import { ArrowLeft, Info, History, Image, Activity, FileText, ChevronDown, ChevronUp, Footprints, Camera, Clock, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -22,6 +22,7 @@ import { HufCamPro } from "@/components/hufcam/HufCamPro";
 import { HoofStatusGrid } from "@/components/horse-detail/HoofStatusGrid";
 import { HorseStammdatenCard } from "@/components/horse-detail/HorseStammdatenCard";
 import { HoofPhotoTimeline } from "@/components/horse-detail/HoofPhotoTimeline";
+import { HorsePartnerPanel } from "@/components/horse-detail/HorsePartnerPanel";
 import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
 
 interface OwnerProfile {
@@ -282,7 +283,7 @@ export default function ProviderHorseDetail() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="historie" className="flex items-center gap-1.5">
             <History className="h-4 w-4" />
             <span className="hidden sm:inline">Historie</span>
@@ -314,6 +315,10 @@ export default function ProviderHorseDetail() {
           <TabsTrigger value="dokumente" className="flex items-center gap-1.5">
             <FileText className="h-4 w-4" />
             <span className="hidden sm:inline">Dokumente</span>
+          </TabsTrigger>
+          <TabsTrigger value="partner" className="flex items-center gap-1.5">
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline">Partner</span>
           </TabsTrigger>
         </TabsList>
 
@@ -376,6 +381,14 @@ export default function ProviderHorseDetail() {
             documents={documents} 
             hoofPhotos={hoofPhotos}
             onRefresh={fetchHorseData}
+          />
+        </TabsContent>
+
+        <TabsContent value="partner">
+          <HorsePartnerPanel
+            horseId={horse.id}
+            horseName={horse.name}
+            inviterRole="provider"
           />
         </TabsContent>
       </Tabs>
