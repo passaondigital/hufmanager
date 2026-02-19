@@ -7,7 +7,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -17,6 +16,40 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    // Auth: require service_role bearer token OR valid admin user token
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+
+    // If not service role key, verify caller is an admin
+    if (token !== supabaseServiceKey) {
+      const callerClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: claimsData, error: claimsError } = await callerClient.auth.getClaims(token);
+      if (claimsError || !claimsData?.claims?.sub) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const adminCheck = createClient(supabaseUrl, supabaseServiceKey);
+      const { data: isAdmin } = await adminCheck.rpc("is_admin", { _user_id: claimsData.claims.sub });
+      if (!isAdmin) {
+        return new Response(
+          JSON.stringify({ error: "Forbidden - admin only" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -39,19 +72,11 @@ serve(async (req) => {
 
     if (!postsToPublish || postsToPublish.length === 0) {
       return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: "No posts to publish",
-          published_count: 0 
-        }),
-        { 
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200 
-        }
+        JSON.stringify({ success: true, message: "No posts to publish", published_count: 0 }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     }
 
-    // Publish each post
     const publishedPosts: string[] = [];
     const errors: { id: string; error: string }[] = [];
 
@@ -62,8 +87,8 @@ serve(async (req) => {
         .from("blog_posts")
         .update({
           is_published: true,
-          published_at: post.scheduled_at, // Use the scheduled time as published time
-          scheduled_at: null, // Clear the scheduled_at field
+          published_at: post.scheduled_at,
+          scheduled_at: null,
         })
         .eq("id", post.id);
 
@@ -88,24 +113,15 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify(response),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200 
-      }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
 
   } catch (error) {
     console.error("[publish-scheduled-posts] Fatal error:", error);
     
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error instanceof Error ? error.message : "Unknown error" 
-      }),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500 
-      }
+      JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Unknown error" }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }
 });
