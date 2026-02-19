@@ -19,6 +19,7 @@ import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { PricingModal } from "@/components/subscription/PricingModal";
+import { DemoAccessCards } from "@/components/auth/DemoAccessCards";
 
 // NOTE: Admin access is controlled server-side via user_roles table and RLS policies
 // Do NOT add client-side email whitelists - they can be bypassed
@@ -551,8 +552,22 @@ export default function Auth() {
         </CardContent>
       </Card>
 
+      {/* Demo Access Cards */}
+      <DemoAccessCards
+        onSelectAccount={(email, password) => {
+          setLoginEmail(email);
+          setLoginPassword(password);
+          // Auto-submit login
+          signIn(email, password).then(({ error }) => {
+            if (error) {
+              toast.error(error.message);
+            }
+          });
+        }}
+      />
+
       {/* Info Footer */}
-      <div className="mt-6 max-w-md w-full">
+      <div className="mt-4 max-w-md w-full">
         <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-2.5">
           <p className="text-xs font-semibold text-foreground">Wer nutzt was?</p>
           <div className="grid grid-cols-1 gap-1.5 text-[11px] text-muted-foreground">
