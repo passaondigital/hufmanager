@@ -58,6 +58,12 @@ import SubmitReview from "@/pages/SubmitReview";
 import AboMatrix from "@/pages/AboMatrix";
 import Blog from "@/pages/Blog";
 import BlogPost from "@/pages/BlogPost";
+
+// Website (Landing Page) Pages
+import WebsiteHome from "@/pages/website/WebsiteHome";
+import WebsiteImpressum from "@/pages/website/Impressum";
+import WebsiteDatenschutz from "@/pages/website/Datenschutz";
+import WebsiteAGB from "@/pages/website/AGB";
 import Glossar from "@/pages/Glossar";
 import Lager from "@/pages/Lager";
 import Ausgaben from "@/pages/Ausgaben";
@@ -210,6 +216,12 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             {/* Öffentliche Review-Seite */}
             <Route path="/submit-review" element={<SubmitReview />} />
             <Route path="/bewertung/:providerId" element={<SubmitReview />} />
+            
+            {/* Website / Landing Page Routes */}
+            <Route path="/website" element={<WebsiteHome />} />
+            <Route path="/impressum" element={<WebsiteImpressum />} />
+            <Route path="/datenschutz" element={<WebsiteDatenschutz />} />
+            <Route path="/agb" element={<WebsiteAGB />} />
             
             {/* Öffentliche Blog-Seiten */}
             <Route path="/blog" element={<Blog />} />
