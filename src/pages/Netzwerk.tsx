@@ -16,7 +16,9 @@ import {
   MoreHorizontal,
   Trash2,
   Edit,
+  UserPlus,
 } from "lucide-react";
+import { PartnerInvitations } from "@/components/netzwerk/PartnerInvitations";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -189,6 +191,10 @@ const Netzwerk = () => {
             <Truck className="h-4 w-4" />
             Lieferanten ({suppliers.length})
           </TabsTrigger>
+          <TabsTrigger value="invitations" className="gap-2">
+            <UserPlus className="h-4 w-4" />
+            Einladungen
+          </TabsTrigger>
         </TabsList>
 
         <div className="mt-4">
@@ -241,6 +247,10 @@ const Netzwerk = () => {
               ))
             )}
           </div>
+        </TabsContent>
+
+        <TabsContent value="invitations" className="mt-4">
+          <PartnerInvitations />
         </TabsContent>
       </Tabs>
     </div>
