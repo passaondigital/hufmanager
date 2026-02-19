@@ -65,3 +65,15 @@ verify_jwt = false
 
 [functions.send-partner-invitation]
 verify_jwt = true
+
+[functions.autoflow-process-lead]
+verify_jwt = false
+
+[functions.autoflow-auto-invoice]
+verify_jwt = false
+
+[functions.autoflow-customer-notify]
+verify_jwt = false
+
+[functions.autoflow-monthly-checkin]
+verify_jwt = false
