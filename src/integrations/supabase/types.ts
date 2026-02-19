@@ -637,6 +637,7 @@ export type Database = {
           auto_reminder_enabled: boolean
           auto_schedule_enabled: boolean
           auto_schedule_mode: string
+          autoflow_mode: string
           created_at: string
           default_service_id: string | null
           feedback_channel: string
@@ -658,6 +659,7 @@ export type Database = {
           auto_reminder_enabled?: boolean
           auto_schedule_enabled?: boolean
           auto_schedule_mode?: string
+          autoflow_mode?: string
           created_at?: string
           default_service_id?: string | null
           feedback_channel?: string
@@ -679,6 +681,7 @@ export type Database = {
           auto_reminder_enabled?: boolean
           auto_schedule_enabled?: boolean
           auto_schedule_mode?: string
+          autoflow_mode?: string
           created_at?: string
           default_service_id?: string | null
           feedback_channel?: string
