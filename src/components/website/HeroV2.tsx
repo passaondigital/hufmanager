@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play } from "lucide-react";
-import customerAppScreenshot from "@/assets/lp/customer-app-screenshot.jpeg";
+import heroHorse from "@/assets/lp/hero-horse.png";
 
 const trustItems = ["DSGVO", "DE-Server", "Offlinefähig", "Mobile-first"];
 
@@ -40,16 +40,9 @@ const HeroV2 = () => {
           </div>
 
           <div className="relative animate-fade-up lg:pl-8" style={{ animationDelay: "300ms" }}>
-            <div className="relative mx-auto max-w-[300px] lg:max-w-[360px]">
-              <div className="absolute inset-0 bg-primary/25 blur-[60px] scale-90" />
-              <div className="relative bg-gradient-to-b from-zinc-800 to-zinc-900 rounded-[3rem] p-3 shadow-2xl border border-white/10">
-                <div className="bg-black rounded-[2.5rem] overflow-hidden">
-                  <div className="bg-black h-8 flex justify-center pt-2 relative z-10">
-                    <div className="w-24 h-4 bg-zinc-900 rounded-full" />
-                  </div>
-                  <img src={customerAppScreenshot} alt="HufManager App" className="w-full -mt-8" />
-                </div>
-              </div>
+            <div className="relative mx-auto max-w-[420px] lg:max-w-[500px]">
+              <div className="absolute inset-0 bg-primary/20 blur-[80px] scale-75" />
+              <img src={heroHorse} alt="HufManager – Pferd" className="relative w-full h-auto drop-shadow-2xl" />
             </div>
           </div>
         </div>
