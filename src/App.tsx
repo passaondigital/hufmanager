@@ -71,6 +71,7 @@ import EmployeeTour from "@/pages/EmployeeTour";
 import MeinOffice from "@/pages/MeinOffice";
 import Ecosystem from "@/pages/Ecosystem";
 import Buchhaltung from "@/pages/Buchhaltung";
+import AutoFlow from "@/pages/AutoFlow";
 import { EmployeeAppLayout } from "@/components/employee/EmployeeAppLayout";
 import { PartnerAppLayout } from "@/components/partner/PartnerAppLayout";
 import EmployeeNotizbuch from "@/pages/employee/EmployeeNotizbuch";
@@ -283,6 +284,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/mein-office" element={<MeinOffice />} />
               <Route path="/support" element={<Support />} />
               <Route path="/ecosystem" element={<Ecosystem />} />
+              <Route path="/autoflow" element={<AutoFlow />} />
               <Route path="/abo-matrix" element={<AboMatrix />} />
               {/* Provider Horse Detail - Direct Access */}
               <Route path="/horse/:id" element={<ProviderHorseDetail />} />

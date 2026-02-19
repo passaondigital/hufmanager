@@ -41,6 +41,7 @@ import {
   Map,
   Wallet,
   Scale,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -215,6 +216,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
     { title: "Lager", icon: Warehouse, locked: !isFeatureVisible('beta_features'), url: "/lager" },
     { title: "Mitarbeiter", icon: UsersRound, locked: !isFeatureVisible('module_team'), url: "/team" },
     { title: "Ecosystem", icon: Globe, locked: false, url: "/ecosystem" },
+    { title: "AutoFlow", icon: Zap, locked: false, url: "/autoflow" },
   ];
 
   // Check if a submenu contains the active route
