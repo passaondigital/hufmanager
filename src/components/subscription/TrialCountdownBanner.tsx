@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Clock, ArrowRight, X } from "lucide-react";
 import { PricingModal } from "./PricingModal";
+import { isDemoEmail } from "@/lib/demo-accounts";
 
 const TRIAL_DURATION_DAYS = 14;
-const DEMO_EMAIL = "hufbearbeiter.hufmanager@gmail.com";
 
 export function TrialCountdownBanner() {
   const { status, plan, loading } = useSubscription();
@@ -20,7 +20,7 @@ export function TrialCountdownBanner() {
   if (loading || dismissed) return null;
   if (role !== "provider") return null;
   if (status !== "trialing") return null;
-  if (user?.email === DEMO_EMAIL) return null;
+  if (isDemoEmail(user?.email)) return null;
 
   // Calculate days remaining from user creation
   const createdAt = user?.created_at ? new Date(user.created_at) : null;
