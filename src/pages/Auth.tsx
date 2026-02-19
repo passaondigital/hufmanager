@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, Hammer, Heart, Package, Rocket, KeyRound } from "lucide-react";
+import { Loader2, Hammer, Heart, Package, Rocket, KeyRound, Users, Stethoscope } from "lucide-react";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,7 +35,7 @@ const signupSchema = z.object({
 });
 
 type RoleOption = "provider" | "client";
-type LoginMode = "provider" | "client";
+type LoginMode = "provider" | "client" | "team";
 
 export default function Auth() {
   const { user, role, loading: authLoading, signIn, signUp } = useAuth();
@@ -311,40 +311,55 @@ export default function Auth() {
             </TabsList>
             
             <TabsContent value="login" className="mt-6">
-              {/* Login Mode Toggle - Profi vs Kunde */}
+              {/* Login Mode Toggle - Profi vs Kunde vs Team */}
               <div className="mb-6">
-                <div className="grid grid-cols-2 gap-2 p-1.5 bg-muted rounded-xl border border-border">
+                <div className="grid grid-cols-3 gap-1.5 p-1.5 bg-muted rounded-xl border border-border">
                   <button
                     type="button"
                     onClick={() => setLoginMode("provider")}
                     className={cn(
-                      "flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-200",
+                      "flex flex-col items-center gap-1 px-2 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200",
                       loginMode === "provider"
                         ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     )}
                   >
-                    <Hammer className="h-5 w-5" />
-                    Profi Login
+                    <Hammer className="h-4 w-4" />
+                    Hufbearbeiter
                   </button>
                   <button
                     type="button"
                     onClick={() => setLoginMode("client")}
                     className={cn(
-                      "flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-200",
+                      "flex flex-col items-center gap-1 px-2 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200",
                       loginMode === "client"
                         ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     )}
                   >
-                    <Heart className="h-5 w-5" />
-                    Kunden Login
+                    <Heart className="h-4 w-4" />
+                    Pferdebesitzer
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLoginMode("team")}
+                    className={cn(
+                      "flex flex-col items-center gap-1 px-2 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200",
+                      loginMode === "team"
+                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    )}
+                  >
+                    <Users className="h-4 w-4" />
+                    Team & Partner
                   </button>
                 </div>
                 <p className="text-xs text-muted-foreground text-center mt-2">
                   {loginMode === "provider" 
-                    ? "Für Hufschmiede & Hufpfleger (#pid)" 
-                    : "Für Pferdebesitzer (#kid)"}
+                    ? "Für Hufschmiede, Hufpfleger & Betriebsinhaber" 
+                    : loginMode === "client"
+                    ? "Für Pferdebesitzer – kostenloser Zugang"
+                    : "Für Mitarbeiter & Fachpartner (Tierärzte, Therapeuten etc.)"}
                 </p>
               </div>
 
@@ -536,8 +551,33 @@ export default function Auth() {
         </CardContent>
       </Card>
 
+      {/* Info Footer */}
+      <div className="mt-6 max-w-md w-full">
+        <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-2.5">
+          <p className="text-xs font-semibold text-foreground">Wer nutzt was?</p>
+          <div className="grid grid-cols-1 gap-1.5 text-[11px] text-muted-foreground">
+            <div className="flex items-start gap-2">
+              <Hammer className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
+              <span><strong className="text-foreground">Hufbearbeiter</strong> – Betrieb, Termine, Kunden & Rechnungen verwalten</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <Heart className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
+              <span><strong className="text-foreground">Pferdebesitzer</strong> – Pferde-Akte, Termine einsehen & Hufbearbeiter kontaktieren</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <Users className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
+              <span><strong className="text-foreground">Mitarbeiter</strong> – Vom Betrieb eingeladen, Aufträge & Tour ausführen</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <Stethoscope className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
+              <span><strong className="text-foreground">Fachpartner</strong> – Tierärzte & Therapeuten, per Einladung freigeschaltet</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Legal Links */}
-      <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">
         <a 
           href="https://hufmanager.de/impressum" 
           target="_blank" 
