@@ -2515,6 +2515,141 @@ export type Database = {
           },
         ]
       }
+      horse_partner_access: {
+        Row: {
+          accepted_at: string | null
+          access_note: string | null
+          can_add_treatment_notes: boolean
+          can_create_appointments: boolean
+          can_view_basic: boolean
+          can_view_hoof_history: boolean
+          can_view_medical: boolean
+          created_at: string | null
+          horse_id: string
+          id: string
+          invite_token: string | null
+          invited_at: string | null
+          invited_by_client_id: string | null
+          invited_by_provider_id: string | null
+          is_active: boolean
+          partner_email: string | null
+          partner_name: string | null
+          partner_profile_id: string | null
+          partner_type: Database["public"]["Enums"]["partner_type"] | null
+          revoked_at: string | null
+          status: string
+          updated_at: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          access_note?: string | null
+          can_add_treatment_notes?: boolean
+          can_create_appointments?: boolean
+          can_view_basic?: boolean
+          can_view_hoof_history?: boolean
+          can_view_medical?: boolean
+          created_at?: string | null
+          horse_id: string
+          id?: string
+          invite_token?: string | null
+          invited_at?: string | null
+          invited_by_client_id?: string | null
+          invited_by_provider_id?: string | null
+          is_active?: boolean
+          partner_email?: string | null
+          partner_name?: string | null
+          partner_profile_id?: string | null
+          partner_type?: Database["public"]["Enums"]["partner_type"] | null
+          revoked_at?: string | null
+          status?: string
+          updated_at?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          access_note?: string | null
+          can_add_treatment_notes?: boolean
+          can_create_appointments?: boolean
+          can_view_basic?: boolean
+          can_view_hoof_history?: boolean
+          can_view_medical?: boolean
+          created_at?: string | null
+          horse_id?: string
+          id?: string
+          invite_token?: string | null
+          invited_at?: string | null
+          invited_by_client_id?: string | null
+          invited_by_provider_id?: string | null
+          is_active?: boolean
+          partner_email?: string | null
+          partner_name?: string | null
+          partner_profile_id?: string | null
+          partner_type?: Database["public"]["Enums"]["partner_type"] | null
+          revoked_at?: string | null
+          status?: string
+          updated_at?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horse_partner_access_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_partner_access_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_partner_access_invited_by_client_id_fkey"
+            columns: ["invited_by_client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_partner_access_invited_by_client_id_fkey"
+            columns: ["invited_by_client_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_partner_access_invited_by_provider_id_fkey"
+            columns: ["invited_by_provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_partner_access_invited_by_provider_id_fkey"
+            columns: ["invited_by_provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_partner_access_partner_profile_id_fkey"
+            columns: ["partner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_partner_access_partner_profile_id_fkey"
+            columns: ["partner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       horses: {
         Row: {
           anamnesis_interval_months: number | null
@@ -3537,6 +3672,86 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      partner_treatment_notes: {
+        Row: {
+          created_at: string | null
+          findings: string | null
+          horse_id: string
+          id: string
+          next_treatment: string | null
+          notes: string | null
+          partner_id: string
+          partner_type: Database["public"]["Enums"]["partner_type"] | null
+          photo_urls: string[] | null
+          title: string
+          treatment_date: string
+          updated_at: string | null
+          visible_to_kid: boolean
+          visible_to_pid: boolean
+        }
+        Insert: {
+          created_at?: string | null
+          findings?: string | null
+          horse_id: string
+          id?: string
+          next_treatment?: string | null
+          notes?: string | null
+          partner_id: string
+          partner_type?: Database["public"]["Enums"]["partner_type"] | null
+          photo_urls?: string[] | null
+          title: string
+          treatment_date: string
+          updated_at?: string | null
+          visible_to_kid?: boolean
+          visible_to_pid?: boolean
+        }
+        Update: {
+          created_at?: string | null
+          findings?: string | null
+          horse_id?: string
+          id?: string
+          next_treatment?: string | null
+          notes?: string | null
+          partner_id?: string
+          partner_type?: Database["public"]["Enums"]["partner_type"] | null
+          photo_urls?: string[] | null
+          title?: string
+          treatment_date?: string
+          updated_at?: string | null
+          visible_to_kid?: boolean
+          visible_to_pid?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_treatment_notes_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_treatment_notes_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_treatment_notes_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_treatment_notes_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payment_products: {
         Row: {
@@ -5615,6 +5830,10 @@ export type Database = {
       }
     }
     Functions: {
+      accept_partner_invitation: {
+        Args: { p_token: string; p_user_id: string }
+        Returns: Json
+      }
       can_submit_review: {
         Args: { p_provider_id: string; p_token?: string }
         Returns: boolean
@@ -5659,6 +5878,7 @@ export type Database = {
         }[]
       }
       get_or_assign_provider_for_client: { Args: never; Returns: string }
+      get_partner_invitation: { Args: { p_token: string }; Returns: Json }
       get_partner_shared_data: {
         Args: { p_partner_email: string }
         Returns: Json
@@ -5778,6 +5998,10 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      is_provider_for_horse: {
+        Args: { _horse_id: string; _provider_id: string }
+        Returns: boolean
+      }
       is_team_lead_for_provider: {
         Args: { _provider_id: string; _user_id: string }
         Returns: boolean
@@ -5797,7 +6021,7 @@ export type Database = {
       validate_magic_link: { Args: { slug_input: string }; Returns: Json }
     }
     Enums: {
-      app_role: "provider" | "client" | "admin" | "employee"
+      app_role: "provider" | "client" | "admin" | "employee" | "partner"
       appointment_status:
         | "scheduled"
         | "confirmed"
@@ -5818,6 +6042,18 @@ export type Database = {
       holding_type: "box" | "open_stable" | "mixed" | "pasture"
       lifecycle_status: "new" | "active" | "archive"
       organization_role: "admin" | "employee"
+      partner_type:
+        | "tierarzt"
+        | "physiotherapeut"
+        | "osteopath"
+        | "chiropraktiker"
+        | "reitlehrer"
+        | "trainer"
+        | "sattler"
+        | "huforthopaedie"
+        | "zahnarzt"
+        | "ernaehrungsberater"
+        | "other"
       payment_rating: "A" | "B" | "C" | "D"
       usage_type:
         | "leisure"
@@ -5956,7 +6192,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["provider", "client", "admin", "employee"],
+      app_role: ["provider", "client", "admin", "employee", "partner"],
       appointment_status: [
         "scheduled",
         "confirmed",
@@ -5978,6 +6214,19 @@ export const Constants = {
       holding_type: ["box", "open_stable", "mixed", "pasture"],
       lifecycle_status: ["new", "active", "archive"],
       organization_role: ["admin", "employee"],
+      partner_type: [
+        "tierarzt",
+        "physiotherapeut",
+        "osteopath",
+        "chiropraktiker",
+        "reitlehrer",
+        "trainer",
+        "sattler",
+        "huforthopaedie",
+        "zahnarzt",
+        "ernaehrungsberater",
+        "other",
+      ],
       payment_rating: ["A", "B", "C", "D"],
       usage_type: [
         "leisure",
