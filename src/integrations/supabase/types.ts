@@ -5944,6 +5944,7 @@ export type Database = {
         Args: { p_token: string; p_user_id: string }
         Returns: Json
       }
+      auth_user_email: { Args: never; Returns: string }
       can_submit_review: {
         Args: { p_provider_id: string; p_token?: string }
         Returns: boolean
