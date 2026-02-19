@@ -596,6 +596,113 @@ export type Database = {
           },
         ]
       }
+      autoflow_log: {
+        Row: {
+          action_type: string
+          created_at: string
+          details: Json | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          provider_id: string
+          status: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          provider_id: string
+          status?: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          provider_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      autoflow_settings: {
+        Row: {
+          auto_feedback_enabled: boolean
+          auto_invoice_enabled: boolean
+          auto_invoice_trigger: string
+          auto_reminder_enabled: boolean
+          auto_schedule_enabled: boolean
+          auto_schedule_mode: string
+          created_at: string
+          default_service_id: string | null
+          feedback_channel: string
+          feedback_delay_hours: number
+          group_by_plz: boolean
+          id: string
+          last_checkin_at: string | null
+          monthly_checkin_enabled: boolean
+          next_checkin_at: string | null
+          preferred_slot_days: number
+          provider_id: string
+          reminder_hours_before: number
+          updated_at: string
+        }
+        Insert: {
+          auto_feedback_enabled?: boolean
+          auto_invoice_enabled?: boolean
+          auto_invoice_trigger?: string
+          auto_reminder_enabled?: boolean
+          auto_schedule_enabled?: boolean
+          auto_schedule_mode?: string
+          created_at?: string
+          default_service_id?: string | null
+          feedback_channel?: string
+          feedback_delay_hours?: number
+          group_by_plz?: boolean
+          id?: string
+          last_checkin_at?: string | null
+          monthly_checkin_enabled?: boolean
+          next_checkin_at?: string | null
+          preferred_slot_days?: number
+          provider_id: string
+          reminder_hours_before?: number
+          updated_at?: string
+        }
+        Update: {
+          auto_feedback_enabled?: boolean
+          auto_invoice_enabled?: boolean
+          auto_invoice_trigger?: string
+          auto_reminder_enabled?: boolean
+          auto_schedule_enabled?: boolean
+          auto_schedule_mode?: string
+          created_at?: string
+          default_service_id?: string | null
+          feedback_channel?: string
+          feedback_delay_hours?: number
+          group_by_plz?: boolean
+          id?: string
+          last_checkin_at?: string | null
+          monthly_checkin_enabled?: boolean
+          next_checkin_at?: string | null
+          preferred_slot_days?: number
+          provider_id?: string
+          reminder_hours_before?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "autoflow_settings_default_service_id_fkey"
+            columns: ["default_service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blog_posts: {
         Row: {
           author_name: string | null
