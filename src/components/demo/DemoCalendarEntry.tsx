@@ -4,15 +4,14 @@ import { Badge } from "@/components/ui/badge";
 import { Monitor, ArrowRight } from "lucide-react";
 import { PricingModal } from "@/components/subscription/PricingModal";
 import { useAuth } from "@/hooks/useAuth";
-
-const DEMO_EMAIL = "hufbearbeiter.hufmanager@gmail.com";
+import { isProviderDemoEmail } from "@/lib/demo-accounts";
 
 export function DemoCalendarEntry() {
   const { user } = useAuth();
   const [isPricingOpen, setIsPricingOpen] = useState(false);
 
-  // Only show for demo account
-  if (user?.email !== DEMO_EMAIL) {
+  // Only show for provider demo account
+  if (!isProviderDemoEmail(user?.email)) {
     return null;
   }
 

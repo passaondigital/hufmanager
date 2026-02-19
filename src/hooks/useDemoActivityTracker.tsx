@@ -2,8 +2,7 @@ import { useEffect, useCallback, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-
-const DEMO_EMAIL = "hufbearbeiter.hufmanager@gmail.com";
+import { isDemoEmail } from "@/lib/demo-accounts";
 
 // DSGVO: Hash email to anonymize tracking data
 async function hashEmail(email: string): Promise<string> {
@@ -19,7 +18,7 @@ export function useDemoActivityTracker() {
   const location = useLocation();
   const lastPathRef = useRef<string>("");
 
-  const isDemoUser = user?.email === DEMO_EMAIL;
+  const isDemoUser = isDemoEmail(user?.email);
 
   // Track page view
   const trackPageView = useCallback(async (path: string) => {

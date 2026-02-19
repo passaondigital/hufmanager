@@ -4,16 +4,15 @@ import { X, Monitor } from "lucide-react";
 import { PricingModal } from "@/components/subscription/PricingModal";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-
-const DEMO_EMAIL = "hufbearbeiter.hufmanager@gmail.com";
+import { isDemoEmail } from "@/lib/demo-accounts";
 
 export function DemoStickyBanner() {
   const { user } = useAuth();
   const [isDismissed, setIsDismissed] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
 
-  // Only show for demo account
-  if (user?.email !== DEMO_EMAIL || isDismissed) {
+  // Only show for any demo account
+  if (!isDemoEmail(user?.email) || isDismissed) {
     return null;
   }
 
