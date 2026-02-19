@@ -67,6 +67,7 @@ import { useAdminActivityLog } from "@/hooks/useAdminActivityLog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { VersionManager } from "@/components/admin/VersionManager";
 import { DemoAnalyticsDashboard } from "@/components/admin/DemoAnalyticsDashboard";
+import { DemoAccountsManager } from "@/components/admin/DemoAccountsManager";
 import { AdminGlossaryManager } from "@/components/admin/AdminGlossaryManager";
 
 // Horse icon fallback since lucide doesn't have it
@@ -2074,6 +2075,7 @@ export default function MissionControl() {
           </TabsContent>
 
           <TabsContent value="demo" className="space-y-6">
+            <DemoAccountsManager />
             <DemoAnalyticsDashboard />
           </TabsContent>
 
