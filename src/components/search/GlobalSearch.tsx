@@ -157,7 +157,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
 
   // Navigation items
   const navigationItems = [
-    { icon: Home, label: "Dashboard", path: "/" },
+    { icon: Home, label: "Dashboard", path: "/home" },
     { icon: Calendar, label: "Kalender", path: "/kalender" },
     { icon: Users, label: "Kunden", path: "/kunden" },
     { icon: Network, label: "Netzwerk", path: "/netzwerk" },

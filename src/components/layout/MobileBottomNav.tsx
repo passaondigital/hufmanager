@@ -18,7 +18,7 @@ interface NavItem {
 }
 
 const providerNavItems: NavItem[] = [
-  { icon: Home, label: "Home", path: "/" },
+  { icon: Home, label: "Home", path: "/home" },
   { icon: Calendar, label: "Kalender", path: "/kalender" },
   { icon: MessageSquare, label: "Chat", path: "/chat" },
   { icon: BarChart3, label: "Analyse", path: "/analyse" },
