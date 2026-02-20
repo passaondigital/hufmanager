@@ -4,7 +4,6 @@ const CACHE_NAME = 'hufmanager-v1';
 
 // Static assets to cache immediately
 const STATIC_ASSETS = [
-  '/',
   '/hufmanager-logo.png',
   '/favicon.ico',
 ];
@@ -92,24 +91,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For HTML/navigation, use network-first with cache fallback
+  // For HTML/navigation, ALWAYS use network - never serve cached HTML
+  // This prevents stale routing logic (e.g. landing page on app subdomain)
   if (request.mode === 'navigate' || request.destination === 'document') {
-    event.respondWith(
-      fetch(request).then((response) => {
-        if (response && response.ok) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseClone);
-          });
-        }
-        return response;
-      }).catch(() => {
-        return caches.match(request).then((cachedResponse) => {
-          return cachedResponse || caches.match('/');
-        });
-      })
-    );
-    return;
+    return; // Let the browser handle navigation normally
   }
 });
 
