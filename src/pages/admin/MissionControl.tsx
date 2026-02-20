@@ -53,7 +53,8 @@ import {
   EyeOff,
   Megaphone,
   Bug,
-  Download
+  Download,
+  Target
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -69,6 +70,7 @@ import { VersionManager } from "@/components/admin/VersionManager";
 import { DemoAnalyticsDashboard } from "@/components/admin/DemoAnalyticsDashboard";
 import { DemoAccountsManager } from "@/components/admin/DemoAccountsManager";
 import { AdminGlossaryManager } from "@/components/admin/AdminGlossaryManager";
+import { FunnelCockpit } from "@/components/admin/FunnelCockpit";
 
 // Horse icon fallback since lucide doesn't have it
 const Horse = () => (
@@ -1052,6 +1054,10 @@ export default function MissionControl() {
               <TabsTrigger value="glossary" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
                 <FileText className="w-4 h-4" />
                 <span className="hidden md:inline">Glossar</span>
+              </TabsTrigger>
+              <TabsTrigger value="funnel" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <Target className="w-4 h-4" />
+                <span className="hidden md:inline">Funnel</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -2081,6 +2087,10 @@ export default function MissionControl() {
 
           <TabsContent value="glossary" className="space-y-6">
             <AdminGlossaryManager />
+          </TabsContent>
+
+          <TabsContent value="funnel" className="space-y-6">
+            <FunnelCockpit />
           </TabsContent>
         </Tabs>
 

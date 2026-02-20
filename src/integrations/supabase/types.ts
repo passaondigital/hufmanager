@@ -2153,6 +2153,81 @@ export type Database = {
         }
         Relationships: []
       }
+      funnel_leads: {
+        Row: {
+          assigned_to: string | null
+          company_name: string | null
+          converted_at: string | null
+          converted_provider_id: string | null
+          created_at: string
+          demo_booked_at: string | null
+          demo_completed_at: string | null
+          email: string | null
+          full_name: string
+          id: string
+          notes: string | null
+          phone: string | null
+          postal_code: string | null
+          source: string | null
+          status: string
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          company_name?: string | null
+          converted_at?: string | null
+          converted_provider_id?: string | null
+          created_at?: string
+          demo_booked_at?: string | null
+          demo_completed_at?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          source?: string | null
+          status?: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          company_name?: string | null
+          converted_at?: string | null
+          converted_provider_id?: string | null
+          created_at?: string
+          demo_booked_at?: string | null
+          demo_completed_at?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          source?: string | null
+          status?: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funnel_leads_converted_provider_id_fkey"
+            columns: ["converted_provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "funnel_leads_converted_provider_id_fkey"
+            columns: ["converted_provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       global_feature_defaults: {
         Row: {
           created_at: string | null
