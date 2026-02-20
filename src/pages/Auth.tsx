@@ -106,7 +106,7 @@ export default function Auth() {
       return <Navigate to={redirectTo} replace />;
     }
     if (role === "provider") {
-      return <Navigate to="/" replace />;
+      return <Navigate to="/home" replace />;
     }
     if (role === "partner") {
       return <Navigate to="/partner-home" replace />;
