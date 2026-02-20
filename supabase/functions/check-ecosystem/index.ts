@@ -13,58 +13,56 @@ Deno.serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get auth user from header
+    const authHeader = req.headers.get("Authorization");
+    let userId: string | null = null;
+
+    if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user } } = await supabase.auth.getUser(token);
+      userId = user?.id ?? null;
+    }
 
     const body = await req.json();
     const { action, app_key, webhook_data } = body;
-
-    // Validate action
-    if (!action || typeof action !== "string") {
-      return new Response(
-        JSON.stringify({ error: "Missing or invalid action" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
 
     // --- Webhook endpoint for external apps ---
     if (action === "webhook") {
       const { user_id, status, external_id, app_key: webhookAppKey } = webhook_data || {};
 
-      if (!user_id || !webhookAppKey || typeof user_id !== "string" || typeof webhookAppKey !== "string") {
+      if (!user_id || !webhookAppKey) {
         return new Response(
-          JSON.stringify({ error: "Missing or invalid user_id or app_key" }),
+          JSON.stringify({ error: "Missing user_id or app_key" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      // Validate status values
-      const allowedStatuses = ["connected", "disconnected", "pending", "error"];
-      const safeStatus = allowedStatuses.includes(status) ? status : "connected";
-
+      // Update ecosystem link
       const { error } = await supabase
         .from("ecosystem_links")
         .update({
-          status: safeStatus,
+          status: status || "connected",
           external_id: external_id || null,
-          connected_at: safeStatus === "connected" ? new Date().toISOString() : undefined,
+          connected_at: status === "connected" ? new Date().toISOString() : undefined,
         })
         .eq("user_id", user_id)
         .eq("app_key", webhookAppKey);
 
       if (error) {
-        console.error("Ecosystem webhook update error:", error.message);
         return new Response(
-          JSON.stringify({ error: "Failed to update ecosystem link" }),
+          JSON.stringify({ error: error.message }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
+      // Send notification to user
       await supabase.from("notifications").insert({
         user_id,
         title: "Ecosystem Update",
-        message: `${webhookAppKey} Status: ${safeStatus}`,
+        message: `${webhookAppKey} Status: ${status}`,
         type: "ecosystem",
         link: "/ecosystem",
       });
@@ -77,44 +75,29 @@ Deno.serve(async (req) => {
 
     // --- Status check (authenticated) ---
     if (action === "check_status") {
-      // Enforce proper JWT validation
-      const authHeader = req.headers.get("Authorization");
-      if (!authHeader?.startsWith("Bearer ")) {
+      if (!userId) {
         return new Response(
           JSON.stringify({ error: "Unauthorized" }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      const token = authHeader.replace("Bearer ", "");
-      const authClient = createClient(supabaseUrl, supabaseAnonKey, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
-
-      if (claimsError || !claimsData?.claims?.sub) {
+      if (!app_key) {
         return new Response(
-          JSON.stringify({ error: "Unauthorized" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      const userId = claimsData.claims.sub as string;
-
-      if (!app_key || typeof app_key !== "string" || app_key.length > 100) {
-        return new Response(
-          JSON.stringify({ error: "Missing or invalid app_key" }),
+          JSON.stringify({ error: "Missing app_key" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
+      // Check local link status
       const { data: link } = await supabase
         .from("ecosystem_links")
-        .select("status, external_id, data_sharing_enabled")
+        .select("*")
         .eq("user_id", userId)
         .eq("app_key", app_key)
         .maybeSingle();
 
+      // Return current status
       return new Response(
         JSON.stringify({
           connected: link?.status === "connected",
@@ -131,9 +114,8 @@ Deno.serve(async (req) => {
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
-    console.error("check-ecosystem error:", err);
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
+      JSON.stringify({ error: err.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

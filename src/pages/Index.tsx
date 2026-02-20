@@ -1,7 +1,7 @@
 import { Navigate } from "react-router-dom";
 import WebsiteHome from "@/pages/website/WebsiteHome";
 
-const LANDING_HOSTS = ["www.hufmanager.de", "hufmanager.de"];
+const LANDING_HOSTS = ["www.hufmanager.de", "hufmanager.de", "hufmanager.lovable.app"];
 
 const Index = () => {
   const hostname = window.location.hostname;

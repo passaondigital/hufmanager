@@ -63,42 +63,8 @@ const handler = async (req: Request): Promise<Response> => {
       pdf_base64 
     } = body;
 
-    // Input validation
     if (!recipient_email || !recipient_name) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(recipient_email) || recipient_email.length > 255) {
-      return new Response(JSON.stringify({ error: "Invalid recipient email" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Validate string lengths
-    if (recipient_name.length > 200 || (invoice_number && invoice_number.length > 100) || (provider_name && provider_name.length > 200)) {
-      return new Response(JSON.stringify({ error: "Input exceeds maximum length" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Validate amount
-    if (total_amount !== undefined && (typeof total_amount !== "number" || total_amount < 0 || total_amount > 10000000)) {
-      return new Response(JSON.stringify({ error: "Invalid amount" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Validate PDF size (max 10MB base64)
-    if (pdf_base64 && pdf_base64.length > 13_400_000) {
-      return new Response(JSON.stringify({ error: "PDF attachment too large" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
