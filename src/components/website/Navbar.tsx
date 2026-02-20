@@ -24,7 +24,7 @@ const Navbar = () => {
 
           <div className="hidden md:flex items-center gap-4">
             <Button variant="ghost" className="text-white hover:bg-white/10" asChild>
-              <Link to="/auth">Login</Link>
+              <a href="https://app.hufmanager.de/auth">Login</a>
             </Button>
             <Button asChild>
               <a href="/#demo">Demo ansehen</a>
@@ -45,7 +45,7 @@ const Navbar = () => {
               <Link to="/blog" className="text-white py-2">Blog</Link>
               <div className="flex flex-col gap-2 pt-4">
                 <Button variant="ghost" className="w-full text-white" asChild>
-                  <Link to="/auth">Login</Link>
+                  <a href="https://app.hufmanager.de/auth">Login</a>
                 </Button>
                 <Button className="w-full" asChild>
                   <a href="/#demo" onClick={() => setIsOpen(false)}>Demo ansehen</a>
