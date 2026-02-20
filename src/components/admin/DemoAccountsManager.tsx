@@ -1,9 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { toast } from "sonner";
 import {
   Hammer,
   Heart,
@@ -47,18 +48,18 @@ const ACCOUNT_CONFIGS = [
 ];
 
 export function DemoAccountsManager() {
+  const queryClient = useQueryClient();
+  
   const { data: accounts, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ["demo-accounts-status"],
     queryFn: async () => {
       const emails = Object.values(DEMO_EMAILS);
 
-      // Fetch profiles
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, email, full_name, readable_id, created_at")
         .in("email", emails);
 
-      // Fetch roles
       const profileIds = profiles?.map(p => p.id) || [];
       const { data: roles } = profileIds.length > 0
         ? await supabase
@@ -67,13 +68,11 @@ export function DemoAccountsManager() {
             .in("user_id", profileIds)
         : { data: [] };
 
-      // Fetch demo activity counts
       const { data: activityCounts } = await supabase
         .from("demo_activity_logs")
         .select("user_email, id")
         .order("created_at", { ascending: false });
 
-      // Build account info
       const result: DemoAccountInfo[] = ACCOUNT_CONFIGS.map(config => {
         const profile = profiles?.find(p => p.email?.toLowerCase() === config.email.toLowerCase());
         const role = roles?.find(r => r.user_id === profile?.id);
@@ -92,6 +91,23 @@ export function DemoAccountsManager() {
       });
 
       return result;
+    },
+  });
+
+  const setupMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("setup-demo-accounts", {
+        body: {},
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(`Demo-Accounts eingerichtet: ${data?.results?.filter((r: any) => r.status === "ok").length}/4 erfolgreich`);
+      queryClient.invalidateQueries({ queryKey: ["demo-accounts-status"] });
+    },
+    onError: (err: any) => {
+      toast.error(`Fehler: ${err.message}`);
     },
   });
 
@@ -200,13 +216,13 @@ export function DemoAccountsManager() {
             })}
           </div>
 
-          {/* Setup Instructions for missing accounts */}
+          {/* Setup Button */}
           {!allReady && (
             <Card className="border-dashed">
               <CardHeader>
                 <CardTitle className="text-base">Fehlende Accounts einrichten</CardTitle>
                 <CardDescription>
-                  Erstelle die fehlenden Demo-Accounts im Supabase Auth Dashboard
+                  Erstelle die fehlenden Demo-Accounts automatisch per Klick
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -234,9 +250,24 @@ export function DemoAccountsManager() {
                     ))}
                   </TableBody>
                 </Table>
-                <p className="text-xs text-muted-foreground">
-                  Passwort für alle Demo-Accounts: <code className="bg-muted px-1 rounded">HufManagerDemo2030</code>
-                </p>
+                <div className="flex items-center justify-between pt-2">
+                  <p className="text-xs text-muted-foreground">
+                    Passwort für alle Demo-Accounts: <code className="bg-muted px-1 rounded">HufManagerDemo2030</code>
+                  </p>
+                  <Button 
+                    onClick={() => setupMutation.mutate()}
+                    disabled={setupMutation.isPending}
+                  >
+                    {setupMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Einrichten...
+                      </>
+                    ) : (
+                      "Alle 4 Accounts einrichten"
+                    )}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}
