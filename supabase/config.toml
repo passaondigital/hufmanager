@@ -80,3 +80,6 @@ verify_jwt = false
 
 [functions.setup-demo-accounts]
 verify_jwt = true
+
+[functions.seed-demo-data]
+verify_jwt = true

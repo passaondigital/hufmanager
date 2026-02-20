@@ -111,6 +111,23 @@ export function DemoAccountsManager() {
     },
   });
 
+  const seedMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("seed-demo-data", {
+        body: {},
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success("Demo-Daten erfolgreich befüllt!");
+      queryClient.invalidateQueries({ queryKey: ["demo-accounts-status"] });
+    },
+    onError: (err: any) => {
+      toast.error(`Fehler beim Befüllen: ${err.message}`);
+    },
+  });
+
   const allReady = accounts?.every(a => a.exists && a.hasCorrectRole) || false;
   const readyCount = accounts?.filter(a => a.exists && a.hasCorrectRole).length || 0;
 
@@ -265,6 +282,36 @@ export function DemoAccountsManager() {
                       </>
                     ) : (
                       "Alle 4 Accounts einrichten"
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Seed Demo Data Button - show when all accounts are ready */}
+          {allReady && (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-foreground">Demo-Daten befüllen</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Alle 4 Accounts mit professionellen Inhalten füllen: Pferde, Termine, Rechnungen, Bewertungen, Inventar, Angebote und mehr.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => seedMutation.mutate()}
+                    disabled={seedMutation.isPending}
+                    variant="outline"
+                  >
+                    {seedMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Befülle Daten...
+                      </>
+                    ) : (
+                      "Demo-Daten befüllen"
                     )}
                   </Button>
                 </div>
