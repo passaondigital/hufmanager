@@ -20,9 +20,17 @@ export default defineConfig(({ mode }) => ({
         // Limit auf 6 MB erhöht für große Bundles
         maximumFileSizeToCacheInBytes: 6000000,
         
-        // Cache all static assets aggressively
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff,woff2}"],
-        // Cache-first strategy for all assets
+        // Force new service worker to activate immediately
+        skipWaiting: true,
+        clientsClaim: true,
+        
+        // Cache static assets but NOT HTML (to prevent stale routing)
+        globPatterns: ["**/*.{js,css,ico,png,svg,jpg,jpeg,webp,woff,woff2}"],
+        
+        // Don't cache navigation requests - always fetch fresh HTML
+        navigateFallback: null,
+        
+        // Cache-first strategy for assets only
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
