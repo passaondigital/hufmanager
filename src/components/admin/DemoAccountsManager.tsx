@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,16 +13,17 @@ import {
   Stethoscope,
   Loader2,
   RefreshCw,
-  ExternalLink,
   CheckCircle,
   XCircle,
   Clock,
   UserCheck,
   Monitor,
+  Settings2,
 } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
 import { DEMO_EMAILS } from "@/lib/demo-accounts";
+import { DemoAccountDetailDialog } from "./DemoAccountDetailDialog";
 
 interface DemoAccountInfo {
   email: string;
@@ -49,6 +51,8 @@ const ACCOUNT_CONFIGS = [
 
 export function DemoAccountsManager() {
   const queryClient = useQueryClient();
+  const [selectedAccount, setSelectedAccount] = useState<DemoAccountInfo | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
   
   const { data: accounts, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ["demo-accounts-status"],
@@ -224,8 +228,22 @@ export function DemoAccountsManager() {
                               Account muss in Supabase Auth angelegt werden
                             </p>
                           )}
-                        </div>
-                      </div>
+                          {account.exists && (
+                             <Button
+                               variant="ghost"
+                               size="sm"
+                               className="h-7 px-2 text-xs"
+                               onClick={() => {
+                                 setSelectedAccount(account);
+                                 setDetailOpen(true);
+                               }}
+                             >
+                               <Settings2 className="h-3.5 w-3.5 mr-1" />
+                               Verwalten
+                             </Button>
+                           )}
+                         </div>
+                       </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -320,6 +338,15 @@ export function DemoAccountsManager() {
           )}
         </>
       )}
+      {/* Detail Dialog */}
+      <DemoAccountDetailDialog
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        account={selectedAccount}
+        onSaved={() => {
+          queryClient.invalidateQueries({ queryKey: ["demo-accounts-status"] });
+        }}
+      />
     </div>
   );
 }
