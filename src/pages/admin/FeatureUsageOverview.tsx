@@ -25,8 +25,14 @@ import {
   Loader2,
   CheckCircle,
   XCircle,
-  TrendingUp
+  TrendingUp,
+  Zap,
+  Bell,
+  CalendarClock,
+  Star,
+  ClipboardCheck
 } from "lucide-react";
+import { FEATURE_CATEGORIES, FeatureCategory } from "@/types/featureFlags";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 
@@ -66,15 +72,25 @@ interface ModuleStats {
   lastUsed: string | null;
 }
 
-const MODULE_CONFIG = [
-  { key: "module_invoicing", label: "Rechnungen", icon: FileText },
-  { key: "module_chat", label: "Chat", icon: MessageSquare },
-  { key: "module_maps", label: "Anfahrt / Maps", icon: Map },
-  { key: "module_academy", label: "Academy", icon: GraduationCap },
-  { key: "module_hufanalyse", label: "Hufanalyse (LTZ)", icon: ClipboardList },
-  { key: "module_network", label: "Netzwerk", icon: Users },
-  { key: "module_analytics", label: "Analytics", icon: BarChart3 },
-  { key: "beta_features", label: "Beta Features", icon: Sparkles },
+const MODULE_CONFIG: { key: string; label: string; icon: React.ComponentType<{ className?: string }>; category: FeatureCategory }[] = [
+  // Core
+  { key: "module_invoicing", label: "Rechnungen", icon: FileText, category: "core" },
+  { key: "module_chat", label: "Chat", icon: MessageSquare, category: "core" },
+  { key: "module_maps", label: "Anfahrt / Maps", icon: Map, category: "core" },
+  { key: "module_academy", label: "Academy", icon: GraduationCap, category: "core" },
+  { key: "module_hufanalyse", label: "Hufanalyse (LTZ)", icon: ClipboardList, category: "core" },
+  { key: "module_network", label: "Netzwerk", icon: Users, category: "core" },
+  { key: "module_analytics", label: "Analytics", icon: BarChart3, category: "core" },
+  // AutoFlow
+  { key: "autoflow_reminders", label: "Auto-Erinnerungen", icon: Bell, category: "autoflow" },
+  { key: "autoflow_invoicing", label: "Auto-Rechnungen", icon: Zap, category: "autoflow" },
+  { key: "autoflow_scheduling", label: "Auto-Terminplanung", icon: CalendarClock, category: "autoflow" },
+  { key: "autoflow_feedback", label: "Auto-Feedback", icon: Star, category: "autoflow" },
+  { key: "autoflow_checkin", label: "Monatlicher Check-in", icon: ClipboardCheck, category: "autoflow" },
+  // Advanced
+  { key: "beta_features", label: "Beta Features", icon: Sparkles, category: "advanced" },
+  { key: "module_team", label: "Team / Mitarbeiter", icon: Users, category: "advanced" },
+  { key: "module_office", label: "Mein Office", icon: FileText, category: "advanced" },
 ];
 
 export default function FeatureUsageOverview() {
@@ -377,36 +393,45 @@ export default function FeatureUsageOverview() {
               ))}
             </div>
 
-            {/* Summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Modul-Aktivierung Summary</CardTitle>
-                <CardDescription>
-                  Zeigt wie viele Provider welche Module aktiviert haben
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {moduleStats.map(stat => (
-                    <div key={stat.module} className="flex items-center gap-4">
-                      <stat.icon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between mb-1">
-                          <span className="font-medium">{stat.label}</span>
-                          <span className="text-sm text-muted-foreground">
-                            {stat.enabledCount} von {stat.totalCount}
-                          </span>
+            {/* Summary grouped by category */}
+            {(['core', 'autoflow', 'advanced'] as FeatureCategory[]).map(cat => {
+              const catStats = moduleStats.filter(s => {
+                const cfg = MODULE_CONFIG.find(m => m.key === s.module);
+                return cfg?.category === cat;
+              });
+              if (!catStats.length) return null;
+              const catConfig = FEATURE_CATEGORIES[cat];
+
+              return (
+                <Card key={cat}>
+                  <CardHeader>
+                    <CardTitle className="text-base">{catConfig.label}</CardTitle>
+                    <CardDescription>{catConfig.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {catStats.map(stat => (
+                        <div key={stat.module} className="flex items-center gap-4">
+                          <stat.icon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex justify-between mb-1">
+                              <span className="font-medium">{stat.label}</span>
+                              <span className="text-sm text-muted-foreground">
+                                {stat.enabledCount} von {stat.totalCount}
+                              </span>
+                            </div>
+                            <Progress 
+                              value={(stat.enabledCount / stat.totalCount) * 100} 
+                              className="h-2"
+                            />
+                          </div>
                         </div>
-                        <Progress 
-                          value={(stat.enabledCount / stat.totalCount) * 100} 
-                          className="h-2"
-                        />
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </TabsContent>
 
           {/* Providers Tab */}
