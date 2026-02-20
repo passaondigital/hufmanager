@@ -3,14 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { RefreshCw, Smartphone, Check, CloudOff, Loader2, Trash2 } from "lucide-react";
+import { RefreshCw, Smartphone, Check, CloudOff, Loader2, Trash2, Download, Share, Wifi, WifiOff, Cloud } from "lucide-react";
 import { CURRENT_APP_VERSION, forceHardReload } from "@/lib/appVersion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { useOfflineState } from "@/hooks/useOfflineState";
 import { toast } from "sonner";
 
 export function AppSettingsCard() {
   const { user } = useAuth();
+  const { canInstall, isInstalled, isMacSafari, isIOS, promptInstall } = usePWAInstall();
+  const { isOnline, syncState, pendingMutations, pendingImages, totalPending, lastSyncDate } = useOfflineState();
   const [isChecking, setIsChecking] = useState(false);
   const [updateAvailable, setUpdateAvailable] = useState<{
     version: string;
@@ -216,16 +220,92 @@ export function AppSettingsCard() {
               Aktuelle Netzwerkverbindung
             </p>
           </div>
-          {navigator.onLine ? (
-            <Badge variant="outline" className="gap-1 text-green-600 border-green-600/30">
-              <Check className="h-3 w-3" />
+          {isOnline ? (
+            <Badge variant="outline" className="gap-1 text-primary border-primary/30">
+              <Wifi className="h-3 w-3" />
               Online
             </Badge>
           ) : (
-            <Badge variant="outline" className="gap-1 text-muted-foreground">
-              <CloudOff className="h-3 w-3" />
+            <Badge variant="outline" className="gap-1 text-destructive border-destructive/30">
+              <WifiOff className="h-3 w-3" />
               Offline
             </Badge>
+          )}
+        </div>
+
+        {/* Sync Status */}
+        {totalPending > 0 && (
+          <>
+            <Separator />
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Cloud className="h-4 w-4 text-amber-500" />
+                <p className="text-sm font-medium">Wartende Synchronisation</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {pendingMutations > 0 && `${pendingMutations} Änderung${pendingMutations > 1 ? "en" : ""}`}
+                {pendingMutations > 0 && pendingImages > 0 && " · "}
+                {pendingImages > 0 && `${pendingImages} Bild${pendingImages > 1 ? "er" : ""}`}
+                {" "}– wird bei Verbindung automatisch synchronisiert
+              </p>
+            </div>
+          </>
+        )}
+
+        {lastSyncDate && totalPending === 0 && (
+          <>
+            <Separator />
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Letzte Synchronisation</p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(lastSyncDate).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" })}
+                </p>
+              </div>
+              <Badge variant="outline" className="gap-1 text-primary border-primary/30">
+                <Check className="h-3 w-3" />
+                Synchron
+              </Badge>
+            </div>
+          </>
+        )}
+
+        {/* App Installation */}
+        <Separator />
+        <div className="space-y-3">
+          <div>
+            <p className="text-sm font-medium">App installieren</p>
+            <p className="text-xs text-muted-foreground">
+              HufManager als App auf diesem Gerät installieren
+            </p>
+          </div>
+
+          {isInstalled ? (
+            <Badge variant="outline" className="gap-1 text-primary border-primary/30">
+              <Check className="h-3 w-3" />
+              App ist installiert
+            </Badge>
+          ) : canInstall ? (
+            <Button onClick={promptInstall} className="w-full gap-2">
+              <Download className="h-4 w-4" />
+              Jetzt installieren
+            </Button>
+          ) : isIOS || isMacSafari ? (
+            <div className="rounded-lg border border-border bg-muted/50 p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <Share className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm font-medium text-foreground">Installation auf Apple-Gerät</p>
+              </div>
+              <ol className="text-xs text-muted-foreground space-y-1 ml-6 list-decimal">
+                <li>Tippe auf das <strong>Teilen</strong>-Symbol (Quadrat mit Pfeil)</li>
+                <li>Wähle <strong>„Zum Home-Bildschirm"</strong> bzw. <strong>„Zum Dock hinzufügen"</strong></li>
+                <li>Bestätige mit <strong>Hinzufügen</strong></li>
+              </ol>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Öffne HufManager im Browser, um die Installationsoption zu sehen.
+            </p>
           )}
         </div>
       </CardContent>
