@@ -150,12 +150,12 @@ const Management = () => {
           .eq("id", settings.id);
         if (error) throw error;
       } else {
-        // Create new
-        const { error } = await supabase.from("business_settings").insert({
-          id: user.id, // id must match user_id due to FK constraint on auth.users
+        // Create new (upsert to avoid duplicate key errors)
+        const { error } = await supabase.from("business_settings").upsert({
+          id: user.id,
           user_id: user.id,
           ...data,
-        });
+        }, { onConflict: "id" });
         if (error) throw error;
       }
     },
@@ -188,11 +188,11 @@ const Management = () => {
 
       // If no row existed (or RLS filtered it out without error), create one.
       if (!updated || updated.length === 0) {
-        const { error: insertError } = await supabase.from("business_settings").insert({
-          id: user.id, // id must match user_id due to FK constraint on auth.users
+        const { error: insertError } = await supabase.from("business_settings").upsert({
+          id: user.id,
           user_id: user.id,
           ...payload,
-        });
+        }, { onConflict: "id" });
         if (insertError) throw insertError;
       }
     },
@@ -281,10 +281,11 @@ const Management = () => {
           .update({ logo_url: publicUrl })
           .eq('id', settings.id);
       } else {
-        await supabase.from('business_settings').insert({
+        await supabase.from('business_settings').upsert({
+          id: user.id,
           user_id: user.id,
           logo_url: publicUrl,
-        });
+        }, { onConflict: "id" });
       }
 
       queryClient.invalidateQueries({ queryKey: ['business-settings'] });
