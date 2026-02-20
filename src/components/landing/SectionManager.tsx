@@ -82,10 +82,11 @@ export const SectionManager = () => {
           .eq("id", settings.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("business_settings").insert({
+        const { error } = await supabase.from("business_settings").upsert({
+          id: user.id,
           user_id: user.id,
           section_order: enabledOrder,
-        });
+        }, { onConflict: "id" });
         if (error) throw error;
       }
     },
