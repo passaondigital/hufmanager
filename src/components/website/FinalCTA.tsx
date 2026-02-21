@@ -5,7 +5,7 @@ const LANDING_HOSTS = ["www.hufmanager.de", "hufmanager.de"];
 
 const FinalCTA = () => {
   const isLandingDomain = LANDING_HOSTS.includes(window.location.hostname);
-  const loginHref = isLandingDomain ? "https://app.hufmanager.de/auth" : "/auth";
+  const loginHref = isLandingDomain ? "https://app.hufmanager.de/auth" : "/auth?force=login";
 
   return (
   <section className="relative py-24 md:py-32 bg-black overflow-hidden">

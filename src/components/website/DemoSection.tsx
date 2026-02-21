@@ -99,7 +99,7 @@ const DemoSection = () => (
 
         {(() => {
           const isLandingDomain = ["www.hufmanager.de", "hufmanager.de"].includes(window.location.hostname);
-          const loginHref = isLandingDomain ? "https://app.hufmanager.de/auth" : "/auth";
+          const loginHref = isLandingDomain ? "https://app.hufmanager.de/auth" : "/auth?force=login";
           return (
             <Button size="lg" className="glow-orange text-lg font-bold bg-primary hover:bg-primary/90 text-white" asChild>
               <a href={loginHref}><Play className="mr-2 h-5 w-5" />Jetzt Demo starten</a>
