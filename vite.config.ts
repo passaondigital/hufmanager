@@ -95,7 +95,7 @@ export default defineConfig(({ mode }) => ({
         background_color: "#000000",
         display: "standalone",
         orientation: "portrait",
-        start_url: "/",
+        start_url: "/home",
         scope: "/",
         categories: ["business", "productivity"],
         icons: [
