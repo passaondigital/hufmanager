@@ -80,6 +80,7 @@ export default function Auth() {
 
   // Check for admin redirect parameter
   const redirectTo = searchParams.get("redirect");
+  const forceLogin = searchParams.get("force") === "login";
   
   // Check for partner invite mode from URL
   const urlMode = searchParams.get("mode");
@@ -104,7 +105,7 @@ export default function Auth() {
   const LANDING_HOSTS = ["www.hufmanager.de", "hufmanager.de"];
   const isOnLandingDomain = LANDING_HOSTS.includes(window.location.hostname);
 
-  if (!authLoading && user && role) {
+  if (!authLoading && user && role && !forceLogin) {
     // On the landing domain, redirect to app.hufmanager.de (not internal routes)
     if (isOnLandingDomain) {
       const roleToPath: Record<string, string> = {

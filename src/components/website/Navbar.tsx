@@ -12,7 +12,7 @@ const Navbar = () => {
 
   // On the landing page domain, login must go to app.hufmanager.de/auth
   // On preview/app domains, use internal SPA routing
-  const loginHref = isLandingDomain ? "https://app.hufmanager.de/auth" : "/auth";
+  const loginHref = isLandingDomain ? "https://app.hufmanager.de/auth" : "/auth?force=login";
 
   const LoginLink = isLandingDomain 
     ? ({ children, className }: { children: React.ReactNode; className?: string }) => (
