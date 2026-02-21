@@ -18,21 +18,23 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Auth: require service_role bearer token OR valid admin user token
+    // Auth: accept service_role key, anon key (for cron jobs), or valid admin JWT
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.replace("Bearer ", "") : null;
 
-    const token = authHeader.replace("Bearer ", "");
+    // Allow cron calls with anon key or service role key
+    const isCronOrService = token === supabaseServiceKey || token === anonKey;
 
-    // If not service role key, verify caller is an admin
-    if (token !== supabaseServiceKey) {
+    if (!isCronOrService) {
+      // Must be a valid admin user
+      if (!token) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       const callerClient = createClient(supabaseUrl, anonKey, {
-        global: { headers: { Authorization: authHeader } },
+        global: { headers: { Authorization: authHeader! } },
       });
       const { data: claimsData, error: claimsError } = await callerClient.auth.getClaims(token);
       if (claimsError || !claimsData?.claims?.sub) {
