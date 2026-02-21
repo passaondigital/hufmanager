@@ -190,7 +190,7 @@ const signIn = async (email: string, password: string) => {
   };
 
   const signUp = async (email: string, password: string, fullName: string, role: "provider" | "client" | "partner" = "client") => {
-    const redirectUrl = `${window.location.origin}/`;
+    const redirectUrl = `${window.location.origin}/home`;
     
     const { error } = await supabase.auth.signUp({
       email,
