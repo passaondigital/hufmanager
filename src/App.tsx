@@ -363,8 +363,14 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner-home" element={<PartnerHome />} />
               <Route path="/partner-horse/:id" element={<PartnerHorseView />} />
               <Route path="/partner-horses" element={<PartnerHome />} />
+              <Route path="/partner-calendar" element={<PartnerCalendar />} />
               <Route path="/partner-notes" element={<PartnerNotes />} />
+              <Route path="/partner-plans" element={<PartnerTreatmentPlans />} />
+              <Route path="/partner-documents" element={<PartnerDocuments />} />
+              <Route path="/partner-services" element={<PartnerServices />} />
+              <Route path="/partner-invoices" element={<PartnerInvoices />} />
               <Route path="/partner-chat" element={<PartnerChat />} />
+              <Route path="/partner-settings" element={<PartnerSettings />} />
               <Route path="/partner-profile" element={<PartnerProfile />} />
             </Route>
 

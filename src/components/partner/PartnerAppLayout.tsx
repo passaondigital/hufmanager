@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Outlet, useLocation, NavLink } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Home, Heart, FileText, MessageSquare, User, Menu, LogOut, Sun, Moon, ChevronRight } from "lucide-react";
+import { Home, Heart, FileText, MessageSquare, User, Menu, LogOut, Sun, Moon, ChevronRight, Calendar, Upload, ClipboardList, Receipt, Briefcase, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -12,17 +12,23 @@ import { useTheme } from "@/components/ThemeProvider";
 
 const bottomNavItems = [
   { icon: Home, label: "Home", path: "/partner-home" },
+  { icon: Calendar, label: "Kalender", path: "/partner-calendar" },
   { icon: Heart, label: "Pferde", path: "/partner-horses" },
-  { icon: FileText, label: "Notizen", path: "/partner-notes" },
   { icon: MessageSquare, label: "Chat", path: "/partner-chat" },
   { icon: User, label: "Profil", path: "/partner-profile" },
 ];
 
 const sidebarItems = [
   { icon: Home, label: "Übersicht", path: "/partner-home" },
+  { icon: Calendar, label: "Kalender", path: "/partner-calendar" },
   { icon: Heart, label: "Meine Pferde", path: "/partner-horses" },
   { icon: FileText, label: "Behandlungsnotizen", path: "/partner-notes" },
+  { icon: ClipboardList, label: "Behandlungspläne", path: "/partner-plans" },
+  { icon: Upload, label: "Dokumente & Befunde", path: "/partner-documents" },
+  { icon: Briefcase, label: "Leistungskatalog", path: "/partner-services" },
+  { icon: Receipt, label: "Rechnungen", path: "/partner-invoices" },
   { icon: MessageSquare, label: "Chat", path: "/partner-chat" },
+  { icon: Settings, label: "Einstellungen", path: "/partner-settings" },
   { icon: User, label: "Profil", path: "/partner-profile" },
 ];
 
@@ -76,7 +82,7 @@ export function PartnerAppLayout() {
               </div>
             </div>
           </div>
-          <nav className="p-2 space-y-1">
+          <nav className="p-2 space-y-1 overflow-auto max-h-[calc(100vh-12rem)]">
             {sidebarItems.map((item) => (
               <NavLink
                 key={item.path}
