@@ -2,11 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Check, Play } from "lucide-react";
 
 const included = [
-  "Provider-App (dein Cockpit)",
+  "Profi-App (dein Cockpit)",
   "Kunden-App (kostenlos für Besitzer)",
   "Offline-Modus",
   "Unbegrenzte Rechnungen (GoBD)",
-  "Huf-Dokumentation & Fotos",
+  "Dokumentation & Fotos",
   "DSGVO-konform · Deutsche Server",
 ];
 
@@ -17,12 +17,12 @@ const PricingV2 = () => (
         <div className="text-center mb-12">
           <span className="text-primary font-bold text-sm uppercase tracking-widest">Preise</span>
           <h2 className="font-sans text-3xl md:text-4xl lg:text-5xl font-extrabold text-white mt-4 mb-4">Einfach. Transparent.</h2>
-          <p className="text-white/60 text-lg">Kein Feature-Dschungel. Ein Preis, alles drin.</p>
+          <p className="text-white/60 text-lg">Kein Feature-Dschungel. Ein Preis, alles drin – für jede Berufsgruppe.</p>
         </div>
         <div className="rounded-3xl border-2 border-primary/40 bg-gradient-to-b from-primary/10 to-transparent p-8 md:p-10">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8 mb-8">
             <div>
-              <p className="text-white/50 text-sm font-medium uppercase tracking-wider mb-2">HufManager</p>
+              <p className="text-white/50 text-sm font-medium uppercase tracking-wider mb-2">HufManager für Pferde-Profis</p>
               <div className="flex items-baseline gap-2">
                 <span className="text-5xl md:text-6xl font-extrabold text-white">ab 19€</span>
                 <span className="text-white/50 text-lg">/ Monat</span>
@@ -48,7 +48,7 @@ const PricingV2 = () => (
             <p className="text-white/40 text-sm">Monatlich kündbar · Keine Kreditkarte nötig</p>
           </div>
         </div>
-        <p className="text-center text-white/40 text-sm mt-8">Bereits eine Hufbearbeitung finanziert deinen gesamten Monat. Der Rest ist Gewinn.</p>
+        <p className="text-center text-white/40 text-sm mt-8">Bereits ein Kundentermin finanziert deinen gesamten Monat. Der Rest ist Gewinn.</p>
       </div>
     </div>
   </section>

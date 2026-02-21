@@ -7,7 +7,7 @@ const trustItems = ["DSGVO", "DE-Server", "Offlinefähig", "Mobile-first"];
 const highlights = [
   "für das Pferdewohl.",
   "Für deine Kunden.",
-  "Für Weiterbildung.",
+  "Für dein Team.",
   "Für deine Familie.",
   "Für dich.",
 ];
@@ -23,8 +23,11 @@ const HeroV2 = () => {
       <div className="container relative z-10 py-20 md:py-32">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <div className="space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/10 animate-fade-up">
+              <span className="text-xs font-semibold text-primary">Für Hufbearbeiter · Therapeuten · Trainer · und mehr</span>
+            </div>
             <h1 className="font-sans text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-[1.08] tracking-tight animate-fade-up" style={{ animationDelay: "0ms" }}>
-              Wir machen deinen Kopf frei – <span className="text-primary">und entlasten deinen Rücken.</span>
+              Die Plattform, die Pferde-Profis <span className="text-primary">den Rücken freihält.</span>
             </h1>
             <p className="text-xl md:text-2xl text-white/80 font-medium leading-snug animate-fade-up" style={{ animationDelay: "100ms" }}>
               Mehr Zeit für das, was dir wirklich wichtig ist:
@@ -52,7 +55,7 @@ const HeroV2 = () => {
           <div className="relative animate-fade-up lg:pl-8" style={{ animationDelay: "300ms" }}>
             <div className="relative mx-auto max-w-[420px] lg:max-w-[500px]">
               <div className="absolute inset-0 bg-primary/20 blur-[80px] scale-75" />
-              <img src={heroHorse} alt="HufManager – Pferd" className="relative w-full h-auto drop-shadow-2xl" />
+              <img src={heroHorse} alt="HufManager – Die Plattform für Pferde-Profis" className="relative w-full h-auto drop-shadow-2xl" />
             </div>
           </div>
         </div>

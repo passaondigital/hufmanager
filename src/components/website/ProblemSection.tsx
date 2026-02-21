@@ -1,10 +1,10 @@
 import { X } from "lucide-react";
 
 const painPoints = [
-  "Terminsuche, Schieberei und No-Shows, die dich Zeit, Nerven und Geld kosten",
-  "Endlose WhatsApp-Verläufe, die mehr Chaos erzeugen als lösen",
-  "Unleserliche, zerknitterte oder verlorene Pferdedaten und Notizen",
-  "Umsatzverluste, die du gar nicht bemerkst – weil du keine Zeit hast, hinzuschauen",
+  "Terminsuche, Schieberei und No-Shows – egal ob Hufbearbeitung, Therapie oder Training",
+  "Endlose WhatsApp-Verläufe mit Besitzern, Kollegen und Ställen",
+  "Verstreute Befunde, Notizen und Fotos ohne zentralen Zugriff",
+  "Umsatzverluste, die du gar nicht bemerkst – weil die Verwaltung dich auffrisst",
 ];
 
 const ProblemSection = () => (
@@ -14,10 +14,10 @@ const ProblemSection = () => (
         <div className="text-center mb-12">
           <span className="text-red-500 font-bold text-sm uppercase tracking-widest">Kommt dir das bekannt vor?</span>
           <h2 className="font-sans text-3xl md:text-4xl lg:text-5xl font-extrabold text-white mt-4">
-            Du hast gerade einen langen Tag hinter dir&nbsp;–
+            Du arbeitest am Pferd&nbsp;– und danach wartet das Büro.
           </h2>
           <p className="text-white/60 text-lg mt-4 max-w-3xl mx-auto leading-relaxed">
-            und dann fängt die eigentliche Arbeit erst an. Termine suchen, verschieben, nachhaken. WhatsApp-Nachrichten, die sich über Wochen ziehen. Zettel, die irgendwo zwischen Halfter und Hufmesser verschwinden. Und am Ende des Monats das ungute Gefühl: <span className="text-white font-semibold">War das wirklich alles, was ich verdient habe?</span>
+            Egal ob Hufbearbeiter, Physiotherapeut, Osteopath oder Trainer: Nach dem letzten Pferd fängt die eigentliche Arbeit erst an. Termine koordinieren, Befunde dokumentieren, Rechnungen schreiben. Und am Ende des Monats das ungute Gefühl: <span className="text-white font-semibold">War das wirklich alles, was ich verdient habe?</span>
           </p>
         </div>
 

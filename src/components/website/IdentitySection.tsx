@@ -4,17 +4,17 @@ const IdentitySection = () => (
       <div className="max-w-3xl mx-auto text-center space-y-6">
         <span className="text-primary font-bold text-sm uppercase tracking-widest">Dein Beruf. Deine Berufung.</span>
         <h2 className="font-sans text-3xl md:text-4xl lg:text-5xl font-extrabold text-white leading-tight">
-          Du bist nicht im Büro angestellt. <span className="text-primary">Und das ist gut so.</span>
+          Du bist Profi am Pferd – <span className="text-primary">kein Bürokraft.</span>
         </h2>
         <div className="space-y-4 text-white/70 text-lg leading-relaxed max-w-2xl mx-auto">
           <p>
-            Du bist Hufbearbeiter:in. Pferdedienstleister:in. Selbstständig in einem der schönsten und bedeutsamsten Berufe, die es gibt.
+            Hufbearbeiter, Therapeut, Trainer, Heilpraktiker – ihr alle habt euch für die Arbeit am Pferd entschieden. Nicht für Papierkram, Zettelwirtschaft oder endlose Telefonate.
           </p>
           <p>
-            Du trägst zum Tierwohl bei. Du investierst deine Zeit, deine Energie, dein Geld – und deine Gesundheit. Du bist Fachmensch, kein Buchhalter. Kein Steuerbüro. Kein Verwaltungsapparat.
+            Ihr tragt zum Tierwohl bei. Ihr investiert eure Zeit, eure Energie, euer Geld – und eure Gesundheit. Ihr seid Fachmenschen, keine Buchhalter.
           </p>
           <p className="text-white font-semibold text-xl">
-            Du hast Besseres zu tun – nämlich das, wofür du angetreten bist: die Pferde.
+            Ihr habt Besseres zu tun – nämlich das, wofür ihr angetreten seid: die Pferde.
           </p>
         </div>
       </div>
