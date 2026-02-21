@@ -423,11 +423,11 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         {/* Dashboard Quick Access */}
         <div className="px-3 mb-2">
           <NavLink
-            to="/"
+            to="/home"
             onClick={onNavigate}
             className={cn(
               "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 min-h-[48px]",
-              isActive("/") && location.pathname === "/"
+              isActive("/home")
                 ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/30"
                 : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
             )}

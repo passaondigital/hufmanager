@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Play, Hammer, Heart, Stethoscope, Users, Zap,
@@ -98,7 +99,7 @@ const DemoSection = () => (
         </div>
 
         <Button size="lg" className="glow-orange text-lg font-bold bg-primary hover:bg-primary/90 text-white" asChild>
-          <a href="https://app.hufmanager.de/auth" target="_blank" rel="noopener noreferrer"><Play className="mr-2 h-5 w-5" />Jetzt Demo starten</a>
+          <Link to="/auth"><Play className="mr-2 h-5 w-5" />Jetzt Demo starten</Link>
         </Button>
         <p className="text-white/40 text-sm mt-6">Kein Verkaufsgespräch. Kein Druck. Einfach reinschauen und selbst entscheiden.</p>
       </div>
