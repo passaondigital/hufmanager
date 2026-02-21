@@ -101,45 +101,19 @@ export default function Auth() {
     }
   }, [inviteCode, urlRole, urlEmail]);
 
-  // Redirect if already logged in
-  const LANDING_HOSTS = ["www.hufmanager.de", "hufmanager.de"];
-  const isOnLandingDomain = LANDING_HOSTS.includes(window.location.hostname);
-
+  // Redirect if already logged in (skip if force=login from landing page)
   if (!authLoading && user && role && !forceLogin) {
-    // On the landing domain, redirect to app.hufmanager.de (not internal routes)
-    if (isOnLandingDomain) {
-      const roleToPath: Record<string, string> = {
-        admin: "/admin/mission-control",
-        provider: "/home",
-        employee: "/employee",
-        partner: "/partner-home",
-        client: "/client-home",
-      };
-      const target = redirectTo || roleToPath[role] || "/home";
-      window.location.href = `https://app.hufmanager.de${target}`;
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-background">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      );
-    }
-
     if (redirectTo) {
       return <Navigate to={redirectTo} replace />;
     }
-    if (role === "admin") {
-      return <Navigate to="/admin/mission-control" replace />;
-    }
-    if (role === "provider") {
-      return <Navigate to="/home" replace />;
-    }
-    if (role === "employee") {
-      return <Navigate to="/employee" replace />;
-    }
-    if (role === "partner") {
-      return <Navigate to="/partner-home" replace />;
-    }
-    return <Navigate to="/client-home" replace />;
+    const roleToPath: Record<string, string> = {
+      admin: "/admin/mission-control",
+      provider: "/home",
+      employee: "/employee",
+      partner: "/partner-home",
+      client: "/client-home",
+    };
+    return <Navigate to={roleToPath[role] || "/home"} replace />;
   }
 
   const openPricingModal = (title: string, description: string) => {
