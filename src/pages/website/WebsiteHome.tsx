@@ -10,6 +10,7 @@ import OfflineSection from "@/components/website/OfflineSection";
 import DemoSection from "@/components/website/DemoSection";
 import PricingV2 from "@/components/website/PricingV2";
 import TrustSection from "@/components/website/TrustSection";
+import ContactFormSection from "@/components/website/ContactFormSection";
 import HufrenteSection from "@/components/website/HufrenteSection";
 import FAQ from "@/components/website/FAQ";
 import FinalCTA from "@/components/website/FinalCTA";
@@ -39,6 +40,7 @@ const WebsiteHome = () => {
       <OfflineSection />
       <DemoSection />
       <PricingV2 />
+      <ContactFormSection />
       <TrustSection />
       <LatestBlogPosts />
       <HufrenteSection />
