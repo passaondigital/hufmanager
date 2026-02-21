@@ -3906,6 +3906,577 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_appointments: {
+        Row: {
+          appointment_date: string
+          appointment_time: string | null
+          completed_at: string | null
+          completion_notes: string | null
+          confirmed_at: string | null
+          created_at: string
+          duration: number | null
+          end_time: string | null
+          horse_id: string
+          id: string
+          location: string | null
+          notes: string | null
+          partner_id: string
+          price: number | null
+          requested_by: string | null
+          service_id: string | null
+          status: string
+          title: string
+          treatment_note_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          appointment_date: string
+          appointment_time?: string | null
+          completed_at?: string | null
+          completion_notes?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          duration?: number | null
+          end_time?: string | null
+          horse_id: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          partner_id: string
+          price?: number | null
+          requested_by?: string | null
+          service_id?: string | null
+          status?: string
+          title: string
+          treatment_note_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          appointment_date?: string
+          appointment_time?: string | null
+          completed_at?: string | null
+          completion_notes?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          duration?: number | null
+          end_time?: string | null
+          horse_id?: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          partner_id?: string
+          price?: number | null
+          requested_by?: string | null
+          service_id?: string | null
+          status?: string
+          title?: string
+          treatment_note_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_appointments_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_appointments_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_appointments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "partner_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_appointments_treatment_note_id_fkey"
+            columns: ["treatment_note_id"]
+            isOneToOne: false
+            referencedRelation: "partner_treatment_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_business_settings: {
+        Row: {
+          address: string | null
+          bank_name: string | null
+          bic: string | null
+          business_name: string | null
+          created_at: string
+          email: string | null
+          iban: string | null
+          id: string
+          logo_url: string | null
+          owner_name: string | null
+          partner_id: string
+          phone: string | null
+          qualifications: string | null
+          specialty: string | null
+          tax_number: string | null
+          updated_at: string
+          vat_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          bank_name?: string | null
+          bic?: string | null
+          business_name?: string | null
+          created_at?: string
+          email?: string | null
+          iban?: string | null
+          id?: string
+          logo_url?: string | null
+          owner_name?: string | null
+          partner_id: string
+          phone?: string | null
+          qualifications?: string | null
+          specialty?: string | null
+          tax_number?: string | null
+          updated_at?: string
+          vat_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          bank_name?: string | null
+          bic?: string | null
+          business_name?: string | null
+          created_at?: string
+          email?: string | null
+          iban?: string | null
+          id?: string
+          logo_url?: string | null
+          owner_name?: string | null
+          partner_id?: string
+          phone?: string | null
+          qualifications?: string | null
+          specialty?: string | null
+          tax_number?: string | null
+          updated_at?: string
+          vat_id?: string | null
+        }
+        Relationships: []
+      }
+      partner_conversations: {
+        Row: {
+          counterpart_id: string
+          counterpart_role: string
+          created_at: string
+          horse_id: string | null
+          id: string
+          last_message_at: string | null
+          partner_id: string
+          subject: string | null
+          updated_at: string
+        }
+        Insert: {
+          counterpart_id: string
+          counterpart_role: string
+          created_at?: string
+          horse_id?: string | null
+          id?: string
+          last_message_at?: string | null
+          partner_id: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Update: {
+          counterpart_id?: string
+          counterpart_role?: string
+          created_at?: string
+          horse_id?: string | null
+          id?: string
+          last_message_at?: string | null
+          partner_id?: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_conversations_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_conversations_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_data_consents: {
+        Row: {
+          consent_type: string
+          granted_at: string
+          horse_id: string
+          id: string
+          ip_address: string | null
+          partner_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          consent_type?: string
+          granted_at?: string
+          horse_id: string
+          id?: string
+          ip_address?: string | null
+          partner_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          consent_type?: string
+          granted_at?: string
+          horse_id?: string
+          id?: string
+          ip_address?: string | null
+          partner_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_data_consents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_data_consents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_documents: {
+        Row: {
+          appointment_id: string | null
+          category: string
+          description: string | null
+          file_name: string
+          file_size_bytes: number | null
+          file_type: string | null
+          file_url: string
+          horse_id: string
+          id: string
+          partner_id: string
+          treatment_note_id: string | null
+          uploaded_at: string
+          visible_to_kid: boolean
+          visible_to_pid: boolean
+        }
+        Insert: {
+          appointment_id?: string | null
+          category?: string
+          description?: string | null
+          file_name: string
+          file_size_bytes?: number | null
+          file_type?: string | null
+          file_url: string
+          horse_id: string
+          id?: string
+          partner_id: string
+          treatment_note_id?: string | null
+          uploaded_at?: string
+          visible_to_kid?: boolean
+          visible_to_pid?: boolean
+        }
+        Update: {
+          appointment_id?: string | null
+          category?: string
+          description?: string | null
+          file_name?: string
+          file_size_bytes?: number | null
+          file_type?: string | null
+          file_url?: string
+          horse_id?: string
+          id?: string
+          partner_id?: string
+          treatment_note_id?: string | null
+          uploaded_at?: string
+          visible_to_kid?: boolean
+          visible_to_pid?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_documents_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "partner_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_documents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_documents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_documents_treatment_note_id_fkey"
+            columns: ["treatment_note_id"]
+            isOneToOne: false
+            referencedRelation: "partner_treatment_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_invoice_items: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string
+          quantity: number
+          total: number
+          treatment_note_id: string | null
+          unit_price: number
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          invoice_id: string
+          quantity?: number
+          total: number
+          treatment_note_id?: string | null
+          unit_price: number
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string
+          quantity?: number
+          total?: number
+          treatment_note_id?: string | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_invoice_items_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "partner_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "partner_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_invoice_items_treatment_note_id_fkey"
+            columns: ["treatment_note_id"]
+            isOneToOne: false
+            referencedRelation: "partner_treatment_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_invoice_number_counters: {
+        Row: {
+          id: string
+          last_number: number
+          partner_id: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          id?: string
+          last_number?: number
+          partner_id: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          id?: string
+          last_number?: number
+          partner_id?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      partner_invoices: {
+        Row: {
+          created_at: string
+          due_date: string | null
+          horse_id: string | null
+          id: string
+          invoice_number: string
+          issue_date: string
+          notes: string | null
+          partner_id: string
+          pdf_url: string | null
+          recipient_address: string | null
+          recipient_email: string | null
+          recipient_name: string
+          status: string
+          subtotal: number
+          tax_amount: number
+          tax_rate: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          due_date?: string | null
+          horse_id?: string | null
+          id?: string
+          invoice_number: string
+          issue_date?: string
+          notes?: string | null
+          partner_id: string
+          pdf_url?: string | null
+          recipient_address?: string | null
+          recipient_email?: string | null
+          recipient_name: string
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          due_date?: string | null
+          horse_id?: string | null
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          notes?: string | null
+          partner_id?: string
+          pdf_url?: string | null
+          recipient_address?: string | null
+          recipient_email?: string | null
+          recipient_name?: string
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_invoices_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_invoices_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          is_read: boolean
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "partner_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_services: {
+        Row: {
+          base_price: number | null
+          category: string | null
+          created_at: string
+          description: string | null
+          duration: number | null
+          id: string
+          is_active: boolean
+          name: string
+          partner_id: string
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          base_price?: number | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          duration?: number | null
+          id?: string
+          is_active?: boolean
+          name: string
+          partner_id: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          base_price?: number | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          duration?: number | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          partner_id?: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       partner_treatment_notes: {
         Row: {
           created_at: string | null
@@ -3982,6 +4553,78 @@ export type Database = {
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_treatment_plans: {
+        Row: {
+          created_at: string
+          description: string | null
+          diagnosis: string | null
+          end_date: string | null
+          goals: string | null
+          horse_id: string
+          id: string
+          partner_id: string
+          progress_percent: number | null
+          recommended_frequency: string | null
+          start_date: string | null
+          status: string
+          title: string
+          updated_at: string
+          visible_to_kid: boolean
+          visible_to_pid: boolean
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          diagnosis?: string | null
+          end_date?: string | null
+          goals?: string | null
+          horse_id: string
+          id?: string
+          partner_id: string
+          progress_percent?: number | null
+          recommended_frequency?: string | null
+          start_date?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          visible_to_kid?: boolean
+          visible_to_pid?: boolean
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          diagnosis?: string | null
+          end_date?: string | null
+          goals?: string | null
+          horse_id?: string
+          id?: string
+          partner_id?: string
+          progress_percent?: number | null
+          recommended_frequency?: string | null
+          start_date?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          visible_to_kid?: boolean
+          visible_to_pid?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_treatment_plans_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_treatment_plans_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
             referencedColumns: ["id"]
           },
         ]
@@ -6238,6 +6881,10 @@ export type Database = {
       delete_horse_safe: { Args: { _horse_id: string }; Returns: undefined }
       generate_invoice_number: {
         Args: { p_provider_id: string }
+        Returns: string
+      }
+      generate_partner_invoice_number: {
+        Args: { p_partner_id: string }
         Returns: string
       }
       generate_random_id: { Args: { prefix: string }; Returns: string }
