@@ -83,3 +83,6 @@ verify_jwt = true
 
 [functions.seed-demo-data]
 verify_jwt = true
+
+[functions.funnel-lead-notify]
+verify_jwt = false

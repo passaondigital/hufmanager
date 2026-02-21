@@ -2187,6 +2187,8 @@ export type Database = {
         Row: {
           assigned_to: string | null
           company_name: string | null
+          contact_history: Json | null
+          contact_preference: string | null
           converted_at: string | null
           converted_provider_id: string | null
           created_at: string
@@ -2195,17 +2197,23 @@ export type Database = {
           email: string | null
           full_name: string
           id: string
+          message: string | null
           notes: string | null
+          notification_sent_at: string | null
           phone: string | null
           postal_code: string | null
+          preferred_slots: Json | null
           source: string | null
           status: string
           tags: string[] | null
+          topic: string | null
           updated_at: string
         }
         Insert: {
           assigned_to?: string | null
           company_name?: string | null
+          contact_history?: Json | null
+          contact_preference?: string | null
           converted_at?: string | null
           converted_provider_id?: string | null
           created_at?: string
@@ -2214,17 +2222,23 @@ export type Database = {
           email?: string | null
           full_name: string
           id?: string
+          message?: string | null
           notes?: string | null
+          notification_sent_at?: string | null
           phone?: string | null
           postal_code?: string | null
+          preferred_slots?: Json | null
           source?: string | null
           status?: string
           tags?: string[] | null
+          topic?: string | null
           updated_at?: string
         }
         Update: {
           assigned_to?: string | null
           company_name?: string | null
+          contact_history?: Json | null
+          contact_preference?: string | null
           converted_at?: string | null
           converted_provider_id?: string | null
           created_at?: string
@@ -2233,12 +2247,16 @@ export type Database = {
           email?: string | null
           full_name?: string
           id?: string
+          message?: string | null
           notes?: string | null
+          notification_sent_at?: string | null
           phone?: string | null
           postal_code?: string | null
+          preferred_slots?: Json | null
           source?: string | null
           status?: string
           tags?: string[] | null
+          topic?: string | null
           updated_at?: string
         }
         Relationships: [
