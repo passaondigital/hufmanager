@@ -4582,6 +4582,7 @@ export type Database = {
       }
       provider_vehicles: {
         Row: {
+          assigned_employee_id: string | null
           average_consumption: number | null
           brand: string | null
           color: string | null
@@ -4589,20 +4590,28 @@ export type Database = {
           current_odometer: number | null
           fuel_type: string | null
           id: string
+          initial_odometer: number | null
           insurance_company: string | null
           insurance_expiry: string | null
           insurance_policy_number: string | null
           is_primary: boolean | null
           license_plate: string | null
           model: string | null
+          name: string | null
+          notes: string | null
+          photo_url: string | null
           price_per_km: number | null
           provider_id: string
+          status: string | null
           tax_yearly: number | null
           travel_cost_flat: number | null
+          tuev_date: string | null
           updated_at: string
+          vin: string | null
           year: number | null
         }
         Insert: {
+          assigned_employee_id?: string | null
           average_consumption?: number | null
           brand?: string | null
           color?: string | null
@@ -4610,20 +4619,28 @@ export type Database = {
           current_odometer?: number | null
           fuel_type?: string | null
           id?: string
+          initial_odometer?: number | null
           insurance_company?: string | null
           insurance_expiry?: string | null
           insurance_policy_number?: string | null
           is_primary?: boolean | null
           license_plate?: string | null
           model?: string | null
+          name?: string | null
+          notes?: string | null
+          photo_url?: string | null
           price_per_km?: number | null
           provider_id: string
+          status?: string | null
           tax_yearly?: number | null
           travel_cost_flat?: number | null
+          tuev_date?: string | null
           updated_at?: string
+          vin?: string | null
           year?: number | null
         }
         Update: {
+          assigned_employee_id?: string | null
           average_consumption?: number | null
           brand?: string | null
           color?: string | null
@@ -4631,20 +4648,35 @@ export type Database = {
           current_odometer?: number | null
           fuel_type?: string | null
           id?: string
+          initial_odometer?: number | null
           insurance_company?: string | null
           insurance_expiry?: string | null
           insurance_policy_number?: string | null
           is_primary?: boolean | null
           license_plate?: string | null
           model?: string | null
+          name?: string | null
+          notes?: string | null
+          photo_url?: string | null
           price_per_km?: number | null
           provider_id?: string
+          status?: string | null
           tax_yearly?: number | null
           travel_cost_flat?: number | null
+          tuev_date?: string | null
           updated_at?: string
+          vin?: string | null
           year?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "provider_vehicles_assigned_employee_id_fkey"
+            columns: ["assigned_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       purchase_order_items: {
         Row: {
@@ -5478,6 +5510,71 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      vehicle_costs: {
+        Row: {
+          amount: number
+          cost_type: string
+          created_at: string
+          date: string
+          description: string | null
+          fuel_station: string | null
+          id: string
+          is_full_tank: boolean | null
+          liters: number | null
+          mileage_at_cost: number | null
+          price_per_liter: number | null
+          provider_id: string
+          receipt_url: string | null
+          recorded_by: string | null
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          amount: number
+          cost_type: string
+          created_at?: string
+          date?: string
+          description?: string | null
+          fuel_station?: string | null
+          id?: string
+          is_full_tank?: boolean | null
+          liters?: number | null
+          mileage_at_cost?: number | null
+          price_per_liter?: number | null
+          provider_id: string
+          receipt_url?: string | null
+          recorded_by?: string | null
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          amount?: number
+          cost_type?: string
+          created_at?: string
+          date?: string
+          description?: string | null
+          fuel_station?: string | null
+          id?: string
+          is_full_tank?: boolean | null
+          liters?: number | null
+          mileage_at_cost?: number | null
+          price_per_liter?: number | null
+          provider_id?: string
+          receipt_url?: string | null
+          recorded_by?: string | null
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_costs_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "provider_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vehicle_logs: {
         Row: {
