@@ -77,7 +77,7 @@ export default function Blog() {
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/blog" className="flex items-center gap-2">
             <img 
               src="/hufmanager-logo.png" 
               alt="Hufmanager" 

@@ -105,8 +105,14 @@ export default function Auth() {
     if (redirectTo) {
       return <Navigate to={redirectTo} replace />;
     }
+    if (role === "admin") {
+      return <Navigate to="/admin/mission-control" replace />;
+    }
     if (role === "provider") {
       return <Navigate to="/home" replace />;
+    }
+    if (role === "employee") {
+      return <Navigate to="/employee" replace />;
     }
     if (role === "partner") {
       return <Navigate to="/partner-home" replace />;
