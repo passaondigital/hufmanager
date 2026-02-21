@@ -66,7 +66,7 @@ import AdminBroadcastCard from "@/components/admin/AdminBroadcastCard";
 import AdminFeedbackViewer from "@/components/admin/AdminFeedbackViewer";
 import { useAdminActivityLog } from "@/hooks/useAdminActivityLog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { VersionManager } from "@/components/admin/VersionManager";
+import { ReleaseControlCenter } from "@/components/admin/release-control/ReleaseControlCenter";
 import { DemoAnalyticsDashboard } from "@/components/admin/DemoAnalyticsDashboard";
 import { DemoAccountsManager } from "@/components/admin/DemoAccountsManager";
 import { AdminGlossaryManager } from "@/components/admin/AdminGlossaryManager";
@@ -1040,8 +1040,8 @@ export default function MissionControl() {
                 <span className="hidden md:inline">Tools</span>
               </TabsTrigger>
               <TabsTrigger value="versions" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Download className="w-4 h-4" />
-                <span className="hidden md:inline">Versionen</span>
+                <Shield className="w-4 h-4" />
+                <span className="hidden md:inline">Release Control</span>
               </TabsTrigger>
               <TabsTrigger value="rollout" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
                 <Sparkles className="w-4 h-4" />
@@ -2050,21 +2050,7 @@ export default function MissionControl() {
           </TabsContent>
 
           <TabsContent value="versions" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Download className="h-5 w-5" />
-                  App Versions-Kontrolle
-                </CardTitle>
-                <CardDescription>
-                  Erzwinge Updates auf allen Client-Geräten durch Versions-Bumps.
-                  Die lokale Version ist in <code className="bg-muted px-1 rounded">src/lib/appVersion.ts</code> definiert.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <VersionManager />
-              </CardContent>
-            </Card>
+            <ReleaseControlCenter />
           </TabsContent>
 
           <TabsContent value="rollout" className="space-y-6">

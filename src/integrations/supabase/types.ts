@@ -1064,6 +1064,36 @@ export type Database = {
           },
         ]
       }
+      config_snapshots: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          snapshot_data: Json
+          snapshot_type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          snapshot_data: Json
+          snapshot_type?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          snapshot_data?: Json
+          snapshot_type?: string
+        }
+        Relationships: []
+      }
       contacts: {
         Row: {
           category: Database["public"]["Enums"]["contact_category"]
@@ -4821,6 +4851,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      release_history: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          breaking_changes: string | null
+          changelog: string | null
+          created_at: string
+          deployed_at: string | null
+          deployed_by: string | null
+          id: string
+          instance: string
+          release_type: string
+          rollback_notes: string | null
+          rolled_back_at: string | null
+          status: string
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          breaking_changes?: string | null
+          changelog?: string | null
+          created_at?: string
+          deployed_at?: string | null
+          deployed_by?: string | null
+          id?: string
+          instance?: string
+          release_type?: string
+          rollback_notes?: string | null
+          rolled_back_at?: string | null
+          status?: string
+          updated_at?: string
+          version: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          breaking_changes?: string | null
+          changelog?: string | null
+          created_at?: string
+          deployed_at?: string | null
+          deployed_by?: string | null
+          id?: string
+          instance?: string
+          release_type?: string
+          rollback_notes?: string | null
+          rolled_back_at?: string | null
+          status?: string
+          updated_at?: string
+          version?: string
+        }
+        Relationships: []
       }
       revenue_events: {
         Row: {
