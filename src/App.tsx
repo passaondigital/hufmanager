@@ -97,6 +97,12 @@ import PartnerNotes from "@/pages/partner/PartnerNotes";
 import PartnerChat from "@/pages/partner/PartnerChat";
 import PartnerProfile from "@/pages/partner/PartnerProfile";
 import PartnerInvite from "@/pages/PartnerInvite";
+import PartnerCalendar from "@/pages/partner/PartnerCalendar";
+import PartnerTreatmentPlans from "@/pages/partner/PartnerTreatmentPlans";
+import PartnerDocuments from "@/pages/partner/PartnerDocuments";
+import PartnerServices from "@/pages/partner/PartnerServices";
+import PartnerInvoices from "@/pages/partner/PartnerInvoices";
+import PartnerSettings from "@/pages/partner/PartnerSettings";
 
 // Components
 import { AIChatWidget } from "@/components/chat/AIChatWidget";

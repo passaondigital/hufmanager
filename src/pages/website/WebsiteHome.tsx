@@ -3,6 +3,7 @@ import Navbar from "@/components/website/Navbar";
 import HeroV2 from "@/components/website/HeroV2";
 import ProblemSection from "@/components/website/ProblemSection";
 import IdentitySection from "@/components/website/IdentitySection";
+import HorseEcosystem from "@/components/website/HorseEcosystem";
 import SolutionSection from "@/components/website/SolutionSection";
 import EcosystemSection from "@/components/website/EcosystemSection";
 import PillarsSection from "@/components/website/PillarsSection";
@@ -34,6 +35,7 @@ const WebsiteHome = () => {
       <HeroV2 />
       <ProblemSection />
       <IdentitySection />
+      <HorseEcosystem />
       <SolutionSection />
       <EcosystemSection />
       <PillarsSection />
