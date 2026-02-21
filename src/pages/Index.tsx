@@ -10,8 +10,8 @@ const Index = () => {
     return <WebsiteHome />;
   }
   
-  // app.hufmanager.de or preview → Dashboard
-  return <Navigate to="/home" replace />;
+  // app.hufmanager.de or preview → Auth login
+  return <Navigate to="/auth" replace />;
 };
 
 export default Index;
