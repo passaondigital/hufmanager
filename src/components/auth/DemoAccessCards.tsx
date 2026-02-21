@@ -63,7 +63,7 @@ export function DemoAccessCards({ onSelectAccount }: DemoAccessCardsProps) {
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors py-2"
       >
-        <span className="font-medium">Demo-Zugänge verfügbar</span>
+        <span className="font-medium">1-Click Demo – 4 Perspektiven entdecken</span>
         {expanded ? (
           <ChevronUp className="h-3.5 w-3.5" />
         ) : (
@@ -113,7 +113,7 @@ export function DemoAccessCards({ onSelectAccount }: DemoAccessCardsProps) {
             );
           })}
           <p className="col-span-2 text-[10px] text-muted-foreground/60 text-center mt-1">
-            Passwort: <code className="bg-muted px-1 rounded">{DEMO_PASSWORD}</code> · Klick = Auto-Login
+            Klick = Auto-Login · Entdecke auch die <span className="text-primary font-medium">3 AutoFlow-Modi</span>
           </p>
         </div>
       )}
