@@ -32,10 +32,10 @@ export function DemoCalendarEntry() {
 
             <div className="flex-1 min-w-0">
               <h4 className="font-medium text-foreground text-sm">
-                Bereit für deinen eigenen HufManager?
+                Kopf frei? Dann jetzt mit deinem eigenen Account starten.
               </h4>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Übernimm deine Daten aus der Demo und arbeite im eigenen Account.
+                Übernimm deine Daten und arbeite in deinem eigenen HufManager.
               </p>
             </div>
 

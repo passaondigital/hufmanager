@@ -34,7 +34,7 @@ export function DemoStickyBanner() {
                   Demo-Modus
                 </p>
                 <p className="text-xs sm:text-sm text-muted-foreground">
-                  Du siehst einen Beispiel-Account mit Testdaten.
+                  Schau dich um – probier die App aus allen Perspektiven.
                 </p>
               </div>
             </div>
