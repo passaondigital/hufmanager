@@ -101,7 +101,28 @@ export default function Auth() {
   }, [inviteCode, urlRole, urlEmail]);
 
   // Redirect if already logged in
+  const LANDING_HOSTS = ["www.hufmanager.de", "hufmanager.de"];
+  const isOnLandingDomain = LANDING_HOSTS.includes(window.location.hostname);
+
   if (!authLoading && user && role) {
+    // On the landing domain, redirect to app.hufmanager.de (not internal routes)
+    if (isOnLandingDomain) {
+      const roleToPath: Record<string, string> = {
+        admin: "/admin/mission-control",
+        provider: "/home",
+        employee: "/employee",
+        partner: "/partner-home",
+        client: "/client-home",
+      };
+      const target = redirectTo || roleToPath[role] || "/home";
+      window.location.href = `https://app.hufmanager.de${target}`;
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+    }
+
     if (redirectTo) {
       return <Navigate to={redirectTo} replace />;
     }
