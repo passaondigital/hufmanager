@@ -101,8 +101,8 @@ export default function Auth() {
     }
   }, [inviteCode, urlRole, urlEmail]);
 
-  // Redirect if already logged in (skip if force=login from landing page)
-  if (!authLoading && user && role && !forceLogin) {
+  // Redirect if already logged in
+  if (!authLoading && user && role) {
     if (redirectTo) {
       return <Navigate to={redirectTo} replace />;
     }
