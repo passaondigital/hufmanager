@@ -1,6 +1,6 @@
 // HufManager Service Worker for Push Notifications & Offline Support
 
-const CACHE_NAME = 'hufmanager-v1';
+const CACHE_NAME = 'hufmanager-v2';
 
 // Static assets to cache immediately
 const STATIC_ASSETS = [
@@ -49,14 +49,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For static assets, use cache-first
+  // For images and fonts ONLY, use cache-first (stale-while-revalidate)
+  // NOTE: JS and CSS are handled by Workbox (vite-plugin-pwa) - do NOT cache them here
+  // to prevent serving stale application code
   if (
     request.destination === 'image' ||
     request.destination === 'font' ||
-    request.destination === 'style' ||
-    request.destination === 'script' ||
-    url.pathname.endsWith('.js') ||
-    url.pathname.endsWith('.css') ||
     url.pathname.endsWith('.png') ||
     url.pathname.endsWith('.jpg') ||
     url.pathname.endsWith('.svg') ||
