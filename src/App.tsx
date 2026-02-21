@@ -78,6 +78,7 @@ import EmployeeTour from "@/pages/EmployeeTour";
 import MeinOffice from "@/pages/MeinOffice";
 import Ecosystem from "@/pages/Ecosystem";
 import Buchhaltung from "@/pages/Buchhaltung";
+import Fuhrpark from "@/pages/Fuhrpark";
 import AutoFlow from "@/pages/AutoFlow";
 import { EmployeeAppLayout } from "@/components/employee/EmployeeAppLayout";
 import { PartnerAppLayout } from "@/components/partner/PartnerAppLayout";
@@ -292,6 +293,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/work-mode" element={<WorkMode />} />
               <Route path="/tour" element={<Tour />} />
               <Route path="/ausgaben" element={<Ausgaben />} />
+              <Route path="/fuhrpark" element={<Fuhrpark />} />
               <Route path="/guv" element={<GuV />} />
               <Route path="/buchhaltung" element={<Buchhaltung />} />
               <Route path="/rechnungen" element={<Rechnungen />} />
