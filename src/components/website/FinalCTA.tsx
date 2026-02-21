@@ -1,12 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-
-const LANDING_HOSTS = ["www.hufmanager.de", "hufmanager.de"];
+import { Link } from "react-router-dom";
 
 const FinalCTA = () => {
-  const isLandingDomain = LANDING_HOSTS.includes(window.location.hostname);
-  const loginHref = isLandingDomain ? "https://app.hufmanager.de/auth" : "/auth?force=login";
-
   return (
   <section className="relative py-24 md:py-32 bg-black overflow-hidden">
     <div className="absolute inset-0">
@@ -21,7 +17,7 @@ const FinalCTA = () => {
           Jetzt kostenlos testen – keine Kreditkarte, kein Risiko.
         </p>
         <Button size="lg" className="glow-orange text-lg font-bold bg-primary hover:bg-primary/90 text-white" asChild>
-          <a href={loginHref}>Kostenlos starten<ArrowRight className="ml-2 h-5 w-5" /></a>
+          <Link to="/auth?force=login">Kostenlos starten<ArrowRight className="ml-2 h-5 w-5" /></Link>
         </Button>
         <div className="pt-4 space-y-2">
           <p className="text-white/40 text-sm">HufManager – weil die Pferdebranche eine bessere Zukunft verdient.</p>
