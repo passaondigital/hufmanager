@@ -4,6 +4,14 @@ import heroHorse from "@/assets/lp/hero-horse.png";
 
 const trustItems = ["DSGVO", "DE-Server", "Offlinefähig", "Mobile-first"];
 
+const highlights = [
+  "für das Pferdewohl.",
+  "Für deine Kunden.",
+  "Für Weiterbildung.",
+  "Für deine Familie.",
+  "Für dich.",
+];
+
 const HeroV2 = () => {
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-black">
@@ -16,14 +24,16 @@ const HeroV2 = () => {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <div className="space-y-6">
             <h1 className="font-sans text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-[1.08] tracking-tight animate-fade-up" style={{ animationDelay: "0ms" }}>
-              Betriebssystem für <span className="text-primary">Hufbearbeiter.</span>
+              Wir machen deinen Kopf frei – <span className="text-primary">und entlasten deinen Rücken.</span>
             </h1>
             <p className="text-xl md:text-2xl text-white/80 font-medium leading-snug animate-fade-up" style={{ animationDelay: "100ms" }}>
-              Ein System für Betrieb, Team & Kunden – online & offline.
+              Mehr Zeit für das, was dir wirklich wichtig ist:
             </p>
-            <p className="text-lg text-white/50 max-w-lg animate-fade-up" style={{ animationDelay: "150ms" }}>
-              Schluss mit Zettelchaos, No-Shows und Diskussionen.
-            </p>
+            <div className="flex flex-wrap gap-2 animate-fade-up" style={{ animationDelay: "150ms" }}>
+              {highlights.map((item) => (
+                <span key={item} className="text-lg text-white/60 italic">{item}</span>
+              ))}
+            </div>
             <div className="flex flex-col sm:flex-row gap-4 pt-4 animate-fade-up" style={{ animationDelay: "200ms" }}>
               <Button size="lg" className="glow-orange text-lg font-bold bg-primary hover:bg-primary/90 text-white" asChild>
                 <a href="#demo"><Play className="mr-2 h-5 w-5" />Demo ansehen</a>

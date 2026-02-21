@@ -2,11 +2,14 @@ import { useEffect } from "react";
 import Navbar from "@/components/website/Navbar";
 import HeroV2 from "@/components/website/HeroV2";
 import ProblemSection from "@/components/website/ProblemSection";
+import IdentitySection from "@/components/website/IdentitySection";
+import SolutionSection from "@/components/website/SolutionSection";
 import EcosystemSection from "@/components/website/EcosystemSection";
 import PillarsSection from "@/components/website/PillarsSection";
 import OfflineSection from "@/components/website/OfflineSection";
 import DemoSection from "@/components/website/DemoSection";
 import PricingV2 from "@/components/website/PricingV2";
+import TrustSection from "@/components/website/TrustSection";
 import HufrenteSection from "@/components/website/HufrenteSection";
 import FAQ from "@/components/website/FAQ";
 import FinalCTA from "@/components/website/FinalCTA";
@@ -29,11 +32,14 @@ const WebsiteHome = () => {
       <Navbar />
       <HeroV2 />
       <ProblemSection />
+      <IdentitySection />
+      <SolutionSection />
       <EcosystemSection />
       <PillarsSection />
       <OfflineSection />
       <DemoSection />
       <PricingV2 />
+      <TrustSection />
       <LatestBlogPosts />
       <HufrenteSection />
       <FAQ />
