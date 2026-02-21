@@ -575,19 +575,19 @@ export default function Auth() {
           <div className="grid grid-cols-1 gap-1.5 text-[11px] text-muted-foreground">
             <div className="flex items-start gap-2">
               <Hammer className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
-              <span><strong className="text-foreground">Hufbearbeiter</strong> – Betrieb, Termine, Kunden & Rechnungen verwalten</span>
+              <span><strong className="text-foreground">HufbearbeiterInnen</strong> – Betrieb, Termine, Kunden & Rechnungen verwalten</span>
             </div>
             <div className="flex items-start gap-2">
               <Heart className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
-              <span><strong className="text-foreground">Pferdebesitzer</strong> – Pferde-Akte, Termine einsehen & Hufbearbeiter kontaktieren</span>
+              <span><strong className="text-foreground">PferdebesitzerInnen</strong> – Pferde-Akte, Termine einsehen & Profis kontaktieren</span>
             </div>
             <div className="flex items-start gap-2">
               <Users className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
-              <span><strong className="text-foreground">Mitarbeiter</strong> – Vom Betrieb eingeladen, Aufträge & Tour ausführen</span>
+              <span><strong className="text-foreground">MitarbeiterInnen</strong> – Vom Betrieb eingeladen, Aufträge & Tour ausführen</span>
             </div>
             <div className="flex items-start gap-2">
               <Stethoscope className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
-              <span><strong className="text-foreground">Fachpartner</strong> – Tierärzte & Therapeuten, per Einladung freigeschaltet</span>
+              <span><strong className="text-foreground">TherapeutInnen & TierärztInnen</strong> – Per Einladung freigeschaltet, Befunde & Behandlungen</span>
             </div>
           </div>
         </div>
