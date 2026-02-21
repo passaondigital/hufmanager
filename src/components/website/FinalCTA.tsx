@@ -1,8 +1,13 @@
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 
-const FinalCTA = () => (
+const LANDING_HOSTS = ["www.hufmanager.de", "hufmanager.de"];
+
+const FinalCTA = () => {
+  const isLandingDomain = LANDING_HOSTS.includes(window.location.hostname);
+  const loginHref = isLandingDomain ? "https://app.hufmanager.de/auth" : "/auth";
+
+  return (
   <section className="relative py-24 md:py-32 bg-black overflow-hidden">
     <div className="absolute inset-0">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-primary/15 rounded-full blur-[150px]" />
@@ -16,7 +21,7 @@ const FinalCTA = () => (
           Jetzt kostenlos testen – keine Kreditkarte, kein Risiko.
         </p>
         <Button size="lg" className="glow-orange text-lg font-bold bg-primary hover:bg-primary/90 text-white" asChild>
-          <Link to="/auth">Kostenlos starten<ArrowRight className="ml-2 h-5 w-5" /></Link>
+          <a href={loginHref}>Kostenlos starten<ArrowRight className="ml-2 h-5 w-5" /></a>
         </Button>
         <div className="pt-4 space-y-2">
           <p className="text-white/40 text-sm">HufManager – weil die Pferdebranche eine bessere Zukunft verdient.</p>
@@ -26,6 +31,7 @@ const FinalCTA = () => (
       </div>
     </div>
   </section>
-);
+  );
+};
 
 export default FinalCTA;

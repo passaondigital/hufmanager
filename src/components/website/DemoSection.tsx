@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Play, Hammer, Heart, Stethoscope, Users, Zap,
@@ -98,9 +97,15 @@ const DemoSection = () => (
           </p>
         </div>
 
-        <Button size="lg" className="glow-orange text-lg font-bold bg-primary hover:bg-primary/90 text-white" asChild>
-          <Link to="/auth"><Play className="mr-2 h-5 w-5" />Jetzt Demo starten</Link>
-        </Button>
+        {(() => {
+          const isLandingDomain = ["www.hufmanager.de", "hufmanager.de"].includes(window.location.hostname);
+          const loginHref = isLandingDomain ? "https://app.hufmanager.de/auth" : "/auth";
+          return (
+            <Button size="lg" className="glow-orange text-lg font-bold bg-primary hover:bg-primary/90 text-white" asChild>
+              <a href={loginHref}><Play className="mr-2 h-5 w-5" />Jetzt Demo starten</a>
+            </Button>
+          );
+        })()}
         <p className="text-white/40 text-sm mt-6">Kein Verkaufsgespräch. Kein Druck. Einfach reinschauen und selbst entscheiden.</p>
       </div>
 
