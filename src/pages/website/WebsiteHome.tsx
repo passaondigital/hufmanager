@@ -22,10 +22,10 @@ import CookieBanner from "@/components/website/CookieBanner";
 const WebsiteHome = () => {
   useEffect(() => {
     // Set SEO meta tags
-    document.title = "HufManager - Die All-in-One App für Hufpfleger & Hufschmiede";
+    document.title = "HufManager - Die All-in-One Plattform für Pferde-Profis";
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
-      metaDesc.setAttribute("content", "Digitalisiere dein Hufpflege-Business: Terminplanung, Kundenverwaltung, Rechnungen & mehr. 100% DSGVO-konform. Jetzt kostenlos starten!");
+      metaDesc.setAttribute("content", "Terminplanung, Dokumentation, Rechnungen & Vernetzung für Hufbearbeiter, Therapeuten, Trainer & alle Pferde-Profis. 100% DSGVO-konform. Jetzt kostenlos starten!");
     }
   }, []);
 

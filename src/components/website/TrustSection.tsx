@@ -2,7 +2,7 @@ import { Shield, Server, Heart } from "lucide-react";
 
 const trustValues = [
   { icon: Shield, title: "Datenschutz", text: "DSGVO-konform. Deutsche Server. Verschlüsselte Übertragung." },
-  { icon: Heart, title: "Pferdeschutz", text: "Gebaut für Menschen, die ihr Herz für Pferde geben." },
+  { icon: Heart, title: "Pferdewohl", text: "Gebaut für Menschen, die ihr Herz für Pferde geben – in jeder Disziplin." },
   { icon: Server, title: "Innovation", text: "Der modernste Werkzeugkasten für die gesamte Pferdebranche." },
 ];
 
@@ -12,7 +12,7 @@ const TrustSection = () => (
       <div className="max-w-4xl mx-auto text-center mb-12">
         <span className="text-primary font-bold text-sm uppercase tracking-widest">Vertrauen</span>
         <h2 className="font-sans text-2xl md:text-3xl font-extrabold text-white mt-4">
-          Pferdeschutz und Datenschutz – aus Überzeugung.
+          Pferdewohl und Datenschutz – aus Überzeugung.
         </h2>
         <p className="text-white/50 mt-3">Weil Vertrauen die Grundlage für alles ist – bei Pferden wie bei Software.</p>
       </div>
