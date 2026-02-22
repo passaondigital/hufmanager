@@ -1,7 +1,12 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Outlet, useLocation, NavLink } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Home, Heart, FileText, MessageSquare, User, Menu, LogOut, Sun, Moon, ChevronRight, Calendar, Upload, ClipboardList, Receipt, Briefcase, Settings } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
+import {
+  Home, Heart, FileText, MessageSquare, User, Menu, LogOut, Sun, Moon,
+  ChevronRight, Calendar, Upload, ClipboardList, Receipt, Briefcase,
+  Settings, BarChart3, Map as MapIcon, GraduationCap, Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -9,34 +14,58 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/ThemeProvider";
+import { FeatureKey } from "@/types/featureFlags";
 
-const bottomNavItems = [
-  { icon: Home, label: "Home", path: "/partner-home" },
-  { icon: Calendar, label: "Kalender", path: "/partner-calendar" },
-  { icon: Heart, label: "Pferde", path: "/partner-horses" },
-  { icon: MessageSquare, label: "Chat", path: "/partner-chat" },
-  { icon: User, label: "Profil", path: "/partner-profile" },
-];
+interface NavItem {
+  icon: React.ElementType;
+  label: string;
+  path: string;
+  /** If set, item is only visible when this feature is accessible */
+  featureKey?: FeatureKey;
+  /** Show in bottom nav on mobile */
+  bottomNav?: boolean;
+}
 
-const sidebarItems = [
-  { icon: Home, label: "Übersicht", path: "/partner-home" },
-  { icon: Calendar, label: "Kalender", path: "/partner-calendar" },
-  { icon: Heart, label: "Meine Pferde", path: "/partner-horses" },
+// All possible navigation items – visibility controlled by feature flags
+const ALL_NAV_ITEMS: NavItem[] = [
+  { icon: Home, label: "Übersicht", path: "/partner-home", bottomNav: true },
+  { icon: Calendar, label: "Kalender", path: "/partner-calendar", featureKey: "module_invoicing", bottomNav: true },
+  { icon: Heart, label: "Meine Pferde", path: "/partner-horses", bottomNav: true },
   { icon: FileText, label: "Behandlungsnotizen", path: "/partner-notes" },
   { icon: ClipboardList, label: "Behandlungspläne", path: "/partner-plans" },
   { icon: Upload, label: "Dokumente & Befunde", path: "/partner-documents" },
-  { icon: Briefcase, label: "Leistungskatalog", path: "/partner-services" },
-  { icon: Receipt, label: "Rechnungen", path: "/partner-invoices" },
-  { icon: MessageSquare, label: "Chat", path: "/partner-chat" },
+  { icon: Briefcase, label: "Leistungskatalog", path: "/partner-services", featureKey: "module_invoicing" },
+  { icon: Receipt, label: "Rechnungen", path: "/partner-invoices", featureKey: "module_invoicing" },
+  { icon: MessageSquare, label: "Chat", path: "/partner-chat", featureKey: "module_chat", bottomNav: true },
+  { icon: MapIcon, label: "Karte / Navigation", path: "/partner-maps", featureKey: "module_maps" },
+  { icon: BarChart3, label: "Analytics", path: "/partner-analytics", featureKey: "module_analytics" },
+  { icon: GraduationCap, label: "Academy", path: "/partner-academy", featureKey: "module_academy" },
   { icon: Settings, label: "Einstellungen", path: "/partner-settings" },
-  { icon: User, label: "Profil", path: "/partner-profile" },
+  { icon: User, label: "Profil", path: "/partner-profile", bottomNav: true },
 ];
 
 export function PartnerAppLayout() {
   const location = useLocation();
   const { signOut, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { isFeatureVisible, showBetaBadge } = useSubscription();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Filter nav items based on feature flags
+  const visibleNavItems = useMemo(() => {
+    return ALL_NAV_ITEMS.filter(item => {
+      if (!item.featureKey) return true;
+      return isFeatureVisible(item.featureKey);
+    });
+  }, [isFeatureVisible]);
+
+  const bottomNavItems = useMemo(() => {
+    return visibleNavItems.filter(item => item.bottomNav).slice(0, 5);
+  }, [visibleNavItems]);
+
+  const sidebarItems = useMemo(() => {
+    return visibleNavItems;
+  }, [visibleNavItems]);
 
   const isActive = (path: string) => {
     if (path === "/partner-home") return location.pathname === "/partner-home";
@@ -97,6 +126,9 @@ export function PartnerAppLayout() {
               >
                 <item.icon className="h-4 w-4" />
                 <span className="flex-1">{item.label}</span>
+                {item.featureKey && showBetaBadge(item.featureKey) && (
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Beta</Badge>
+                )}
               </NavLink>
             ))}
           </nav>
@@ -143,6 +175,9 @@ export function PartnerAppLayout() {
               >
                 <item.icon className="h-4 w-4" />
                 <span className="flex-1">{item.label}</span>
+                {item.featureKey && showBetaBadge(item.featureKey) && (
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Beta</Badge>
+                )}
                 <ChevronRight className="h-3.5 w-3.5 opacity-50" />
               </NavLink>
             ))}

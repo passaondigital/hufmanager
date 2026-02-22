@@ -71,6 +71,8 @@ import { DemoAnalyticsDashboard } from "@/components/admin/DemoAnalyticsDashboar
 import { DemoAccountsManager } from "@/components/admin/DemoAccountsManager";
 import { AdminGlossaryManager } from "@/components/admin/AdminGlossaryManager";
 import { FunnelCockpit } from "@/components/admin/FunnelCockpit";
+import AdminPartnerOverview from "@/components/admin/AdminPartnerOverview";
+import AdminEmployeeOverview from "@/components/admin/AdminEmployeeOverview";
 
 // Horse icon fallback since lucide doesn't have it
 const Horse = () => (
@@ -1022,6 +1024,14 @@ export default function MissionControl() {
               <TabsTrigger value="providers" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
                 <Users className="w-4 h-4" />
                 <span className="hidden md:inline">Provider</span> ({providers.length})
+              </TabsTrigger>
+              <TabsTrigger value="partners" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <Globe className="w-4 h-4" />
+                <span className="hidden md:inline">Partner</span>
+              </TabsTrigger>
+              <TabsTrigger value="employees" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <Building2 className="w-4 h-4" />
+                <span className="hidden md:inline">Mitarbeiter</span>
               </TabsTrigger>
               <TabsTrigger value="stats" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
                 <Settings className="w-4 h-4" />
@@ -2075,8 +2085,16 @@ export default function MissionControl() {
             <AdminGlossaryManager />
           </TabsContent>
 
-          <TabsContent value="funnel" className="space-y-6">
+           <TabsContent value="funnel" className="space-y-6">
             <FunnelCockpit />
+          </TabsContent>
+
+          <TabsContent value="partners" className="space-y-6">
+            <AdminPartnerOverview />
+          </TabsContent>
+
+          <TabsContent value="employees" className="space-y-6">
+            <AdminEmployeeOverview />
           </TabsContent>
         </Tabs>
 
