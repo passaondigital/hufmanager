@@ -438,6 +438,7 @@ export type Database = {
           recurring_group_id: string | null
           series_current: number | null
           series_total: number | null
+          service_id: string | null
           service_type: string | null
           signature_url: string | null
           signed_at: string | null
@@ -479,6 +480,7 @@ export type Database = {
           recurring_group_id?: string | null
           series_current?: number | null
           series_total?: number | null
+          service_id?: string | null
           service_type?: string | null
           signature_url?: string | null
           signed_at?: string | null
@@ -520,6 +522,7 @@ export type Database = {
           recurring_group_id?: string | null
           series_current?: number | null
           series_total?: number | null
+          service_id?: string | null
           service_type?: string | null
           signature_url?: string | null
           signed_at?: string | null
@@ -585,6 +588,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
             referencedColumns: ["id"]
           },
           {
@@ -3697,7 +3707,7 @@ export type Database = {
       offers: {
         Row: {
           auto_deduct: boolean | null
-          billing_type: string | null
+          billing_type: Database["public"]["Enums"]["billing_type"] | null
           created_at: string
           description: string | null
           display_mode: string | null
@@ -3719,7 +3729,7 @@ export type Database = {
         }
         Insert: {
           auto_deduct?: boolean | null
-          billing_type?: string | null
+          billing_type?: Database["public"]["Enums"]["billing_type"] | null
           created_at?: string
           description?: string | null
           display_mode?: string | null
@@ -3741,7 +3751,7 @@ export type Database = {
         }
         Update: {
           auto_deduct?: boolean | null
-          billing_type?: string | null
+          billing_type?: Database["public"]["Enums"]["billing_type"] | null
           created_at?: string
           description?: string | null
           display_mode?: string | null
@@ -4431,6 +4441,44 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "partner_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_service_price_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_price: number | null
+          old_price: number | null
+          partner_service_id: string
+          reason: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_price?: number | null
+          old_price?: number | null
+          partner_service_id: string
+          reason?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_price?: number | null
+          old_price?: number | null
+          partner_service_id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_service_price_history_partner_service_id_fkey"
+            columns: ["partner_service_id"]
+            isOneToOne: false
+            referencedRelation: "partner_services"
             referencedColumns: ["id"]
           },
         ]
@@ -5743,6 +5791,50 @@ export type Database = {
         }
         Relationships: []
       }
+      service_price_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_billing_type: Database["public"]["Enums"]["billing_type"] | null
+          new_price: number | null
+          old_billing_type: Database["public"]["Enums"]["billing_type"] | null
+          old_price: number | null
+          reason: string | null
+          service_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_billing_type?: Database["public"]["Enums"]["billing_type"] | null
+          new_price?: number | null
+          old_billing_type?: Database["public"]["Enums"]["billing_type"] | null
+          old_price?: number | null
+          reason?: string | null
+          service_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_billing_type?: Database["public"]["Enums"]["billing_type"] | null
+          new_price?: number | null
+          old_billing_type?: Database["public"]["Enums"]["billing_type"] | null
+          old_price?: number | null
+          reason?: string | null
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_price_history_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
           base_price: number
@@ -5756,10 +5848,7 @@ export type Database = {
           is_active: boolean | null
           is_group_service: boolean | null
           name: string
-          position: number | null
           provider_id: string | null
-          rank: number | null
-          service_category: string | null
           sort_order: number | null
           updated_at: string
         }
@@ -5775,10 +5864,7 @@ export type Database = {
           is_active?: boolean | null
           is_group_service?: boolean | null
           name: string
-          position?: number | null
           provider_id?: string | null
-          rank?: number | null
-          service_category?: string | null
           sort_order?: number | null
           updated_at?: string
         }
@@ -5794,10 +5880,7 @@ export type Database = {
           is_active?: boolean | null
           is_group_service?: boolean | null
           name?: string
-          position?: number | null
           provider_id?: string | null
-          rank?: number | null
-          service_category?: string | null
           sort_order?: number | null
           updated_at?: string
         }
