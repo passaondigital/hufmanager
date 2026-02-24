@@ -445,6 +445,8 @@ export type Database = {
           signed_by_name: string | null
           stable_group_id: string | null
           status: string | null
+          surcharge_amount: number | null
+          surcharge_label: string | null
           time: string | null
           tour_order: number | null
           updated_at: string
@@ -487,6 +489,8 @@ export type Database = {
           signed_by_name?: string | null
           stable_group_id?: string | null
           status?: string | null
+          surcharge_amount?: number | null
+          surcharge_label?: string | null
           time?: string | null
           tour_order?: number | null
           updated_at?: string
@@ -529,6 +533,8 @@ export type Database = {
           signed_by_name?: string | null
           stable_group_id?: string | null
           status?: string | null
+          surcharge_amount?: number | null
+          surcharge_label?: string | null
           time?: string | null
           tour_order?: number | null
           updated_at?: string
@@ -4881,6 +4887,7 @@ export type Database = {
           phone_mobile: string | null
           plan_override: string | null
           preferred_app_theme: string | null
+          price_group: Database["public"]["Enums"]["price_group"]
           readable_id: string | null
           reliability_score: number | null
           reminder_1h: boolean | null
@@ -4972,6 +4979,7 @@ export type Database = {
           phone_mobile?: string | null
           plan_override?: string | null
           preferred_app_theme?: string | null
+          price_group?: Database["public"]["Enums"]["price_group"]
           readable_id?: string | null
           reliability_score?: number | null
           reminder_1h?: boolean | null
@@ -5063,6 +5071,7 @@ export type Database = {
           phone_mobile?: string | null
           plan_override?: string | null
           preferred_app_theme?: string | null
+          price_group?: Database["public"]["Enums"]["price_group"]
           readable_id?: string | null
           reliability_score?: number | null
           reminder_1h?: boolean | null
@@ -5835,6 +5844,44 @@ export type Database = {
           },
         ]
       }
+      service_price_overrides: {
+        Row: {
+          created_at: string
+          id: string
+          price: number
+          price_group: Database["public"]["Enums"]["price_group"]
+          provider_id: string
+          service_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          price: number
+          price_group: Database["public"]["Enums"]["price_group"]
+          provider_id: string
+          service_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          price?: number
+          price_group?: Database["public"]["Enums"]["price_group"]
+          provider_id?: string
+          service_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_price_overrides_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
           base_price: number
@@ -6056,6 +6103,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      surcharge_rules: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string | null
+          provider_id: string
+          trigger: Database["public"]["Enums"]["surcharge_trigger"]
+          type: Database["public"]["Enums"]["surcharge_type"]
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          provider_id: string
+          trigger: Database["public"]["Enums"]["surcharge_trigger"]
+          type?: Database["public"]["Enums"]["surcharge_type"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          provider_id?: string
+          trigger?: Database["public"]["Enums"]["surcharge_trigger"]
+          type?: Database["public"]["Enums"]["surcharge_type"]
+          updated_at?: string
+        }
+        Relationships: []
       }
       system_settings: {
         Row: {
@@ -7170,6 +7253,13 @@ export type Database = {
         | "ernaehrungsberater"
         | "other"
       payment_rating: "A" | "B" | "C" | "D"
+      price_group: "standard" | "vip" | "grossstall" | "individuell"
+      surcharge_trigger:
+        | "notfall"
+        | "wochenende"
+        | "anfahrt"
+        | "schwieriges_pferd"
+      surcharge_type: "fix" | "prozent"
       usage_type:
         | "leisure"
         | "sport"
@@ -7343,6 +7433,14 @@ export const Constants = {
         "other",
       ],
       payment_rating: ["A", "B", "C", "D"],
+      price_group: ["standard", "vip", "grossstall", "individuell"],
+      surcharge_trigger: [
+        "notfall",
+        "wochenende",
+        "anfahrt",
+        "schwieriges_pferd",
+      ],
+      surcharge_type: ["fix", "prozent"],
       usage_type: [
         "leisure",
         "sport",
