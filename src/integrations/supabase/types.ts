@@ -409,7 +409,9 @@ export type Database = {
       appointments: {
         Row: {
           added_during_tour: boolean | null
+          applied_price: number | null
           assigned_to_user_id: string | null
+          base_price: number | null
           client_id: string | null
           completed_at: string | null
           completion_notes: string | null
@@ -418,6 +420,8 @@ export type Database = {
           confirmed_at: string | null
           created_at: string
           date: string
+          discount_amount: number | null
+          discount_reason: string | null
           duration: number | null
           gait_analysis_done: boolean | null
           gait_analysis_ok: boolean | null
@@ -434,6 +438,7 @@ export type Database = {
           notes: string | null
           organization_id: string | null
           price: number | null
+          price_group_applied: string | null
           provider_id: string | null
           recurring_group_id: string | null
           series_current: number | null
@@ -446,14 +451,16 @@ export type Database = {
           stable_group_id: string | null
           status: string | null
           surcharge_amount: number | null
-          surcharge_label: string | null
+          surcharge_reason: string | null
           time: string | null
           tour_order: number | null
           updated_at: string
         }
         Insert: {
           added_during_tour?: boolean | null
+          applied_price?: number | null
           assigned_to_user_id?: string | null
+          base_price?: number | null
           client_id?: string | null
           completed_at?: string | null
           completion_notes?: string | null
@@ -462,6 +469,8 @@ export type Database = {
           confirmed_at?: string | null
           created_at?: string
           date: string
+          discount_amount?: number | null
+          discount_reason?: string | null
           duration?: number | null
           gait_analysis_done?: boolean | null
           gait_analysis_ok?: boolean | null
@@ -478,6 +487,7 @@ export type Database = {
           notes?: string | null
           organization_id?: string | null
           price?: number | null
+          price_group_applied?: string | null
           provider_id?: string | null
           recurring_group_id?: string | null
           series_current?: number | null
@@ -490,14 +500,16 @@ export type Database = {
           stable_group_id?: string | null
           status?: string | null
           surcharge_amount?: number | null
-          surcharge_label?: string | null
+          surcharge_reason?: string | null
           time?: string | null
           tour_order?: number | null
           updated_at?: string
         }
         Update: {
           added_during_tour?: boolean | null
+          applied_price?: number | null
           assigned_to_user_id?: string | null
+          base_price?: number | null
           client_id?: string | null
           completed_at?: string | null
           completion_notes?: string | null
@@ -506,6 +518,8 @@ export type Database = {
           confirmed_at?: string | null
           created_at?: string
           date?: string
+          discount_amount?: number | null
+          discount_reason?: string | null
           duration?: number | null
           gait_analysis_done?: boolean | null
           gait_analysis_ok?: boolean | null
@@ -522,6 +536,7 @@ export type Database = {
           notes?: string | null
           organization_id?: string | null
           price?: number | null
+          price_group_applied?: string | null
           provider_id?: string | null
           recurring_group_id?: string | null
           series_current?: number | null
@@ -534,7 +549,7 @@ export type Database = {
           stable_group_id?: string | null
           status?: string | null
           surcharge_amount?: number | null
-          surcharge_label?: string | null
+          surcharge_reason?: string | null
           time?: string | null
           tour_order?: number | null
           updated_at?: string
@@ -4887,7 +4902,8 @@ export type Database = {
           phone_mobile: string | null
           plan_override: string | null
           preferred_app_theme: string | null
-          price_group: Database["public"]["Enums"]["price_group"]
+          price_group: string
+          price_group_label: string | null
           readable_id: string | null
           reliability_score: number | null
           reminder_1h: boolean | null
@@ -4979,7 +4995,8 @@ export type Database = {
           phone_mobile?: string | null
           plan_override?: string | null
           preferred_app_theme?: string | null
-          price_group?: Database["public"]["Enums"]["price_group"]
+          price_group?: string
+          price_group_label?: string | null
           readable_id?: string | null
           reliability_score?: number | null
           reminder_1h?: boolean | null
@@ -5071,7 +5088,8 @@ export type Database = {
           phone_mobile?: string | null
           plan_override?: string | null
           preferred_app_theme?: string | null
-          price_group?: Database["public"]["Enums"]["price_group"]
+          price_group?: string
+          price_group_label?: string | null
           readable_id?: string | null
           reliability_score?: number | null
           reminder_1h?: boolean | null
@@ -5849,7 +5867,7 @@ export type Database = {
           created_at: string
           id: string
           price: number
-          price_group: Database["public"]["Enums"]["price_group"]
+          price_group: string
           provider_id: string
           service_id: string
           updated_at: string
@@ -5858,7 +5876,7 @@ export type Database = {
           created_at?: string
           id?: string
           price: number
-          price_group: Database["public"]["Enums"]["price_group"]
+          price_group: string
           provider_id: string
           service_id: string
           updated_at?: string
@@ -5867,7 +5885,7 @@ export type Database = {
           created_at?: string
           id?: string
           price?: number
-          price_group?: Database["public"]["Enums"]["price_group"]
+          price_group?: string
           provider_id?: string
           service_id?: string
           updated_at?: string
@@ -6107,35 +6125,38 @@ export type Database = {
       surcharge_rules: {
         Row: {
           amount: number
+          calculation_type: string
           created_at: string
           id: string
           is_active: boolean
           label: string | null
+          name: string | null
           provider_id: string
-          trigger: Database["public"]["Enums"]["surcharge_trigger"]
-          type: Database["public"]["Enums"]["surcharge_type"]
+          trigger_type: string
           updated_at: string
         }
         Insert: {
           amount?: number
+          calculation_type: string
           created_at?: string
           id?: string
           is_active?: boolean
           label?: string | null
+          name?: string | null
           provider_id: string
-          trigger: Database["public"]["Enums"]["surcharge_trigger"]
-          type?: Database["public"]["Enums"]["surcharge_type"]
+          trigger_type: string
           updated_at?: string
         }
         Update: {
           amount?: number
+          calculation_type?: string
           created_at?: string
           id?: string
           is_active?: boolean
           label?: string | null
+          name?: string | null
           provider_id?: string
-          trigger?: Database["public"]["Enums"]["surcharge_trigger"]
-          type?: Database["public"]["Enums"]["surcharge_type"]
+          trigger_type?: string
           updated_at?: string
         }
         Relationships: []
@@ -7253,13 +7274,6 @@ export type Database = {
         | "ernaehrungsberater"
         | "other"
       payment_rating: "A" | "B" | "C" | "D"
-      price_group: "standard" | "vip" | "grossstall" | "individuell"
-      surcharge_trigger:
-        | "notfall"
-        | "wochenende"
-        | "anfahrt"
-        | "schwieriges_pferd"
-      surcharge_type: "fix" | "prozent"
       usage_type:
         | "leisure"
         | "sport"
@@ -7433,14 +7447,6 @@ export const Constants = {
         "other",
       ],
       payment_rating: ["A", "B", "C", "D"],
-      price_group: ["standard", "vip", "grossstall", "individuell"],
-      surcharge_trigger: [
-        "notfall",
-        "wochenende",
-        "anfahrt",
-        "schwieriges_pferd",
-      ],
-      surcharge_type: ["fix", "prozent"],
       usage_type: [
         "leisure",
         "sport",
