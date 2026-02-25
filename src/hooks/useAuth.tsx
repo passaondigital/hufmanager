@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
-  const fetchUserRole = async (userId: string) => {
+  const fetchUserRole = async (userId: string): Promise<UserRole> => {
     const { data, error } = await supabase
       .from("user_roles")
       .select("role")
@@ -36,7 +36,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Error fetching role:", error);
       return null;
     }
-    return data?.role as UserRole;
+    
+    if (data?.role) {
+      return data.role as UserRole;
+    }
+
+    // Auto-repair: if no role found, try to assign based on user metadata
+    console.warn("No role found for user, attempting auto-repair...");
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const metaRole = user?.user_metadata?.role;
+      const roleToAssign = metaRole === "provider" ? "provider" 
+        : metaRole === "partner" ? "partner" 
+        : "client";
+      
+      const { error: insertError } = await supabase
+        .from("user_roles")
+        .insert({ user_id: userId, role: roleToAssign })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error("Auto-repair role failed:", insertError);
+        // Fallback: return meta role anyway so user isn't stuck
+        return (metaRole as UserRole) || "client";
+      }
+      
+      console.log("Auto-repaired role:", roleToAssign);
+      return roleToAssign as UserRole;
+    } catch (err) {
+      console.error("Auto-repair error:", err);
+      return "client"; // Ultimate fallback
+    }
   };
 
   const clearPasswordRecovery = () => {
