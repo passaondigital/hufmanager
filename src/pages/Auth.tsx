@@ -103,17 +103,21 @@ export default function Auth() {
 
   // Redirect if already logged in
   if (!authLoading && user && role) {
-    if (redirectTo) {
-      return <Navigate to={redirectTo} replace />;
+    if (forceLogin) {
+      // Allow staying on auth page for admin/testing
+    } else {
+      if (redirectTo) {
+        return <Navigate to={redirectTo} replace />;
+      }
+      const roleToPath: Record<string, string> = {
+        admin: "/admin/mission-control",
+        provider: "/home",
+        employee: "/employee",
+        partner: "/partner-home",
+        client: "/client-home",
+      };
+      return <Navigate to={roleToPath[role] || "/home"} replace />;
     }
-    const roleToPath: Record<string, string> = {
-      admin: "/admin/mission-control",
-      provider: "/home",
-      employee: "/employee",
-      partner: "/partner-home",
-      client: "/client-home",
-    };
-    return <Navigate to={roleToPath[role] || "/home"} replace />;
   }
 
   const openPricingModal = (title: string, description: string) => {
