@@ -201,7 +201,7 @@ const Angebote = () => {
 
   const updateOffer = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Offer> }) => {
-      const { error } = await supabase.from("offers").update(data).eq("id", id);
+      const { error } = await supabase.from("offers").update(data as any).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
