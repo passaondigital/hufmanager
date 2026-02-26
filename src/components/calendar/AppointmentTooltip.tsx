@@ -5,7 +5,8 @@ import {
 } from "@/components/ui/hover-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Clock, CheckCircle2, UserPlus } from "lucide-react";
+import { MapPin, Clock, CheckCircle2, UserPlus, Tags } from "lucide-react";
+import { getPriceGroupShortLabel } from "@/lib/priceGroups";
 
 interface AppointmentTooltipProps {
   children: React.ReactNode;
@@ -18,6 +19,7 @@ interface AppointmentTooltipProps {
     status: string | null;
     is_confirmed_by_client: boolean | null;
     notes: string | null;
+    price_group_applied?: string | null;
     horses?: {
       name: string;
       breed: string | null;
@@ -41,9 +43,17 @@ export function AppointmentTooltip({ children, appointment, onAssign }: Appointm
                 <p className="text-xs text-muted-foreground">{appointment.horses.breed}</p>
               )}
             </div>
-            <Badge variant="outline" className="text-xs">
-              {appointment.service_type}
-            </Badge>
+            <div className="flex items-center gap-1">
+              <Badge variant="outline" className="text-xs">
+                {appointment.service_type}
+              </Badge>
+              {appointment.price_group_applied && (
+                <Badge variant="secondary" className="text-[10px] font-bold">
+                  <Tags className="h-2.5 w-2.5 mr-0.5" />
+                  {getPriceGroupShortLabel(appointment.price_group_applied)}
+                </Badge>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-4 text-sm text-muted-foreground">

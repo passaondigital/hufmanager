@@ -131,14 +131,31 @@ export function AppointmentFormModal({
   const isFlatRate = currentService?.billing_type === "flat_rate";
   const isSeriesService = currentService?.billing_type === "series";
 
-  // Fetch horses
+  // Fetch horses with owner price_group
   const { data: horses = [] } = useQuery({
-    queryKey: ["horses"],
+    queryKey: ["horses-with-price-group"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("horses").select("*");
+      const { data, error } = await supabase
+        .from("horses")
+        .select("*, owner:owner_id (id, price_group)");
       if (error) throw error;
       return data;
     },
+  });
+
+  // Fetch service price overrides for the current service
+  const { data: priceOverrides = [] } = useQuery({
+    queryKey: ["service-price-overrides", currentService?.id],
+    queryFn: async () => {
+      if (!currentService?.id) return [];
+      const { data, error } = await supabase
+        .from("service_price_overrides")
+        .select("*")
+        .eq("service_id", currentService.id);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!currentService?.id,
   });
 
   // Check for conflicts
@@ -418,6 +435,13 @@ export function AppointmentFormModal({
       // Check if this specific occurrence is in the past
       const occurrenceIsPast = appointmentDate < today;
       
+      // Resolve price group override
+      const selectedHorse = horses.find((h: any) => h.id === validated.horseId);
+      const ownerPriceGroup = selectedHorse?.owner?.price_group || "standard";
+      const override = priceOverrides.find((o: any) => o.price_group === ownerPriceGroup);
+      const resolvedPrice = isFlatRate ? 0 : (override ? override.price : (currentService?.base_price || 0));
+      const appliedGroup = override ? ownerPriceGroup : (ownerPriceGroup !== "standard" ? ownerPriceGroup : null);
+
       appointments.push({
         horse_id: validated.horseId,
         date: format(appointmentDate, "yyyy-MM-dd"),
@@ -428,8 +452,10 @@ export function AppointmentFormModal({
         duration: validated.duration,
         provider_id: user.id,
         recurring_group_id: recurringGroupId,
-        // Business logic: flat_rate = price 0, but marked as paid
-        price: isFlatRate ? 0 : (currentService?.base_price || 0),
+        // Price group resolution
+        price: resolvedPrice,
+        applied_price: resolvedPrice,
+        price_group_applied: appliedGroup,
         is_internally_paid: isFlatRate,
         // Series appointment tracking
         is_series_appointment: formData.isSeriesAppointment || isSeriesService,
@@ -538,6 +564,26 @@ export function AppointmentFormModal({
                 ))}
               </SelectContent>
             </Select>
+            {/* Price group warning */}
+            {formData.horseId && (() => {
+              const h = horses.find((ho: any) => ho.id === formData.horseId);
+              const pg = h?.owner?.price_group;
+              if (!pg || pg === "standard") {
+                return (
+                  <p className="text-xs text-amber-600 flex items-center gap-1 mt-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    Kunde hat keine Preisgruppe → Basispreis wird verwendet
+                  </p>
+                );
+              }
+              const override = priceOverrides.find((o: any) => o.price_group === pg);
+              return (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Preisgruppe: <span className="font-medium">{pg.toUpperCase()}</span>
+                  {override ? ` → €${override.price}` : " (kein Override → Basispreis)"}
+                </p>
+              );
+            })()}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

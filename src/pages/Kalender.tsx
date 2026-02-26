@@ -141,6 +141,7 @@ const Kalender = () => {
           status,
           is_confirmed_by_client,
           notes,
+          price_group_applied,
           horses (
             id,
             name,
@@ -400,6 +401,13 @@ const Kalender = () => {
                           <div className="px-1 py-0.5 text-xs truncate">
                             {event.resource.is_confirmed_by_client && (
                               <CheckCircle2 className="h-3 w-3 inline mr-1" />
+                            )}
+                            {event.resource.price_group_applied && (
+                              <span className="bg-white/30 rounded px-1 mr-1 text-[10px] font-bold">
+                                {event.resource.price_group_applied === "vip" ? "VIP" : 
+                                 event.resource.price_group_applied === "grossstall" ? "GS" : 
+                                 event.resource.price_group_applied === "individuell" ? "IND" : ""}
+                              </span>
                             )}
                             {event.title}
                           </div>
