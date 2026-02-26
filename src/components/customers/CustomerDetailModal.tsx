@@ -60,10 +60,12 @@ import {
   CreditCard,
   UserCheck,
   Briefcase,
+  Tags,
 } from "lucide-react";
 import { ProviderHorseEditSheet } from "@/components/customers/ProviderHorseEditSheet";
 import { ClientInvoicesSection } from "@/components/invoices/ClientInvoicesSection";
 import { ClientDocumentsTab } from "@/components/customers/ClientDocumentsTab";
+import { PRICE_GROUPS, getPriceGroupLabel } from "@/lib/priceGroups";
 import { ClientBadges } from "@/components/customers/ClientStatusBadges";
 import { AddressGeocoder } from "@/components/customers/AddressGeocoder";
 import { CustomerLocationMap, CustomerLocationPlaceholder } from "@/components/customers/CustomerLocationMap";
@@ -123,6 +125,8 @@ interface Customer {
   reliability_score?: number;
   working_conditions?: string;
   order_authorization?: boolean;
+  price_group?: string;
+  price_group_label?: string | null;
 }
 
 interface Props {
@@ -172,6 +176,7 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
     reliability_score: null as number | null,
     working_conditions: "",
     order_authorization: false,
+    price_group: "standard",
   });
 
   // Initialize edit form when customer changes
@@ -200,6 +205,7 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
         reliability_score: customer.reliability_score || null,
         working_conditions: customer.working_conditions || "",
         order_authorization: customer.order_authorization || false,
+        price_group: customer.price_group || "standard",
       });
     }
   };
@@ -232,6 +238,7 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
           reliability_score: data.reliability_score,
           working_conditions: data.working_conditions || null,
           order_authorization: data.order_authorization,
+          price_group: data.price_group || "standard",
         })
         .eq("id", data.id);
       if (error) throw error;
@@ -586,6 +593,27 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                             </SelectContent>
                           </Select>
                         </div>
+                      </div>
+
+                      {/* Preisgruppe */}
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-1">
+                          <Tags className="h-3 w-3" />
+                          Kundenpreisgruppe
+                        </Label>
+                        <Select
+                          value={editForm.price_group}
+                          onValueChange={(v) => setEditForm({ ...editForm, price_group: v })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Auswählen" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PRICE_GROUPS.map((g) => (
+                              <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       {/* Arbeitsbedingungen */}

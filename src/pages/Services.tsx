@@ -33,6 +33,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ServicePaymentModal } from "@/components/services/ServicePaymentModal";
+import { GroupPricingSection } from "@/components/services/GroupPricingSection";
 
 const categoryColors: Record<string, string> = {
   Standard: "bg-accent/10 text-accent",
@@ -401,6 +402,14 @@ const Services = () => {
               <p className="text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg">
                 💡 Bei Terminen können Sie "Termin X von Y" angeben. Dies erscheint auf der Rechnung.
               </p>
+            )}
+
+            {/* Group Pricing - only for existing services */}
+            {editingService && (
+              <GroupPricingSection
+                serviceId={editingService.id}
+                basePrice={formData.base_price}
+              />
             )}
           </div>
 
