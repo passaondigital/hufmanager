@@ -42,6 +42,7 @@ import {
   Wallet,
   Scale,
   Zap,
+  DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -162,6 +163,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         { title: "Inbox", url: "/chat", icon: Inbox, badge: unreadMessagesCount || undefined, description: "Nachrichten & Chat" },
         { title: "Warteliste", url: "/anfragen", icon: Clock, badge: newLeadsCount || undefined, description: "Potenzielle Kunden" },
         { title: "Landingpage", url: "/management?tab=landing", icon: Globe, description: "Öffentliche Visitenkarte" },
+        { title: "Notfall", url: "/notfall", icon: AlertTriangle, description: "Notfall‑Dashboard" },
       ]
     },
     { 
@@ -170,6 +172,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       icon: FileText,
       subItems: [
         { title: "Service-Katalog", url: "/services", icon: ShoppingBag, description: "Leistungen definieren" },
+        { title: "Preisgruppen", url: "/preise", icon: DollarSign, description: "Kundengruppen & Preise" },
         { title: "Offene Angebote", url: "/angebote", icon: ClipboardList, description: "Kostenvoranschläge" },
       ]
     },

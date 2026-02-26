@@ -175,6 +175,8 @@ export default function MissionControl() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [providers, setProviders] = useState<ProviderData[]>([]);
   const [loading, setLoading] = useState(true);
+  // emergency escalations for admin view
+  const [escalations, setEscalations] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProvider, setSelectedProvider] = useState<ProviderData | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -248,6 +250,13 @@ export default function MissionControl() {
     checkAdminAccess();
   }, [user]);
 
+  // when we have confirmed admin status, fetch data
+  useEffect(() => {
+    if (isAdmin) {
+      fetchProviders();
+    }
+  }, [isAdmin]);
+
   useEffect(() => {
     if (isAdmin) {
       fetchProviders();
@@ -317,6 +326,17 @@ export default function MissionControl() {
         .from("services")
         .select("provider_id, name, base_price, billing_type")
         .eq("is_active", true);
+      
+      // 5. also fetch escalations (admin only)
+      const { data: escData, error: escError } = await supabase
+        .from("emergency_escalations")
+        .select(`*, provider:profiles(id, full_name)`)
+        .order("created_at", { ascending: false });
+      if (escError) {
+        console.warn("could not load escalations", escError);
+      } else if (escData) {
+        setEscalations(escData as any[]);
+      }
 
       if (servicesError) console.warn("Could not fetch services:", servicesError);
 
@@ -1024,6 +1044,10 @@ export default function MissionControl() {
               <TabsTrigger value="providers" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
                 <Users className="w-4 h-4" />
                 <span className="hidden md:inline">Provider</span> ({providers.length})
+              </TabsTrigger>
+              <TabsTrigger value="escalations" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="hidden md:inline">Eskalationen</span>
               </TabsTrigger>
               <TabsTrigger value="partners" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
                 <Globe className="w-4 h-4" />
@@ -2087,6 +2111,67 @@ export default function MissionControl() {
 
            <TabsContent value="funnel" className="space-y-6">
             <FunnelCockpit />
+          </TabsContent>
+
+          {/* ESCALATIONS TAB */}
+          <TabsContent value="escalations" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-red-600" /> Notfall-Eskalationen
+                </CardTitle>
+                <CardDescription>
+                  Alle Notfall-Meldungen von Proviern verwaltbar unter Insights
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {escalations.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">Keine Eskalationen vorhanden.</p>
+                ) : (
+                  <div className="space-y-3">
+                    <Table className="text-xs md:text-sm">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Provider</TableHead>
+                          <TableHead>Kunde (#KID)</TableHead>
+                          <TableHead>Grund</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Erstellt</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {escalations.map((e) => (
+                          <TableRow key={e.id}>
+                            <TableCell className="font-mono text-xs">
+                              {(e.provider as any)?.full_name || "N/A"}
+                            </TableCell>
+                            <TableCell className="font-mono">{e.client_readable_id}</TableCell>
+                            <TableCell className="max-w-xs truncate">{e.escalation_reason || "-"}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={{
+                                  open: "bg-red-500/10 text-red-600",
+                                  acknowledged: "bg-amber-500/10 text-amber-600",
+                                  resolved: "bg-green-500/10 text-green-600",
+                                }[e.status] || ""}
+                              >
+                                {e.status === "open" && "Offen"}
+                                {e.status === "acknowledged" && "Bestätigt"}
+                                {e.status === "resolved" && "Gelöst"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {format(new Date(e.created_at), "dd.MM.yyyy HH:mm", { locale: de })}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="partners" className="space-y-6">

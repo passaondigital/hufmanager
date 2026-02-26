@@ -7118,6 +7118,27 @@ export type Database = {
           subdomain: string
         }[]
       }
+      get_provider_clients: {
+        Args: { _provider_id: string }
+        Returns: {
+          client_id: string
+          client_readable_id: string
+          client_email: string | null
+          client_name: string | null
+        }[]
+      }
+      create_emergency_otp: {
+        Args: { _provider_id: string; _client_id: string }
+        Returns: string
+      }
+      calculate_effective_price: {
+        Args: { _service_id: string; _client_id: string; _provider_id: string }
+        Returns: number
+      }
+      log_emergency_action: {
+        Args: { _actor_id: string; _action_type: string; _target_kid?: string; _details?: Json }
+        Returns: string
+      }
       get_public_business_landing: {
         Args: { subdomain_input: string }
         Returns: Json

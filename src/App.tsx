@@ -74,6 +74,8 @@ import Tour from "@/pages/Tour";
 import Team from "@/pages/Team";
 import EmployeeDashboard from "@/pages/EmployeeDashboard";
 import EmployeeInvite from "@/pages/EmployeeInvite";
+import EmergencyDashboard from "@/pages/EmergencyDashboard";
+import PriceGroupManagement from "@/pages/PriceGroupManagement";
 import EmployeeTour from "@/pages/EmployeeTour";
 import MeinOffice from "@/pages/MeinOffice";
 import Ecosystem from "@/pages/Ecosystem";
@@ -292,6 +294,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/services" element={<Services />} />
               <Route path="/management" element={<Management />} />
               <Route path="/management/import" element={<ImportCenter />} />
+              <Route path="/preise" element={<PriceGroupManagement />} />
               <Route path="/academy" element={<Academy />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/partner" element={<GeldVerdienen />} />
@@ -310,6 +313,8 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/ecosystem" element={<Ecosystem />} />
               <Route path="/autoflow" element={<AutoFlow />} />
               <Route path="/abo-matrix" element={<AboMatrix />} />
+              {/* neu: Notfall-Dashboard für Provider */}
+              <Route path="/notfall" element={<EmergencyDashboard />} />
               {/* Provider Horse Detail - Direct Access */}
               <Route path="/horse/:id" element={<ProviderHorseDetail />} />
               {/* German alias for horse detail */}
@@ -378,6 +383,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner-chat" element={<PartnerChat />} />
               <Route path="/partner-settings" element={<PartnerSettings />} />
               <Route path="/partner-profile" element={<PartnerProfile />} />
+              <Route path="/partner-notfall" element={<EmergencyDashboard />} />
             </Route>
 
             {/* Fallback für alles andere */}
