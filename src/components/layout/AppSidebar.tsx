@@ -43,6 +43,7 @@ import {
   Scale,
   Zap,
   DollarSign,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";

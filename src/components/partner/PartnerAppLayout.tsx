@@ -5,7 +5,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import {
   Home, Heart, FileText, MessageSquare, User, Menu, LogOut, Sun, Moon,
   ChevronRight, Calendar, Upload, ClipboardList, Receipt, Briefcase,
-  Settings, BarChart3, Map as MapIcon, GraduationCap, Sparkles,
+  Settings, BarChart3, Map as MapIcon, GraduationCap, Sparkles, AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";

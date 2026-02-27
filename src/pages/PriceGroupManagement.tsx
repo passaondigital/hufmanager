@@ -15,8 +15,9 @@ interface PriceGroup {
   id: string;
   provider_id: string;
   name: string;
-  description: string | null;
-  color: string | null;
+  label: string;
+  is_default: boolean;
+  sort_order: number;
   created_at: string;
   updated_at: string;
 }
@@ -202,7 +203,7 @@ export default function PriceGroupManagement() {
                 <div key={g.id} className="flex items-center justify-between p-3 border rounded">
                   <div>
                     <p className="font-medium">{g.name}</p>
-                    {g.description && <p className="text-xs text-muted-foreground">{g.description}</p>}
+                    {g.label && <p className="text-xs text-muted-foreground">{g.label}</p>}
                   </div>
                   <div className="flex gap-2">
                     <Button

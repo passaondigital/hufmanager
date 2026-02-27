@@ -1433,6 +1433,181 @@ export type Database = {
           },
         ]
       }
+      emergency_audit_log: {
+        Row: {
+          action_type: string
+          actor_id: string
+          actor_role: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: unknown
+          target_kid: string | null
+        }
+        Insert: {
+          action_type: string
+          actor_id: string
+          actor_role: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: unknown
+          target_kid?: string | null
+        }
+        Update: {
+          action_type?: string
+          actor_id?: string
+          actor_role?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: unknown
+          target_kid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emergency_audit_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emergency_audit_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      emergency_escalations: {
+        Row: {
+          client_readable_id: string
+          created_at: string
+          escalation_reason: string | null
+          id: string
+          provider_id: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+        }
+        Insert: {
+          client_readable_id: string
+          created_at?: string
+          escalation_reason?: string | null
+          id?: string
+          provider_id: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Update: {
+          client_readable_id?: string
+          created_at?: string
+          escalation_reason?: string | null
+          id?: string
+          provider_id?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emergency_escalations_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emergency_escalations_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emergency_escalations_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emergency_escalations_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      emergency_otp: {
+        Row: {
+          client_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          otp_hash: string
+          provider_id: string
+          status: string
+          used_at: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          otp_hash: string
+          provider_id: string
+          status?: string
+          used_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          otp_hash?: string
+          provider_id?: string
+          status?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emergency_otp_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emergency_otp_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emergency_otp_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emergency_otp_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_absence_requests: {
         Row: {
           created_at: string
@@ -4736,6 +4911,54 @@ export type Database = {
           },
         ]
       }
+      price_groups: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean | null
+          label: string | null
+          name: string
+          provider_id: string
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          label?: string | null
+          name: string
+          provider_id: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          label?: string | null
+          name?: string
+          provider_id?: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_groups_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_groups_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_recipe_items: {
         Row: {
           created_at: string
@@ -4866,6 +5089,7 @@ export type Database = {
           feature_flags: Json | null
           feature_statuses: Json | null
           first_name: string | null
+          force_password_reset: boolean | null
           full_name: string | null
           geo_lat: number | null
           geo_lng: number | null
@@ -4894,6 +5118,7 @@ export type Database = {
           order_authorization: boolean | null
           org_role: Database["public"]["Enums"]["organization_role"] | null
           organization_id: string | null
+          otp_enabled: boolean | null
           owner_name: string | null
           payment_rating: string | null
           permissions_granted: Json | null
@@ -4959,6 +5184,7 @@ export type Database = {
           feature_flags?: Json | null
           feature_statuses?: Json | null
           first_name?: string | null
+          force_password_reset?: boolean | null
           full_name?: string | null
           geo_lat?: number | null
           geo_lng?: number | null
@@ -4987,6 +5213,7 @@ export type Database = {
           order_authorization?: boolean | null
           org_role?: Database["public"]["Enums"]["organization_role"] | null
           organization_id?: string | null
+          otp_enabled?: boolean | null
           owner_name?: string | null
           payment_rating?: string | null
           permissions_granted?: Json | null
@@ -5052,6 +5279,7 @@ export type Database = {
           feature_flags?: Json | null
           feature_statuses?: Json | null
           first_name?: string | null
+          force_password_reset?: boolean | null
           full_name?: string | null
           geo_lat?: number | null
           geo_lng?: number | null
@@ -5080,6 +5308,7 @@ export type Database = {
           order_authorization?: boolean | null
           org_role?: Database["public"]["Enums"]["organization_role"] | null
           organization_id?: string | null
+          otp_enabled?: boolean | null
           owner_name?: string | null
           payment_rating?: string | null
           permissions_granted?: Json | null
@@ -5916,6 +6145,7 @@ export type Database = {
           provider_id: string | null
           sort_order: number | null
           updated_at: string
+          use_group_pricing: boolean | null
         }
         Insert: {
           base_price?: number
@@ -5932,6 +6162,7 @@ export type Database = {
           provider_id?: string | null
           sort_order?: number | null
           updated_at?: string
+          use_group_pricing?: boolean | null
         }
         Update: {
           base_price?: number
@@ -5948,6 +6179,7 @@ export type Database = {
           provider_id?: string | null
           sort_order?: number | null
           updated_at?: string
+          use_group_pricing?: boolean | null
         }
         Relationships: []
       }
@@ -7049,6 +7281,10 @@ export type Database = {
         Returns: Json
       }
       auth_user_email: { Args: never; Returns: string }
+      calculate_effective_price: {
+        Args: { _client_id: string; _provider_id: string; _service_id: string }
+        Returns: number
+      }
       can_submit_review: {
         Args: { p_provider_id: string; p_token?: string }
         Returns: boolean
@@ -7060,6 +7296,10 @@ export type Database = {
           p_file_size_bytes: number
         }
         Returns: Json
+      }
+      create_emergency_otp: {
+        Args: { _client_id: string; _provider_id: string }
+        Returns: string
       }
       delete_client_cascade: {
         Args: { _client_id: string }
@@ -7121,23 +7361,11 @@ export type Database = {
       get_provider_clients: {
         Args: { _provider_id: string }
         Returns: {
+          client_email: string
           client_id: string
+          client_name: string
           client_readable_id: string
-          client_email: string | null
-          client_name: string | null
         }[]
-      }
-      create_emergency_otp: {
-        Args: { _provider_id: string; _client_id: string }
-        Returns: string
-      }
-      calculate_effective_price: {
-        Args: { _service_id: string; _client_id: string; _provider_id: string }
-        Returns: number
-      }
-      log_emergency_action: {
-        Args: { _actor_id: string; _action_type: string; _target_kid?: string; _details?: Json }
-        Returns: string
       }
       get_public_business_landing: {
         Args: { subdomain_input: string }
@@ -7245,6 +7473,15 @@ export type Database = {
       is_team_lead_for_provider: {
         Args: { _provider_id: string; _user_id: string }
         Returns: boolean
+      }
+      log_emergency_action: {
+        Args: {
+          _action_type: string
+          _actor_id: string
+          _details?: Json
+          _target_kid: string
+        }
+        Returns: string
       }
       provider_can_manage_client_horses: {
         Args: { _client_id: string; _provider_id: string }
