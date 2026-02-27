@@ -257,6 +257,13 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               </ProtectedRoute>
             } />
 
+            {/* Admin Notfall-Dashboard */}
+            <Route path="/admin/notfall" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <EmergencyDashboard />
+              </ProtectedRoute>
+            } />
+
             {/* Feature Usage Overview - Admin */}
             <Route path="/admin/feature-usage" element={
               <ProtectedRoute allowedRoles={["admin"]}>
@@ -336,6 +343,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client-booking" element={<ClientBooking />} />
               <Route path="/client-profile" element={<ClientProfile />} />
               <Route path="/client-chat" element={<ClientChat />} />
+              <Route path="/client-notfall" element={<EmergencyDashboard />} />
             </Route>
 
             {/* --- 4. EMPLOYEE (MITARBEITER) ROUTES --- */}

@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Shield, Users, Database, Bug, Activity, Crown, Plus, Zap, Package, BookOpen, Brain } from "lucide-react";
+import { Loader2, Shield, Users, Database, Bug, Activity, Crown, Plus, Zap, Package, BookOpen, Brain, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 // Admin Views
@@ -163,6 +163,14 @@ export default function AdminDashboard() {
           >
             <Plus className="w-4 h-4" />
             Quick Note
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full justify-start gap-2 text-destructive hover:text-destructive"
+            onClick={() => navigate("/admin/notfall")}
+          >
+            <AlertTriangle className="w-4 h-4" />
+            Notfall-Dashboard
           </Button>
           <Button
             variant="ghost"
