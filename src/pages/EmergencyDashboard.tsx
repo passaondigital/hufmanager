@@ -154,7 +154,62 @@ export default function EmergencyDashboard() {
     }
   };
 
-  // if not provider show a note
+  // Admin view: show escalation overview
+  if (role === "admin") {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center gap-3">
+          <AlertTriangle className="h-6 w-6 text-red-600" />
+          <h1 className="text-2xl font-bold">Notfall‑Dashboard (Admin)</h1>
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Eskalationen & Notfälle</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground text-sm mb-4">
+              Alle eingehenden Notfälle und Eskalationen findest du unter{" "}
+              <Button variant="link" className="p-0 h-auto text-primary" onClick={() => window.location.href = "/admin/mission-control?tab=escalations"}>
+                Mission Control → Eskalationen
+              </Button>.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Client view: emergency contacts & provider contact
+  if (role === "client") {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center gap-3">
+          <AlertTriangle className="h-6 w-6 text-red-600" />
+          <h1 className="text-2xl font-bold">Erste Hilfe & Notfall</h1>
+        </div>
+        <Card className="border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+              Notfall-Kontakt
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Im Notfall kontaktiere deinen Hufbearbeiter oder Tierarzt direkt.
+              Deine Notfall-Kontakte kannst du in deinem <Button variant="link" className="p-0 h-auto text-primary" onClick={() => window.location.href = "/client-profile"}>Profil</Button> hinterlegen.
+            </p>
+            <Button variant="destructive" className="w-full" onClick={() => window.location.href = "/client-chat"}>
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              Nachricht an Hufbearbeiter senden
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // if not provider/partner/admin/client show a note
   if (role !== "provider" && role !== "partner") {
     return (
       <Card>
@@ -163,7 +218,7 @@ export default function EmergencyDashboard() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-sm">
-            Diese Seite ist nur für Hufbearbeiter und Fachpartner bestimmt.
+            Diese Seite ist nicht für deine Rolle verfügbar.
           </p>
         </CardContent>
       </Card>

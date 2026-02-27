@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   LogOut, FileText, ChevronRight, Plus, Shield, Scissors, User, 
   MessageSquare, Moon, Sun, Bell, Camera, Heart, Calendar,
-  Sparkles, Star, TrendingUp, Clock
+  Sparkles, Star, TrendingUp, Clock, AlertTriangle
 } from "lucide-react";
 import { UnconfirmedAppointmentsBanner } from "@/components/UnconfirmedAppointmentsBanner";
 import { CreateHorseModal } from "@/components/horse-detail/CreateHorseModal";
@@ -420,6 +420,14 @@ export default function ClientHome() {
             >
               <User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               <span className="text-[9px] sm:text-[10px]">Profil</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="h-14 sm:h-16 flex-col gap-1 rounded-xl hover:bg-destructive/10 hover:border-destructive/30 transition-all min-h-[44px]"
+              onClick={() => navigate("/client-notfall")}
+            >
+              <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-destructive" />
+              <span className="text-[9px] sm:text-[10px]">Notfall</span>
             </Button>
           </motion.div>
 
