@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, ClipboardList, Eye, FileText } from "lucide-react";
 import { LTZAnalysisWizard, LTZAnalysisHistory, LTZComparisonView } from "@/components/hoof-analysis";
+import { AiDisclosure } from "@/components/legal/AiDisclosure";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 
@@ -75,6 +76,7 @@ const Hufanalyse = () => {
         <p className="text-muted-foreground mt-1">
           Professionelle Bearbeitungsbögen nach dem Leipziger Modell
         </p>
+        <AiDisclosure context="Hufanalyse" className="mt-2" />
       </div>
 
       {/* Start New Analysis */}

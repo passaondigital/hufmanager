@@ -3,9 +3,11 @@ import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Send, X, Loader2, Sparkles } from "lucide-react";
+import { Bot, Send, X, Loader2, Sparkles, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { AiDisclosure } from "@/components/legal/AiDisclosure";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -135,7 +137,17 @@ export function AIChatWidget() {
       <div className="flex items-center justify-between p-4 border-b bg-primary/5">
         <div className="flex items-center gap-2">
           <Bot className="h-5 w-5 text-primary" />
-          <span className="font-semibold">HufManager KI-Assistent</span>
+          <span className="font-semibold">Hufi KI-Assistent</span>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-[250px] text-xs">
+                Hufi nutzt Google Gemini, um deine Fragen zu beantworten. Antworten basieren auf allgemeinem Wissen — bitte immer fachlich prüfen.
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
         <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
           <X className="h-4 w-4" />
@@ -182,8 +194,9 @@ export function AIChatWidget() {
         </div>
       </ScrollArea>
 
-      {/* Input */}
-      <div className="p-4 border-t">
+      {/* Footer with AiDisclosure + Input */}
+      <div className="p-4 border-t space-y-2">
+        <AiDisclosure context="Hufi" className="justify-center" />
         <form
           onSubmit={(e) => {
             e.preventDefault();
