@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, Hammer, Heart, Package, Rocket, KeyRound, Users, Stethoscope } from "lucide-react";
+import { Loader2, Hammer, Heart, Package, Rocket, KeyRound, Users, Stethoscope, Link2 } from "lucide-react";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,8 +44,9 @@ export default function Auth() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   
-  // Invite code from URL (provider's readable_id)
+  // Invite code from URL (provider's readable_id) or HM Connect invite token
   const inviteCode = searchParams.get("invite_code");
+  const hmInviteToken = searchParams.get("invite");
   
   // Login mode (provider vs client)
   const [loginMode, setLoginMode] = useState<LoginMode>("provider");
@@ -92,14 +93,17 @@ export default function Auth() {
     if (inviteCode) {
       sessionStorage.setItem("huf_invite_code", inviteCode);
     }
+    if (hmInviteToken) {
+      sessionStorage.setItem("hm_connect_invite", hmInviteToken);
+    }
     // Pre-fill partner signup from invite link
     if (urlRole === "partner") {
-      setSelectedRole("provider"); // doesn't matter, partner signup bypasses role selector
+      setSelectedRole("provider");
     }
     if (urlEmail) {
       setSignupEmail(decodeURIComponent(urlEmail));
     }
-  }, [inviteCode, urlRole, urlEmail]);
+  }, [inviteCode, hmInviteToken, urlRole, urlEmail]);
 
   // Redirect if already logged in
   if (!authLoading && user && role) {
@@ -301,6 +305,22 @@ export default function Auth() {
   return (
     <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md border-border bg-card shadow-xl">
+        {/* HM Connect Invite Banner */}
+        {hmInviteToken && (
+          <div className="bg-primary/10 border-b border-primary/20 p-4 rounded-t-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <Link2 className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm text-foreground">Du wurdest eingeladen! 🎉</p>
+                <p className="text-xs text-muted-foreground">
+                  Erstelle ein Konto oder melde dich an, um dich zu vernetzen.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         <CardHeader className="text-center pb-2">
           <img 
             src="/hufmanager-logo.png" 

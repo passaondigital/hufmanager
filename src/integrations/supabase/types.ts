@@ -2749,6 +2749,54 @@ export type Database = {
         }
         Relationships: []
       }
+      hm_connect_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          invite_message: string | null
+          invite_role: string
+          invited_by: string
+          invited_email: string
+          invited_name: string | null
+          status: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invite_message?: string | null
+          invite_role?: string
+          invited_by: string
+          invited_email: string
+          invited_name?: string | null
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invite_message?: string | null
+          invite_role?: string
+          invited_by?: string
+          invited_email?: string
+          invited_name?: string | null
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hoof_analyses: {
         Row: {
           appointment_id: string | null
