@@ -24,14 +24,15 @@ interface PricingModalProps {
 const PRICING_PLANS = [
   {
     id: "starter",
-    name: "Anfänger",
-    price: "19",
+    name: "Starter",
+    price: "9,90",
     period: "pro Monat",
-    description: "Grundfunktionen für Einzelbetriebe",
+    description: "Für Einsteiger mit bis zu 10 Pferden",
     features: [
       "Kalender & Termine",
-      "Kundenverwaltung",
+      "Kundenverwaltung (bis 10 Pferde)",
       "Digitale Pferdeakte",
+      "Mein Office & Lager",
       "Basis-Support",
     ],
     checkoutUrl: "https://copecart.com/products/9bb65569/checkout",
@@ -39,16 +40,17 @@ const PRICING_PLANS = [
     highlighted: false,
   },
   {
-    id: "advanced",
-    name: "Fortgeschritten",
-    price: "49",
+    id: "pro",
+    name: "Pro",
+    price: "29",
     period: "pro Monat",
-    description: "Erweitert um Navigation, Erinnerungen, Chat",
+    description: "Für aktive Betriebe mit bis zu 75 Pferden",
     features: [
-      "Alles aus Anfänger",
-      "GPS-Navigation zum Stall",
-      "Automatische Erinnerungen",
-      "Kunden-Chat",
+      "Alles aus Starter",
+      "Bis zu 75 Pferde",
+      "AutoFlow-Automatisierung",
+      "HM Connect & Netzwerk",
+      "GPS-Navigation & Karten",
       "Prioritäts-Support",
     ],
     checkoutUrl: "https://copecart.com/products/ec500b5e/checkout",
@@ -57,19 +59,36 @@ const PRICING_PLANS = [
     badge: "Meistgewählt",
   },
   {
-    id: "pro",
-    name: "Profi",
-    price: "99",
+    id: "duo",
+    name: "Duo",
+    price: "49",
     period: "pro Monat",
-    description: "Alle Funktionen inkl. KI und Academy",
+    description: "Für wachsende Betriebe mit bis zu 150 Pferden",
     features: [
-      "Alles aus Fortgeschritten",
-      "KI-Assistent",
-      "Academy Zugang",
-      "Partner-Programm",
+      "Alles aus Pro",
+      "Bis zu 150 Pferde",
+      "Mitarbeiter-App (bis 2 MA)",
+      "Team-Management",
       "Premium-Support",
     ],
     checkoutUrl: "https://copecart.com/products/483bbb5b/checkout",
+    icon: Crown,
+    highlighted: false,
+  },
+  {
+    id: "team",
+    name: "Team",
+    price: "79",
+    period: "pro Monat",
+    description: "Für große Betriebe – unbegrenzt",
+    features: [
+      "Alles aus Duo",
+      "Unbegrenzt Pferde",
+      "Unbegrenzt Mitarbeiter",
+      "Erweiterte Analysen",
+      "Dedicated Support",
+    ],
+    checkoutUrl: "https://copecart.com/products/team-checkout/checkout",
     icon: Crown,
     highlighted: false,
   },
@@ -97,7 +116,7 @@ export function PricingModal({
   // Filter plans based on current plan for upgrade view
   const availablePlans = currentPlan
     ? PRICING_PLANS.filter((plan) => {
-        const planOrder = ["starter", "advanced", "pro"];
+        const planOrder = ["starter", "pro", "duo", "team"];
         return planOrder.indexOf(plan.id) > planOrder.indexOf(currentPlan);
       })
     : PRICING_PLANS;
