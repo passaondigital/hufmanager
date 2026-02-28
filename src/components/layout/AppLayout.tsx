@@ -45,7 +45,7 @@ export function AppLayout() {
   useDemoActivityTracker();
 
   return (
-    <div className="min-h-screen flex w-full bg-background overflow-safe">
+    <div className="min-h-[100dvh] flex w-full bg-background overflow-safe">
       {/* Desktop Sidebar - hidden on mobile */}
       <div className="hidden lg:block">
         <AppSidebar />
@@ -58,7 +58,7 @@ export function AppLayout() {
         </SheetContent>
       </Sheet>
 
-      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-[100dvh] overflow-hidden">
         {/* Mobile Header with Hamburger */}
         <header 
           className="lg:hidden h-14 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-3 pt-safe"

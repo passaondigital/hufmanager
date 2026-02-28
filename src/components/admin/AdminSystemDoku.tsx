@@ -497,7 +497,7 @@ const ROLLOUT_PLAN: PlanStep[] = [
     id: "mobile-dvh",
     title: "Mobile 100dvh Fix",
     description: "min-h-screen durch min-h-[100dvh] ersetzen für iOS Safari",
-    status: "todo",
+    status: "done",
     files: ["src/index.css", "diverse Layouts"],
     details: [
       "CSS: min-height: 100dvh statt 100vh",
@@ -522,7 +522,7 @@ const ROLLOUT_PLAN: PlanStep[] = [
     id: "ai-disclosure",
     title: "AiDisclosure: EU AI Act Komponente",
     description: "Transparenz-Hinweis für KI-gestützte Features",
-    status: "todo",
+    status: "done",
     files: ["src/components/legal/AiDisclosure.tsx"],
     details: [
       "Pflichthinweis bei KI-generierten Inhalten",

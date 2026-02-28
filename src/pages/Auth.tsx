@@ -287,7 +287,7 @@ export default function Auth() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
         <img 
           src="/hufmanager-logo.png" 
           alt="HufManager" 
@@ -299,7 +299,7 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+    <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md border-border bg-card shadow-xl">
         <CardHeader className="text-center pb-2">
           <img 
