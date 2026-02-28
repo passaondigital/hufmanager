@@ -12,8 +12,9 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import {
   AlertTriangle, Copy, Loader2, Search, LifeBuoy, Camera,
-  Send, MessageCircle, HelpCircle, Shield, Phone, BookOpen,
-  ChevronDown, ChevronUp, CheckCircle2, Zap, Users, Lock
+  Send, MessageCircle, HelpCircle, Shield, Phone,
+  ChevronDown, ChevronUp, CheckCircle2, Users, Lock,
+  KeyRound, UserX, RefreshCw, Link2, Unlink, Bug
 } from "lucide-react";
 import html2canvas from "html2canvas";
 
@@ -47,14 +48,11 @@ function SOSSupportSection() {
     await new Promise(r => setTimeout(r, 400));
     try {
       const canvas = await html2canvas(document.body, {
-        useCORS: true,
-        allowTaint: true,
+        useCORS: true, allowTaint: true,
         scale: Math.min(window.devicePixelRatio || 1, 2),
-        logging: false,
-        backgroundColor: null,
+        logging: false, backgroundColor: null,
         ignoreElements: (el) =>
-          el.hasAttribute("data-radix-portal") ||
-          el.getAttribute("role") === "dialog",
+          el.hasAttribute("data-radix-portal") || el.getAttribute("role") === "dialog",
       });
       setSosScreenshot(canvas.toDataURL("image/png"));
     } catch {
@@ -65,7 +63,6 @@ function SOSSupportSection() {
     }
   }, []);
 
-  // Paint screenshot on canvas
   useEffect(() => {
     if (sosScreenshot && canvasRef.current) {
       const ctx = canvasRef.current.getContext("2d");
@@ -90,7 +87,6 @@ function SOSSupportSection() {
     setIsSending(true);
     try {
       let screenshotUrl = null;
-
       if (canvasRef.current && sosScreenshot) {
         const dataUrl = canvasRef.current.toDataURL("image/png");
         const base64 = dataUrl.split(",")[1];
@@ -104,12 +100,10 @@ function SOSSupportSection() {
           .upload(fileName, blob, { contentType: "image/png" });
         if (!upErr && upData) {
           const { data: { publicUrl } } = supabase.storage
-            .from("feedback-screenshots")
-            .getPublicUrl(upData.path);
+            .from("feedback-screenshots").getPublicUrl(upData.path);
           screenshotUrl = publicUrl;
         }
       }
-
       const { error } = await supabase.from("feedback_reports").insert({
         user_id: user?.id || null,
         user_email: user?.email || null,
@@ -125,8 +119,7 @@ function SOSSupportSection() {
         status: "open",
       });
       if (error) throw error;
-
-      toast({ title: "SOS-Meldung gesendet!", description: "Wir kümmern uns schnellstmöglich darum." });
+      toast({ title: "Meldung gesendet!", description: "Wir kümmern uns schnellstmöglich darum." });
       setSosOpen(false);
       setSosMessage("");
       setSosScreenshot(null);
@@ -147,16 +140,11 @@ function SOSSupportSection() {
             SOS Support
           </CardTitle>
           <CardDescription>
-            Problem mit der App? Schreib uns direkt – mit Screenshot. Wir helfen schnell.
+            Etwas funktioniert nicht? Schreib uns – gerne mit Screenshot. Wir helfen schnell.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button
-            onClick={() => setSosOpen(true)}
-            className="w-full gap-2"
-            variant="default"
-            size="lg"
-          >
+          <Button onClick={() => setSosOpen(true)} className="w-full gap-2" variant="default" size="lg">
             <MessageCircle className="h-5 w-5" />
             Problem melden
           </Button>
@@ -168,70 +156,48 @@ function SOSSupportSection() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <LifeBuoy className="h-5 w-5 text-primary" />
-              SOS Support – Problem melden
+              Problem melden
             </DialogTitle>
             <DialogDescription>
-              Beschreibe kurz, was nicht funktioniert. Ein Screenshot hilft uns, schneller zu helfen.
+              Beschreibe kurz, was nicht klappt. Ein Screenshot hilft uns enorm.
             </DialogDescription>
           </DialogHeader>
-
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label htmlFor="sos-msg">Was ist das Problem?</Label>
               <Textarea
                 id="sos-msg"
-                placeholder="z.B. Rechnung lässt sich nicht erstellen, Button reagiert nicht..."
+                placeholder="z.B. Kunde kann sich nicht einloggen, Pferd erscheint nicht in der Liste..."
                 value={sosMessage}
                 onChange={(e) => setSosMessage(e.target.value)}
                 rows={3}
                 maxLength={2000}
               />
             </div>
-
             <div className="space-y-2">
-              <Label>Screenshot (optional, aber hilfreich)</Label>
+              <Label>Screenshot (optional)</Label>
               {sosScreenshot ? (
                 <div className="space-y-2">
-                  <canvas
-                    ref={canvasRef}
-                    className="w-full rounded-lg border"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSosScreenshot(null)}
-                  >
+                  <canvas ref={canvasRef} className="w-full rounded-lg border" />
+                  <Button variant="outline" size="sm" onClick={() => setSosScreenshot(null)}>
                     Screenshot entfernen
                   </Button>
                 </div>
               ) : (
-                <Button
-                  variant="outline"
-                  className="w-full gap-2"
-                  onClick={captureScreenshot}
-                  disabled={isCapturing}
-                >
+                <Button variant="outline" className="w-full gap-2" onClick={captureScreenshot} disabled={isCapturing}>
                   <Camera className="h-4 w-4" />
                   {isCapturing ? "Wird erstellt..." : "Screenshot aufnehmen"}
                 </Button>
               )}
             </div>
-
             <div className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">
-              <p>📧 Deine Meldung geht direkt an das HufManager-Team. Wir antworten so schnell wie möglich.</p>
+              📧 Deine Meldung geht direkt an das HufManager-Team.
             </div>
           </div>
-
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSosOpen(false)}>
-              Abbrechen
-            </Button>
+            <Button variant="outline" onClick={() => setSosOpen(false)}>Abbrechen</Button>
             <Button onClick={handleSubmit} disabled={isSending} className="gap-2">
-              {isSending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
+              {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               {isSending ? "Wird gesendet..." : "Absenden"}
             </Button>
           </DialogFooter>
@@ -242,24 +208,23 @@ function SOSSupportSection() {
 }
 
 // ─────────────────────────────────────────────
-// Collapsible Info Section
+// Collapsible Help Section
 // ─────────────────────────────────────────────
-function InfoSection({
+function HelpSection({
   icon: Icon,
   title,
+  defaultOpen = false,
   children,
 }: {
   icon: React.ElementType;
   title: string;
+  defaultOpen?: boolean;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <Card>
-      <button
-        className="w-full flex items-center justify-between p-4 text-left"
-        onClick={() => setOpen(!open)}
-      >
+      <button className="w-full flex items-center justify-between p-4 text-left" onClick={() => setOpen(!open)}>
         <div className="flex items-center gap-2">
           <Icon className="h-5 w-5 text-primary" />
           <span className="font-medium text-sm">{title}</span>
@@ -276,8 +241,22 @@ function InfoSection({
 }
 
 // ─────────────────────────────────────────────
-// Main Component
+// Numbered Step
 // ─────────────────────────────────────────────
+function Step({ n, children }: { n: number; children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-3">
+      <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
+        {n}
+      </span>
+      <p className="text-sm text-muted-foreground">{children}</p>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════
 export default function EmergencyDashboard() {
   const { user, role } = useAuth();
   const [clients, setClients] = useState<ClientInfo[]>([]);
@@ -297,62 +276,45 @@ export default function EmergencyDashboard() {
   const [loadingOtp, setLoadingOtp] = useState(false);
   const [loadingEscalation, setLoadingEscalation] = useState(false);
 
-  // load providers if partner
+  // Load providers for partner
   useEffect(() => {
     if (role === "partner") {
-      const fetchProviders = async () => {
+      (async () => {
         const { data: providerRoles } = await supabase
-          .from("user_roles")
-          .select("user_id")
-          .eq("role", "provider");
-        if (providerRoles && providerRoles.length > 0) {
-          const ids = providerRoles.map((r) => r.user_id);
+          .from("user_roles").select("user_id").eq("role", "provider");
+        if (providerRoles?.length) {
           const { data } = await supabase
-            .from("profiles")
-            .select("id, full_name")
-            .in("id", ids)
+            .from("profiles").select("id, full_name")
+            .in("id", providerRoles.map(r => r.user_id))
             .is("deleted_at", null);
           if (data) {
             setProviders(data as ProviderInfo[]);
             if (!selectedProviderId && data.length) setSelectedProviderId(data[0].id);
           }
         }
-      };
-      fetchProviders();
+      })();
     }
   }, [role, selectedProviderId]);
 
-  // fetch clients
+  // Fetch clients
   useEffect(() => {
     if (!selectedProviderId || role === "client") return;
-    const fetchClients = async () => {
-      const { data, error } = await supabase.rpc("get_provider_clients", {
-        _provider_id: selectedProviderId,
-      });
-      if (error) {
-        toast({ title: "Fehler beim Laden der Kunden", variant: "destructive" });
-      } else {
-        setClients((data as ClientInfo[]) || []);
-      }
-    };
-    fetchClients();
+    (async () => {
+      const { data, error } = await supabase.rpc("get_provider_clients", { _provider_id: selectedProviderId });
+      if (error) toast({ title: "Fehler beim Laden der Kunden", variant: "destructive" });
+      else setClients((data as ClientInfo[]) || []);
+    })();
   }, [selectedProviderId, role]);
 
-  // filter
+  // Filter
   useEffect(() => {
     const term = searchTerm.toLowerCase().trim();
-    if (!term) {
-      setFiltered(clients);
-    } else {
-      setFiltered(
-        clients.filter(
-          (c) =>
-            c.client_email?.toLowerCase().includes(term) ||
-            c.client_readable_id?.toLowerCase().includes(term) ||
-            c.client_name?.toLowerCase().includes(term)
-        )
-      );
-    }
+    if (!term) { setFiltered(clients); return; }
+    setFiltered(clients.filter(c =>
+      c.client_email?.toLowerCase().includes(term) ||
+      c.client_readable_id?.toLowerCase().includes(term) ||
+      c.client_name?.toLowerCase().includes(term)
+    ));
   }, [searchTerm, clients]);
 
   // OTP countdown
@@ -360,8 +322,7 @@ export default function EmergencyDashboard() {
     if (!otpExpiry) { setRemaining(0); return; }
     const iv = setInterval(() => {
       const diff = otpExpiry.getTime() - Date.now();
-      if (diff <= 0) { setRemaining(0); clearInterval(iv); }
-      else setRemaining(Math.ceil(diff / 1000));
+      if (diff <= 0) { setRemaining(0); clearInterval(iv); } else setRemaining(Math.ceil(diff / 1000));
     }, 1000);
     return () => clearInterval(iv);
   }, [otpExpiry]);
@@ -370,23 +331,15 @@ export default function EmergencyDashboard() {
     if (!selected || !user) return;
     setLoadingOtp(true);
     const { data, error } = await supabase.rpc("create_emergency_otp", {
-      _provider_id: selectedProviderId,
-      _client_id: selected.client_id,
+      _provider_id: selectedProviderId, _client_id: selected.client_id,
     });
     setLoadingOtp(false);
-    if (error) {
-      toast({ title: "OTP konnte nicht angefordert werden", variant: "destructive" });
-    } else {
-      setOtp(data as string);
-      setOtpExpiry(new Date(Date.now() + 30 * 60 * 1000));
-    }
+    if (error) toast({ title: "OTP konnte nicht erstellt werden", variant: "destructive" });
+    else { setOtp(data as string); setOtpExpiry(new Date(Date.now() + 30 * 60 * 1000)); }
   };
 
   const copyOtp = () => {
-    if (otp) {
-      navigator.clipboard.writeText(otp);
-      toast({ title: "OTP in Zwischenablage kopiert" });
-    }
+    if (otp) { navigator.clipboard.writeText(otp); toast({ title: "Kopiert!" }); }
   };
 
   const submitEscalation = async () => {
@@ -398,13 +351,8 @@ export default function EmergencyDashboard() {
       escalation_reason: escalationReason || null,
     });
     setLoadingEscalation(false);
-    if (error) {
-      toast({ title: "Eskalation fehlgeschlagen", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Notfall eskaliert", description: "Admin wurde benachrichtigt" });
-      setEscalationReason("");
-      setEscalationOpen(false);
-    }
+    if (error) toast({ title: "Fehlgeschlagen", description: error.message, variant: "destructive" });
+    else { toast({ title: "Eskaliert", description: "Admin wurde benachrichtigt" }); setEscalationReason(""); setEscalationOpen(false); }
   };
 
   // ═══════════════════════════════════════════
@@ -412,18 +360,18 @@ export default function EmergencyDashboard() {
   // ═══════════════════════════════════════════
   if (role === "admin") {
     return (
-      <div className="space-y-6 animate-fade-in max-w-2xl mx-auto">
+      <div className="space-y-5 animate-fade-in max-w-2xl mx-auto">
         <div className="flex items-center gap-3">
-          <AlertTriangle className="h-6 w-6 text-destructive" />
-          <h1 className="text-2xl font-bold">Notfall‑Dashboard (Admin)</h1>
+          <Shield className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-bold">Erste Hilfe & Support (Admin)</h1>
         </div>
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Eskalationen & Notfälle</CardTitle>
+            <CardTitle className="text-lg">Eskalationen</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground text-sm mb-4">
-              Alle eingehenden Notfälle und Eskalationen findest du unter{" "}
+              Eingehende Meldungen findest du unter{" "}
               <Button variant="link" className="p-0 h-auto text-primary" onClick={() => window.location.href = "/admin/mission-control?tab=escalations"}>
                 Mission Control → Eskalationen
               </Button>.
@@ -436,65 +384,69 @@ export default function EmergencyDashboard() {
   }
 
   // ═══════════════════════════════════════════
-  // CLIENT VIEW (simplified)
+  // CLIENT VIEW (vereinfacht)
   // ═══════════════════════════════════════════
   if (role === "client") {
     return (
       <div className="space-y-5 animate-fade-in max-w-lg mx-auto">
         <div className="flex items-center gap-3">
-          <AlertTriangle className="h-6 w-6 text-destructive" />
-          <h1 className="text-2xl font-bold">Hilfe & Notfall</h1>
+          <HelpCircle className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-bold">Hilfe & Support</h1>
         </div>
 
-        {/* Emergency Contact */}
-        <Card className="border-destructive/30 bg-destructive/5">
+        <Card>
+          <CardContent className="pt-5">
+            <p className="text-sm text-muted-foreground">
+              Hier findest du Hilfe, wenn etwas nicht funktioniert – z.B. wenn du dich nicht einloggen kannst, 
+              dein Pferd nicht angezeigt wird oder du deinen Hufbearbeiter nicht findest.
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Direct contact */}
+        <Card className="border-primary/20">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Phone className="h-5 w-5 text-destructive" />
-              Sofort-Hilfe
+              <MessageCircle className="h-5 w-5 text-primary" />
+              Deinen Hufbearbeiter kontaktieren
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Dein Pferd hat ein akutes Problem? Kontaktiere deinen Hufbearbeiter direkt per Chat.
+              Die schnellste Lösung: Schreib deinem Hufbearbeiter direkt im Chat. Er kann dir bei den meisten Problemen sofort helfen.
             </p>
-            <Button
-              variant="destructive"
-              className="w-full gap-2"
-              size="lg"
-              onClick={() => window.location.href = "/client-chat"}
-            >
-              <MessageCircle className="h-5 w-5" />
-              Nachricht an Hufbearbeiter
+            <Button className="w-full gap-2" size="lg" onClick={() => window.location.href = "/client-chat"}>
+              <Send className="h-5 w-5" />
+              Chat öffnen
             </Button>
           </CardContent>
         </Card>
 
-        {/* Quick Info */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <HelpCircle className="h-5 w-5 text-primary" />
-              Häufige Fragen
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-              <p><strong>Termin absagen?</strong> Gehe auf deine Termine und tippe auf „Absagen".</p>
-            </div>
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-              <p><strong>Pferdedaten ändern?</strong> Tippe auf dein Pferd → „Bearbeiten".</p>
-            </div>
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-              <p><strong>Rechnung nicht erhalten?</strong> Schreib deinem Hufbearbeiter im Chat.</p>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Common issues */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium px-1">Häufige Probleme & Lösungen</p>
 
-        {/* SOS Support */}
+          <HelpSection icon={KeyRound} title="Passwort vergessen?" defaultOpen>
+            <p>Auf der Login-Seite findest du den Link <strong>„Passwort vergessen"</strong>. 
+            Du bekommst eine E-Mail mit einem Link zum Zurücksetzen.</p>
+            <p>Falls die E-Mail nicht ankommt, bitte deinen Hufbearbeiter, dir ein <strong>Einmal-Passwort (OTP)</strong> zu erstellen – 
+            das geht über sein Notfall-Dashboard.</p>
+          </HelpSection>
+
+          <HelpSection icon={UserX} title="Pferd wird nicht angezeigt?">
+            <p>Das kann passieren, wenn dein Pferd noch nicht mit deinem Konto verknüpft ist.</p>
+            <Step n={1}>Gehe auf <strong>„Meine Pferde"</strong> und prüfe, ob das Pferd dort aufgelistet ist.</Step>
+            <Step n={2}>Falls nicht, schreib deinem Hufbearbeiter im Chat – er kann die Zuordnung korrigieren.</Step>
+          </HelpSection>
+
+          <HelpSection icon={Unlink} title="Kein Hufbearbeiter zugewiesen?">
+            <p>Falls du keinen Hufbearbeiter siehst, wurde dein Konto noch nicht verknüpft.</p>
+            <Step n={1}>Frag deinen Hufbearbeiter nach seinem <strong>Einladungslink</strong>.</Step>
+            <Step n={2}>Öffne den Link – die Verbindung wird automatisch hergestellt.</Step>
+          </HelpSection>
+        </div>
+
+        {/* SOS */}
         <SOSSupportSection />
       </div>
     );
@@ -507,30 +459,25 @@ export default function EmergencyDashboard() {
     return (
       <div className="space-y-5 animate-fade-in max-w-2xl mx-auto">
         <div className="flex items-center gap-3">
-          <AlertTriangle className="h-6 w-6 text-destructive" />
-          <h1 className="text-2xl font-bold">Erste Hilfe & Support</h1>
+          <HelpCircle className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-bold">Hilfe & Support</h1>
         </div>
 
-        {/* What is this */}
-        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900">
+        <Card>
           <CardContent className="pt-5">
-            <p className="text-sm">
-              <strong>Was ist das?</strong> Hier findest du schnelle Hilfe bei Problemen auf der Tour oder in der App.
-              Du kannst deinem Chef direkt ein Problem melden oder den HufManager-Support kontaktieren.
+            <p className="text-sm text-muted-foreground">
+              Hier findest du Hilfe bei Problemen mit der App, deiner Tour oder Kundenzuordnungen.
+              Bei dringenden Fragen kontaktiere deinen Chef direkt.
             </p>
           </CardContent>
         </Card>
 
-        {/* Contact boss */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <MessageCircle className="h-5 w-5 text-primary" />
               Chef kontaktieren
             </CardTitle>
-            <CardDescription>
-              Bei Tour-Problemen, Unfällen oder dringenden Fragen.
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <Button className="w-full gap-2" onClick={() => window.location.href = "/chat"}>
@@ -540,69 +487,72 @@ export default function EmergencyDashboard() {
           </CardContent>
         </Card>
 
-        {/* SOS */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium px-1">Häufige Probleme</p>
+
+          <HelpSection icon={UserX} title="Kunde/Pferd falsch zugewiesen?">
+            <p>Falsche Zuordnungen kann nur dein Chef korrigieren.</p>
+            <Step n={1}>Notiere dir den Namen des Kunden und des Pferdes.</Step>
+            <Step n={2}>Schreib deinem Chef über den Chat oben.</Step>
+            <Step n={3}>Er kann die Zuordnung im Kunden-Bereich ändern.</Step>
+          </HelpSection>
+
+          <HelpSection icon={RefreshCw} title="App lädt nicht richtig?">
+            <p>Versuche folgendes:</p>
+            <Step n={1}>Schließe die App komplett und öffne sie neu.</Step>
+            <Step n={2}>Prüfe deine Internetverbindung.</Step>
+            <Step n={3}>Falls es weiterhin nicht geht, melde das Problem über den SOS-Button unten.</Step>
+          </HelpSection>
+        </div>
+
         <SOSSupportSection />
-
-        {/* Info sections */}
-        <InfoSection icon={Zap} title="Was tun bei einem Tour-Notfall?">
-          <p>1. Sichere dich und das Pferd ab.</p>
-          <p>2. Kontaktiere deinen Chef über den Chat oben.</p>
-          <p>3. Dokumentiere den Vorfall (Fotos).</p>
-          <p>4. Warte auf Anweisungen, bevor du die Tour fortsetzt.</p>
-        </InfoSection>
-
-        <InfoSection icon={HelpCircle} title="App funktioniert nicht richtig?">
-          <p>Nutze den „Problem melden"-Button oben. Mach am besten einen Screenshot dazu – so können wir den Fehler schneller finden und beheben.</p>
-        </InfoSection>
       </div>
     );
   }
 
   // ═══════════════════════════════════════════
-  // PROVIDER / PARTNER VIEW (full features)
+  // PROVIDER / PARTNER VIEW
   // ═══════════════════════════════════════════
   if (role !== "provider" && role !== "partner") {
     return (
-      <Card>
-        <CardHeader><CardTitle>Notfall-Dashboard</CardTitle></CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-sm">
-            Diese Seite ist nicht für deine Rolle verfügbar.
-          </p>
-        </CardContent>
+      <Card><CardHeader><CardTitle>Nicht verfügbar</CardTitle></CardHeader>
+        <CardContent><p className="text-muted-foreground text-sm">Diese Seite ist nicht für deine Rolle verfügbar.</p></CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-2xl mx-auto">
+    <div className="space-y-5 animate-fade-in max-w-2xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <AlertTriangle className="h-6 w-6 text-destructive" />
-        <h1 className="text-2xl font-bold">Notfall‑Dashboard</h1>
+        <Shield className="h-6 w-6 text-primary" />
+        <h1 className="text-2xl font-bold">Erste Hilfe & Verbindungen</h1>
       </div>
 
-      {/* Explainer Card */}
-      <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900">
-        <CardContent className="pt-5 space-y-2">
-          <p className="text-sm font-medium">🛡️ Wozu ist das?</p>
-          <p className="text-sm text-muted-foreground">
-            Dieses Dashboard hilft dir in <strong>zwei Situationen</strong>:
+      {/* What is this */}
+      <Card>
+        <CardContent className="pt-5 space-y-3">
+          <p className="text-sm">
+            <strong>Wozu ist das?</strong> Hier löst du die häufigsten Probleme deiner Kunden:
           </p>
           <div className="grid gap-2 text-sm text-muted-foreground">
             <div className="flex items-start gap-2">
-              <Lock className="h-4 w-4 mt-0.5 shrink-0 text-amber-600" />
-              <p><strong>Kunde kann sich nicht einloggen?</strong> Erstelle ein Notfall-Passwort (OTP), das 30 Min. gültig ist.</p>
+              <KeyRound className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
+              <p><strong>Login-Probleme:</strong> Erstelle ein Einmal-Passwort (OTP), damit dein Kunde sich sofort einloggen kann.</p>
+            </div>
+            <div className="flex items-start gap-2">
+              <Link2 className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
+              <p><strong>Falsche Zuordnung:</strong> Kunde oder Pferd falsch verknüpft? → Gehe zu <Button variant="link" className="p-0 h-auto text-xs text-primary" onClick={() => window.location.href = "/kunden"}>Kunden</Button> und korrigiere es dort.</p>
             </div>
             <div className="flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-destructive" />
-              <p><strong>Dringender Notfall?</strong> Eskaliere direkt an den Admin – wir reagieren sofort.</p>
+              <p><strong>Nichts hilft?</strong> Eskaliere an den Admin – oder nutze den SOS-Button unten.</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* SOS Support — always visible */}
+      {/* SOS Support */}
       <SOSSupportSection />
 
       <Separator />
@@ -616,7 +566,7 @@ export default function EmergencyDashboard() {
               Provider auswählen
             </CardTitle>
             <CardDescription>
-              Wähle den Hufbearbeiter, für den du den Notfall bearbeitest.
+              Für welchen Hufbearbeiter möchtest du ein Problem lösen?
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -627,45 +577,48 @@ export default function EmergencyDashboard() {
             >
               <option value="">-- Bitte wählen --</option>
               {providers.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.full_name || "Unbekannt"}
-                </option>
+                <option key={p.id} value={p.id}>{p.full_name || "Unbekannt"}</option>
               ))}
             </select>
           </CardContent>
         </Card>
       )}
 
-      {/* Client search */}
+      {/* Customer OTP Section */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <Search className="h-5 w-5 text-primary" />
-            Kunden suchen
+            <KeyRound className="h-5 w-5 text-primary" />
+            Kunden-Login reparieren
           </CardTitle>
           <CardDescription>
-            Finde den betroffenen Kunden per Name, E-Mail oder #KID.
+            Wenn ein Kunde sein Passwort vergessen hat oder sich nicht einloggen kann, 
+            kannst du hier ein Einmal-Passwort erstellen.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Input
-            placeholder="Nach Name, E-Mail oder #KID suchen..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          {/* Search */}
+          <div>
+            <Label className="text-xs text-muted-foreground mb-1 block">Kunde suchen</Label>
+            <Input
+              placeholder="Name, E-Mail oder #KID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
 
-          <div className="space-y-1 max-h-64 overflow-y-auto">
+          <div className="space-y-1 max-h-48 overflow-y-auto">
             {filtered.length === 0 && searchTerm && (
-              <p className="text-xs text-muted-foreground p-2">Keine Kunden gefunden.</p>
+              <p className="text-xs text-muted-foreground p-2">Kein Kunde gefunden.</p>
             )}
             {filtered.length === 0 && !searchTerm && (
-              <p className="text-xs text-muted-foreground p-2">Gib einen Suchbegriff ein, um Kunden zu finden.</p>
+              <p className="text-xs text-muted-foreground p-2">Gib einen Namen oder eine E-Mail ein.</p>
             )}
             {filtered.map((c) => (
               <button
                 key={c.client_id}
-                onClick={() => setSelected(c)}
-                className={`w-full text-left px-3 py-3 rounded-lg text-sm transition-colors ${
+                onClick={() => { setSelected(c); setOtp(null); }}
+                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
                   selected?.client_id === c.client_id
                     ? "bg-primary/10 text-primary border border-primary/20"
                     : "hover:bg-muted border border-transparent"
@@ -678,99 +631,95 @@ export default function EmergencyDashboard() {
                   )}
                 </div>
                 {c.client_email && (
-                  <div className="text-xs text-muted-foreground mt-1">{c.client_email}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{c.client_email}</div>
                 )}
               </button>
             ))}
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Actions for selected customer */}
-      {selected && (
-        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Shield className="h-5 w-5 text-amber-600" />
-              {selected.client_name || selected.client_readable_id}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {/* OTP Section */}
-            <div>
-              <h3 className="font-medium text-sm mb-1 flex items-center gap-2">
-                <Lock className="h-4 w-4" />
-                Notfall-Passwort (OTP)
-              </h3>
-              <p className="text-xs text-muted-foreground mb-3">
-                Erstellt ein einmaliges Passwort, das der Kunde zum Login nutzen kann. Gültig für 30 Minuten.
-              </p>
-              <Button
-                onClick={requestOtp}
-                disabled={loadingOtp || !!otp}
-                className="w-full"
-              >
-                {loadingOtp && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                OTP anfordern
+          {/* OTP Actions */}
+          {selected && (
+            <div className="border-t pt-3 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <CheckCircle2 className="h-4 w-4 text-primary" />
+                Ausgewählt: {selected.client_name || selected.client_readable_id}
+              </div>
+
+              <Button onClick={requestOtp} disabled={loadingOtp || !!otp} className="w-full gap-2" variant="outline">
+                {loadingOtp && <Loader2 className="w-4 h-4 animate-spin" />}
+                <KeyRound className="h-4 w-4" />
+                Einmal-Passwort erstellen
               </Button>
 
               {otp && (
-                <div className="mt-3 p-4 bg-background border-2 border-amber-300 rounded-lg">
+                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
                   <p className="font-mono text-2xl tracking-[0.2em] font-bold text-center mb-2">
                     {otp}
                   </p>
                   <p className="text-xs text-muted-foreground text-center mb-3">
-                    Noch {Math.floor(remaining / 60)}:{("0" + (remaining % 60)).slice(-2)} Minuten gültig
+                    Noch {Math.floor(remaining / 60)}:{("0" + (remaining % 60)).slice(-2)} gültig – teile den Code per Telefon oder SMS.
                   </p>
                   <Button size="sm" variant="outline" className="w-full gap-2" onClick={copyOtp}>
                     <Copy className="h-4 w-4" />
-                    In Zwischenablage kopieren
+                    Kopieren
                   </Button>
                 </div>
               )}
             </div>
+          )}
+        </CardContent>
+      </Card>
 
-            <Separator />
-
-            {/* Escalation Section */}
-            <div>
-              <h3 className="font-medium text-sm mb-1 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-destructive" />
-                Notfall eskalieren
-              </h3>
-              <p className="text-xs text-muted-foreground mb-3">
-                Informiere den Admin über einen schwerwiegenden Notfall, der sofortige Aufmerksamkeit erfordert.
-              </p>
-              <Button
-                onClick={() => setEscalationOpen(true)}
-                variant="destructive"
-                className="w-full gap-2"
-              >
-                <AlertTriangle className="w-4 h-4" />
-                Eskalieren & Admin benachrichtigen
-              </Button>
-            </div>
+      {/* Escalation */}
+      {selected && (
+        <Card className="border-destructive/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Problem eskalieren
+            </CardTitle>
+            <CardDescription>
+              Wenn du das Problem selbst nicht lösen kannst, informiere den Admin.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => setEscalationOpen(true)} variant="destructive" className="w-full gap-2">
+              <AlertTriangle className="w-4 h-4" />
+              An Admin eskalieren
+            </Button>
           </CardContent>
         </Card>
       )}
 
-      {/* Info Sections */}
+      {/* Help guides */}
       <div className="space-y-2">
-        <InfoSection icon={HelpCircle} title="Wie funktioniert das Notfall-Passwort?">
-          <p>1. Wähle den betroffenen Kunden oben aus.</p>
-          <p>2. Klicke auf „OTP anfordern" – ein 6-stelliger Code wird generiert.</p>
-          <p>3. Teile den Code mit dem Kunden (z.B. per Telefon).</p>
-          <p>4. Der Kunde kann sich damit 30 Minuten lang einloggen.</p>
-          <p className="text-xs italic mt-1">Hinweis: Jeder OTP-Vorgang wird protokolliert und ist nachvollziehbar.</p>
-        </InfoSection>
+        <p className="text-sm font-medium px-1">Anleitungen</p>
 
-        <InfoSection icon={BookOpen} title="Wann sollte ich eskalieren?">
-          <p>Eskaliere nur bei <strong>echten Notfällen</strong>, z.B.:</p>
-          <p>• Kunde wurde aus dem System ausgesperrt und braucht dringend Zugang.</p>
-          <p>• Sicherheitsrelevantes Problem (Datenleck, unberechtigter Zugriff).</p>
-          <p>• Systemausfall, der den Betrieb blockiert.</p>
-          <p className="text-xs italic mt-1">Für normale Support-Fragen nutze bitte den SOS-Button oben.</p>
-        </InfoSection>
+        <HelpSection icon={KeyRound} title="So funktioniert das Einmal-Passwort (OTP)">
+          <Step n={1}>Suche oben den betroffenen Kunden.</Step>
+          <Step n={2}>Klicke auf <strong>„Einmal-Passwort erstellen"</strong> – ein 6-stelliger Code wird erzeugt.</Step>
+          <Step n={3}>Teile den Code mit dem Kunden (Telefon, SMS, WhatsApp).</Step>
+          <Step n={4}>Der Kunde gibt den Code auf der Login-Seite ein und ist sofort drin.</Step>
+          <p className="text-xs italic">Der Code ist 30 Minuten gültig. Jede Nutzung wird protokolliert.</p>
+        </HelpSection>
+
+        <HelpSection icon={Link2} title="Kunde oder Pferd falsch zugeordnet?">
+          <Step n={1}>Gehe zu <strong>Kunden</strong> → öffne den betroffenen Kunden.</Step>
+          <Step n={2}>Unter <strong>„Pferde"</strong> kannst du Zuordnungen ändern oder entfernen.</Step>
+          <Step n={3}>Um einen Kunden einem anderen Provider zuzuweisen, nutze den <strong>Netzwerk</strong>-Bereich.</Step>
+          <p className="text-xs italic">Bei komplexen Fällen nutze den SOS-Button – wir helfen dir.</p>
+        </HelpSection>
+
+        <HelpSection icon={UserX} title="Kunde hat keinen Zugang erhalten?">
+          <p>Mögliche Ursachen:</p>
+          <Step n={1}>E-Mail-Adresse falsch geschrieben → Prüfe unter <strong>Kunden → Profil</strong>.</Step>
+          <Step n={2}>Einladungslink abgelaufen → Erstelle einen neuen unter <strong>Kunden → Einladen</strong>.</Step>
+          <Step n={3}>Kunde hat die E-Mail nicht erhalten → Prüfe Spam-Ordner oder erstelle ein OTP (oben).</Step>
+        </HelpSection>
+
+        <HelpSection icon={Bug} title="Technisches Problem mit der App?">
+          <p>Nutze den <strong>SOS-Button</strong> oben – am besten mit Screenshot. Wir sehen dann genau, was schief läuft und können schneller helfen.</p>
+        </HelpSection>
       </div>
 
       {/* Escalation Dialog */}
@@ -779,22 +728,27 @@ export default function EmergencyDashboard() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-destructive" />
-              Notfall eskalieren
+              Problem eskalieren
             </DialogTitle>
             <DialogDescription>
-              Der Admin wird sofort benachrichtigt. Beschreibe kurz, was passiert ist.
+              Der Admin wird sofort benachrichtigt und kümmert sich um das Problem.
             </DialogDescription>
           </DialogHeader>
-          <Textarea
-            placeholder="Was ist passiert? (optional)"
-            value={escalationReason}
-            onChange={(e) => setEscalationReason(e.target.value)}
-            rows={3}
-          />
+          <div className="space-y-2">
+            <Label>Betroffener Kunde</Label>
+            <p className="text-sm font-medium">{selected?.client_name || selected?.client_readable_id}</p>
+          </div>
+          <div className="space-y-2">
+            <Label>Was ist das Problem? (optional)</Label>
+            <Textarea
+              placeholder="z.B. Kunde kann sich trotz OTP nicht einloggen..."
+              value={escalationReason}
+              onChange={(e) => setEscalationReason(e.target.value)}
+              rows={3}
+            />
+          </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEscalationOpen(false)}>
-              Abbrechen
-            </Button>
+            <Button variant="outline" onClick={() => setEscalationOpen(false)}>Abbrechen</Button>
             <Button onClick={submitEscalation} disabled={loadingEscalation} variant="destructive" className="gap-2">
               {loadingEscalation && <Loader2 className="w-4 h-4 animate-spin" />}
               Jetzt eskalieren
