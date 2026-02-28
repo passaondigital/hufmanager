@@ -20,6 +20,17 @@ serve(async (req) => {
   }
 
   try {
+    // Auth guard: allow service_role key or anon key (public form), but validate lead exists
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const authHeader = req.headers.get('Authorization');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : null;
+    if (token !== serviceKey && token !== anonKey) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { lead } = await req.json();
     if (!lead || !lead.full_name) {
       return new Response(JSON.stringify({ error: 'Invalid lead data' }), { 
@@ -28,10 +39,23 @@ serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const resendKey = Deno.env.get('RESEND_API_KEY');
-
     const supabase = createClient(supabaseUrl, serviceKey);
+
+    // Validate lead exists in DB (prevents abuse - lead must be recently created)
+    if (lead.id) {
+      const { data: dbLead } = await supabase
+        .from('funnel_leads')
+        .select('id')
+        .eq('id', lead.id)
+        .maybeSingle();
+      if (!dbLead) {
+        return new Response(JSON.stringify({ error: 'Lead not found' }), {
+          status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    const resendKey = Deno.env.get('RESEND_API_KEY');
 
     // Format preferred slots for email
     const slotsHtml = (lead.preferred_slots || []).map((slot: any, i: number) => 

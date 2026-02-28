@@ -18,14 +18,13 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Auth: accept service_role key, anon key (for cron jobs), or valid admin JWT
+    // Auth: accept service_role key (for cron jobs) or valid admin JWT
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.startsWith("Bearer ") ? authHeader.replace("Bearer ", "") : null;
 
-    // Allow cron calls with anon key or service role key
-    const isCronOrService = token === supabaseServiceKey || token === anonKey;
+    const isServiceRole = token === supabaseServiceKey;
 
-    if (!isCronOrService) {
+    if (!isServiceRole) {
       // Must be a valid admin user
       if (!token) {
         return new Response(
