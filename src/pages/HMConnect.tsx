@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConnectionSearch } from "@/components/network/ConnectionSearch";
+import { InviteToHufManager } from "@/components/hm-connect/InviteToHufManager";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +25,7 @@ import {
   Loader2,
   Info,
   Crown,
+  UserPlus,
 } from "lucide-react";
 
 // Connection overview component
@@ -324,14 +326,18 @@ export default function HMConnect() {
       </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="search" className="gap-2">
             <Search className="h-4 w-4" />
             Suchen & Verbinden
           </TabsTrigger>
+          <TabsTrigger value="invite" className="gap-2">
+            <UserPlus className="h-4 w-4" />
+            Einladen
+          </TabsTrigger>
           <TabsTrigger value="connections" className="gap-2">
             <Users className="h-4 w-4" />
-            Meine Verbindungen
+            Verbindungen
           </TabsTrigger>
         </TabsList>
 
@@ -343,6 +349,10 @@ export default function HMConnect() {
               onConnectionRequested={() => setActiveTab("connections")}
             />
           ))}
+        </TabsContent>
+
+        <TabsContent value="invite" className="mt-6">
+          <InviteToHufManager />
         </TabsContent>
 
         <TabsContent value="connections" className="mt-6">

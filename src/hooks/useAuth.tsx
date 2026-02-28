@@ -119,6 +119,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Process HM Connect invite token after successful login
+  const processHmConnectInvite = async (userId: string) => {
+    const token = sessionStorage.getItem("hm_connect_invite");
+    if (!token) return;
+
+    try {
+      // Mark invitation as accepted
+      const { data, error } = await supabase
+        .from("hm_connect_invitations")
+        .update({
+          status: "accepted",
+          accepted_by: userId,
+          accepted_at: new Date().toISOString(),
+        })
+        .eq("token", token)
+        .eq("status", "pending")
+        .select("invited_by")
+        .maybeSingle();
+
+      if (!error && data?.invited_by) {
+        // Auto-create connection between inviter and invitee
+        const { data: existingGrant } = await supabase
+          .from("access_grants")
+          .select("id")
+          .or(`and(client_id.eq.${userId},provider_id.eq.${data.invited_by}),and(client_id.eq.${data.invited_by},provider_id.eq.${userId})`)
+          .maybeSingle();
+
+        if (!existingGrant) {
+          // Create bidirectional pending connection - will be finalized based on roles
+          await supabase.from("access_grants").insert({
+            client_id: userId,
+            provider_id: data.invited_by,
+            status: "active",
+            is_active: true,
+            can_view_basic: true,
+            can_view_medical: false,
+            can_create_appointments: false,
+            requested_by: data.invited_by,
+          });
+        }
+        console.log("HM Connect invite accepted, connected to:", data.invited_by);
+      }
+    } catch (error) {
+      console.error("Error processing HM Connect invite:", error);
+    } finally {
+      sessionStorage.removeItem("hm_connect_invite");
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -138,7 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Process invite code on sign in
             if (event === "SIGNED_IN") {
               processInviteCode(session.user.id);
-              // Process partner invite token if present
+              processHmConnectInvite(session.user.id);
               const partnerToken = sessionStorage.getItem("partner_invite_token");
               if (partnerToken) {
                 try {
