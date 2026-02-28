@@ -158,7 +158,7 @@ export default function ClientHome() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
         <img 
           src="/hufmanager-logo.png" 
           alt="HufManager" 
@@ -189,7 +189,7 @@ export default function ClientHome() {
         />
       )}
 
-      <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20 overflow-safe">
+      <div className="min-h-[100dvh] bg-gradient-to-b from-background via-background to-muted/20 overflow-safe">
         {/* Modern Header with glassmorphism + safe area */}
         <header 
           className="sticky top-0 z-20 bg-background/70 backdrop-blur-xl border-b border-border/50"

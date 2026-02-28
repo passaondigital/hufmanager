@@ -124,6 +124,14 @@
 }
 
 @layer utilities {
+  /* Dynamic viewport height for iOS Safari */
+  .min-h-dvh {
+    min-height: 100dvh;
+  }
+  .h-dvh {
+    height: 100dvh;
+  }
+
   /* Gradient utilities kept for backward compat but flattened */
   .gradient-primary {
     background: hsl(var(--primary));
