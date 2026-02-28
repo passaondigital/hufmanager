@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Shield, Users, Database, Bug, Activity, Crown, Plus, Zap, Package, BookOpen, Brain, AlertTriangle, PiggyBank } from "lucide-react";
+import { Loader2, Shield, Users, Database, Bug, Activity, Crown, Plus, Zap, Package, BookOpen, Brain, AlertTriangle, PiggyBank, Link2 } from "lucide-react";
 import { toast } from "sonner";
 
 // Admin Views
@@ -18,8 +18,9 @@ import { AdminProductCatalog } from "@/components/admin/AdminProductCatalog";
 import { AdminSystemDoku } from "@/components/admin/AdminSystemDoku";
 import { AdminKIDataHub } from "@/components/admin/AdminKIDataHub";
 import { AdminRevenue } from "@/components/admin/AdminRevenue";
+import { AdminConnections } from "@/components/admin/AdminConnections";
 
-type AdminView = "users" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue";
+type AdminView = "users" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "connections";
 
 const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "users", label: "User-DB", icon: Users },
@@ -28,6 +29,7 @@ const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ cla
   { id: "catalog", label: "Produktkatalog", icon: Package },
   { id: "docs", label: "System & Doku", icon: BookOpen },
   { id: "ki-hub", label: "KI-Daten-Hub", icon: Brain },
+  { id: "connections", label: "HM Connect", icon: Link2 },
   { id: "dev", label: "Dev-Zentrale", icon: Bug },
   { id: "health", label: "System-Health", icon: Activity },
 ];
@@ -189,6 +191,7 @@ export default function AdminDashboard() {
         {activeView === "users" && <AdminUserDB isMasterAdmin={isMasterAdmin} />}
         {activeView === "horses" && <AdminHorseDB isMasterAdmin={isMasterAdmin} />}
         {activeView === "revenue" && <AdminRevenue />}
+        {activeView === "connections" && <AdminConnections />}
         {activeView === "catalog" && <AdminProductCatalog />}
         {activeView === "docs" && <AdminSystemDoku />}
         {activeView === "ki-hub" && <AdminKIDataHub />}
