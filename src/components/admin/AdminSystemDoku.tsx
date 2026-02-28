@@ -381,7 +381,7 @@ const ROLLOUT_PLAN: PlanStep[] = [
     id: "db-migration",
     title: "DB-Migration: admin_revenue_log + admin_expenses",
     description: "Neue Tabellen für Buchhaltung + RLS für agent_data_hub + 2. Master-Admin",
-    status: "todo",
+    status: "done",
     files: ["supabase/migrations/"],
     details: [
       "CREATE TABLE admin_revenue_log (Copecart-Transaktionen)",
@@ -394,7 +394,7 @@ const ROLLOUT_PLAN: PlanStep[] = [
     id: "feature-flags",
     title: "Feature-Flag-Defaults aktualisieren",
     description: "Office + Lager auf 'public' setzen, Team als 'beta'",
-    status: "todo",
+    status: "done",
     files: ["src/types/featureFlags.ts", "src/hooks/useSubscription.tsx"],
     details: [
       "module_office: 'disabled' → 'public'",

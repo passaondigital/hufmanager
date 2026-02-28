@@ -48,8 +48,9 @@ const DEFAULT_FEATURE_STATUSES: FeatureStatuses = {
   module_network: 'public',
   module_analytics: 'public',
   beta_features: 'disabled',
-  module_team: 'disabled',
-  module_office: 'disabled',
+  module_team: 'beta',
+  module_office: 'public',
+  module_lager: 'public',
 };
 
 interface SubscriptionContextType {

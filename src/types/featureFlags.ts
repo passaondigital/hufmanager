@@ -20,6 +20,7 @@ export type FeatureKey =
   | 'beta_features'
   | 'module_team'
   | 'module_office'
+  | 'module_lager'
   | 'autoflow_reminders'
   | 'autoflow_invoicing'
   | 'autoflow_scheduling'
@@ -37,6 +38,7 @@ export interface FeatureStatuses {
   beta_features?: FeatureStatus;
   module_team?: FeatureStatus;
   module_office?: FeatureStatus;
+  module_lager?: FeatureStatus;
   autoflow_reminders?: FeatureStatus;
   autoflow_invoicing?: FeatureStatus;
   autoflow_scheduling?: FeatureStatus;
@@ -72,8 +74,9 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
 
   // Advanced modules
   { key: 'beta_features', name: 'Beta Features', description: 'Zugang zu neuen Testfunktionen', defaultStatus: 'disabled', category: 'advanced' },
-  { key: 'module_team', name: 'Team / Mitarbeiter', description: 'Mitarbeiterverwaltung', defaultStatus: 'disabled', category: 'advanced' },
-  { key: 'module_office', name: 'Mein Office', description: 'Dokumente, Formulare & Vorlagen', defaultStatus: 'disabled', category: 'advanced' },
+  { key: 'module_team', name: 'Team / Mitarbeiter', description: 'Mitarbeiterverwaltung', defaultStatus: 'beta', category: 'advanced' },
+  { key: 'module_office', name: 'Mein Office', description: 'Dokumente, Formulare & Vorlagen', defaultStatus: 'public', category: 'advanced' },
+  { key: 'module_lager', name: 'Lager / Material', description: 'Material- und Lagerverwaltung', defaultStatus: 'public', category: 'advanced' },
 ];
 
 // Helper to get features grouped by category
