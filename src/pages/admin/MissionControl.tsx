@@ -75,6 +75,7 @@ import { FunnelCockpit } from "@/components/admin/FunnelCockpit";
 import AdminPartnerOverview from "@/components/admin/AdminPartnerOverview";
 import AdminEmployeeOverview from "@/components/admin/AdminEmployeeOverview";
 import { AdminRevenue } from "@/components/admin/AdminRevenue";
+import { RetentionDashboard } from "@/components/admin/RetentionDashboard";
 
 // Horse icon fallback since lucide doesn't have it
 const Horse = () => (
@@ -1133,6 +1134,10 @@ export default function MissionControl() {
                 <PiggyBank className="w-4 h-4" />
                 <span className="hidden md:inline">Einnahmen</span>
               </TabsTrigger>
+              <TabsTrigger value="retention" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <Clock className="w-4 h-4" />
+                <span className="hidden md:inline">Fristen</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -2155,6 +2160,10 @@ export default function MissionControl() {
 
           <TabsContent value="revenue" className="space-y-6">
             <AdminRevenue />
+          </TabsContent>
+
+          <TabsContent value="retention" className="space-y-6">
+            <RetentionDashboard />
           </TabsContent>
 
           {/* ESCALATIONS TAB */}
