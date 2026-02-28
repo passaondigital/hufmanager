@@ -16,7 +16,7 @@ const Navbar = () => {
           </a>
 
           <nav className="hidden md:flex items-center gap-8">
-            <a href="/#ecosystem" className="text-white/60 hover:text-white transition-colors text-sm font-medium">Plattform</a>
+            <a href="/#plattform" className="text-white/60 hover:text-white transition-colors text-sm font-medium">Plattform</a>
             <a href="/#pricing" className="text-white/60 hover:text-white transition-colors text-sm font-medium">Preise</a>
             <a href="/#hufrente" className="text-white/60 hover:text-white transition-colors text-sm font-medium">Über uns</a>
             <Link to="/blog" className="text-white/60 hover:text-white transition-colors text-sm font-medium">Blog</Link>
@@ -39,7 +39,7 @@ const Navbar = () => {
         {isOpen && (
           <div className="md:hidden py-4 border-t border-white/10">
             <nav className="flex flex-col gap-4">
-              <a href="/#ecosystem" className="text-white py-2" onClick={() => setIsOpen(false)}>Plattform</a>
+              <a href="/#plattform" className="text-white py-2" onClick={() => setIsOpen(false)}>Plattform</a>
               <a href="/#pricing" className="text-white py-2" onClick={() => setIsOpen(false)}>Preise</a>
               <a href="/#hufrente" className="text-white py-2" onClick={() => setIsOpen(false)}>Über uns</a>
               <Link to="/blog" className="text-white py-2">Blog</Link>

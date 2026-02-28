@@ -57,6 +57,7 @@ const plans = [
       "1. Hilfe Kunden Center",
     ],
     excludes: [
+      "HM Connect & Netzwerk",
       "KI-Features & AutoFlow",
       "Vorlagen & PDF/Export",
       "2. Benutzer",
@@ -71,6 +72,7 @@ const plans = [
     users: "1 Nutzer",
     includes: [
       "Alle 5 Workflow-Stufen",
+      "HM Connect & Netzwerk",
       "KI-Features & AutoFlow",
       "Vorlagen & PDF/Export",
       "Prioritäts-Support",

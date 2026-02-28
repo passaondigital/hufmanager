@@ -262,11 +262,13 @@ export default function HMConnect() {
   const { role } = useAuth();
   const [activeTab, setActiveTab] = useState("search");
 
-  // Pro plan gate
-  const isPlanAllowed = plan === "pro" || plan === "duo" || plan === "team";
+  // Plan gate: Clients can always use HM Connect for free
+  // Only providers/partners need Pro plan
+  const isClient = role === "client";
   const isAdmin = role === "admin";
+  const isPlanAllowed = plan === "pro" || plan === "duo" || plan === "team";
 
-  if (!isPlanAllowed && !isAdmin) {
+  if (!isClient && !isPlanAllowed && !isAdmin) {
     return (
       <div className="container max-w-2xl py-12">
         <Card className="border-primary/20">
@@ -287,11 +289,15 @@ export default function HMConnect() {
     );
   }
 
-  const searchTypes = role === "client"
-    ? [{ key: "provider" as const, label: "Hufbearbeiter finden", prefix: "#PID" }]
+  const searchTypes = isClient
+    ? [
+        { key: "provider" as const, label: "Hufbearbeiter finden", prefix: "#PID" },
+        { key: "partner" as const, label: "Fachpartner finden", prefix: "#PRID" },
+      ]
     : [
         { key: "client" as const, label: "Kunde finden", prefix: "#KID" },
         { key: "provider" as const, label: "Profi finden", prefix: "#PID" },
+        { key: "partner" as const, label: "Fachpartner finden", prefix: "#PRID" },
         { key: "horse" as const, label: "Pferd finden", prefix: "#EQID" },
       ];
 

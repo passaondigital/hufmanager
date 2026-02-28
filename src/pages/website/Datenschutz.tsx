@@ -41,7 +41,19 @@ const Datenschutz = () => (
             <p className="mb-4">Der Provider der Seiten erhebt und speichert automatisch Informationen in so genannten Server-Log-Dateien.</p>
           </div>
           <div>
-            <h2 className="text-2xl font-semibold mb-4">5. Soziale Medien</h2>
+            <h2 className="text-2xl font-semibold mb-4">5. HM Connect – Vernetzung & Datenaustausch</h2>
+            <p className="mb-4">HufManager bietet mit „HM Connect" eine Funktion zur DSGVO-konformen Vernetzung zwischen Nutzern (Hufbearbeiter, Pferdebesitzer, Fachpartner). Die Vernetzung erfolgt ausschließlich über eindeutige, pseudonymisierte Kennungen (#PID, #KID, #PRID, #EQID).</p>
+            <h3 className="text-xl font-semibold mb-2">Verbindungsanfragen</h3>
+            <p className="mb-4">Bei einer Verbindungsanfrage werden Name und Kennung des Anfragenden dem Empfänger angezeigt. Personenbezogene Daten (E-Mail, Telefon, Adressen) werden erst nach beidseitiger Bestätigung der Verbindung gemäß Art. 6 Abs. 1 lit. a DSGVO geteilt. Jeder Nutzer kann erteilte Berechtigungen (Stammdaten, medizinische Daten, Terminplanung) jederzeit granular widerrufen.</p>
+            <h3 className="text-xl font-semibold mb-2">Einladungen</h3>
+            <p className="mb-4">Nutzer können Dritte per E-Mail-Adresse zum HufManager einladen. Die eingegebene E-Mail-Adresse wird ausschließlich zur Erstellung eines Einladungslinks verwendet und nach Ablauf (30 Tage) oder Annahme gelöscht. Es erfolgt kein automatischer E-Mail-Versand – der Nutzer teilt den Link eigenständig. Maximal 10 Einladungen pro Nutzer pro 24 Stunden sind möglich (Rate-Limiting).</p>
+          </div>
+          <div>
+            <h2 className="text-2xl font-semibold mb-4">6. Einsatz von Künstlicher Intelligenz</h2>
+            <p className="mb-4">HufManager setzt KI-Modelle (Google Gemini) zur Unterstützung bei der Analyse von Hufbildern, automatisierten Textvorschlägen und Workflow-Automatisierung (AutoFlow) ein. Gemäß Art. 50 der EU KI-Verordnung (AI Act) werden alle KI-generierten Inhalte entsprechend gekennzeichnet. Die Verarbeitung erfolgt auf Grundlage Ihrer Einwilligung (Art. 6 Abs. 1 lit. a DSGVO). Das System wird als „Minimales Risiko" gemäß der KI-Verordnung eingestuft.</p>
+          </div>
+          <div>
+            <h2 className="text-2xl font-semibold mb-4">7. Soziale Medien</h2>
             <p className="mb-4">Auf dieser Website sind Elemente sozialer Netzwerke (Facebook, Instagram) integriert. Die Nutzung erfolgt auf Grundlage Ihrer Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO.</p>
           </div>
           <div className="pt-4 text-sm border-t border-white/10">
