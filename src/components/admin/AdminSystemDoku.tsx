@@ -434,7 +434,7 @@ const ROLLOUT_PLAN: PlanStep[] = [
     id: "sidebar-unlock",
     title: "Sidebar: Office/Lager entsperren + MC-Link entfernen",
     description: "Module sichtbar machen, Mission Control Link aus Sidebar entfernen",
-    status: "todo",
+    status: "done",
     files: ["src/components/layout/AppSidebar.tsx"],
     details: [
       "Office-Modul in Sidebar einblenden",
@@ -447,7 +447,7 @@ const ROLLOUT_PLAN: PlanStep[] = [
     id: "admin-hardening",
     title: "Mission Control Hardening",
     description: "HOPE-Codewort, 2. Admin, Zurück-Button, DB-basierte Admin-Prüfung",
-    status: "todo",
+    status: "done",
     files: ["src/pages/admin/AdminDashboard.tsx", "src/pages/Auth.tsx"],
     details: [
       "HOPE-Codewort auf Auth-Seite → Magic-Link für Master-Admins",
