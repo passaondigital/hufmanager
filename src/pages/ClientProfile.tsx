@@ -13,6 +13,7 @@ import { StableLocationCard } from "@/components/client/StableLocationCard";
 import { EmergencyContactsCard } from "@/components/client/EmergencyContactsCard";
 import { PushNotificationToggle } from "@/components/notifications/PushNotificationToggle";
 import { DeleteAccountSection } from "@/components/client/DeleteAccountSection";
+import { DataExportSection } from "@/components/settings/DataExportSection";
 
 interface Profile {
   id: string;
@@ -223,6 +224,9 @@ export default function ClientProfile() {
             <PushNotificationToggle />
           </CardContent>
         </Card>
+
+        {/* DSGVO: Datenexport (Art. 15/20) */}
+        <DataExportSection />
 
         {/* DSGVO: Account Deletion (Art. 17) */}
         <DeleteAccountSection />

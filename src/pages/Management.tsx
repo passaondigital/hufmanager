@@ -40,6 +40,8 @@ import { ReviewsManagement } from "@/components/management/ReviewsManagement";
 import { SectionManager } from "@/components/landing/SectionManager";
 import { GalleryManager } from "@/components/management/GalleryManager";
 import { AVVSigningCard } from "@/components/settings/AVVSigningCard";
+import { DataExportSection } from "@/components/settings/DataExportSection";
+import { DeleteProviderAccountSection } from "@/components/settings/DeleteProviderAccountSection";
 import { PaymentSettingsCard } from "@/components/settings/PaymentSettingsCard";
 import { AppSettingsCard } from "@/components/settings/AppSettingsCard";
 import { KiSettingsCard } from "@/components/settings/KiSettingsCard";
@@ -841,6 +843,12 @@ Steuernummer: 12/345/67890
               </div>
             </CardContent>
           </Card>
+
+          {/* DSGVO: Datenexport (Art. 15/20) */}
+          <DataExportSection />
+
+          {/* DSGVO: Account löschen (Art. 17) */}
+          <DeleteProviderAccountSection />
         </TabsContent>
 
         {/* Payment */}
