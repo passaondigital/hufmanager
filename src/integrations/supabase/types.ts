@@ -7615,6 +7615,10 @@ export type Database = {
         Returns: undefined
       }
       delete_horse_safe: { Args: { _horse_id: string }; Returns: undefined }
+      delete_provider_cascade: {
+        Args: { _provider_id: string }
+        Returns: undefined
+      }
       generate_invoice_number: {
         Args: { p_provider_id: string }
         Returns: string
