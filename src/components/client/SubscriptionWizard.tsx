@@ -430,12 +430,12 @@ export function SubscriptionWizard({ settings, providerId, onSwitchToStandard }:
                 className="text-sm leading-snug cursor-pointer"
               >
                 Ich akzeptiere die{" "}
-                <a href="#" className="text-primary underline">
+                <a href="/agb" target="_blank" rel="noopener noreferrer" className="text-primary underline">
                   Allgemeinen Geschäftsbedingungen
                 </a>{" "}
                 und den{" "}
-                <a href="#" className="text-primary underline">
-                  Abo-Vertrag
+                <a href="/datenschutz" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                  Datenschutzhinweise
                 </a>
                 .
               </label>
