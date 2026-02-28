@@ -427,7 +427,7 @@ export default function ClientHome() {
               onClick={() => navigate("/client-notfall")}
             >
               <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-destructive" />
-              <span className="text-[9px] sm:text-[10px]">Notfall</span>
+              <span className="text-[9px] sm:text-[10px]">Hilfe</span>
             </Button>
           </motion.div>
 

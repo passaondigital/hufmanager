@@ -164,7 +164,6 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         { title: "Inbox", url: "/chat", icon: Inbox, badge: unreadMessagesCount || undefined, description: "Nachrichten & Chat" },
         { title: "Warteliste", url: "/anfragen", icon: Clock, badge: newLeadsCount || undefined, description: "Potenzielle Kunden" },
         { title: "Landingpage", url: "/management?tab=landing", icon: Globe, description: "Öffentliche Visitenkarte" },
-        { title: "Notfall", url: "/notfall", icon: AlertTriangle, description: "Notfall‑Dashboard" },
       ]
     },
     { 
@@ -238,7 +237,8 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
   const isManagementActive = () => {
     return (
       (isActive("/management") && (location.search.includes("profile") || location.search.includes("subscription"))) ||
-      isActive("/ausgaben")
+      isActive("/ausgaben") ||
+      isActive("/notfall")
     );
   };
 
@@ -539,8 +539,6 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
                 <span className="text-xs">Profil</span>
               </NavLink>
 
-
-
               <NavLink
                 to="/management?tab=subscription"
                 onClick={onNavigate}
@@ -553,6 +551,20 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
               >
                 <CreditCard className="h-3.5 w-3.5 flex-shrink-0" />
                 <span className="text-xs">Abo & Module</span>
+              </NavLink>
+
+              <NavLink
+                to="/notfall"
+                onClick={onNavigate}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200 ml-4",
+                  isActive("/notfall")
+                    ? "bg-primary/10 text-primary"
+                    : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                )}
+              >
+                <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="text-xs">1. Hilfe Kunden Center</span>
               </NavLink>
             </CollapsibleContent>
           )}

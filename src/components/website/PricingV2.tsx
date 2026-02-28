@@ -1,4 +1,4 @@
-import { Check, X, Play, Users, Star, MessageSquare, Package, UserPlus, Wrench, BarChart3 } from "lucide-react";
+import { Check, X, Play, Users, Star, MessageSquare, Package, UserPlus, Wrench, BarChart3, LifeBuoy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // Die 5 A's des Workflows
@@ -35,6 +35,13 @@ const FIVE_AS = [
   },
 ];
 
+// Inklusive: 1. Hilfe Kunden Center
+const HILFE_CENTER_FEATURE = {
+  icon: LifeBuoy,
+  name: "1. Hilfe Kunden Center",
+  description: "Login-Hilfe, OTP-Codes, Zuordnungen reparieren & SOS-Support – direkt in der App.",
+};
+
 const plans = [
   {
     name: "Starter",
@@ -47,6 +54,7 @@ const plans = [
       "Offline-Modus & PWA",
       "DSGVO-konform",
       "Kunden-App kostenlos",
+      "1. Hilfe Kunden Center",
     ],
     excludes: [
       "KI-Features & AutoFlow",
@@ -68,6 +76,7 @@ const plans = [
       "Prioritäts-Support",
       "Offline-Modus & PWA",
       "DSGVO-konform",
+      "1. Hilfe Kunden Center",
     ],
     excludes: [
       "2. Benutzer",
@@ -85,6 +94,7 @@ const plans = [
       "2. Benutzer inklusive",
       "Gemeinsame Doku & Notizen",
       "Geteilte Kalender",
+      "1. Hilfe Kunden Center",
     ],
     excludes: [
       "Unbegrenzte Nutzer",
@@ -103,6 +113,7 @@ const plans = [
       "Rollen & Berechtigungen",
       "Team-Auswertungen",
       "Mitarbeiter-Verwaltung",
+      "1. Hilfe Kunden Center",
     ],
     excludes: [],
   },
@@ -156,6 +167,18 @@ const PricingV2 = () => (
           <p className="text-center text-white/30 text-xs mt-3">
             Alle Pläne enthalten den vollständigen 5A-Workflow. Unterschied: Pferde-Limit, KI & Teamgröße.
           </p>
+
+          {/* 1. Hilfe Kunden Center Highlight */}
+          <div className="mt-6 flex items-center gap-4 p-4 rounded-xl border border-primary/20 bg-primary/5">
+            <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+              <HILFE_CENTER_FEATURE.icon className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <span className="text-white font-bold text-sm">{HILFE_CENTER_FEATURE.name}</span>
+              <p className="text-white/50 text-xs mt-0.5 leading-relaxed">{HILFE_CENTER_FEATURE.description}</p>
+              <span className="text-primary text-[10px] font-semibold uppercase tracking-wider">In allen Plänen inklusive</span>
+            </div>
+          </div>
         </div>
 
         {/* Plan Cards */}
