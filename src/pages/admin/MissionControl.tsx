@@ -54,7 +54,8 @@ import {
   Megaphone,
   Bug,
   Download,
-  Target
+  Target,
+  PiggyBank
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -73,6 +74,7 @@ import { AdminGlossaryManager } from "@/components/admin/AdminGlossaryManager";
 import { FunnelCockpit } from "@/components/admin/FunnelCockpit";
 import AdminPartnerOverview from "@/components/admin/AdminPartnerOverview";
 import AdminEmployeeOverview from "@/components/admin/AdminEmployeeOverview";
+import { AdminRevenue } from "@/components/admin/AdminRevenue";
 
 // Horse icon fallback since lucide doesn't have it
 const Horse = () => (
@@ -1093,6 +1095,10 @@ export default function MissionControl() {
                 <Target className="w-4 h-4" />
                 <span className="hidden md:inline">Funnel</span>
               </TabsTrigger>
+              <TabsTrigger value="revenue" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <PiggyBank className="w-4 h-4" />
+                <span className="hidden md:inline">Einnahmen</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -2111,6 +2117,10 @@ export default function MissionControl() {
 
            <TabsContent value="funnel" className="space-y-6">
             <FunnelCockpit />
+          </TabsContent>
+
+          <TabsContent value="revenue" className="space-y-6">
+            <AdminRevenue />
           </TabsContent>
 
           {/* ESCALATIONS TAB */}
