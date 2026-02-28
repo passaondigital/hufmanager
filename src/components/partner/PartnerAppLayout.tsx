@@ -37,7 +37,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { icon: Briefcase, label: "Leistungskatalog", path: "/partner-services", featureKey: "module_invoicing" },
   { icon: Receipt, label: "Rechnungen", path: "/partner-invoices", featureKey: "module_invoicing" },
   { icon: MessageSquare, label: "Chat", path: "/partner-chat", featureKey: "module_chat", bottomNav: true },
-  { icon: AlertTriangle, label: "Notfall", path: "/partner-notfall" },
+  { icon: AlertTriangle, label: "1. Hilfe Kunden Center", path: "/partner-notfall" },
   { icon: MapIcon, label: "Karte / Navigation", path: "/partner-maps", featureKey: "module_maps" },
   { icon: BarChart3, label: "Analytics", path: "/partner-analytics", featureKey: "module_analytics" },
   { icon: GraduationCap, label: "Academy", path: "/partner-academy", featureKey: "module_academy" },

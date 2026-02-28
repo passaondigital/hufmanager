@@ -172,7 +172,7 @@ export default function AdminDashboard() {
             onClick={() => navigate("/admin/notfall")}
           >
             <AlertTriangle className="w-4 h-4" />
-            Notfall-Dashboard
+            1. Hilfe Kunden Center
           </Button>
           <Button
             variant="ghost"
