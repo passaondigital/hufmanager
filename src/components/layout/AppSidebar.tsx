@@ -27,6 +27,7 @@ import {
   Inbox,
   Clock,
   Globe,
+  Link2,
   ShoppingBag,
   ClipboardList,
   User,
@@ -218,7 +219,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
     { title: "Mein Office", icon: FileText, locked: !isFeatureVisible('module_office'), url: "/mein-office" },
     { title: "Lager", icon: Warehouse, locked: !isFeatureVisible('beta_features'), url: "/lager" },
     { title: "Mitarbeiter", icon: UsersRound, locked: !isFeatureVisible('module_team'), url: "/team" },
-    { title: "Ecosystem", icon: Globe, locked: false, url: "/ecosystem" },
+    { title: "HM Connect", icon: Link2, locked: !isFeatureVisible('module_network'), url: "/hm-connect" },
     { title: "AutoFlow", icon: Zap, locked: false, url: "/autoflow" },
   ];
 
