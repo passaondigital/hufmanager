@@ -67,6 +67,7 @@ const WebsiteHome = lazy(() => import("@/pages/website/WebsiteHome"));
 const WebsiteImpressum = lazy(() => import("@/pages/website/Impressum"));
 const WebsiteDatenschutz = lazy(() => import("@/pages/website/Datenschutz"));
 const WebsiteAGB = lazy(() => import("@/pages/website/AGB"));
+const WebsiteVertrauen = lazy(() => import("@/pages/website/Vertrauen"));
 const Glossar = lazy(() => import("@/pages/Glossar"));
 const Lager = lazy(() => import("@/pages/Lager"));
 const Ausgaben = lazy(() => import("@/pages/Ausgaben"));
@@ -247,6 +248,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/impressum" element={<WebsiteImpressum />} />
             <Route path="/datenschutz" element={<WebsiteDatenschutz />} />
             <Route path="/agb" element={<WebsiteAGB />} />
+            <Route path="/vertrauen" element={<WebsiteVertrauen />} />
             
             {/* Öffentliche Blog-Seiten */}
             <Route path="/blog" element={<Blog />} />

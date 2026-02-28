@@ -12,6 +12,7 @@ const FooterNew = () => (
           <Link to="/impressum" className="text-white/50 hover:text-white transition-colors text-sm">Impressum</Link>
           <Link to="/datenschutz" className="text-white/50 hover:text-white transition-colors text-sm">Datenschutz</Link>
           <Link to="/agb" className="text-white/50 hover:text-white transition-colors text-sm">AGB</Link>
+          <Link to="/vertrauen" className="text-white/50 hover:text-white transition-colors text-sm">Sicherheit</Link>
         </nav>
         <p className="text-white/40 text-sm">© {new Date().getFullYear()} HufManager. Alle Rechte vorbehalten.</p>
       </div>
