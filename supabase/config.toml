@@ -89,3 +89,6 @@ verify_jwt = false
 
 [functions.check-retention-deadlines]
 verify_jwt = false
+
+[functions.data-export]
+verify_jwt = false
