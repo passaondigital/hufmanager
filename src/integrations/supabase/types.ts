@@ -4844,42 +4844,99 @@ export type Database = {
       partner_services: {
         Row: {
           base_price: number | null
+          billing_interval: string | null
+          billing_type: string
+          bundle_discount_percent: number | null
+          bundle_service_ids: string[] | null
+          capacity_limit: number | null
+          capacity_used: number | null
           category: string | null
           created_at: string
           description: string | null
+          digital_asset_url: string | null
           duration: number | null
+          early_bird_deadline: string | null
+          early_bird_price: number | null
           id: string
+          image_url: string | null
+          installment_amount: number | null
+          installment_count: number | null
           is_active: boolean
+          item_type: string
           name: string
           partner_id: string
+          session_count: number | null
+          sku: string | null
           sort_order: number | null
+          stock_quantity: number | null
+          tier_config: Json | null
           updated_at: string
+          validity_days: number | null
+          vat_rate: number | null
         }
         Insert: {
           base_price?: number | null
+          billing_interval?: string | null
+          billing_type?: string
+          bundle_discount_percent?: number | null
+          bundle_service_ids?: string[] | null
+          capacity_limit?: number | null
+          capacity_used?: number | null
           category?: string | null
           created_at?: string
           description?: string | null
+          digital_asset_url?: string | null
           duration?: number | null
+          early_bird_deadline?: string | null
+          early_bird_price?: number | null
           id?: string
+          image_url?: string | null
+          installment_amount?: number | null
+          installment_count?: number | null
           is_active?: boolean
+          item_type?: string
           name: string
           partner_id: string
+          session_count?: number | null
+          sku?: string | null
           sort_order?: number | null
+          stock_quantity?: number | null
+          tier_config?: Json | null
           updated_at?: string
+          validity_days?: number | null
+          vat_rate?: number | null
         }
         Update: {
           base_price?: number | null
+          billing_interval?: string | null
+          billing_type?: string
+          bundle_discount_percent?: number | null
+          bundle_service_ids?: string[] | null
+          capacity_limit?: number | null
+          capacity_used?: number | null
           category?: string | null
           created_at?: string
           description?: string | null
+          digital_asset_url?: string | null
           duration?: number | null
+          early_bird_deadline?: string | null
+          early_bird_price?: number | null
           id?: string
+          image_url?: string | null
+          installment_amount?: number | null
+          installment_count?: number | null
           is_active?: boolean
+          item_type?: string
           name?: string
           partner_id?: string
+          session_count?: number | null
+          sku?: string | null
           sort_order?: number | null
+          stock_quantity?: number | null
+          tier_config?: Json | null
           updated_at?: string
+          validity_days?: number | null
+          vat_rate?: number | null
         }
         Relationships: []
       }
@@ -6294,54 +6351,108 @@ export type Database = {
       services: {
         Row: {
           base_price: number
+          billing_interval: string | null
           billing_type: Database["public"]["Enums"]["billing_type"]
           booking_action: string
+          bundle_discount_percent: number | null
+          bundle_service_ids: string[] | null
+          capacity_limit: number | null
+          capacity_used: number | null
           category: string
           created_at: string
           description: string | null
+          digital_asset_url: string | null
           duration: number | null
+          early_bird_deadline: string | null
+          early_bird_price: number | null
           id: string
+          image_url: string | null
+          installment_amount: number | null
+          installment_count: number | null
           is_active: boolean | null
           is_group_service: boolean | null
+          item_type: string
           name: string
           provider_id: string | null
+          session_count: number | null
+          sku: string | null
           sort_order: number | null
+          stock_quantity: number | null
+          tier_config: Json | null
           updated_at: string
           use_group_pricing: boolean | null
+          validity_days: number | null
+          vat_rate: number | null
         }
         Insert: {
           base_price?: number
+          billing_interval?: string | null
           billing_type?: Database["public"]["Enums"]["billing_type"]
           booking_action?: string
+          bundle_discount_percent?: number | null
+          bundle_service_ids?: string[] | null
+          capacity_limit?: number | null
+          capacity_used?: number | null
           category?: string
           created_at?: string
           description?: string | null
+          digital_asset_url?: string | null
           duration?: number | null
+          early_bird_deadline?: string | null
+          early_bird_price?: number | null
           id?: string
+          image_url?: string | null
+          installment_amount?: number | null
+          installment_count?: number | null
           is_active?: boolean | null
           is_group_service?: boolean | null
+          item_type?: string
           name: string
           provider_id?: string | null
+          session_count?: number | null
+          sku?: string | null
           sort_order?: number | null
+          stock_quantity?: number | null
+          tier_config?: Json | null
           updated_at?: string
           use_group_pricing?: boolean | null
+          validity_days?: number | null
+          vat_rate?: number | null
         }
         Update: {
           base_price?: number
+          billing_interval?: string | null
           billing_type?: Database["public"]["Enums"]["billing_type"]
           booking_action?: string
+          bundle_discount_percent?: number | null
+          bundle_service_ids?: string[] | null
+          capacity_limit?: number | null
+          capacity_used?: number | null
           category?: string
           created_at?: string
           description?: string | null
+          digital_asset_url?: string | null
           duration?: number | null
+          early_bird_deadline?: string | null
+          early_bird_price?: number | null
           id?: string
+          image_url?: string | null
+          installment_amount?: number | null
+          installment_count?: number | null
           is_active?: boolean | null
           is_group_service?: boolean | null
+          item_type?: string
           name?: string
           provider_id?: string | null
+          session_count?: number | null
+          sku?: string | null
           sort_order?: number | null
+          stock_quantity?: number | null
+          tier_config?: Json | null
           updated_at?: string
           use_group_pricing?: boolean | null
+          validity_days?: number | null
+          vat_rate?: number | null
         }
         Relationships: []
       }
@@ -7669,7 +7780,17 @@ export type Database = {
         | "canceled_by_client"
         | "canceled_by_provider"
         | "no_show"
-      billing_type: "standard" | "flat_rate" | "series"
+      billing_type:
+        | "standard"
+        | "flat_rate"
+        | "series"
+        | "subscription"
+        | "installment"
+        | "hourly"
+        | "session_card"
+        | "tiered"
+        | "early_bird"
+        | "free"
       client_type: "private" | "commercial"
       contact_category: "client" | "partner" | "supplier" | "lead"
       employee_role: "view" | "employee" | "team_lead"
@@ -7841,7 +7962,18 @@ export const Constants = {
         "canceled_by_provider",
         "no_show",
       ],
-      billing_type: ["standard", "flat_rate", "series"],
+      billing_type: [
+        "standard",
+        "flat_rate",
+        "series",
+        "subscription",
+        "installment",
+        "hourly",
+        "session_card",
+        "tiered",
+        "early_bird",
+        "free",
+      ],
       client_type: ["private", "commercial"],
       contact_category: ["client", "partner", "supplier", "lead"],
       employee_role: ["view", "employee", "team_lead"],
