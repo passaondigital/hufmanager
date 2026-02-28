@@ -12,7 +12,16 @@ import {
 } from "@/types/featureFlags";
 
 type SubscriptionStatus = "active" | "cancelled" | "past_due" | "trialing" | "lifetime" | null;
-type SubscriptionPlan = "starter" | "advanced" | "pro" | null;
+type SubscriptionPlan = "starter" | "advanced" | "pro" | "duo" | "team" | null;
+
+// Horse limits per plan
+export const PLAN_HORSE_LIMITS: Record<string, number> = {
+  starter: 10,
+  advanced: 75,
+  pro: 75,
+  duo: 150,
+  team: Infinity,
+};
 
 // Legacy boolean flags for backward compatibility
 interface FeatureFlags {
@@ -64,6 +73,7 @@ interface SubscriptionContextType {
   featureStatuses: FeatureStatuses;
   planOverride: string | null;
   accessValidUntil: Date | null;
+  horseLimit: number;
   hasFeature: (feature: string) => boolean;
   hasModuleAccess: (module: keyof FeatureFlags) => boolean;
   getFeatureStatus: (feature: FeatureKey) => FeatureStatus;
@@ -204,7 +214,10 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const hasValidAccess = accessValidUntil ? accessValidUntil > new Date() : true;
   const isPro = hasOverridePro && hasValidAccess 
     ? true 
-    : plan === "pro" || plan === "advanced" || status === "lifetime";
+    : plan === "pro" || plan === "advanced" || plan === "duo" || plan === "team" || status === "lifetime";
+
+  // Horse limit based on plan
+  const horseLimit = plan ? (PLAN_HORSE_LIMITS[plan] ?? 10) : 10;
 
   const hasFeature = (feature: string): boolean => {
     if (isSuspended) return false;
@@ -255,6 +268,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         featureStatuses,
         planOverride,
         accessValidUntil,
+        horseLimit,
         hasFeature,
         hasModuleAccess,
         getFeatureStatus,

@@ -407,7 +407,7 @@ const ROLLOUT_PLAN: PlanStep[] = [
     id: "subscription-plans",
     title: "useSubscription: Plan-Filterung + Pferde-Limit",
     description: "Neue Pläne (Starter/Pro/Duo/Team) mit Horse-Limits",
-    status: "todo",
+    status: "done",
     files: ["src/hooks/useSubscription.tsx"],
     details: [
       "Starter: max 10 Pferde",
@@ -421,7 +421,7 @@ const ROLLOUT_PLAN: PlanStep[] = [
     id: "pricing-5as",
     title: "PricingV2: 5As-Feature-Glossar",
     description: "Feature-Grid durch 5As-Workflow ersetzen",
-    status: "todo",
+    status: "done",
     files: ["src/pages/PricingV2.tsx"],
     details: [
       "Anfragen → Angebote → Aufnahme → Auffassen → Analyse",
