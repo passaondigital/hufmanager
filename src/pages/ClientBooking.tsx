@@ -108,7 +108,7 @@ export default function ClientBooking() {
         
         if (anyProvider) {
           foundProviderId = anyProvider.user_id;
-          console.log("Fallback: Using first available provider for testing:", foundProviderId);
+          // Fallback provider assigned
         }
       }
 

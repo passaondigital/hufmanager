@@ -80,7 +80,7 @@ const EmployeeDashboard = () => {
         lat = position.coords.latitude;
         lng = position.coords.longitude;
       } catch (e) {
-        console.log("Location not available");
+        // Location not available - continue without coordinates
       }
 
       const { error } = await supabase
@@ -119,7 +119,7 @@ const EmployeeDashboard = () => {
         lat = position.coords.latitude;
         lng = position.coords.longitude;
       } catch (e) {
-        console.log("Location not available");
+        // Location not available - continue without coordinates
       }
 
       const { error } = await supabase

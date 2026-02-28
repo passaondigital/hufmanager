@@ -345,8 +345,8 @@ export default function ProviderHorseDetail() {
             <HufCamPro 
               horseName={horse.name}
               horseId={horse.id}
-              onCollageGenerated={(collageUrl) => {
-                console.log("Collage generated:", collageUrl);
+              onCollageGenerated={() => {
+                toast.success("Collage erfolgreich erstellt");
               }}
             />
           </div>

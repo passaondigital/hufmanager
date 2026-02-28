@@ -601,7 +601,7 @@ export default function Chat() {
             url: `/chat?startWith=${user.id}`,
           }
         }).catch(err => {
-          console.log('Push notification not sent (user may not have push enabled):', err);
+          // Push notification skipped - user may not have push enabled
         });
       }
 

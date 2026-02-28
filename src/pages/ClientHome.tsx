@@ -120,7 +120,7 @@ export default function ClientHome() {
       .is("deleted_at", null)
       .order("name");
     
-    console.log("Horses query for user", user.id, "result:", horsesData, "error:", error);
+    // TECH-DEBT: UI — debug log removed for production
 
     if (!error && horsesData) {
       setHorses(horsesData);
@@ -530,7 +530,7 @@ export default function ClientHome() {
         open={showHMCamModal}
         onOpenChange={setShowHMCamModal}
         onComplete={(photos) => {
-          console.log("HM-CAM photos captured:", photos);
+          // Photos captured successfully
           toast.success(`${photos.length} Huf-Foto${photos.length > 1 ? "s" : ""} aufgenommen!`);
         }}
         mode="client"
