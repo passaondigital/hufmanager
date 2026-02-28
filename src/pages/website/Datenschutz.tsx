@@ -51,8 +51,14 @@ const Datenschutz = () => (
           <div>
             <h2 className="text-2xl font-semibold mb-4">6. Einsatz von Künstlicher Intelligenz</h2>
             <p className="mb-4">HufManager setzt KI-Modelle (Google Gemini) zur Unterstützung bei der Analyse von Hufbildern, automatisierten Textvorschlägen und Workflow-Automatisierung (AutoFlow) ein. Gemäß Art. 50 der EU KI-Verordnung (AI Act) werden alle KI-generierten Inhalte entsprechend gekennzeichnet. Die Verarbeitung erfolgt auf Grundlage Ihrer Einwilligung (Art. 6 Abs. 1 lit. a DSGVO). Das System wird als „Minimales Risiko" gemäß der KI-Verordnung eingestuft.</p>
-            <h3 className="text-xl font-semibold mb-2">Keine Verwendung zum Modelltraining</h3>
-            <p className="mb-4">Ihre Daten werden nicht zum Training von KI-Modellen verwendet. Anfragen werden ausschließlich zur Beantwortung Ihrer konkreten Anfrage verarbeitet und danach nicht weiter gespeichert oder für Trainingszwecke genutzt. Die Verarbeitung erfolgt über die Google Gemini API — es findet keine Weitergabe Ihrer Daten an Dritte zu Trainingszwecken statt.</p>
+            <div className="my-6 p-4 rounded-lg border border-primary/30 bg-primary/5">
+              <h4 className="text-lg font-semibold mb-2 text-white">Keine Nutzung Ihrer Daten für KI-Training</h4>
+              <p className="mb-0">Ihre Daten werden nicht zum Training von KI-Modellen verwendet. Anfragen an KI-Systeme werden ausschließlich zur Bearbeitung Ihrer konkreten Anfrage verarbeitet und danach nicht gespeichert.</p>
+            </div>
+            <div className="my-6 p-4 rounded-lg border border-primary/30 bg-primary/5">
+              <h4 className="text-lg font-semibold mb-2 text-white">Ausschließlich API-basierte Verarbeitung</h4>
+              <p className="mb-0">Wir setzen ausschließlich API-basierte KI-Dienste ein (Google Gemini). Es findet keine dauerhafte Übertragung Ihrer personenbezogenen Daten an KI-Anbieter statt. Jede Anfrage wird isoliert verarbeitet.</p>
+            </div>
             <h3 className="text-xl font-semibold mb-2">KI-Funktionen im Überblick</h3>
             <ul className="list-disc pl-6 mb-4 space-y-1">
               <li>HufiAI Assistent: KI-gestützter Chat für Fragen rund um Hufbearbeitung und Pferdepflege</li>
@@ -68,7 +74,8 @@ const Datenschutz = () => (
             <h2 className="text-2xl font-semibold mb-4">7. Soziale Medien</h2>
             <p className="mb-4">Auf dieser Website sind Elemente sozialer Netzwerke (Facebook, Instagram) integriert. Die Nutzung erfolgt auf Grundlage Ihrer Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO.</p>
           </div>
-          <div className="pt-4 text-sm border-t border-white/10">
+          <div className="pt-4 text-sm border-t border-white/10 flex flex-col gap-2">
+            <p>Zuletzt aktualisiert: {new Date().toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" })}</p>
             <p>Quelle: <a href="https://www.e-recht24.de" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">e-recht24.de</a></p>
           </div>
         </section>
