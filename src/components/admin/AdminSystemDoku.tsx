@@ -473,7 +473,7 @@ const ROLLOUT_PLAN: PlanStep[] = [
     id: "copecart-webhook",
     title: "CopeCart Webhook: Auto-Features + Revenue-Log",
     description: "Webhook setzt automatisch feature_statuses + loggt in admin_revenue_log",
-    status: "todo",
+    status: "done",
     files: ["supabase/functions/copecart-webhook/index.ts"],
     details: [
       "Plan → feature_statuses JSONB Mapping",
@@ -486,7 +486,7 @@ const ROLLOUT_PLAN: PlanStep[] = [
     id: "emergency-fix",
     title: "EmergencyDashboard: Role-Query Fix",
     description: "Query von profiles.role auf user_roles.role umstellen",
-    status: "todo",
+    status: "done",
     files: ["src/pages/admin/EmergencyDashboard.tsx"],
     details: [
       "profiles.role existiert nicht → user_roles JOIN",
