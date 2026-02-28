@@ -19,6 +19,7 @@ import {
   CalendarOff,
   FileText,
   ChevronRight,
+  ShoppingBag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -66,6 +67,7 @@ const getSidebarItems = (permissions: Record<string, boolean>): SidebarItem[] =>
     { icon: Package, label: "Material", path: "/employee/material" },
     { icon: CalendarOff, label: "Abwesenheiten", path: "/employee/abwesenheiten" },
     { icon: FileText, label: "Vertrag", path: "/employee/vertrag" },
+    { icon: ShoppingBag, label: "Leistungskatalog", path: "/employee/angebot" },
     { icon: Notebook, label: "Mein Notizbuch", path: "/employee/notizbuch" },
     { icon: User, label: "Profil", path: "/employee/profil" },
   );
