@@ -13,7 +13,7 @@ import { ensureUserProfile } from "@/lib/ensureProfile";
 
 interface SearchResult {
   id: string;
-  type: 'provider' | 'client' | 'horse';
+  type: 'provider' | 'client' | 'horse' | 'partner';
   readable_id: string;
   name: string;
   avatar_url?: string;
@@ -23,7 +23,7 @@ interface SearchResult {
 
 
 interface ConnectionSearchProps {
-  searchType: 'provider' | 'client' | 'horse';
+  searchType: 'provider' | 'client' | 'horse' | 'partner';
   onConnectionRequested?: () => void;
 }
 
@@ -43,7 +43,7 @@ export function ConnectionSearch({ searchType, onConnectionRequested }: Connecti
     setResult(null);
     
     try {
-      if (searchType === 'provider' || searchType === 'client') {
+      if (searchType === 'provider' || searchType === 'client' || searchType === 'partner') {
         // Use secure RPC function to search profiles globally
         const { data, error } = await supabase
           .rpc("search_profile_by_readable_id", { search_id: searchId });
@@ -53,7 +53,7 @@ export function ConnectionSearch({ searchType, onConnectionRequested }: Connecti
         const result = data as { found: boolean; id?: string; readable_id?: string; full_name?: string; avatar_url?: string; role?: string };
         
         if (result?.found && result.id) {
-          const expectedRole = searchType;
+          const expectedRole = searchType; // 'provider', 'client', or 'partner'
           
           if (result.role === expectedRole) {
             setResult({
@@ -64,7 +64,7 @@ export function ConnectionSearch({ searchType, onConnectionRequested }: Connecti
               avatar_url: result.avatar_url || undefined,
             });
           } else {
-            const label = searchType === 'provider' ? 'Hufbearbeiter' : 'Kunde';
+            const label = searchType === 'provider' ? 'Hufbearbeiter' : searchType === 'partner' ? 'Fachpartner' : 'Kunde';
             toast({ 
               title: `Kein ${label} gefunden`, 
               description: `Diese ID gehört nicht zu einem ${label}.`, 
@@ -72,7 +72,7 @@ export function ConnectionSearch({ searchType, onConnectionRequested }: Connecti
             });
           }
         } else {
-          const label = searchType === 'provider' ? 'Hufbearbeiter' : 'Kunde';
+          const label = searchType === 'provider' ? 'Hufbearbeiter' : searchType === 'partner' ? 'Fachpartner' : 'Kunde';
           toast({ 
             title: "Nicht gefunden", 
             description: `Kein ${label} mit dieser ID gefunden.`, 
@@ -151,6 +151,11 @@ export function ConnectionSearch({ searchType, onConnectionRequested }: Connecti
         // Provider requesting connection to client
         grantData.provider_id = user.id;
         grantData.client_id = result.id;
+      } else if (searchType === 'partner') {
+        // Provider requesting connection to partner - use partner_email field
+        grantData.provider_id = user.id;
+        grantData.client_id = result.id;
+        grantData.partner_name = result.name;
       } else if (searchType === 'horse') {
         // Provider requesting connection via horse ID (EQID) -> connect to horse owner
         const ownerId = result.owner_id;
@@ -269,6 +274,7 @@ export function ConnectionSearch({ searchType, onConnectionRequested }: Connecti
     switch (searchType) {
       case 'provider': return "#PID-123456 eingeben...";
       case 'client': return "#KID-123456 eingeben...";
+      case 'partner': return "#PRID-123456 eingeben...";
       case 'horse': return "#EQID-123456 eingeben...";
     }
   };
@@ -277,6 +283,7 @@ export function ConnectionSearch({ searchType, onConnectionRequested }: Connecti
     switch (searchType) {
       case 'provider': return "Hufbearbeiter finden";
       case 'client': return "Kunde finden";
+      case 'partner': return "Fachpartner finden";
       case 'horse': return "Pferd finden";
     }
   };
