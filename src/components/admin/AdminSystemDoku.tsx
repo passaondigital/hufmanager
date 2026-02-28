@@ -21,7 +21,11 @@ import {
   Clock,
   Bell,
   Smartphone,
-  Shield
+  Shield,
+  ClipboardList,
+  Circle,
+  CircleDot,
+  CircleCheck
 } from "lucide-react";
 
 // Custom Horse icon
@@ -358,6 +362,199 @@ const UI_PRINCIPLES = [
   }
 ];
 
+// ============================================
+// ROLLOUT PLAN - SaaS Hardening v2
+// ============================================
+type PlanStepStatus = "done" | "in_progress" | "todo";
+
+interface PlanStep {
+  id: string;
+  title: string;
+  description: string;
+  status: PlanStepStatus;
+  files: string[];
+  details: string[];
+}
+
+const ROLLOUT_PLAN: PlanStep[] = [
+  {
+    id: "db-migration",
+    title: "DB-Migration: admin_revenue_log + admin_expenses",
+    description: "Neue Tabellen für Buchhaltung + RLS für agent_data_hub + 2. Master-Admin",
+    status: "todo",
+    files: ["supabase/migrations/"],
+    details: [
+      "CREATE TABLE admin_revenue_log (Copecart-Transaktionen)",
+      "CREATE TABLE admin_expenses (Ausgaben-Tracking)",
+      "RLS auf agent_data_hub aktivieren (nur Admins)",
+      "barhufserviceschmid@gmail.com in master_admins eintragen",
+    ],
+  },
+  {
+    id: "feature-flags",
+    title: "Feature-Flag-Defaults aktualisieren",
+    description: "Office + Lager auf 'public' setzen, Team als 'beta'",
+    status: "todo",
+    files: ["src/types/featureFlags.ts", "src/hooks/useSubscription.tsx"],
+    details: [
+      "module_office: 'disabled' → 'public'",
+      "module_lager: neu als 'public'",
+      "module_team: 'disabled' → 'beta'",
+      "Defaults in useSubscription.tsx synchronisieren",
+    ],
+  },
+  {
+    id: "subscription-plans",
+    title: "useSubscription: Plan-Filterung + Pferde-Limit",
+    description: "Neue Pläne (Starter/Pro/Duo/Team) mit Horse-Limits",
+    status: "todo",
+    files: ["src/hooks/useSubscription.tsx"],
+    details: [
+      "Starter: max 10 Pferde",
+      "Pro: max 75 Pferde",
+      "Duo: max 150 Pferde",
+      "Team: Unbegrenzt",
+      "useHorseLimit() Hook exportieren",
+    ],
+  },
+  {
+    id: "pricing-5as",
+    title: "PricingV2: 5As-Feature-Glossar",
+    description: "Feature-Grid durch 5As-Workflow ersetzen",
+    status: "todo",
+    files: ["src/pages/PricingV2.tsx"],
+    details: [
+      "Anfragen → Angebote → Aufnahme → Auffassen → Analyse",
+      "Pro Plan: Alle 5As + KI",
+      "Duo: + 2. Nutzer",
+      "Team: + Unbegrenzte Nutzer + Team-Management",
+    ],
+  },
+  {
+    id: "sidebar-unlock",
+    title: "Sidebar: Office/Lager entsperren + MC-Link entfernen",
+    description: "Module sichtbar machen, Mission Control Link aus Sidebar entfernen",
+    status: "todo",
+    files: ["src/components/layout/AppSidebar.tsx"],
+    details: [
+      "Office-Modul in Sidebar einblenden",
+      "Lager-Modul in Sidebar einblenden",
+      "Mission Control (/admin/god-mode) Link entfernen",
+      "Zugang nur noch über versteckten Weg",
+    ],
+  },
+  {
+    id: "admin-hardening",
+    title: "Mission Control Hardening",
+    description: "HOPE-Codewort, 2. Admin, Zurück-Button, DB-basierte Admin-Prüfung",
+    status: "todo",
+    files: ["src/pages/admin/AdminDashboard.tsx", "src/pages/Auth.tsx"],
+    details: [
+      "HOPE-Codewort auf Auth-Seite → Magic-Link für Master-Admins",
+      "isMasterAdmin über DB statt Hardcoded-Email",
+      "2. Master-Admin: barhufserviceschmid@gmail.com",
+      "Zurück-Button im Admin verbessern",
+    ],
+  },
+  {
+    id: "admin-revenue",
+    title: "AdminRevenue: Buchhaltungstool ausbauen",
+    description: "Automatisierte Einnahmen-Queries, Trend-Charts, Ausgaben-Tracking",
+    status: "todo",
+    files: ["src/components/admin/AdminRevenue.tsx"],
+    details: [
+      "Subscriptions aus profiles aggregieren",
+      "Recharts Trend-Diagramme (MRR, Churn)",
+      "Ausgaben-CRUD aus admin_expenses",
+      "CSV-Export für Steuerberater",
+    ],
+  },
+  {
+    id: "copecart-webhook",
+    title: "CopeCart Webhook: Auto-Features + Revenue-Log",
+    description: "Webhook setzt automatisch feature_statuses + loggt in admin_revenue_log",
+    status: "todo",
+    files: ["supabase/functions/copecart-webhook/index.ts"],
+    details: [
+      "Plan → feature_statuses JSONB Mapping",
+      "Jede Transaktion in admin_revenue_log speichern",
+      "Downgrade-Schutz: Grace Period 7 Tage",
+      "Webhook-Signatur verifizieren",
+    ],
+  },
+  {
+    id: "emergency-fix",
+    title: "EmergencyDashboard: Role-Query Fix",
+    description: "Query von profiles.role auf user_roles.role umstellen",
+    status: "todo",
+    files: ["src/pages/admin/EmergencyDashboard.tsx"],
+    details: [
+      "profiles.role existiert nicht → user_roles JOIN",
+      "Fehler führt aktuell zu leerem Dashboard",
+    ],
+  },
+  {
+    id: "mobile-dvh",
+    title: "Mobile 100dvh Fix",
+    description: "min-h-screen durch min-h-[100dvh] ersetzen für iOS Safari",
+    status: "todo",
+    files: ["src/index.css", "diverse Layouts"],
+    details: [
+      "CSS: min-height: 100dvh statt 100vh",
+      "Betrifft: Auth, Dashboard, Client-Home",
+      "Verhindert Adressleisten-Overlap auf iOS",
+    ],
+  },
+  {
+    id: "code-splitting",
+    title: "React.lazy Code-Splitting",
+    description: "Große Seiten lazy laden für schnellere Startzeit",
+    status: "todo",
+    files: ["src/App.tsx"],
+    details: [
+      "Admin-Seiten: React.lazy()",
+      "Calendar, Invoices: React.lazy()",
+      "Suspense mit Loader-Fallback",
+      "Reduziert Initial Bundle um ~40%",
+    ],
+  },
+  {
+    id: "ai-disclosure",
+    title: "AiDisclosure: EU AI Act Komponente",
+    description: "Transparenz-Hinweis für KI-gestützte Features",
+    status: "todo",
+    files: ["src/components/legal/AiDisclosure.tsx"],
+    details: [
+      "Pflichthinweis bei KI-generierten Inhalten",
+      "Anzeige in: Chatbot, Hufanalyse, AutoFlow",
+      "Text: 'Dieser Inhalt wurde KI-gestützt erstellt'",
+      "EU AI Act Artikel 52 konform",
+    ],
+  },
+];
+
+const getStepIcon = (status: PlanStepStatus) => {
+  switch (status) {
+    case "done":
+      return <CircleCheck className="w-5 h-5 text-emerald-500" />;
+    case "in_progress":
+      return <CircleDot className="w-5 h-5 text-amber-500 animate-pulse" />;
+    case "todo":
+      return <Circle className="w-5 h-5 text-muted-foreground" />;
+  }
+};
+
+const getStepBadge = (status: PlanStepStatus) => {
+  switch (status) {
+    case "done":
+      return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Erledigt</Badge>;
+    case "in_progress":
+      return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">In Arbeit</Badge>;
+    case "todo":
+      return <Badge variant="outline" className="text-muted-foreground">Offen</Badge>;
+  }
+};
+
 const getStatusBadge = (status: "active" | "beta" | "planned") => {
   switch (status) {
     case "active":
@@ -370,6 +567,11 @@ const getStatusBadge = (status: "active" | "beta" | "planned") => {
 };
 
 export function AdminSystemDoku() {
+  const totalSteps = ROLLOUT_PLAN.length;
+  const doneSteps = ROLLOUT_PLAN.filter(s => s.status === "done").length;
+  const inProgressSteps = ROLLOUT_PLAN.filter(s => s.status === "in_progress").length;
+  const progressPercent = Math.round((doneSteps / totalSteps) * 100);
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -406,8 +608,12 @@ export function AdminSystemDoku() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="trinity" className="space-y-4">
-        <TabsList className="grid w-full max-w-2xl grid-cols-4">
+      <Tabs defaultValue="rollout" className="space-y-4">
+        <TabsList className="grid w-full max-w-3xl grid-cols-5">
+          <TabsTrigger value="rollout" className="gap-2">
+            <ClipboardList className="w-4 h-4" />
+            Rollout-Plan
+          </TabsTrigger>
           <TabsTrigger value="trinity" className="gap-2">
             <Database className="w-4 h-4" />
             Huf-Dreieck
@@ -425,6 +631,80 @@ export function AdminSystemDoku() {
             Datenfluss
           </TabsTrigger>
         </TabsList>
+
+        {/* TAB 0: Rollout Plan */}
+        <TabsContent value="rollout" className="space-y-4">
+          {/* Progress Overview */}
+          <Card className="border-primary/20">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-primary" />
+                SaaS Hardening v2 – Rollout-Plan
+              </CardTitle>
+              <CardDescription>
+                {doneSteps}/{totalSteps} Schritte erledigt · {inProgressSteps} in Arbeit · {progressPercent}% abgeschlossen
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="w-full bg-muted rounded-full h-3 mb-2">
+                <div
+                  className="bg-primary h-3 rounded-full transition-all duration-500"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                ⚠️ Bestehende Nutzer, Daten und Pferde bleiben vollständig unberührt. Alle Änderungen sind additiv.
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Steps */}
+          <div className="space-y-3">
+            {ROLLOUT_PLAN.map((step, idx) => (
+              <Card key={step.id} className={step.status === "in_progress" ? "border-amber-500/30 bg-amber-500/5" : step.status === "done" ? "border-emerald-500/20 bg-emerald-500/5" : ""}>
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-4">
+                    {/* Step number + icon */}
+                    <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground">
+                        {idx + 1}
+                      </div>
+                      {getStepIcon(step.status)}
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold text-sm">{step.title}</h3>
+                        {getStepBadge(step.status)}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">{step.description}</p>
+
+                      {/* Details */}
+                      <ul className="mt-2 space-y-1">
+                        {step.details.map((d, i) => (
+                          <li key={i} className="text-xs flex items-start gap-2">
+                            <span className="text-muted-foreground">•</span>
+                            <span className="text-muted-foreground">{d}</span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      {/* Files */}
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {step.files.map((f, i) => (
+                          <Badge key={i} variant="secondary" className="text-[10px] font-mono">
+                            {f}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
 
         {/* TAB 1: Das Huf-Dreieck (Holy Trinity) */}
         <TabsContent value="trinity" className="space-y-4">
