@@ -460,7 +460,7 @@ const ROLLOUT_PLAN: PlanStep[] = [
     id: "admin-revenue",
     title: "AdminRevenue: Buchhaltungstool ausbauen",
     description: "Automatisierte Einnahmen-Queries, Trend-Charts, Ausgaben-Tracking",
-    status: "todo",
+    status: "done",
     files: ["src/components/admin/AdminRevenue.tsx"],
     details: [
       "Subscriptions aus profiles aggregieren",
@@ -509,7 +509,7 @@ const ROLLOUT_PLAN: PlanStep[] = [
     id: "code-splitting",
     title: "React.lazy Code-Splitting",
     description: "Große Seiten lazy laden für schnellere Startzeit",
-    status: "todo",
+    status: "done",
     files: ["src/App.tsx"],
     details: [
       "Admin-Seiten: React.lazy()",

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,100 +16,110 @@ import { AuthLoadingScreen } from "@/components/auth/AuthLoadingScreen";
 import { ProfileGuardianScreen } from "@/components/auth/ProfileGuardianScreen";
 import { createIDBPersister, initImageSyncManager, QUERY_CACHE_MAX_AGE, STATIC_QUERY_KEYS } from "@/lib/offline";
 import { initSyncManager } from "@/lib/offline/syncManager";
+import { Loader2 } from "lucide-react";
 
-// Pages
-import Dashboard from "@/pages/Dashboard";
+// Eagerly loaded core pages
 import Index from "@/pages/Index";
-import Anfragen from "@/pages/Anfragen";
-import Angebote from "@/pages/Angebote";
-import Aufnahme from "@/pages/Aufnahme";
-import Auffassen from "@/pages/Auffassen";
-import Analyse from "@/pages/Analyse";
-import Kalender from "@/pages/Kalender";
-import Kunden from "@/pages/Kunden";
-import Services from "@/pages/Services";
-import Management from "@/pages/Management";
-import Academy from "@/pages/Academy";
-import Chat from "@/pages/Chat";
-import GeldVerdienen from "@/pages/GeldVerdienen";
-import Hufanalyse from "@/pages/Hufanalyse";
-import Rechnungen from "@/pages/Rechnungen";
-import Support from "@/pages/Support";
 import Auth from "@/pages/Auth";
-import ResetPassword from "@/pages/ResetPassword";
-import UpdatePassword from "@/pages/UpdatePassword";
-import ClientHome from "@/pages/ClientHome";
-import ClientHorseDetail from "@/pages/ClientHorseDetail";
-import ClientInvoices from "@/pages/ClientInvoices";
-import ClientPermissions from "@/pages/ClientPermissions";
-import ClientBooking from "@/pages/ClientBooking";
-import ClientProfile from "@/pages/ClientProfile";
-import ClientChat from "@/pages/ClientChat";
 import NotFound from "@/pages/NotFound";
-import ProviderLanding from "@/pages/ProviderLanding";
-import ProviderHorseDetail from "@/pages/ProviderHorseDetail";
-import ImportCenter from "@/pages/ImportCenter";
-import ConnectForm from "@/pages/ConnectForm";
-import Netzwerk from "@/pages/Netzwerk";
-import MissionControl from "@/pages/admin/MissionControl";
-import AdminDashboard from "@/pages/admin/AdminDashboard";
-import FeatureUsageOverview from "@/pages/admin/FeatureUsageOverview";
-import ModuleAccessLogs from "@/pages/admin/ModuleAccessLogs";
-import SubmitReview from "@/pages/SubmitReview";
-import AboMatrix from "@/pages/AboMatrix";
-import Blog from "@/pages/Blog";
-import BlogPost from "@/pages/BlogPost";
 
-// Website (Landing Page) Pages
-import WebsiteHome from "@/pages/website/WebsiteHome";
-import WebsiteImpressum from "@/pages/website/Impressum";
-import WebsiteDatenschutz from "@/pages/website/Datenschutz";
-import WebsiteAGB from "@/pages/website/AGB";
-import Glossar from "@/pages/Glossar";
-import Lager from "@/pages/Lager";
-import Ausgaben from "@/pages/Ausgaben";
-import GuV from "@/pages/GuV";
-import WorkMode from "@/pages/WorkMode";
-import Tour from "@/pages/Tour";
-import Team from "@/pages/Team";
-import EmployeeDashboard from "@/pages/EmployeeDashboard";
-import EmployeeInvite from "@/pages/EmployeeInvite";
-import EmergencyDashboard from "@/pages/EmergencyDashboard";
-import PriceGroupManagement from "@/pages/PriceGroupManagement";
-import EmployeeTour from "@/pages/EmployeeTour";
-import MeinOffice from "@/pages/MeinOffice";
-import Ecosystem from "@/pages/Ecosystem";
-import Buchhaltung from "@/pages/Buchhaltung";
-import Fuhrpark from "@/pages/Fuhrpark";
-import AutoFlow from "@/pages/AutoFlow";
-import { EmployeeAppLayout } from "@/components/employee/EmployeeAppLayout";
-import { PartnerAppLayout } from "@/components/partner/PartnerAppLayout";
-import EmployeeNotizbuch from "@/pages/employee/EmployeeNotizbuch";
-import EmployeeProfil from "@/pages/employee/EmployeeProfil";
-import EmployeeMaterial from "@/pages/employee/EmployeeMaterial";
-import EmployeeAbwesenheiten from "@/pages/employee/EmployeeAbwesenheiten";
-import EmployeeVertrag from "@/pages/employee/EmployeeVertrag";
-import EmployeeTimer from "@/pages/employee/EmployeeTimer";
-import EmployeeHufCam from "@/pages/employee/EmployeeHufCam";
-import EmployeeAnalyse from "@/pages/employee/EmployeeAnalyse";
-import EmployeeChat from "@/pages/employee/EmployeeChat";
-import PartnerHome from "@/pages/partner/PartnerHome";
-import PartnerHorseView from "@/pages/partner/PartnerHorseView";
-import PartnerNotes from "@/pages/partner/PartnerNotes";
-import PartnerChat from "@/pages/partner/PartnerChat";
-import PartnerProfile from "@/pages/partner/PartnerProfile";
-import PartnerInvite from "@/pages/PartnerInvite";
-import PartnerCalendar from "@/pages/partner/PartnerCalendar";
-import PartnerTreatmentPlans from "@/pages/partner/PartnerTreatmentPlans";
-import PartnerDocuments from "@/pages/partner/PartnerDocuments";
-import PartnerServices from "@/pages/partner/PartnerServices";
-import PartnerInvoices from "@/pages/partner/PartnerInvoices";
-import PartnerSettings from "@/pages/partner/PartnerSettings";
+// Lazy-loaded pages for code-splitting
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const Anfragen = lazy(() => import("@/pages/Anfragen"));
+const Angebote = lazy(() => import("@/pages/Angebote"));
+const Aufnahme = lazy(() => import("@/pages/Aufnahme"));
+const Auffassen = lazy(() => import("@/pages/Auffassen"));
+const Analyse = lazy(() => import("@/pages/Analyse"));
+const Kalender = lazy(() => import("@/pages/Kalender"));
+const Kunden = lazy(() => import("@/pages/Kunden"));
+const Services = lazy(() => import("@/pages/Services"));
+const Management = lazy(() => import("@/pages/Management"));
+const Academy = lazy(() => import("@/pages/Academy"));
+const Chat = lazy(() => import("@/pages/Chat"));
+const GeldVerdienen = lazy(() => import("@/pages/GeldVerdienen"));
+const Hufanalyse = lazy(() => import("@/pages/Hufanalyse"));
+const Rechnungen = lazy(() => import("@/pages/Rechnungen"));
+const Support = lazy(() => import("@/pages/Support"));
+const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
+const UpdatePassword = lazy(() => import("@/pages/UpdatePassword"));
+const ClientHome = lazy(() => import("@/pages/ClientHome"));
+const ClientHorseDetail = lazy(() => import("@/pages/ClientHorseDetail"));
+const ClientInvoices = lazy(() => import("@/pages/ClientInvoices"));
+const ClientPermissions = lazy(() => import("@/pages/ClientPermissions"));
+const ClientBooking = lazy(() => import("@/pages/ClientBooking"));
+const ClientProfile = lazy(() => import("@/pages/ClientProfile"));
+const ClientChat = lazy(() => import("@/pages/ClientChat"));
+const ProviderLanding = lazy(() => import("@/pages/ProviderLanding"));
+const ProviderHorseDetail = lazy(() => import("@/pages/ProviderHorseDetail"));
+const ImportCenter = lazy(() => import("@/pages/ImportCenter"));
+const ConnectForm = lazy(() => import("@/pages/ConnectForm"));
+const Netzwerk = lazy(() => import("@/pages/Netzwerk"));
+const MissionControl = lazy(() => import("@/pages/admin/MissionControl"));
+const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
+const FeatureUsageOverview = lazy(() => import("@/pages/admin/FeatureUsageOverview"));
+const ModuleAccessLogs = lazy(() => import("@/pages/admin/ModuleAccessLogs"));
+const SubmitReview = lazy(() => import("@/pages/SubmitReview"));
+const AboMatrix = lazy(() => import("@/pages/AboMatrix"));
+const Blog = lazy(() => import("@/pages/Blog"));
+const BlogPost = lazy(() => import("@/pages/BlogPost"));
+const WebsiteHome = lazy(() => import("@/pages/website/WebsiteHome"));
+const WebsiteImpressum = lazy(() => import("@/pages/website/Impressum"));
+const WebsiteDatenschutz = lazy(() => import("@/pages/website/Datenschutz"));
+const WebsiteAGB = lazy(() => import("@/pages/website/AGB"));
+const Glossar = lazy(() => import("@/pages/Glossar"));
+const Lager = lazy(() => import("@/pages/Lager"));
+const Ausgaben = lazy(() => import("@/pages/Ausgaben"));
+const GuV = lazy(() => import("@/pages/GuV"));
+const WorkMode = lazy(() => import("@/pages/WorkMode"));
+const Tour = lazy(() => import("@/pages/Tour"));
+const Team = lazy(() => import("@/pages/Team"));
+const EmployeeDashboard = lazy(() => import("@/pages/EmployeeDashboard"));
+const EmployeeInvite = lazy(() => import("@/pages/EmployeeInvite"));
+const EmergencyDashboard = lazy(() => import("@/pages/EmergencyDashboard"));
+const PriceGroupManagement = lazy(() => import("@/pages/PriceGroupManagement"));
+const EmployeeTour = lazy(() => import("@/pages/EmployeeTour"));
+const MeinOffice = lazy(() => import("@/pages/MeinOffice"));
+const Ecosystem = lazy(() => import("@/pages/Ecosystem"));
+const Buchhaltung = lazy(() => import("@/pages/Buchhaltung"));
+const Fuhrpark = lazy(() => import("@/pages/Fuhrpark"));
+const AutoFlow = lazy(() => import("@/pages/AutoFlow"));
+const EmployeeNotizbuch = lazy(() => import("@/pages/employee/EmployeeNotizbuch"));
+const EmployeeProfil = lazy(() => import("@/pages/employee/EmployeeProfil"));
+const EmployeeMaterial = lazy(() => import("@/pages/employee/EmployeeMaterial"));
+const EmployeeAbwesenheiten = lazy(() => import("@/pages/employee/EmployeeAbwesenheiten"));
+const EmployeeVertrag = lazy(() => import("@/pages/employee/EmployeeVertrag"));
+const EmployeeTimer = lazy(() => import("@/pages/employee/EmployeeTimer"));
+const EmployeeHufCam = lazy(() => import("@/pages/employee/EmployeeHufCam"));
+const EmployeeAnalyse = lazy(() => import("@/pages/employee/EmployeeAnalyse"));
+const EmployeeChat = lazy(() => import("@/pages/employee/EmployeeChat"));
+const PartnerHome = lazy(() => import("@/pages/partner/PartnerHome"));
+const PartnerHorseView = lazy(() => import("@/pages/partner/PartnerHorseView"));
+const PartnerNotes = lazy(() => import("@/pages/partner/PartnerNotes"));
+const PartnerChat = lazy(() => import("@/pages/partner/PartnerChat"));
+const PartnerProfile = lazy(() => import("@/pages/partner/PartnerProfile"));
+const PartnerInvite = lazy(() => import("@/pages/PartnerInvite"));
+const PartnerCalendar = lazy(() => import("@/pages/partner/PartnerCalendar"));
+const PartnerTreatmentPlans = lazy(() => import("@/pages/partner/PartnerTreatmentPlans"));
+const PartnerDocuments = lazy(() => import("@/pages/partner/PartnerDocuments"));
+const PartnerServices = lazy(() => import("@/pages/partner/PartnerServices"));
+const PartnerInvoices = lazy(() => import("@/pages/partner/PartnerInvoices"));
+const PartnerSettings = lazy(() => import("@/pages/partner/PartnerSettings"));
+
+// Layouts (lazy)
+const EmployeeAppLayout = lazy(() => import("@/components/employee/EmployeeAppLayout").then(m => ({ default: m.EmployeeAppLayout })));
+const PartnerAppLayout = lazy(() => import("@/components/partner/PartnerAppLayout").then(m => ({ default: m.PartnerAppLayout })));
 
 // Components
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
 import { PWAInstallPrompt } from "@/components/pwa/PWAInstallPrompt";
 import { VersionChecker } from "@/components/version/VersionChecker";
+
+// Suspense fallback
+const LazyFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  </div>
+);
 
 // Create persister for IndexedDB storage
 const persister = createIDBPersister();
@@ -205,6 +215,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
         
         
         <PasswordRecoveryRedirect>
+          <Suspense fallback={<LazyFallback />}>
           <Routes>
             {/* --- 1. ÖFFENTLICHE ROUTES (Kein Login nötig) --- */}
             {/* WICHTIG: Diese müssen VOR den Protected Routes stehen */}
@@ -397,6 +408,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             {/* Fallback für alles andere */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
         </PasswordRecoveryRedirect>
       </TooltipProvider>
     </SubscriptionProvider>
