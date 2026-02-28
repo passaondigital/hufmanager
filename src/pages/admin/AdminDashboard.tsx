@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Shield, Users, Database, Bug, Activity, Crown, Plus, Zap, Package, BookOpen, Brain, AlertTriangle } from "lucide-react";
+import { Loader2, Shield, Users, Database, Bug, Activity, Crown, Plus, Zap, Package, BookOpen, Brain, AlertTriangle, PiggyBank } from "lucide-react";
 import { toast } from "sonner";
 
 // Admin Views
@@ -17,12 +17,14 @@ import { AdminQuickNote } from "@/components/admin/AdminQuickNote";
 import { AdminProductCatalog } from "@/components/admin/AdminProductCatalog";
 import { AdminSystemDoku } from "@/components/admin/AdminSystemDoku";
 import { AdminKIDataHub } from "@/components/admin/AdminKIDataHub";
+import { AdminRevenue } from "@/components/admin/AdminRevenue";
 
-type AdminView = "users" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub";
+type AdminView = "users" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue";
 
 const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "users", label: "User-DB", icon: Users },
   { id: "horses", label: "Pferde-DB", icon: Database },
+  { id: "revenue", label: "Einnahmen", icon: PiggyBank },
   { id: "catalog", label: "Produktkatalog", icon: Package },
   { id: "docs", label: "System & Doku", icon: BookOpen },
   { id: "ki-hub", label: "KI-Daten-Hub", icon: Brain },
@@ -186,6 +188,7 @@ export default function AdminDashboard() {
       <main className="flex-1 overflow-auto">
         {activeView === "users" && <AdminUserDB isMasterAdmin={isMasterAdmin} />}
         {activeView === "horses" && <AdminHorseDB isMasterAdmin={isMasterAdmin} />}
+        {activeView === "revenue" && <AdminRevenue />}
         {activeView === "catalog" && <AdminProductCatalog />}
         {activeView === "docs" && <AdminSystemDoku />}
         {activeView === "ki-hub" && <AdminKIDataHub />}
