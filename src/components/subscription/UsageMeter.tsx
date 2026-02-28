@@ -6,11 +6,12 @@ import { Progress } from "@/components/ui/progress";
 import { useState } from "react";
 import { PricingModal } from "./PricingModal";
 
-// Plan limits for horses
+// Plan limits for horses - aligned with useSubscription.tsx
 const PLAN_HORSE_LIMITS: Record<string, number | null> = {
-  starter: 15,
-  advanced: 50,
-  pro: null, // unlimited
+  starter: 10,
+  pro: 75,
+  duo: 150,
+  team: null, // unlimited
 };
 
 interface UsageMeterProps {
@@ -37,7 +38,7 @@ export function UsageMeter({ collapsed = false }: UsageMeterProps) {
   });
 
   if (subLoading || role !== "provider") return null;
-  if (!plan || plan === "pro") return null; // Pro = unlimited, no meter
+  if (!plan || plan === "team") return null; // Team = unlimited, no meter
 
   const limit = PLAN_HORSE_LIMITS[plan];
   if (!limit) return null;

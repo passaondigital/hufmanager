@@ -130,13 +130,18 @@ interface ProviderData {
 
 const PLAN_OVERRIDE_OPTIONS = [
   { value: "standard", label: "Standard (wartet auf Copecart)" },
-  { value: "copecart_anfaenger", label: "🟢 Anfänger (19€/Monat)" },
-  { value: "copecart_fortgeschritten", label: "🟡 Fortgeschritten (29€/Monat)" },
-  { value: "copecart_profi", label: "🔵 Profi (39€/Monat)" },
+  { value: "copecart_starter", label: "🟢 Starter (9,90€/Monat)" },
+  { value: "copecart_pro", label: "🟡 Pro (29€/Monat)" },
+  { value: "copecart_duo", label: "🔵 Duo (49€/Monat)" },
+  { value: "copecart_team", label: "🟣 Team (79€/Monat)" },
   { value: "lifetime_grant", label: "⭐ Lifetime Grant" },
   { value: "manual_cash_1y", label: "💵 Barzahlung (1 Jahr)" },
   { value: "beta_tester", label: "🧪 Beta Tester" },
   { value: "employee", label: "👤 Mitarbeiter" },
+  // Legacy values (still supported for backward compat)
+  { value: "copecart_anfaenger", label: "🟢 [Legacy] Anfänger → Starter" },
+  { value: "copecart_fortgeschritten", label: "🟡 [Legacy] Fortgeschritten → Pro" },
+  { value: "copecart_profi", label: "🔵 [Legacy] Profi → Duo" },
 ];
 
 import { FeatureStatuses, FeatureStatus, FeatureKey, FEATURE_DEFINITIONS, migrateBooleanToStatus } from "@/types/featureFlags";
@@ -920,11 +925,21 @@ export default function MissionControl() {
   const getPlanBadge = (provider: ProviderData) => {
     const plan = provider.plan_override || provider.subscription_plan || "starter";
     const planLabels: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
-      pro: { label: "Pro", variant: "default" },
       starter: { label: "Starter", variant: "outline" },
+      copecart_starter: { label: "Starter", variant: "outline" },
+      pro: { label: "Pro", variant: "default" },
+      copecart_pro: { label: "Pro", variant: "default" },
+      duo: { label: "Duo", variant: "default" },
+      copecart_duo: { label: "Duo", variant: "default" },
+      team: { label: "Team", variant: "default" },
+      copecart_team: { label: "Team", variant: "default" },
       lifetime_grant: { label: "Lifetime", variant: "default" },
       beta_tester: { label: "Beta", variant: "secondary" },
-      employee: { label: "Team", variant: "secondary" },
+      employee: { label: "MA", variant: "secondary" },
+      // Legacy
+      copecart_anfaenger: { label: "Starter", variant: "outline" },
+      copecart_fortgeschritten: { label: "Pro", variant: "default" },
+      copecart_profi: { label: "Duo", variant: "default" },
     };
     const config = planLabels[plan] || { label: plan, variant: "outline" as const };
     return <Badge variant={config.variant}>{config.label}</Badge>;

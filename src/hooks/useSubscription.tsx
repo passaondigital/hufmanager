@@ -87,8 +87,9 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 // Features restricted by plan
 const PLAN_FEATURES: Record<string, string[]> = {
   starter: ["basic_calendar", "basic_customers", "basic_horses"],
-  advanced: ["basic_calendar", "basic_customers", "basic_horses", "chatbot", "gps_navigation", "reminders"],
-  pro: ["basic_calendar", "basic_customers", "basic_horses", "chatbot", "gps_navigation", "reminders", "analytics", "academy", "partner_program"],
+  pro: ["basic_calendar", "basic_customers", "basic_horses", "chatbot", "gps_navigation", "reminders", "autoflow", "analytics", "academy", "partner_program", "hm_connect"],
+  duo: ["basic_calendar", "basic_customers", "basic_horses", "chatbot", "gps_navigation", "reminders", "autoflow", "analytics", "academy", "partner_program", "hm_connect", "team_management"],
+  team: ["basic_calendar", "basic_customers", "basic_horses", "chatbot", "gps_navigation", "reminders", "autoflow", "analytics", "academy", "partner_program", "hm_connect", "team_management", "advanced_analytics"],
 };
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
@@ -158,31 +159,33 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       if (data?.plan_override) {
         const override = data.plan_override;
         
-        // Copecart plans set via admin
-        if (override === "copecart_anfaenger") {
+        // Map plan overrides to the 4-tier model
+        const OVERRIDE_TO_PLAN: Record<string, SubscriptionPlan> = {
+          copecart_starter: "starter",
+          copecart_pro: "pro",
+          copecart_duo: "duo",
+          copecart_team: "team",
+          // Legacy mappings for backward compatibility
+          copecart_anfaenger: "starter",
+          copecart_fortgeschritten: "pro",
+          copecart_profi: "duo",
+        };
+        
+        if (OVERRIDE_TO_PLAN[override]) {
           setStatus("active");
-          setPlan("starter");
-        } else if (override === "copecart_fortgeschritten") {
-          setStatus("active");
-          setPlan("advanced");
-        } else if (override === "copecart_profi") {
-          setStatus("active");
-          setPlan("pro");
+          setPlan(OVERRIDE_TO_PLAN[override]);
         } else if (override === "lifetime_grant" || override === "employee") {
           setStatus("active");
-          setPlan("pro");
+          setPlan("team");
         } else if (override === "manual_cash_1y" || override === "beta_tester") {
-          // Check if access is still valid
           const validUntil = data?.access_valid_until ? new Date(data.access_valid_until) : null;
           if (validUntil && validUntil > new Date()) {
             setStatus("active");
             setPlan("pro");
           } else if (!validUntil) {
-            // No expiry set, assume active
             setStatus("active");
             setPlan("pro");
           } else {
-            // Expired
             setStatus("past_due");
             setPlan("starter");
           }
