@@ -80,7 +80,7 @@ const EmergencyDashboard = lazy(() => import("@/pages/EmergencyDashboard"));
 const PriceGroupManagement = lazy(() => import("@/pages/PriceGroupManagement"));
 const EmployeeTour = lazy(() => import("@/pages/EmployeeTour"));
 const MeinOffice = lazy(() => import("@/pages/MeinOffice"));
-const Ecosystem = lazy(() => import("@/pages/Ecosystem"));
+const HMConnect = lazy(() => import("@/pages/HMConnect"));
 const Buchhaltung = lazy(() => import("@/pages/Buchhaltung"));
 const Fuhrpark = lazy(() => import("@/pages/Fuhrpark"));
 const AutoFlow = lazy(() => import("@/pages/AutoFlow"));
@@ -330,7 +330,8 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/team" element={<Team />} />
               <Route path="/mein-office" element={<MeinOffice />} />
               <Route path="/support" element={<Support />} />
-              <Route path="/ecosystem" element={<Ecosystem />} />
+              <Route path="/ecosystem" element={<Navigate to="/hm-connect" replace />} />
+              <Route path="/hm-connect" element={<HMConnect />} />
               <Route path="/autoflow" element={<AutoFlow />} />
               <Route path="/abo-matrix" element={<AboMatrix />} />
               {/* neu: Notfall-Dashboard für Provider */}
