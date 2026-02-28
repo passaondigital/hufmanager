@@ -59,6 +59,7 @@ const MissionControl = lazy(() => import("@/pages/admin/MissionControl"));
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
 const FeatureUsageOverview = lazy(() => import("@/pages/admin/FeatureUsageOverview"));
 const ModuleAccessLogs = lazy(() => import("@/pages/admin/ModuleAccessLogs"));
+const Verarbeitungsverzeichnis = lazy(() => import("@/pages/admin/Verarbeitungsverzeichnis"));
 const SubmitReview = lazy(() => import("@/pages/SubmitReview"));
 const AboMatrix = lazy(() => import("@/pages/AboMatrix"));
 const Blog = lazy(() => import("@/pages/Blog"));
@@ -287,6 +288,11 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/admin/module-access-logs" element={
               <ProtectedRoute allowedRoles={["admin"]}>
                 <ModuleAccessLogs />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/verarbeitungsverzeichnis" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <Verarbeitungsverzeichnis />
               </ProtectedRoute>
             } />
 
