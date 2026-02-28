@@ -12,12 +12,11 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Auth guard: only allow service_role or anon key (cron jobs)
+    // Auth guard: only allow service_role key (cron jobs use service_role)
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.startsWith("Bearer ") ? authHeader.replace("Bearer ", "") : null;
-    if (token !== supabaseServiceKey && token !== anonKey) {
+    if (token !== supabaseServiceKey) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
