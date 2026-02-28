@@ -179,6 +179,7 @@ export default function MissionControl() {
   const [loading, setLoading] = useState(true);
   // emergency escalations for admin view
   const [escalations, setEscalations] = useState<any[]>([]);
+  const [connectStats, setConnectStats] = useState<{ activeConnections: number; pendingConnections: number; totalInvitations: number; acceptedInvitations: number } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProvider, setSelectedProvider] = useState<ProviderData | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -455,6 +456,24 @@ export default function MissionControl() {
       });
 
       setProviders(providersWithData);
+
+      // Fetch HM Connect stats
+      try {
+        const [grantsRes, invitesRes] = await Promise.all([
+          supabase.from("access_grants").select("status, is_active", { count: "exact" }),
+          supabase.from("hm_connect_invitations").select("status", { count: "exact" }),
+        ]);
+        const grants = grantsRes.data || [];
+        const invites = invitesRes.data || [];
+        setConnectStats({
+          activeConnections: grants.filter(g => g.is_active && g.status === "active").length,
+          pendingConnections: grants.filter(g => g.status === "pending").length,
+          totalInvitations: invites.length,
+          acceptedInvitations: invites.filter(i => i.status === "accepted").length,
+        });
+      } catch (csErr) {
+        console.warn("Could not fetch connect stats:", csErr);
+      }
     } catch (error) {
       console.error("Error fetching providers:", error);
       toast.error("Fehler beim Laden der Provider");
@@ -1037,7 +1056,7 @@ export default function MissionControl() {
         </Card>
 
         {/* KPI Dashboard */}
-        <MissionControlKPIs providers={providers} />
+        <MissionControlKPIs providers={providers} connectStats={connectStats} />
 
         <Tabs defaultValue="providers" className="space-y-4 md:space-y-6">
           {/* Tabs - Horizontally scrollable on mobile */}

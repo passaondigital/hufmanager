@@ -11,6 +11,7 @@ import {
   Crown,
   Ban,
   Clock,
+  Link2,
 } from "lucide-react";
 
 interface ProviderData {
@@ -25,11 +26,19 @@ interface ProviderData {
   base_price: number | null;
 }
 
-interface MissionControlKPIsProps {
-  providers: ProviderData[];
+interface ConnectStats {
+  activeConnections: number;
+  pendingConnections: number;
+  totalInvitations: number;
+  acceptedInvitations: number;
 }
 
-export default function MissionControlKPIs({ providers }: MissionControlKPIsProps) {
+interface MissionControlKPIsProps {
+  providers: ProviderData[];
+  connectStats?: ConnectStats | null;
+}
+
+export default function MissionControlKPIs({ providers, connectStats }: MissionControlKPIsProps) {
   const stats = useMemo(() => {
     const now = new Date();
     const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -214,6 +223,33 @@ export default function MissionControlKPIs({ providers }: MissionControlKPIsProp
         <p className="text-2xl font-bold mt-2">€{stats.avgBasePrice.toFixed(0)}</p>
         <p className="text-xs text-muted-foreground">Ø Grundpreis</p>
       </Card>
+
+      {/* HM Connect Stats */}
+      {connectStats && (
+        <>
+          <Card className="p-4 col-span-2 md:col-span-1">
+            <div className="flex items-center justify-between">
+              <Link2 className="w-5 h-5 text-primary" />
+              <Badge variant="outline" className="text-xs">
+                {connectStats.pendingConnections} offen
+              </Badge>
+            </div>
+            <p className="text-2xl font-bold mt-2">{connectStats.activeConnections}</p>
+            <p className="text-xs text-muted-foreground">Aktive Verbindungen</p>
+          </Card>
+
+          <Card className="p-4 col-span-2 md:col-span-1">
+            <div className="flex items-center justify-between">
+              <UserPlus className="w-5 h-5 text-blue-500" />
+              <Badge variant="outline" className="text-xs">
+                {connectStats.acceptedInvitations} angen.
+              </Badge>
+            </div>
+            <p className="text-2xl font-bold mt-2">{connectStats.totalInvitations}</p>
+            <p className="text-xs text-muted-foreground">Einladungen gesamt</p>
+          </Card>
+        </>
+      )}
     </div>
   );
 }
