@@ -45,7 +45,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-
+import { AiDisclosure } from "@/components/legal/AiDisclosure";
 interface ReceiptScannerProps {
   isOpen: boolean;
   onClose: () => void;
@@ -349,6 +349,7 @@ export function ReceiptScanner({ isOpen, onClose, onBack }: ReceiptScannerProps)
                 <p className="text-sm text-muted-foreground">
                   Betrag, Datum und Kategorie werden erkannt
                 </p>
+                <AiDisclosure context="Belegerfassung" className="justify-center mt-2" />
               </div>
             </motion.div>
           )}
@@ -362,19 +363,22 @@ export function ReceiptScanner({ isOpen, onClose, onBack }: ReceiptScannerProps)
               exit={{ opacity: 0, y: -10 }}
               className="space-y-4 py-2"
             >
-              {/* Confidence + Doc Type */}
-              <div className="flex items-center justify-between">
+              {/* Confidence + Doc Type + AI Disclosure */}
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <Badge variant="outline" className="gap-1">
                   <FileText className="h-3 w-3" />
                   {DOC_TYPE_LABELS[scanResult.document_type] || scanResult.document_type}
                 </Badge>
-                <div className={cn("flex items-center gap-1 text-xs", confidenceColor(scanResult.confidence))}>
-                  {scanResult.confidence >= 0.8 ? (
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                  ) : (
-                    <AlertTriangle className="h-3.5 w-3.5" />
-                  )}
-                  {confidenceLabel(scanResult.confidence)}
+                <div className="flex items-center gap-3">
+                  <AiDisclosure context="Belegerfassung" />
+                  <div className={cn("flex items-center gap-1 text-xs", confidenceColor(scanResult.confidence))}>
+                    {scanResult.confidence >= 0.8 ? (
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                    ) : (
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                    )}
+                    {confidenceLabel(scanResult.confidence)}
+                  </div>
                 </div>
               </div>
 

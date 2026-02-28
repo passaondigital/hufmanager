@@ -33,6 +33,7 @@ import {
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { AutoFlowSetupWizard } from "@/components/autoflow/AutoFlowSetupWizard";
+import { AiDisclosure } from "@/components/legal/AiDisclosure";
 
 interface AutoFlowSettings {
   id?: string;
@@ -256,17 +257,18 @@ const AutoFlow = () => {
   return (
     <div className="container mx-auto p-4 space-y-6 max-w-3xl">
       {/* Header */}
+      <AiDisclosure context="AutoFlow" variant="banner" className="mb-2" />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-primary/10 rounded-xl">
             <Zap className="h-6 w-6 text-primary" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold">AutoFlow</h1>
-            <p className="text-muted-foreground text-sm">
-              {enabledCount}/4 Automatisierungen aktiv
-            </p>
-          </div>
+           <div>
+             <h1 className="text-2xl font-bold">AutoFlow</h1>
+             <p className="text-muted-foreground text-sm">
+               {enabledCount}/4 Automatisierungen aktiv
+             </p>
+           </div>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setWizardOpen(true)}>

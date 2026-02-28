@@ -51,6 +51,18 @@ const Datenschutz = () => (
           <div>
             <h2 className="text-2xl font-semibold mb-4">6. Einsatz von Künstlicher Intelligenz</h2>
             <p className="mb-4">HufManager setzt KI-Modelle (Google Gemini) zur Unterstützung bei der Analyse von Hufbildern, automatisierten Textvorschlägen und Workflow-Automatisierung (AutoFlow) ein. Gemäß Art. 50 der EU KI-Verordnung (AI Act) werden alle KI-generierten Inhalte entsprechend gekennzeichnet. Die Verarbeitung erfolgt auf Grundlage Ihrer Einwilligung (Art. 6 Abs. 1 lit. a DSGVO). Das System wird als „Minimales Risiko" gemäß der KI-Verordnung eingestuft.</p>
+            <h3 className="text-xl font-semibold mb-2">Keine Verwendung zum Modelltraining</h3>
+            <p className="mb-4">Ihre Daten werden nicht zum Training von KI-Modellen verwendet. Anfragen werden ausschließlich zur Beantwortung Ihrer konkreten Anfrage verarbeitet und danach nicht weiter gespeichert oder für Trainingszwecke genutzt. Die Verarbeitung erfolgt über die Google Gemini API — es findet keine Weitergabe Ihrer Daten an Dritte zu Trainingszwecken statt.</p>
+            <h3 className="text-xl font-semibold mb-2">KI-Funktionen im Überblick</h3>
+            <ul className="list-disc pl-6 mb-4 space-y-1">
+              <li>HufiAI Assistent: KI-gestützter Chat für Fragen rund um Hufbearbeitung und Pferdepflege</li>
+              <li>Hufbild-Analyse: Automatische Erkennung von Merkmalen auf Huffotos zur Dokumentationsunterstützung</li>
+              <li>Belegerfassung: KI-basierte Erkennung von Betrag, Datum und Kategorie auf Belegen</li>
+              <li>AutoFlow: Intelligente Vorschläge für Terminplanung und Arbeitsabläufe</li>
+              <li>E-Mail-Entwürfe: KI-generierte Textvorschläge für Kundenkommunikation</li>
+            </ul>
+            <h3 className="text-xl font-semibold mb-2">Opt-Out</h3>
+            <p className="mb-4">Sie können alle KI-Features jederzeit in Ihren Einstellungen deaktivieren. Die Deaktivierung hat keinen Einfluss auf die sonstige Nutzung der Plattform.</p>
           </div>
           <div>
             <h2 className="text-2xl font-semibold mb-4">7. Soziale Medien</h2>

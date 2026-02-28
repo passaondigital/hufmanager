@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { AiDisclosure } from "@/components/legal/AiDisclosure";
 
 interface PhotoData {
   dataUrl: string;
@@ -487,6 +488,7 @@ export function HufCamGalleryReport({
               <Mail className="h-5 w-5 text-primary" />
               E-Mail-Entwurf
             </DialogTitle>
+            <AiDisclosure context="E-Mail-Entwurf" />
           </DialogHeader>
           <div className="space-y-4">
             <Textarea
