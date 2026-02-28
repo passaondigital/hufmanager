@@ -171,8 +171,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       title: "Angebote", 
       icon: FileText,
       subItems: [
-        { title: "Service-Katalog", url: "/services", icon: ShoppingBag, description: "Leistungen definieren" },
-        { title: "Preisgruppen", url: "/preise", icon: DollarSign, description: "Kundengruppen & Preise" },
+        { title: "Mein Angebot", url: "/mein-angebot", icon: ShoppingBag, description: "Leistungen, Preise & Gruppen" },
         { title: "Offene Angebote", url: "/angebote", icon: ClipboardList, description: "Kostenvoranschläge" },
       ]
     },

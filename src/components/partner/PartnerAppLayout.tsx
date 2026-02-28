@@ -34,7 +34,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { icon: FileText, label: "Behandlungsnotizen", path: "/partner-notes" },
   { icon: ClipboardList, label: "Behandlungspläne", path: "/partner-plans" },
   { icon: Upload, label: "Dokumente & Befunde", path: "/partner-documents" },
-  { icon: Briefcase, label: "Leistungskatalog", path: "/partner-services", featureKey: "module_invoicing" },
+  { icon: Briefcase, label: "Mein Angebot", path: "/partner-services", featureKey: "module_invoicing" },
   { icon: Receipt, label: "Rechnungen", path: "/partner-invoices", featureKey: "module_invoicing" },
   { icon: MessageSquare, label: "Chat", path: "/partner-chat", featureKey: "module_chat", bottomNav: true },
   { icon: AlertTriangle, label: "1. Hilfe Kunden Center", path: "/partner-notfall" },
