@@ -495,22 +495,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
           </NavLink>
         )}
 
-        {/* Admin Link */}
-        {isAdmin && (
-          <NavLink
-            to="/admin/mission-control"
-            onClick={onNavigate}
-            className={cn(
-              "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200",
-              isActive("/admin/mission-control")
-                ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                : "text-sidebar-accent-foreground hover:bg-sidebar-accent"
-            )}
-          >
-            <Shield className={cn("h-4 w-4 flex-shrink-0", collapsed && "mx-auto")} />
-            {!collapsed && <span className="text-sm">Mission Control</span>}
-          </NavLink>
-        )}
+        {/* Admin Link removed - access only via Auth page rocket icon */}
 
         {/* Management - Collapsible mit Untermenüs */}
         <Collapsible 
