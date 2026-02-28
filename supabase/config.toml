@@ -86,3 +86,6 @@ verify_jwt = true
 
 [functions.funnel-lead-notify]
 verify_jwt = false
+
+[functions.check-retention-deadlines]
+verify_jwt = false

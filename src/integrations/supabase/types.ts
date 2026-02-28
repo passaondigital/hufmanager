@@ -1437,6 +1437,42 @@ export type Database = {
         }
         Relationships: []
       }
+      data_retention_rules: {
+        Row: {
+          action: string
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          retention_days: number
+          target_date_column: string | null
+          target_table: string | null
+          updated_at: string
+        }
+        Insert: {
+          action?: string
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          retention_days: number
+          target_date_column?: string | null
+          target_table?: string | null
+          updated_at?: string
+        }
+        Update: {
+          action?: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          retention_days?: number
+          target_date_column?: string | null
+          target_table?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       demo_activity_logs: {
         Row: {
           action_name: string | null
