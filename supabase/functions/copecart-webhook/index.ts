@@ -24,6 +24,64 @@ const PRODUCT_PLAN_OVERRIDE_MAP: Record<string, string> = {
   "483bbb5b": "copecart_profi",
 };
 
+// Plan → feature_statuses mapping for auto-provisioning
+const PLAN_FEATURE_MAP: Record<string, Record<string, string>> = {
+  starter: {
+    module_invoicing: "public",
+    module_chat: "public",
+    module_maps: "public",
+    module_academy: "public",
+    module_hufanalyse: "public",
+    module_network: "public",
+    module_analytics: "public",
+    module_office: "public",
+    module_lager: "public",
+    module_team: "disabled",
+    autoflow_reminders: "disabled",
+    autoflow_invoicing: "disabled",
+    autoflow_scheduling: "disabled",
+    autoflow_feedback: "disabled",
+    autoflow_checkin: "disabled",
+    beta_features: "disabled",
+  },
+  advanced: {
+    module_invoicing: "public",
+    module_chat: "public",
+    module_maps: "public",
+    module_academy: "public",
+    module_hufanalyse: "public",
+    module_network: "public",
+    module_analytics: "public",
+    module_office: "public",
+    module_lager: "public",
+    module_team: "beta",
+    autoflow_reminders: "public",
+    autoflow_invoicing: "public",
+    autoflow_scheduling: "disabled",
+    autoflow_feedback: "public",
+    autoflow_checkin: "disabled",
+    beta_features: "disabled",
+  },
+  pro: {
+    module_invoicing: "public",
+    module_chat: "public",
+    module_maps: "public",
+    module_academy: "public",
+    module_hufanalyse: "public",
+    module_network: "public",
+    module_analytics: "public",
+    module_office: "public",
+    module_lager: "public",
+    module_team: "public",
+    autoflow_reminders: "public",
+    autoflow_invoicing: "public",
+    autoflow_scheduling: "public",
+    autoflow_feedback: "public",
+    autoflow_checkin: "public",
+    beta_features: "beta",
+  },
+};
+
 function getPlanFromProductId(productId: string): string {
   return PRODUCT_PLAN_MAP[productId] || 'pro';
 }
@@ -671,6 +729,43 @@ const handler = async (req: Request): Promise<Response> => {
         }
 
         console.log("[copecart] Subscription updated successfully");
+
+        // Auto-provision feature_statuses based on plan
+        const featureMap = PLAN_FEATURE_MAP[subscriptionPlan];
+        if (featureMap && updateData.subscription_status === "active") {
+          const { error: featureError } = await supabase
+            .from("profiles")
+            .update({ feature_statuses: featureMap })
+            .eq("id", profile.id);
+
+          if (featureError) {
+            console.error("[copecart] Feature flags update failed:", featureError.message);
+          } else {
+            console.log("[copecart] Feature flags auto-provisioned for plan:", subscriptionPlan);
+          }
+        }
+
+        // Log to admin_revenue_log
+        const amount = payload.amount || payload.total || payload.price || 0;
+        const { error: logError } = await supabase
+          .from("admin_revenue_log")
+          .insert({
+            event_type: eventType,
+            amount: typeof amount === "string" ? parseFloat(amount) : amount,
+            currency: "EUR",
+            plan_name: subscriptionPlan,
+            provider_id: profile.id,
+            customer_email: customerEmail,
+            customer_name: customerName,
+            transaction_id: subscriptionId || payload.transaction_id || null,
+            raw_payload: payload,
+          });
+
+        if (logError) {
+          console.error("[copecart] Revenue log failed:", logError.message);
+        } else {
+          console.log("[copecart] Revenue logged successfully");
+        }
       }
     }
 

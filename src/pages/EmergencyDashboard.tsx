@@ -44,21 +44,37 @@ export default function EmergencyDashboard() {
   // load providers if partner so they can pick one
   useEffect(() => {
     if (role === "partner") {
-      const fetch = async () => {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("id,full_name")
+      const fetchProviders = async () => {
+        // Query user_roles to find providers, then join with profiles
+        const { data: providerRoles, error: rolesErr } = await supabase
+          .from("user_roles")
+          .select("user_id")
           .eq("role", "provider");
-        if (error) {
-          console.error(error);
-        } else if (data) {
-          setProviders(data as ProviderInfo[]);
-          if (!selectedProviderId && data.length) {
-            setSelectedProviderId((data[0] as ProviderInfo).id);
+        
+        if (rolesErr) {
+          console.error(rolesErr);
+          return;
+        }
+        
+        if (providerRoles && providerRoles.length > 0) {
+          const providerIds = providerRoles.map(r => r.user_id);
+          const { data, error } = await supabase
+            .from("profiles")
+            .select("id, full_name")
+            .in("id", providerIds)
+            .is("deleted_at", null);
+          
+          if (error) {
+            console.error(error);
+          } else if (data) {
+            setProviders(data as ProviderInfo[]);
+            if (!selectedProviderId && data.length) {
+              setSelectedProviderId((data[0] as ProviderInfo).id);
+            }
           }
         }
       };
-      fetch();
+      fetchProviders();
     }
   }, [role, selectedProviderId]);
 
