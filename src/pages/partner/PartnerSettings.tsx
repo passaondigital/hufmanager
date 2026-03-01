@@ -37,6 +37,15 @@ export default function PartnerSettings() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
+  const { data: profile } = useQuery({
+    queryKey: ["partner-profile-settings", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("readable_id").eq("id", user!.id).single();
+      return data;
+    },
+    enabled: !!user,
+  });
+
   const { data: settings, isLoading } = useQuery({
     queryKey: ["partner-business-settings", user?.id],
     queryFn: async () => {
@@ -56,6 +65,7 @@ export default function PartnerSettings() {
     tax_number: "", vat_id: "", iban: "", bank_name: "", bic: "",
     specialty: "", qualifications: "",
     country: "DE", kleine_unternehmer: false, default_vat_rate: "19",
+    public_profile_visible: false,
   });
 
   const [notifications, setNotifications] = useState({
@@ -84,6 +94,7 @@ export default function PartnerSettings() {
         country: s.country || "DE",
         kleine_unternehmer: s.kleine_unternehmer || false,
         default_vat_rate: String(s.default_vat_rate || "19"),
+        public_profile_visible: s.public_profile_visible || false,
       });
       if (s.notification_preferences) {
         setNotifications({
@@ -128,6 +139,7 @@ export default function PartnerSettings() {
         default_vat_rate: parseFloat(form.default_vat_rate) || 19,
         currency: COUNTRY_OPTIONS.find(c => c.value === form.country)?.currency || "EUR",
         notification_preferences: notifications,
+        public_profile_visible: form.public_profile_visible,
       };
 
       if (settings) {
@@ -218,6 +230,15 @@ export default function PartnerSettings() {
               </div>
               <div><Label>Adresse</Label><Textarea value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} rows={2} /></div>
               <div><Label>Qualifikationen & Zertifizierungen</Label><Textarea value={form.qualifications} onChange={e => setForm(p => ({ ...p, qualifications: e.target.value }))} placeholder="z.B. DIPO-Diplom, Equine Physiotherapie Zertifikat" rows={3} /></div>
+              
+              {/* Public Profile Toggle */}
+              <div className="flex items-center justify-between p-3 rounded-lg border border-border">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Öffentliches Profil</p>
+                  <p className="text-xs text-muted-foreground">Dein Profil ist unter /partner/{profile?.readable_id || "PRID-..."} sichtbar</p>
+                </div>
+                <Switch checked={form.public_profile_visible} onCheckedChange={v => setForm(p => ({ ...p, public_profile_visible: v }))} />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

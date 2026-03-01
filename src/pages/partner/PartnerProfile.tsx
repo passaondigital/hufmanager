@@ -275,6 +275,31 @@ export default function PartnerProfile() {
             {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             Profil speichern
           </Button>
+
+          {/* Public profile link */}
+          {profile?.readable_id && (
+            <div className="p-4 rounded-lg bg-muted/50 border border-border space-y-2">
+              <p className="text-sm font-medium text-foreground">Dein öffentlicher Profillink:</p>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={`${window.location.origin}/partner/${profile.readable_id}`}
+                  readOnly
+                  className="text-xs bg-background"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/partner/${profile.readable_id}`);
+                    toast.success("Link kopiert!");
+                  }}
+                >
+                  Kopieren
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">Aktiviere das öffentliche Profil in den Einstellungen.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

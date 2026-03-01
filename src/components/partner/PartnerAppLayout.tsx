@@ -2,10 +2,11 @@ import { useState, useMemo } from "react";
 import { Outlet, useLocation, NavLink } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { usePartnerOffline } from "@/hooks/usePartnerOffline";
 import {
   Home, Heart, FileText, MessageSquare, User, Menu, LogOut, Sun, Moon,
   ChevronRight, Calendar, Upload, ClipboardList, Receipt, Briefcase,
-  Settings, AlertTriangle, Lock,
+  Settings, AlertTriangle, Lock, Users, WifiOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -17,6 +18,7 @@ import { useTheme } from "@/components/ThemeProvider";
 import { FeatureKey } from "@/types/featureFlags";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { AIChatWidget } from "@/components/chat/AIChatWidget";
 
 interface NavItem {
   icon: React.ElementType;
@@ -38,6 +40,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { icon: Receipt, label: "Rechnungen", path: "/partner-invoices", featureKey: "module_invoicing" },
   { icon: MessageSquare, label: "Chat", path: "/partner-chat", featureKey: "module_chat", bottomNav: true },
   { icon: AlertTriangle, label: "1. Hilfe Kunden Center", path: "/partner-notfall" },
+  { icon: Users, label: "Netzwerk", path: "/partner-connect", bottomNav: false },
   // Coming soon items — visible but disabled
   { icon: Settings, label: "Einstellungen", path: "/partner-settings" },
   { icon: User, label: "Profil", path: "/partner-profile", bottomNav: true },
@@ -48,6 +51,7 @@ export function PartnerAppLayout() {
   const { signOut, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { isFeatureVisible, showBetaBadge } = useSubscription();
+  const { isOnline, pendingCount } = usePartnerOffline();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const visibleNavItems = useMemo(() => {
@@ -78,6 +82,14 @@ export function PartnerAppLayout() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      {/* Offline Banner */}
+      {!isOnline && (
+        <div className="bg-destructive text-destructive-foreground text-center text-xs py-2 px-4 flex items-center justify-center gap-2 z-50">
+          <WifiOff className="h-3.5 w-3.5" />
+          Du arbeitest offline — Notizen werden lokal gespeichert und synchronisiert sobald du wieder Netz hast.
+          {pendingCount > 0 && <span className="font-semibold">({pendingCount} ausstehend)</span>}
+        </div>
+      )}
       {/* Mobile Header */}
       <header
         className="lg:hidden h-14 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-3"
@@ -253,6 +265,9 @@ export function PartnerAppLayout() {
           ))}
         </div>
       </nav>
+
+      {/* Hufi KI-Assistent */}
+      <AIChatWidget />
     </div>
   );
 }
