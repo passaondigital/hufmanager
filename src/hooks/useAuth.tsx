@@ -270,33 +270,36 @@ const signIn = async (email: string, password: string) => {
       return { error };
     }
 
-    // Check if user is suspended - use maybeSingle() to avoid schema errors
     if (data.user) {
-      try {
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("is_suspended, suspended_reason")
-          .eq("id", data.user.id)
-          .maybeSingle();
-
-        // Log profile errors but don't block login
-        if (profileError) {
-          console.warn("Profile check failed (non-blocking):", profileError.message);
-          // Continue with login - profile will be created/repaired by ProfileGuardian
+      // Run suspension check and role fetch in parallel for speed
+      const profilePromise = (async () => {
+        try {
+          return await supabase
+            .from("profiles")
+            .select("is_suspended, suspended_reason")
+            .eq("id", data.user.id)
+            .maybeSingle();
+        } catch {
+          return { data: null, error: null };
         }
+      })();
 
-        if (profile?.is_suspended) {
-          // Sign out immediately
-          await supabase.auth.signOut();
-          const reason = profile.suspended_reason || "Ihr Konto wurde gesperrt.";
-          return { 
-            error: new Error(`Konto gesperrt: ${reason}`) 
-          };
-        }
-      } catch (err) {
-        // Non-blocking error - allow login to proceed
-        console.warn("Unexpected error during profile check:", err);
+      const [profileResult, roleResult] = await Promise.all([
+        profilePromise,
+        fetchUserRole(data.user.id),
+      ]);
+
+      // Check suspension
+      const profile = profileResult?.data as { is_suspended?: boolean; suspended_reason?: string } | null;
+      if (profile?.is_suspended) {
+        await supabase.auth.signOut();
+        const reason = profile.suspended_reason || "Ihr Konto wurde gesperrt.";
+        return { error: new Error(`Konto gesperrt: ${reason}`) };
       }
+
+      // Pre-set role immediately so redirect happens without waiting for onAuthStateChange
+      setRole(roleResult);
+      setLoading(false);
     }
 
     return { error: null };
