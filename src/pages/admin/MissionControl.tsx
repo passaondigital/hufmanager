@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useLogout } from "@/hooks/useLogout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -181,6 +182,7 @@ type SortDirection = "asc" | "desc";
 export default function MissionControl() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const logout = useLogout();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [providers, setProviders] = useState<ProviderData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1026,10 +1028,7 @@ export default function MissionControl() {
             <Button variant="outline" className="min-h-[44px] flex-1 md:flex-none" onClick={() => navigate("/home")}>
               ← Dashboard
             </Button>
-            <Button variant="destructive" className="min-h-[44px] flex-1 md:flex-none" onClick={async () => {
-              await supabase.auth.signOut();
-              navigate("/auth");
-            }}>
+            <Button variant="destructive" className="min-h-[44px] flex-1 md:flex-none" onClick={logout}>
               Ausloggen
             </Button>
           </div>

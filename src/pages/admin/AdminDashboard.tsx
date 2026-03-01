@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useLogout } from "@/hooks/useLogout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +42,7 @@ const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ cla
 export default function AdminDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const logout = useLogout();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isMasterAdmin, setIsMasterAdmin] = useState(false);
@@ -190,10 +192,7 @@ export default function AdminDashboard() {
           <Button
             variant="ghost"
             className="w-full justify-start text-destructive hover:text-destructive"
-            onClick={async () => {
-              await supabase.auth.signOut();
-              navigate("/auth");
-            }}
+            onClick={logout}
           >
             🚪 Ausloggen
           </Button>
