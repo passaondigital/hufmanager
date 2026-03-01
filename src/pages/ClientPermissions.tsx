@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Shield, Eye, Heart, Calendar, UserX, AlertTriangle, Stethoscope, Footprints, FileText } from "lucide-react";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { toast } from "@/hooks/use-toast";
 import { getPartnerTypeConfig } from "@/lib/partnerTypes";
 import {
@@ -298,6 +299,7 @@ export default function ClientPermissions() {
                       <Label htmlFor={`basic-${grant.id}`} className="text-sm cursor-pointer">
                         Darf Stammdaten sehen
                       </Label>
+                      <InfoTooltip text="Name, Kontaktdaten und Adresse deines Pferdes" example="Name, Rasse, Stallstandort" />
                     </div>
                     <Switch
                       id={`basic-${grant.id}`}
@@ -315,6 +317,7 @@ export default function ClientPermissions() {
                       <Label htmlFor={`medical-${grant.id}`} className="text-sm cursor-pointer">
                         Darf medizinische Akte sehen
                       </Label>
+                      <InfoTooltip text="Gesundheitsstatus, Befunde und medizinische Notizen" example="Hufbefund, Lahmheitsstatus" />
                     </div>
                     <Switch
                       id={`medical-${grant.id}`}
@@ -332,6 +335,7 @@ export default function ClientPermissions() {
                       <Label htmlFor={`appointments-${grant.id}`} className="text-sm cursor-pointer">
                         Darf Termine erstellen
                       </Label>
+                      <InfoTooltip text="Darf neue Termine für dein Pferd anlegen" example="Nächster Hufbeschlag am 15.04." />
                     </div>
                     <Switch
                       id={`appointments-${grant.id}`}

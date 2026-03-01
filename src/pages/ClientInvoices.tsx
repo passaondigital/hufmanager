@@ -169,12 +169,12 @@ export default function ClientInvoices() {
   const getStatusBadge = (status: string | null) => {
     switch (status) {
       case "paid":
-        return <Badge className="bg-green-500/10 text-green-600 border-green-500/20">Bezahlt</Badge>;
+        return <Badge className="bg-green-500/10 text-green-600 border-green-500/20" title="Alles erledigt ✓">Bezahlt</Badge>;
       case "overdue":
-        return <Badge variant="destructive">Überfällig</Badge>;
+        return <Badge variant="destructive" title="Zahlungsfrist abgelaufen">Überfällig</Badge>;
       case "pending":
       default:
-        return <Badge variant="secondary">Offen</Badge>;
+        return <Badge variant="secondary" title="Noch nicht bezahlt">Offen</Badge>;
     }
   };
 
