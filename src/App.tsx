@@ -202,7 +202,7 @@ function App() {
 // Separate component that can use useAuth and Profile Guardian
 function AppContent({ queryClient }: { queryClient: QueryClient }) {
   const { user, loading } = useAuth();
-  const { isRepairing, repairError, isProfileReady } = useProfileGuardian(user);
+  const { isRepairing, repairError, isProfileReady, retry } = useProfileGuardian(user);
 
   // Show loading screen while checking authentication
   if (loading) {
@@ -210,8 +210,9 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
   }
 
   // Show profile repair screen if authenticated but profile is being repaired
-  if (user && (isRepairing || !isProfileReady)) {
-    return <ProfileGuardianScreen isRepairing={isRepairing} error={repairError} />;
+  // Only block if still repairing AND not yet ready (safety timeout will release)
+  if (user && isRepairing && !isProfileReady) {
+    return <ProfileGuardianScreen isRepairing={isRepairing} error={repairError} onRetry={retry} />;
   }
 
   return (

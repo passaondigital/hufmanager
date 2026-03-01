@@ -169,6 +169,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    let isMounted = true;
+    let initialSessionHandled = false;
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -183,7 +186,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Defer role fetching with setTimeout
         if (session?.user) {
           setTimeout(async () => {
-            fetchUserRole(session.user.id).then(setRole);
+            if (!isMounted) return;
+            const fetchedRole = await fetchUserRole(session.user.id);
+            if (isMounted) {
+              setRole(fetchedRole);
+              // Also set loading to false here to prevent stuck loading
+              setLoading(false);
+            }
             // Process invite code on sign in
             if (event === "SIGNED_IN") {
               processInviteCode(session.user.id);
@@ -206,28 +215,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }, 0);
         } else {
           setRole(null);
+          // No session means not authenticated - stop loading
+          if (isMounted) setLoading(false);
         }
       }
     );
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted || initialSessionHandled) return;
+      initialSessionHandled = true;
+
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
         fetchUserRole(session.user.id).then((r) => {
-          setRole(r);
-          setLoading(false);
+          if (isMounted) {
+            setRole(r);
+            setLoading(false);
+          }
         });
         // Also process invite code on initial load (in case of email confirmation redirect)
         processInviteCode(session.user.id);
       } else {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    // Safety timeout: never stay loading for more than 10 seconds
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted) {
+        setLoading(prev => {
+          if (prev) {
+            console.warn("⚠️ Auth: Safety timeout reached, forcing loading=false");
+            return false;
+          }
+          return prev;
+        });
+      }
+    }, 10000);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(safetyTimeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
 const signIn = async (email: string, password: string) => {
