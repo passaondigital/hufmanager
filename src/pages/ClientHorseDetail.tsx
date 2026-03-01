@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Info, History, Image, Users, FileText, BookOpen } from "lucide-react";
+import { ArrowLeft, Info, History, Image, Users, FileText, BookOpen, Heart, ArrowLeftRight } from "lucide-react";
 import { toast } from "sonner";
 
 import { TabSteckbrief } from "@/components/horse-detail/TabSteckbrief";
@@ -20,6 +20,8 @@ import { HorseStammdatenCard } from "@/components/horse-detail/HorseStammdatenCa
 import { HoofPhotoTimeline } from "@/components/horse-detail/HoofPhotoTimeline";
 import { HorsePartnerPanel } from "@/components/horse-detail/HorsePartnerPanel";
 import { HorseDiary } from "@/components/client/HorseDiary";
+import { HorseHealthTracker } from "@/components/client/HorseHealthTracker";
+import { HoofDevelopmentComparison } from "@/components/client/HoofDevelopmentComparison";
 import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
 
 export default function ClientHorseDetail() {
@@ -154,7 +156,7 @@ export default function ClientHorseDetail() {
         />
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <div className="overflow-x-auto -mx-4 px-4">
-            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-6">
+            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-7">
               <TabsTrigger value="steckbrief" className="flex items-center gap-1.5 whitespace-nowrap">
                 <Info className="h-4 w-4" />
                 <span>Übersicht</span>
@@ -166,6 +168,10 @@ export default function ClientHorseDetail() {
               <TabsTrigger value="fotos" className="flex items-center gap-1.5 whitespace-nowrap">
                 <Image className="h-4 w-4" />
                 <span>Fotos & Medien</span>
+              </TabsTrigger>
+              <TabsTrigger value="gesundheit" className="flex items-center gap-1.5 whitespace-nowrap">
+                <Heart className="h-4 w-4" />
+                <span>Gesundheit</span>
               </TabsTrigger>
               <TabsTrigger value="dokumente" className="flex items-center gap-1.5 whitespace-nowrap">
                 <FileText className="h-4 w-4" />
@@ -198,12 +204,18 @@ export default function ClientHorseDetail() {
             </div>
           </TabsContent>
 
-          {/* Fotos & Medien = Foto-Timeline + Medien */}
+          {/* Fotos & Medien = Foto-Timeline + Medien + Huf-Vergleich */}
           <TabsContent value="fotos">
             <div className="space-y-6">
+              <HoofDevelopmentComparison horseId={horse.id} horseName={horse.name} />
               <HoofPhotoTimeline horseId={horse.id} horseName={horse.name} />
               <TabMediaVault horseId={horse.id} />
             </div>
+          </TabsContent>
+
+          {/* Gesundheit & Wohlbefinden */}
+          <TabsContent value="gesundheit">
+            <HorseHealthTracker horseId={horse.id} />
           </TabsContent>
 
           <TabsContent value="dokumente">

@@ -54,6 +54,7 @@ const ClientPermissions = lazy(() => import("@/pages/ClientPermissions"));
 const ClientBooking = lazy(() => import("@/pages/ClientBooking"));
 const ClientProfile = lazy(() => import("@/pages/ClientProfile"));
 const ClientChat = lazy(() => import("@/pages/ClientChat"));
+const ClientStallBoard = lazy(() => import("@/pages/ClientStallBoard"));
 const ProviderLanding = lazy(() => import("@/pages/ProviderLanding"));
 const ProviderHorseDetail = lazy(() => import("@/pages/ProviderHorseDetail"));
 const ImportCenter = lazy(() => import("@/pages/ImportCenter"));
@@ -389,6 +390,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client-booking" element={<ClientBooking />} />
               <Route path="/client-profile" element={<ClientProfile />} />
               <Route path="/client-chat" element={<ClientChat />} />
+              <Route path="/client-stall" element={<ClientStallBoard />} />
               <Route path="/client-notfall" element={<EmergencyDashboard />} />
             </Route>
 
