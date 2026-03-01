@@ -4,64 +4,94 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEmployeeProfile } from "@/hooks/useEmployees";
 import { useEmployeeOffline } from "@/hooks/useEmployeeOffline";
 import {
-  Home, Route, Camera, Notebook, User, Menu, Sun, Moon, LogOut,
-  Clock, ClipboardList, MessageSquare, Package, CalendarOff,
-  FileText, ChevronRight, ShoppingBag, WifiOff, RefreshCw,
-  Calendar,
+  Home, Route, Camera, Notebook, User, Menu, Sun, Moon,
+  WifiOff, RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/ThemeProvider";
 import { Loader2 } from "lucide-react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { EmployeeNotificationBell } from "@/components/employee/EmployeeNotificationBell";
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
+import { AppSidebar, MobileAppSidebar, NavigationConfig } from "@/components/shared/AppSidebar";
+
+const getEmployeeNav = (permissions: Record<string, boolean>): NavigationConfig => {
+  const tourChildren = [];
+  if (permissions.can_use_tour_manager || permissions.can_use_maps) {
+    tourChildren.push({ label: "Meine Tour", path: "/employee/tour" });
+  }
+  tourChildren.push({ label: "Kalender", path: "/employee/kalender" });
+
+  return {
+    directItems: [
+      { id: "dashboard", label: "Dashboard", iconName: "Home", path: "/employee" },
+    ],
+    groups: [
+      {
+        label: "Mein Arbeitstag",
+        items: [
+          {
+            id: "tours", number: "1", label: "Touren & Termine", iconName: "Route",
+            children: tourChildren,
+          },
+          {
+            id: "documentation", number: "2", label: "Dokumentation", iconName: "Camera",
+            children: [
+              { label: "HufCam Pro", path: "/employee/hufcam" },
+              { label: "Hufanalyse", path: "/employee/analyse" },
+            ],
+          },
+          {
+            id: "tracking", number: "3", label: "Zeit & Tracking", iconName: "Clock",
+            children: [
+              { label: "Zeiterfassung", path: "/employee/timer" },
+            ],
+          },
+        ],
+      },
+      {
+        label: "Kommunikation",
+        items: [
+          {
+            id: "chat", label: "Chat", iconName: "MessageSquare",
+            children: [
+              { label: "Chat", path: "/employee/chat" },
+            ],
+          },
+        ],
+      },
+      {
+        label: "Verwaltung",
+        items: [
+          { id: "material", label: "Material", iconName: "Package", path: "/employee/material" },
+          { id: "absence", label: "Abwesenheiten", iconName: "CalendarOff", path: "/employee/abwesenheiten" },
+          { id: "contract", label: "Vertrag", iconName: "FileText", path: "/employee/vertrag" },
+          { id: "services", label: "Leistungskatalog", iconName: "ShoppingBag", path: "/employee/angebot" },
+          { id: "notebook", label: "Mein Notizbuch", iconName: "Notebook", path: "/employee/notizbuch" },
+        ],
+      },
+      {
+        label: "Konto",
+        items: [
+          { id: "profile", label: "Profil", iconName: "User", path: "/employee/profil" },
+        ],
+      },
+    ],
+  };
+};
 
 const getBottomNavItems = (permissions: Record<string, boolean>) => {
   const items = [
-    { icon: Home, label: "Home", path: "/employee" },
+    { Icon: Home, label: "Home", path: "/employee" },
   ];
   if (permissions.can_use_tour_manager || permissions.can_use_maps) {
-    items.push({ icon: Route, label: "Tour", path: "/employee/tour" });
+    items.push({ Icon: Route, label: "Tour", path: "/employee/tour" });
   }
   items.push(
-    { icon: Camera, label: "HufCam", path: "/employee/hufcam" },
-    { icon: Notebook, label: "Notizbuch", path: "/employee/notizbuch" },
-    { icon: User, label: "Profil", path: "/employee/profil" },
-  );
-  return items;
-};
-
-interface SidebarItem {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  path: string;
-  badge?: string;
-}
-
-const getSidebarItems = (permissions: Record<string, boolean>): SidebarItem[] => {
-  const items: SidebarItem[] = [
-    { icon: Home, label: "Dashboard", path: "/employee" },
-  ];
-  if (permissions.can_use_tour_manager || permissions.can_use_maps) {
-    items.push({ icon: Route, label: "Meine Tour", path: "/employee/tour" });
-  }
-  items.push(
-    { icon: Clock, label: "Zeiterfassung", path: "/employee/timer" },
-    { icon: Calendar, label: "Kalender", path: "/employee/kalender" },
-    { icon: Camera, label: "HufCam Pro", path: "/employee/hufcam" },
-    { icon: ClipboardList, label: "Hufanalyse", path: "/employee/analyse" },
-    { icon: MessageSquare, label: "Chat", path: "/employee/chat" },
-    { icon: Package, label: "Material", path: "/employee/material" },
-    { icon: CalendarOff, label: "Abwesenheiten", path: "/employee/abwesenheiten" },
-    { icon: FileText, label: "Vertrag", path: "/employee/vertrag" },
-    { icon: ShoppingBag, label: "Leistungskatalog", path: "/employee/angebot" },
-    { icon: Notebook, label: "Mein Notizbuch", path: "/employee/notizbuch" },
-    { icon: User, label: "Profil", path: "/employee/profil" },
+    { Icon: Camera, label: "HufCam", path: "/employee/hufcam" },
+    { Icon: Notebook, label: "Notizbuch", path: "/employee/notizbuch" },
+    { Icon: User, label: "Profil", path: "/employee/profil" },
   );
   return items;
 };
@@ -78,13 +108,6 @@ export function EmployeeAppLayout() {
     if (path === "/employee") return location.pathname === "/employee";
     return location.pathname.startsWith(path);
   };
-
-  const getInitials = (name: string) =>
-    name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
-
-  const customPerms = profile?.custom_permissions || {};
-  const bottomNavItems = getBottomNavItems(customPerms as Record<string, boolean>);
-  const sidebarItems = getSidebarItems(customPerms as Record<string, boolean>);
 
   if (isLoading) {
     return (
@@ -107,17 +130,19 @@ export function EmployeeAppLayout() {
     );
   }
 
+  const customPerms = (profile.custom_permissions || {}) as Record<string, boolean>;
+  const employeeNav = getEmployeeNav(customPerms);
+  const bottomNavItems = getBottomNavItems(customPerms);
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Offline Banner */}
       {!isOnline && (
         <div className="bg-destructive text-destructive-foreground text-center text-xs py-2 px-4 flex items-center justify-center gap-2">
           <WifiOff className="h-3.5 w-3.5" />
-          <span>Du arbeitest offline — Dokumentation und Check-ins werden lokal gespeichert und synchronisiert sobald du wieder Netz hast.</span>
+          <span>Du arbeitest offline — Dokumentation wird lokal gespeichert.</span>
         </div>
       )}
-
-      {/* Sync pending banner */}
       {isOnline && pendingCount > 0 && (
         <div className="bg-accent text-accent-foreground text-center text-xs py-1.5 px-4 flex items-center justify-center gap-2">
           <RefreshCw className="h-3 w-3 animate-spin" />
@@ -144,101 +169,25 @@ export function EmployeeAppLayout() {
         </div>
       </header>
 
-      {/* Mobile Sidebar Sheet */}
-      <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-        <SheetContent side="left" className="p-0 w-72">
-          <div className="p-4 border-b border-border">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={profile.avatar_url || undefined} />
-                <AvatarFallback className="bg-primary/10 text-primary">{getInitials(profile.full_name)}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <p className="font-semibold text-sm truncate">{profile.full_name}</p>
-                <Badge variant="secondary" className="text-xs">
-                  {profile.role === "team_lead" ? "Teamleiter" : profile.role === "employee" ? "Mitarbeiter" : "Assistent"}
-                </Badge>
-              </div>
-            </div>
-          </div>
-          <nav className="p-2 space-y-1">
-            {sidebarItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                onClick={() => setMenuOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
-                  isActive(item.path)
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-muted-foreground hover:bg-muted"
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                <span className="flex-1">{item.label}</span>
-                {item.badge && <Badge variant="secondary" className="text-xs">{item.badge}</Badge>}
-              </NavLink>
-            ))}
-          </nav>
-          <Separator className="my-2" />
-          <div className="p-2">
-            <button
-              onClick={() => { signOut(); setMenuOpen(false); }}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-destructive hover:bg-destructive/10 w-full transition-colors"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Abmelden</span>
-            </button>
-          </div>
-        </SheetContent>
-      </Sheet>
+      {/* Mobile Sidebar */}
+      <MobileAppSidebar
+        open={menuOpen}
+        onOpenChange={setMenuOpen}
+        appName="MitarbeiterApp"
+        userDisplayName={profile.full_name}
+        userAvatar={profile.avatar_url || undefined}
+        navigationConfig={employeeNav}
+      />
 
-      {/* Desktop Sidebar */}
+      {/* Desktop Layout */}
       <div className="hidden lg:flex min-h-screen">
-        <aside className="w-60 border-r border-border bg-card flex flex-col">
-          <div className="p-4 border-b border-border">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-9 w-9">
-                <AvatarImage src={profile.avatar_url || undefined} />
-                <AvatarFallback className="bg-primary/10 text-primary text-sm">{getInitials(profile.full_name)}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold text-sm truncate">{profile.full_name}</p>
-                <p className="text-xs text-muted-foreground">MitarbeiterApp</p>
-              </div>
-              <EmployeeNotificationBell />
-            </div>
-          </div>
-          <nav className="flex-1 p-2 space-y-1 overflow-auto">
-            {sidebarItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-                  isActive(item.path)
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-muted-foreground hover:bg-muted"
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                <span className="flex-1">{item.label}</span>
-                <ChevronRight className="h-3.5 w-3.5 opacity-50" />
-              </NavLink>
-            ))}
-          </nav>
-          <div className="p-2 border-t border-border">
-            <button
-              onClick={() => signOut()}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-destructive hover:bg-destructive/10 w-full transition-colors"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Abmelden</span>
-            </button>
-          </div>
-        </aside>
-
-        <main className="flex-1 overflow-auto p-6">
+        <AppSidebar
+          appName="MitarbeiterApp"
+          userDisplayName={profile.full_name}
+          userAvatar={profile.avatar_url || undefined}
+          navigationConfig={employeeNav}
+        />
+        <main className="flex-1 overflow-auto p-6 ml-60">
           <ErrorBoundary name="EmployeeApp">
             <Outlet />
           </ErrorBoundary>
@@ -267,14 +216,13 @@ export function EmployeeAppLayout() {
                 isActive(item.path) ? "text-primary" : "text-muted-foreground"
               )}
             >
-              <item.icon className={cn("h-5 w-5 mb-1 transition-transform", isActive(item.path) && "scale-110")} />
+              <item.Icon className={cn("h-5 w-5 mb-1 transition-transform", isActive(item.path) && "scale-110")} />
               <span className="text-[10px] font-medium">{item.label}</span>
             </NavLink>
           ))}
         </div>
       </nav>
 
-      {/* Hufi AI Assistant - Floating Button */}
       <AIChatWidget />
     </div>
   );

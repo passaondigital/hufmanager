@@ -1,83 +1,98 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Outlet, useLocation, NavLink } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useSubscription } from "@/hooks/useSubscription";
 import { usePartnerOffline } from "@/hooks/usePartnerOffline";
 import {
-  Home, Heart, FileText, MessageSquare, User, Menu, LogOut, Sun, Moon,
-  ChevronRight, Calendar, Upload, ClipboardList, Receipt, Briefcase,
-  Settings, AlertTriangle, Lock, Users, WifiOff, Globe,
+  Home, Calendar, Heart, MessageSquare, User,
+  Menu, Sun, Moon, WifiOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/ThemeProvider";
-import { FeatureKey } from "@/types/featureFlags";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
+import { AppSidebar, MobileAppSidebar, NavigationConfig } from "@/components/shared/AppSidebar";
 
-interface NavItem {
-  icon: React.ElementType;
-  label: string;
-  path: string;
-  featureKey?: FeatureKey;
-  bottomNav?: boolean;
-  comingSoon?: boolean;
-}
+const PARTNER_NAV: NavigationConfig = {
+  directItems: [
+    { id: "overview", label: "Übersicht", iconName: "Home", path: "/partner-home" },
+  ],
+  groups: [
+    {
+      label: "Meine Arbeit",
+      items: [
+        {
+          id: "horses", number: "1", label: "Pferde & Patienten", iconName: "Heart",
+          children: [
+            { label: "Meine Pferde", path: "/partner-horses" },
+            { label: "Behandlungspläne", path: "/partner-plans" },
+            { label: "Befunde & Notizen", path: "/partner-notes" },
+          ],
+        },
+        {
+          id: "appointments", number: "2", label: "Termine", iconName: "Calendar",
+          children: [
+            { label: "Kalender", path: "/partner-calendar" },
+          ],
+        },
+        {
+          id: "finance", number: "3", label: "Finanzen", iconName: "Receipt",
+          children: [
+            { label: "Rechnungen", path: "/partner-invoices" },
+            { label: "Mein Angebot", path: "/partner-services" },
+          ],
+        },
+        {
+          id: "communication", number: "4", label: "Kommunikation", iconName: "MessageSquare",
+          children: [
+            { label: "Chat", path: "/partner-chat" },
+            { label: "1. Hilfe Kunden Center", path: "/partner-notfall" },
+          ],
+        },
+      ],
+    },
+    {
+      label: "Präsenz",
+      items: [
+        { id: "website", label: "Meine Website", iconName: "Globe", path: "/partner-website" },
+        { id: "network", label: "Netzwerk", iconName: "Users", path: "/partner-connect" },
+        { id: "documents", label: "Dokumente & Befunde", iconName: "Upload", path: "/partner-documents" },
+      ],
+    },
+    {
+      label: "Konto",
+      items: [
+        {
+          id: "settings", label: "Einstellungen", iconName: "Settings",
+          children: [
+            { label: "Einstellungen", path: "/partner-settings" },
+          ],
+        },
+        { id: "profile", label: "Profil", iconName: "User", path: "/partner-profile" },
+      ],
+    },
+  ],
+};
 
-const ALL_NAV_ITEMS: NavItem[] = [
-  { icon: Home, label: "Übersicht", path: "/partner-home", bottomNav: true },
-  { icon: Calendar, label: "Kalender", path: "/partner-calendar", featureKey: "module_invoicing", bottomNav: true },
-  { icon: Heart, label: "Meine Pferde", path: "/partner-horses", bottomNav: true },
-  { icon: FileText, label: "Behandlungsnotizen", path: "/partner-notes" },
-  { icon: ClipboardList, label: "Behandlungspläne", path: "/partner-plans" },
-  { icon: Upload, label: "Dokumente & Befunde", path: "/partner-documents" },
-  { icon: Briefcase, label: "Mein Angebot", path: "/partner-services", featureKey: "module_invoicing" },
-  { icon: Receipt, label: "Rechnungen", path: "/partner-invoices", featureKey: "module_invoicing" },
-  { icon: Globe, label: "Meine Website", path: "/partner-website" },
-  { icon: MessageSquare, label: "Chat", path: "/partner-chat", featureKey: "module_chat", bottomNav: true },
-  { icon: AlertTriangle, label: "1. Hilfe Kunden Center", path: "/partner-notfall" },
-  { icon: Users, label: "Netzwerk", path: "/partner-connect", bottomNav: false },
-  { icon: Settings, label: "Einstellungen", path: "/partner-settings" },
-  { icon: User, label: "Profil", path: "/partner-profile", bottomNav: true },
+const BOTTOM_NAV_ITEMS = [
+  { Icon: Home, label: "Übersicht", path: "/partner-home" },
+  { Icon: Calendar, label: "Kalender", path: "/partner-calendar" },
+  { Icon: Heart, label: "Pferde", path: "/partner-horses" },
+  { Icon: MessageSquare, label: "Chat", path: "/partner-chat" },
+  { Icon: User, label: "Profil", path: "/partner-profile" },
 ];
 
 export function PartnerAppLayout() {
   const location = useLocation();
-  const { signOut, user } = useAuth();
+  const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { isFeatureVisible, showBetaBadge } = useSubscription();
   const { isOnline, pendingCount } = usePartnerOffline();
   const [menuOpen, setMenuOpen] = useState(false);
-
-  const visibleNavItems = useMemo(() => {
-    return ALL_NAV_ITEMS.filter(item => {
-      if (item.comingSoon) return true;
-      if (!item.featureKey) return true;
-      return isFeatureVisible(item.featureKey);
-    });
-  }, [isFeatureVisible]);
-
-  const bottomNavItems = useMemo(() => {
-    return visibleNavItems.filter(item => item.bottomNav && !item.comingSoon).slice(0, 5);
-  }, [visibleNavItems]);
-
-  const sidebarItems = useMemo(() => {
-    return visibleNavItems;
-  }, [visibleNavItems]);
 
   const isActive = (path: string) => {
     if (path === "/partner-home") return location.pathname === "/partner-home";
     return location.pathname.startsWith(path);
-  };
-
-  const getInitials = (email?: string) => {
-    if (!email) return "P";
-    return email.substring(0, 2).toUpperCase();
   };
 
   return (
@@ -86,10 +101,11 @@ export function PartnerAppLayout() {
       {!isOnline && (
         <div className="bg-destructive text-destructive-foreground text-center text-xs py-2 px-4 flex items-center justify-center gap-2 z-50">
           <WifiOff className="h-3.5 w-3.5" />
-          Du arbeitest offline — Notizen werden lokal gespeichert und synchronisiert sobald du wieder Netz hast.
+          Du arbeitest offline — Notizen werden lokal gespeichert.
           {pendingCount > 0 && <span className="font-semibold">({pendingCount} ausstehend)</span>}
         </div>
       )}
+
       {/* Mobile Header */}
       <header
         className="lg:hidden h-14 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-3"
@@ -110,127 +126,22 @@ export function PartnerAppLayout() {
       </header>
 
       {/* Mobile Sidebar */}
-      <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-        <SheetContent side="left" className="p-0 w-72">
-          <div className="p-4 border-b border-border">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10">
-                <AvatarFallback className="bg-primary/10 text-primary">
-                  {getInitials(user?.email || undefined)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <p className="font-semibold text-sm truncate">{user?.email}</p>
-                <Badge variant="secondary" className="text-xs">Fachpartner</Badge>
-              </div>
-            </div>
-          </div>
-          <nav className="p-2 space-y-1 overflow-auto max-h-[calc(100vh-12rem)]">
-            {sidebarItems.map((item) => (
-              item.comingSoon ? (
-                <div
-                  key={item.path}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground/50 cursor-not-allowed"
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span className="flex-1">{item.label}</span>
-                  <Lock className="h-3 w-3" />
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">Bald</Badge>
-                </div>
-              ) : (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setMenuOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
-                    isActive(item.path)
-                      ? "bg-primary/10 text-primary font-medium"
-                      : "text-muted-foreground hover:bg-muted"
-                  )}
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span className="flex-1">{item.label}</span>
-                  {item.featureKey && showBetaBadge(item.featureKey) && (
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Beta</Badge>
-                  )}
-                </NavLink>
-              )
-            ))}
-          </nav>
-          <Separator className="my-2" />
-          <div className="p-2">
-            <button
-              onClick={() => { signOut(); setMenuOpen(false); }}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-destructive hover:bg-destructive/10 w-full transition-colors"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Abmelden</span>
-            </button>
-          </div>
-        </SheetContent>
-      </Sheet>
+      <MobileAppSidebar
+        open={menuOpen}
+        onOpenChange={setMenuOpen}
+        appName="PartnerApp"
+        userDisplayName={user?.email || "Partner"}
+        navigationConfig={PARTNER_NAV}
+      />
 
-      {/* Desktop Sidebar */}
+      {/* Desktop Layout */}
       <div className="hidden lg:flex min-h-screen">
-        <aside className="w-60 border-r border-border bg-card flex flex-col">
-          <div className="p-4 border-b border-border">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-9 w-9">
-                <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                  {getInitials(user?.email || undefined)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold text-sm truncate">{user?.email}</p>
-                <p className="text-xs text-muted-foreground">PartnerApp</p>
-              </div>
-              <NotificationBell collapsed />
-            </div>
-          </div>
-          <nav className="flex-1 p-2 space-y-1 overflow-auto">
-            {sidebarItems.map((item) => (
-              item.comingSoon ? (
-                <div
-                  key={item.path}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground/50 cursor-not-allowed"
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span className="flex-1">{item.label}</span>
-                  <Lock className="h-3 w-3" />
-                </div>
-              ) : (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-                    isActive(item.path)
-                      ? "bg-primary/10 text-primary font-medium"
-                      : "text-muted-foreground hover:bg-muted"
-                  )}
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span className="flex-1">{item.label}</span>
-                  {item.featureKey && showBetaBadge(item.featureKey) && (
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Beta</Badge>
-                  )}
-                  <ChevronRight className="h-3.5 w-3.5 opacity-50" />
-                </NavLink>
-              )
-            ))}
-          </nav>
-          <div className="p-2 border-t border-border">
-            <button
-              onClick={() => signOut()}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-destructive hover:bg-destructive/10 w-full transition-colors"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Abmelden</span>
-            </button>
-          </div>
-        </aside>
-        <main className="flex-1 overflow-auto p-6">
+        <AppSidebar
+          appName="PartnerApp"
+          userDisplayName={user?.email || "Partner"}
+          navigationConfig={PARTNER_NAV}
+        />
+        <main className="flex-1 overflow-auto p-6 ml-60">
           <ErrorBoundary name="PartnerApp">
             <Outlet />
           </ErrorBoundary>
@@ -250,7 +161,7 @@ export function PartnerAppLayout() {
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         <div className="flex items-center justify-around h-16 px-2">
-          {bottomNavItems.map((item) => (
+          {BOTTOM_NAV_ITEMS.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
@@ -259,14 +170,13 @@ export function PartnerAppLayout() {
                 isActive(item.path) ? "text-primary" : "text-muted-foreground"
               )}
             >
-              <item.icon className={cn("h-5 w-5 mb-1 transition-transform", isActive(item.path) && "scale-110")} />
+              <item.Icon className={cn("h-5 w-5 mb-1 transition-transform", isActive(item.path) && "scale-110")} />
               <span className="text-[10px] font-medium">{item.label}</span>
             </NavLink>
           ))}
         </div>
       </nav>
 
-      {/* Hufi KI-Assistent */}
       <AIChatWidget />
     </div>
   );
