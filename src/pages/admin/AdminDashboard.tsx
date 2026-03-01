@@ -19,8 +19,10 @@ import { AdminSystemDoku } from "@/components/admin/AdminSystemDoku";
 import { AdminKIDataHub } from "@/components/admin/AdminKIDataHub";
 import { AdminRevenue } from "@/components/admin/AdminRevenue";
 import { AdminConnections } from "@/components/admin/AdminConnections";
+import { AdminHealthDashboard } from "@/components/admin/AdminHealthDashboard";
+import { HeartPulse } from "lucide-react";
 
-type AdminView = "users" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "connections" | "domains";
+type AdminView = "users" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "connections" | "domains" | "self-healing";
 
 const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "users", label: "User-DB", icon: Users },
@@ -33,6 +35,7 @@ const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ cla
   { id: "domains", label: "Domains", icon: Globe },
   { id: "dev", label: "Dev-Zentrale", icon: Bug },
   { id: "health", label: "System-Health", icon: Activity },
+  { id: "self-healing", label: "Self-Healing", icon: HeartPulse },
 ];
 
 export default function AdminDashboard() {
@@ -212,6 +215,7 @@ export default function AdminDashboard() {
         {activeView === "ki-hub" && <AdminKIDataHub />}
         {activeView === "dev" && <AdminDevZentrale />}
         {activeView === "health" && <AdminSystemHealth />}
+        {activeView === "self-healing" && <AdminHealthDashboard />}
       </main>
 
       {/* Quick Note FAB */}

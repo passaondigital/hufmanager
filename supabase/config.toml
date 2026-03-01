@@ -95,3 +95,6 @@ verify_jwt = false
 
 [functions.check-domain-waitlist]
 verify_jwt = false
+
+[functions.system-health-check]
+verify_jwt = false
