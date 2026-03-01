@@ -78,6 +78,9 @@ import AdminEmployeeOverview from "@/components/admin/AdminEmployeeOverview";
 import { AdminRevenue } from "@/components/admin/AdminRevenue";
 import { RetentionDashboard } from "@/components/admin/RetentionDashboard";
 import { AdminHufrenteOverview } from "@/components/admin/AdminHufrenteOverview";
+import { AdminManualPayments } from "@/components/admin/AdminManualPayments";
+import { AdminContractTracking } from "@/components/admin/AdminContractTracking";
+import { isDemoEmail } from "@/lib/demo-accounts";
 
 // Horse icon fallback since lucide doesn't have it
 const Horse = () => (
@@ -464,7 +467,7 @@ export default function MissionControl() {
         };
       });
 
-      setProviders(providersWithData);
+      setProviders(providersWithData.filter(p => !isDemoEmail(p.email)));
 
       // Fetch HM Connect stats
       try {
@@ -1080,7 +1083,7 @@ export default function MissionControl() {
         </Card>
 
         {/* KPI Dashboard */}
-        <MissionControlKPIs providers={providers} connectStats={connectStats} />
+        <MissionControlKPIs />
 
         <Tabs defaultValue="providers" className="space-y-4 md:space-y-6">
           {/* Tabs - Horizontally scrollable on mobile */}
@@ -1149,6 +1152,14 @@ export default function MissionControl() {
               <TabsTrigger value="hufrente" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
                 <Shield className="w-4 h-4" />
                 <span className="hidden md:inline">Hufrente</span>
+              </TabsTrigger>
+              <TabsTrigger value="payments" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <Euro className="w-4 h-4" />
+                <span className="hidden md:inline">Zahlungen</span>
+              </TabsTrigger>
+              <TabsTrigger value="compliance" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <Shield className="w-4 h-4" />
+                <span className="hidden md:inline">Compliance</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -2180,6 +2191,14 @@ export default function MissionControl() {
 
           <TabsContent value="hufrente" className="space-y-6">
             <AdminHufrenteOverview />
+          </TabsContent>
+
+          <TabsContent value="payments" className="space-y-6">
+            <AdminManualPayments />
+          </TabsContent>
+
+          <TabsContent value="compliance" className="space-y-6">
+            <AdminContractTracking />
           </TabsContent>
 
           {/* ESCALATIONS TAB */}

@@ -318,8 +318,8 @@ export function AdminRevenue() {
         return isWithinInterval(rd, { start: mStart, end: mEnd }) && (r.event_type === "payment" || r.event_type === "subscription_payment");
       }).reduce((s, r) => s + r.amount, 0);
 
-      // If no webhook data for this month, estimate from current MRR
-      const einnahmen = monthPayments > 0 ? monthPayments : (i === 0 ? monthlyRevenue : Math.round(monthlyRevenue * Math.max(0.3, 1 - i * 0.1) * 100) / 100);
+      // Only show real data - no estimates
+      const einnahmen = monthPayments;
 
       months.push({
         month: label,
