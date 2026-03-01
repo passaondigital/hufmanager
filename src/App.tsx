@@ -17,6 +17,7 @@ import { ProfileGuardianScreen } from "@/components/auth/ProfileGuardianScreen";
 import { createIDBPersister, initImageSyncManager, QUERY_CACHE_MAX_AGE, STATIC_QUERY_KEYS } from "@/lib/offline";
 import { initSyncManager } from "@/lib/offline/syncManager";
 import { Loader2 } from "lucide-react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Eagerly loaded core pages
 import Index from "@/pages/Index";
@@ -180,13 +181,15 @@ function App() {
         },
       }}
     >
-      <ThemeProvider defaultTheme="dark">
-        <BrowserRouter>
-          <AuthProvider>
-            <AppContent queryClient={queryClient} />
-          </AuthProvider>
-        </BrowserRouter>
-      </ThemeProvider>
+      <ErrorBoundary name="App">
+        <ThemeProvider defaultTheme="dark">
+          <BrowserRouter>
+            <AuthProvider>
+              <AppContent queryClient={queryClient} />
+            </AuthProvider>
+          </BrowserRouter>
+        </ThemeProvider>
+      </ErrorBoundary>
     </PersistQueryClientProvider>
   );
 }
