@@ -1,25 +1,12 @@
-import { useState, useEffect } from "react";
-import { Outlet, useLocation, NavLink, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Outlet, useLocation, NavLink } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useEmployeeProfile } from "@/hooks/useEmployees";
+import { useEmployeeOffline } from "@/hooks/useEmployeeOffline";
 import {
-  Home,
-  Route,
-  Camera,
-  Notebook,
-  User,
-  Menu,
-  Sun,
-  Moon,
-  LogOut,
-  Clock,
-  ClipboardList,
-  MessageSquare,
-  Package,
-  CalendarOff,
-  FileText,
-  ChevronRight,
-  ShoppingBag,
+  Home, Route, Camera, Notebook, User, Menu, Sun, Moon, LogOut,
+  Clock, ClipboardList, MessageSquare, Package, CalendarOff,
+  FileText, ChevronRight, ShoppingBag, WifiOff, RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -29,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/ThemeProvider";
 import { Loader2 } from "lucide-react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const getBottomNavItems = (permissions: Record<string, boolean>) => {
   const items = [
@@ -80,6 +68,7 @@ export function EmployeeAppLayout() {
   const { data: profile, isLoading } = useEmployeeProfile();
   const { theme, toggleTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { isOnline, pendingCount } = useEmployeeOffline();
 
   const isActive = (path: string) => {
     if (path === "/employee") return location.pathname === "/employee";
@@ -116,6 +105,22 @@ export function EmployeeAppLayout() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      {/* Offline Banner */}
+      {!isOnline && (
+        <div className="bg-destructive text-destructive-foreground text-center text-xs py-2 px-4 flex items-center justify-center gap-2">
+          <WifiOff className="h-3.5 w-3.5" />
+          <span>Du arbeitest offline — Dokumentation und Check-ins werden lokal gespeichert und synchronisiert sobald du wieder Netz hast.</span>
+        </div>
+      )}
+
+      {/* Sync pending banner */}
+      {isOnline && pendingCount > 0 && (
+        <div className="bg-accent text-accent-foreground text-center text-xs py-1.5 px-4 flex items-center justify-center gap-2">
+          <RefreshCw className="h-3 w-3 animate-spin" />
+          <span>{pendingCount} Einträge werden synchronisiert...</span>
+        </div>
+      )}
+
       {/* Mobile Header */}
       <header
         className="lg:hidden h-14 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-3"
@@ -228,13 +233,17 @@ export function EmployeeAppLayout() {
         </aside>
 
         <main className="flex-1 overflow-auto p-6">
-          <Outlet />
+          <ErrorBoundary name="EmployeeApp">
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
 
       {/* Mobile Content */}
       <main className="flex-1 overflow-auto p-4 pb-24 lg:hidden">
-        <Outlet />
+        <ErrorBoundary name="EmployeeApp-Mobile">
+          <Outlet />
+        </ErrorBoundary>
       </main>
 
       {/* Mobile Bottom Nav */}

@@ -2167,6 +2167,44 @@ export type Database = {
           },
         ]
       }
+      employee_conversations: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: string
+          last_message_at: string | null
+          provider_id: string
+          subject: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: string
+          last_message_at?: string | null
+          provider_id: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: string
+          last_message_at?: string | null
+          provider_id?: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_conversations_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_documentation: {
         Row: {
           assignment_id: string
@@ -2314,6 +2352,41 @@ export type Database = {
           },
         ]
       }
+      employee_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          is_read: boolean | null
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "employee_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_profiles: {
         Row: {
           avatar_url: string | null
@@ -2413,6 +2486,41 @@ export type Database = {
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_sync_queue: {
+        Row: {
+          action_type: string
+          created_at: string
+          employee_id: string
+          id: string
+          payload: Json
+          synced_at: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          payload?: Json
+          synced_at?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          payload?: Json
+          synced_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_sync_queue_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -7726,6 +7834,10 @@ export type Database = {
       }
       delete_client_cascade: {
         Args: { _client_id: string }
+        Returns: undefined
+      }
+      delete_employee_account: {
+        Args: { _employee_user_id: string }
         Returns: undefined
       }
       delete_horse_safe: { Args: { _horse_id: string }; Returns: undefined }

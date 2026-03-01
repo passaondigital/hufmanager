@@ -10,38 +10,32 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
 import {
-  User,
-  Mail,
-  Phone,
-  Calendar,
-  Briefcase,
-  Shield,
-  LogOut,
-  CheckCircle,
-  XCircle,
-  Key,
-  Loader2,
-  Download,
+  User, Mail, Phone, Calendar, Briefcase, Shield, LogOut,
+  CheckCircle, XCircle, Key, Loader2, Download, Trash2, AlertTriangle,
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
 
 const EmployeeProfil = () => {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const { data: profile } = useEmployeeProfile();
   const { toast } = useToast();
   const [showPwDialog, setShowPwDialog] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPw, setChangingPw] = useState(false);
+
+  // DSGVO deletion state
+  const [showDeleteStep1, setShowDeleteStep1] = useState(false);
+  const [showDeleteStep2, setShowDeleteStep2] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   if (!profile) return null;
 
@@ -89,6 +83,25 @@ const EmployeeProfil = () => {
       setShowPwDialog(false);
       setNewPassword("");
       setConfirmPassword("");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== "LÖSCHEN" || !user?.id) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase.rpc("delete_employee_account", {
+        _employee_user_id: user.id,
+      });
+      if (error) throw error;
+
+      toast({ title: "Konto gelöscht", description: "Dein Konto und deine Daten wurden gelöscht." });
+      await signOut();
+      navigate("/");
+    } catch (err: any) {
+      toast({ title: "Fehler", description: err.message || "Konto konnte nicht gelöscht werden.", variant: "destructive" });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -202,6 +215,24 @@ const EmployeeProfil = () => {
         Abmelden
       </Button>
 
+      {/* DSGVO: Account deletion */}
+      <Separator />
+      <Card className="border-destructive/30">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3 mb-2">
+            <Trash2 className="h-4 w-4 text-destructive" />
+            <span className="text-sm font-medium text-destructive">Konto & Daten löschen</span>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            Lösche dein Mitarbeiterkonto und alle damit verbundenen Daten unwiderruflich. 
+            Die Betriebsdaten deines Providers bleiben erhalten.
+          </p>
+          <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setShowDeleteStep1(true)}>
+            Konto löschen
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Password Change Dialog */}
       <Dialog open={showPwDialog} onOpenChange={setShowPwDialog}>
         <DialogContent>
@@ -223,6 +254,86 @@ const EmployeeProfil = () => {
             <Button onClick={handlePasswordChange} disabled={changingPw || !newPassword}>
               {changingPw && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Ändern
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Step 1: Warning */}
+      <Dialog open={showDeleteStep1} onOpenChange={setShowDeleteStep1}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Konto löschen — Was wird entfernt?
+            </DialogTitle>
+            <DialogDescription>
+              Diese Aktion kann nicht rückgängig gemacht werden.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p className="font-medium">Folgende Daten werden gelöscht:</p>
+            <ul className="space-y-1.5 text-muted-foreground">
+              <li className="flex items-center gap-2">
+                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                Dein Mitarbeiterprofil und Login
+              </li>
+              <li className="flex items-center gap-2">
+                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                Alle offenen Aufträge (werden storniert)
+              </li>
+              <li className="flex items-center gap-2">
+                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                Deine Dokumentationen und Befunde
+              </li>
+              <li className="flex items-center gap-2">
+                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                Abwesenheitsanträge und Materialzuweisungen
+              </li>
+            </ul>
+            <div className="p-3 bg-muted/50 rounded-lg text-xs">
+              <p className="font-medium mb-1">Was bleibt erhalten:</p>
+              <p className="text-muted-foreground">
+                Betriebsdaten deines Providers (Kunden, Pferde, Rechnungen) bleiben unberührt. 
+                Dein Provider wird über die Löschung benachrichtigt.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteStep1(false)}>Abbrechen</Button>
+            <Button variant="destructive" onClick={() => { setShowDeleteStep1(false); setShowDeleteStep2(true); }}>
+              Ich verstehe — weiter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Step 2: Confirmation */}
+      <Dialog open={showDeleteStep2} onOpenChange={(open) => { setShowDeleteStep2(open); if (!open) setDeleteConfirmText(""); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Endgültige Bestätigung</DialogTitle>
+            <DialogDescription>
+              Tippe <span className="font-mono font-bold">LÖSCHEN</span> ein, um dein Konto unwiderruflich zu löschen.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            placeholder='Tippe "LÖSCHEN" ein'
+            className="font-mono"
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowDeleteStep2(false); setDeleteConfirmText(""); }}>
+              Abbrechen
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleteConfirmText !== "LÖSCHEN" || deleting}
+              onClick={handleDeleteAccount}
+            >
+              {deleting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Konto endgültig löschen
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -13,16 +13,41 @@ const EmployeeAnalyse = () => {
   const [selectedHorseId, setSelectedHorseId] = useState<string | null>(null);
   const [showWizard, setShowWizard] = useState(false);
 
-  // Fetch horses accessible via assignments
+  // Fetch ONLY horses assigned to this employee via employee_assignments
   const { data: horses = [] } = useQuery({
     queryKey: ["employee-horses-analyse", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      // Get horses from assigned appointments
+
+      // First get employee profile id
+      const { data: empProfile } = await supabase
+        .from("employee_profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!empProfile?.id) return [];
+
+      // Get horse IDs from assignments
+      const { data: assignments } = await supabase
+        .from("employee_assignments")
+        .select("appointment:appointments(horse_id)")
+        .eq("employee_id", empProfile.id);
+
+      const horseIds = [...new Set(
+        (assignments || [])
+          .map((a: any) => a.appointment?.horse_id)
+          .filter(Boolean)
+      )];
+
+      if (horseIds.length === 0) return [];
+
       const { data } = await supabase
         .from("horses")
         .select("id, name, breed")
+        .in("id", horseIds)
         .is("deleted_at", null);
+
       return data || [];
     },
     enabled: !!user?.id,
