@@ -493,8 +493,8 @@ lovable-badge,
 
 /* ─── Mobile Performance Optimizations ─────────────────────────── */
 
-/* Eliminate 300ms tap delay on all touch targets */
-* {
+/* Eliminate 300ms tap delay on interactive elements only (not on scrollable content) */
+button, a, [role="button"], label, input, select, textarea, [tabindex] {
   touch-action: manipulation;
 }
 
@@ -503,13 +503,10 @@ button, a, [role="button"], label, input[type="checkbox"], input[type="radio"] {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Smooth momentum scrolling & contain overscroll */
+/* Smooth momentum scrolling */
 .scrollable,
-[data-radix-scroll-area-viewport],
-.overflow-y-auto,
-.overflow-auto {
+[data-radix-scroll-area-viewport] {
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
 }
 
 /* GPU-accelerated animations only */
