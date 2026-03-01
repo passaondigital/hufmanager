@@ -5,7 +5,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import {
   Home, Heart, FileText, MessageSquare, User, Menu, LogOut, Sun, Moon,
   ChevronRight, Calendar, Upload, ClipboardList, Receipt, Briefcase,
-  Settings, BarChart3, Map as MapIcon, GraduationCap, Sparkles, AlertTriangle,
+  Settings, AlertTriangle, Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -15,18 +15,18 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/ThemeProvider";
 import { FeatureKey } from "@/types/featureFlags";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 interface NavItem {
   icon: React.ElementType;
   label: string;
   path: string;
-  /** If set, item is only visible when this feature is accessible */
   featureKey?: FeatureKey;
-  /** Show in bottom nav on mobile */
   bottomNav?: boolean;
+  comingSoon?: boolean;
 }
 
-// All possible navigation items – visibility controlled by feature flags
 const ALL_NAV_ITEMS: NavItem[] = [
   { icon: Home, label: "Übersicht", path: "/partner-home", bottomNav: true },
   { icon: Calendar, label: "Kalender", path: "/partner-calendar", featureKey: "module_invoicing", bottomNav: true },
@@ -38,9 +38,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { icon: Receipt, label: "Rechnungen", path: "/partner-invoices", featureKey: "module_invoicing" },
   { icon: MessageSquare, label: "Chat", path: "/partner-chat", featureKey: "module_chat", bottomNav: true },
   { icon: AlertTriangle, label: "1. Hilfe Kunden Center", path: "/partner-notfall" },
-  { icon: MapIcon, label: "Karte / Navigation", path: "/partner-maps", featureKey: "module_maps" },
-  { icon: BarChart3, label: "Analytics", path: "/partner-analytics", featureKey: "module_analytics" },
-  { icon: GraduationCap, label: "Academy", path: "/partner-academy", featureKey: "module_academy" },
+  // Coming soon items — visible but disabled
   { icon: Settings, label: "Einstellungen", path: "/partner-settings" },
   { icon: User, label: "Profil", path: "/partner-profile", bottomNav: true },
 ];
@@ -52,16 +50,16 @@ export function PartnerAppLayout() {
   const { isFeatureVisible, showBetaBadge } = useSubscription();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Filter nav items based on feature flags
   const visibleNavItems = useMemo(() => {
     return ALL_NAV_ITEMS.filter(item => {
+      if (item.comingSoon) return true;
       if (!item.featureKey) return true;
       return isFeatureVisible(item.featureKey);
     });
   }, [isFeatureVisible]);
 
   const bottomNavItems = useMemo(() => {
-    return visibleNavItems.filter(item => item.bottomNav).slice(0, 5);
+    return visibleNavItems.filter(item => item.bottomNav && !item.comingSoon).slice(0, 5);
   }, [visibleNavItems]);
 
   const sidebarItems = useMemo(() => {
@@ -91,9 +89,12 @@ export function PartnerAppLayout() {
           </Button>
           <span className="font-semibold text-sm">PartnerApp</span>
         </div>
-        <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-10 w-10">
-          {theme === "dark" ? <Sun className="h-5 w-5 text-primary" /> : <Moon className="h-5 w-5 text-muted-foreground" />}
-        </Button>
+        <div className="flex items-center gap-1">
+          <NotificationBell />
+          <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-10 w-10">
+            {theme === "dark" ? <Sun className="h-5 w-5 text-primary" /> : <Moon className="h-5 w-5 text-muted-foreground" />}
+          </Button>
+        </div>
       </header>
 
       {/* Mobile Sidebar */}
@@ -114,23 +115,35 @@ export function PartnerAppLayout() {
           </div>
           <nav className="p-2 space-y-1 overflow-auto max-h-[calc(100vh-12rem)]">
             {sidebarItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                onClick={() => setMenuOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
-                  isActive(item.path)
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-muted-foreground hover:bg-muted"
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                <span className="flex-1">{item.label}</span>
-                {item.featureKey && showBetaBadge(item.featureKey) && (
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Beta</Badge>
-                )}
-              </NavLink>
+              item.comingSoon ? (
+                <div
+                  key={item.path}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground/50 cursor-not-allowed"
+                >
+                  <item.icon className="h-4 w-4" />
+                  <span className="flex-1">{item.label}</span>
+                  <Lock className="h-3 w-3" />
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">Bald</Badge>
+                </div>
+              ) : (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setMenuOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
+                    isActive(item.path)
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-muted-foreground hover:bg-muted"
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  <span className="flex-1">{item.label}</span>
+                  {item.featureKey && showBetaBadge(item.featureKey) && (
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Beta</Badge>
+                  )}
+                </NavLink>
+              )
             ))}
           </nav>
           <Separator className="my-2" />
@@ -156,31 +169,43 @@ export function PartnerAppLayout() {
                   {getInitials(user?.email || undefined)}
                 </AvatarFallback>
               </Avatar>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="font-semibold text-sm truncate">{user?.email}</p>
                 <p className="text-xs text-muted-foreground">PartnerApp</p>
               </div>
+              <NotificationBell collapsed />
             </div>
           </div>
           <nav className="flex-1 p-2 space-y-1 overflow-auto">
             {sidebarItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-                  isActive(item.path)
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-muted-foreground hover:bg-muted"
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                <span className="flex-1">{item.label}</span>
-                {item.featureKey && showBetaBadge(item.featureKey) && (
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Beta</Badge>
-                )}
-                <ChevronRight className="h-3.5 w-3.5 opacity-50" />
-              </NavLink>
+              item.comingSoon ? (
+                <div
+                  key={item.path}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground/50 cursor-not-allowed"
+                >
+                  <item.icon className="h-4 w-4" />
+                  <span className="flex-1">{item.label}</span>
+                  <Lock className="h-3 w-3" />
+                </div>
+              ) : (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                    isActive(item.path)
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-muted-foreground hover:bg-muted"
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  <span className="flex-1">{item.label}</span>
+                  {item.featureKey && showBetaBadge(item.featureKey) && (
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Beta</Badge>
+                  )}
+                  <ChevronRight className="h-3.5 w-3.5 opacity-50" />
+                </NavLink>
+              )
             ))}
           </nav>
           <div className="p-2 border-t border-border">
@@ -194,13 +219,17 @@ export function PartnerAppLayout() {
           </div>
         </aside>
         <main className="flex-1 overflow-auto p-6">
-          <Outlet />
+          <ErrorBoundary name="PartnerApp">
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
 
       {/* Mobile Content */}
       <main className="flex-1 overflow-auto p-4 pb-24 lg:hidden">
-        <Outlet />
+        <ErrorBoundary name="PartnerApp-Mobile">
+          <Outlet />
+        </ErrorBoundary>
       </main>
 
       {/* Mobile Bottom Nav */}

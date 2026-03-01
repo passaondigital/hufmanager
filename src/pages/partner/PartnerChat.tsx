@@ -25,7 +25,7 @@ export default function PartnerChat() {
   const [newChatSubject, setNewChatSubject] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Fetch conversations
+  // Fetch conversations with unread counts
   const { data: conversations = [], isLoading: convsLoading } = useQuery({
     queryKey: ["partner-conversations", user?.id],
     queryFn: async () => {
@@ -36,22 +36,47 @@ export default function PartnerChat() {
         .order("last_message_at", { ascending: false, nullsFirst: false });
       if (error) throw error;
 
+      const convs = data || [];
+
       // Fetch profile names for counterparts
-      const ids = (data || []).map((c: any) => c.partner_id === user!.id ? c.counterpart_id : c.partner_id);
+      const ids = convs.map((c: any) => c.partner_id === user!.id ? c.counterpart_id : c.partner_id);
       const uniqueIds = [...new Set(ids)];
+      
+      let profileMap = new Map();
       if (uniqueIds.length > 0) {
         const { data: profiles } = await supabase
           .from("profiles")
           .select("id, full_name, readable_id")
           .in("id", uniqueIds);
-        const profileMap = new Map((profiles || []).map(p => [p.id, p]));
-        return (data || []).map((c: any) => {
-          const otherId = c.partner_id === user!.id ? c.counterpart_id : c.partner_id;
-          const profile = profileMap.get(otherId);
-          return { ...c, counterpart_name: profile?.full_name || "Unbekannt", counterpart_readable_id: profile?.readable_id };
+        profileMap = new Map((profiles || []).map(p => [p.id, p]));
+      }
+
+      // Fetch unread counts per conversation
+      const convIds = convs.map((c: any) => c.id);
+      let unreadMap = new Map<string, number>();
+      if (convIds.length > 0) {
+        const { data: unreadData } = await supabase
+          .from("partner_messages")
+          .select("conversation_id")
+          .in("conversation_id", convIds)
+          .neq("sender_id", user!.id)
+          .eq("is_read", false);
+        
+        (unreadData || []).forEach((msg: any) => {
+          unreadMap.set(msg.conversation_id, (unreadMap.get(msg.conversation_id) || 0) + 1);
         });
       }
-      return data || [];
+
+      return convs.map((c: any) => {
+        const otherId = c.partner_id === user!.id ? c.counterpart_id : c.partner_id;
+        const profile = profileMap.get(otherId);
+        return {
+          ...c,
+          counterpart_name: profile?.full_name || "Unbekannt",
+          counterpart_readable_id: profile?.readable_id,
+          unread_count: unreadMap.get(c.id) || 0,
+        };
+      });
     },
     enabled: !!user,
   });
@@ -67,12 +92,15 @@ export default function PartnerChat() {
         .order("created_at", { ascending: true });
       if (error) throw error;
 
-      // Mark unread as read
+      // Mark unread messages as read
       const unread = (data || []).filter((m: any) => !m.is_read && m.sender_id !== user!.id);
       if (unread.length > 0) {
         await supabase.from("partner_messages")
           .update({ is_read: true })
           .in("id", unread.map((m: any) => m.id));
+        
+        // Refresh conversation list to update unread counts
+        queryClient.invalidateQueries({ queryKey: ["partner-conversations"] });
       }
 
       return data || [];
@@ -153,12 +181,6 @@ export default function PartnerChat() {
 
   const selectedConvData = conversations.find((c: any) => c.id === selectedConv);
 
-  // Unread count per conversation
-  const getUnread = (convId: string) => {
-    // This would need a separate query in production; simplified here
-    return 0;
-  };
-
   return (
     <div className="space-y-4 animate-fade-in h-[calc(100vh-12rem)] lg:h-[calc(100vh-8rem)]">
       <div className="flex items-center justify-between">
@@ -199,11 +221,18 @@ export default function PartnerChat() {
                           {conv.subject || conv.counterpart_readable_id || ""}
                         </p>
                       </div>
-                      {conv.last_message_at && (
-                        <span className="text-[10px] text-muted-foreground">
-                          {format(new Date(conv.last_message_at), "dd.MM.", { locale: de })}
-                        </span>
-                      )}
+                      <div className="flex flex-col items-end gap-1">
+                        {conv.last_message_at && (
+                          <span className="text-[10px] text-muted-foreground">
+                            {format(new Date(conv.last_message_at), "dd.MM.", { locale: de })}
+                          </span>
+                        )}
+                        {conv.unread_count > 0 && (
+                          <span className="bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                            {conv.unread_count > 9 ? "9+" : conv.unread_count}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </button>
                 ))}
