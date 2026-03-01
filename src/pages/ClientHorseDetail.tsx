@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Info, History, Image, Activity, Footprints, FileText, Clock, Users } from "lucide-react";
+import { ArrowLeft, Info, History, Image, Users, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 import { TabSteckbrief } from "@/components/horse-detail/TabSteckbrief";
@@ -152,55 +152,53 @@ export default function ClientHorseDetail() {
           horseId={horse.id}
         />
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-8">
-            <TabsTrigger value="steckbrief" className="flex items-center gap-1.5">
-              <Info className="h-4 w-4" />
-              <span className="hidden sm:inline">Steckbrief</span>
-            </TabsTrigger>
-            <TabsTrigger value="historie" className="flex items-center gap-1.5">
-              <History className="h-4 w-4" />
-              <span className="hidden sm:inline">Historie</span>
-            </TabsTrigger>
-            <TabsTrigger value="huf-historie" className="flex items-center gap-1.5">
-              <Footprints className="h-4 w-4" />
-              <span className="hidden sm:inline">Huf</span>
-            </TabsTrigger>
-            <TabsTrigger value="foto-timeline" className="flex items-center gap-1.5">
-              <Clock className="h-4 w-4" />
-              <span className="hidden sm:inline">Fotos</span>
-            </TabsTrigger>
-            <TabsTrigger value="dokumente" className="flex items-center gap-1.5">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Dokumente</span>
-            </TabsTrigger>
-            <TabsTrigger value="medien" className="flex items-center gap-1.5">
-              <Image className="h-4 w-4" />
-              <span className="hidden sm:inline">Medien</span>
-            </TabsTrigger>
-            <TabsTrigger value="gesundheit" className="flex items-center gap-1.5">
-              <Activity className="h-4 w-4" />
-              <span className="hidden sm:inline">Gesundheit</span>
-            </TabsTrigger>
-            <TabsTrigger value="partner" className="flex items-center gap-1.5">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Partner</span>
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4">
+            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-5">
+              <TabsTrigger value="steckbrief" className="flex items-center gap-1.5 whitespace-nowrap">
+                <Info className="h-4 w-4" />
+                <span>Übersicht</span>
+              </TabsTrigger>
+              <TabsTrigger value="verlauf" className="flex items-center gap-1.5 whitespace-nowrap">
+                <History className="h-4 w-4" />
+                <span>Verlauf</span>
+              </TabsTrigger>
+              <TabsTrigger value="fotos" className="flex items-center gap-1.5 whitespace-nowrap">
+                <Image className="h-4 w-4" />
+                <span>Fotos & Medien</span>
+              </TabsTrigger>
+              <TabsTrigger value="dokumente" className="flex items-center gap-1.5 whitespace-nowrap">
+                <FileText className="h-4 w-4" />
+                <span>Dokumente</span>
+              </TabsTrigger>
+              <TabsTrigger value="betreuer" className="flex items-center gap-1.5 whitespace-nowrap">
+                <Users className="h-4 w-4" />
+                <span>Betreuer</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
+          {/* Übersicht = Steckbrief + Gesundheit */}
           <TabsContent value="steckbrief">
-            <TabSteckbrief horse={horse} onEdit={() => setShowEditModal(true)} />
+            <div className="space-y-6">
+              <TabSteckbrief horse={horse} onEdit={() => setShowEditModal(true)} />
+              <TabGesundheit horse={horse} onEdit={() => setShowEditModal(true)} />
+            </div>
           </TabsContent>
 
-          <TabsContent value="historie">
-            <TabHistorie appointments={appointments} horseId={horse.id} />
+          {/* Verlauf = Historie + Huf */}
+          <TabsContent value="verlauf">
+            <div className="space-y-6">
+              <TabHistorie appointments={appointments} horseId={horse.id} />
+              <TabHufHistorie horseId={horse.id} horseName={horse.name} />
+            </div>
           </TabsContent>
 
-          <TabsContent value="huf-historie">
-            <TabHufHistorie horseId={horse.id} horseName={horse.name} />
-          </TabsContent>
-
-          <TabsContent value="foto-timeline">
-            <HoofPhotoTimeline horseId={horse.id} horseName={horse.name} />
+          {/* Fotos & Medien = Foto-Timeline + Medien */}
+          <TabsContent value="fotos">
+            <div className="space-y-6">
+              <HoofPhotoTimeline horseId={horse.id} horseName={horse.name} />
+              <TabMediaVault horseId={horse.id} />
+            </div>
           </TabsContent>
 
           <TabsContent value="dokumente">
@@ -212,18 +210,7 @@ export default function ClientHorseDetail() {
             />
           </TabsContent>
 
-          <TabsContent value="medien">
-            <TabMediaVault horseId={horse.id} />
-          </TabsContent>
-
-          <TabsContent value="gesundheit">
-            <TabGesundheit 
-              horse={horse} 
-              onEdit={() => setShowEditModal(true)}
-            />
-          </TabsContent>
-
-          <TabsContent value="partner">
+          <TabsContent value="betreuer">
             <HorsePartnerPanel horseId={horse.id} horseName={horse.name} inviterRole="client" />
           </TabsContent>
         </Tabs>

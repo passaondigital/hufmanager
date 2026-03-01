@@ -19,6 +19,7 @@ import { initSyncManager } from "@/lib/offline/syncManager";
 import { Loader2 } from "lucide-react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { TourProvider } from "@/components/tour/TourContext";
+import { ClientErrorFallback as ClientErrorFallbackComponent } from "@/components/client/ClientErrorFallback";
 
 // Eagerly loaded core pages
 import Index from "@/pages/Index";
@@ -453,7 +454,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
   );
 }
 
-// Simple client layout wrapper
+// Simple client layout wrapper with ErrorBoundary
 function ClientLayout() {
   const location = useLocation();
   
@@ -468,7 +469,9 @@ function ClientLayout() {
   
   return (
     <div className="min-h-screen bg-background">
-      <Outlet />
+      <ErrorBoundary name="ClientApp" fallback={<ClientErrorFallbackComponent />}>
+        <Outlet />
+      </ErrorBoundary>
       {HelpCenterFAB && <HelpCenterFAB currentRoute={location.pathname} />}
     </div>
   );
