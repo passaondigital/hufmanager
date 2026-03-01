@@ -38,14 +38,26 @@ const PARTNER_NAV: NavigationConfig = {
           ],
         },
         {
-          id: "finance", number: "3", label: "Finanzen", iconName: "Receipt",
+          id: "auffassen", number: "3", label: "Auffassen", iconName: "ClipboardCheck",
           children: [
-            { label: "Rechnungen", path: "/partner-invoices" },
-            { label: "Mein Angebot", path: "/partner-services" },
+            { label: "Tour Manager", path: "/partner-tour" },
+            { label: "Zeit-Tracking", path: "/partner-work-mode?tab=timer" },
+            { label: "km-Tracker", path: "/partner-work-mode?tab=mileage" },
+            { label: "HufCam Pro", path: "/partner-work-mode?tab=hufcam" },
+            { label: "Hufanalyse", path: "/partner-work-mode?tab=analyse" },
+            { label: "Feedback", path: "/partner-feedback" },
           ],
         },
         {
-          id: "communication", number: "4", label: "Kommunikation", iconName: "MessageSquare",
+          id: "finance", number: "4", label: "Finanzen", iconName: "Receipt",
+          children: [
+            { label: "Rechnungen", path: "/partner-invoices" },
+            { label: "Mein Angebot", path: "/partner-services" },
+            { label: "Fuhrpark", path: "/partner-fuhrpark" },
+          ],
+        },
+        {
+          id: "communication", number: "5", label: "Kommunikation", iconName: "MessageSquare",
           children: [
             { label: "Chat", path: "/partner-chat" },
             { label: "1. Hilfe Kunden Center", path: "/partner-notfall" },

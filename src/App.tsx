@@ -455,6 +455,10 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner-profile" element={<PartnerProfile />} />
               <Route path="/partner-notfall" element={<EmergencyDashboard />} />
               <Route path="/partner-connect" element={<PartnerConnect />} />
+              <Route path="/partner-tour" element={<Tour />} />
+              <Route path="/partner-work-mode" element={<WorkMode />} />
+              <Route path="/partner-feedback" element={<Auffassen />} />
+              <Route path="/partner-fuhrpark" element={<Fuhrpark />} />
             </Route>
 
             {/* Fallback für alles andere */}
