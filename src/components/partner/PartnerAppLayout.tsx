@@ -13,6 +13,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
 import { AppSidebar, MobileAppSidebar, NavigationConfig } from "@/components/shared/AppSidebar";
+import { AppHeader } from "@/components/layout/AppHeader";
 
 const PARTNER_NAV: NavigationConfig = {
   directItems: [
@@ -141,11 +142,14 @@ export function PartnerAppLayout() {
           userDisplayName={user?.email || "Partner"}
           navigationConfig={PARTNER_NAV}
         />
-        <main className="flex-1 overflow-auto p-6 ml-60">
-          <ErrorBoundary name="PartnerApp">
-            <Outlet />
-          </ErrorBoundary>
-        </main>
+        <div className="flex-1 flex flex-col ml-60">
+          <AppHeader />
+          <main className="flex-1 overflow-auto p-6">
+            <ErrorBoundary name="PartnerApp">
+              <Outlet />
+            </ErrorBoundary>
+          </main>
+        </div>
       </div>
 
       {/* Mobile Content */}
