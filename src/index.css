@@ -388,12 +388,41 @@ lovable-badge,
 
 /* Bottom navigation spacer - add to main content */
 .pb-bottom-nav {
-  padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
 }
 
 @media (min-width: 1024px) {
   .pb-bottom-nav {
     padding-bottom: 0;
+  }
+}
+
+/* ============================================
+   MOBILE-NATIVE GLOBAL RULES
+   Applied everywhere for farmyard/glove usage
+   ============================================ */
+
+/* Ensure no zoom on input focus (iOS) */
+@media (max-width: 1023px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+  
+  /* Global minimum touch targets */
+  button, a, [role="button"], [role="tab"], [role="menuitem"] {
+    min-height: 44px;
+  }
+  
+  /* Cards: full width, proper internal spacing */
+  .mobile-card {
+    @apply w-full rounded-xl p-4;
+    min-height: 72px;
+  }
+  
+  /* List items: proper height for glove tapping */
+  .mobile-list-item {
+    @apply w-full py-3 px-4;
+    min-height: 64px;
   }
 }
 

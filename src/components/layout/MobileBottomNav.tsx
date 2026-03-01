@@ -62,7 +62,7 @@ export function MobileBottomNav() {
           paddingBottom: "env(safe-area-inset-bottom, 0px)" 
         }}
       >
-        <div className="flex items-center justify-around h-16 px-2">
+        <div className="flex items-center justify-around h-[72px] px-1">
           {navItems.slice(0, 2).map((item) => (
             <NavLink
               key={item.path}
@@ -75,10 +75,13 @@ export function MobileBottomNav() {
               )}
             >
               <item.icon className={cn(
-                "h-5 w-5 mb-1 transition-transform",
+                "h-7 w-7 mb-1 transition-transform",
                 isActive(item.path) && "scale-110"
               )} />
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <span className={cn(
+                "text-xs font-medium",
+                isActive(item.path) && "font-bold"
+              )}>{item.label}</span>
             </NavLink>
           ))}
           
@@ -86,10 +89,10 @@ export function MobileBottomNav() {
           {role !== "client" && (
             <button
               onClick={() => setShowQuickActions(true)}
-              className="flex items-center justify-center -mt-5 z-10"
+              className="flex items-center justify-center -mt-6 z-10"
             >
-              <div className="w-14 h-14 rounded-full bg-primary shadow-lg shadow-primary/30 flex items-center justify-center">
-                <Plus className="h-7 w-7 text-primary-foreground" />
+              <div className="w-16 h-16 rounded-full bg-primary shadow-lg shadow-primary/30 flex items-center justify-center">
+                <Plus className="h-8 w-8 text-primary-foreground" />
               </div>
             </button>
           )}
@@ -106,10 +109,13 @@ export function MobileBottomNav() {
               )}
             >
               <item.icon className={cn(
-                "h-5 w-5 mb-1 transition-transform",
+                "h-7 w-7 mb-1 transition-transform",
                 isActive(item.path) && "scale-110"
               )} />
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <span className={cn(
+                "text-xs font-medium",
+                isActive(item.path) && "font-bold"
+              )}>{item.label}</span>
             </NavLink>
           ))}
         </div>
