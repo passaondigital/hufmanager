@@ -6,6 +6,8 @@ import IdentitySection from "@/components/website/IdentitySection";
 import HorseEcosystem from "@/components/website/HorseEcosystem";
 import SolutionSection from "@/components/website/SolutionSection";
 import EcosystemSection from "@/components/website/EcosystemSection";
+import AudienceTabsSection from "@/components/website/AudienceTabsSection";
+import { DataSovereigntyBadge } from "@/components/shared/DataSovereigntyBadge";
 import PillarsSection from "@/components/website/PillarsSection";
 import OfflineSection from "@/components/website/OfflineSection";
 import DemoSection from "@/components/website/DemoSection";
@@ -38,6 +40,12 @@ const WebsiteHome = () => {
       <HorseEcosystem />
       <SolutionSection />
       <EcosystemSection />
+      <AudienceTabsSection />
+      <section className="py-16 bg-zinc-950">
+        <div className="container max-w-3xl">
+          <DataSovereigntyBadge />
+        </div>
+      </section>
       <PillarsSection />
       <OfflineSection />
       <DemoSection />
