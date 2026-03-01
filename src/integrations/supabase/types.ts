@@ -1449,6 +1449,63 @@ export type Database = {
           },
         ]
       }
+      customer_domains: {
+        Row: {
+          auto_renew: boolean | null
+          created_at: string | null
+          dns_records: Json | null
+          domain_name: string
+          expires_at: string | null
+          id: string
+          nameservers: Json | null
+          owner_id: string
+          owner_type: string
+          price_paid_cents: number | null
+          registered_at: string | null
+          registrar_reference: string | null
+          renewal_price_cents: number | null
+          status: string
+          tld: string
+          updated_at: string | null
+        }
+        Insert: {
+          auto_renew?: boolean | null
+          created_at?: string | null
+          dns_records?: Json | null
+          domain_name: string
+          expires_at?: string | null
+          id?: string
+          nameservers?: Json | null
+          owner_id: string
+          owner_type?: string
+          price_paid_cents?: number | null
+          registered_at?: string | null
+          registrar_reference?: string | null
+          renewal_price_cents?: number | null
+          status?: string
+          tld: string
+          updated_at?: string | null
+        }
+        Update: {
+          auto_renew?: boolean | null
+          created_at?: string | null
+          dns_records?: Json | null
+          domain_name?: string
+          expires_at?: string | null
+          id?: string
+          nameservers?: Json | null
+          owner_id?: string
+          owner_type?: string
+          price_paid_cents?: number | null
+          registered_at?: string | null
+          registrar_reference?: string | null
+          renewal_price_cents?: number | null
+          status?: string
+          tld?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       daily_tours: {
         Row: {
           created_at: string | null
@@ -1566,6 +1623,119 @@ export type Database = {
           metadata?: Json | null
           page_path?: string | null
           user_email?: string
+        }
+        Relationships: []
+      }
+      domain_orders: {
+        Row: {
+          amount_cents: number
+          created_at: string | null
+          domain_id: string | null
+          domain_name: string
+          id: string
+          order_type: string
+          owner_id: string
+          payment_reference: string | null
+          status: string
+          tld: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string | null
+          domain_id?: string | null
+          domain_name: string
+          id?: string
+          order_type: string
+          owner_id: string
+          payment_reference?: string | null
+          status?: string
+          tld: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string | null
+          domain_id?: string | null
+          domain_name?: string
+          id?: string
+          order_type?: string
+          owner_id?: string
+          payment_reference?: string | null
+          status?: string
+          tld?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "domain_orders_domain_id_fkey"
+            columns: ["domain_id"]
+            isOneToOne: false
+            referencedRelation: "customer_domains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      domain_products: {
+        Row: {
+          created_at: string | null
+          display_name: string
+          id: string
+          is_available: boolean | null
+          is_featured: boolean | null
+          register_price_cents: number
+          renewal_price_cents: number
+          sort_order: number | null
+          tld: string
+          transfer_price_cents: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_name: string
+          id?: string
+          is_available?: boolean | null
+          is_featured?: boolean | null
+          register_price_cents: number
+          renewal_price_cents: number
+          sort_order?: number | null
+          tld: string
+          transfer_price_cents?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string
+          id?: string
+          is_available?: boolean | null
+          is_featured?: boolean | null
+          register_price_cents?: number
+          renewal_price_cents?: number
+          sort_order?: number | null
+          tld?: string
+          transfer_price_cents?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      domain_waitlist: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          owner_id: string
+          owner_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          owner_id: string
+          owner_type?: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          owner_id?: string
+          owner_type?: string
         }
         Relationships: []
       }
