@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { MessageSquare, Send, Plus, Loader2, ArrowLeft } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -74,6 +75,7 @@ export default function PartnerChat() {
           ...c,
           counterpart_name: profile?.full_name || "Unbekannt",
           counterpart_readable_id: profile?.readable_id,
+          counterpart_role_label: c.counterpart_role === "provider" ? "Hufpfleger" : "Pferdebesitzer",
           unread_count: unreadMap.get(c.id) || 0,
         };
       });
@@ -99,7 +101,6 @@ export default function PartnerChat() {
           .update({ is_read: true })
           .in("id", unread.map((m: any) => m.id));
         
-        // Refresh conversation list to update unread counts
         queryClient.invalidateQueries({ queryKey: ["partner-conversations"] });
       }
 
@@ -109,26 +110,36 @@ export default function PartnerChat() {
     refetchInterval: 5000,
   });
 
-  // Fetch available contacts (horse owners + providers from horse_partner_access)
+  // VERBESSERUNG 1: Fetch available contacts — horse owners AND providers
   const { data: contacts = [] } = useQuery({
     queryKey: ["partner-chat-contacts", user?.id],
     queryFn: async () => {
       const { data: grants, error } = await supabase
         .from("horse_partner_access")
-        .select("horse_id, horses:horse_id (owner_id, name)")
+        .select("horse_id, granted_by, horses:horse_id (owner_id, name)")
         .eq("partner_profile_id", user!.id)
         .eq("status", "active")
         .eq("is_active", true);
       if (error) throw error;
 
+      // Collect owner IDs (clients) and provider IDs (granted_by)
       const ownerIds = [...new Set((grants || []).map((g: any) => g.horses?.owner_id).filter(Boolean))];
-      if (ownerIds.length === 0) return [];
+      const providerIds = [...new Set((grants || []).map((g: any) => g.granted_by).filter(Boolean))];
+      
+      // Combine all unique IDs
+      const allIds = [...new Set([...ownerIds, ...providerIds])];
+      if (allIds.length === 0) return [];
 
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, full_name, readable_id")
-        .in("id", ownerIds);
-      return (profiles || []).map(p => ({ ...p, role: "client" as const }));
+        .in("id", allIds);
+
+      return (profiles || []).map(p => ({
+        ...p,
+        role: providerIds.includes(p.id) ? ("provider" as const) : ("client" as const),
+        role_label: providerIds.includes(p.id) ? "Hufpfleger" : "Pferdebesitzer",
+      }));
     },
     enabled: !!user,
   });
@@ -181,6 +192,18 @@ export default function PartnerChat() {
 
   const selectedConvData = conversations.find((c: any) => c.id === selectedConv);
 
+  if (convsLoading) {
+    return (
+      <div className="space-y-4 animate-fade-in">
+        <Skeleton className="h-8 w-32" />
+        <div className="grid lg:grid-cols-3 gap-4">
+          <Skeleton className="h-96 rounded-xl" />
+          <Skeleton className="h-96 rounded-xl lg:col-span-2" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 animate-fade-in h-[calc(100vh-12rem)] lg:h-[calc(100vh-8rem)]">
       <div className="flex items-center justify-between">
@@ -194,9 +217,7 @@ export default function PartnerChat() {
         {/* Conversation List */}
         <Card className={`overflow-hidden ${selectedConv ? "hidden lg:block" : ""}`}>
           <CardContent className="p-0">
-            {convsLoading ? (
-              <div className="p-4 text-center text-muted-foreground">Laden...</div>
-            ) : conversations.length === 0 ? (
+            {conversations.length === 0 ? (
               <div className="p-8 text-center">
                 <MessageSquare className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                 <p className="text-sm text-muted-foreground">Noch keine Unterhaltungen</p>
@@ -218,6 +239,7 @@ export default function PartnerChat() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{conv.counterpart_name}</p>
                         <p className="text-xs text-muted-foreground truncate">
+                          <Badge variant="outline" className="text-[9px] mr-1 px-1 py-0">{conv.counterpart_role_label}</Badge>
                           {conv.subject || conv.counterpart_readable_id || ""}
                         </p>
                       </div>
@@ -264,7 +286,10 @@ export default function PartnerChat() {
                 </Avatar>
                 <div>
                   <p className="text-sm font-medium text-foreground">{selectedConvData?.counterpart_name}</p>
-                  {selectedConvData?.subject && <p className="text-xs text-muted-foreground">{selectedConvData.subject}</p>}
+                  <p className="text-xs text-muted-foreground">
+                    {selectedConvData?.counterpart_role_label}
+                    {selectedConvData?.subject && ` · ${selectedConvData.subject}`}
+                  </p>
                 </div>
               </div>
 
@@ -317,7 +342,9 @@ export default function PartnerChat() {
                 <SelectTrigger><SelectValue placeholder="Kontakt auswählen" /></SelectTrigger>
                 <SelectContent>
                   {contacts.map((c: any) => (
-                    <SelectItem key={c.id} value={c.id}>{c.full_name} ({c.readable_id})</SelectItem>
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.full_name} ({c.role_label})
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

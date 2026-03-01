@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar, Plus, Clock, MapPin, ChevronLeft, ChevronRight, Loader2, Check, X as XIcon } from "lucide-react";
@@ -38,6 +39,7 @@ export default function PartnerCalendar() {
   const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: calStart, end: calEnd });
 
+  // Partner's own appointments
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ["partner-calendar", user?.id, format(monthStart, "yyyy-MM")],
     queryFn: async () => {
@@ -50,7 +52,7 @@ export default function PartnerCalendar() {
         .order("appointment_date")
         .order("appointment_time");
       if (error) throw error;
-      return data || [];
+      return (data || []).map((a: any) => ({ ...a, _source: "partner" as const }));
     },
     enabled: !!user,
   });
@@ -69,6 +71,38 @@ export default function PartnerCalendar() {
     },
     enabled: !!user,
   });
+
+  // VERBESSERUNG 6: Provider appointments on shared horses
+  const { data: providerAppointments = [] } = useQuery({
+    queryKey: ["partner-provider-appointments", user?.id, format(monthStart, "yyyy-MM")],
+    queryFn: async () => {
+      const horseIds = horses.map((h: any) => h.id);
+      if (horseIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("id, date, time, status, horse_id, service_type, horses:horse_id (name), profiles:provider_id (full_name)")
+        .in("horse_id", horseIds)
+        .gte("date", format(calStart, "yyyy-MM-dd"))
+        .lte("date", format(calEnd, "yyyy-MM-dd"))
+        .in("status", ["planned", "confirmed", "completed"])
+        .order("date")
+        .order("time");
+      if (error) return [];
+      return (data || []).map((a: any) => ({
+        id: a.id,
+        appointment_date: a.date,
+        appointment_time: a.time,
+        title: `Hufpflege — ${(a.profiles as any)?.full_name || "Hufbearbeiter"}`,
+        horses: a.horses,
+        status: a.status,
+        _source: "provider" as const,
+      }));
+    },
+    enabled: !!user && horses.length > 0,
+  });
+
+  // Merge all appointments
+  const allAppointments = [...appointments, ...providerAppointments];
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -111,7 +145,7 @@ export default function PartnerCalendar() {
   });
 
   const getAppointmentsForDay = (day: Date) =>
-    appointments.filter((a: any) => isSameDay(new Date(a.appointment_date), day));
+    allAppointments.filter((a: any) => isSameDay(new Date(a.appointment_date), day));
 
   const selectedDayAppts = selectedDate ? getAppointmentsForDay(selectedDate) : [];
 
@@ -123,6 +157,18 @@ export default function PartnerCalendar() {
     setCreateOpen(true);
   };
 
+  if (isLoading) {
+    return (
+      <div className="space-y-4 animate-fade-in">
+        <Skeleton className="h-8 w-32" />
+        <div className="grid lg:grid-cols-3 gap-6">
+          <Skeleton className="h-96 rounded-xl lg:col-span-2" />
+          <Skeleton className="h-96 rounded-xl" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
@@ -130,6 +176,12 @@ export default function PartnerCalendar() {
         <Button onClick={handleCreateClick} className="gap-2">
           <Plus className="h-4 w-4" /> Neuer Termin
         </Button>
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1.5"><div className="h-2.5 w-2.5 rounded-full bg-primary" /> Meine Termine</div>
+        <div className="flex items-center gap-1.5"><div className="h-2.5 w-2.5 rounded-full bg-orange-500" /> Hufpflege-Termine</div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -140,9 +192,7 @@ export default function PartnerCalendar() {
               <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <CardTitle className="text-lg">
-                {format(currentMonth, "MMMM yyyy", { locale: de })}
-              </CardTitle>
+              <CardTitle className="text-lg">{format(currentMonth, "MMMM yyyy", { locale: de })}</CardTitle>
               <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -171,7 +221,14 @@ export default function PartnerCalendar() {
                     {dayAppts.length > 0 && (
                       <div className="flex gap-0.5 mt-1 flex-wrap">
                         {dayAppts.slice(0, 3).map((a: any) => (
-                          <div key={a.id} className={`h-1.5 w-1.5 rounded-full ${a.status === "completed" ? "bg-muted-foreground" : a.status === "confirmed" ? "bg-primary" : "bg-primary/50"}`} />
+                          <div
+                            key={a.id}
+                            className={`h-1.5 w-1.5 rounded-full ${
+                              a._source === "provider"
+                                ? "bg-orange-500"
+                                : a.status === "completed" ? "bg-muted-foreground" : a.status === "confirmed" ? "bg-primary" : "bg-primary/50"
+                            }`}
+                          />
                         ))}
                         {dayAppts.length > 3 && <span className="text-[8px] text-muted-foreground">+{dayAppts.length - 3}</span>}
                       </div>
@@ -204,11 +261,15 @@ export default function PartnerCalendar() {
             ) : (
               selectedDayAppts.map((apt: any) => {
                 const statusInfo = STATUS_LABELS[apt.status] || STATUS_LABELS.planned;
+                const isProvider = apt._source === "provider";
                 return (
-                  <div key={apt.id} className="p-3 rounded-lg border border-border space-y-2">
+                  <div key={apt.id} className={`p-3 rounded-lg border space-y-2 ${isProvider ? "border-orange-500/30 bg-orange-500/5" : "border-border"}`}>
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className="font-semibold text-sm text-foreground">{apt.title}</p>
+                        <div className="flex items-center gap-1.5">
+                          {isProvider && <div className="h-2 w-2 rounded-full bg-orange-500 flex-shrink-0" />}
+                          <p className="font-semibold text-sm text-foreground">{apt.title}</p>
+                        </div>
                         <p className="text-xs text-muted-foreground">🐴 {apt.horses?.name}</p>
                       </div>
                       <Badge variant={statusInfo.variant} className="text-[10px]">{statusInfo.label}</Badge>
@@ -222,11 +283,11 @@ export default function PartnerCalendar() {
                     )}
                     {apt.location && (
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <MapPin className="h-3 w-3" />
-                        {apt.location}
+                        <MapPin className="h-3 w-3" /> {apt.location}
                       </div>
                     )}
-                    {apt.status === "planned" && (
+                    {/* Only show action buttons for partner's own appointments */}
+                    {!isProvider && apt.status === "planned" && (
                       <div className="flex gap-1.5 pt-1">
                         <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => updateStatus.mutate({ id: apt.id, status: "confirmed" })}>
                           <Check className="h-3 w-3 mr-1" /> Bestätigen
@@ -239,7 +300,7 @@ export default function PartnerCalendar() {
                         </Button>
                       </div>
                     )}
-                    {apt.status === "confirmed" && (
+                    {!isProvider && apt.status === "confirmed" && (
                       <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => updateStatus.mutate({ id: apt.id, status: "completed" })}>
                         Als erledigt markieren
                       </Button>
@@ -255,53 +316,28 @@ export default function PartnerCalendar() {
       {/* Create Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Neuer Termin</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Neuer Termin</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); createMutation.mutate(); }} className="space-y-4">
-            <div>
-              <Label>Titel *</Label>
-              <Input value={newApt.title} onChange={e => setNewApt(p => ({ ...p, title: e.target.value }))} placeholder="z.B. Osteopathie-Sitzung" required />
-            </div>
+            <div><Label>Titel *</Label><Input value={newApt.title} onChange={e => setNewApt(p => ({ ...p, title: e.target.value }))} placeholder="z.B. Osteopathie-Sitzung" required /></div>
             <div>
               <Label>Pferd *</Label>
               <Select value={newApt.horse_id} onValueChange={v => setNewApt(p => ({ ...p, horse_id: v }))}>
                 <SelectTrigger><SelectValue placeholder="Pferd auswählen" /></SelectTrigger>
                 <SelectContent>
-                  {horses.map((h: any) => (
-                    <SelectItem key={h.id} value={h.id}>🐴 {h.name}</SelectItem>
-                  ))}
+                  {horses.map((h: any) => (<SelectItem key={h.id} value={h.id}>🐴 {h.name}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Datum *</Label>
-                <Input type="date" value={newApt.appointment_date} onChange={e => setNewApt(p => ({ ...p, appointment_date: e.target.value }))} required />
-              </div>
-              <div>
-                <Label>Uhrzeit</Label>
-                <Input type="time" value={newApt.appointment_time} onChange={e => setNewApt(p => ({ ...p, appointment_time: e.target.value }))} />
-              </div>
+              <div><Label>Datum *</Label><Input type="date" value={newApt.appointment_date} onChange={e => setNewApt(p => ({ ...p, appointment_date: e.target.value }))} required /></div>
+              <div><Label>Uhrzeit</Label><Input type="time" value={newApt.appointment_time} onChange={e => setNewApt(p => ({ ...p, appointment_time: e.target.value }))} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Dauer (Min.)</Label>
-                <Input type="number" value={newApt.duration} onChange={e => setNewApt(p => ({ ...p, duration: e.target.value }))} />
-              </div>
-              <div>
-                <Label>Preis (€)</Label>
-                <Input type="number" step="0.01" value={newApt.price} onChange={e => setNewApt(p => ({ ...p, price: e.target.value }))} />
-              </div>
+              <div><Label>Dauer (Min.)</Label><Input type="number" value={newApt.duration} onChange={e => setNewApt(p => ({ ...p, duration: e.target.value }))} /></div>
+              <div><Label>Preis (€)</Label><Input type="number" step="0.01" value={newApt.price} onChange={e => setNewApt(p => ({ ...p, price: e.target.value }))} /></div>
             </div>
-            <div>
-              <Label>Ort</Label>
-              <Input value={newApt.location} onChange={e => setNewApt(p => ({ ...p, location: e.target.value }))} placeholder="z.B. Stall Müller" />
-            </div>
-            <div>
-              <Label>Notizen</Label>
-              <Textarea value={newApt.notes} onChange={e => setNewApt(p => ({ ...p, notes: e.target.value }))} rows={2} />
-            </div>
+            <div><Label>Ort</Label><Input value={newApt.location} onChange={e => setNewApt(p => ({ ...p, location: e.target.value }))} placeholder="z.B. Stall Müller" /></div>
+            <div><Label>Notizen</Label><Textarea value={newApt.notes} onChange={e => setNewApt(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>Abbrechen</Button>
               <Button type="submit" disabled={createMutation.isPending || !newApt.title || !newApt.horse_id || !newApt.appointment_date}>

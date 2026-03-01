@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -165,7 +166,10 @@ export default function PartnerDocuments() {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-8 text-muted-foreground">Laden...</div>
+        <div className="space-y-3">
+          <Skeleton className="h-6 w-32" />
+          {[1,2,3].map(i => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
+        </div>
       ) : Object.keys(grouped).length === 0 ? (
         <Card className="border-dashed border-2">
           <CardContent className="p-8 text-center">
