@@ -16,6 +16,9 @@ import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { DemoCalendarEntry } from "@/components/demo/DemoCalendarEntry";
 import { useTour } from "@/components/tour/TourContext";
 import { Button } from "@/components/ui/button";
+import { FeatureDiscoveryHint } from "@/components/growth/FeatureDiscoveryHint";
+import { MilestoneCelebration } from "@/components/growth/MilestoneCelebration";
+import { SocialProofWidget } from "@/components/growth/SocialProofWidget";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -44,6 +47,15 @@ const Dashboard = () => {
 
       {/* Demo Account Calendar Entry */}
       <DemoCalendarEntry />
+
+      {/* Growth: Milestone Celebrations */}
+      <MilestoneCelebration />
+
+      {/* Growth: Feature Discovery */}
+      <FeatureDiscoveryHint />
+
+      {/* Growth: Social Proof */}
+      <SocialProofWidget />
 
       {/* First Steps Checklist */}
       <div data-tour="checklist">
