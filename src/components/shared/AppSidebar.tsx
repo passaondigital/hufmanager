@@ -95,12 +95,13 @@ export function AppSidebar({ appName, userDisplayName, userAvatar, navigationCon
           <NavLink
             to={cat.path}
             className={cn(
-              "flex items-center gap-2.5 px-4 py-2 text-[13px] font-medium transition-colors",
-              "text-muted-foreground hover:bg-muted/50",
-              catActive && "bg-primary/15 text-primary"
+              "flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium transition-colors duration-150 w-full rounded-none",
+              catActive
+                ? "bg-orange-500 text-white font-semibold [&_svg]:text-white"
+                : "text-muted-foreground hover:bg-orange-500/10 hover:text-orange-500"
             )}
           >
-            {cat.number && <span className="text-[11px] font-bold text-muted-foreground/40 min-w-[16px]">{cat.number}</span>}
+            {cat.number && <span className={cn("text-[11px] font-bold min-w-[16px]", catActive ? "text-white" : "text-muted-foreground/40")}>{cat.number}</span>}
             <LucideIcon name={cat.iconName} className="h-4 w-4 shrink-0" />
             <span className="flex-1 truncate">{cat.label}</span>
             {cat.badge && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{cat.badge}</Badge>}
@@ -114,16 +115,17 @@ export function AppSidebar({ appName, userDisplayName, userAvatar, navigationCon
         <button
           onClick={() => toggleCategory(cat.id)}
           className={cn(
-            "flex items-center gap-2.5 px-4 py-2 w-full text-[13px] font-medium transition-colors",
-            "text-muted-foreground hover:bg-muted/50",
-            catActive && "bg-primary/15 text-primary"
+            "flex items-center gap-2.5 px-4 py-2.5 w-full text-[13px] font-medium transition-colors duration-150 rounded-none",
+            catActive
+              ? "bg-orange-500 text-white font-semibold [&_svg]:text-white"
+              : "text-muted-foreground hover:bg-orange-500/10 hover:text-orange-500"
           )}
         >
-          {cat.number && <span className="text-[11px] font-bold text-muted-foreground/40 min-w-[16px]">{cat.number}</span>}
+          {cat.number && <span className={cn("text-[11px] font-bold min-w-[16px]", catActive ? "text-white" : "text-muted-foreground/40")}>{cat.number}</span>}
           <LucideIcon name={cat.iconName} className="h-4 w-4 shrink-0" />
           <span className="flex-1 truncate text-left">{cat.label}</span>
           {cat.badge && <Badge variant="secondary" className="text-[10px] px-1.5 py-0 mr-1">{cat.badge}</Badge>}
-          <ChevronRight className={cn("h-3.5 w-3.5 opacity-40 transition-transform duration-200", isOpen && "rotate-90")} />
+          <ChevronRight className={cn("h-3.5 w-3.5 transition-transform duration-200", catActive ? "text-white opacity-80" : "opacity-40", isOpen && "rotate-90")} />
         </button>
         {isOpen && cat.children && (
           <div className="py-0.5">
@@ -132,9 +134,10 @@ export function AppSidebar({ appName, userDisplayName, userAvatar, navigationCon
                 key={child.path}
                 to={child.path}
                 className={cn(
-                  "block py-1.5 pl-11 pr-4 text-[12.5px] transition-colors",
-                  "text-muted-foreground/60 hover:text-foreground hover:bg-muted/30",
-                  isActive(child.path) && "text-primary border-l-2 border-primary pl-[42px]"
+                  "block py-1.5 pr-4 text-[12.5px] transition-colors duration-150",
+                  isActive(child.path)
+                    ? "text-orange-500 border-l-[3px] border-orange-500 bg-orange-500/[0.08] pl-[41px]"
+                    : "text-muted-foreground/55 hover:text-foreground/90 hover:bg-muted/30 pl-11"
                 )}
               >
                 {child.label}
