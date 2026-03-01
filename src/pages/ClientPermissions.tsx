@@ -238,7 +238,7 @@ export default function ClientPermissions() {
           </Button>
           <div>
             <h1 className="font-semibold text-foreground">Datenfreigabe & Zugriff</h1>
-            <p className="text-xs text-muted-foreground">DSGVO-Kontrollzentrum</p>
+            <p className="text-xs text-muted-foreground">Wer sieht meine Daten?</p>
           </div>
         </div>
       </header>

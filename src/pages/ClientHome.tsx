@@ -26,6 +26,7 @@ import { ProviderTourStatusWidget } from "@/components/client/ProviderTourStatus
 import { PushNotificationBanner } from "@/components/notifications/PushNotificationBanner";
 import { ServiceHistoryWidget } from "@/components/client/ServiceHistoryWidget";
 import { ProviderSelector } from "@/components/client/ProviderSelector";
+import { ClientBottomNav } from "@/components/client/ClientBottomNav";
 import { ConnectedProviderCard } from "@/components/client/ConnectedProviderCard";
 import { PendingConnectionRequests } from "@/components/network/PendingConnectionRequests";
 import { ConnectionSearch } from "@/components/network/ConnectionSearch";
@@ -33,6 +34,7 @@ import { MyConnectionRequests } from "@/components/network/MyConnectionRequests"
 import { HMCamModal } from "@/components/hufcam";
 import { HorseIntervalReminderWidget } from "@/components/client/HorseIntervalReminderWidget";
 import { PostAppointmentReviewPrompt } from "@/components/client/PostAppointmentReviewPrompt";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -208,14 +210,7 @@ export default function ClientHome() {
               </Badge>
             </div>
             <div className="flex items-center gap-1">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="relative h-10 w-10 min-w-[40px]"
-                onClick={() => navigate("/client-chat")}
-              >
-                <MessageSquare className="h-5 w-5" />
-              </Button>
+              <NotificationBell />
               <Button variant="ghost" size="icon" className="h-10 w-10 min-w-[40px]" onClick={toggleTheme}>
                 {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
@@ -271,16 +266,16 @@ export default function ClientHome() {
                   <div className="text-xs text-muted-foreground">Pferde</div>
                 </CardContent>
               </Card>
-              <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+              <Card className="bg-gradient-to-br from-accent/30 to-accent/10 border-accent/20">
                 <CardContent className="p-4 text-center">
-                  <Heart className="h-5 w-5 mx-auto text-green-600 mb-1" />
-                  <div className="text-xs text-muted-foreground">Gesund</div>
+                  <Calendar className="h-5 w-5 mx-auto text-primary mb-1" />
+                  <div className="text-xs text-muted-foreground">Termine</div>
                 </CardContent>
               </Card>
-              <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
+              <Card className="bg-gradient-to-br from-muted to-muted/50 border-border">
                 <CardContent className="p-4 text-center">
-                  <Calendar className="h-5 w-5 mx-auto text-blue-600 mb-1" />
-                  <div className="text-xs text-muted-foreground">Termine</div>
+                  <Star className="h-5 w-5 mx-auto text-primary mb-1" />
+                  <div className="text-xs text-muted-foreground">Betreuer</div>
                 </CardContent>
               </Card>
             </motion.div>
@@ -344,7 +339,7 @@ export default function ClientHome() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="space-y-4"
+            className="space-y-4" id="pferde-section"
           >
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
@@ -370,15 +365,15 @@ export default function ClientHome() {
             transition={{ delay: 0.3 }}
             className="grid grid-cols-3 gap-2 sm:gap-3"
           >
-            {/* HM-CAM Primary Button */}
+            {/* Huf fotografieren Primary Button */}
             <Button 
               variant="default" 
               className="h-20 sm:h-24 flex-col gap-1.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg min-h-[44px] col-span-3"
               onClick={() => setShowHMCamModal(true)}
             >
               <Camera className="h-6 w-6 sm:h-7 sm:w-7" />
-              <span className="text-sm sm:text-base font-semibold">HM-CAM starten</span>
-              <span className="text-[9px] sm:text-[10px] opacity-80">HufManager Cam Technology</span>
+              <span className="text-sm sm:text-base font-semibold">Huf fotografieren</span>
+              <span className="text-[9px] sm:text-[10px] opacity-80">Automatische Huf-Dokumentation</span>
             </Button>
             
             <Button 
@@ -518,6 +513,9 @@ export default function ClientHome() {
         </div>
       </main>
 
+      {/* Bottom Navigation */}
+      <ClientBottomNav />
+
       {/* Create Horse Modal */}
       <CreateHorseModal 
         open={showCreateModal}
@@ -525,7 +523,7 @@ export default function ClientHome() {
         onCreated={handleHorseCreated}
       />
       
-      {/* HM-CAM Modal */}
+      {/* Huf-Foto Modal */}
       <HMCamModal
         open={showHMCamModal}
         onOpenChange={setShowHMCamModal}
