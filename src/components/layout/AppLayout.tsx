@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import { AppHeader } from "./AppHeader";
 import { MobileBottomNav } from "./MobileBottomNav";
+import { OfflineBanner } from "@/components/offline/OfflineBanner";
 import { Menu, Sun, Moon, Search, Zap, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -159,6 +160,9 @@ export function AppLayout() {
 
         {/* Trial Countdown Banner */}
         <TrialCountdownBanner />
+
+        {/* Offline Banner - shows when offline or syncing */}
+        <OfflineBanner />
 
         {/* Main content with bottom nav spacing on mobile */}
         <main className="flex-1 overflow-auto px-4 py-4 lg:p-6 pb-bottom-nav overflow-x-hidden">

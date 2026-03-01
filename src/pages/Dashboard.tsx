@@ -1,4 +1,4 @@
-import { Users, Calendar, TrendingUp, MessageSquare, Loader2, Compass } from "lucide-react";
+import { Users, Calendar, TrendingUp, MessageSquare, Compass } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentCustomers } from "@/components/dashboard/RecentCustomers";
 import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointments";
@@ -16,6 +16,7 @@ import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { DemoCalendarEntry } from "@/components/demo/DemoCalendarEntry";
 import { useTour } from "@/components/tour/TourContext";
 import { Button } from "@/components/ui/button";
+import { StatGridSkeleton } from "@/components/ui/skeletons";
 import { FeatureDiscoveryHint } from "@/components/growth/FeatureDiscoveryHint";
 import { MilestoneCelebration } from "@/components/growth/MilestoneCelebration";
 import { SocialProofWidget } from "@/components/growth/SocialProofWidget";
@@ -94,13 +95,7 @@ const Dashboard = () => {
       {/* Stats Grid */}
       <div data-tour="stats-grid">
       {isLoading ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-card rounded-xl border border-border p-4 flex items-center justify-center min-h-[100px]">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ))}
-        </div>
+        <StatGridSkeleton />
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard
