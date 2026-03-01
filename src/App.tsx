@@ -129,6 +129,7 @@ const PartnerAppLayout = lazy(() => import("@/components/partner/PartnerAppLayou
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
 import { PWAInstallPrompt } from "@/components/pwa/PWAInstallPrompt";
 import { VersionChecker } from "@/components/version/VersionChecker";
+import { SystemStatusBanner } from "@/components/notifications/SystemStatusBanner";
 
 // Suspense fallback
 const LazyFallback = () => (
@@ -231,7 +232,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
         <AIChatWidget />
         <PWAInstallPrompt />
         <VersionChecker />
-        
+        <SystemStatusBanner />
         
         
         <PasswordRecoveryRedirect>

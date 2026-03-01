@@ -5929,6 +5929,36 @@ export type Database = {
           },
         ]
       }
+      performance_metrics: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json | null
+          metric_type: string
+          route: string | null
+          user_role: string | null
+          value_ms: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          metric_type: string
+          route?: string | null
+          user_role?: string | null
+          value_ms: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          metric_type?: string
+          route?: string | null
+          user_role?: string | null
+          value_ms?: number
+        }
+        Relationships: []
+      }
       price_groups: {
         Row: {
           created_at: string
@@ -7634,6 +7664,84 @@ export type Database = {
         }
         Relationships: []
       }
+      system_error_log: {
+        Row: {
+          auto_fixed: boolean
+          component: string | null
+          created_at: string
+          error_message: string
+          error_type: string
+          fix_description: string | null
+          id: string
+          resolved_at: string | null
+          route: string | null
+          severity: string
+          stack_trace: string | null
+          user_id: string | null
+        }
+        Insert: {
+          auto_fixed?: boolean
+          component?: string | null
+          created_at?: string
+          error_message: string
+          error_type: string
+          fix_description?: string | null
+          id?: string
+          resolved_at?: string | null
+          route?: string | null
+          severity?: string
+          stack_trace?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          auto_fixed?: boolean
+          component?: string | null
+          created_at?: string
+          error_message?: string
+          error_type?: string
+          fix_description?: string | null
+          id?: string
+          resolved_at?: string | null
+          route?: string | null
+          severity?: string
+          stack_trace?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      system_health_checks: {
+        Row: {
+          auto_fixed: boolean
+          check_category: string
+          check_name: string
+          created_at: string
+          details: Json | null
+          fix_applied: string | null
+          id: string
+          status: string
+        }
+        Insert: {
+          auto_fixed?: boolean
+          check_category: string
+          check_name: string
+          created_at?: string
+          details?: Json | null
+          fix_applied?: string | null
+          id?: string
+          status?: string
+        }
+        Update: {
+          auto_fixed?: boolean
+          check_category?: string
+          check_name?: string
+          created_at?: string
+          details?: Json | null
+          fix_applied?: string | null
+          id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       system_settings: {
         Row: {
           is_forced: boolean
@@ -7658,6 +7766,42 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           value?: string
+        }
+        Relationships: []
+      }
+      system_status_messages: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          message: string
+          resolved_at: string | null
+          severity: string
+          show_banner: boolean
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          message: string
+          resolved_at?: string | null
+          severity?: string
+          show_banner?: boolean
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          message?: string
+          resolved_at?: string | null
+          severity?: string
+          show_banner?: boolean
+          title?: string
         }
         Relationships: []
       }
