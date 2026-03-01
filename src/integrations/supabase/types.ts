@@ -972,6 +972,7 @@ export type Database = {
           client_intake_status: string | null
           copecart_customer_portal_url: string | null
           copecart_vendor_id: string | null
+          country: string | null
           created_at: string
           currency: string | null
           custom_domain: string | null
@@ -985,8 +986,10 @@ export type Database = {
           impressum_text: string | null
           imprint: string | null
           ki_features_enabled: boolean
+          kleine_unternehmer: boolean | null
           logo_url: string | null
           meta_description: string | null
+          mwst_pflichtig: boolean | null
           owner_name: string | null
           paypal_link: string | null
           phone: string | null
@@ -995,6 +998,7 @@ export type Database = {
           reminder_custom_text: string | null
           reminder_intervals: Json | null
           reviews_layout: string | null
+          rksv_enabled: boolean | null
           section_order: Json | null
           social_facebook: string | null
           social_instagram: string | null
@@ -1023,6 +1027,7 @@ export type Database = {
           client_intake_status?: string | null
           copecart_customer_portal_url?: string | null
           copecart_vendor_id?: string | null
+          country?: string | null
           created_at?: string
           currency?: string | null
           custom_domain?: string | null
@@ -1036,8 +1041,10 @@ export type Database = {
           impressum_text?: string | null
           imprint?: string | null
           ki_features_enabled?: boolean
+          kleine_unternehmer?: boolean | null
           logo_url?: string | null
           meta_description?: string | null
+          mwst_pflichtig?: boolean | null
           owner_name?: string | null
           paypal_link?: string | null
           phone?: string | null
@@ -1046,6 +1053,7 @@ export type Database = {
           reminder_custom_text?: string | null
           reminder_intervals?: Json | null
           reviews_layout?: string | null
+          rksv_enabled?: boolean | null
           section_order?: Json | null
           social_facebook?: string | null
           social_instagram?: string | null
@@ -1074,6 +1082,7 @@ export type Database = {
           client_intake_status?: string | null
           copecart_customer_portal_url?: string | null
           copecart_vendor_id?: string | null
+          country?: string | null
           created_at?: string
           currency?: string | null
           custom_domain?: string | null
@@ -1087,8 +1096,10 @@ export type Database = {
           impressum_text?: string | null
           imprint?: string | null
           ki_features_enabled?: boolean
+          kleine_unternehmer?: boolean | null
           logo_url?: string | null
           meta_description?: string | null
+          mwst_pflichtig?: boolean | null
           owner_name?: string | null
           paypal_link?: string | null
           phone?: string | null
@@ -1097,6 +1108,7 @@ export type Database = {
           reminder_custom_text?: string | null
           reminder_intervals?: Json | null
           reviews_layout?: string | null
+          rksv_enabled?: boolean | null
           section_order?: Json | null
           social_facebook?: string | null
           social_instagram?: string | null
@@ -5382,6 +5394,7 @@ export type Database = {
           phone_mobile: string | null
           plan_override: string | null
           preferred_app_theme: string | null
+          preferred_currency: string | null
           price_group: string
           price_group_label: string | null
           readable_id: string | null
@@ -5403,6 +5416,7 @@ export type Database = {
           suspended_at: string | null
           suspended_reason: string | null
           tax_id: string | null
+          tax_model: string | null
           tax_number: string | null
           updated_at: string
           vat_number: string | null
@@ -5477,6 +5491,7 @@ export type Database = {
           phone_mobile?: string | null
           plan_override?: string | null
           preferred_app_theme?: string | null
+          preferred_currency?: string | null
           price_group?: string
           price_group_label?: string | null
           readable_id?: string | null
@@ -5498,6 +5513,7 @@ export type Database = {
           suspended_at?: string | null
           suspended_reason?: string | null
           tax_id?: string | null
+          tax_model?: string | null
           tax_number?: string | null
           updated_at?: string
           vat_number?: string | null
@@ -5572,6 +5588,7 @@ export type Database = {
           phone_mobile?: string | null
           plan_override?: string | null
           preferred_app_theme?: string | null
+          preferred_currency?: string | null
           price_group?: string
           price_group_label?: string | null
           readable_id?: string | null
@@ -5593,6 +5610,7 @@ export type Database = {
           suspended_at?: string | null
           suspended_reason?: string | null
           tax_id?: string | null
+          tax_model?: string | null
           tax_number?: string | null
           updated_at?: string
           vat_number?: string | null

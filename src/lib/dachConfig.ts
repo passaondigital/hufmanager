@@ -1,7 +1,25 @@
-// DACH Region (Germany, Austria, Switzerland) Tax & Currency Configuration
+/**
+ * DACH Region (Germany, Austria, Switzerland) Tax & Currency Configuration
+ * 
+ * This file maintains backward compatibility while delegating to the 
+ * comprehensive dach.ts module.
+ */
 
-export type TaxCountry = 'DE' | 'AT' | 'CH';
-export type Currency = 'EUR' | 'CHF';
+import {
+  type DachCountry,
+  DACH_COUNTRIES,
+  getCurrencyConfig,
+  getCurrencyCode,
+  getCurrencySymbol,
+  getVatConfig,
+  formatCurrency,
+  roundToRappen,
+  calculateVat,
+} from "./dach";
+
+// Re-export types with original names for backward compatibility
+export type TaxCountry = DachCountry;
+export type Currency = "EUR" | "CHF";
 
 export interface DACHConfig {
   country: TaxCountry;
@@ -12,112 +30,110 @@ export interface DACHConfig {
   vatExemptLabel: string;
 }
 
-// Country-specific configurations
+// Country-specific configurations (enriched from dach.ts)
 export const DACH_CONFIGS: Record<TaxCountry, DACHConfig> = {
   DE: {
-    country: 'DE',
-    currency: 'EUR',
-    currencySymbol: '€',
+    country: "DE",
+    currency: "EUR",
+    currencySymbol: "€",
     defaultVatRate: 19,
-    vatLabel: 'MwSt.',
-    vatExemptLabel: 'Gemäß §19 UStG wird keine Umsatzsteuer berechnet.',
+    vatLabel: "MwSt.",
+    vatExemptLabel: "Gemäß §19 UStG wird keine Umsatzsteuer berechnet.",
   },
   AT: {
-    country: 'AT',
-    currency: 'EUR',
-    currencySymbol: '€',
+    country: "AT",
+    currency: "EUR",
+    currencySymbol: "€",
     defaultVatRate: 20,
-    vatLabel: 'USt.',
-    vatExemptLabel: 'Umsatzsteuerbefreit gemäß Kleinunternehmerregelung.',
+    vatLabel: "USt.",
+    vatExemptLabel: "Umsatzsteuerbefreit gemäß Kleinunternehmerregelung.",
   },
   CH: {
-    country: 'CH',
-    currency: 'CHF',
-    currencySymbol: 'CHF',
+    country: "CH",
+    currency: "CHF",
+    currencySymbol: "Fr.",
     defaultVatRate: 8.1,
-    vatLabel: 'MwSt.',
-    vatExemptLabel: 'Mehrwertsteuerbefreit.',
+    vatLabel: "MWST",
+    vatExemptLabel: "Nicht MWST-pflichtig (Jahresumsatz unter CHF 100'000).",
   },
 };
 
 export const COUNTRY_OPTIONS = [
-  { value: 'DE', label: 'Deutschland', flag: '🇩🇪' },
-  { value: 'AT', label: 'Österreich', flag: '🇦🇹' },
-  { value: 'CH', label: 'Schweiz', flag: '🇨🇭' },
+  { value: "DE" as const, label: "Deutschland", flag: "🇩🇪" },
+  { value: "AT" as const, label: "Österreich", flag: "🇦🇹" },
+  { value: "CH" as const, label: "Schweiz", flag: "🇨🇭" },
 ] as const;
 
-/**
- * Get the default DACH config for a country
- */
 export function getDACHConfig(country: TaxCountry): DACHConfig {
   return DACH_CONFIGS[country] || DACH_CONFIGS.DE;
 }
 
-/**
- * Get the currency for a country
- */
 export function getCurrencyForCountry(country: TaxCountry): Currency {
-  return country === 'CH' ? 'CHF' : 'EUR';
+  return country === "CH" ? "CHF" : "EUR";
 }
 
-/**
- * Format a currency amount with proper locale and symbol
- */
 export function formatCurrencyDACH(
-  amount: number, 
-  currency: Currency = 'EUR',
+  amount: number,
+  currency: Currency = "EUR",
   options?: { swissRounding?: boolean }
 ): string {
   let finalAmount = amount;
-  
-  // Swiss Rappen rounding (to 0.05)
-  if (currency === 'CHF' && options?.swissRounding) {
-    finalAmount = Math.round(amount * 20) / 20;
+  if (currency === "CHF" && options?.swissRounding) {
+    finalAmount = roundToRappen(amount);
   }
-  
-  const locale = currency === 'CHF' ? 'de-CH' : 'de-DE';
-  
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency: currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(finalAmount);
+  const country: TaxCountry = currency === "CHF" ? "CH" : "DE";
+  return formatCurrency(finalAmount, country);
 }
 
-/**
- * Apply Swiss rounding (to 0.05 CHF / Rappen)
- */
 export function applySwissRounding(amount: number): number {
-  return Math.round(amount * 20) / 20;
+  return roundToRappen(amount);
 }
 
-/**
- * Calculate VAT amount from gross total
- */
 export function calculateVatFromGross(
-  grossAmount: number, 
+  grossAmount: number,
   vatRate: number
 ): { netAmount: number; vatAmount: number } {
   if (vatRate <= 0) {
     return { netAmount: grossAmount, vatAmount: 0 };
   }
-  
-  const netAmount = grossAmount / (1 + vatRate / 100);
-  const vatAmount = grossAmount - netAmount;
-  
-  return { netAmount, vatAmount };
+  const result = calculateVat(grossAmount, vatRate, "DE", true);
+  return { netAmount: result.net, vatAmount: result.vatAmount };
 }
 
-/**
- * Calculate gross total from net amount
- */
 export function calculateGrossFromNet(
-  netAmount: number, 
+  netAmount: number,
   vatRate: number
 ): { grossAmount: number; vatAmount: number } {
-  const vatAmount = netAmount * (vatRate / 100);
-  const grossAmount = netAmount + vatAmount;
-  
-  return { grossAmount, vatAmount };
+  const result = calculateVat(netAmount, vatRate, "DE", false);
+  return { grossAmount: result.gross, vatAmount: result.vatAmount };
 }
+
+// Re-export everything from dach.ts for new code
+export {
+  formatCurrency,
+  roundToRappen,
+  calculateVat,
+  type DachCountry,
+  DACH_COUNTRIES,
+  getCurrencyConfig,
+  getCurrencyCode,
+  getCurrencySymbol as getCurrencySymbolDach,
+  getVatConfig,
+} from "./dach";
+
+// Also re-export new utilities
+export {
+  formatDate,
+  formatTime,
+  formatMonthName,
+  formatPhone,
+  getVatLabel,
+  validateVatNumber,
+  getVatNumberPlaceholder,
+  getPhoneConfig,
+  validatePostalCode,
+  getPostalCodePlaceholder,
+  getCountryName,
+  getCountryFlag,
+  getCountryDefaults,
+} from "./dach";

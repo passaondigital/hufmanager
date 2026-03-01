@@ -90,6 +90,10 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
         default_vat_rate: config.defaultVatRate,
         swiss_rounding: taxCountry === 'CH',
         impressum_text: impressumText.trim() || undefined,
+        country: taxCountry,
+        kleine_unternehmer: true,
+        rksv_enabled: false,
+        mwst_pflichtig: false,
       };
 
       if (existingSettings) {
@@ -143,7 +147,11 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
       }
 
       // Mark onboarding complete
-      await supabase.from('profiles').update({ onboarding_completed: true }).eq('id', user.id);
+      await supabase.from('profiles').update({ 
+        onboarding_completed: true,
+        country: taxCountry,
+        preferred_currency: currency,
+      }).eq('id', user.id);
 
       setPhase('complete');
     } catch (error) {

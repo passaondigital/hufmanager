@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Hammer, Heart, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ConfettiEffect } from "@/components/onboarding/ConfettiEffect";
+import { DACH_COUNTRIES, type DachCountry } from "@/lib/dach";
 
 interface MultiStepSignupProps {
   onComplete: (data: {
@@ -13,6 +14,7 @@ interface MultiStepSignupProps {
     role: "provider" | "client";
     email: string;
     password: string;
+    country: DachCountry;
     businessName?: string;
   }) => Promise<void>;
   onCancel: () => void;
@@ -20,9 +22,11 @@ interface MultiStepSignupProps {
   inviteCode?: string | null;
 }
 
+// Steps: Name → Role → Country → Credentials → Business (provider only)
 const STEPS = [
   { id: "name", motivation: "Schön dass du dabei bist." },
   { id: "role", motivation: "HufManager passt sich deiner Arbeit an." },
+  { id: "country", motivation: "Steuerrecht, Währung & Sprache — automatisch korrekt." },
   { id: "credentials", motivation: "Deine Daten. Deine Kontrolle. Deutsche Server." },
   { id: "business", motivation: "Fast geschafft — gleich bist du drin." },
 ];
@@ -31,6 +35,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
   const [step, setStep] = useState(0);
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<"provider" | "client">(inviteCode ? "client" : "provider");
+  const [country, setCountry] = useState<DachCountry>("DE");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -38,23 +43,22 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
 
   const firstName = fullName.split(" ")[0] || "";
 
+  // For clients: skip business step (step 4)
+  const maxStep = role === "client" ? 3 : 4;
+
   const canProceed = () => {
     switch (step) {
       case 0: return fullName.trim().length >= 2;
-      case 1: return true; // role always selected
-      case 2: return email.includes("@") && password.length >= 6;
-      case 3: return true; // business name is optional
+      case 1: return true;
+      case 2: return true; // country always selected
+      case 3: return email.includes("@") && password.length >= 6;
+      case 4: return true; // business name optional
       default: return false;
     }
   };
 
   const handleNext = async () => {
-    if (step < 3) {
-      // Skip business name step for clients
-      if (step === 2 && role === "client") {
-        await handleSubmit();
-        return;
-      }
+    if (step < maxStep) {
       setStep(step + 1);
     } else {
       await handleSubmit();
@@ -67,6 +71,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
       role,
       email,
       password,
+      country,
       businessName: businessName.trim() || undefined,
     });
     setShowWelcome(true);
@@ -81,11 +86,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
           animate={{ opacity: 1, scale: 1 }}
           className="text-center space-y-6 max-w-sm"
         >
-          <motion.div
-            initial={{ y: 20 }}
-            animate={{ y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
+          <motion.div initial={{ y: 20 }} animate={{ y: 0 }} transition={{ delay: 0.3 }}>
             <h1 className="text-3xl font-bold text-foreground">
               Willkommen, {firstName}! 🎉
             </h1>
@@ -93,18 +94,9 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
               Dein Betrieb wartet — leg los.
             </p>
           </motion.div>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.5 }}
-          >
-            <Button
-              size="lg"
-              className="w-full h-14 text-base font-semibold gap-2"
-              onClick={onCancel}
-            >
-              Jetzt starten
-              <ArrowRight className="h-5 w-5" />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5 }}>
+            <Button size="lg" className="w-full h-14 text-base font-semibold gap-2" onClick={onCancel}>
+              Jetzt starten <ArrowRight className="h-5 w-5" />
             </Button>
           </motion.div>
         </motion.div>
@@ -112,14 +104,14 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
     );
   }
 
-  const totalSteps = role === "client" ? 3 : 4;
+  const totalDots = maxStep + 1;
   const currentStepData = STEPS[step];
 
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
       {/* Progress Dots */}
       <div className="flex items-center justify-center gap-2">
-        {Array.from({ length: totalSteps }).map((_, i) => (
+        {Array.from({ length: totalDots }).map((_, i) => (
           <div
             key={i}
             className={cn(
@@ -174,15 +166,10 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
                   onClick={() => setRole("provider")}
                   className={cn(
                     "w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all min-h-[64px]",
-                    role === "provider"
-                      ? "border-primary bg-primary/10 shadow-md"
-                      : "border-border hover:border-primary/50"
+                    role === "provider" ? "border-primary bg-primary/10 shadow-md" : "border-border hover:border-primary/50"
                   )}
                 >
-                  <div className={cn(
-                    "w-12 h-12 rounded-full flex items-center justify-center shrink-0",
-                    role === "provider" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                  )}>
+                  <div className={cn("w-12 h-12 rounded-full flex items-center justify-center shrink-0", role === "provider" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
                     <Hammer className="h-6 w-6" />
                   </div>
                   <div className="text-left">
@@ -190,24 +177,16 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
                     <p className="text-sm text-muted-foreground">Termine, Kunden & Rechnungen verwalten</p>
                   </div>
                 </button>
-
                 <button
                   type="button"
                   onClick={() => setRole("client")}
                   className={cn(
                     "w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all min-h-[64px] relative",
-                    role === "client"
-                      ? "border-primary bg-primary/10 shadow-md"
-                      : "border-border hover:border-primary/50"
+                    role === "client" ? "border-primary bg-primary/10 shadow-md" : "border-border hover:border-primary/50"
                   )}
                 >
-                  <div className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                    GRATIS
-                  </div>
-                  <div className={cn(
-                    "w-12 h-12 rounded-full flex items-center justify-center shrink-0",
-                    role === "client" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                  )}>
+                  <div className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">GRATIS</div>
+                  <div className={cn("w-12 h-12 rounded-full flex items-center justify-center shrink-0", role === "client" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
                     <Heart className="h-6 w-6" />
                   </div>
                   <div className="text-left">
@@ -219,8 +198,44 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
             </div>
           )}
 
-          {/* Step 2: Email & Password */}
+          {/* Step 2: Country */}
           {step === 2 && (
+            <div className="space-y-4">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-foreground">In welchem Land arbeitest du?</h2>
+              </div>
+              <div className="space-y-3">
+                {DACH_COUNTRIES.map((c) => (
+                  <button
+                    key={c.code}
+                    type="button"
+                    onClick={() => setCountry(c.code)}
+                    className={cn(
+                      "w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all min-h-[64px]",
+                      country === c.code ? "border-primary bg-primary/10 shadow-md" : "border-border hover:border-primary/50"
+                    )}
+                  >
+                    <span className="text-3xl">{c.flag}</span>
+                    <p className="font-semibold text-foreground text-lg">{c.name}</p>
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setCountry("DE")}
+                  className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-border hover:border-primary/50 transition-all min-h-[56px] opacity-60"
+                >
+                  <span className="text-3xl">🌍</span>
+                  <div className="text-left">
+                    <p className="font-semibold text-foreground">Anderes Land</p>
+                    <p className="text-xs text-muted-foreground">Standardeinstellungen (DE) werden verwendet</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Email & Password */}
+          {step === 3 && (
             <div className="space-y-4">
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-foreground">Dein Zugang</h2>
@@ -229,26 +244,17 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
                 <div className="space-y-1.5">
                   <Label htmlFor="s-email">E-Mail</Label>
                   <Input
-                    id="s-email"
-                    type="email"
-                    inputMode="email"
-                    autoComplete="email"
-                    placeholder="deine@email.de"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="h-[52px] text-base"
+                    id="s-email" type="email" inputMode="email" autoComplete="email"
+                    placeholder="deine@email.de" value={email}
+                    onChange={(e) => setEmail(e.target.value)} className="h-[52px] text-base"
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="s-pw">Passwort</Label>
                   <Input
-                    id="s-pw"
-                    type="password"
-                    autoComplete="new-password"
-                    placeholder="Mindestens 6 Zeichen"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="h-[52px] text-base"
+                    id="s-pw" type="password" autoComplete="new-password"
+                    placeholder="Mindestens 6 Zeichen" value={password}
+                    onChange={(e) => setPassword(e.target.value)} className="h-[52px] text-base"
                     onKeyDown={(e) => e.key === "Enter" && canProceed() && handleNext()}
                   />
                 </div>
@@ -256,8 +262,8 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
             </div>
           )}
 
-          {/* Step 3: Business Name (providers only) */}
-          {step === 3 && (
+          {/* Step 4: Business Name (providers only) */}
+          {step === 4 && (
             <div className="space-y-4">
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-foreground">Dein Betrieb</h2>
@@ -265,18 +271,12 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
               <div className="space-y-1.5">
                 <Label htmlFor="s-biz">Betriebsname (optional)</Label>
                 <Input
-                  id="s-biz"
-                  type="text"
-                  placeholder="z.B. Hufservice Müller"
-                  autoFocus
-                  value={businessName}
-                  onChange={(e) => setBusinessName(e.target.value)}
+                  id="s-biz" type="text" placeholder="z.B. Hufservice Müller" autoFocus
+                  value={businessName} onChange={(e) => setBusinessName(e.target.value)}
                   className="h-[52px] text-base"
                   onKeyDown={(e) => e.key === "Enter" && handleNext()}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Erscheint auf deiner Seite. Du kannst das später ändern.
-                </p>
+                <p className="text-xs text-muted-foreground">Erscheint auf deiner Seite. Du kannst das später ändern.</p>
               </div>
             </div>
           )}
@@ -291,11 +291,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
       {/* Actions */}
       <div className="flex items-center gap-3">
         {step > 0 && (
-          <Button
-            variant="ghost"
-            onClick={() => setStep(step - 1)}
-            className="min-h-[52px]"
-          >
+          <Button variant="ghost" onClick={() => setStep(step - 1)} className="min-h-[52px]">
             Zurück
           </Button>
         )}
@@ -305,15 +301,13 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
           onClick={handleNext}
         >
           {loading && <Loader2 className="h-5 w-5 animate-spin" />}
-          {step === (role === "client" ? 2 : 3) ? "Registrieren" : "Weiter"}
+          {step === maxStep ? "Registrieren" : "Weiter"}
           {!loading && <ArrowRight className="h-5 w-5" />}
         </Button>
       </div>
 
-      {/* Cancel link */}
       <button
-        type="button"
-        onClick={onCancel}
+        type="button" onClick={onCancel}
         className="w-full text-sm text-muted-foreground hover:text-foreground text-center min-h-[44px]"
       >
         Ich habe schon ein Konto → Anmelden

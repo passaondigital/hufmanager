@@ -49,9 +49,9 @@ export function CountrySelectionStep({ value, onChange }: CountrySelectionStepPr
               <div className="flex-1">
                 <p className="font-medium text-foreground">{option.label}</p>
                 <p className="text-sm text-muted-foreground">
-                  {option.value === "DE" && "EUR • 19% MwSt."}
-                  {option.value === "AT" && "EUR • 20% USt."}
-                  {option.value === "CH" && "CHF • 8.1% MwSt."}
+                  {option.value === "DE" && "EUR • 19% MwSt. • §19 UStG"}
+                  {option.value === "AT" && "EUR • 20% USt. • KU-Regelung"}
+                  {option.value === "CH" && "CHF • 8.1% MWST • Rappen-Rundung"}
                 </p>
               </div>
               {value === option.value && (
