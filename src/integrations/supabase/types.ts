@@ -6520,6 +6520,63 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_contracts: {
+        Row: {
+          avv_signed_at: string | null
+          avv_version: string | null
+          created_at: string
+          id: string
+          ip_address: string | null
+          privacy_accepted_at: string | null
+          provider_id: string
+          terms_accepted_at: string | null
+          terms_version: string | null
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          avv_signed_at?: string | null
+          avv_version?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          privacy_accepted_at?: string | null
+          provider_id: string
+          terms_accepted_at?: string | null
+          terms_version?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          avv_signed_at?: string | null
+          avv_version?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          privacy_accepted_at?: string | null
+          provider_id?: string
+          terms_accepted_at?: string | null
+          terms_version?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_contracts_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_contracts_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: true
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       provider_documents: {
         Row: {
           appointment_id: string | null
@@ -9006,6 +9063,7 @@ export type Database = {
           tour_date: string
         }[]
       }
+      get_demo_user_ids: { Args: never; Returns: string[] }
       get_employee_profile_id: { Args: { _user_id: string }; Returns: string }
       get_health_score_trend: {
         Args: { days_back?: number }
