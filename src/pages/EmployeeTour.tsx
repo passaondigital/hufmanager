@@ -54,19 +54,18 @@ const EmployeeTour = () => {
         .in("status", ["pending", "en_route", "checked_in", "working", "checked_out"])
         .order("created_at", { ascending: true });
 
-      // Filter to only today's appointments
-      if (!data) return [];
-      return data.filter(a => a.appointment?.date === today);
-
       if (error) throw error;
+      if (!data) return [];
 
-      // Sort by tour_order if available, otherwise by time
-      return (data).sort((a: any, b: any) => {
-        const orderA = a.appointment?.tour_order ?? 999;
-        const orderB = b.appointment?.tour_order ?? 999;
-        if (orderA !== orderB) return orderA - orderB;
-        return (a.appointment?.time || "").localeCompare(b.appointment?.time || "");
-      });
+      // Filter to only today's appointments, then sort
+      return data
+        .filter(a => a.appointment?.date === today)
+        .sort((a: any, b: any) => {
+          const orderA = a.appointment?.tour_order ?? 999;
+          const orderB = b.appointment?.tour_order ?? 999;
+          if (orderA !== orderB) return orderA - orderB;
+          return (a.appointment?.time || "").localeCompare(b.appointment?.time || "");
+        });
     },
     enabled: !!profile?.id,
   });

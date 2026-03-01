@@ -1,60 +1,47 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useEmployeeProfile } from "@/hooks/useEmployees";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import { MessageSquare, Send, ArrowLeft, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-
-interface Message {
-  id: string;
-  conversation_id: string;
-  sender_id: string;
-  content: string;
-  is_read: boolean;
-  created_at: string;
-}
 
 const EmployeeChat = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { data: profile } = useEmployeeProfile();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState("");
+  const [message, setMessage] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [providerName, setProviderName] = useState("Provider");
-  const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Find or create conversation with provider
+  // Initialize: find or create employee_conversation with provider
   useEffect(() => {
     if (!user || !profile) return;
-    
-    const initChat = async () => {
-      setLoading(true);
-      
+
+    const init = async () => {
       // Get provider name
       const { data: providerProfile } = await supabase
         .from("profiles")
         .select("full_name")
         .eq("id", profile.provider_id)
         .maybeSingle();
-      
       if (providerProfile?.full_name) setProviderName(providerProfile.full_name);
 
-      // Check existing conversation
+      // Check existing employee_conversation
       const { data: existing } = await supabase
-        .from("conversations")
+        .from("employee_conversations")
         .select("id")
-        .or(`and(provider_id.eq.${profile.provider_id},client_id.eq.${user.id}),and(provider_id.eq.${user.id},client_id.eq.${profile.provider_id})`)
+        .eq("employee_id", profile.id)
+        .eq("provider_id", profile.provider_id)
         .maybeSingle();
 
       if (existing) {
@@ -62,109 +49,83 @@ const EmployeeChat = () => {
       } else {
         // Create conversation
         const { data: newConv, error } = await supabase
-          .from("conversations")
+          .from("employee_conversations")
           .insert({
+            employee_id: profile.id,
             provider_id: profile.provider_id,
-            client_id: user.id,
             subject: "Mitarbeiter-Chat",
-            last_message_at: new Date().toISOString(),
           })
           .select("id")
           .single();
-        
+
         if (!error && newConv) setConversationId(newConv.id);
       }
-      setLoading(false);
     };
-
-    initChat();
+    init();
   }, [user, profile]);
 
-  // Load and subscribe to messages
-  useEffect(() => {
-    if (!conversationId) return;
-
-    const loadMessages = async () => {
-      const { data } = await supabase
-        .from("messages")
+  // Fetch messages
+  const { data: messages = [], isLoading: messagesLoading } = useQuery({
+    queryKey: ["employee-messages", conversationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("employee_messages")
         .select("*")
-        .eq("conversation_id", conversationId)
+        .eq("conversation_id", conversationId!)
         .order("created_at", { ascending: true });
-      if (data) setMessages(data as Message[]);
-      
-      // Mark as read
-      if (user) {
+      if (error) throw error;
+
+      // Mark unread as read
+      const unread = (data || []).filter((m: any) => !m.is_read && m.sender_id !== user!.id);
+      if (unread.length > 0) {
         await supabase
-          .from("messages")
+          .from("employee_messages")
           .update({ is_read: true })
-          .eq("conversation_id", conversationId)
-          .neq("sender_id", user.id)
-          .eq("is_read", false);
+          .in("id", unread.map((m: any) => m.id));
       }
-    };
+      return data || [];
+    },
+    enabled: !!conversationId,
+    refetchInterval: 5000,
+  });
 
-    loadMessages();
+  // Send message
+  const sendMutation = useMutation({
+    mutationFn: async () => {
+      if (!message.trim() || !conversationId || !user) return;
+      const { error } = await supabase.from("employee_messages").insert({
+        conversation_id: conversationId,
+        sender_id: user.id,
+        content: message.trim(),
+      });
+      if (error) throw error;
 
-    const channel = supabase
-      .channel(`emp-messages-${conversationId}`)
-      .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "messages",
-        filter: `conversation_id=eq.${conversationId}`,
-      }, (payload) => {
-        const msg = payload.new as Message;
-        setMessages((prev) => {
-          if (prev.some(m => m.id === msg.id)) return prev;
-          return [...prev, msg];
-        });
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [conversationId, user]);
+      await supabase
+        .from("employee_conversations")
+        .update({ last_message_at: new Date().toISOString() })
+        .eq("id", conversationId);
+    },
+    onSuccess: () => {
+      setMessage("");
+      queryClient.invalidateQueries({ queryKey: ["employee-messages", conversationId] });
+    },
+    onError: () => toast.error("Nachricht konnte nicht gesendet werden"),
+  });
 
   // Auto-scroll
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const sendMessage = async () => {
-    if (!newMessage.trim() || !conversationId || !user || sending) return;
-    setSending(true);
-    const content = newMessage.trim();
-    setNewMessage("");
+  if (!profile) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
-    // Optimistic
-    const tempMsg: Message = {
-      id: `temp-${Date.now()}`,
-      conversation_id: conversationId,
-      sender_id: user.id,
-      content,
-      is_read: false,
-      created_at: new Date().toISOString(),
-    };
-    setMessages(prev => [...prev, tempMsg]);
-
-    const { error } = await supabase.from("messages").insert({
-      conversation_id: conversationId,
-      sender_id: user.id,
-      content,
-    });
-
-    if (error) {
-      setMessages(prev => prev.filter(m => m.id !== tempMsg.id));
-      toast({ title: "Fehler", description: "Nachricht konnte nicht gesendet werden.", variant: "destructive" });
-    }
-
-    // Update last_message_at
-    await supabase.from("conversations").update({ last_message_at: new Date().toISOString() }).eq("id", conversationId);
-    setSending(false);
-  };
-
-  if (loading) {
+  if (!conversationId) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -188,15 +149,20 @@ const EmployeeChat = () => {
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-auto space-y-3 py-2">
-        {messages.length === 0 ? (
+      <div className="flex-1 overflow-auto space-y-3 py-2">
+        {messagesLoading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-10 w-48" />
+            <Skeleton className="h-10 w-64 ml-auto" />
+          </div>
+        ) : messages.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <MessageSquare className="h-10 w-10 mx-auto mb-3 opacity-50" />
             <p className="text-sm font-medium">Noch keine Nachrichten</p>
             <p className="text-xs">Schreibe deinem Provider eine Nachricht.</p>
           </div>
         ) : (
-          messages.map((msg) => {
+          messages.map((msg: any) => {
             const isMe = msg.sender_id === user?.id;
             return (
               <div key={msg.id} className={cn("flex", isMe ? "justify-end" : "justify-start")}>
@@ -218,21 +184,25 @@ const EmployeeChat = () => {
             );
           })
         )}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Input */}
-      <div className="flex items-center gap-2 pt-3 border-t border-border">
+      <form
+        onSubmit={(e) => { e.preventDefault(); sendMutation.mutate(); }}
+        className="flex items-center gap-2 pt-3 border-t border-border"
+      >
         <Input
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
           placeholder="Nachricht schreiben..."
-          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
           className="flex-1"
+          maxLength={5000}
         />
-        <Button size="icon" onClick={sendMessage} disabled={!newMessage.trim() || sending}>
-          <Send className="h-4 w-4" />
+        <Button type="submit" size="icon" disabled={!message.trim() || sendMutation.isPending}>
+          {sendMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
         </Button>
-      </div>
+      </form>
     </div>
   );
 };
