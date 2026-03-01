@@ -7,6 +7,7 @@ import {
   Home, Route, Camera, Notebook, User, Menu, Sun, Moon, LogOut,
   Clock, ClipboardList, MessageSquare, Package, CalendarOff,
   FileText, ChevronRight, ShoppingBag, WifiOff, RefreshCw,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -51,6 +52,7 @@ const getSidebarItems = (permissions: Record<string, boolean>): SidebarItem[] =>
   }
   items.push(
     { icon: Clock, label: "Zeiterfassung", path: "/employee/timer" },
+    { icon: Calendar, label: "Kalender", path: "/employee/kalender" },
     { icon: Camera, label: "HufCam Pro", path: "/employee/hufcam" },
     { icon: ClipboardList, label: "Hufanalyse", path: "/employee/analyse" },
     { icon: MessageSquare, label: "Chat", path: "/employee/chat" },

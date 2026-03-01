@@ -12,6 +12,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, differenceInMinutes, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface TimeRecord {
   id: string;
@@ -159,6 +160,21 @@ export function EmployeeTimeTracker() {
 
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
   const DAILY_TARGET = 480; // 8h in minutes
+  const DAILY_MAX = 600; // 10h in minutes (DE)
+
+  // Calculate current shift duration for warnings
+  const currentShiftMins = activeRecord
+    ? differenceInMinutes(new Date(), parseISO(activeRecord.start_time)) - (activeRecord.break_minutes || 0)
+    : 0;
+
+  const getOvertimeWarning = () => {
+    if (currentShiftMins >= 570) return { level: "critical", text: "⚠️ WARNUNG: Maximale Arbeitszeit fast erreicht (10h Limit DE)" };
+    if (currentShiftMins >= 480) return { level: "warning", text: "Du arbeitest seit 8 Stunden — Überstunden beginnen" };
+    if (currentShiftMins >= 360) return { level: "info", text: "Bitte mach eine Pause (gesetzlich vorgeschrieben nach 6h)" };
+    return null;
+  };
+
+  const overtimeWarning = activeRecord ? getOvertimeWarning() : null;
 
   if (isLoading) {
     return <Card><CardContent className="py-8 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></CardContent></Card>;
@@ -166,6 +182,18 @@ export function EmployeeTimeTracker() {
 
   return (
     <div className="space-y-4">
+      {/* Overtime warning */}
+      {overtimeWarning && (
+        <div className={cn(
+          "p-3 rounded-lg text-sm font-medium flex items-center gap-2",
+          overtimeWarning.level === "critical" ? "bg-destructive/10 text-destructive border border-destructive/30" :
+          overtimeWarning.level === "warning" ? "bg-amber-500/10 text-amber-700 border border-amber-500/30" :
+          "bg-primary/10 text-primary border border-primary/30"
+        )}>
+          {overtimeWarning.text}
+        </div>
+      )}
+
       {/* Active shift or start button */}
       {activeRecord ? (
         <Card className="border-primary">
