@@ -2387,9 +2387,51 @@ export type Database = {
           },
         ]
       }
+      employee_notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          employee_id: string
+          id: string
+          link_to: string | null
+          read_at: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          employee_id: string
+          id?: string
+          link_to?: string | null
+          read_at?: string | null
+          title: string
+          type?: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          employee_id?: string
+          id?: string
+          link_to?: string | null
+          read_at?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_notifications_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           can_apply_hoof_protection: boolean | null
           can_work_alone: boolean | null
           can_work_sensitive_clients: boolean | null
@@ -2406,6 +2448,7 @@ export type Database = {
           invitation_sent_at: string | null
           invitation_token: string | null
           notes: string | null
+          onboarding_completed: Json | null
           organization_id: string | null
           phone: string | null
           provider_id: string
@@ -2416,6 +2459,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           can_apply_hoof_protection?: boolean | null
           can_work_alone?: boolean | null
           can_work_sensitive_clients?: boolean | null
@@ -2432,6 +2476,7 @@ export type Database = {
           invitation_sent_at?: string | null
           invitation_token?: string | null
           notes?: string | null
+          onboarding_completed?: Json | null
           organization_id?: string | null
           phone?: string | null
           provider_id: string
@@ -2442,6 +2487,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           can_apply_hoof_protection?: boolean | null
           can_work_alone?: boolean | null
           can_work_sensitive_clients?: boolean | null
@@ -2458,6 +2504,7 @@ export type Database = {
           invitation_sent_at?: string | null
           invitation_token?: string | null
           notes?: string | null
+          onboarding_completed?: Json | null
           organization_id?: string | null
           phone?: string | null
           provider_id?: string
@@ -2518,6 +2565,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "employee_sync_queue_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_time_records: {
+        Row: {
+          break_minutes: number
+          break_type: string | null
+          created_at: string
+          date: string
+          deleted_at: string | null
+          employee_id: string
+          end_time: string | null
+          id: string
+          notes: string | null
+          provider_id: string
+          start_time: string
+        }
+        Insert: {
+          break_minutes?: number
+          break_type?: string | null
+          created_at?: string
+          date: string
+          deleted_at?: string | null
+          employee_id: string
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          provider_id: string
+          start_time: string
+        }
+        Update: {
+          break_minutes?: number
+          break_type?: string | null
+          created_at?: string
+          date?: string
+          deleted_at?: string | null
+          employee_id?: string
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          provider_id?: string
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_time_records_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employee_profiles"

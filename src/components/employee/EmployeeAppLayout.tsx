@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/ThemeProvider";
 import { Loader2 } from "lucide-react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { EmployeeNotificationBell } from "@/components/employee/EmployeeNotificationBell";
+import { AIChatWidget } from "@/components/chat/AIChatWidget";
 
 const getBottomNavItems = (permissions: Record<string, boolean>) => {
   const items = [
@@ -133,6 +135,7 @@ export function EmployeeAppLayout() {
           <span className="font-semibold text-sm">MitarbeiterApp</span>
         </div>
         <div className="flex items-center gap-1">
+          <EmployeeNotificationBell />
           <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-10 w-10">
             {theme === "dark" ? <Sun className="h-5 w-5 text-primary" /> : <Moon className="h-5 w-5 text-muted-foreground" />}
           </Button>
@@ -197,10 +200,11 @@ export function EmployeeAppLayout() {
                 <AvatarImage src={profile.avatar_url || undefined} />
                 <AvatarFallback className="bg-primary/10 text-primary text-sm">{getInitials(profile.full_name)}</AvatarFallback>
               </Avatar>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="font-semibold text-sm truncate">{profile.full_name}</p>
                 <p className="text-xs text-muted-foreground">MitarbeiterApp</p>
               </div>
+              <EmployeeNotificationBell />
             </div>
           </div>
           <nav className="flex-1 p-2 space-y-1 overflow-auto">
@@ -267,6 +271,9 @@ export function EmployeeAppLayout() {
           ))}
         </div>
       </nav>
+
+      {/* Hufi AI Assistant - Floating Button */}
+      <AIChatWidget />
     </div>
   );
 }
