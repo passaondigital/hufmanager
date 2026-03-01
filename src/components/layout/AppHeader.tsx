@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/components/ThemeProvider";
 import { toast } from "@/hooks/use-toast";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { useLogout } from "@/hooks/useLogout";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { FeierabendWaechter } from "@/components/tracking/FeierabendWaechter";
 import { ConnectionStatus } from "@/components/offline/ConnectionStatus";
@@ -74,21 +75,14 @@ export function AppHeader() {
     }
   };
 
+  const logout = useLogout();
+
   const handleLogout = async () => {
-    try {
-      await signOut();
-      toast({
-        title: "Abgemeldet",
-        description: "Sie wurden erfolgreich abgemeldet.",
-      });
-      navigate("/auth");
-    } catch (error) {
-      toast({
-        title: "Fehler",
-        description: "Beim Abmelden ist ein Fehler aufgetreten.",
-        variant: "destructive",
-      });
-    }
+    await logout();
+    toast({
+      title: "Abgemeldet",
+      description: "Sie wurden erfolgreich abgemeldet.",
+    });
   };
 
   const userInitials = user?.email?.substring(0, 2).toUpperCase() || "MH";

@@ -271,7 +271,10 @@ const signIn = async (email: string, password: string) => {
     }
 
     if (data.user) {
-      // Run suspension check and role fetch in parallel for speed
+      // FAST PATH: Read role from user_metadata first (instant, no DB query)
+      const metaRole = data.user.user_metadata?.role as UserRole;
+      
+      // Run suspension check in parallel with DB role fetch
       const profilePromise = (async () => {
         try {
           return await supabase
@@ -284,7 +287,14 @@ const signIn = async (email: string, password: string) => {
         }
       })();
 
-      const [profileResult, roleResult] = await Promise.all([
+      // If we have a meta role, use it immediately for fast redirect
+      if (metaRole) {
+        setRole(metaRole);
+        setLoading(false);
+      }
+
+      // Still fetch the authoritative role from DB in parallel
+      const [profileResult, dbRole] = await Promise.all([
         profilePromise,
         fetchUserRole(data.user.id),
       ]);
@@ -297,8 +307,8 @@ const signIn = async (email: string, password: string) => {
         return { error: new Error(`Konto gesperrt: ${reason}`) };
       }
 
-      // Pre-set role immediately so redirect happens without waiting for onAuthStateChange
-      setRole(roleResult);
+      // Update with authoritative DB role (may differ from metadata)
+      setRole(dbRole);
       setLoading(false);
     }
 
