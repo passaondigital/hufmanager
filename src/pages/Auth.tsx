@@ -485,15 +485,21 @@ export default function Auth() {
 
       {/* Demo Access Cards */}
       <DemoAccessCards
-        onSelectAccount={(email, password) => {
+        onSelectAccount={async (email, password) => {
           setLoginEmail(email);
           setLoginPassword(password);
-          // Auto-submit login
-          signIn(email, password).then(({ error }) => {
+          setLoading(true);
+          try {
+            const { error } = await signIn(email, password);
             if (error) {
               toast.error(error.message);
+              setLoading(false);
             }
-          });
+            // On success, the auth state change will trigger redirect via the Navigate check above
+          } catch (err) {
+            toast.error("Login fehlgeschlagen");
+            setLoading(false);
+          }
         }}
       />
 
