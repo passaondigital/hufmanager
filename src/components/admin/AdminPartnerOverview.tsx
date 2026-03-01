@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { Search, RefreshCw, Loader2, Users, Heart, FileText, Calendar, Receipt, Eye, Settings } from "lucide-react";
+import { Search, RefreshCw, Loader2, Users, Heart, FileText, Calendar, Receipt, Eye, Settings, MapPin, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -24,10 +24,12 @@ interface PartnerData {
   is_suspended: boolean | null;
   feature_statuses: FeatureStatuses | null;
   phone: string | null;
-  // Computed
   horse_access_count: number;
   document_count: number;
   invoice_count: number;
+  appointment_count: number;
+  contact_count: number;
+  service_count: number;
 }
 
 export default function AdminPartnerOverview() {
@@ -89,6 +91,25 @@ export default function AdminPartnerOverview() {
         .select("partner_id")
         .in("partner_id", partnerIds);
 
+      // Fetch appointment counts
+      const { data: appointments } = await supabase
+        .from("appointments")
+        .select("provider_id")
+        .in("provider_id", partnerIds);
+
+      // Fetch contact counts
+      const { data: contacts } = await supabase
+        .from("contacts")
+        .select("provider_id")
+        .in("provider_id", partnerIds)
+        .is("deleted_at", null);
+
+      // Fetch service counts
+      const { data: services } = await supabase
+        .from("partner_services")
+        .select("partner_id")
+        .in("partner_id", partnerIds);
+
       // Build counts
       const horseCountMap = new Map<string, number>();
       horseAccess?.forEach(h => {
@@ -99,6 +120,12 @@ export default function AdminPartnerOverview() {
       docs?.forEach(d => docCountMap.set(d.partner_id, (docCountMap.get(d.partner_id) || 0) + 1));
       const invoiceCountMap = new Map<string, number>();
       invoices?.forEach(i => invoiceCountMap.set(i.partner_id, (invoiceCountMap.get(i.partner_id) || 0) + 1));
+      const appointmentCountMap = new Map<string, number>();
+      appointments?.forEach(a => appointmentCountMap.set(a.provider_id, (appointmentCountMap.get(a.provider_id) || 0) + 1));
+      const contactCountMap = new Map<string, number>();
+      contacts?.forEach(c => contactCountMap.set(c.provider_id, (contactCountMap.get(c.provider_id) || 0) + 1));
+      const serviceCountMap = new Map<string, number>();
+      services?.forEach(s => serviceCountMap.set(s.partner_id, (serviceCountMap.get(s.partner_id) || 0) + 1));
 
       const partnerData: PartnerData[] = (profiles || []).map(p => ({
         id: p.id,
@@ -112,6 +139,9 @@ export default function AdminPartnerOverview() {
         horse_access_count: horseCountMap.get(p.id) || 0,
         document_count: docCountMap.get(p.id) || 0,
         invoice_count: invoiceCountMap.get(p.id) || 0,
+        appointment_count: appointmentCountMap.get(p.id) || 0,
+        contact_count: contactCountMap.get(p.id) || 0,
+        service_count: serviceCountMap.get(p.id) || 0,
       }));
 
       setPartners(partnerData);
@@ -184,7 +214,7 @@ export default function AdminPartnerOverview() {
   return (
     <div className="space-y-4">
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <Card className="p-3">
           <p className="text-2xl font-bold">{partners.length}</p>
           <p className="text-xs text-muted-foreground">Partner gesamt</p>
@@ -198,8 +228,16 @@ export default function AdminPartnerOverview() {
           <p className="text-xs text-muted-foreground">Pferde-Zugriffe</p>
         </Card>
         <Card className="p-3">
-          <p className="text-2xl font-bold">{partners.reduce((s, p) => s + p.document_count, 0)}</p>
-          <p className="text-xs text-muted-foreground">Dokumente</p>
+          <p className="text-2xl font-bold">{partners.reduce((s, p) => s + p.appointment_count, 0)}</p>
+          <p className="text-xs text-muted-foreground">Termine</p>
+        </Card>
+        <Card className="p-3">
+          <p className="text-2xl font-bold">{partners.reduce((s, p) => s + p.contact_count, 0)}</p>
+          <p className="text-xs text-muted-foreground">Kunden</p>
+        </Card>
+        <Card className="p-3">
+          <p className="text-2xl font-bold">{partners.reduce((s, p) => s + p.invoice_count, 0)}</p>
+          <p className="text-xs text-muted-foreground">Rechnungen</p>
         </Card>
       </div>
 
@@ -227,8 +265,9 @@ export default function AdminPartnerOverview() {
               <TableHead>Partner</TableHead>
               <TableHead className="hidden md:table-cell">ID</TableHead>
               <TableHead>Pferde</TableHead>
-              <TableHead className="hidden md:table-cell">Dokumente</TableHead>
-              <TableHead className="hidden md:table-cell">Rechnungen</TableHead>
+              <TableHead className="hidden md:table-cell">Termine</TableHead>
+              <TableHead className="hidden md:table-cell">Kunden</TableHead>
+              <TableHead className="hidden lg:table-cell">Rechnungen</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Aktionen</TableHead>
             </TableRow>
@@ -246,8 +285,9 @@ export default function AdminPartnerOverview() {
                   <Badge variant="outline" className="text-xs font-mono">{partner.readable_id}</Badge>
                 </TableCell>
                 <TableCell>{partner.horse_access_count}</TableCell>
-                <TableCell className="hidden md:table-cell">{partner.document_count}</TableCell>
-                <TableCell className="hidden md:table-cell">{partner.invoice_count}</TableCell>
+                <TableCell className="hidden md:table-cell">{partner.appointment_count}</TableCell>
+                <TableCell className="hidden md:table-cell">{partner.contact_count}</TableCell>
+                <TableCell className="hidden lg:table-cell">{partner.invoice_count}</TableCell>
                 <TableCell>
                   {partner.is_suspended ? (
                     <Badge variant="destructive" className="text-xs">Gesperrt</Badge>
@@ -310,6 +350,16 @@ export default function AdminPartnerOverview() {
                   <p className="text-xs text-muted-foreground">Pferde</p>
                 </Card>
                 <Card className="p-3 text-center">
+                  <Calendar className="w-4 h-4 mx-auto mb-1 text-primary" />
+                  <p className="text-lg font-bold">{selectedPartner.appointment_count}</p>
+                  <p className="text-xs text-muted-foreground">Termine</p>
+                </Card>
+                <Card className="p-3 text-center">
+                  <Users className="w-4 h-4 mx-auto mb-1 text-primary" />
+                  <p className="text-lg font-bold">{selectedPartner.contact_count}</p>
+                  <p className="text-xs text-muted-foreground">Kunden</p>
+                </Card>
+                <Card className="p-3 text-center">
                   <FileText className="w-4 h-4 mx-auto mb-1 text-primary" />
                   <p className="text-lg font-bold">{selectedPartner.document_count}</p>
                   <p className="text-xs text-muted-foreground">Dokumente</p>
@@ -318,6 +368,11 @@ export default function AdminPartnerOverview() {
                   <Receipt className="w-4 h-4 mx-auto mb-1 text-primary" />
                   <p className="text-lg font-bold">{selectedPartner.invoice_count}</p>
                   <p className="text-xs text-muted-foreground">Rechnungen</p>
+                </Card>
+                <Card className="p-3 text-center">
+                  <Zap className="w-4 h-4 mx-auto mb-1 text-primary" />
+                  <p className="text-lg font-bold">{selectedPartner.service_count}</p>
+                  <p className="text-xs text-muted-foreground">Services</p>
                 </Card>
               </div>
               <Separator />
