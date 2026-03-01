@@ -279,6 +279,54 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_provider_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string
+          period_end: string | null
+          period_start: string | null
+          plan_name: string | null
+          provider_id: string
+          recorded_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          period_end?: string | null
+          period_start?: string | null
+          plan_name?: string | null
+          provider_id: string
+          recorded_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          period_end?: string | null
+          period_start?: string | null
+          plan_name?: string | null
+          provider_id?: string
+          recorded_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       admin_revenue_log: {
         Row: {
           amount: number
