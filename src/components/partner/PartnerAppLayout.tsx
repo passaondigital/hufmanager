@@ -6,7 +6,7 @@ import { usePartnerOffline } from "@/hooks/usePartnerOffline";
 import {
   Home, Heart, FileText, MessageSquare, User, Menu, LogOut, Sun, Moon,
   ChevronRight, Calendar, Upload, ClipboardList, Receipt, Briefcase,
-  Settings, AlertTriangle, Lock, Users, WifiOff,
+  Settings, AlertTriangle, Lock, Users, WifiOff, Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -38,10 +38,10 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { icon: Upload, label: "Dokumente & Befunde", path: "/partner-documents" },
   { icon: Briefcase, label: "Mein Angebot", path: "/partner-services", featureKey: "module_invoicing" },
   { icon: Receipt, label: "Rechnungen", path: "/partner-invoices", featureKey: "module_invoicing" },
+  { icon: Globe, label: "Meine Website", path: "/partner-website" },
   { icon: MessageSquare, label: "Chat", path: "/partner-chat", featureKey: "module_chat", bottomNav: true },
   { icon: AlertTriangle, label: "1. Hilfe Kunden Center", path: "/partner-notfall" },
   { icon: Users, label: "Netzwerk", path: "/partner-connect", bottomNav: false },
-  // Coming soon items — visible but disabled
   { icon: Settings, label: "Einstellungen", path: "/partner-settings" },
   { icon: User, label: "Profil", path: "/partner-profile", bottomNav: true },
 ];

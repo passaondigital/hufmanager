@@ -28,7 +28,7 @@ export function VersionChecker() {
     if (!user) return;
 
     try {
-      // Determine which version to check based on role
+      // Determine which version to check based on role — all roles share app_version_provider except clients
       const versionKey = role === 'client' ? 'app_version_client' : 'app_version_provider';
       
       const { data, error } = await supabase
