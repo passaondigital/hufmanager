@@ -103,7 +103,7 @@ export default function AdminDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => navigate("/")} className="w-full">
+            <Button onClick={() => navigate("/home")} className="w-full">
               Zurück zum Dashboard
             </Button>
           </CardContent>
@@ -183,9 +183,19 @@ export default function AdminDashboard() {
           <Button
             variant="ghost"
             className="w-full justify-start text-muted-foreground"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/home")}
           >
-            ← Zurück zum Dashboard
+            ← Dashboard
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-destructive hover:text-destructive"
+            onClick={async () => {
+              await supabase.auth.signOut();
+              navigate("/auth");
+            }}
+          >
+            🚪 Ausloggen
           </Button>
         </div>
       </aside>

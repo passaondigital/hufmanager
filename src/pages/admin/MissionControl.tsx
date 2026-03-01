@@ -990,7 +990,7 @@ export default function MissionControl() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => navigate("/")} className="w-full">
+            <Button onClick={() => navigate("/home")} className="w-full">
               Zurück zum Dashboard
             </Button>
           </CardContent>
@@ -1022,9 +1022,17 @@ export default function MissionControl() {
               Provider-Management & Marktforschung
             </p>
           </div>
-          <Button variant="outline" className="min-h-[44px] w-full md:w-auto" onClick={() => navigate("/")}>
-            Zurück
-          </Button>
+          <div className="flex gap-2 w-full md:w-auto">
+            <Button variant="outline" className="min-h-[44px] flex-1 md:flex-none" onClick={() => navigate("/home")}>
+              ← Dashboard
+            </Button>
+            <Button variant="destructive" className="min-h-[44px] flex-1 md:flex-none" onClick={async () => {
+              await supabase.auth.signOut();
+              navigate("/auth");
+            }}>
+              Ausloggen
+            </Button>
+          </div>
         </div>
 
         {/* Password Setup Card */}
