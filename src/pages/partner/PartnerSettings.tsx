@@ -8,12 +8,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Building2, CreditCard, Loader2, Save } from "lucide-react";
+import { Settings, Building2, CreditCard, Loader2, Save, Trash2, AlertTriangle } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 export default function PartnerSettings() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ["partner-business-settings", user?.id],
@@ -88,6 +101,82 @@ export default function PartnerSettings() {
     onError: () => toast.error("Fehler beim Speichern"),
   });
 
+  // ── Delete Account ──
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== "LÖSCHEN") {
+      toast.error("Bitte tippe LÖSCHEN ein, um fortzufahren.");
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      // Soft-delete all partner data
+      const partnerId = user!.id;
+
+      // 1. Soft-delete treatment notes
+      await supabase
+        .from("partner_treatment_notes")
+        .update({ deleted_at: new Date().toISOString() } as any)
+        .eq("partner_id", partnerId);
+
+      // 2. Deactivate horse access grants
+      await supabase
+        .from("horse_partner_access")
+        .update({ is_active: false, status: "revoked" })
+        .eq("partner_profile_id", partnerId);
+
+      // 3. Soft-delete partner conversations
+      await supabase
+        .from("partner_conversations")
+        .update({ deleted_at: new Date().toISOString() } as any)
+        .eq("partner_id", partnerId);
+
+      // 4. Soft-delete partner invoices
+      await supabase
+        .from("partner_invoices")
+        .update({ deleted_at: new Date().toISOString() } as any)
+        .eq("partner_id", partnerId);
+
+      // 5. Delete partner business settings
+      await supabase
+        .from("partner_business_settings")
+        .delete()
+        .eq("partner_id", partnerId);
+
+      // 6. Soft-delete profile
+      await supabase
+        .from("profiles")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", partnerId);
+
+      // 7. Log in admin activity
+      await supabase.from("admin_activity_log").insert({
+        admin_id: partnerId,
+        admin_email: user!.email || null,
+        action_type: "partner_account_deleted",
+        target_type: "partner",
+        target_id: partnerId,
+        target_name: user!.email || null,
+        details: { self_service: true, timestamp: new Date().toISOString() },
+      });
+
+      toast.success("Dein Account wurde gelöscht. Du wirst abgemeldet.");
+      
+      setTimeout(async () => {
+        await signOut();
+        navigate("/");
+      }, 1500);
+    } catch (error: any) {
+      console.error("Account deletion error:", error);
+      toast.error("Fehler beim Löschen des Accounts. Bitte kontaktiere den Support.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (isLoading) return <div className="text-center py-8 text-muted-foreground">Laden...</div>;
 
   return (
@@ -98,6 +187,7 @@ export default function PartnerSettings() {
         <TabsList>
           <TabsTrigger value="business" className="gap-1.5"><Building2 className="h-4 w-4" /> Praxis</TabsTrigger>
           <TabsTrigger value="billing" className="gap-1.5"><CreditCard className="h-4 w-4" /> Abrechnung</TabsTrigger>
+          <TabsTrigger value="account" className="gap-1.5"><Settings className="h-4 w-4" /> Konto</TabsTrigger>
         </TabsList>
 
         <TabsContent value="business">
@@ -128,6 +218,73 @@ export default function PartnerSettings() {
                 <div><Label>IBAN</Label><Input value={form.iban} onChange={e => setForm(p => ({ ...p, iban: e.target.value }))} /></div>
                 <div><Label>BIC</Label><Input value={form.bic} onChange={e => setForm(p => ({ ...p, bic: e.target.value }))} /></div>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="account">
+          <Card className="border-destructive/30">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+                Account löschen
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  <strong className="text-destructive">Achtung:</strong> Diese Aktion ist unwiderruflich. 
+                  Alle deine Daten werden dauerhaft gelöscht — Behandlungsnotizen, Dokumente, 
+                  Rechnungen, Pferdezugänge und Konversationen. 
+                  Steuerlich relevante Daten werden gemäß gesetzlicher Aufbewahrungspflicht archiviert.
+                </p>
+              </div>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="gap-2">
+                    <Trash2 className="h-4 w-4" />
+                    Account dauerhaft löschen
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Account unwiderruflich löschen?</AlertDialogTitle>
+                    <AlertDialogDescription asChild>
+                      <div className="space-y-3">
+                        <p>
+                          Alle deine Daten werden gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
+                        </p>
+                        <div>
+                          <Label className="text-sm font-medium">
+                            Tippe <span className="font-bold text-destructive">LÖSCHEN</span> zur Bestätigung:
+                          </Label>
+                          <Input
+                            value={deleteConfirmText}
+                            onChange={e => setDeleteConfirmText(e.target.value)}
+                            placeholder="LÖSCHEN"
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setDeleteConfirmText("")}>
+                      Abbrechen
+                    </AlertDialogCancel>
+                    <Button
+                      variant="destructive"
+                      disabled={deleteConfirmText !== "LÖSCHEN" || deleting}
+                      onClick={handleDeleteAccount}
+                      className="gap-2"
+                    >
+                      {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
+                      Ja, endgültig löschen
+                    </Button>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </CardContent>
           </Card>
         </TabsContent>

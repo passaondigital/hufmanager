@@ -1,17 +1,16 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Info, Footprints, Activity, FileText, Plus } from "lucide-react";
+import { ArrowLeft, Info, Footprints, Activity, FileText, Plus, Calendar, Lock, Image } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { PartnerTreatmentNoteModal } from "@/components/partner/PartnerTreatmentNoteModal";
-import { getPartnerTypeConfig } from "@/lib/partnerTypes";
 
 export default function PartnerHorseView() {
   const { id } = useParams<{ id: string }>();
@@ -70,6 +69,37 @@ export default function PartnerHorseView() {
     enabled: !!id && !!user && !!grant?.can_add_treatment_notes,
   });
 
+  // Fetch hoof history entries
+  const { data: hoofHistory = [], isLoading: hoofLoading } = useQuery({
+    queryKey: ["partner-hoof-history", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("hoof_history")
+        .select("id, entry_date, entry_type, description, photo_before_url, photo_after_url, created_by")
+        .eq("horse_id", id!)
+        .order("entry_date", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+
+      // Fetch creator names
+      const creatorIds = [...new Set((data || []).map(e => e.created_by).filter(Boolean))];
+      let creatorMap = new Map<string, string>();
+      if (creatorIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", creatorIds);
+        (profiles || []).forEach(p => creatorMap.set(p.id, p.full_name || "Unbekannt"));
+      }
+
+      return (data || []).map(entry => ({
+        ...entry,
+        creator_name: creatorMap.get(entry.created_by) || "Unbekannt",
+      }));
+    },
+    enabled: !!id && !!grant?.can_view_hoof_history,
+  });
+
   const isLoading = grantLoading || horseLoading;
 
   if (isLoading) {
@@ -113,6 +143,14 @@ export default function PartnerHorseView() {
   if (grant.can_add_treatment_notes) {
     availableTabs.push({ value: "notizen", label: "Meine Notizen", icon: FileText });
   }
+
+  const entryTypeLabels: Record<string, string> = {
+    trim: "Ausschnitt",
+    shoeing: "Beschlag",
+    check: "Kontrolle",
+    correction: "Korrektur",
+    note: "Notiz",
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -171,14 +209,79 @@ export default function PartnerHorseView() {
           </TabsContent>
         )}
 
-        {/* Huf-Historie (read-only) */}
+        {/* Huf-Historie — echte Daten */}
         {grant.can_view_hoof_history && (
           <TabsContent value="huf-historie">
             <Card>
-              <CardContent className="p-6 text-center text-muted-foreground">
-                <Footprints className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                <p className="font-medium">Huf-Historie</p>
-                <p className="text-sm mt-1">Nur-Lesen Zugriff auf die Hufhistorie dieses Pferdes.</p>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Footprints className="h-5 w-5 text-primary" />
+                  Huf-Historie — Nur-Lesen
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {hoofLoading ? (
+                  <div className="space-y-3">
+                    <Skeleton className="h-20 w-full" />
+                    <Skeleton className="h-20 w-full" />
+                  </div>
+                ) : hoofHistory.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Footprints className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                    <p className="font-medium">Keine Hufhistorie vorhanden</p>
+                    <p className="text-sm mt-1">Es wurden noch keine Einträge für dieses Pferd erfasst.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {hoofHistory.map((entry: any) => (
+                      <div
+                        key={entry.id}
+                        className="border border-border rounded-lg p-4 hover:bg-muted/30 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge variant="secondary" className="text-xs">
+                                {entryTypeLabels[entry.entry_type] || entry.entry_type}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(entry.entry_date).toLocaleDateString("de-DE")}
+                              </span>
+                            </div>
+                            {entry.description && (
+                              <p className="text-sm mt-2 text-foreground">{entry.description}</p>
+                            )}
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Erstellt von: {entry.creator_name}
+                            </p>
+                          </div>
+                          {/* Photo thumbnails */}
+                          {(entry.photo_before_url || entry.photo_after_url) && (
+                            <div className="flex gap-1.5 flex-shrink-0">
+                              {entry.photo_before_url && (
+                                <a href={entry.photo_before_url} target="_blank" rel="noopener noreferrer" className="block">
+                                  <div className="w-14 h-14 rounded-md border border-border overflow-hidden bg-muted">
+                                    <img src={entry.photo_before_url} alt="Vorher" className="w-full h-full object-cover" />
+                                  </div>
+                                  <p className="text-[9px] text-center text-muted-foreground mt-0.5">Vorher</p>
+                                </a>
+                              )}
+                              {entry.photo_after_url && (
+                                <a href={entry.photo_after_url} target="_blank" rel="noopener noreferrer" className="block">
+                                  <div className="w-14 h-14 rounded-md border border-border overflow-hidden bg-muted">
+                                    <img src={entry.photo_after_url} alt="Nachher" className="w-full h-full object-cover" />
+                                  </div>
+                                  <p className="text-[9px] text-center text-muted-foreground mt-0.5">Nachher</p>
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
