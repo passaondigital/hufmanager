@@ -14,7 +14,7 @@ type Message = { role: "user" | "assistant"; content: string };
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
 
 // Routes where the FAB should be hidden (chat screens have their own input)
-const HIDDEN_ON_ROUTES = ['/chat', '/client-chat'];
+const HIDDEN_ON_ROUTES = ['/chat', '/client-chat', '/employee/chat'];
 
 export function AIChatWidget() {
   const location = useLocation();

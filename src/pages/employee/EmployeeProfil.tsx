@@ -1,17 +1,20 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useEmployeeProfile } from "@/hooks/useEmployees";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
 import {
   User, Mail, Phone, Calendar, Briefcase, Shield, LogOut,
   CheckCircle, XCircle, Key, Loader2, Download, Trash2, AlertTriangle,
+  Camera, Save, Edit2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -24,8 +27,20 @@ import { useNavigate } from "react-router-dom";
 const EmployeeProfil = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: profile } = useEmployeeProfile();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Edit state
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editBio, setEditBio] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  // Password dialog
   const [showPwDialog, setShowPwDialog] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -43,13 +58,7 @@ const EmployeeProfil = () => {
     name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 
   const roleLabel = profile.role === "team_lead" ? "Teamleiter" : profile.role === "employee" ? "Mitarbeiter" : "Assistent";
-  const statusLabel = {
-    active: "Aktiv",
-    sick: "Krank",
-    vacation: "Urlaub",
-    suspended: "Gesperrt",
-    inactive: "Inaktiv",
-  }[profile.status] || profile.status;
+  const statusLabel = { active: "Aktiv", sick: "Krank", vacation: "Urlaub", suspended: "Gesperrt", inactive: "Inaktiv" }[profile.status] || profile.status;
 
   const permissions = [
     { label: "Alleine arbeiten", value: profile.can_work_alone },
@@ -63,6 +72,77 @@ const EmployeeProfil = () => {
     { label: "Tour-Manager", value: customPerms.can_use_tour_manager },
     { label: "Kundenchat", value: customPerms.can_chat_clients },
   ];
+
+  const startEditing = () => {
+    setEditName(profile.full_name || "");
+    setEditPhone(profile.phone || "");
+    setEditBio((profile as any).bio || "");
+    setEditing(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!profile?.id || !user?.id) return;
+    setSaving(true);
+    try {
+      // Validate phone for DACH
+      if (editPhone && !/^(\+49|\+43|\+41|0)[0-9\s\-\/]{6,15}$/.test(editPhone.replace(/\s/g, ""))) {
+        toast({ title: "Ungültige Telefonnummer", description: "Bitte DACH-Format verwenden (+49, +43, +41 oder 0...)", variant: "destructive" });
+        setSaving(false);
+        return;
+      }
+
+      // Update employee_profiles
+      await supabase
+        .from("employee_profiles")
+        .update({ full_name: editName, phone: editPhone, bio: editBio })
+        .eq("id", profile.id);
+
+      // Update profiles table too
+      await supabase
+        .from("profiles")
+        .update({ full_name: editName, phone: editPhone })
+        .eq("id", user.id);
+
+      queryClient.invalidateQueries({ queryKey: ["employee-profile"] });
+      toast({ title: "Profil gespeichert ✓" });
+      setEditing(false);
+    } catch (err: any) {
+      toast({ title: "Fehler", description: err.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "Datei zu groß", description: "Max. 2 MB erlaubt.", variant: "destructive" });
+      return;
+    }
+    setUploadingAvatar(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${user.id}/avatar.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("employee-avatars")
+        .upload(path, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from("employee-avatars").getPublicUrl(path);
+      const avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+      await supabase.from("employee_profiles").update({ avatar_url: avatarUrl }).eq("id", profile.id);
+      await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("id", user.id);
+
+      queryClient.invalidateQueries({ queryKey: ["employee-profile"] });
+      toast({ title: "Profilbild aktualisiert ✓" });
+    } catch (err: any) {
+      toast({ title: "Upload fehlgeschlagen", description: err.message, variant: "destructive" });
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const handlePasswordChange = async () => {
     if (newPassword.length < 6) {
@@ -79,7 +159,7 @@ const EmployeeProfil = () => {
     if (error) {
       toast({ title: "Fehler", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Passwort geändert", description: "Dein Passwort wurde erfolgreich aktualisiert." });
+      toast({ title: "Passwort geändert" });
       setShowPwDialog(false);
       setNewPassword("");
       setConfirmPassword("");
@@ -90,16 +170,13 @@ const EmployeeProfil = () => {
     if (deleteConfirmText !== "LÖSCHEN" || !user?.id) return;
     setDeleting(true);
     try {
-      const { error } = await supabase.rpc("delete_employee_account", {
-        _employee_user_id: user.id,
-      });
+      const { error } = await supabase.rpc("delete_employee_account", { _employee_user_id: user.id });
       if (error) throw error;
-
-      toast({ title: "Konto gelöscht", description: "Dein Konto und deine Daten wurden gelöscht." });
+      toast({ title: "Konto gelöscht" });
       await signOut();
       navigate("/");
     } catch (err: any) {
-      toast({ title: "Fehler", description: err.message || "Konto konnte nicht gelöscht werden.", variant: "destructive" });
+      toast({ title: "Fehler", description: err.message, variant: "destructive" });
     } finally {
       setDeleting(false);
     }
@@ -107,24 +184,41 @@ const EmployeeProfil = () => {
 
   return (
     <div className="space-y-4 animate-fade-in max-w-lg mx-auto">
-      <h1 className="text-xl font-bold">Mein Profil</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold">Mein Profil</h1>
+        {!editing && (
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={startEditing}>
+            <Edit2 className="h-3.5 w-3.5" /> Bearbeiten
+          </Button>
+        )}
+      </div>
 
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center gap-4 mb-4">
-            <Avatar className="h-16 w-16">
-              <AvatarImage src={profile.avatar_url || undefined} />
-              <AvatarFallback className="bg-primary/10 text-primary text-lg">
-                {getInitials(profile.full_name)}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h2 className="text-lg font-semibold">{profile.full_name}</h2>
+            <div className="relative group">
+              <Avatar className="h-16 w-16">
+                <AvatarImage src={profile.avatar_url || undefined} />
+                <AvatarFallback className="bg-primary/10 text-primary text-lg">{getInitials(profile.full_name)}</AvatarFallback>
+              </Avatar>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                disabled={uploadingAvatar}
+              >
+                {uploadingAvatar ? <Loader2 className="h-5 w-5 text-white animate-spin" /> : <Camera className="h-5 w-5 text-white" />}
+              </button>
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+            </div>
+            <div className="flex-1">
+              {editing ? (
+                <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Vor- und Nachname" className="mb-2" />
+              ) : (
+                <h2 className="text-lg font-semibold">{profile.full_name}</h2>
+              )}
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant="secondary">{roleLabel}</Badge>
-                <Badge variant={profile.status === "active" ? "default" : "outline"}>
-                  {statusLabel}
-                </Badge>
+                <Badge variant={profile.status === "active" ? "default" : "outline"}>{statusLabel}</Badge>
               </div>
             </div>
           </div>
@@ -136,12 +230,17 @@ const EmployeeProfil = () => {
               <Mail className="h-4 w-4 text-muted-foreground" />
               <span>{profile.email}</span>
             </div>
-            {profile.phone && (
+            {editing ? (
+              <div className="flex items-center gap-3">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="+49 170 1234567" className="flex-1" />
+              </div>
+            ) : profile.phone ? (
               <div className="flex items-center gap-3 text-sm">
                 <Phone className="h-4 w-4 text-muted-foreground" />
                 <span>{profile.phone}</span>
               </div>
-            )}
+            ) : null}
             <div className="flex items-center gap-3 text-sm">
               <Briefcase className="h-4 w-4 text-muted-foreground" />
               <span>{profile.employment_type === "contractor" ? "Selbstständig" : "Angestellt"}</span>
@@ -153,6 +252,30 @@ const EmployeeProfil = () => {
               </div>
             )}
           </div>
+
+          {editing && (
+            <>
+              <Separator className="my-4" />
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Über mich (max. 200 Zeichen)</label>
+                <Textarea
+                  value={editBio}
+                  onChange={(e) => setEditBio(e.target.value.slice(0, 200))}
+                  placeholder="Kurze Vorstellung..."
+                  className="resize-none"
+                  rows={2}
+                />
+                <p className="text-xs text-muted-foreground mt-1">{editBio.length}/200</p>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button variant="outline" className="flex-1" onClick={() => setEditing(false)}>Abbrechen</Button>
+                <Button className="flex-1 gap-1.5" onClick={handleSaveProfile} disabled={saving}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Speichern
+                </Button>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -168,11 +291,7 @@ const EmployeeProfil = () => {
           {permissions.map((p) => (
             <div key={p.label} className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">{p.label}</span>
-              {p.value ? (
-                <CheckCircle className="h-4 w-4 text-primary" />
-              ) : (
-                <XCircle className="h-4 w-4 text-muted-foreground/50" />
-              )}
+              {p.value ? <CheckCircle className="h-4 w-4 text-primary" /> : <XCircle className="h-4 w-4 text-muted-foreground/50" />}
             </div>
           ))}
           <Separator className="my-2" />
@@ -180,11 +299,7 @@ const EmployeeProfil = () => {
           {appPermissions.map((p) => (
             <div key={p.label} className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">{p.label}</span>
-              {p.value ? (
-                <CheckCircle className="h-4 w-4 text-primary" />
-              ) : (
-                <XCircle className="h-4 w-4 text-muted-foreground/50" />
-              )}
+              {p.value ? <CheckCircle className="h-4 w-4 text-primary" /> : <XCircle className="h-4 w-4 text-muted-foreground/50" />}
             </div>
           ))}
         </CardContent>
@@ -197,25 +312,20 @@ const EmployeeProfil = () => {
             <Download className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium">App installieren</span>
           </div>
-          <p className="text-xs text-muted-foreground mb-3">
-            Installiere die MitarbeiterApp auf deinem Gerät für schnellen Zugriff.
-          </p>
+          <p className="text-xs text-muted-foreground mb-3">Installiere die MitarbeiterApp auf deinem Gerät.</p>
           <PWAInstallButton />
         </CardContent>
       </Card>
 
-      {/* Password change */}
       <Button variant="outline" className="w-full gap-2" onClick={() => setShowPwDialog(true)}>
-        <Key className="h-4 w-4" />
-        Passwort ändern
+        <Key className="h-4 w-4" />Passwort ändern
       </Button>
 
       <Button variant="destructive" className="w-full gap-2" onClick={() => signOut()}>
-        <LogOut className="h-4 w-4" />
-        Abmelden
+        <LogOut className="h-4 w-4" />Abmelden
       </Button>
 
-      {/* DSGVO: Account deletion */}
+      {/* DSGVO */}
       <Separator />
       <Card className="border-destructive/30">
         <CardContent className="p-4">
@@ -224,8 +334,7 @@ const EmployeeProfil = () => {
             <span className="text-sm font-medium text-destructive">Konto & Daten löschen</span>
           </div>
           <p className="text-xs text-muted-foreground mb-3">
-            Lösche dein Mitarbeiterkonto und alle damit verbundenen Daten unwiderruflich. 
-            Die Betriebsdaten deines Providers bleiben erhalten.
+            Lösche dein Mitarbeiterkonto und alle damit verbundenen Daten unwiderruflich.
           </p>
           <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setShowDeleteStep1(true)}>
             Konto löschen
@@ -233,12 +342,10 @@ const EmployeeProfil = () => {
         </CardContent>
       </Card>
 
-      {/* Password Change Dialog */}
+      {/* Password Dialog */}
       <Dialog open={showPwDialog} onOpenChange={setShowPwDialog}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Passwort ändern</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Passwort ändern</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium mb-1.5 block">Neues Passwort</label>
@@ -246,94 +353,59 @@ const EmployeeProfil = () => {
             </div>
             <div>
               <label className="text-sm font-medium mb-1.5 block">Passwort bestätigen</label>
-              <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Passwort wiederholen" />
+              <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowPwDialog(false)}>Abbrechen</Button>
             <Button onClick={handlePasswordChange} disabled={changingPw || !newPassword}>
-              {changingPw && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Ändern
+              {changingPw && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Ändern
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Step 1: Warning */}
+      {/* Delete Step 1 */}
       <Dialog open={showDeleteStep1} onOpenChange={setShowDeleteStep1}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" />
-              Konto löschen — Was wird entfernt?
+              <AlertTriangle className="h-5 w-5" />Konto löschen — Was wird entfernt?
             </DialogTitle>
-            <DialogDescription>
-              Diese Aktion kann nicht rückgängig gemacht werden.
-            </DialogDescription>
+            <DialogDescription>Diese Aktion kann nicht rückgängig gemacht werden.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 text-sm">
             <p className="font-medium">Folgende Daten werden gelöscht:</p>
             <ul className="space-y-1.5 text-muted-foreground">
-              <li className="flex items-center gap-2">
-                <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                Dein Mitarbeiterprofil und Login
-              </li>
-              <li className="flex items-center gap-2">
-                <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                Alle offenen Aufträge (werden storniert)
-              </li>
-              <li className="flex items-center gap-2">
-                <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                Deine Dokumentationen und Befunde
-              </li>
-              <li className="flex items-center gap-2">
-                <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                Abwesenheitsanträge und Materialzuweisungen
-              </li>
+              <li className="flex items-center gap-2"><Trash2 className="h-3.5 w-3.5 text-destructive" />Dein Mitarbeiterprofil und Login</li>
+              <li className="flex items-center gap-2"><Trash2 className="h-3.5 w-3.5 text-destructive" />Alle offenen Aufträge</li>
+              <li className="flex items-center gap-2"><Trash2 className="h-3.5 w-3.5 text-destructive" />Deine Dokumentationen und Befunde</li>
+              <li className="flex items-center gap-2"><Trash2 className="h-3.5 w-3.5 text-destructive" />Abwesenheitsanträge und Materialzuweisungen</li>
             </ul>
             <div className="p-3 bg-muted/50 rounded-lg text-xs">
               <p className="font-medium mb-1">Was bleibt erhalten:</p>
-              <p className="text-muted-foreground">
-                Betriebsdaten deines Providers (Kunden, Pferde, Rechnungen) bleiben unberührt. 
-                Dein Provider wird über die Löschung benachrichtigt.
-              </p>
+              <p className="text-muted-foreground">Betriebsdaten deines Providers bleiben unberührt.</p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDeleteStep1(false)}>Abbrechen</Button>
-            <Button variant="destructive" onClick={() => { setShowDeleteStep1(false); setShowDeleteStep2(true); }}>
-              Ich verstehe — weiter
-            </Button>
+            <Button variant="destructive" onClick={() => { setShowDeleteStep1(false); setShowDeleteStep2(true); }}>Ich verstehe — weiter</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Step 2: Confirmation */}
+      {/* Delete Step 2 */}
       <Dialog open={showDeleteStep2} onOpenChange={(open) => { setShowDeleteStep2(open); if (!open) setDeleteConfirmText(""); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="text-destructive">Endgültige Bestätigung</DialogTitle>
-            <DialogDescription>
-              Tippe <span className="font-mono font-bold">LÖSCHEN</span> ein, um dein Konto unwiderruflich zu löschen.
-            </DialogDescription>
+            <DialogDescription>Tippe <span className="font-mono font-bold">LÖSCHEN</span> ein.</DialogDescription>
           </DialogHeader>
-          <Input
-            value={deleteConfirmText}
-            onChange={(e) => setDeleteConfirmText(e.target.value)}
-            placeholder='Tippe "LÖSCHEN" ein'
-            className="font-mono"
-          />
+          <Input value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value)} placeholder='Tippe "LÖSCHEN" ein' className="font-mono" />
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setShowDeleteStep2(false); setDeleteConfirmText(""); }}>
-              Abbrechen
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={deleteConfirmText !== "LÖSCHEN" || deleting}
-              onClick={handleDeleteAccount}
-            >
-              {deleting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Konto endgültig löschen
+            <Button variant="outline" onClick={() => { setShowDeleteStep2(false); setDeleteConfirmText(""); }}>Abbrechen</Button>
+            <Button variant="destructive" disabled={deleteConfirmText !== "LÖSCHEN" || deleting} onClick={handleDeleteAccount}>
+              {deleting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Konto endgültig löschen
             </Button>
           </DialogFooter>
         </DialogContent>

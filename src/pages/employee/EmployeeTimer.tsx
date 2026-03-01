@@ -1,4 +1,5 @@
-import { WorkTimer } from "@/components/workmode/WorkTimer";
+import { EmployeeTimeTracker } from "@/components/employee/EmployeeTimeTracker";
+import { EmployeeRoleGate } from "@/components/employee/EmployeeRoleGate";
 import { Clock } from "lucide-react";
 
 const EmployeeTimer = () => {
@@ -11,7 +12,9 @@ const EmployeeTimer = () => {
         </h1>
         <p className="text-sm text-muted-foreground">Arbeitszeiten dokumentieren</p>
       </div>
-      <WorkTimer />
+      <EmployeeRoleGate allowed={["employee", "team_lead"]}>
+        <EmployeeTimeTracker />
+      </EmployeeRoleGate>
     </div>
   );
 };

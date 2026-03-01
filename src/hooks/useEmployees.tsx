@@ -30,6 +30,8 @@ export interface Employee {
   invitation_sent_at: string | null;
   invitation_accepted_at: string | null;
   notes: string | null;
+  bio: string | null;
+  onboarding_completed: Record<string, boolean> | null;
   created_at: string;
   updated_at: string;
 }
