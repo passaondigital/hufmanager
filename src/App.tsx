@@ -101,6 +101,7 @@ const EmployeeTimer = lazy(() => import("@/pages/employee/EmployeeTimer"));
 const EmployeeHufCam = lazy(() => import("@/pages/employee/EmployeeHufCam"));
 const EmployeeAnalyse = lazy(() => import("@/pages/employee/EmployeeAnalyse"));
 const EmployeeChat = lazy(() => import("@/pages/employee/EmployeeChat"));
+const EmployeeCalendar = lazy(() => import("@/pages/employee/EmployeeCalendar"));
 const PartnerHome = lazy(() => import("@/pages/partner/PartnerHome"));
 const PartnerHorseView = lazy(() => import("@/pages/partner/PartnerHorseView"));
 const PartnerNotes = lazy(() => import("@/pages/partner/PartnerNotes"));
@@ -414,6 +415,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/employee/angebot" element={<MeinAngebot readOnly />} />
               <Route path="/employee/notizbuch" element={<EmployeeNotizbuch />} />
               <Route path="/employee/profil" element={<EmployeeProfil />} />
+              <Route path="/employee/kalender" element={<EmployeeCalendar />} />
             </Route>
 
             {/* --- 5. PARTNER (FACHPARTNER) ROUTES --- */}

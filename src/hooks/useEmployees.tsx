@@ -32,6 +32,8 @@ export interface Employee {
   notes: string | null;
   bio: string | null;
   onboarding_completed: Record<string, boolean> | null;
+  country: string | null;
+  timezone: string | null;
   created_at: string;
   updated_at: string;
 }

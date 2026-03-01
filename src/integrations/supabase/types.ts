@@ -2352,6 +2352,71 @@ export type Database = {
           },
         ]
       }
+      employee_material_requests: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: string
+          material_assignment_id: string
+          note: string | null
+          provider_id: string
+          requested_quantity: number
+          resolved_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: string
+          material_assignment_id: string
+          note?: string | null
+          provider_id: string
+          requested_quantity?: number
+          resolved_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: string
+          material_assignment_id?: string
+          note?: string | null
+          provider_id?: string
+          requested_quantity?: number
+          resolved_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_material_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_material_requests_material_assignment_id_fkey"
+            columns: ["material_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "employee_material_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_material_requests_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_material_requests_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_messages: {
         Row: {
           content: string
@@ -2438,6 +2503,7 @@ export type Database = {
           contract_end_date: string | null
           contract_pdf_url: string | null
           contract_start_date: string | null
+          country: string | null
           created_at: string
           custom_permissions: Json | null
           email: string
@@ -2454,6 +2520,7 @@ export type Database = {
           provider_id: string
           role: Database["public"]["Enums"]["employee_role"]
           status: Database["public"]["Enums"]["employee_status"]
+          timezone: string | null
           updated_at: string
           user_id: string | null
         }
@@ -2466,6 +2533,7 @@ export type Database = {
           contract_end_date?: string | null
           contract_pdf_url?: string | null
           contract_start_date?: string | null
+          country?: string | null
           created_at?: string
           custom_permissions?: Json | null
           email: string
@@ -2482,6 +2550,7 @@ export type Database = {
           provider_id: string
           role?: Database["public"]["Enums"]["employee_role"]
           status?: Database["public"]["Enums"]["employee_status"]
+          timezone?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -2494,6 +2563,7 @@ export type Database = {
           contract_end_date?: string | null
           contract_pdf_url?: string | null
           contract_start_date?: string | null
+          country?: string | null
           created_at?: string
           custom_permissions?: Json | null
           email?: string
@@ -2510,6 +2580,7 @@ export type Database = {
           provider_id?: string
           role?: Database["public"]["Enums"]["employee_role"]
           status?: Database["public"]["Enums"]["employee_status"]
+          timezone?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -2568,6 +2639,48 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employee_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_team_messages: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          provider_id: string
+          read_by: string[] | null
+          sender_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          provider_id: string
+          read_by?: string[] | null
+          sender_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          provider_id?: string
+          read_by?: string[] | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_team_messages_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_team_messages_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
             referencedColumns: ["id"]
           },
         ]

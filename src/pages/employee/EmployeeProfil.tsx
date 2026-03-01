@@ -14,8 +14,9 @@ import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
 import {
   User, Mail, Phone, Calendar, Briefcase, Shield, LogOut,
   CheckCircle, XCircle, Key, Loader2, Download, Trash2, AlertTriangle,
-  Camera, Save, Edit2,
+  Camera, Save, Edit2, Globe,
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -314,6 +315,42 @@ const EmployeeProfil = () => {
           </div>
           <p className="text-xs text-muted-foreground mb-3">Installiere die MitarbeiterApp auf deinem Gerät.</p>
           <PWAInstallButton />
+        </CardContent>
+      </Card>
+
+      {/* DACH Settings */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Globe className="h-4 w-4 text-primary" />
+            Regionale Einstellungen
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Land</label>
+            <Select
+              defaultValue={(profile as any).country || "DE"}
+              onValueChange={async (val) => {
+                await supabase.from("employee_profiles").update({ country: val }).eq("id", profile.id);
+                queryClient.invalidateQueries({ queryKey: ["employee-profile"] });
+                toast({ title: "Land aktualisiert" });
+              }}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="DE">🇩🇪 Deutschland</SelectItem>
+                <SelectItem value="AT">🇦🇹 Österreich</SelectItem>
+                <SelectItem value="CH">🇨🇭 Schweiz</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="text-xs text-muted-foreground p-2.5 bg-muted/50 rounded-lg">
+            <p className="font-medium mb-1">Überstunden-Grenzen:</p>
+            {((profile as any).country || "DE") === "DE" && <p>Max. 10h/Tag, 48h/Woche (ArbZG Deutschland)</p>}
+            {(profile as any).country === "AT" && <p>Max. 10h/Tag, 50h/Woche (AZG Österreich)</p>}
+            {(profile as any).country === "CH" && <p>Max. 14h/Tag (Ausnahme), 45h/Woche (ArG Schweiz)</p>}
+          </div>
         </CardContent>
       </Card>
 
