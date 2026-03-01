@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { UnconfirmedAppointmentsBanner } from "@/components/UnconfirmedAppointmentsBanner";
 import { CreateHorseModal } from "@/components/horse-detail/CreateHorseModal";
+import { ClientOnboarding } from "@/components/client/ClientOnboarding";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { MandatoryHorseModal } from "@/components/onboarding/MandatoryHorseModal";
 import { UpcomingAppointmentsList } from "@/components/client/UpcomingAppointmentsList";
@@ -183,12 +184,9 @@ export default function ClientHome() {
         />
       )}
 
-      {/* Onboarding Wizard */}
+      {/* Client-specific Onboarding (3-screen intro) */}
       {showOnboarding && (
-        <OnboardingWizard 
-          onComplete={completeOnboarding}
-          onSkip={completeOnboarding}
-        />
+        <ClientOnboarding onComplete={completeOnboarding} />
       )}
 
       <div className="min-h-[100dvh] bg-gradient-to-b from-background via-background to-muted/20 overflow-safe">
@@ -373,7 +371,7 @@ export default function ClientHome() {
             >
               <Camera className="h-6 w-6 sm:h-7 sm:w-7" />
               <span className="text-sm sm:text-base font-semibold">Huf fotografieren</span>
-              <span className="text-[9px] sm:text-[10px] opacity-80">Automatische Huf-Dokumentation</span>
+              <span className="text-[9px] sm:text-[10px] opacity-80">Foto in die Pferdeakte laden</span>
             </Button>
             
             <Button 

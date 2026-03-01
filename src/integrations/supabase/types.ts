@@ -1221,6 +1221,30 @@ export type Database = {
           },
         ]
       }
+      client_referrals: {
+        Row: {
+          channel: string
+          created_at: string
+          id: string
+          provider_id: string
+          referrer_id: string
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          id?: string
+          provider_id: string
+          referrer_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          id?: string
+          provider_id?: string
+          referrer_id?: string
+        }
+        Relationships: []
+      }
       config_snapshots: {
         Row: {
           created_at: string
@@ -3424,6 +3448,57 @@ export type Database = {
           },
           {
             foreignKeyName: "hoof_photos_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      horse_diary_entries: {
+        Row: {
+          category: string
+          created_at: string
+          deleted_at: string | null
+          horse_id: string
+          id: string
+          owner_id: string
+          photo_url: string | null
+          shared_with_provider: boolean
+          text: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          deleted_at?: string | null
+          horse_id: string
+          id?: string
+          owner_id: string
+          photo_url?: string | null
+          shared_with_provider?: boolean
+          text: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          deleted_at?: string | null
+          horse_id?: string
+          id?: string
+          owner_id?: string
+          photo_url?: string | null
+          shared_with_provider?: boolean
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horse_diary_entries_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_diary_entries_horse_id_fkey"
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "safe_horses"

@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Info, History, Image, Users, FileText } from "lucide-react";
+import { ArrowLeft, Info, History, Image, Users, FileText, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
 import { TabSteckbrief } from "@/components/horse-detail/TabSteckbrief";
@@ -19,6 +19,7 @@ import { HoofStatusGrid } from "@/components/horse-detail/HoofStatusGrid";
 import { HorseStammdatenCard } from "@/components/horse-detail/HorseStammdatenCard";
 import { HoofPhotoTimeline } from "@/components/horse-detail/HoofPhotoTimeline";
 import { HorsePartnerPanel } from "@/components/horse-detail/HorsePartnerPanel";
+import { HorseDiary } from "@/components/client/HorseDiary";
 import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
 
 export default function ClientHorseDetail() {
@@ -153,7 +154,7 @@ export default function ClientHorseDetail() {
         />
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <div className="overflow-x-auto -mx-4 px-4">
-            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-5">
+            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-6">
               <TabsTrigger value="steckbrief" className="flex items-center gap-1.5 whitespace-nowrap">
                 <Info className="h-4 w-4" />
                 <span>Übersicht</span>
@@ -169,6 +170,10 @@ export default function ClientHorseDetail() {
               <TabsTrigger value="dokumente" className="flex items-center gap-1.5 whitespace-nowrap">
                 <FileText className="h-4 w-4" />
                 <span>Dokumente</span>
+              </TabsTrigger>
+              <TabsTrigger value="tagebuch" className="flex items-center gap-1.5 whitespace-nowrap">
+                <BookOpen className="h-4 w-4" />
+                <span>Tagebuch</span>
               </TabsTrigger>
               <TabsTrigger value="betreuer" className="flex items-center gap-1.5 whitespace-nowrap">
                 <Users className="h-4 w-4" />
@@ -208,6 +213,10 @@ export default function ClientHorseDetail() {
               documents={documents} 
               onRefresh={fetchHorseData} 
             />
+          </TabsContent>
+
+          <TabsContent value="tagebuch">
+            <HorseDiary horseId={horse.id} />
           </TabsContent>
 
           <TabsContent value="betreuer">

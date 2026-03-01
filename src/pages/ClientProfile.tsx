@@ -7,19 +7,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, User, Loader2, Save, Bell } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, User, Loader2, Save, Bell, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { StableLocationCard } from "@/components/client/StableLocationCard";
 import { EmergencyContactsCard } from "@/components/client/EmergencyContactsCard";
 import { PushNotificationToggle } from "@/components/notifications/PushNotificationToggle";
 import { DeleteAccountSection } from "@/components/client/DeleteAccountSection";
 import { DataExportSection } from "@/components/settings/DataExportSection";
+import { ClientAvatarUpload } from "@/components/client/ClientAvatarUpload";
+import { ProviderReferral } from "@/components/client/ProviderReferral";
 
 interface Profile {
   id: string;
   full_name: string | null;
   email: string | null;
   phone: string | null;
+  avatar_url: string | null;
+  country: string | null;
   stable_street: string | null;
   stable_zip: string | null;
   stable_city: string | null;
@@ -46,7 +51,7 @@ export default function ClientProfile() {
     const { data, error } = await supabase
       .from("profiles")
       .select(
-        "id, full_name, email, phone, stable_street, stable_zip, stable_city, stable_latitude, stable_longitude, emergency_contacts"
+        "id, full_name, email, phone, avatar_url, country, stable_street, stable_zip, stable_city, stable_latitude, stable_longitude, emergency_contacts"
       )
       .eq("id", user.id)
       .maybeSingle();
@@ -62,6 +67,8 @@ export default function ClientProfile() {
       
       setProfile({
         ...data,
+        avatar_url: data.avatar_url || null,
+        country: data.country || null,
         emergency_contacts: parsedContacts,
       });
       setFormData({
@@ -136,6 +143,14 @@ export default function ClientProfile() {
       </header>
 
       <main className="px-4 py-6 max-w-lg mx-auto space-y-4">
+        {/* Avatar */}
+        <ClientAvatarUpload
+          userId={profile.id}
+          avatarUrl={profile.avatar_url}
+          fullName={profile.full_name}
+          onUploaded={(url) => setProfile(prev => prev ? { ...prev, avatar_url: url } : prev)}
+        />
+
         {/* Basic Info */}
         <Card>
           <CardHeader className="pb-3">
@@ -224,6 +239,49 @@ export default function ClientProfile() {
             <PushNotificationToggle />
           </CardContent>
         </Card>
+
+        {/* DACH Region Settings */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Globe className="h-4 w-4 text-primary" />
+              Region
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div>
+              <Label>Land</Label>
+              <Select
+                value={profile.country || "DE"}
+                onValueChange={async (value) => {
+                  const { error } = await supabase
+                    .from("profiles")
+                    .update({ country: value })
+                    .eq("id", profile.id);
+                  if (!error) {
+                    setProfile(prev => prev ? { ...prev, country: value } : prev);
+                    toast.success("Region gespeichert");
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="DE">🇩🇪 Deutschland</SelectItem>
+                  <SelectItem value="AT">🇦🇹 Österreich</SelectItem>
+                  <SelectItem value="CH">🇨🇭 Schweiz</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Beeinflusst Datums- und Währungsformat
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Provider Referral */}
+        <ProviderReferral />
 
         {/* DSGVO: Datenexport (Art. 15/20) */}
         <DataExportSection />
