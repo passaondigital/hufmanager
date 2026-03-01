@@ -208,7 +208,7 @@ export function AppSidebar({ appName, userDisplayName, navigationConfig, mobile 
         />
       </div>
 
-      <ScrollArea className="flex-1 min-h-0 py-4">
+      <div className="flex-1 min-h-0 overflow-y-auto py-4">
         {/* Direct items (e.g. Dashboard) */}
         {navigationConfig.directItems && (
           <div className="px-3 mb-2">
@@ -240,7 +240,7 @@ export function AppSidebar({ appName, userDisplayName, navigationConfig, mobile 
             </div>
           </div>
         ))}
-      </ScrollArea>
+      </div>
 
       {/* Bottom: Hilfe & Support + Logout */}
       <div className="shrink-0 border-t border-sidebar-border px-3 py-2 space-y-0.5">
