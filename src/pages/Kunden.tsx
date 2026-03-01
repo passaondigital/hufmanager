@@ -80,7 +80,7 @@ const Kunden = () => {
       // First get clients created by provider
       const { data: createdClients, error: createdError } = await supabase
         .from("profiles")
-        .select("*")
+        .select("id, full_name, email, phone, avatar_url, readable_id, created_at, city, zip_code, street, has_logged_in, created_by_provider_id, invited_at, payment_rating, lifecycle_status")
         .eq("created_by_provider_id", user.id)
         .is("deleted_at", null);
       
@@ -103,7 +103,7 @@ const Kunden = () => {
       if (grantedClientIds.length > 0) {
         const { data: grantedData, error: grantedError } = await supabase
           .from("profiles")
-          .select("*")
+          .select("id, full_name, email, phone, avatar_url, readable_id, created_at, city, zip_code, street, has_logged_in, created_by_provider_id, invited_at, payment_rating, lifecycle_status")
           .in("id", grantedClientIds)
           .is("deleted_at", null);
         
@@ -150,7 +150,7 @@ const Kunden = () => {
       // This ensures we see ALL horses belonging to clients, regardless of who created them
       const { data, error } = await supabase
         .from("horses")
-        .select("*")
+        .select("id, name, breed, photo_url, owner_id, readable_id, hoof_type, hoof_protection, color, birth_year, gender, latitude, longitude")
         .in("owner_id", clientIds)
         .is("deleted_at", null);
         

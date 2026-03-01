@@ -159,7 +159,7 @@ export default function ClientChat() {
     const loadMessages = async () => {
       const { data } = await supabase
         .from("messages")
-        .select("*")
+        .select("id, conversation_id, sender_id, content, created_at, is_read")
         .eq("conversation_id", conversationId)
         .order("created_at", { ascending: true });
       
