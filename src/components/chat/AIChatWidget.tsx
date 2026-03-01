@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { AiDisclosure } from "@/components/legal/AiDisclosure";
 
+
 type Message = { role: "user" | "assistant"; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
@@ -169,7 +170,22 @@ export function AIChatWidget() {
                     : "bg-muted"
                 )}
               >
-                {msg.content}
+                {msg.role === "assistant" ? (
+                  <div
+                    className="prose prose-sm dark:prose-invert max-w-none [&_p]:mb-1.5 [&_ul]:mb-1.5 [&_ol]:mb-1.5 [&_li]:mb-0.5 [&_strong]:text-foreground"
+                    dangerouslySetInnerHTML={{
+                      __html: msg.content
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                        .replace(/`(.*?)`/g, '<code class="bg-background/50 px-1 rounded text-xs">$1</code>')
+                        .replace(/^- (.+)/gm, '<li>$1</li>')
+                        .replace(/^(\d+)\. (.+)/gm, '<li>$1. $2</li>')
+                        .replace(/\n/g, '<br/>')
+                    }}
+                  />
+                ) : (
+                  msg.content
+                )}
               </div>
             </div>
           ))}
