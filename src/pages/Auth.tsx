@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { PricingModal } from "@/components/subscription/PricingModal";
 import { DemoAccessCards } from "@/components/auth/DemoAccessCards";
+import { MultiStepSignup } from "@/components/auth/MultiStepSignup";
 
 // NOTE: Admin access is controlled server-side via user_roles table and RLS policies
 // Do NOT add client-side email whitelists - they can be bypassed
@@ -42,6 +43,7 @@ export default function Auth() {
   const { user, role, loading: authLoading, signIn, signUp } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const [showMultiStepSignup, setShowMultiStepSignup] = useState(false);
   const [loading, setLoading] = useState(false);
   
   // Invite code from URL (provider's readable_id) or HM Connect invite token
@@ -440,146 +442,41 @@ export default function Auth() {
             </TabsContent>
             
             <TabsContent value="signup" className="mt-6">
-              {/* Package Selection Prompt for Providers */}
-              {selectedRole === "provider" && (
-                <div className="mb-6 p-4 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                        <Package className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground text-sm">
-                          Schon ein Paket gewählt?
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Du brauchst zuerst ein Abo.
-                        </p>
-                      </div>
-                    </div>
-                    <Button 
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="shrink-0 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                      onClick={() => openPricingModal(
-                        "Wähle dein Paket",
-                        "Starte jetzt mit HufManager und digitalisiere dein Business."
-                      )}
-                    >
-                      Pakete anzeigen
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              <form onSubmit={handleSignup} className="space-y-5">
-                {/* Role Selection */}
-                <div className="space-y-3">
-                  <Label className="text-foreground font-medium">Ich bin...</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedRole("provider")}
-                      className={cn(
-                        "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
-                        selectedRole === "provider"
-                          ? "border-primary bg-primary/10 shadow-md shadow-primary/20"
-                          : "border-border bg-card hover:border-primary/50 hover:bg-muted/50"
-                      )}
-                    >
-                      <div className={cn(
-                        "w-12 h-12 rounded-full flex items-center justify-center transition-colors",
-                        selectedRole === "provider"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground"
-                      )}>
-                        <Hammer className="h-6 w-6" />
-                      </div>
-                      <span className={cn(
-                        "font-semibold text-sm",
-                        selectedRole === "provider" ? "text-primary" : "text-foreground"
-                      )}>
-                        Hufbearbeiter
-                      </span>
-                      <span className="text-xs text-muted-foreground text-center">
-                        Verwalte Termine & Kunden
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setSelectedRole("client")}
-                      className={cn(
-                        "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 relative",
-                        selectedRole === "client"
-                          ? "border-primary bg-primary/10 shadow-md shadow-primary/20"
-                          : "border-border bg-card hover:border-primary/50 hover:bg-muted/50"
-                      )}
-                    >
-                      {/* Free badge */}
-                      <div className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-                        GRATIS
-                      </div>
-                      <div className={cn(
-                        "w-12 h-12 rounded-full flex items-center justify-center transition-colors",
-                        selectedRole === "client"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground"
-                      )}>
-                        <Heart className="h-6 w-6" />
-                      </div>
-                      <span className={cn(
-                        "font-semibold text-sm",
-                        selectedRole === "client" ? "text-primary" : "text-foreground"
-                      )}>
-                        Pferdebesitzer
-                      </span>
-                      <span className="text-xs text-muted-foreground text-center">
-                        Kostenlos für Besitzer
-                      </span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name" className="text-foreground font-medium">Vollständiger Name</Label>
-                  <Input
-                    id="signup-name"
-                    type="text"
-                    placeholder="Max Mustermann"
-                    value={signupName}
-                    onChange={(e) => setSignupName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email" className="text-foreground font-medium">E-Mail</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="ihre@email.de"
-                    value={signupEmail}
-                    onChange={(e) => setSignupEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password" className="text-foreground font-medium">Passwort</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={signupPassword}
-                    onChange={(e) => setSignupPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full h-14 text-base font-semibold" disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-                  {selectedRole === "provider" ? "Als Hufbearbeiter registrieren" : "Als Pferdebesitzer registrieren"}
-                </Button>
-              </form>
+              <MultiStepSignup
+                inviteCode={inviteCode}
+                loading={loading}
+                onComplete={async (data) => {
+                  setLoading(true);
+                  try {
+                    const { error } = await signUp(data.email, data.password, data.fullName, data.role);
+                    if (error) {
+                      if (error.message.includes("already registered")) {
+                        toast.error("Diese E-Mail ist bereits registriert. Bitte melden Sie sich an.");
+                      } else {
+                        toast.error(`Registrierung fehlgeschlagen: ${error.message}`);
+                      }
+                    } else {
+                      if (inviteCode) {
+                        sessionStorage.setItem("huf_invite_code", inviteCode);
+                      }
+                      // Save business name if provided
+                      if (data.businessName) {
+                        sessionStorage.setItem("hm_pending_business_name", data.businessName);
+                      }
+                      toast.success("Registrierung erfolgreich! Bitte bestätigen Sie Ihre E-Mail.");
+                    }
+                  } catch (err: any) {
+                    toast.error("Ein unerwarteter Fehler ist aufgetreten.");
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                onCancel={() => {
+                  // Switch back to login tab
+                  const loginTab = document.querySelector('[value="login"]') as HTMLButtonElement;
+                  loginTab?.click();
+                }}
+              />
             </TabsContent>
           </Tabs>
         </CardContent>

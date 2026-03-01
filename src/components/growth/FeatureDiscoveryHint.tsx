@@ -11,33 +11,47 @@ interface FeatureHint {
   cta: string;
   navigateTo: string;
   requiredDaysActive: number;
-  /** localStorage key that, if present, means user already uses this feature */
-  usageKey?: string;
 }
 
 const featureHints: FeatureHint[] = [
   {
     id: "hufcam",
     title: "Huffotos direkt in die Akte",
-    description: "Mit HufCam speicherst du Huffotos direkt in der Pferdeakte — inklusive Datum und Verlauf. Perfekt für Vorher-Nachher-Vergleiche.",
-    cta: "Jetzt ausprobieren",
+    description: "Mach einfach ein Foto vom Huf — HufCam speichert es direkt in die Pferdeakte. Kein Hochladen, kein Suchen.",
+    cta: "HufCam ausprobieren",
     navigateTo: "/huf-analyse",
     requiredDaysActive: 7,
   },
   {
     id: "autoflow",
-    title: "Termine, Rechnungen, Erinnerungen — automatisch",
-    description: "AutoFlow erledigt die Routinearbeit für dich. Termin erledigt → Rechnung raus → Erinnerung an den nächsten Termin.",
-    cta: "AutoFlow entdecken",
+    title: "Erinnerungen, Rechnungen — automatisch",
+    description: "Erinnerungen verschicken, Rechnungen erstellen, Nachfassen — alles automatisch. Während du am nächsten Pferd stehst.",
+    cta: "AutoFlow ansehen",
     navigateTo: "/autoflow",
     requiredDaysActive: 14,
   },
   {
-    id: "calendar-sync",
-    title: "Kalender mit dem Handy synchronisieren",
-    description: "Exportiere deine HufManager-Termine in deinen iPhone- oder Google-Kalender. Alle Termine immer dabei.",
-    cta: "Kalender verbinden",
-    navigateTo: "/calendar",
+    id: "hm-connect",
+    title: "Das echte Stallnetzwerk",
+    description: "Mit HM Connect siehst du welche Therapeuten und Tierärzte deine Pferde kennen — und sie sehen dich.",
+    cta: "HM Connect entdecken",
+    navigateTo: "/hm-connect",
+    requiredDaysActive: 7,
+  },
+  {
+    id: "hufi",
+    title: "Frag einfach — Hufi weiß Bescheid",
+    description: "Frag einfach — Hufi kennt HufManager besser als jedes Handbuch.",
+    cta: "Hufi fragen",
+    navigateTo: "/hufi",
+    requiredDaysActive: 3,
+  },
+  {
+    id: "fahrtenbuch",
+    title: "Kilometer von der Steuer absetzen",
+    description: "Jeden Kilometer den du fährst kannst du von der Steuer absetzen. Fahrtenbuch läuft automatisch mit.",
+    cta: "Fahrtenbuch starten",
+    navigateTo: "/fahrtenbuch",
     requiredDaysActive: 5,
   },
   {
