@@ -63,7 +63,7 @@ export const WebsiteEditorPage = () => {
 
   // Check if first time (no subdomain = show onboarding)
   if (!isLoading && !subdomain && !showOnboarding) {
-    return <WebsiteOnboarding onComplete={() => setShowOnboarding(false)} />;
+    return <WebsiteOnboarding onComplete={() => setShowOnboarding(true)} />;
   }
 
   if (isLoading) {
