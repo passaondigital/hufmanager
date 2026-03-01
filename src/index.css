@@ -484,3 +484,39 @@ lovable-badge,
 .overflow-safe {
   @apply overflow-x-hidden max-w-full;
 }
+
+/* ─── Mobile Performance Optimizations ─────────────────────────── */
+
+/* Eliminate 300ms tap delay on all touch targets */
+* {
+  touch-action: manipulation;
+}
+
+/* Smoother tap feedback */
+button, a, [role="button"], label, input[type="checkbox"], input[type="radio"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth momentum scrolling & contain overscroll */
+.scrollable,
+[data-radix-scroll-area-viewport],
+.overflow-y-auto,
+.overflow-auto {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* GPU-accelerated animations only */
+.animate-fade-in,
+.animate-slide-in,
+[data-state="open"],
+[data-state="closed"] {
+  will-change: transform, opacity;
+}
+
+/* Prevent iOS input zoom — 16px minimum */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}

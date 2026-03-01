@@ -97,7 +97,7 @@ const Services = () => {
       
       const { data, error } = await supabase
         .from("services")
-        .select("*")
+        .select("id, name, description, base_price, duration, is_active, booking_action, provider_id, created_at, category, billing_type")
         .eq("provider_id", user.id)
         .order("created_at");
       if (error) throw error;
