@@ -86,13 +86,11 @@ export function AppSidebar({ appName, userDisplayName, navigationConfig, mobile 
     setOpenMenus(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Separate Management group from main groups
+  // Separate Management group's support item for bottom pinning
   const managementGroup = navigationConfig.groups.find(g => g.label === "Management");
-  const mainGroups = navigationConfig.groups.filter(g => g.label !== "Management");
-  const managementItem = managementGroup?.items.find(i => i.id === "management");
   const supportItem = managementGroup?.items.find(i => i.id === "support");
-  const isManagementActiveFlag = managementItem?.children?.some(c => isActive(c.path)) || false;
-  const effectiveManagementOpen = managementOpen || isManagementActiveFlag;
+  // All groups render in main area (including Management)
+  const allGroups = navigationConfig.groups;
 
   // ── Sub-item renderer (inside collapsible) ──────────
   const SubNavItem = ({ child }: { child: NavItem }) => (
@@ -222,8 +220,8 @@ export function AppSidebar({ appName, userDisplayName, navigationConfig, mobile 
 
         <Separator className="my-4 bg-sidebar-border" />
 
-        {/* Main Groups */}
-        {mainGroups.map((group, idx) => (
+        {/* All Groups (including Management) */}
+        {allGroups.map((group, idx) => (
           <div key={group.label}>
             {idx > 0 && <Separator className="my-4 bg-sidebar-border" />}
             <div className="px-3 space-y-1">
@@ -236,7 +234,7 @@ export function AppSidebar({ appName, userDisplayName, navigationConfig, mobile 
                 )}
                 {group.label}
               </p>
-              {group.items.map(cat => (
+              {group.items.filter(cat => cat.id !== "support").map(cat => (
                 <MainNavItem key={cat.id} cat={cat} />
               ))}
             </div>
@@ -244,50 +242,8 @@ export function AppSidebar({ appName, userDisplayName, navigationConfig, mobile 
         ))}
       </ScrollArea>
 
-      {/* Bottom-Pinned Management Section */}
+      {/* Bottom: Hilfe & Support + Logout */}
       <div className="shrink-0 border-t border-sidebar-border px-3 py-2 space-y-0.5">
-        {managementItem && (
-          <Collapsible
-            open={effectiveManagementOpen}
-            onOpenChange={() => setManagementOpen(prev => !prev)}
-          >
-            <CollapsibleTrigger asChild>
-              <button
-                className={cn(
-                  "w-full flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-200",
-                  isManagementActiveFlag
-                    ? "bg-sidebar-primary/10 text-sidebar-primary"
-                    : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                )}
-              >
-                <LucideIcon name={managementItem.iconName} className="h-4 w-4 shrink-0" />
-                <span className="text-sm font-medium flex-1 text-left">{managementItem.label}</span>
-                <ChevronDown className={cn(
-                  "h-3.5 w-3.5 transition-transform",
-                  effectiveManagementOpen && "rotate-180"
-                )} />
-              </button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-0.5 pt-1">
-              {managementItem.children?.map(child => (
-                <NavLink
-                  key={child.path}
-                  to={child.path}
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200 ml-4",
-                    isActive(child.path)
-                      ? "bg-sidebar-primary/10 text-sidebar-primary"
-                      : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                  )}
-                >
-                  <span className="text-xs">{child.label}</span>
-                </NavLink>
-              ))}
-            </CollapsibleContent>
-          </Collapsible>
-        )}
-
-        {/* Hilfe & Support */}
         {supportItem && (
           <NavLink
             to={supportItem.path!}
@@ -303,7 +259,6 @@ export function AppSidebar({ appName, userDisplayName, navigationConfig, mobile 
           </NavLink>
         )}
 
-        {/* Logout */}
         <button
           onClick={logout}
           className="w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-sidebar-foreground/40 hover:bg-destructive/10 hover:text-destructive transition-colors"
@@ -312,7 +267,6 @@ export function AppSidebar({ appName, userDisplayName, navigationConfig, mobile 
           <span className="text-xs">Abmelden</span>
         </button>
 
-        {/* Legal Links */}
         <div className="flex items-center justify-center gap-1.5 pt-2 text-[10px] text-sidebar-foreground/40">
           <a href="https://hufmanager.de/impressum" target="_blank" rel="noopener noreferrer" className="hover:text-sidebar-foreground hover:underline">
             Impressum
@@ -323,19 +277,6 @@ export function AppSidebar({ appName, userDisplayName, navigationConfig, mobile 
           </a>
         </div>
       </div>
-
-      {/* Fallback Logout if no Management group */}
-      {!managementGroup && (
-        <div className="shrink-0 border-t border-sidebar-border">
-          <button
-            onClick={logout}
-            className="flex items-center gap-2.5 px-4 py-4 w-full text-sm text-destructive hover:bg-destructive/10 transition-colors"
-          >
-            <LogOut className="h-4 w-4" />
-            <span>Abmelden</span>
-          </button>
-        </div>
-      )}
     </aside>
   );
 }
