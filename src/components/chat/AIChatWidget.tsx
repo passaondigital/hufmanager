@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import DOMPurify from "dompurify";
 import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -174,13 +175,16 @@ export function AIChatWidget() {
                   <div
                     className="prose prose-sm dark:prose-invert max-w-none [&_p]:mb-1.5 [&_ul]:mb-1.5 [&_ol]:mb-1.5 [&_li]:mb-0.5 [&_strong]:text-foreground"
                     dangerouslySetInnerHTML={{
-                      __html: msg.content
-                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                        .replace(/`(.*?)`/g, '<code class="bg-background/50 px-1 rounded text-xs">$1</code>')
-                        .replace(/^- (.+)/gm, '<li>$1</li>')
-                        .replace(/^(\d+)\. (.+)/gm, '<li>$1. $2</li>')
-                        .replace(/\n/g, '<br/>')
+                      __html: DOMPurify.sanitize(
+                        msg.content
+                          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                          .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                          .replace(/`(.*?)`/g, '<code class="bg-background/50 px-1 rounded text-xs">$1</code>')
+                          .replace(/^- (.+)/gm, '<li>$1</li>')
+                          .replace(/^(\d+)\. (.+)/gm, '<li>$1. $2</li>')
+                          .replace(/\n/g, '<br/>'),
+                        { ALLOWED_TAGS: ['strong', 'em', 'code', 'li', 'br', 'ul', 'ol', 'p'], ALLOWED_ATTR: ['class'] }
+                      )
                     }}
                   />
                 ) : (
