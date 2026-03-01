@@ -7664,6 +7664,123 @@ export type Database = {
         }
         Relationships: []
       }
+      system_alert_rules: {
+        Row: {
+          alert_level: number
+          alert_name: string
+          condition_type: string
+          created_at: string
+          id: string
+          is_active: boolean
+          notification_channels: string[]
+          threshold_value: number | null
+          updated_at: string
+        }
+        Insert: {
+          alert_level: number
+          alert_name: string
+          condition_type: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          notification_channels?: string[]
+          threshold_value?: number | null
+          updated_at?: string
+        }
+        Update: {
+          alert_level?: number
+          alert_name?: string
+          condition_type?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          notification_channels?: string[]
+          threshold_value?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      system_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          alert_level: number
+          alert_name: string
+          channels_notified: string[] | null
+          created_at: string
+          details: Json | null
+          id: string
+          message: string
+          resolved_at: string | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_level: number
+          alert_name: string
+          channels_notified?: string[] | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          message: string
+          resolved_at?: string | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_level?: number
+          alert_name?: string
+          channels_notified?: string[] | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          message?: string
+          resolved_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_alerts_acknowledged_by_fkey"
+            columns: ["acknowledged_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_alerts_acknowledged_by_fkey"
+            columns: ["acknowledged_by"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_anomaly_baselines: {
+        Row: {
+          baseline_value: number
+          id: string
+          last_measured_at: string | null
+          metric_name: string
+          threshold_multiplier: number
+          updated_at: string
+        }
+        Insert: {
+          baseline_value?: number
+          id?: string
+          last_measured_at?: string | null
+          metric_name: string
+          threshold_multiplier?: number
+          updated_at?: string
+        }
+        Update: {
+          baseline_value?: number
+          id?: string
+          last_measured_at?: string | null
+          metric_name?: string
+          threshold_multiplier?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       system_error_log: {
         Row: {
           auto_fixed: boolean
@@ -7713,30 +7830,36 @@ export type Database = {
         Row: {
           auto_fixed: boolean
           check_category: string
+          check_duration_ms: number | null
           check_name: string
           created_at: string
           details: Json | null
           fix_applied: string | null
+          health_score: number | null
           id: string
           status: string
         }
         Insert: {
           auto_fixed?: boolean
           check_category: string
+          check_duration_ms?: number | null
           check_name: string
           created_at?: string
           details?: Json | null
           fix_applied?: string | null
+          health_score?: number | null
           id?: string
           status?: string
         }
         Update: {
           auto_fixed?: boolean
           check_category?: string
+          check_duration_ms?: number | null
           check_name?: string
           created_at?: string
           details?: Json | null
           fix_applied?: string | null
+          health_score?: number | null
           id?: string
           status?: string
         }
@@ -8836,6 +8959,16 @@ export type Database = {
         }[]
       }
       get_employee_profile_id: { Args: { _user_id: string }; Returns: string }
+      get_health_score_trend: {
+        Args: { days_back?: number }
+        Returns: {
+          avg_score: number
+          check_date: string
+          critical_count: number
+          total_checks: number
+          warning_count: number
+        }[]
+      }
       get_horse_medical_data: {
         Args: { p_horse_id: string }
         Returns: {
@@ -8997,6 +9130,7 @@ export type Database = {
         Args: { _client_id: string; _provider_id: string }
         Returns: boolean
       }
+      run_health_fix: { Args: { fix_type: string }; Returns: Json }
       search_horse_by_readable_id: {
         Args: { search_id: string }
         Returns: Json
