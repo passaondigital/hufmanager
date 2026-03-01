@@ -18,6 +18,7 @@ import { createIDBPersister, initImageSyncManager, QUERY_CACHE_MAX_AGE, STATIC_Q
 import { initSyncManager } from "@/lib/offline/syncManager";
 import { Loader2 } from "lucide-react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { TourProvider } from "@/components/tour/TourContext";
 
 // Eagerly loaded core pages
 import Index from "@/pages/Index";
@@ -211,6 +212,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
 
   return (
     <SubscriptionProvider>
+      <TourProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -426,6 +428,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
           </Suspense>
         </PasswordRecoveryRedirect>
       </TooltipProvider>
+      </TourProvider>
     </SubscriptionProvider>
   );
 }
