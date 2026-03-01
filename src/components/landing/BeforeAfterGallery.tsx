@@ -119,6 +119,7 @@ export function BeforeAfterGallery({ images, primaryColor = "#F47B20" }: BeforeA
                 size="icon"
                 className="absolute top-2 right-2 z-10 text-white hover:bg-white/20"
                 onClick={() => setSelectedIndex(null)}
+                aria-label="Schließen"
               >
                 <X className="h-5 w-5" />
               </Button>
@@ -131,6 +132,7 @@ export function BeforeAfterGallery({ images, primaryColor = "#F47B20" }: BeforeA
                     size="icon"
                     className="absolute left-2 top-1/2 -translate-y-1/2 z-10 text-white hover:bg-white/20"
                     onClick={handlePrev}
+                    aria-label="Vorheriges Bild"
                   >
                     <ChevronLeft className="h-8 w-8" />
                   </Button>
@@ -139,6 +141,7 @@ export function BeforeAfterGallery({ images, primaryColor = "#F47B20" }: BeforeA
                     size="icon"
                     className="absolute right-2 top-1/2 -translate-y-1/2 z-10 text-white hover:bg-white/20"
                     onClick={handleNext}
+                    aria-label="Nächstes Bild"
                   >
                     <ChevronRight className="h-8 w-8" />
                   </Button>

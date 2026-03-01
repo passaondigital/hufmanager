@@ -303,8 +303,8 @@ export default function Verarbeitungsverzeichnis() {
                       <td className="p-2"><Textarea value={editBuffer.safeguards} onChange={e => updateField("safeguards", e.target.value)} className="text-xs min-h-[60px]" /></td>
                       <td className="p-2"><Textarea value={editBuffer.deletionProcess} onChange={e => updateField("deletionProcess", e.target.value)} className="text-xs min-h-[60px]" /></td>
                       <td className="p-2 space-y-1">
-                        <Button size="icon" variant="ghost" onClick={confirmEdit} className="h-7 w-7 text-primary"><Check className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={cancelEdit} className="h-7 w-7 text-destructive"><X className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" onClick={confirmEdit} className="h-7 w-7 text-primary" aria-label="Änderung bestätigen"><Check className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" onClick={cancelEdit} className="h-7 w-7 text-destructive" aria-label="Abbrechen"><X className="h-4 w-4" /></Button>
                       </td>
                     </>
                   ) : (
@@ -317,7 +317,7 @@ export default function Verarbeitungsverzeichnis() {
                       <td className="p-3 text-muted-foreground text-xs">{entry.safeguards}</td>
                       <td className="p-3 text-muted-foreground text-xs">{entry.deletionProcess}</td>
                       <td className="p-3">
-                        <Button size="icon" variant="ghost" onClick={() => startEdit(entry)} className="h-7 w-7"><Pencil className="h-3.5 w-3.5" /></Button>
+                        <Button size="icon" variant="ghost" onClick={() => startEdit(entry)} className="h-7 w-7" aria-label="Eintrag bearbeiten"><Pencil className="h-3.5 w-3.5" /></Button>
                       </td>
                     </>
                   )}

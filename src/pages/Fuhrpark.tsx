@@ -375,8 +375,8 @@ function VehicleCard({ vehicle: v, onEdit, onDelete }: { vehicle: Vehicle; onEdi
           <div className="flex items-center gap-2">
             {v.is_primary && <Badge variant="secondary">Hauptfahrzeug</Badge>}
             {v.status === "maintenance" && <Badge variant="outline" className="text-yellow-600 border-yellow-600">Werkstatt</Badge>}
-            <Button variant="ghost" size="icon" onClick={onEdit}><Edit2 className="h-4 w-4" /></Button>
-            <Button variant="ghost" size="icon" className="text-destructive" onClick={onDelete}><Trash2 className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" onClick={onEdit} aria-label="Fahrzeug bearbeiten"><Edit2 className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" className="text-destructive" onClick={onDelete} aria-label="Fahrzeug löschen"><Trash2 className="h-4 w-4" /></Button>
           </div>
         </div>
 

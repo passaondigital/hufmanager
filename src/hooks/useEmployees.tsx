@@ -70,7 +70,7 @@ export function useEmployees() {
       
       const { data, error } = await supabase
         .from("employee_profiles")
-        .select("*")
+        .select("id, user_id, provider_id, organization_id, full_name, email, phone, avatar_url, role, status, employment_type, contract_start_date, contract_end_date, contract_pdf_url, can_work_alone, can_apply_hoof_protection, can_work_sensitive_clients, custom_permissions, invitation_token, invitation_sent_at, invitation_accepted_at, notes, bio, onboarding_completed, country, timezone, created_at, updated_at")
         .eq("provider_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -78,6 +78,7 @@ export function useEmployees() {
       return data as Employee[];
     },
     enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   // Create new employee
@@ -258,7 +259,7 @@ export function useEmployeeProfile() {
 
       const { data, error } = await supabase
         .from("employee_profiles")
-        .select("*")
+        .select("id, user_id, provider_id, organization_id, full_name, email, phone, avatar_url, role, status, employment_type, contract_start_date, contract_end_date, contract_pdf_url, can_work_alone, can_apply_hoof_protection, can_work_sensitive_clients, custom_permissions, invitation_token, invitation_sent_at, invitation_accepted_at, notes, bio, onboarding_completed, country, timezone, created_at, updated_at")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -266,5 +267,6 @@ export function useEmployeeProfile() {
       return data as Employee | null;
     },
     enabled: !!user?.id,
+    staleTime: 1000 * 60 * 10, // 10 minutes - profile rarely changes
   });
 }

@@ -70,7 +70,7 @@ export function PdfPreviewDialog({
                 <Download className="h-4 w-4 mr-2" />
                 Herunterladen
               </Button>
-              <Button variant="ghost" size="icon" onClick={onClose}>
+              <Button variant="ghost" size="icon" onClick={onClose} aria-label="Schließen">
                 <X className="h-4 w-4" />
               </Button>
             </div>
