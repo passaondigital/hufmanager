@@ -56,6 +56,7 @@ const ClientProfile = lazy(() => import("@/pages/ClientProfile"));
 const ClientChat = lazy(() => import("@/pages/ClientChat"));
 const ClientStallBoard = lazy(() => import("@/pages/ClientStallBoard"));
 const ProviderLanding = lazy(() => import("@/pages/ProviderLanding"));
+const MeineWebsite = lazy(() => import("@/pages/MeineWebsite"));
 const ProviderHorseDetail = lazy(() => import("@/pages/ProviderHorseDetail"));
 const ImportCenter = lazy(() => import("@/pages/ImportCenter"));
 const ConnectForm = lazy(() => import("@/pages/ConnectForm"));
@@ -247,8 +248,9 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             {/* Domain-basierte Weiche: www.hufmanager.de → LP, app.hufmanager.de → Dashboard */}
             <Route path="/" element={<Index />} />
             
-            {/* Landingpages für Hufbearbeiter (z.B. hufmanager.de/p/max-mustermann) */}
+            {/* Provider Website (Multi-Page) */}
             <Route path="/p/:slug" element={<ProviderLanding />} />
+            <Route path="/p/:slug/:page" element={<ProviderLanding />} />
             
             {/* Einladungs-Links für Kunden */}
             <Route path="/connect/:slug" element={<ConnectForm />} />
@@ -379,6 +381,8 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/horse/:id" element={<ProviderHorseDetail />} />
               {/* German alias for horse detail */}
               <Route path="/pferd/:id" element={<ProviderHorseDetail />} />
+              {/* Meine Website - Provider Website Editor */}
+              <Route path="/meine-website" element={<MeineWebsite />} />
             </Route>
 
             {/* --- 3. CLIENT (PFERDEBESITZER) ROUTES --- */}

@@ -978,7 +978,11 @@ export type Database = {
           custom_domain: string | null
           default_vat_rate: number | null
           email: string | null
+          exit_intent_enabled: boolean | null
+          facebook_pixel_id: string | null
           gallery_images: Json | null
+          google_analytics_id: string | null
+          google_search_console_code: string | null
           hero_headline: string | null
           hero_image_url: string | null
           iban: string | null
@@ -1016,6 +1020,10 @@ export type Database = {
           updated_at: string
           user_id: string | null
           vat_id: string | null
+          website_active_pages: Json | null
+          website_navigation: Json | null
+          whatsapp_enabled: boolean | null
+          whatsapp_number: string | null
         }
         Insert: {
           about_text?: string | null
@@ -1033,7 +1041,11 @@ export type Database = {
           custom_domain?: string | null
           default_vat_rate?: number | null
           email?: string | null
+          exit_intent_enabled?: boolean | null
+          facebook_pixel_id?: string | null
           gallery_images?: Json | null
+          google_analytics_id?: string | null
+          google_search_console_code?: string | null
           hero_headline?: string | null
           hero_image_url?: string | null
           iban?: string | null
@@ -1071,6 +1083,10 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           vat_id?: string | null
+          website_active_pages?: Json | null
+          website_navigation?: Json | null
+          whatsapp_enabled?: boolean | null
+          whatsapp_number?: string | null
         }
         Update: {
           about_text?: string | null
@@ -1088,7 +1104,11 @@ export type Database = {
           custom_domain?: string | null
           default_vat_rate?: number | null
           email?: string | null
+          exit_intent_enabled?: boolean | null
+          facebook_pixel_id?: string | null
           gallery_images?: Json | null
+          google_analytics_id?: string | null
+          google_search_console_code?: string | null
           hero_headline?: string | null
           hero_image_url?: string | null
           iban?: string | null
@@ -1126,6 +1146,10 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           vat_id?: string | null
+          website_active_pages?: Json | null
+          website_navigation?: Json | null
+          whatsapp_enabled?: boolean | null
+          whatsapp_number?: string | null
         }
         Relationships: []
       }
@@ -6194,6 +6218,60 @@ export type Database = {
           },
         ]
       }
+      provider_blog_posts: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string
+          excerpt: string | null
+          featured_image_url: string | null
+          id: string
+          is_published: boolean
+          owner_id: string
+          published_at: string | null
+          seo_description: string | null
+          seo_title: string | null
+          slug: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          content?: string
+          created_at?: string
+          excerpt?: string | null
+          featured_image_url?: string | null
+          id?: string
+          is_published?: boolean
+          owner_id: string
+          published_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string
+          excerpt?: string | null
+          featured_image_url?: string | null
+          id?: string
+          is_published?: boolean
+          owner_id?: string
+          published_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       provider_documents: {
         Row: {
           appointment_id: string | null
@@ -7778,6 +7856,123 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      website_leads: {
+        Row: {
+          breed: string | null
+          contact_name: string
+          created_at: string
+          dsgvo_consent: boolean
+          email: string | null
+          hoof_condition: string | null
+          horse_age: string | null
+          horse_name: string | null
+          id: string
+          notes: string | null
+          owner_id: string
+          phone: string | null
+          plz: string | null
+          preferred_timeframe: string | null
+          referral_source: string | null
+          service_interest: string | null
+          source: string | null
+          status: string
+          updated_at: string
+          urgency: number | null
+        }
+        Insert: {
+          breed?: string | null
+          contact_name: string
+          created_at?: string
+          dsgvo_consent?: boolean
+          email?: string | null
+          hoof_condition?: string | null
+          horse_age?: string | null
+          horse_name?: string | null
+          id?: string
+          notes?: string | null
+          owner_id: string
+          phone?: string | null
+          plz?: string | null
+          preferred_timeframe?: string | null
+          referral_source?: string | null
+          service_interest?: string | null
+          source?: string | null
+          status?: string
+          updated_at?: string
+          urgency?: number | null
+        }
+        Update: {
+          breed?: string | null
+          contact_name?: string
+          created_at?: string
+          dsgvo_consent?: boolean
+          email?: string | null
+          hoof_condition?: string | null
+          horse_age?: string | null
+          horse_name?: string | null
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          phone?: string | null
+          plz?: string | null
+          preferred_timeframe?: string | null
+          referral_source?: string | null
+          service_interest?: string | null
+          source?: string | null
+          status?: string
+          updated_at?: string
+          urgency?: number | null
+        }
+        Relationships: []
+      }
+      website_pages: {
+        Row: {
+          content_json: Json | null
+          created_at: string
+          id: string
+          is_published: boolean
+          owner_id: string
+          owner_type: string
+          page_type: string
+          seo_description: string | null
+          seo_title: string | null
+          slug: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content_json?: Json | null
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          owner_id: string
+          owner_type?: string
+          page_type?: string
+          seo_description?: string | null
+          seo_title?: string | null
+          slug: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content_json?: Json | null
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          owner_id?: string
+          owner_type?: string
+          page_type?: string
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       work_sessions: {
         Row: {

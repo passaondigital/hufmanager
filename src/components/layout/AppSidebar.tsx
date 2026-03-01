@@ -164,7 +164,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       subItems: [
         { title: "Inbox", url: "/chat", icon: Inbox, badge: unreadMessagesCount || undefined, description: "Nachrichten & Chat" },
         { title: "Warteliste", url: "/anfragen", icon: Clock, badge: newLeadsCount || undefined, description: "Potenzielle Kunden" },
-        { title: "Landingpage", url: "/management?tab=landing", icon: Globe, description: "Öffentliche Visitenkarte" },
+        { title: "Meine Website", url: "/meine-website", icon: Globe, description: "Deine professionelle Website" },
       ]
     },
     { 

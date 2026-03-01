@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { LandingHero } from "@/components/landing/sections/LandingHero";
 import { LandingAbout } from "@/components/landing/sections/LandingAbout";
 import { LandingServices } from "@/components/landing/sections/LandingServices";
@@ -18,7 +18,15 @@ import { CookieConsentBanner } from "@/components/landing/CookieConsentBanner";
 import { IntakeStatusBadge } from "@/components/landing/IntakeStatusBadge";
 import { ServiceInquiryModal } from "@/components/landing/ServiceInquiryModal";
 import { LandingSEOHead } from "@/components/landing/LandingSEOHead";
+import { WebsiteNavbar } from "@/components/landing/WebsiteNavbar";
+import { WebsiteLeadForm } from "@/components/landing/WebsiteLeadForm";
+import { WhatsAppButton } from "@/components/landing/WhatsAppButton";
+import { ExitIntentPopup } from "@/components/landing/ExitIntentPopup";
+import { WebsiteTrustBadges } from "@/components/landing/WebsiteTrustBadges";
 import { toast } from "@/hooks/use-toast";
+import DOMPurify from "dompurify";
+import { format } from "date-fns";
+import { de } from "date-fns/locale";
 
 type IntakeStatus = 'open' | 'waitlist' | 'closed';
 
@@ -45,6 +53,12 @@ interface BusinessSettings {
   social_tiktok: string | null;
   social_website: string | null;
   meta_description: string | null;
+  phone: string | null;
+  address: string | null;
+  whatsapp_enabled: boolean | null;
+  whatsapp_number: string | null;
+  exit_intent_enabled: boolean | null;
+  website_active_pages: string[] | null;
 }
 
 interface Service {
@@ -56,30 +70,6 @@ interface Service {
   booking_action: 'direct_book' | 'request_only';
 }
 
-interface Offer {
-  id: string;
-  title: string;
-  description: string | null;
-  price: number | null;
-  price_type: string | null;
-  features: string[] | null;
-  is_active: boolean;
-  image_url: string | null;
-  offer_type: string | null;
-  display_mode: string | null;
-  media_url: string | null;
-  external_link: string | null;
-  billing_type: string | null;
-}
-
-interface Feedback {
-  id: string;
-  customer_name: string;
-  rating: number;
-  text: string | null;
-  is_featured: boolean;
-}
-
 interface Review {
   id: string;
   reviewer_name: string;
@@ -88,7 +78,6 @@ interface Review {
   created_at: string;
   source?: string;
   proof_image_url?: string;
-  is_visible?: boolean;
   reactions?: { green: number; yellow: number; red: number };
   category?: string;
 }
@@ -101,28 +90,36 @@ interface GalleryImage {
   description?: string;
 }
 
+interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  content: string;
+  category: string;
+  featured_image_url: string | null;
+  published_at: string;
+}
+
 const DEFAULT_SECTION_ORDER = ["hero", "about", "services", "highlights", "list_items", "shop_grid", "before_after", "gallery", "reviews", "contact"];
 
 const ProviderLanding = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug, page } = useParams<{ slug: string; page?: string }>();
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<BusinessSettings | null>(null);
-  const [offers, setOffers] = useState<Offer[]>([]);
+  const [offers, setOffers] = useState<any[]>([]);
   const [services, setServices] = useState<Service[]>([]);
-  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [feedbacks, setFeedbacks] = useState<any[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [profileIncomplete, setProfileIncomplete] = useState(false);
-  const [inquiryModal, setInquiryModal] = useState<{ open: boolean; serviceName: string }>({
-    open: false,
-    serviceName: ""
-  });
+  const [inquiryModal, setInquiryModal] = useState<{ open: boolean; serviceName: string }>({ open: false, serviceName: "" });
 
   useEffect(() => {
     const fetchProviderData = async () => {
       if (!slug) return;
-
       try {
         const { data: businessData, error: businessError } = await supabase
           .rpc('get_public_business_landing', { subdomain_input: slug });
@@ -144,116 +141,77 @@ const ProviderLanding = () => {
 
         setSettings(typedBusinessData);
 
-        const { data: offersData } = await supabase
-          .from('offers')
-          .select('id, title, description, price, price_type, features, is_active, image_url, offer_type, display_mode, media_url, external_link, billing_type')
-          .eq('provider_id', typedBusinessData.user_id)
-          .eq('is_active', true)
-          .neq('display_mode', 'hidden')
-          .order('sort_order')
-          .limit(20);
+        // Fetch all data in parallel
+        const [offersRes, servicesRes, feedbackRes, reviewsRes, blogRes, hoofRes] = await Promise.all([
+          supabase.from('offers').select('id, title, description, price, price_type, features, is_active, image_url, offer_type, display_mode, media_url, external_link, billing_type').eq('provider_id', typedBusinessData.user_id).eq('is_active', true).neq('display_mode', 'hidden').order('sort_order').limit(20),
+          supabase.from('services').select('id, name, description, base_price, duration, booking_action').eq('provider_id', typedBusinessData.user_id).eq('is_active', true).order('name').limit(10),
+          supabase.rpc('get_public_feedbacks', { provider_id_input: typedBusinessData.user_id }),
+          supabase.rpc('get_public_reviews', { provider_id_input: typedBusinessData.user_id }),
+          supabase.from('provider_blog_posts').select('id, title, slug, excerpt, content, category, featured_image_url, published_at').eq('owner_id', typedBusinessData.user_id).eq('is_published', true).order('published_at', { ascending: false }).limit(20),
+          supabase.from('hoof_photos').select('id, photo_url, hoof_position, notes, horse_id, horses!inner(name, owner_id)').order('created_at', { ascending: false }).limit(20),
+        ]);
 
-        if (offersData) setOffers(offersData);
-
-        const { data: servicesData } = await supabase
-          .from('services')
-          .select('id, name, description, base_price, duration, booking_action')
-          .eq('provider_id', typedBusinessData.user_id)
-          .eq('is_active', true)
-          .order('name')
-          .limit(10);
-
-        if (servicesData) {
-          const publicServices = servicesData.filter(
-            (service) => !service.name.toUpperCase().includes('BALANCE')
-          );
+        if (offersRes.data) setOffers(offersRes.data);
+        if (servicesRes.data) {
+          const publicServices = servicesRes.data.filter((s: any) => !s.name.toUpperCase().includes('BALANCE'));
           setServices(publicServices.slice(0, 6) as Service[]);
         }
+        if (feedbackRes.data) setFeedbacks(feedbackRes.data);
+        if (reviewsRes.data) setReviews(reviewsRes.data as Review[]);
+        if (blogRes.data) setBlogPosts(blogRes.data as BlogPost[]);
 
-        const { data: feedbackData } = await supabase
-          .rpc('get_public_feedbacks', { provider_id_input: typedBusinessData.user_id });
-        if (feedbackData) setFeedbacks(feedbackData);
-
-        const { data: reviewsData } = await supabase
-          .rpc('get_public_reviews', { provider_id_input: typedBusinessData.user_id });
-        if (reviewsData) setReviews(reviewsData as Review[]);
-
-        const { data: hoofPhotos } = await supabase
-          .from('hoof_photos')
-          .select(`id, photo_url, hoof_position, notes, horse_id, horses!inner(name, owner_id)`)
-          .order('created_at', { ascending: false })
-          .limit(20);
-
-        if (hoofPhotos && hoofPhotos.length >= 2) {
+        if (hoofRes.data && hoofRes.data.length >= 2) {
           const pairs: GalleryImage[] = [];
-          for (let i = 0; i < hoofPhotos.length - 1; i += 2) {
-            const horse = hoofPhotos[i].horses as any;
+          for (let i = 0; i < hoofRes.data.length - 1; i += 2) {
+            const horse = hoofRes.data[i].horses as any;
             pairs.push({
-              id: hoofPhotos[i].id,
-              before_url: hoofPhotos[i + 1].photo_url,
-              after_url: hoofPhotos[i].photo_url,
+              id: hoofRes.data[i].id,
+              before_url: hoofRes.data[i + 1].photo_url,
+              after_url: hoofRes.data[i].photo_url,
               title: horse?.name || "Hufbearbeitung",
-              description: hoofPhotos[i].hoof_position || undefined,
+              description: hoofRes.data[i].hoof_position || undefined,
             });
           }
           setGalleryImages(pairs.slice(0, 6));
         }
-
       } catch (err: any) {
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
-
     fetchProviderData();
   }, [slug]);
 
-  // Derive primary color - use provider's color or fallback
   const primaryColor = settings?.primary_color || '#F47B20';
   const intakeStatus: IntakeStatus = (settings?.client_intake_status as IntakeStatus) || 'open';
+  const activePages: string[] = (settings?.website_active_pages as string[]) || ["home", "contact", "impressum", "datenschutz"];
   const sectionOrder = useMemo(() => {
     const order = settings?.section_order;
     if (Array.isArray(order) && order.length > 0) return order;
     return DEFAULT_SECTION_ORDER;
   }, [settings?.section_order]);
+  const providerName = settings?.owner_name || settings?.business_name || 'Hufbearbeiter';
+  const isMultiPage = activePages.length > 4; // More than just home+contact+legal
 
-  const handleServiceRequest = (serviceName: string) => {
-    setInquiryModal({ open: true, serviceName });
-  };
-
+  const handleServiceRequest = (serviceName: string) => setInquiryModal({ open: true, serviceName });
   const handleServiceBook = (serviceName: string) => {
     document.getElementById('kontakt')?.scrollIntoView({ behavior: 'smooth' });
-    toast({
-      title: `Buchung für: ${serviceName}`,
-      description: "Bitte füllen Sie das Kontaktformular aus um einen Termin zu vereinbaren.",
-    });
+    toast({ title: `Buchung für: ${serviceName}`, description: "Bitte füllen Sie das Kontaktformular aus." });
   };
-
-  const scrollToContact = () => {
-    document.getElementById('kontakt')?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const scrollToContact = () => document.getElementById('kontakt')?.scrollIntoView({ behavior: 'smooth' });
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
   if (profileIncomplete) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="text-center max-w-md">
-          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
-            <span className="text-3xl">🔧</span>
-          </div>
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-6"><span className="text-3xl">🔧</span></div>
           <h1 className="text-2xl font-bold text-foreground mb-3">Profil wird eingerichtet</h1>
-          <p className="text-muted-foreground">
-            Dieses Profil ist noch nicht vollständig eingerichtet. 
-            Bitte schauen Sie später noch einmal vorbei.
-          </p>
+          <p className="text-muted-foreground">Dieses Profil ist noch nicht vollständig eingerichtet. Bitte schauen Sie später noch einmal vorbei.</p>
         </div>
       </div>
     );
@@ -270,103 +228,204 @@ const ProviderLanding = () => {
     );
   }
 
-  // Build section map for dynamic rendering
-  const sectionMap: Record<string, React.ReactNode> = {
-    hero: (
-      <LandingHero
-        key="hero"
-        settings={settings}
-        primaryColor={primaryColor}
-        intakeStatus={intakeStatus}
-        onScrollToContact={scrollToContact}
-      />
-    ),
-    about: settings.about_text ? (
-      <LandingAbout key="about" aboutText={settings.about_text} />
-    ) : null,
-    services: services.length > 0 ? (
-      <LandingServices
-        key="services"
-        services={services}
-        primaryColor={primaryColor}
-        onBook={handleServiceBook}
-        onRequest={handleServiceRequest}
-      />
-    ) : null,
-    highlights: offers.filter(o => o.display_mode === 'highlight_card' || !o.display_mode).length > 0 ? (
-      <LandingHighlights
-        key="highlights"
-        offers={offers.filter(o => (o.display_mode === 'highlight_card' || !o.display_mode) && !o.title.toUpperCase().includes('BALANCE'))}
-        primaryColor={primaryColor}
-      />
-    ) : null,
-    list_items: offers.filter(o => o.display_mode === 'list_item').length > 0 ? (
-      <LandingListItems
-        key="list_items"
-        offers={offers.filter(o => o.display_mode === 'list_item')}
-        primaryColor={primaryColor}
-      />
-    ) : null,
-    shop_grid: offers.filter(o => o.display_mode === 'shop_grid').length > 0 ? (
-      <LandingShopGrid
-        key="shop_grid"
-        offers={offers.filter(o => o.display_mode === 'shop_grid')}
-        primaryColor={primaryColor}
-      />
-    ) : null,
-    before_after: galleryImages.length > 0 ? (
-      <LandingBeforeAfter key="before_after" galleryImages={galleryImages} primaryColor={primaryColor} />
-    ) : null,
-    gallery: settings.gallery_images && settings.gallery_images.length > 0 ? (
-      <GallerySection key="gallery" images={settings.gallery_images} primaryColor={primaryColor} />
-    ) : null,
-    reviews: reviews.length > 0 ? (
-      <ReviewsSection
-        key="reviews"
-        reviews={reviews}
-        primaryColor={primaryColor}
-        layout={settings.reviews_layout || 'grid'}
-      />
-    ) : feedbacks.length > 0 ? (
-      <ReviewsSection
-        key="reviews-legacy"
-        reviews={feedbacks.map(f => ({
-          id: f.id,
-          reviewer_name: f.customer_name,
-          rating: f.rating,
-          text: f.text,
-          created_at: '',
-        }))}
-        primaryColor={primaryColor}
-        layout="grid"
-      />
-    ) : null,
-    contact: intakeStatus !== 'closed' ? (
-      <LandingContact
-        key="contact"
-        providerId={settings.user_id}
-        providerName={settings.owner_name || settings.business_name || 'Hufbearbeiter'}
-        primaryColor={primaryColor}
-      />
-    ) : null,
+  // SEO title based on current page
+  const getSeoTitle = () => {
+    const city = settings.address?.split(",").pop()?.trim() || "";
+    const name = settings.business_name || settings.owner_name || "Hufpfleger";
+    switch (page) {
+      case "ueber-mich": return `Über ${name} — Ihr Hufpfleger${city ? ` in ${city}` : ""}`;
+      case "leistungen": return `Hufpflege Leistungen | ${name}${city ? ` in ${city}` : ""}`;
+      case "galerie": return `Galerie | ${name} Hufpflege`;
+      case "kontakt": return `Kontakt & Termin | ${name}${city ? ` ${city}` : ""}`;
+      case "blog": return `Blog | ${name} — Fachwissen rund ums Pferd`;
+      case "referenzen": return `Bewertungen | ${name} Hufpflege`;
+      default: return undefined; // Let LandingSEOHead handle default
+    }
   };
+
+  const seoTitle = getSeoTitle();
+  if (seoTitle) {
+    document.title = seoTitle;
+  }
+
+  // Render sub-pages
+  const renderSubPage = () => {
+    switch (page) {
+      case "ueber-mich":
+        return (
+          <div className="max-w-3xl mx-auto px-4 py-16">
+            <h1 className="text-3xl font-bold text-foreground mb-6">Über {providerName}</h1>
+            {settings.about_text ? (
+              <div className="prose prose-lg text-foreground/80 max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(settings.about_text) }} />
+            ) : (
+              <p className="text-muted-foreground">Noch keine Beschreibung hinterlegt.</p>
+            )}
+            <WebsiteTrustBadges primaryColor={primaryColor} />
+          </div>
+        );
+
+      case "leistungen":
+        return (
+          <div className="max-w-5xl mx-auto px-4 py-16">
+            <h1 className="text-3xl font-bold text-foreground mb-8">Leistungen & Preise</h1>
+            {services.length > 0 ? (
+              <LandingServices services={services} primaryColor={primaryColor} onBook={handleServiceBook} onRequest={handleServiceRequest} />
+            ) : (
+              <p className="text-muted-foreground">Keine Leistungen hinterlegt.</p>
+            )}
+          </div>
+        );
+
+      case "galerie":
+        return (
+          <div className="max-w-5xl mx-auto px-4 py-16">
+            <h1 className="text-3xl font-bold text-foreground mb-8">Galerie</h1>
+            {settings.gallery_images && settings.gallery_images.length > 0 ? (
+              <GallerySection images={settings.gallery_images} primaryColor={primaryColor} />
+            ) : galleryImages.length > 0 ? (
+              <LandingBeforeAfter galleryImages={galleryImages} primaryColor={primaryColor} />
+            ) : (
+              <p className="text-muted-foreground">Noch keine Bilder vorhanden.</p>
+            )}
+          </div>
+        );
+
+      case "kontakt":
+        return (
+          <div className="max-w-3xl mx-auto px-4 py-16">
+            <h1 className="text-3xl font-bold text-foreground mb-8">Kontakt</h1>
+            <WebsiteLeadForm
+              providerId={settings.user_id}
+              providerName={providerName}
+              primaryColor={primaryColor}
+              services={services.map((s) => ({ id: s.id, name: s.name }))}
+            />
+          </div>
+        );
+
+      case "referenzen":
+        return (
+          <div className="max-w-5xl mx-auto px-4 py-16">
+            <h1 className="text-3xl font-bold text-foreground mb-8">Bewertungen & Referenzen</h1>
+            {reviews.length > 0 ? (
+              <ReviewsSection reviews={reviews} primaryColor={primaryColor} layout={settings.reviews_layout || 'grid'} />
+            ) : (
+              <p className="text-muted-foreground">Noch keine Bewertungen.</p>
+            )}
+          </div>
+        );
+
+      case "blog":
+        return <BlogPage blogPosts={blogPosts} slug={slug!} primaryColor={primaryColor} />;
+
+      case "impressum":
+        return (
+          <div className="max-w-3xl mx-auto px-4 py-16">
+            <h1 className="text-3xl font-bold text-foreground mb-6">Impressum</h1>
+            {settings.impressum_text ? (
+              <div className="prose text-foreground/80 max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(settings.impressum_text) }} />
+            ) : (
+              <p className="text-muted-foreground">Kein Impressum hinterlegt.</p>
+            )}
+          </div>
+        );
+
+      case "datenschutz":
+        return (
+          <div className="max-w-3xl mx-auto px-4 py-16">
+            <h1 className="text-3xl font-bold text-foreground mb-6">Datenschutzerklärung</h1>
+            {settings.terms_text ? (
+              <div className="prose text-foreground/80 max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(settings.terms_text) }} />
+            ) : (
+              <p className="text-muted-foreground">Keine Datenschutzerklärung hinterlegt.</p>
+            )}
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  // Build home page sections
+  const sectionMap: Record<string, React.ReactNode> = {
+    hero: <LandingHero key="hero" settings={settings} primaryColor={primaryColor} intakeStatus={intakeStatus} onScrollToContact={scrollToContact} />,
+    about: settings.about_text ? <LandingAbout key="about" aboutText={settings.about_text} /> : null,
+    services: services.length > 0 ? <LandingServices key="services" services={services} primaryColor={primaryColor} onBook={handleServiceBook} onRequest={handleServiceRequest} /> : null,
+    highlights: offers.filter(o => o.display_mode === 'highlight_card' || !o.display_mode).length > 0 ? <LandingHighlights key="highlights" offers={offers.filter(o => (o.display_mode === 'highlight_card' || !o.display_mode) && !o.title.toUpperCase().includes('BALANCE'))} primaryColor={primaryColor} /> : null,
+    list_items: offers.filter(o => o.display_mode === 'list_item').length > 0 ? <LandingListItems key="list_items" offers={offers.filter(o => o.display_mode === 'list_item')} primaryColor={primaryColor} /> : null,
+    shop_grid: offers.filter(o => o.display_mode === 'shop_grid').length > 0 ? <LandingShopGrid key="shop_grid" offers={offers.filter(o => o.display_mode === 'shop_grid')} primaryColor={primaryColor} /> : null,
+    before_after: galleryImages.length > 0 ? <LandingBeforeAfter key="before_after" galleryImages={galleryImages} primaryColor={primaryColor} /> : null,
+    gallery: settings.gallery_images && settings.gallery_images.length > 0 ? <GallerySection key="gallery" images={settings.gallery_images} primaryColor={primaryColor} /> : null,
+    reviews: reviews.length > 0 ? <ReviewsSection key="reviews" reviews={reviews} primaryColor={primaryColor} layout={settings.reviews_layout || 'grid'} /> : feedbacks.length > 0 ? <ReviewsSection key="reviews-legacy" reviews={feedbacks.map(f => ({ id: f.id, reviewer_name: f.customer_name, rating: f.rating, text: f.text, created_at: '' }))} primaryColor={primaryColor} layout="grid" /> : null,
+    contact: intakeStatus !== 'closed' ? <LandingContact key="contact" providerId={settings.user_id} providerName={providerName} primaryColor={primaryColor} /> : null,
+  };
+
+  const isSubPage = page && page !== "";
 
   return (
     <div className="min-h-screen bg-background">
-      {/* SEO Head */}
       <LandingSEOHead settings={settings} />
 
-      {/* Intake Status Badge */}
-      <div className="fixed top-4 right-4 z-50">
-        <IntakeStatusBadge status={intakeStatus} />
-      </div>
+      {/* Multi-page navbar */}
+      {isMultiPage && (
+        <WebsiteNavbar
+          slug={slug!}
+          businessName={settings.business_name || providerName}
+          logoUrl={settings.logo_url}
+          primaryColor={primaryColor}
+          activePages={activePages}
+          phone={settings.phone}
+        />
+      )}
 
-      {/* Dynamic Section Rendering */}
-      {sectionOrder.map((sectionKey) => sectionMap[sectionKey] || null)}
+      {/* Intake Status */}
+      {!isSubPage && (
+        <div className="fixed top-4 right-4 z-50">
+          <IntakeStatusBadge status={intakeStatus} />
+        </div>
+      )}
 
-      {/* Footer (always last) */}
+      {/* Page content */}
+      {isSubPage ? (
+        <main className="min-h-[60vh]">
+          {renderSubPage()}
+        </main>
+      ) : (
+        <>
+          {/* Trust badges on home */}
+          {sectionOrder.map((sectionKey) => sectionMap[sectionKey] || null)}
+          
+          {/* Blog preview on home if blog active */}
+          {activePages.includes("blog") && blogPosts.length > 0 && (
+            <section className="py-16 px-4 bg-muted/30">
+              <div className="max-w-5xl mx-auto">
+                <h2 className="text-2xl font-bold text-foreground mb-8">Neueste Artikel</h2>
+                <div className="grid md:grid-cols-3 gap-6">
+                  {blogPosts.slice(0, 3).map((post) => (
+                    <Link key={post.id} to={`/p/${slug}/blog?post=${post.slug}`} className="group border rounded-lg overflow-hidden bg-card hover:shadow-md transition-shadow">
+                      {post.featured_image_url && (
+                        <img src={post.featured_image_url} alt={post.title} className="w-full aspect-video object-cover" loading="lazy" />
+                      )}
+                      <div className="p-4">
+                        <p className="text-xs text-muted-foreground mb-1">
+                          {post.published_at && format(new Date(post.published_at), "dd. MMMM yyyy", { locale: de })}
+                        </p>
+                        <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">{post.title}</h3>
+                        {post.excerpt && <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{post.excerpt}</p>}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+        </>
+      )}
+
+      {/* Footer */}
       <LegalFooter
-        businessName={settings.business_name || settings.owner_name || 'Hufbearbeiter'}
+        businessName={settings.business_name || providerName}
         impressumText={settings.impressum_text}
         termsText={settings.terms_text}
         primaryColor={primaryColor}
@@ -377,26 +436,80 @@ const ProviderLanding = () => {
       />
 
       {/* Lead Chat Bot */}
-      <LeadChatBot 
-        providerId={settings.user_id}
-        providerName={settings.owner_name || settings.business_name || 'Hufbearbeiter'}
-        providerLogo={settings.logo_url}
-        primaryColor={primaryColor}
-      />
+      <LeadChatBot providerId={settings.user_id} providerName={providerName} providerLogo={settings.logo_url} primaryColor={primaryColor} />
+
+      {/* WhatsApp Button */}
+      {settings.whatsapp_enabled && settings.whatsapp_number && (
+        <WhatsAppButton phoneNumber={settings.whatsapp_number} providerName={providerName} />
+      )}
+
+      {/* Exit Intent Popup */}
+      {settings.exit_intent_enabled && (
+        <ExitIntentPopup providerId={settings.user_id} providerName={providerName} primaryColor={primaryColor} />
+      )}
 
       {/* Service Inquiry Modal */}
-      <ServiceInquiryModal
-        open={inquiryModal.open}
-        onOpenChange={(open) => setInquiryModal({ ...inquiryModal, open })}
-        serviceName={inquiryModal.serviceName}
-        providerId={settings.user_id}
-        primaryColor={primaryColor}
-      />
+      <ServiceInquiryModal open={inquiryModal.open} onOpenChange={(open) => setInquiryModal({ ...inquiryModal, open })} serviceName={inquiryModal.serviceName} providerId={settings.user_id} primaryColor={primaryColor} />
 
-      {/* DSGVO Cookie Consent Banner */}
       <CookieConsentBanner primaryColor={primaryColor} />
     </div>
   );
 };
+
+// Blog sub-page component
+function BlogPage({ blogPosts, slug, primaryColor }: { blogPosts: BlogPost[]; slug: string; primaryColor: string }) {
+  const urlParams = new URLSearchParams(window.location.search);
+  const postSlug = urlParams.get("post");
+
+  if (postSlug) {
+    const post = blogPosts.find((p) => p.slug === postSlug);
+    if (!post) return <div className="max-w-3xl mx-auto px-4 py-16"><p className="text-muted-foreground">Artikel nicht gefunden.</p></div>;
+    
+    // Set SEO for individual post
+    document.title = post.title;
+
+    return (
+      <article className="max-w-3xl mx-auto px-4 py-16">
+        <Link to={`/p/${slug}/blog`} className="inline-flex items-center gap-1 text-sm text-primary mb-6 hover:underline">
+          <ArrowLeft className="h-4 w-4" /> Alle Artikel
+        </Link>
+        {post.featured_image_url && (
+          <img src={post.featured_image_url} alt={post.title} className="w-full aspect-video object-cover rounded-lg mb-6" />
+        )}
+        <p className="text-sm text-muted-foreground mb-2">
+          {post.published_at && format(new Date(post.published_at), "dd. MMMM yyyy", { locale: de })}
+        </p>
+        <h1 className="text-3xl font-bold text-foreground mb-6">{post.title}</h1>
+        <div className="prose prose-lg max-w-none text-foreground/80" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }} />
+      </article>
+    );
+  }
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-16">
+      <h1 className="text-3xl font-bold text-foreground mb-8">Blog</h1>
+      {blogPosts.length === 0 ? (
+        <p className="text-muted-foreground">Noch keine Artikel veröffentlicht.</p>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {blogPosts.map((post) => (
+            <Link key={post.id} to={`/p/${slug}/blog?post=${post.slug}`} className="group border rounded-lg overflow-hidden bg-card hover:shadow-md transition-shadow">
+              {post.featured_image_url && (
+                <img src={post.featured_image_url} alt={post.title} className="w-full aspect-video object-cover" loading="lazy" />
+              )}
+              <div className="p-4">
+                <p className="text-xs text-muted-foreground mb-1">
+                  {post.published_at && format(new Date(post.published_at), "dd. MMMM yyyy", { locale: de })}
+                </p>
+                <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">{post.title}</h3>
+                {post.excerpt && <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{post.excerpt}</p>}
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default ProviderLanding;
