@@ -3483,6 +3483,66 @@ export type Database = {
           },
         ]
       }
+      hufrente_referrals: {
+        Row: {
+          activated_at: string | null
+          copecart_affiliate_id: string | null
+          copecart_referral_id: string | null
+          created_at: string | null
+          id: string
+          monthly_commission: number | null
+          provider_id: string
+          referred_email: string | null
+          referred_name_anonymous: string | null
+          status: string
+          total_commission: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          activated_at?: string | null
+          copecart_affiliate_id?: string | null
+          copecart_referral_id?: string | null
+          created_at?: string | null
+          id?: string
+          monthly_commission?: number | null
+          provider_id: string
+          referred_email?: string | null
+          referred_name_anonymous?: string | null
+          status?: string
+          total_commission?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          activated_at?: string | null
+          copecart_affiliate_id?: string | null
+          copecart_referral_id?: string | null
+          created_at?: string | null
+          id?: string
+          monthly_commission?: number | null
+          provider_id?: string
+          referred_email?: string | null
+          referred_name_anonymous?: string | null
+          status?: string
+          total_commission?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hufrente_referrals_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufrente_referrals_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_items: {
         Row: {
           brand: string | null
@@ -5333,6 +5393,7 @@ export type Database = {
         Row: {
           access_valid_until: string | null
           address: string | null
+          affiliate_slug: string | null
           avatar_url: string | null
           bank_name: string | null
           bic: string | null
@@ -5430,6 +5491,7 @@ export type Database = {
         Insert: {
           access_valid_until?: string | null
           address?: string | null
+          affiliate_slug?: string | null
           avatar_url?: string | null
           bank_name?: string | null
           bic?: string | null
@@ -5527,6 +5589,7 @@ export type Database = {
         Update: {
           access_valid_until?: string | null
           address?: string | null
+          affiliate_slug?: string | null
           avatar_url?: string | null
           bank_name?: string | null
           bic?: string | null

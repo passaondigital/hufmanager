@@ -7,6 +7,7 @@ import { DueAppointmentsWidget } from "@/components/dashboard/DueAppointmentsWid
 import { SmartTourSuggestionWidget } from "@/components/dashboard/SmartTourSuggestionWidget";
 import { RecentHorsesWidget } from "@/components/dashboard/RecentHorsesWidget";
 import { ShareInviteLinkCard } from "@/components/invite/ShareInviteLinkCard";
+import { HufrenteWidget } from "@/components/dashboard/HufrenteWidget";
 import { FirstStepsChecklist } from "@/components/dashboard/FirstStepsChecklist";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
@@ -154,6 +155,9 @@ const Dashboard = () => {
       <div data-tour="due-appointments">
         <DueAppointmentsWidget />
       </div>
+
+      {/* Hufrente Widget */}
+      <HufrenteWidget />
 
       {/* Smart Tour Suggestions */}
       <SmartTourSuggestionWidget />
