@@ -85,6 +85,7 @@ const PriceGroupManagement = lazy(() => import("@/pages/PriceGroupManagement"));
 const EmployeeTour = lazy(() => import("@/pages/EmployeeTour"));
 const MeinOffice = lazy(() => import("@/pages/MeinOffice"));
 const Hilfe = lazy(() => import("@/pages/Hilfe"));
+const Docs = lazy(() => import("@/pages/Docs"));
 const Status = lazy(() => import("@/pages/Status"));
 const HMConnect = lazy(() => import("@/pages/HMConnect"));
 const Buchhaltung = lazy(() => import("@/pages/Buchhaltung"));
@@ -264,6 +265,10 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             
             {/* Öffentliches Glossar */}
             <Route path="/glossar" element={<Glossar />} />
+            
+            {/* Öffentliche Dokumentation */}
+            <Route path="/docs" element={<Docs />} />
+            <Route path="/docs/changelog" element={<Docs />} />
             
             {/* Admin Mission Control - nur für Admins */}
             <Route path="/admin/mission-control" element={
