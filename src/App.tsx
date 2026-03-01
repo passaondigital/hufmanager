@@ -84,6 +84,8 @@ const EmergencyDashboard = lazy(() => import("@/pages/EmergencyDashboard"));
 const PriceGroupManagement = lazy(() => import("@/pages/PriceGroupManagement"));
 const EmployeeTour = lazy(() => import("@/pages/EmployeeTour"));
 const MeinOffice = lazy(() => import("@/pages/MeinOffice"));
+const Hilfe = lazy(() => import("@/pages/Hilfe"));
+const Status = lazy(() => import("@/pages/Status"));
 const HMConnect = lazy(() => import("@/pages/HMConnect"));
 const Buchhaltung = lazy(() => import("@/pages/Buchhaltung"));
 const Fuhrpark = lazy(() => import("@/pages/Fuhrpark"));
@@ -343,6 +345,8 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/team" element={<Team />} />
               <Route path="/mein-office" element={<MeinOffice />} />
               <Route path="/support" element={<Support />} />
+              <Route path="/hilfe" element={<Hilfe />} />
+              <Route path="/status" element={<Status />} />
               <Route path="/ecosystem" element={<Navigate to="/hm-connect" replace />} />
               <Route path="/hm-connect" element={<HMConnect />} />
               <Route path="/autoflow" element={<AutoFlow />} />
