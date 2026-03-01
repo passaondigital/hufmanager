@@ -98,3 +98,9 @@ verify_jwt = false
 
 [functions.system-health-check]
 verify_jwt = false
+
+[functions.validate-backup]
+verify_jwt = false
+
+[functions.anomaly-detection]
+verify_jwt = false
