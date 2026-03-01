@@ -4485,12 +4485,18 @@ export type Database = {
           address: string | null
           bank_name: string | null
           bic: string | null
+          bio: string | null
           business_name: string | null
+          country: string | null
           created_at: string
+          currency: string | null
+          default_vat_rate: number | null
           email: string | null
           iban: string | null
           id: string
+          kleine_unternehmer: boolean | null
           logo_url: string | null
+          notification_preferences: Json | null
           owner_name: string | null
           partner_id: string
           phone: string | null
@@ -4499,17 +4505,24 @@ export type Database = {
           tax_number: string | null
           updated_at: string
           vat_id: string | null
+          website: string | null
         }
         Insert: {
           address?: string | null
           bank_name?: string | null
           bic?: string | null
+          bio?: string | null
           business_name?: string | null
+          country?: string | null
           created_at?: string
+          currency?: string | null
+          default_vat_rate?: number | null
           email?: string | null
           iban?: string | null
           id?: string
+          kleine_unternehmer?: boolean | null
           logo_url?: string | null
+          notification_preferences?: Json | null
           owner_name?: string | null
           partner_id: string
           phone?: string | null
@@ -4518,17 +4531,24 @@ export type Database = {
           tax_number?: string | null
           updated_at?: string
           vat_id?: string | null
+          website?: string | null
         }
         Update: {
           address?: string | null
           bank_name?: string | null
           bic?: string | null
+          bio?: string | null
           business_name?: string | null
+          country?: string | null
           created_at?: string
+          currency?: string | null
+          default_vat_rate?: number | null
           email?: string | null
           iban?: string | null
           id?: string
+          kleine_unternehmer?: boolean | null
           logo_url?: string | null
+          notification_preferences?: Json | null
           owner_name?: string | null
           partner_id?: string
           phone?: string | null
@@ -4537,6 +4557,7 @@ export type Database = {
           tax_number?: string | null
           updated_at?: string
           vat_id?: string | null
+          website?: string | null
         }
         Relationships: []
       }
@@ -5443,6 +5464,7 @@ export type Database = {
           longitude: number | null
           mobile: string | null
           onboarding_completed: boolean | null
+          onboarding_dismissed: boolean | null
           order_authorization: boolean | null
           org_role: Database["public"]["Enums"]["organization_role"] | null
           organization_id: string | null
@@ -5541,6 +5563,7 @@ export type Database = {
           longitude?: number | null
           mobile?: string | null
           onboarding_completed?: boolean | null
+          onboarding_dismissed?: boolean | null
           order_authorization?: boolean | null
           org_role?: Database["public"]["Enums"]["organization_role"] | null
           organization_id?: string | null
@@ -5639,6 +5662,7 @@ export type Database = {
           longitude?: number | null
           mobile?: string | null
           onboarding_completed?: boolean | null
+          onboarding_dismissed?: boolean | null
           order_authorization?: boolean | null
           org_role?: Database["public"]["Enums"]["organization_role"] | null
           organization_id?: string | null

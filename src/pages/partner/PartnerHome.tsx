@@ -1,25 +1,51 @@
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Heart, Calendar, FileText, TrendingUp, Clock, Activity, ChevronRight, Euro } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import {
+  Heart, Calendar, FileText, TrendingUp, Clock, Activity, ChevronRight, Euro,
+  CheckCircle2, Circle, X, User, Building2, Eye, Stethoscope, CalendarPlus, Receipt, MessageSquare,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getPartnerTypeConfig } from "@/lib/partnerTypes";
-import { format, startOfMonth, endOfMonth, isAfter } from "date-fns";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 import { de } from "date-fns/locale";
+
+// VERBESSERUNG 4: Onboarding Checklist
+interface ChecklistStep {
+  key: string;
+  label: string;
+  icon: React.ElementType;
+  path: string;
+  check: (data: any) => boolean;
+}
+
+const CHECKLIST_STEPS: ChecklistStep[] = [
+  { key: "profile", label: "Profil vervollständigen", icon: User, path: "/partner-profile", check: (d) => !!(d.profile?.full_name && d.profile?.avatar_url) },
+  { key: "business", label: "Geschäftsdaten hinterlegen", icon: Building2, path: "/partner-settings", check: (d) => !!(d.settings?.business_name) },
+  { key: "horse", label: "Erstes Pferd ansehen", icon: Eye, path: "/partner-horses", check: (d) => d.grants?.length > 0 },
+  { key: "note", label: "Erste Behandlungsnotiz erfassen", icon: Stethoscope, path: "/partner-notes", check: (d) => d.notesCount > 0 },
+  { key: "appointment", label: "Ersten Termin eintragen", icon: CalendarPlus, path: "/partner-calendar", check: (d) => d.appointmentsCount > 0 },
+  { key: "invoice", label: "Erste Rechnung erstellen", icon: Receipt, path: "/partner-invoices", check: (d) => d.invoicesCount > 0 },
+  { key: "chat", label: "Chat mit Provider/Besitzer starten", icon: MessageSquare, path: "/partner-chat", check: (d) => d.conversationsCount > 0 },
+];
 
 export default function PartnerHome() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: profile } = useQuery({
     queryKey: ["partner-profile", user?.id],
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, readable_id, avatar_url")
+        .select("full_name, readable_id, avatar_url, onboarding_dismissed")
         .eq("id", user!.id)
         .single();
       return data;
@@ -42,7 +68,6 @@ export default function PartnerHome() {
     enabled: !!user,
   });
 
-  // Fetch recent treatment notes
   const { data: recentNotes = [] } = useQuery({
     queryKey: ["partner-recent-notes", user?.id],
     queryFn: async () => {
@@ -58,7 +83,6 @@ export default function PartnerHome() {
     enabled: !!user,
   });
 
-  // Fetch upcoming appointments
   const { data: upcomingAppointments = [] } = useQuery({
     queryKey: ["partner-upcoming-appointments", user?.id],
     queryFn: async () => {
@@ -77,45 +101,109 @@ export default function PartnerHome() {
     enabled: !!user,
   });
 
-  // Monthly stats
+  // VERBESSERUNG 6: Next provider appointment on shared horses
+  const { data: nextProviderAppointment } = useQuery({
+    queryKey: ["partner-next-provider-apt", user?.id],
+    queryFn: async () => {
+      const horseIds = grants.map((g: any) => g.horse_id);
+      if (horseIds.length === 0) return null;
+      const today = new Date().toISOString().split("T")[0];
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("id, date, time, horse_id, horses:horse_id (name)")
+        .in("horse_id", horseIds)
+        .gte("date", today)
+        .in("status", ["planned", "confirmed"])
+        .order("date", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!user && grants.length > 0,
+  });
+
   const { data: monthlyNotes = [] } = useQuery({
     queryKey: ["partner-monthly-stats", user?.id],
     queryFn: async () => {
       const start = format(startOfMonth(new Date()), "yyyy-MM-dd");
       const end = format(endOfMonth(new Date()), "yyyy-MM-dd");
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("partner_treatment_notes")
-        .select("id, treatment_date")
+        .select("id")
         .eq("partner_id", user!.id)
         .gte("treatment_date", start)
         .lte("treatment_date", end);
-      if (error) throw error;
       return data || [];
     },
     enabled: !!user,
   });
 
-  // Fetch invoices this month
   const { data: monthlyInvoices = [] } = useQuery({
     queryKey: ["partner-monthly-invoices", user?.id],
     queryFn: async () => {
       const start = format(startOfMonth(new Date()), "yyyy-MM-dd");
       const end = format(endOfMonth(new Date()), "yyyy-MM-dd");
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("partner_invoices")
         .select("id, total, status")
         .eq("partner_id", user!.id)
         .gte("issue_date", start)
         .lte("issue_date", end);
-      if (error) throw error;
       return data || [];
     },
     enabled: !!user,
   });
 
+  const { data: settings } = useQuery({
+    queryKey: ["partner-settings-onboarding", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("partner_business_settings")
+        .select("business_name")
+        .eq("partner_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const { data: conversationsCount = 0 } = useQuery({
+    queryKey: ["partner-convs-count", user?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("partner_conversations")
+        .select("id", { count: "exact", head: true })
+        .eq("partner_id", user!.id);
+      return count || 0;
+    },
+    enabled: !!user,
+  });
+
+  const dismissOnboarding = useMutation({
+    mutationFn: async () => {
+      await supabase.from("profiles").update({ onboarding_dismissed: true } as any).eq("id", user!.id);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["partner-profile"] }),
+  });
+
   const partnerType = grants?.[0]?.partner_type;
   const typeConfig = getPartnerTypeConfig(partnerType);
   const monthlyRevenue = monthlyInvoices.reduce((sum: number, inv: any) => sum + Number(inv.total || 0), 0);
+
+  // Checklist data
+  const checklistData = {
+    profile,
+    settings,
+    grants,
+    notesCount: recentNotes.length,
+    appointmentsCount: upcomingAppointments.length,
+    invoicesCount: monthlyInvoices.length,
+    conversationsCount,
+  };
+  const completedSteps = CHECKLIST_STEPS.filter(s => s.check(checklistData)).length;
+  const allDone = completedSteps === CHECKLIST_STEPS.length;
+  const showChecklist = !allDone && !(profile as any)?.onboarding_dismissed;
 
   if (isLoading) {
     return (
@@ -124,6 +212,7 @@ export default function PartnerHome() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
         </div>
+        <Skeleton className="h-48 w-full rounded-xl" />
       </div>
     );
   }
@@ -147,6 +236,60 @@ export default function PartnerHome() {
           )}
         </div>
       </div>
+
+      {/* VERBESSERUNG 4: Onboarding Checklist */}
+      {showChecklist && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                🚀 Einrichtung — {completedSteps}/{CHECKLIST_STEPS.length} erledigt
+              </CardTitle>
+              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={() => dismissOnboarding.mutate()}>
+                <X className="h-3 w-3 mr-1" /> Später
+              </Button>
+            </div>
+            <Progress value={(completedSteps / CHECKLIST_STEPS.length) * 100} className="h-2 mt-2" />
+          </CardHeader>
+          <CardContent className="space-y-1 pt-2">
+            {CHECKLIST_STEPS.map((step) => {
+              const done = step.check(checklistData);
+              return (
+                <button
+                  key={step.key}
+                  onClick={() => !done && navigate(step.path)}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${done ? "text-muted-foreground" : "hover:bg-primary/10 text-foreground cursor-pointer"}`}
+                  disabled={done}
+                >
+                  {done ? <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" /> : <Circle className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
+                  <step.icon className="h-4 w-4 flex-shrink-0" />
+                  <span className={done ? "line-through" : ""}>{step.label}</span>
+                </button>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* VERBESSERUNG 6: Next Provider Appointment */}
+      {nextProviderAppointment && (
+        <Card className="bg-accent/30 border-accent">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
+              <Calendar className="h-5 w-5 text-orange-500" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                Nächste Hufpflege: {format(new Date(nextProviderAppointment.date), "dd.MM.yyyy", { locale: de })}
+                {nextProviderAppointment.time && ` · ${nextProviderAppointment.time.substring(0, 5)}`}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                🐴 {(nextProviderAppointment as any).horses?.name}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -193,12 +336,10 @@ export default function PartnerHome() {
 
       {/* Two columns: Upcoming + Recent */}
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Upcoming Appointments */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Clock className="h-4 w-4 text-primary" />
-              Nächste Termine
+              <Clock className="h-4 w-4 text-primary" /> Nächste Termine
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -206,11 +347,7 @@ export default function PartnerHome() {
               <p className="text-sm text-muted-foreground py-4 text-center">Keine anstehenden Termine</p>
             ) : (
               upcomingAppointments.map((apt: any) => (
-                <div
-                  key={apt.id}
-                  className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                  onClick={() => navigate("/partner-calendar")}
-                >
+                <div key={apt.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors" onClick={() => navigate("/partner-calendar")}>
                   <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
                     {format(new Date(apt.appointment_date), "dd")}
                   </div>
@@ -230,12 +367,10 @@ export default function PartnerHome() {
           </CardContent>
         </Card>
 
-        {/* Recent Notes */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Activity className="h-4 w-4 text-primary" />
-              Letzte Behandlungen
+              <Activity className="h-4 w-4 text-primary" /> Letzte Behandlungen
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -243,11 +378,7 @@ export default function PartnerHome() {
               <p className="text-sm text-muted-foreground py-4 text-center">Noch keine Behandlungsnotizen</p>
             ) : (
               recentNotes.map((note: any) => (
-                <div
-                  key={note.id}
-                  className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                  onClick={() => navigate(`/partner-horse/${note.horse_id}`)}
-                >
+                <div key={note.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors" onClick={() => navigate(`/partner-horse/${note.horse_id}`)}>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{note.title}</p>
                     <p className="text-xs text-muted-foreground">
@@ -265,8 +396,7 @@ export default function PartnerHome() {
       {/* Horse Cards */}
       <div>
         <h2 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-          <Heart className="h-5 w-5 text-primary" />
-          Meine Pferde
+          <Heart className="h-5 w-5 text-primary" /> Meine Pferde
         </h2>
         {grants.length === 0 ? (
           <Card className="border-dashed border-2 border-border">
