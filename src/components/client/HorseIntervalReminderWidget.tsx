@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, AlertTriangle } from "lucide-react";
+import { Clock, AlertTriangle, CalendarPlus } from "lucide-react";
 import { differenceInDays, addWeeks, parseISO, format } from "date-fns";
 import { de } from "date-fns/locale";
 
@@ -16,10 +17,12 @@ interface HorseInterval {
   next_due_date: Date;
   days_until_due: number;
   is_overdue: boolean;
+  weeks_since_last: number;
 }
 
 export function HorseIntervalReminderWidget() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [horses, setHorses] = useState<HorseInterval[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -62,9 +65,10 @@ export function HorseIntervalReminderWidget() {
 
           const nextDue = addWeeks(parseISO(lastDate), interval);
           const daysUntilDue = differenceInDays(nextDue, now);
+          const weeksSinceLast = Math.floor(differenceInDays(now, parseISO(lastDate)) / 7);
 
-          // Only show if due within 14 days or overdue
-          if (daysUntilDue <= 14) {
+          // Show if due within 21 days or overdue (expanded from 14)
+          if (daysUntilDue <= 21) {
             result.push({
               id: horse.id,
               name: horse.name,
@@ -73,6 +77,7 @@ export function HorseIntervalReminderWidget() {
               next_due_date: nextDue,
               days_until_due: daysUntilDue,
               is_overdue: daysUntilDue < 0,
+              weeks_since_last: weeksSinceLast,
             });
           }
         }
@@ -109,26 +114,41 @@ export function HorseIntervalReminderWidget() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{horse.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {format(horse.next_due_date, "dd. MMM yyyy", { locale: de })}
+                  {horse.weeks_since_last} Wochen seit letztem Termin · Fällig {format(horse.next_due_date, "dd. MMM", { locale: de })}
                 </p>
               </div>
-              {horse.is_overdue ? (
-                <Badge variant="destructive" className="text-[10px] gap-1">
-                  <AlertTriangle className="h-3 w-3" />
-                  {Math.abs(horse.days_until_due)} Tage überfällig
-                </Badge>
-              ) : horse.days_until_due <= 3 ? (
-                <Badge className="bg-amber-500/10 text-amber-600 border-amber-200 text-[10px]">
-                  In {horse.days_until_due} Tagen
-                </Badge>
-              ) : (
-                <Badge variant="secondary" className="text-[10px]">
-                  In {horse.days_until_due} Tagen
-                </Badge>
-              )}
+              <div className="flex flex-col items-end gap-1">
+                {horse.is_overdue ? (
+                  <Badge variant="destructive" className="text-[10px] gap-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    {Math.abs(horse.days_until_due)}d überfällig
+                  </Badge>
+                ) : horse.days_until_due <= 3 ? (
+                  <Badge className="bg-amber-500/10 text-amber-600 border-amber-200 text-[10px]">
+                    In {horse.days_until_due} Tagen
+                  </Badge>
+                ) : horse.days_until_due <= 7 ? (
+                  <Badge className="bg-amber-500/5 text-amber-500 border-amber-100 text-[10px]">
+                    In {horse.days_until_due} Tagen
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="text-[10px]">
+                    In {horse.days_until_due} Tagen
+                  </Badge>
+                )}
+              </div>
             </div>
           ))}
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full mt-3 gap-2 text-primary border-primary/30 hover:bg-primary/10"
+          onClick={() => navigate("/client-booking")}
+        >
+          <CalendarPlus className="h-4 w-4" />
+          Jetzt Termin anfragen
+        </Button>
       </CardContent>
     </Card>
   );

@@ -19,7 +19,6 @@ export function ProviderTourStatusWidget({ userId }: ProviderTourStatusWidgetPro
     queryFn: async () => {
       const today = format(new Date(), "yyyy-MM-dd");
       
-      // Find appointments for this client today (as horse owner)
       const { data: myHorses } = await supabase
         .from("horses")
         .select("id")
@@ -43,7 +42,6 @@ export function ProviderTourStatusWidget({ userId }: ProviderTourStatusWidgetPro
       const providerId = myAppt.provider_id;
       if (!providerId) return null;
       
-      // Check if provider has an active tour today
       const { data: tour } = await supabase
         .from("daily_tours")
         .select("id, tour_active_since, tour_ended_at")
@@ -53,10 +51,9 @@ export function ProviderTourStatusWidget({ userId }: ProviderTourStatusWidgetPro
       
       if (!tour || !tour.tour_active_since || tour.tour_ended_at) return null;
       
-      // Get all provider appointments today to determine position
       const { data: allAppts } = await supabase
         .from("appointments")
-        .select("id, status, tour_order, time")
+        .select("id, status, tour_order, time, completed_at")
         .eq("provider_id", providerId)
         .eq("date", today)
         .neq("status", "cancelled")
@@ -68,17 +65,26 @@ export function ProviderTourStatusWidget({ userId }: ProviderTourStatusWidgetPro
       const completedCount = allAppts.filter(a => a.status === "completed").length;
       const totalCount = allAppts.length;
       const myIndex = allAppts.findIndex(a => a.id === myAppt.id);
-      const isMyTurn = myIndex === completedCount; // Next up
+      const isMyTurn = myIndex === completedCount;
       const stationsAway = Math.max(0, myIndex - completedCount);
       
-      // Get provider name
+      // Calculate ETA based on average time per stop
+      let estimatedArrival: string | null = null;
+      const completedAppts = allAppts.filter(a => a.status === "completed" && a.completed_at);
+      if (completedAppts.length > 0 && stationsAway > 0) {
+        const tourStart = new Date(tour.tour_active_since);
+        const lastCompleted = new Date(completedAppts[completedAppts.length - 1].completed_at!);
+        const avgMinPerStop = (lastCompleted.getTime() - tourStart.getTime()) / (completedCount * 60000);
+        const etaMs = lastCompleted.getTime() + (stationsAway * avgMinPerStop * 60000);
+        estimatedArrival = format(new Date(etaMs), "HH:mm");
+      }
+      
       const { data: providerProfile } = await supabase
         .from("profiles")
         .select("full_name")
         .eq("id", providerId)
         .maybeSingle();
       
-      // Check for emergency/delay status
       const { data: emergency } = await supabase
         .from("tour_emergency_status")
         .select("id, estimated_delay_minutes, reason, ended_at")
@@ -88,7 +94,9 @@ export function ProviderTourStatusWidget({ userId }: ProviderTourStatusWidgetPro
       
       return {
         isActive: true,
-        providerName: providerProfile?.full_name || "Dein Hufbearbeiter",
+        tourId: tour.id,
+        providerId,
+        providerName: providerProfile?.full_name || "Dein Hufpfleger",
         completedCount,
         totalCount,
         myPosition: myIndex + 1,
@@ -96,6 +104,7 @@ export function ProviderTourStatusWidget({ userId }: ProviderTourStatusWidgetPro
         isMyTurn,
         isCompleted: myAppt.status === "completed",
         myTime: myAppt.time,
+        estimatedArrival,
         horseName: myHorses?.[0] ? (await supabase.from("horses").select("name").eq("id", horseIds[0]).maybeSingle())?.data?.name || null : null,
         hasDelay: !!emergency,
         delayMinutes: emergency?.estimated_delay_minutes || 0,
@@ -103,7 +112,7 @@ export function ProviderTourStatusWidget({ userId }: ProviderTourStatusWidgetPro
       };
     },
     enabled: !!userId,
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 15000, // Every 15 seconds for smoother updates
   });
 
   if (isLoading || !tourStatus) return null;
@@ -175,7 +184,8 @@ export function ProviderTourStatusWidget({ userId }: ProviderTourStatusWidgetPro
                 <Clock className="h-4 w-4" />
                 <span>
                   Noch {tourStatus.stationsAway} Station{tourStatus.stationsAway !== 1 ? "en" : ""} vor dir
-                  {tourStatus.myTime && ` • geplant um ${tourStatus.myTime}`}
+                  {tourStatus.estimatedArrival && ` • Ankunft ca. ${tourStatus.estimatedArrival} Uhr`}
+                  {!tourStatus.estimatedArrival && tourStatus.myTime && ` • geplant um ${tourStatus.myTime}`}
                 </span>
               </div>
             )}

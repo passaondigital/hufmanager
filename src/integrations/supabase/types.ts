@@ -3557,6 +3557,80 @@ export type Database = {
           },
         ]
       }
+      horse_health_logs: {
+        Row: {
+          ate_normally: boolean | null
+          created_at: string | null
+          date: string
+          hoof_rating: number | null
+          horse_id: string
+          id: string
+          notes: string | null
+          owner_id: string
+          shared_with_provider: boolean | null
+          temperament: string | null
+          weight: number | null
+          wellbeing: number
+        }
+        Insert: {
+          ate_normally?: boolean | null
+          created_at?: string | null
+          date?: string
+          hoof_rating?: number | null
+          horse_id: string
+          id?: string
+          notes?: string | null
+          owner_id: string
+          shared_with_provider?: boolean | null
+          temperament?: string | null
+          weight?: number | null
+          wellbeing?: number
+        }
+        Update: {
+          ate_normally?: boolean | null
+          created_at?: string | null
+          date?: string
+          hoof_rating?: number | null
+          horse_id?: string
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          shared_with_provider?: boolean | null
+          temperament?: string | null
+          weight?: number | null
+          wellbeing?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horse_health_logs_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_health_logs_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_health_logs_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_health_logs_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       horse_partner_access: {
         Row: {
           accepted_at: string | null
@@ -6998,6 +7072,109 @@ export type Database = {
           vat_rate?: number | null
         }
         Relationships: []
+      }
+      stall_board_comments: {
+        Row: {
+          author_id: string
+          created_at: string | null
+          deleted_at: string | null
+          display_name: string
+          id: string
+          post_id: string
+          text: string
+        }
+        Insert: {
+          author_id: string
+          created_at?: string | null
+          deleted_at?: string | null
+          display_name: string
+          id?: string
+          post_id: string
+          text: string
+        }
+        Update: {
+          author_id?: string
+          created_at?: string | null
+          deleted_at?: string | null
+          display_name?: string
+          id?: string
+          post_id?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stall_board_comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stall_board_comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stall_board_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "stall_board_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stall_board_posts: {
+        Row: {
+          author_id: string
+          category: string
+          created_at: string | null
+          deleted_at: string | null
+          display_name: string
+          id: string
+          photo_url: string | null
+          provider_id: string
+          text: string
+        }
+        Insert: {
+          author_id: string
+          category?: string
+          created_at?: string | null
+          deleted_at?: string | null
+          display_name: string
+          id?: string
+          photo_url?: string | null
+          provider_id: string
+          text: string
+        }
+        Update: {
+          author_id?: string
+          category?: string
+          created_at?: string | null
+          deleted_at?: string | null
+          display_name?: string
+          id?: string
+          photo_url?: string | null
+          provider_id?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stall_board_posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stall_board_posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       storage_usage: {
         Row: {

@@ -34,6 +34,7 @@ import { ConnectionSearch } from "@/components/network/ConnectionSearch";
 import { MyConnectionRequests } from "@/components/network/MyConnectionRequests";
 import { HMCamModal } from "@/components/hufcam";
 import { HorseIntervalReminderWidget } from "@/components/client/HorseIntervalReminderWidget";
+import { HorseTipsWidget } from "@/components/client/HorseTipsWidget";
 import { PostAppointmentReviewPrompt } from "@/components/client/PostAppointmentReviewPrompt";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { motion, AnimatePresence } from "framer-motion";
@@ -229,6 +230,9 @@ export default function ClientHome() {
 
           {/* Post-Appointment Review Prompt */}
           <PostAppointmentReviewPrompt />
+
+          {/* Horse Tips Widget */}
+          <HorseTipsWidget />
 
           {/* Interval Reminders */}
           <HorseIntervalReminderWidget />
