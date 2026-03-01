@@ -113,6 +113,8 @@ const PartnerDocuments = lazy(() => import("@/pages/partner/PartnerDocuments"));
 const PartnerServices = lazy(() => import("@/pages/partner/PartnerServices"));
 const PartnerInvoices = lazy(() => import("@/pages/partner/PartnerInvoices"));
 const PartnerSettings = lazy(() => import("@/pages/partner/PartnerSettings"));
+const PartnerConnect = lazy(() => import("@/pages/partner/PartnerConnect"));
+const PartnerPublicProfile = lazy(() => import("@/pages/partner/PartnerPublicProfile"));
 
 // Layouts (lazy)
 const EmployeeAppLayout = lazy(() => import("@/components/employee/EmployeeAppLayout").then(m => ({ default: m.EmployeeAppLayout })));
@@ -249,6 +251,9 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             
             {/* Partner-Einladung (öffentlich) */}
             <Route path="/partner-invite/:token" element={<PartnerInvite />} />
+            
+            {/* Öffentliches Partner-Profil (kein Login nötig) */}
+            <Route path="/partner/:prid" element={<PartnerPublicProfile />} />
             
             {/* Öffentliche Review-Seite */}
             <Route path="/submit-review" element={<SubmitReview />} />
@@ -432,6 +437,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner-settings" element={<PartnerSettings />} />
               <Route path="/partner-profile" element={<PartnerProfile />} />
               <Route path="/partner-notfall" element={<EmergencyDashboard />} />
+              <Route path="/partner-connect" element={<PartnerConnect />} />
             </Route>
 
             {/* Fallback für alles andere */}

@@ -4500,6 +4500,7 @@ export type Database = {
           owner_name: string | null
           partner_id: string
           phone: string | null
+          public_profile_visible: boolean | null
           qualifications: string | null
           specialty: string | null
           tax_number: string | null
@@ -4526,6 +4527,7 @@ export type Database = {
           owner_name?: string | null
           partner_id: string
           phone?: string | null
+          public_profile_visible?: boolean | null
           qualifications?: string | null
           specialty?: string | null
           tax_number?: string | null
@@ -4552,6 +4554,7 @@ export type Database = {
           owner_name?: string | null
           partner_id?: string
           phone?: string | null
+          public_profile_visible?: boolean | null
           qualifications?: string | null
           specialty?: string | null
           tax_number?: string | null
@@ -5071,6 +5074,7 @@ export type Database = {
       }
       partner_treatment_notes: {
         Row: {
+          body_map_zones: Json | null
           created_at: string | null
           findings: string | null
           horse_id: string
@@ -5080,6 +5084,7 @@ export type Database = {
           partner_id: string
           partner_type: Database["public"]["Enums"]["partner_type"] | null
           photo_urls: string[] | null
+          template_key: string | null
           title: string
           treatment_date: string
           updated_at: string | null
@@ -5087,6 +5092,7 @@ export type Database = {
           visible_to_pid: boolean
         }
         Insert: {
+          body_map_zones?: Json | null
           created_at?: string | null
           findings?: string | null
           horse_id: string
@@ -5096,6 +5102,7 @@ export type Database = {
           partner_id: string
           partner_type?: Database["public"]["Enums"]["partner_type"] | null
           photo_urls?: string[] | null
+          template_key?: string | null
           title: string
           treatment_date: string
           updated_at?: string | null
@@ -5103,6 +5110,7 @@ export type Database = {
           visible_to_pid?: boolean
         }
         Update: {
+          body_map_zones?: Json | null
           created_at?: string | null
           findings?: string | null
           horse_id?: string
@@ -5112,6 +5120,7 @@ export type Database = {
           partner_id?: string
           partner_type?: Database["public"]["Enums"]["partner_type"] | null
           photo_urls?: string[] | null
+          template_key?: string | null
           title?: string
           treatment_date?: string
           updated_at?: string | null
