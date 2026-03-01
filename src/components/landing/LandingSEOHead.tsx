@@ -8,6 +8,9 @@ interface LandingSEOHeadProps {
     meta_description: string | null;
     logo_url: string | null;
     subdomain: string | null;
+    phone?: string | null;
+    address?: string | null;
+    google_search_console_code?: string | null;
   };
 }
 
@@ -46,24 +49,48 @@ export const LandingSEOHead = ({ settings }: LandingSEOHeadProps) => {
       tag.setAttribute('content', content);
     });
 
-    // JSON-LD structured data
+    // JSON-LD structured data - LocalBusiness
     const existingScript = document.querySelector('#landing-jsonld');
     if (existingScript) existingScript.remove();
 
-    const jsonLd = {
+    const jsonLd: Record<string, any> = {
       '@context': 'https://schema.org',
       '@type': 'LocalBusiness',
       name: title,
       description,
       ...(settings.logo_url && { image: settings.logo_url }),
-      ...(settings.subdomain && { url: `https://hufmanager.lovable.app/p/${settings.subdomain}` }),
+      ...(settings.subdomain && { url: `https://hufmanager.de/p/${settings.subdomain}` }),
+      ...(settings.phone && { telephone: settings.phone }),
+      priceRange: '€€',
     };
+
+    if (settings.address) {
+      const parts = settings.address.split(',').map(s => s.trim());
+      jsonLd.address = {
+        '@type': 'PostalAddress',
+        streetAddress: parts[0] || '',
+        addressLocality: parts[1] || '',
+        postalCode: parts[2] || '',
+        addressCountry: 'DE',
+      };
+    }
 
     const script = document.createElement('script');
     script.id = 'landing-jsonld';
     script.type = 'application/ld+json';
     script.textContent = JSON.stringify(jsonLd);
     document.head.appendChild(script);
+
+    // Google Search Console verification
+    if (settings.google_search_console_code) {
+      let gscTag = document.querySelector('meta[name="google-site-verification"]');
+      if (!gscTag) {
+        gscTag = document.createElement('meta');
+        gscTag.setAttribute('name', 'google-site-verification');
+        document.head.appendChild(gscTag);
+      }
+      gscTag.setAttribute('content', settings.google_search_console_code);
+    }
 
     return () => {
       document.title = 'HufManager';
