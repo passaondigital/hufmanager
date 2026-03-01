@@ -459,6 +459,18 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner-work-mode" element={<WorkMode />} />
               <Route path="/partner-feedback" element={<Auffassen />} />
               <Route path="/partner-fuhrpark" element={<Fuhrpark />} />
+              <Route path="/partner-anfragen" element={<Anfragen />} />
+              <Route path="/partner-angebote" element={<Angebote />} />
+              <Route path="/partner-kunden" element={<Kunden />} />
+              <Route path="/partner-ausgaben" element={<Ausgaben />} />
+              <Route path="/partner-buchhaltung" element={<Buchhaltung />} />
+              <Route path="/partner-guv" element={<GuV />} />
+              <Route path="/partner-analyse" element={<Analyse />} />
+              <Route path="/partner-office" element={<MeinOffice />} />
+              <Route path="/partner-lager" element={<Lager />} />
+              <Route path="/partner-autoflow" element={<AutoFlow />} />
+              <Route path="/partner-management" element={<Management />} />
+              <Route path="/partner-support" element={<Support />} />
             </Route>
 
             {/* Fallback für alles andere */}

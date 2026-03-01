@@ -17,72 +17,81 @@ import { AppHeader } from "@/components/layout/AppHeader";
 
 const PARTNER_NAV: NavigationConfig = {
   directItems: [
-    { id: "overview", label: "Übersicht", iconName: "Home", path: "/partner-home" },
+    { id: "dashboard", label: "Dashboard", iconName: "LayoutDashboard", path: "/partner-home" },
   ],
   groups: [
     {
-      label: "Meine Arbeit",
+      label: "Die 5 A's",
       items: [
         {
-          id: "horses", number: "1", label: "Pferde & Patienten", iconName: "Heart",
+          id: "anfragen", number: "1", label: "Anfragen", iconName: "MessageSquare",
           children: [
-            { label: "Meine Pferde", path: "/partner-horses" },
+            { label: "Inbox", path: "/partner-chat" },
+            { label: "Warteliste", path: "/partner-anfragen" },
+            { label: "Meine Website", path: "/partner-website" },
+          ],
+        },
+        {
+          id: "angebote", number: "2", label: "Angebote", iconName: "FileText",
+          children: [
+            { label: "Mein Angebot", path: "/partner-services" },
+            { label: "Offene Angebote", path: "/partner-angebote" },
+          ],
+        },
+        {
+          id: "aufnahme", number: "3", label: "Aufnahme", iconName: "UserPlus",
+          children: [
+            { label: "Kunden", path: "/partner-kunden" },
+            { label: "Pferde / Patienten", path: "/partner-horses" },
             { label: "Behandlungspläne", path: "/partner-plans" },
             { label: "Befunde & Notizen", path: "/partner-notes" },
+            { label: "Dokumente & Befunde", path: "/partner-documents" },
           ],
         },
         {
-          id: "appointments", number: "2", label: "Termine", iconName: "Calendar",
+          id: "auffassen", number: "4", label: "Auffassen", iconName: "Calendar",
           children: [
             { label: "Kalender", path: "/partner-calendar" },
-          ],
-        },
-        {
-          id: "auffassen", number: "3", label: "Auffassen", iconName: "ClipboardCheck",
-          children: [
             { label: "Tour Manager", path: "/partner-tour" },
             { label: "Zeit-Tracking", path: "/partner-work-mode?tab=timer" },
             { label: "km-Tracker", path: "/partner-work-mode?tab=mileage" },
-            { label: "HufCam Pro", path: "/partner-work-mode?tab=hufcam" },
-            { label: "Hufanalyse", path: "/partner-work-mode?tab=analyse" },
             { label: "Feedback", path: "/partner-feedback" },
           ],
         },
         {
-          id: "finance", number: "4", label: "Finanzen", iconName: "Receipt",
+          id: "analyse", number: "5", label: "Analyse", iconName: "BarChart3",
           children: [
             { label: "Rechnungen", path: "/partner-invoices" },
-            { label: "Mein Angebot", path: "/partner-services" },
+            { label: "Ausgaben & Belege", path: "/partner-ausgaben" },
             { label: "Fuhrpark", path: "/partner-fuhrpark" },
+            { label: "Buchhaltung", path: "/partner-buchhaltung" },
+            { label: "GuV-Übersicht", path: "/partner-guv" },
+            { label: "Betriebszahlen", path: "/partner-analyse" },
           ],
         },
+      ],
+    },
+    {
+      label: "Erweiterungen",
+      items: [
+        { id: "office", label: "Mein Office", iconName: "FileText", path: "/partner-office" },
+        { id: "lager", label: "Lager & Material", iconName: "Warehouse", path: "/partner-lager" },
+        { id: "connect", label: "HM Connect", iconName: "Link2", path: "/partner-connect" },
+        { id: "autoflow", label: "AutoFlow", iconName: "Zap", path: "/partner-autoflow" },
+      ],
+    },
+    {
+      label: "Management",
+      items: [
         {
-          id: "communication", number: "5", label: "Kommunikation", iconName: "MessageSquare",
+          id: "management", label: "Management", iconName: "Settings",
           children: [
-            { label: "Chat", path: "/partner-chat" },
+            { label: "Profil", path: "/partner-profile" },
+            { label: "Abo & Module", path: "/partner-management?tab=subscription" },
             { label: "1. Hilfe Kunden Center", path: "/partner-notfall" },
           ],
         },
-      ],
-    },
-    {
-      label: "Präsenz",
-      items: [
-        { id: "website", label: "Meine Website", iconName: "Globe", path: "/partner-website" },
-        { id: "network", label: "Netzwerk", iconName: "Users", path: "/partner-connect" },
-        { id: "documents", label: "Dokumente & Befunde", iconName: "Upload", path: "/partner-documents" },
-      ],
-    },
-    {
-      label: "Konto",
-      items: [
-        {
-          id: "settings", label: "Einstellungen", iconName: "Settings",
-          children: [
-            { label: "Einstellungen", path: "/partner-settings" },
-          ],
-        },
-        { id: "profile", label: "Profil", iconName: "User", path: "/partner-profile" },
+        { id: "support", label: "Hilfe & Support", iconName: "LifeBuoy", path: "/partner-support" },
       ],
     },
   ],
