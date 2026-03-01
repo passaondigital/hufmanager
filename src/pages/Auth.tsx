@@ -459,10 +459,11 @@ export default function Auth() {
                       if (inviteCode) {
                         sessionStorage.setItem("huf_invite_code", inviteCode);
                       }
-                      // Save business name if provided
                       if (data.businessName) {
                         sessionStorage.setItem("hm_pending_business_name", data.businessName);
                       }
+                      // Store country for profile update after email confirmation
+                      sessionStorage.setItem("hm_pending_country", data.country);
                       toast.success("Registrierung erfolgreich! Bitte bestätigen Sie Ihre E-Mail.");
                     }
                   } catch (err: any) {
