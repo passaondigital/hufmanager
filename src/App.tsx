@@ -40,6 +40,7 @@ const Management = lazy(() => import("@/pages/Management"));
 const Academy = lazy(() => import("@/pages/Academy"));
 const Chat = lazy(() => import("@/pages/Chat"));
 const GeldVerdienen = lazy(() => import("@/pages/GeldVerdienen"));
+const Hufrente = lazy(() => import("@/pages/Hufrente"));
 const Hufanalyse = lazy(() => import("@/pages/Hufanalyse"));
 const Rechnungen = lazy(() => import("@/pages/Rechnungen"));
 const Support = lazy(() => import("@/pages/Support"));
@@ -338,6 +339,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/academy" element={<Academy />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/partner" element={<GeldVerdienen />} />
+              <Route path="/hufrente" element={<Hufrente />} />
               <Route path="/hufanalyse" element={<Hufanalyse />} />
               <Route path="/work-mode" element={<WorkMode />} />
               <Route path="/tour" element={<Tour />} />
