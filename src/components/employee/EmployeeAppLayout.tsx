@@ -15,6 +15,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { EmployeeNotificationBell } from "@/components/employee/EmployeeNotificationBell";
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
 import { AppSidebar, MobileAppSidebar, NavigationConfig } from "@/components/shared/AppSidebar";
+import { AppHeader } from "@/components/layout/AppHeader";
 
 const getEmployeeNav = (permissions: Record<string, boolean>): NavigationConfig => {
   const tourChildren = [];
@@ -187,11 +188,14 @@ export function EmployeeAppLayout() {
           userAvatar={profile.avatar_url || undefined}
           navigationConfig={employeeNav}
         />
-        <main className="flex-1 overflow-auto p-6 ml-60">
-          <ErrorBoundary name="EmployeeApp">
-            <Outlet />
-          </ErrorBoundary>
-        </main>
+        <div className="flex-1 flex flex-col ml-60">
+          <AppHeader />
+          <main className="flex-1 overflow-auto p-6">
+            <ErrorBoundary name="EmployeeApp">
+              <Outlet />
+            </ErrorBoundary>
+          </main>
+        </div>
       </div>
 
       {/* Mobile Content */}
