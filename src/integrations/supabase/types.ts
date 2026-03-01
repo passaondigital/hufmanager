@@ -553,7 +553,7 @@ export type Database = {
           organization_id: string | null
           price: number | null
           price_group_applied: string | null
-          provider_id: string | null
+          provider_id: string
           recurring_group_id: string | null
           series_current: number | null
           series_total: number | null
@@ -563,7 +563,7 @@ export type Database = {
           signed_at: string | null
           signed_by_name: string | null
           stable_group_id: string | null
-          status: string | null
+          status: string
           surcharge_amount: number | null
           surcharge_reason: string | null
           time: string | null
@@ -602,7 +602,7 @@ export type Database = {
           organization_id?: string | null
           price?: number | null
           price_group_applied?: string | null
-          provider_id?: string | null
+          provider_id: string
           recurring_group_id?: string | null
           series_current?: number | null
           series_total?: number | null
@@ -612,7 +612,7 @@ export type Database = {
           signed_at?: string | null
           signed_by_name?: string | null
           stable_group_id?: string | null
-          status?: string | null
+          status?: string
           surcharge_amount?: number | null
           surcharge_reason?: string | null
           time?: string | null
@@ -651,7 +651,7 @@ export type Database = {
           organization_id?: string | null
           price?: number | null
           price_group_applied?: string | null
-          provider_id?: string | null
+          provider_id?: string
           recurring_group_id?: string | null
           series_current?: number | null
           series_total?: number | null
@@ -661,7 +661,7 @@ export type Database = {
           signed_at?: string | null
           signed_by_name?: string | null
           stable_group_id?: string | null
-          status?: string | null
+          status?: string
           surcharge_amount?: number | null
           surcharge_reason?: string | null
           time?: string | null
@@ -4421,9 +4421,9 @@ export type Database = {
           payment_method: string | null
           payment_status: string | null
           pdf_url: string | null
-          provider_id: string | null
+          provider_id: string
           signature_url: string | null
-          status: string | null
+          status: string
           total_amount: number
           updated_at: string
         }
@@ -4447,9 +4447,9 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string | null
           pdf_url?: string | null
-          provider_id?: string | null
+          provider_id: string
           signature_url?: string | null
-          status?: string | null
+          status?: string
           total_amount: number
           updated_at?: string
         }
@@ -4473,9 +4473,9 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string | null
           pdf_url?: string | null
-          provider_id?: string | null
+          provider_id?: string
           signature_url?: string | null
-          status?: string | null
+          status?: string
           total_amount?: number
           updated_at?: string
         }
@@ -7268,7 +7268,7 @@ export type Database = {
           is_group_service: boolean | null
           item_type: string
           name: string
-          provider_id: string | null
+          provider_id: string
           session_count: number | null
           sku: string | null
           sort_order: number | null
@@ -7303,7 +7303,7 @@ export type Database = {
           is_group_service?: boolean | null
           item_type?: string
           name: string
-          provider_id?: string | null
+          provider_id: string
           session_count?: number | null
           sku?: string | null
           sort_order?: number | null
@@ -7338,7 +7338,7 @@ export type Database = {
           is_group_service?: boolean | null
           item_type?: string
           name?: string
-          provider_id?: string | null
+          provider_id?: string
           session_count?: number | null
           sku?: string | null
           sort_order?: number | null
