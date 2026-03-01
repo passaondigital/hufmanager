@@ -327,7 +327,7 @@ export function RecipesTab() {
                       )}
                     </div>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(recipe)}>
+                      <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(recipe)} aria-label="Rezept bearbeiten">
                         <Pencil className="h-4 w-4" />
                       </Button>
                       <Button
@@ -335,6 +335,7 @@ export function RecipesTab() {
                         size="icon"
                         className="text-destructive hover:text-destructive"
                         onClick={() => deleteMutation.mutate(recipe.id)}
+                        aria-label="Rezept löschen"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -459,6 +460,7 @@ export function RecipesTab() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleRemoveItem(index)}
+                      aria-label="Zutat entfernen"
                     >
                       <X className="h-4 w-4" />
                     </Button>

@@ -143,7 +143,7 @@ export function MaterialAssignment() {
                       <Badge variant={remaining <= 0 ? "destructive" : remaining <= 3 ? "outline" : "default"} className="text-xs">
                         {remaining} übrig
                       </Badge>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteAssignment.mutate(mat.id)}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteAssignment.mutate(mat.id)} aria-label="Material entfernen">
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </CardContent>

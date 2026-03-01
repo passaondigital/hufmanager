@@ -418,6 +418,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
             size="icon"
             onClick={() => setCollapsed(!collapsed)}
             className="text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+            aria-label={collapsed ? "Sidebar aufklappen" : "Sidebar einklappen"}
           >
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>

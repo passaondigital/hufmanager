@@ -100,6 +100,7 @@ export function NotificationBell({ collapsed = false }: NotificationBellProps) {
         <Button
           variant="ghost"
           size="icon"
+          aria-label={`Benachrichtigungen${unreadCount > 0 ? ` (${unreadCount} ungelesen)` : ""}`}
           className={cn(
             "relative text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent",
             collapsed && "mx-auto"

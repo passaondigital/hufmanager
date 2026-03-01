@@ -276,7 +276,7 @@ export default function PartnerChat() {
             <>
               {/* Header */}
               <div className="p-3 border-b border-border flex items-center gap-3">
-                <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8" onClick={() => setSelectedConv(null)}>
+                <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8" onClick={() => setSelectedConv(null)} aria-label="Zurück">
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <Avatar className="h-8 w-8">
@@ -321,7 +321,7 @@ export default function PartnerChat() {
                     className="flex-1"
                     maxLength={5000}
                   />
-                  <Button type="submit" size="icon" disabled={!message.trim() || sendMutation.isPending}>
+                  <Button type="submit" size="icon" disabled={!message.trim() || sendMutation.isPending} aria-label="Nachricht senden">
                     {sendMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   </Button>
                 </form>

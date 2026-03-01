@@ -72,6 +72,7 @@ export function useStorageQuota(entityType: EntityType, entityId: string | null)
       };
     },
     enabled: !!entityId && !!user?.id,
+    staleTime: 1000 * 60 * 2, // 2 minutes
   });
 
   const checkQuota = async (fileSize: number): Promise<StorageQuotaInfo | null> => {

@@ -19,6 +19,7 @@ export function useKiSettings() {
       return data?.ki_features_enabled ?? true;
     },
     enabled: !!user?.id,
+    staleTime: Infinity, // Settings rarely change
   });
 
   const toggleMutation = useMutation({

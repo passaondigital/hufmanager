@@ -175,7 +175,7 @@ export function AdminSystemHealth() {
             Plattform-Statistiken & Monitoring
           </p>
         </div>
-        <Button variant="outline" onClick={fetchStats} size="icon">
+        <Button variant="outline" onClick={fetchStats} size="icon" aria-label="Statistiken aktualisieren">
           <RefreshCw className="w-4 h-4" />
         </Button>
       </div>
