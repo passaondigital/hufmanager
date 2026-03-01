@@ -1,5 +1,9 @@
 export { AppointmentFormModal } from "./AppointmentFormModal";
 export { AppointmentTooltip } from "./AppointmentTooltip";
+export { AppointmentDetailSheet } from "./AppointmentDetailSheet";
 export { CalendarSyncModal } from "./CalendarSyncModal";
+export { CalendarFilterBar } from "./CalendarFilterBar";
+export { CalendarWeekStats } from "./CalendarWeekStats";
+export { BulkActionsBar } from "./BulkActionsBar";
 export { NearbyDueClientsPanel } from "./NearbyDueClientsPanel";
 export { TourMapView } from "./TourMapView";
