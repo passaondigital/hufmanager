@@ -303,7 +303,9 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background p-4">
+    <div className="min-h-[100dvh] flex flex-col bg-background">
+      {/* Scrollable content area that fills viewport */}
+      <div className="flex-1 flex flex-col items-center justify-start px-4 py-6 sm:justify-center overflow-auto">
       <Card className="w-full max-w-md border-border bg-card shadow-xl">
         {/* HM Connect Invite Banner */}
         {hmInviteToken && (
@@ -321,14 +323,14 @@ export default function Auth() {
             </div>
           </div>
         )}
-        <CardHeader className="text-center pb-2">
+        <CardHeader className="text-center pb-2 pt-4">
           <img 
             src="/hufmanager-logo.png" 
             alt="HufManager Logo" 
-            className="mx-auto h-24 w-auto mb-4"
+            className="mx-auto h-16 sm:h-20 w-auto mb-2"
           />
           <CardTitle className="text-2xl font-bold text-foreground sr-only">HufManager</CardTitle>
-          <CardDescription className="text-muted-foreground">Melden Sie sich an oder erstellen Sie ein Konto</CardDescription>
+          <CardDescription className="text-sm text-muted-foreground">Melden Sie sich an oder erstellen Sie ein Konto</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
@@ -339,45 +341,45 @@ export default function Auth() {
             
             <TabsContent value="login" className="mt-6">
               {/* Login Mode Toggle - Profi vs Kunde vs Team */}
-              <div className="mb-6">
-                <div className="grid grid-cols-3 gap-1.5 p-1.5 bg-muted rounded-xl border border-border">
+              <div className="mb-5">
+                <div className="grid grid-cols-3 gap-2 p-1.5 bg-muted rounded-xl border border-border">
                   <button
                     type="button"
                     onClick={() => setLoginMode("provider")}
                     className={cn(
-                      "flex flex-col items-center gap-1 px-2 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200",
+                      "flex flex-col items-center gap-1.5 px-2 py-3 rounded-lg text-sm font-semibold transition-all duration-200 min-h-[52px]",
                       loginMode === "provider"
                         ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     )}
                   >
-                    <Hammer className="h-4 w-4" />
+                    <Hammer className="h-5 w-5" />
                     Hufbearbeiter
                   </button>
                   <button
                     type="button"
                     onClick={() => setLoginMode("client")}
                     className={cn(
-                      "flex flex-col items-center gap-1 px-2 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200",
+                      "flex flex-col items-center gap-1.5 px-2 py-3 rounded-lg text-sm font-semibold transition-all duration-200 min-h-[52px]",
                       loginMode === "client"
                         ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     )}
                   >
-                    <Heart className="h-4 w-4" />
+                    <Heart className="h-5 w-5" />
                     Pferdebesitzer
                   </button>
                   <button
                     type="button"
                     onClick={() => setLoginMode("team")}
                     className={cn(
-                      "flex flex-col items-center gap-1 px-2 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200",
+                      "flex flex-col items-center gap-1.5 px-2 py-3 rounded-lg text-sm font-semibold transition-all duration-200 min-h-[52px]",
                       loginMode === "team"
                         ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     )}
                   >
-                    <Users className="h-4 w-4" />
+                    <Users className="h-5 w-5" />
                     Team & Partner
                   </button>
                 </div>
@@ -390,30 +392,35 @@ export default function Auth() {
                 </p>
               </div>
 
-              <form onSubmit={handleLogin} className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email" className="text-foreground font-medium">E-Mail</Label>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="login-email" className="text-foreground font-medium text-sm">E-Mail</Label>
                   <Input
                     id="login-email"
                     type="email"
+                    inputMode="email"
+                    autoComplete="email"
                     placeholder="ihre@email.de"
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     required
+                    className="h-[52px] text-base"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="login-password" className="text-foreground font-medium">Passwort</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="login-password" className="text-foreground font-medium text-sm">Passwort</Label>
                   <Input
                     id="login-password"
                     type="password"
+                    autoComplete="current-password"
                     placeholder="••••••••"
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     required
+                    className="h-[52px] text-base"
                   />
                 </div>
-                <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={loading}>
+                <Button type="submit" className="w-full h-14 text-base font-semibold" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
                   Anmelden
                 </Button>
@@ -424,7 +431,7 @@ export default function Auth() {
                       setResetEmail(loginEmail);
                       setResetDialogOpen(true);
                     }}
-                    className="text-sm text-primary hover:underline"
+                    className="text-sm text-primary hover:underline min-h-[44px] inline-flex items-center px-4"
                   >
                     Passwort vergessen?
                   </button>
@@ -568,7 +575,7 @@ export default function Auth() {
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={loading}>
+                <Button type="submit" className="w-full h-14 text-base font-semibold" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
                   {selectedRole === "provider" ? "Als Hufbearbeiter registrieren" : "Als Pferdebesitzer registrieren"}
                 </Button>
@@ -618,12 +625,12 @@ export default function Auth() {
       </div>
 
       {/* Legal Links */}
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground pb-4">
         <a 
           href="https://hufmanager.de/impressum" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="hover:text-primary transition-colors"
+          className="hover:text-primary transition-colors min-h-[44px] inline-flex items-center"
         >
           Impressum
         </a>
@@ -632,7 +639,7 @@ export default function Auth() {
           href="https://hufmanager.de/datenschutz" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="hover:text-primary transition-colors"
+          className="hover:text-primary transition-colors min-h-[44px] inline-flex items-center"
         >
           Datenschutz
         </a>
@@ -641,7 +648,7 @@ export default function Auth() {
           href="https://hufmanager.de/agb" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="hover:text-primary transition-colors"
+          className="hover:text-primary transition-colors min-h-[44px] inline-flex items-center"
         >
           AGB
         </a>
@@ -651,10 +658,11 @@ export default function Auth() {
       <button
         type="button"
         onClick={() => setAdminDialogOpen(true)}
-        className="mt-4 text-xs text-muted-foreground/40 hover:text-muted-foreground/80 transition-opacity"
+        className="mb-4 text-xs text-muted-foreground/40 hover:text-muted-foreground/80 transition-opacity min-h-[44px]"
       >
         🚀
       </button>
+      </div> {/* end scrollable wrapper */}
 
       {/* Admin Login Dialog */}
       <Dialog open={adminDialogOpen} onOpenChange={setAdminDialogOpen}>
@@ -820,6 +828,7 @@ export default function Auth() {
         </DialogContent>
       </Dialog>
 
+      {/* Pricing Modal */}
       {/* Pricing Modal */}
       <PricingModal 
         open={pricingModalOpen} 

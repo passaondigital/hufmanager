@@ -41,7 +41,7 @@ const Dashboard = () => {
         <ProviderSetupWizard onComplete={completeOnboarding} />
       )}
 
-      <div className="space-y-6">
+      <div className="space-y-6 pb-4">
       {/* Push Notification Banner */}
       <PushNotificationBanner />
 
@@ -94,15 +94,15 @@ const Dashboard = () => {
       {/* Stats Grid */}
       <div data-tour="stats-grid">
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-card rounded-lg border border-border p-6 flex items-center justify-center h-32">
+            <div key={i} className="bg-card rounded-xl border border-border p-4 flex items-center justify-center min-h-[100px]">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard
             title="Aktive Kunden"
             value={stats?.activeClients || 0}

@@ -61,7 +61,7 @@ export function AppLayout() {
       <div className="flex-1 flex flex-col min-h-[100dvh] overflow-hidden">
         {/* Mobile Header with Hamburger */}
         <header 
-          className="lg:hidden h-14 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-3 pt-safe"
+          className="lg:hidden h-14 max-h-14 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-3"
           style={{ paddingTop: "max(env(safe-area-inset-top), 0px)" }}
         >
           <div className="flex items-center gap-2">
@@ -161,7 +161,7 @@ export function AppLayout() {
         <TrialCountdownBanner />
 
         {/* Main content with bottom nav spacing on mobile */}
-        <main className="flex-1 overflow-auto p-4 lg:p-6 pb-bottom-nav">
+        <main className="flex-1 overflow-auto px-4 py-4 lg:p-6 pb-bottom-nav overflow-x-hidden">
           <Outlet />
         </main>
       </div>

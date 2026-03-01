@@ -33,18 +33,18 @@ export function StatCard({
     <div
       onClick={handleClick}
       className={cn(
-        "bg-card rounded-lg border border-border p-6",
-        navigateTo && "cursor-pointer hover:bg-muted/50"
+        "bg-card rounded-xl border border-border p-4 min-h-[100px]",
+        navigateTo && "cursor-pointer hover:bg-muted/50 active:scale-[0.98] transition-transform"
       )}
     >
       <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-3xl font-bold text-foreground">{value}</p>
+        <div className="space-y-1.5">
+          <p className="text-xs sm:text-sm font-medium text-muted-foreground leading-tight">{title}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-foreground">{value}</p>
           {change && (
             <p
               className={cn(
-                "text-sm font-medium",
+                "text-xs sm:text-sm font-medium",
                 changeType === "positive" && "text-accent",
                 changeType === "negative" && "text-destructive",
                 changeType === "neutral" && "text-muted-foreground"
@@ -56,7 +56,7 @@ export function StatCard({
         </div>
         <div
           className={cn(
-            "p-2 rounded-md",
+            "p-2.5 rounded-lg",
             iconColor === "primary" && "bg-primary/10",
             iconColor === "accent" && "bg-accent/10",
             iconColor === "muted" && "bg-muted"
