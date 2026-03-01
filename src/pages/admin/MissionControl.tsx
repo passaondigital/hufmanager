@@ -76,6 +76,7 @@ import AdminPartnerOverview from "@/components/admin/AdminPartnerOverview";
 import AdminEmployeeOverview from "@/components/admin/AdminEmployeeOverview";
 import { AdminRevenue } from "@/components/admin/AdminRevenue";
 import { RetentionDashboard } from "@/components/admin/RetentionDashboard";
+import { AdminHufrenteOverview } from "@/components/admin/AdminHufrenteOverview";
 
 // Horse icon fallback since lucide doesn't have it
 const Horse = () => (
@@ -1138,6 +1139,10 @@ export default function MissionControl() {
                 <Clock className="w-4 h-4" />
                 <span className="hidden md:inline">Fristen</span>
               </TabsTrigger>
+              <TabsTrigger value="hufrente" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <Shield className="w-4 h-4" />
+                <span className="hidden md:inline">Hufrente</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -2164,6 +2169,10 @@ export default function MissionControl() {
 
           <TabsContent value="retention" className="space-y-6">
             <RetentionDashboard />
+          </TabsContent>
+
+          <TabsContent value="hufrente" className="space-y-6">
+            <AdminHufrenteOverview />
           </TabsContent>
 
           {/* ESCALATIONS TAB */}
