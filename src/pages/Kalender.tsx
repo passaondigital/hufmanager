@@ -137,21 +137,8 @@ const Kalender = () => {
     queryKey: ["appointments", user?.id, dateRange.start, dateRange.end],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data, error } = await supabase
-        .from("appointments")
-        .select(`
-          id, date, time, duration, service_type, location, status,
-          is_confirmed_by_client, notes, price_group_applied, price, applied_price,
-          horses (id, name, breed),
-          contacts:client_id (id, full_name, street, zip_code, city)
-        `)
-        .eq("provider_id", user.id)
-        .gte("date", dateRange.start)
-        .lte("date", dateRange.end)
-        .order("date", { ascending: true });
-
-      if (error) throw error;
-      return data || [];
+      const { fetchAppointmentsByDateRange } = await import("@/services/appointmentService");
+      return fetchAppointmentsByDateRange(user.id, dateRange.start, dateRange.end);
     },
     enabled: !!user?.id,
   });
