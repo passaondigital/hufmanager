@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Shield, Users, Database, Bug, Activity, Crown, Plus, Zap, Package, BookOpen, Brain, AlertTriangle, PiggyBank, Link2 } from "lucide-react";
+import { Loader2, Shield, Users, Database, Bug, Activity, Crown, Plus, Zap, Package, BookOpen, Brain, AlertTriangle, PiggyBank, Link2, Globe } from "lucide-react";
 import { toast } from "sonner";
 
 // Admin Views
@@ -20,7 +20,7 @@ import { AdminKIDataHub } from "@/components/admin/AdminKIDataHub";
 import { AdminRevenue } from "@/components/admin/AdminRevenue";
 import { AdminConnections } from "@/components/admin/AdminConnections";
 
-type AdminView = "users" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "connections";
+type AdminView = "users" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "connections" | "domains";
 
 const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "users", label: "User-DB", icon: Users },
@@ -30,6 +30,7 @@ const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ cla
   { id: "docs", label: "System & Doku", icon: BookOpen },
   { id: "ki-hub", label: "KI-Daten-Hub", icon: Brain },
   { id: "connections", label: "HM Connect", icon: Link2 },
+  { id: "domains", label: "Domains", icon: Globe },
   { id: "dev", label: "Dev-Zentrale", icon: Bug },
   { id: "health", label: "System-Health", icon: Activity },
 ];
@@ -192,6 +193,20 @@ export default function AdminDashboard() {
         {activeView === "horses" && <AdminHorseDB isMasterAdmin={isMasterAdmin} />}
         {activeView === "revenue" && <AdminRevenue />}
         {activeView === "connections" && <AdminConnections />}
+        {activeView === "domains" && (
+          <div className="p-8">
+            <div className="max-w-lg mx-auto text-center space-y-4 py-16">
+              <div className="p-4 bg-muted rounded-full w-fit mx-auto">
+                <Globe className="h-10 w-10 text-muted-foreground" />
+              </div>
+              <h2 className="text-2xl font-bold text-foreground">Domain-Reseller</h2>
+              <p className="text-muted-foreground">
+                Demnächst: Eigene Domains für Provider verkaufen. Registrar-Anbindung, TLD-Preisliste, Ablaufverwaltung & Umsatz-Tracking.
+              </p>
+              <Badge variant="secondary" className="text-sm">🚧 In Vorbereitung</Badge>
+            </div>
+          </div>
+        )}
         {activeView === "catalog" && <AdminProductCatalog />}
         {activeView === "docs" && <AdminSystemDoku />}
         {activeView === "ki-hub" && <AdminKIDataHub />}

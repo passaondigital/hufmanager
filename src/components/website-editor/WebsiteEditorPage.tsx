@@ -15,6 +15,7 @@ import { WebsiteSEOSettings } from "./WebsiteSEOSettings";
 import { WebsiteLeadSettings } from "./WebsiteLeadSettings";
 import { WebsiteBlogManager } from "./WebsiteBlogManager";
 import { WebsiteOnboarding } from "./WebsiteOnboarding";
+import { DomainWaitlistCard } from "./DomainWaitlistCard";
 
 export const WebsiteEditorPage = () => {
   const { user } = useAuth();
@@ -110,6 +111,9 @@ export const WebsiteEditorPage = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Domain Teaser */}
+      <DomainWaitlistCard />
 
       <Tabs defaultValue="pages" className="w-full">
         <TabsList className="grid w-full grid-cols-5">
