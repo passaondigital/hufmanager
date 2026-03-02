@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { PLAN_FEATURE_MAP } from "@/lib/plan-features";
+import { ProviderDetailPanel } from "@/components/admin/ProviderDetailPanel";
 import { 
   Search, 
   RefreshCw, 
@@ -27,7 +28,8 @@ import {
   Calendar,
   Clock,
   ShieldAlert,
-  AlertTriangle
+  AlertTriangle,
+  ChevronDown,
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -76,6 +78,7 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [globalSearch, setGlobalSearch] = useState("");
+  const [expandedProviderId, setExpandedProviderId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<RoleTab>("provider");
   const [specialFilter, setSpecialFilter] = useState<"all" | "never_logged_in" | "email_unconfirmed" | "no_data">("all");
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
@@ -412,6 +415,7 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead className="w-8"></TableHead>
           <TableHead>ID</TableHead>
           <TableHead>Name / E-Mail</TableHead>
           <TableHead>Standort</TableHead>
@@ -425,35 +429,54 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
       </TableHeader>
       <TableBody>
         {data.map(user => (
-          <TableRow key={user.id} className="group">
-            <TableCell>{renderUserIdCell(user)}</TableCell>
-            <TableCell>{renderNameCell(user)}</TableCell>
-            <TableCell>
-              {user.zip_code || user.city ? (
-                <div className="flex items-center gap-1 text-sm"><MapPin className="w-3 h-3 text-muted-foreground" />{user.zip_code} {user.city}</div>
-              ) : "—"}
-            </TableCell>
-            <TableCell className="text-center">{user.customer_count}</TableCell>
-            <TableCell>{getStatusBadge(user)}</TableCell>
-            <TableCell>{renderDateCell(user)}</TableCell>
-            <TableCell>{renderLoginCell(user)}</TableCell>
-            <TableCell>{user.email_confirmed_at ? <span className="text-emerald-500 text-sm">✓</span> : <Badge variant="outline" className="text-red-500 border-red-500/30">Nein</Badge>}</TableCell>
-            <TableCell>
-              <div className="flex items-center justify-end gap-1">
-                <Button variant="outline" size="sm" onClick={() => openEditDialog(user)}>
-                  <UserCog className="w-4 h-4 mr-1" />Plan
+          <>
+            <TableRow key={user.id} className="group">
+              <TableCell className="px-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => setExpandedProviderId(prev => prev === user.id ? null : user.id)}
+                >
+                  <ChevronDown className={`w-4 h-4 transition-transform ${expandedProviderId === user.id ? "rotate-180" : ""}`} />
                 </Button>
-                {renderBanActions(user)}
-                {isMasterAdmin && (
-                  <Button variant="destructive" size="sm" onClick={() => { setSelectedUser(user); setDeleteDialogOpen(true); }}>
-                    <Trash2 className="w-4 h-4" />
+              </TableCell>
+              <TableCell>{renderUserIdCell(user)}</TableCell>
+              <TableCell>{renderNameCell(user)}</TableCell>
+              <TableCell>
+                {user.zip_code || user.city ? (
+                  <div className="flex items-center gap-1 text-sm"><MapPin className="w-3 h-3 text-muted-foreground" />{user.zip_code} {user.city}</div>
+                ) : "—"}
+              </TableCell>
+              <TableCell className="text-center">{user.customer_count}</TableCell>
+              <TableCell>{getStatusBadge(user)}</TableCell>
+              <TableCell>{renderDateCell(user)}</TableCell>
+              <TableCell>{renderLoginCell(user)}</TableCell>
+              <TableCell>{user.email_confirmed_at ? <span className="text-emerald-500 text-sm">✓</span> : <Badge variant="outline" className="text-red-500 border-red-500/30">Nein</Badge>}</TableCell>
+              <TableCell>
+                <div className="flex items-center justify-end gap-1">
+                  <Button variant="outline" size="sm" onClick={() => openEditDialog(user)}>
+                    <UserCog className="w-4 h-4 mr-1" />Plan
                   </Button>
-                )}
-              </div>
-            </TableCell>
-          </TableRow>
+                  {renderBanActions(user)}
+                  {isMasterAdmin && (
+                    <Button variant="destructive" size="sm" onClick={() => { setSelectedUser(user); setDeleteDialogOpen(true); }}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              </TableCell>
+            </TableRow>
+            {expandedProviderId === user.id && (
+              <TableRow key={`${user.id}-detail`}>
+                <TableCell colSpan={10} className="p-0">
+                  <ProviderDetailPanel providerId={user.id} providerEmail={user.email} />
+                </TableCell>
+              </TableRow>
+            )}
+          </>
         ))}
-        {data.length === 0 && <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Keine Benutzer gefunden</TableCell></TableRow>}
+        {data.length === 0 && <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Keine Benutzer gefunden</TableCell></TableRow>}
       </TableBody>
     </Table>
   );
