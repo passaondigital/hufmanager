@@ -88,7 +88,7 @@ export function normalizeToMonthlyMRR(amount: number, periodStart: string | null
   const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
   if (diffDays > 60) {
     const months = Math.max(1, Math.round(diffDays / 30));
-    return amount / months;
+    return Math.round((amount / months) * 100) / 100;
   }
   return amount;
 }
