@@ -415,8 +415,8 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
   );
 
   const renderRepairButton = (user: UserData) => (
-    <Button variant="ghost" size="sm" onClick={() => { setSelectedUser(user); setRepairDialogOpen(true); }} title="Nutzer reparieren">
-      <Wrench className="w-4 h-4" />
+    <Button variant="outline" size="sm" onClick={() => { setSelectedUser(user); setRepairDialogOpen(true); }}>
+      Rolle ändern
     </Button>
   );
 
