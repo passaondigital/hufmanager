@@ -108,9 +108,34 @@ export default function Auth() {
   }, [inviteCode, hmInviteToken, urlRole, urlEmail]);
 
   // Redirect if already logged in
-  if (!authLoading && user && role) {
-    if (forceLogin) {
-      // Allow staying on auth page for admin/testing
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+
+  useEffect(() => {
+    if (!user || !role || authLoading || forceLogin) return;
+    // Check onboarding status for providers
+    if (role === "provider") {
+      supabase
+        .from("profiles")
+        .select("onboarding_completed")
+        .eq("id", user.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data?.onboarding_completed === false || data?.onboarding_completed === null) {
+            setNeedsOnboarding(true);
+          }
+          setOnboardingChecked(true);
+        });
+    } else {
+      setOnboardingChecked(true);
+    }
+  }, [user, role, authLoading, forceLogin]);
+
+  if (!authLoading && user && role && !forceLogin) {
+    if (role === "provider" && !onboardingChecked) {
+      // Wait for onboarding check
+    } else if (role === "provider" && needsOnboarding) {
+      return <Navigate to="/welcome" replace />;
     } else {
       if (redirectTo) {
         return <Navigate to={redirectTo} replace />;
@@ -478,6 +503,13 @@ export default function Auth() {
                   loginTab?.click();
                 }}
               />
+              {/* CopeCart-Kauf Hinweis */}
+              <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3 text-center">
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-semibold text-foreground">Bereits gekauft?</span>{" "}
+                  Registriere dich mit derselben E-Mail-Adresse, die du bei CopeCart verwendet hast.
+                </p>
+              </div>
             </TabsContent>
           </Tabs>
         </CardContent>

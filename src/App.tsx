@@ -46,6 +46,7 @@ const Hufanalyse = lazy(() => import("@/pages/Hufanalyse"));
 const Rechnungen = lazy(() => import("@/pages/Rechnungen"));
 const Support = lazy(() => import("@/pages/Support"));
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
+const Welcome = lazy(() => import("@/pages/Welcome"));
 const UpdatePassword = lazy(() => import("@/pages/UpdatePassword"));
 const ClientHome = lazy(() => import("@/pages/ClientHome"));
 const ClientHorseDetail = lazy(() => import("@/pages/ClientHorseDetail"));
@@ -241,6 +242,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             {/* --- 1. ÖFFENTLICHE ROUTES (Kein Login nötig) --- */}
             {/* WICHTIG: Diese müssen VOR den Protected Routes stehen */}
             <Route path="/auth" element={<Auth />} />
+            <Route path="/welcome" element={<Welcome />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/update-password" element={<UpdatePassword />} />
              {/* Legacy/alias route */}
