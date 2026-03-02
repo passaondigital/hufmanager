@@ -529,7 +529,8 @@ export default function Auth() {
               toast.error(error.message);
               setLoading(false);
             } else {
-              // Demo accounts: navigate directly since forceLogin blocks the Navigate check
+              // Demo accounts: hard redirect to avoid race conditions with React state
+              // This works reliably across all browsers (Chrome, Firefox, Opera, Edge)
               const roleMap: Record<string, string> = {
                 "hufbearbeiter.hufmanager@gmail.com": "/home",
                 "pferdebesitzer.hufmanager@gmail.com": "/client-home",
@@ -537,7 +538,7 @@ export default function Auth() {
                 "mitarbeiter.hufmanager@gmail.com": "/employee",
               };
               const target = roleMap[email.toLowerCase()] || "/home";
-              navigate(target, { replace: true });
+              window.location.replace(target);
             }
           } catch (err) {
             toast.error("Login fehlgeschlagen");
