@@ -528,8 +528,17 @@ export default function Auth() {
             if (error) {
               toast.error(error.message);
               setLoading(false);
+            } else {
+              // Demo accounts: navigate directly since forceLogin blocks the Navigate check
+              const roleMap: Record<string, string> = {
+                "hufbearbeiter.hufmanager@gmail.com": "/home",
+                "pferdebesitzer.hufmanager@gmail.com": "/client-home",
+                "partner.hufmanager@gmail.com": "/partner-home",
+                "mitarbeiter.hufmanager@gmail.com": "/employee",
+              };
+              const target = roleMap[email.toLowerCase()] || "/home";
+              navigate(target, { replace: true });
             }
-            // On success, the auth state change will trigger redirect via the Navigate check above
           } catch (err) {
             toast.error("Login fehlgeschlagen");
             setLoading(false);
