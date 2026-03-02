@@ -9063,6 +9063,14 @@ export type Database = {
           tour_date: string
         }[]
       }
+      get_admin_auth_metadata: {
+        Args: never
+        Returns: {
+          email_confirmed_at: string
+          last_sign_in_at: string
+          user_id: string
+        }[]
+      }
       get_demo_user_ids: { Args: never; Returns: string[] }
       get_employee_profile_id: { Args: { _user_id: string }; Returns: string }
       get_health_score_trend: {
