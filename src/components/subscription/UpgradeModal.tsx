@@ -25,7 +25,7 @@ const PLANS = [
     price: "19",
     icon: Zap,
     features: ["Kalender & Termine", "Kundenverwaltung", "Digitale Pferdeakte"],
-    checkoutUrl: "https://copecart.com/products/9bb65569/checkout",
+    checkoutUrl: "https://www.copecart.com/products/8ef10f74/checkout?utm_source=app&utm_medium=upgrade&utm_campaign=direktkauf",
   },
   {
     id: "advanced",
@@ -34,7 +34,7 @@ const PLANS = [
     icon: Sparkles,
     badge: "Empfohlen",
     features: ["Alles aus Anfänger", "GPS-Navigation", "Erinnerungen", "Kunden-Chat"],
-    checkoutUrl: "https://copecart.com/products/ec500b5e/checkout",
+    checkoutUrl: "https://www.copecart.com/products/1996da6f/checkout?utm_source=app&utm_medium=upgrade&utm_campaign=direktkauf",
   },
   {
     id: "pro",
@@ -42,7 +42,7 @@ const PLANS = [
     price: "99",
     icon: Crown,
     features: ["Alles aus Fortgeschritten", "KI-Assistent", "Academy", "Team-Management"],
-    checkoutUrl: "https://copecart.com/products/483bbb5b/checkout",
+    checkoutUrl: "https://www.copecart.com/products/953da638/checkout?utm_source=app&utm_medium=upgrade&utm_campaign=direktkauf",
   },
 ];
 
