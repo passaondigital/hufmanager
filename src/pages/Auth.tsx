@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { isDemoEmail } from "@/lib/demo-accounts";
 import { Navigate, useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -113,15 +114,16 @@ export default function Auth() {
 
   useEffect(() => {
     if (!user || !role || authLoading || forceLogin) return;
-    // Check onboarding status for providers
-    if (role === "provider") {
+    // Skip onboarding check for demo accounts
+    if (role === "provider" && !isDemoEmail(user.email)) {
       supabase
         .from("profiles")
         .select("onboarding_completed")
         .eq("id", user.id)
         .maybeSingle()
         .then(({ data }) => {
-          if (data?.onboarding_completed === false || data?.onboarding_completed === null) {
+          // Only redirect if explicitly false (not null — null means legacy user)
+          if (data?.onboarding_completed === false) {
             setNeedsOnboarding(true);
           }
           setOnboardingChecked(true);
