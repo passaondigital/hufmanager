@@ -9010,6 +9010,15 @@ export type Database = {
         Args: { p_token: string; p_user_id: string }
         Returns: Json
       }
+      admin_repair_user_role: {
+        Args: {
+          p_admin_id: string
+          p_new_role: string
+          p_reason?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       auth_user_email: { Args: never; Returns: string }
       calculate_effective_price: {
         Args: { _client_id: string; _provider_id: string; _service_id: string }

@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { PLAN_FEATURE_MAP } from "@/lib/plan-features";
 import { ProviderDetailPanel } from "@/components/admin/ProviderDetailPanel";
+import { RepairUserDialog } from "@/components/admin/RepairUserDialog";
 import { 
   Search, 
   RefreshCw, 
@@ -30,6 +31,7 @@ import {
   ShieldAlert,
   AlertTriangle,
   ChevronDown,
+  Wrench,
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -86,6 +88,7 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
   const [banDialogOpen, setBanDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [repairDialogOpen, setRepairDialogOpen] = useState(false);
   
   const [editPlan, setEditPlan] = useState("starter");
   const [editAccessValidUntil, setEditAccessValidUntil] = useState("");
@@ -411,6 +414,12 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
     )
   );
 
+  const renderRepairButton = (user: UserData) => (
+    <Button variant="ghost" size="sm" onClick={() => { setSelectedUser(user); setRepairDialogOpen(true); }} title="Nutzer reparieren">
+      <Wrench className="w-4 h-4" />
+    </Button>
+  );
+
   const renderProviderTable = (data: UserData[]) => (
     <Table>
       <TableHeader>
@@ -459,6 +468,7 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
                     <UserCog className="w-4 h-4 mr-1" />Plan
                   </Button>
                   {renderBanActions(user)}
+                  {renderRepairButton(user)}
                   {isMasterAdmin && (
                     <Button variant="destructive" size="sm" onClick={() => { setSelectedUser(user); setDeleteDialogOpen(true); }}>
                       <Trash2 className="w-4 h-4" />
@@ -512,6 +522,7 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
             <TableCell>
               <div className="flex items-center justify-end gap-1">
                 {renderBanActions(user)}
+                {renderRepairButton(user)}
               </div>
             </TableCell>
           </TableRow>
@@ -550,6 +561,7 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
             <TableCell>
               <div className="flex items-center justify-end gap-1">
                 {renderBanActions(user)}
+                {renderRepairButton(user)}
               </div>
             </TableCell>
           </TableRow>
@@ -587,7 +599,7 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
             <TableCell>{user.email_confirmed_at ? <span className="text-emerald-500 text-sm">✓</span> : <Badge variant="outline" className="text-red-500 border-red-500/30">Nein</Badge>}</TableCell>
             <TableCell>
               <div className="flex items-center justify-end gap-1">
-                <Badge variant="outline" className="text-muted-foreground">Nur lesen</Badge>
+                {renderRepairButton(user)}
               </div>
             </TableCell>
           </TableRow>
@@ -843,6 +855,14 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Repair User Dialog */}
+      <RepairUserDialog
+        open={repairDialogOpen}
+        onOpenChange={setRepairDialogOpen}
+        user={selectedUser}
+        onSuccess={fetchUsers}
+      />
     </div>
   );
 }
