@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
 import { isDemoEmail } from "@/lib/demo-accounts";
+import { normalizeToMonthlyMRR } from "@/lib/plan-features";
 
 interface Payment {
   id: string;
@@ -125,7 +126,7 @@ export function AdminManualPayments() {
   // MRR calculation
   const todayStr = new Date().toISOString().slice(0, 10);
   const activePayments = payments.filter(p => p.period_start && p.period_end && p.period_start <= todayStr && p.period_end >= todayStr);
-  const mrr = activePayments.reduce((s, p) => s + p.amount, 0);
+  const mrr = activePayments.reduce((s, p) => s + normalizeToMonthlyMRR(p.amount, p.period_start, p.period_end), 0);
   const payingCount = new Set(activePayments.map(p => p.provider_id)).size;
 
   return (

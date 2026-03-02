@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { PLAN_FEATURE_MAP } from "@/lib/plan-features";
 import { 
   Search, 
   RefreshCw, 
@@ -198,13 +199,26 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
       if (editAccessValidUntil) {
         updateData.access_valid_until = new Date(editAccessValidUntil).toISOString();
       } else if (editPlan === "lifetime_grant" || editPlan === "employee") {
-        // Auto-set far future date for lifetime plans
         updateData.access_valid_until = "2099-12-31T00:00:00.000Z";
       } else if (editPlan === "manual_cash_1y") {
-        // Auto-set 1 year from now
         const oneYearFromNow = new Date();
         oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
         updateData.access_valid_until = oneYearFromNow.toISOString();
+      }
+
+      // Auto-provision feature_statuses from PLAN_FEATURE_MAP
+      const featurePlan = isCorePlan ? editPlan : (["lifetime_grant", "employee"].includes(editPlan) ? "team" : "pro");
+      const featureMap = PLAN_FEATURE_MAP[featurePlan];
+      if (featureMap) {
+        // Merge with existing feature_statuses (preserve any custom overrides not in the map)
+        const { data: currentProfile } = await supabase
+          .from("profiles")
+          .select("feature_statuses")
+          .eq("id", selectedUser.id)
+          .single();
+        
+        const existing = (currentProfile?.feature_statuses as Record<string, string>) || {};
+        updateData.feature_statuses = { ...existing, ...featureMap };
       }
 
       const { error } = await supabase
@@ -215,7 +229,7 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
       if (error) throw error;
       
       const planLabel = PLAN_OPTIONS.find(p => p.value === editPlan)?.label || editPlan;
-      toast.success(`Plan für ${selectedUser.full_name || selectedUser.email} auf "${planLabel}" geändert`);
+      toast.success(`Plan für ${selectedUser.full_name || selectedUser.email} auf "${planLabel}" geändert (Features provisioniert)`);
       setEditDialogOpen(false);
       fetchUsers();
     } catch (error: any) {
