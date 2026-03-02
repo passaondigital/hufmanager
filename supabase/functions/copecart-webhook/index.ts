@@ -8,20 +8,33 @@ const corsHeaders = {
 };
 
 // Map Copecart product IDs to subscription plans
-// HufManager Copecart Products:
-// - Anfänger (19€): 9bb65569 → starter
-// - Fortgeschritten (29€): ec500b5e → advanced
-// - Profi (39€): 483bbb5b → pro
+// HufManager Copecart Products (NEW – March 2026):
+// - Starter (9,90€): 8ef10f74
+// - Pro (29€): 1996da6f
+// - Duo (49€): 953da638
+// - Team (79€): badae7d2
+// Legacy IDs kept for backward compatibility:
 const PRODUCT_PLAN_MAP: Record<string, string> = {
-  "9bb65569": "starter",      // Anfänger 19€/Monat
-  "ec500b5e": "advanced",     // Fortgeschritten 29€/Monat
-  "483bbb5b": "pro",          // Profi 39€/Monat
+  // New product IDs
+  "8ef10f74": "starter",      // Starter 9,90€/Monat
+  "1996da6f": "pro",          // Pro 29€/Monat
+  "953da638": "duo",          // Duo 49€/Monat
+  "badae7d2": "team",         // Team 79€/Monat
+  // Legacy product IDs (keep for existing subscriptions)
+  "9bb65569": "starter",
+  "ec500b5e": "pro",
+  "483bbb5b": "pro",
 };
 
 const PRODUCT_PLAN_OVERRIDE_MAP: Record<string, string> = {
-  "9bb65569": "copecart_anfaenger",
-  "ec500b5e": "copecart_fortgeschritten",
-  "483bbb5b": "copecart_profi",
+  "8ef10f74": "copecart_starter",
+  "1996da6f": "copecart_pro",
+  "953da638": "copecart_duo",
+  "badae7d2": "copecart_team",
+  // Legacy
+  "9bb65569": "copecart_starter",
+  "ec500b5e": "copecart_pro",
+  "483bbb5b": "copecart_pro",
 };
 
 // Plan → feature_statuses mapping for auto-provisioning
@@ -32,7 +45,7 @@ const PLAN_FEATURE_MAP: Record<string, Record<string, string>> = {
     module_maps: "public",
     module_academy: "public",
     module_hufanalyse: "public",
-    module_network: "public",
+    module_network: "disabled",
     module_analytics: "public",
     module_office: "public",
     module_lager: "public",
@@ -44,7 +57,7 @@ const PLAN_FEATURE_MAP: Record<string, Record<string, string>> = {
     autoflow_checkin: "disabled",
     beta_features: "disabled",
   },
-  advanced: {
+  pro: {
     module_invoicing: "public",
     module_chat: "public",
     module_maps: "public",
@@ -54,15 +67,15 @@ const PLAN_FEATURE_MAP: Record<string, Record<string, string>> = {
     module_analytics: "public",
     module_office: "public",
     module_lager: "public",
-    module_team: "beta",
+    module_team: "disabled",
     autoflow_reminders: "public",
     autoflow_invoicing: "public",
-    autoflow_scheduling: "disabled",
+    autoflow_scheduling: "public",
     autoflow_feedback: "public",
-    autoflow_checkin: "disabled",
+    autoflow_checkin: "public",
     beta_features: "disabled",
   },
-  pro: {
+  duo: {
     module_invoicing: "public",
     module_chat: "public",
     module_maps: "public",
@@ -78,7 +91,44 @@ const PLAN_FEATURE_MAP: Record<string, Record<string, string>> = {
     autoflow_scheduling: "public",
     autoflow_feedback: "public",
     autoflow_checkin: "public",
-    beta_features: "beta",
+    beta_features: "disabled",
+  },
+  team: {
+    module_invoicing: "public",
+    module_chat: "public",
+    module_maps: "public",
+    module_academy: "public",
+    module_hufanalyse: "public",
+    module_network: "public",
+    module_analytics: "public",
+    module_office: "public",
+    module_lager: "public",
+    module_team: "public",
+    autoflow_reminders: "public",
+    autoflow_invoicing: "public",
+    autoflow_scheduling: "public",
+    autoflow_feedback: "public",
+    autoflow_checkin: "public",
+    beta_features: "public",
+  },
+  // Keep legacy "advanced" mapping for backward compat
+  advanced: {
+    module_invoicing: "public",
+    module_chat: "public",
+    module_maps: "public",
+    module_academy: "public",
+    module_hufanalyse: "public",
+    module_network: "public",
+    module_analytics: "public",
+    module_office: "public",
+    module_lager: "public",
+    module_team: "disabled",
+    autoflow_reminders: "public",
+    autoflow_invoicing: "public",
+    autoflow_scheduling: "disabled",
+    autoflow_feedback: "public",
+    autoflow_checkin: "disabled",
+    beta_features: "disabled",
   },
 };
 

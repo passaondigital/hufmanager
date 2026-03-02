@@ -49,6 +49,7 @@ const plans = [
     horses: "1–10 Pferde",
     highlight: false,
     users: "1 Nutzer",
+    checkoutUrl: "https://www.copecart.com/products/8ef10f74/checkout?utm_source=landingpage&utm_medium=pricing&utm_campaign=direktkauf",
     includes: [
       "Alle 5 Workflow-Stufen",
       "Offline-Modus & PWA",
@@ -70,6 +71,7 @@ const plans = [
     horses: "11–75 Pferde",
     highlight: true,
     users: "1 Nutzer",
+    checkoutUrl: "https://www.copecart.com/products/1996da6f/checkout?utm_source=landingpage&utm_medium=pricing&utm_campaign=direktkauf",
     includes: [
       "Alle 5 Workflow-Stufen",
       "HM Connect & Netzwerk",
@@ -91,6 +93,7 @@ const plans = [
     horses: "76–150 Pferde",
     highlight: false,
     users: "2 Nutzer",
+    checkoutUrl: "https://www.copecart.com/products/953da638/checkout?utm_source=landingpage&utm_medium=pricing&utm_campaign=direktkauf",
     includes: [
       "Alles aus Pro",
       "2. Benutzer inklusive",
@@ -109,6 +112,7 @@ const plans = [
     horses: "151+ Pferde",
     highlight: false,
     users: "Unbegrenzt",
+    checkoutUrl: "https://www.copecart.com/products/badae7d2/checkout?utm_source=landingpage&utm_medium=pricing&utm_campaign=direktkauf",
     includes: [
       "Alles aus Duo",
       "Unbegrenzte Nutzer",
@@ -228,19 +232,31 @@ const PricingV2 = () => (
                 ))}
               </ul>
 
-              <Button
-                size="lg"
-                className={`w-full font-bold mt-auto ${
-                  plan.highlight ? "glow-orange bg-primary hover:bg-primary/90 text-white" : ""
-                }`}
-                variant={plan.highlight ? "default" : "outline"}
-                asChild
-              >
-                <a href="#demo">
-                  <Play className="mr-1.5 h-4 w-4" />
-                  Demo ansehen
-                </a>
-              </Button>
+              <div className="flex flex-col gap-2 mt-auto">
+                <Button
+                  size="lg"
+                  className={`w-full font-bold ${
+                    plan.highlight ? "glow-orange bg-primary hover:bg-primary/90 text-white" : ""
+                  }`}
+                  variant={plan.highlight ? "default" : "outline"}
+                  asChild
+                >
+                  <a href={plan.checkoutUrl} target="_blank" rel="noopener noreferrer">
+                    Jetzt starten
+                  </a>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="w-full text-white/50 hover:text-white text-xs"
+                  asChild
+                >
+                  <a href="#demo">
+                    <Play className="mr-1 h-3 w-3" />
+                    Demo ansehen
+                  </a>
+                </Button>
+              </div>
             </div>
           ))}
         </div>

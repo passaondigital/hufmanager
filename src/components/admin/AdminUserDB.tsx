@@ -53,8 +53,10 @@ interface AdminUserDBProps {
 }
 
 const PLAN_OPTIONS = [
-  { value: "starter", label: "Starter (Free)" },
-  { value: "pro", label: "Pro" },
+  { value: "starter", label: "Starter (9,90€)" },
+  { value: "pro", label: "Pro (29€)" },
+  { value: "duo", label: "Duo (49€)" },
+  { value: "team", label: "Team (79€)" },
   { value: "lifetime_grant", label: "Lifetime (Goldesel)" },
   { value: "manual_cash_1y", label: "Barzahlung (1 Jahr)" },
   { value: "beta_tester", label: "Beta Tester" },
@@ -183,9 +185,12 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
     if (!selectedUser) return;
     setSaving(true);
     try {
+      // Map plan selection to subscription_plan (core tiers)
+      const corePlans = ["starter", "pro", "duo", "team"];
+      const isCorePlan = corePlans.includes(editPlan);
       const updateData: Record<string, any> = {
         plan_override: editPlan === "starter" ? null : editPlan,
-        subscription_plan: editPlan === "starter" ? "starter" : "pro",
+        subscription_plan: isCorePlan ? editPlan : "pro",
         subscription_status: editPlan === "starter" ? "trialing" : "active",
       };
 
