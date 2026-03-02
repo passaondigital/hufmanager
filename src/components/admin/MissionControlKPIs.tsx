@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Users, UserPlus, UserMinus, Euro, Crown, Ban, Link2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { isDemoEmail } from "@/lib/demo-accounts";
+import { normalizeToMonthlyMRR } from "@/lib/plan-features";
 
 interface RealKPIs {
   totalProviders: number;
@@ -115,13 +116,13 @@ export default function MissionControlKPIs() {
       const todayStr = new Date().toISOString().slice(0, 10);
       const { data: payments } = await supabase
         .from("admin_provider_payments")
-        .select("amount, provider_id")
+        .select("amount, provider_id, period_start, period_end")
         .lte("period_start", todayStr)
         .gte("period_end", todayStr);
       
-      // Filter out demo provider payments
+      // Filter out demo provider payments & normalize annual payments to monthly
       const realPayments = (payments || []).filter(p => !allDemoIds.includes(p.provider_id));
-      const mrrCents = realPayments.reduce((s, p) => s + (p.amount || 0), 0);
+      const mrrCents = realPayments.reduce((s, p) => s + normalizeToMonthlyMRR(p.amount || 0, p.period_start ?? null, p.period_end ?? null), 0);
       const payingProviders = new Set(realPayments.map(p => p.provider_id)).size;
 
       // 6. Connect stats
