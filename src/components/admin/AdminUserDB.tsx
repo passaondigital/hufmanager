@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,13 +20,14 @@ import {
   CheckCircle, 
   Crown,
   Loader2,
-  Eye,
   UserCog,
   Trash2,
   Copy,
   MapPin,
   Calendar,
-  Clock
+  Clock,
+  ShieldAlert,
+  AlertTriangle
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -51,6 +52,7 @@ interface UserData {
   has_logged_in: boolean | null;
   last_sign_in_at: string | null;
   email_confirmed_at: string | null;
+  provider_name?: string | null;
 }
 
 interface AdminUserDBProps {
@@ -68,11 +70,13 @@ const PLAN_OPTIONS = [
   { value: "employee", label: "Employee" },
 ];
 
+type RoleTab = "provider" | "client" | "partner" | "employee";
+
 export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState<"all" | "provider" | "client" | "admin">("all");
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [activeTab, setActiveTab] = useState<RoleTab>("provider");
   const [specialFilter, setSpecialFilter] = useState<"all" | "never_logged_in" | "email_unconfirmed" | "no_data">("all");
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -80,7 +84,6 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   
-  // Edit form
   const [editPlan, setEditPlan] = useState("starter");
   const [editAccessValidUntil, setEditAccessValidUntil] = useState("");
   const [banReason, setBanReason] = useState("");
@@ -92,7 +95,6 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      // Fetch all profiles
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("*")
@@ -101,34 +103,23 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
 
       if (profilesError) throw profilesError;
 
-      // Fetch all user roles
       const { data: roles, error: rolesError } = await supabase
         .from("user_roles")
         .select("user_id, role");
 
       if (rolesError) throw rolesError;
 
-      // Fetch horse counts per owner
-      const { data: horses, error: horsesError } = await supabase
+      const { data: horses } = await supabase
         .from("horses")
         .select("owner_id")
         .is("deleted_at", null);
 
-      if (horsesError) console.warn("Could not fetch horses:", horsesError);
-
-      // Fetch customer counts (access_grants where user is provider)
-      const { data: grants, error: grantsError } = await supabase
+      const { data: grants } = await supabase
         .from("access_grants")
-        .select("provider_id")
+        .select("provider_id, client_id")
         .eq("is_active", true);
 
-      if (grantsError) console.warn("Could not fetch grants:", grantsError);
-
-      // Fetch auth metadata (last_sign_in_at, email_confirmed_at) via admin function
-      const { data: authMeta, error: authError } = await supabase
-        .rpc("get_admin_auth_metadata");
-
-      if (authError) console.warn("Could not fetch auth metadata:", authError);
+      const { data: authMeta } = await supabase.rpc("get_admin_auth_metadata");
 
       // Build lookup maps
       const roleMap = new Map(roles?.map(r => [r.user_id, r.role]) || []);
@@ -145,15 +136,40 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
         authMetaMap.set(m.user_id, { last_sign_in_at: m.last_sign_in_at, email_confirmed_at: m.email_confirmed_at });
       });
 
-      // Merge data
+      // Build client→provider map from access_grants
+      const clientProviderIdMap = new Map<string, string>();
+      grants?.forEach(g => {
+        if (!clientProviderIdMap.has(g.client_id)) {
+          clientProviderIdMap.set(g.client_id, g.provider_id);
+        }
+      });
+
+      // Build profile name map for provider lookups
+      const profileNameMap = new Map<string, string>();
+      profiles?.forEach(p => {
+        if (p.full_name) profileNameMap.set(p.id, p.full_name);
+      });
+
       const usersWithData: UserData[] = (profiles || []).map(profile => {
         const meta = authMetaMap.get(profile.id);
+        const role = roleMap.get(profile.id) || "client";
+        
+        // Determine associated provider name
+        let providerName: string | null = null;
+        if (role === "client") {
+          const providerId = clientProviderIdMap.get(profile.id) || profile.created_by_provider_id;
+          if (providerId) providerName = profileNameMap.get(providerId) || providerId.slice(0, 8);
+        } else if (role === "employee") {
+          const providerId = profile.created_by_provider_id;
+          if (providerId) providerName = profileNameMap.get(providerId) || providerId.slice(0, 8);
+        }
+
         return {
           id: profile.id,
           email: profile.email,
           full_name: profile.full_name,
           readable_id: profile.readable_id,
-          role: roleMap.get(profile.id) || "client",
+          role,
           subscription_status: profile.subscription_status,
           subscription_plan: profile.subscription_plan,
           plan_override: profile.plan_override,
@@ -168,6 +184,7 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
           has_logged_in: profile.has_logged_in,
           last_sign_in_at: meta?.last_sign_in_at || null,
           email_confirmed_at: meta?.email_confirmed_at || null,
+          provider_name: providerName,
         };
       });
 
@@ -180,33 +197,43 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
     }
   };
 
-  const filteredUsers = useMemo(() => {
-    return users.filter(u => {
-      const matchesSearch = !searchTerm || 
-        u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.readable_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.id.includes(searchTerm);
-      
-      const matchesRole = roleFilter === "all" || u.role === roleFilter;
+  // Global search matches across ALL roles
+  const globalSearchResults = useMemo(() => {
+    if (!globalSearch || globalSearch.length < 2) return null;
+    const s = globalSearch.toLowerCase();
+    return users.filter(u =>
+      u.email?.toLowerCase().includes(s) ||
+      u.full_name?.toLowerCase().includes(s) ||
+      u.readable_id?.toLowerCase().includes(s) ||
+      u.id.includes(globalSearch)
+    ).slice(0, 30);
+  }, [users, globalSearch]);
 
-      let matchesSpecial = true;
-      if (specialFilter === "never_logged_in") {
-        matchesSpecial = !u.last_sign_in_at && !u.has_logged_in;
-      } else if (specialFilter === "email_unconfirmed") {
-        matchesSpecial = !u.email_confirmed_at;
-      } else if (specialFilter === "no_data") {
-        matchesSpecial = u.horse_count === 0 && u.customer_count === 0;
-      }
-      
-      return matchesSearch && matchesRole && matchesSpecial;
-    });
-  }, [users, searchTerm, roleFilter, specialFilter]);
+  // Tab-filtered users
+  const tabUsers = useMemo(() => {
+    let filtered = users.filter(u => u.role === activeTab);
+    
+    if (specialFilter === "never_logged_in") {
+      filtered = filtered.filter(u => !u.last_sign_in_at && !u.has_logged_in);
+    } else if (specialFilter === "email_unconfirmed") {
+      filtered = filtered.filter(u => !u.email_confirmed_at);
+    } else if (specialFilter === "no_data") {
+      filtered = filtered.filter(u => u.horse_count === 0 && u.customer_count === 0);
+    }
+
+    return filtered;
+  }, [users, activeTab, specialFilter]);
+
+  const roleCounts = useMemo(() => ({
+    provider: users.filter(u => u.role === "provider").length,
+    client: users.filter(u => u.role === "client").length,
+    partner: users.filter(u => u.role === "partner").length,
+    employee: users.filter(u => u.role === "employee").length,
+  }), [users]);
 
   const openEditDialog = (user: UserData) => {
     setSelectedUser(user);
     setEditPlan(user.plan_override || user.subscription_plan || "starter");
-    // Get access_valid_until from full profile
     fetchUserAccessDate(user.id);
     setEditDialogOpen(true);
   };
@@ -217,19 +244,13 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
       .select("access_valid_until")
       .eq("id", userId)
       .single();
-    
-    if (data?.access_valid_until) {
-      setEditAccessValidUntil(format(new Date(data.access_valid_until), "yyyy-MM-dd"));
-    } else {
-      setEditAccessValidUntil("");
-    }
+    setEditAccessValidUntil(data?.access_valid_until ? format(new Date(data.access_valid_until), "yyyy-MM-dd") : "");
   };
 
   const handleForcePlan = async () => {
     if (!selectedUser) return;
     setSaving(true);
     try {
-      // Map plan selection to subscription_plan (core tiers)
       const corePlans = ["starter", "pro", "duo", "team"];
       const isCorePlan = corePlans.includes(editPlan);
       const updateData: Record<string, any> = {
@@ -238,7 +259,6 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
         subscription_status: editPlan === "starter" ? "trialing" : "active",
       };
 
-      // Set access_valid_until
       if (editAccessValidUntil) {
         updateData.access_valid_until = new Date(editAccessValidUntil).toISOString();
       } else if (editPlan === "lifetime_grant" || editPlan === "employee") {
@@ -249,30 +269,23 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
         updateData.access_valid_until = oneYearFromNow.toISOString();
       }
 
-      // Auto-provision feature_statuses from PLAN_FEATURE_MAP
       const featurePlan = isCorePlan ? editPlan : (["lifetime_grant", "employee"].includes(editPlan) ? "team" : "pro");
       const featureMap = PLAN_FEATURE_MAP[featurePlan];
       if (featureMap) {
-        // Merge with existing feature_statuses (preserve any custom overrides not in the map)
         const { data: currentProfile } = await supabase
           .from("profiles")
           .select("feature_statuses")
           .eq("id", selectedUser.id)
           .single();
-        
         const existing = (currentProfile?.feature_statuses as Record<string, string>) || {};
         updateData.feature_statuses = { ...existing, ...featureMap };
       }
 
-      const { error } = await supabase
-        .from("profiles")
-        .update(updateData)
-        .eq("id", selectedUser.id);
-
+      const { error } = await supabase.from("profiles").update(updateData).eq("id", selectedUser.id);
       if (error) throw error;
       
       const planLabel = PLAN_OPTIONS.find(p => p.value === editPlan)?.label || editPlan;
-      toast.success(`Plan für ${selectedUser.full_name || selectedUser.email} auf "${planLabel}" geändert (Features provisioniert)`);
+      toast.success(`Plan für ${selectedUser.full_name || selectedUser.email} auf "${planLabel}" geändert`);
       setEditDialogOpen(false);
       fetchUsers();
     } catch (error: any) {
@@ -286,15 +299,11 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
     if (!selectedUser) return;
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          is_suspended: true,
-          suspended_at: new Date().toISOString(),
-          suspended_reason: banReason || "Gesperrt durch Admin",
-        })
-        .eq("id", selectedUser.id);
-
+      const { error } = await supabase.from("profiles").update({
+        is_suspended: true,
+        suspended_at: new Date().toISOString(),
+        suspended_reason: banReason || "Gesperrt durch Admin",
+      }).eq("id", selectedUser.id);
       if (error) throw error;
       toast.success(`${selectedUser.full_name || selectedUser.email} wurde gesperrt`);
       setBanDialogOpen(false);
@@ -309,15 +318,9 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
 
   const handleUnbanUser = async (user: UserData) => {
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          is_suspended: false,
-          suspended_at: null,
-          suspended_reason: null,
-        })
-        .eq("id", user.id);
-
+      const { error } = await supabase.from("profiles").update({
+        is_suspended: false, suspended_at: null, suspended_reason: null,
+      }).eq("id", user.id);
       if (error) throw error;
       toast.success(`${user.full_name || user.email} wurde entsperrt`);
       fetchUsers();
@@ -333,10 +336,8 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
       const { data, error } = await supabase.functions.invoke("admin-delete-user", {
         body: { userId: selectedUser.id },
       });
-
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-
       toast.success(`${selectedUser.full_name || selectedUser.email} wurde gelöscht`);
       setDeleteDialogOpen(false);
       fetchUsers();
@@ -352,28 +353,264 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
     toast.success("In Zwischenablage kopiert");
   };
 
-  const getRoleBadge = (role: string) => {
-    const config: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
-      admin: { label: "Admin", variant: "destructive" },
-      provider: { label: "Provider", variant: "default" },
-      client: { label: "Client", variant: "secondary" },
-    };
-    const c = config[role] || { label: role, variant: "outline" };
-    return <Badge variant={c.variant}>{c.label}</Badge>;
-  };
-
   const getStatusBadge = (user: UserData) => {
-    if (user.is_suspended) {
-      return <Badge variant="destructive"><Ban className="w-3 h-3 mr-1" />Gesperrt</Badge>;
-    }
-    if (user.plan_override === "lifetime_grant") {
-      return <Badge className="bg-gradient-to-r from-amber-500 to-yellow-400 text-black"><Crown className="w-3 h-3 mr-1" />Lifetime</Badge>;
-    }
-    if (user.subscription_status === "active") {
-      return <Badge variant="default"><CheckCircle className="w-3 h-3 mr-1" />Aktiv</Badge>;
-    }
+    if (user.is_suspended) return <Badge variant="destructive"><Ban className="w-3 h-3 mr-1" />Gesperrt</Badge>;
+    if (user.plan_override === "lifetime_grant") return <Badge className="bg-gradient-to-r from-amber-500 to-yellow-400 text-black"><Crown className="w-3 h-3 mr-1" />Lifetime</Badge>;
+    if (user.subscription_status === "active") return <Badge variant="default"><CheckCircle className="w-3 h-3 mr-1" />Aktiv</Badge>;
     return <Badge variant="outline">{user.subscription_status || "Inaktiv"}</Badge>;
   };
+
+  const renderUserIdCell = (user: UserData) => (
+    <div className="flex items-center gap-1">
+      <code className="text-xs font-mono bg-muted px-2 py-1 rounded">
+        {user.readable_id || user.id.slice(0, 8)}
+      </code>
+      <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => copyToClipboard(user.id)}>
+        <Copy className="w-3 h-3" />
+      </Button>
+    </div>
+  );
+
+  const renderNameCell = (user: UserData) => (
+    <div>
+      <p className="font-medium">{user.full_name || "—"}</p>
+      <p className="text-xs text-muted-foreground">{user.email}</p>
+    </div>
+  );
+
+  const renderDateCell = (user: UserData) => (
+    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+      <Calendar className="w-3 h-3" />
+      {format(new Date(user.created_at), "dd.MM.yy HH:mm", { locale: de })}
+    </div>
+  );
+
+  const renderLoginCell = (user: UserData) => (
+    user.last_sign_in_at ? (
+      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+        <Clock className="w-3 h-3" />
+        {format(new Date(user.last_sign_in_at), "dd.MM.yy HH:mm", { locale: de })}
+      </div>
+    ) : (
+      <Badge variant="outline" className="text-orange-500 border-orange-500/30">Nie</Badge>
+    )
+  );
+
+  const renderBanActions = (user: UserData) => (
+    user.is_suspended ? (
+      <Button variant="outline" size="sm" onClick={() => handleUnbanUser(user)}>
+        <CheckCircle className="w-4 h-4 mr-1" />Entsperren
+      </Button>
+    ) : (
+      <Button variant="outline" size="sm" onClick={() => { setSelectedUser(user); setBanDialogOpen(true); }}>
+        <Ban className="w-4 h-4 mr-1" />Ban
+      </Button>
+    )
+  );
+
+  const renderProviderTable = (data: UserData[]) => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>ID</TableHead>
+          <TableHead>Name / E-Mail</TableHead>
+          <TableHead>Standort</TableHead>
+          <TableHead>Kunden</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead>Erstellt</TableHead>
+          <TableHead>Letzter Login</TableHead>
+          <TableHead>E-Mail ✓</TableHead>
+          <TableHead className="text-right">Aktionen</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {data.map(user => (
+          <TableRow key={user.id} className="group">
+            <TableCell>{renderUserIdCell(user)}</TableCell>
+            <TableCell>{renderNameCell(user)}</TableCell>
+            <TableCell>
+              {user.zip_code || user.city ? (
+                <div className="flex items-center gap-1 text-sm"><MapPin className="w-3 h-3 text-muted-foreground" />{user.zip_code} {user.city}</div>
+              ) : "—"}
+            </TableCell>
+            <TableCell className="text-center">{user.customer_count}</TableCell>
+            <TableCell>{getStatusBadge(user)}</TableCell>
+            <TableCell>{renderDateCell(user)}</TableCell>
+            <TableCell>{renderLoginCell(user)}</TableCell>
+            <TableCell>{user.email_confirmed_at ? <span className="text-emerald-500 text-sm">✓</span> : <Badge variant="outline" className="text-red-500 border-red-500/30">Nein</Badge>}</TableCell>
+            <TableCell>
+              <div className="flex items-center justify-end gap-1">
+                <Button variant="outline" size="sm" onClick={() => openEditDialog(user)}>
+                  <UserCog className="w-4 h-4 mr-1" />Plan
+                </Button>
+                {renderBanActions(user)}
+                {isMasterAdmin && (
+                  <Button variant="destructive" size="sm" onClick={() => { setSelectedUser(user); setDeleteDialogOpen(true); }}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+        {data.length === 0 && <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Keine Benutzer gefunden</TableCell></TableRow>}
+      </TableBody>
+    </Table>
+  );
+
+  const renderClientTable = (data: UserData[]) => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>ID</TableHead>
+          <TableHead>Name / E-Mail</TableHead>
+          <TableHead>Zugehöriger Provider</TableHead>
+          <TableHead>Pferde</TableHead>
+          <TableHead>Erstellt</TableHead>
+          <TableHead>Letzter Login</TableHead>
+          <TableHead>E-Mail ✓</TableHead>
+          <TableHead className="text-right">Aktionen</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {data.map(user => (
+          <TableRow key={user.id} className="group">
+            <TableCell>{renderUserIdCell(user)}</TableCell>
+            <TableCell>{renderNameCell(user)}</TableCell>
+            <TableCell>
+              {user.provider_name ? (
+                <span className="text-sm">{user.provider_name}</span>
+              ) : <span className="text-muted-foreground text-sm">—</span>}
+            </TableCell>
+            <TableCell className="text-center">{user.horse_count}</TableCell>
+            <TableCell>{renderDateCell(user)}</TableCell>
+            <TableCell>{renderLoginCell(user)}</TableCell>
+            <TableCell>{user.email_confirmed_at ? <span className="text-emerald-500 text-sm">✓</span> : <Badge variant="outline" className="text-red-500 border-red-500/30">Nein</Badge>}</TableCell>
+            <TableCell>
+              <div className="flex items-center justify-end gap-1">
+                {renderBanActions(user)}
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+        {data.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Keine Kunden gefunden</TableCell></TableRow>}
+      </TableBody>
+    </Table>
+  );
+
+  const renderPartnerTable = (data: UserData[]) => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>ID</TableHead>
+          <TableHead>Name / E-Mail</TableHead>
+          <TableHead>Standort</TableHead>
+          <TableHead>Erstellt</TableHead>
+          <TableHead>Letzter Login</TableHead>
+          <TableHead>E-Mail ✓</TableHead>
+          <TableHead className="text-right">Aktionen</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {data.map(user => (
+          <TableRow key={user.id} className="group">
+            <TableCell>{renderUserIdCell(user)}</TableCell>
+            <TableCell>{renderNameCell(user)}</TableCell>
+            <TableCell>
+              {user.zip_code || user.city ? (
+                <div className="flex items-center gap-1 text-sm"><MapPin className="w-3 h-3 text-muted-foreground" />{user.zip_code} {user.city}</div>
+              ) : "—"}
+            </TableCell>
+            <TableCell>{renderDateCell(user)}</TableCell>
+            <TableCell>{renderLoginCell(user)}</TableCell>
+            <TableCell>{user.email_confirmed_at ? <span className="text-emerald-500 text-sm">✓</span> : <Badge variant="outline" className="text-red-500 border-red-500/30">Nein</Badge>}</TableCell>
+            <TableCell>
+              <div className="flex items-center justify-end gap-1">
+                {renderBanActions(user)}
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+        {data.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Keine Partner gefunden</TableCell></TableRow>}
+      </TableBody>
+    </Table>
+  );
+
+  const renderEmployeeTable = (data: UserData[]) => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>ID</TableHead>
+          <TableHead>Name / E-Mail</TableHead>
+          <TableHead>Zugehöriger Provider</TableHead>
+          <TableHead>Erstellt</TableHead>
+          <TableHead>Letzter Login</TableHead>
+          <TableHead>E-Mail ✓</TableHead>
+          <TableHead className="text-right">Aktionen</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {data.map(user => (
+          <TableRow key={user.id} className="group">
+            <TableCell>{renderUserIdCell(user)}</TableCell>
+            <TableCell>{renderNameCell(user)}</TableCell>
+            <TableCell>
+              {user.provider_name ? (
+                <span className="text-sm">{user.provider_name}</span>
+              ) : <span className="text-muted-foreground text-sm">—</span>}
+            </TableCell>
+            <TableCell>{renderDateCell(user)}</TableCell>
+            <TableCell>{renderLoginCell(user)}</TableCell>
+            <TableCell>{user.email_confirmed_at ? <span className="text-emerald-500 text-sm">✓</span> : <Badge variant="outline" className="text-red-500 border-red-500/30">Nein</Badge>}</TableCell>
+            <TableCell>
+              <div className="flex items-center justify-end gap-1">
+                <Badge variant="outline" className="text-muted-foreground">Nur lesen</Badge>
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+        {data.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Keine Mitarbeiter gefunden</TableCell></TableRow>}
+      </TableBody>
+    </Table>
+  );
+
+  const renderGlobalSearchTable = (data: UserData[]) => (
+    <Card>
+      <CardContent className="p-0">
+        <div className="p-4 border-b bg-muted/30">
+          <p className="text-sm font-medium">{data.length} Treffer über alle Rollen</p>
+        </div>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Name / E-Mail</TableHead>
+                <TableHead>Rolle</TableHead>
+                <TableHead>Erstellt</TableHead>
+                <TableHead>Letzter Login</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.map(user => (
+                <TableRow key={user.id} className="group cursor-pointer" onClick={() => { setActiveTab(user.role as RoleTab); setGlobalSearch(""); }}>
+                  <TableCell>{renderUserIdCell(user)}</TableCell>
+                  <TableCell>{renderNameCell(user)}</TableCell>
+                  <TableCell>
+                    <Badge variant={user.role === "provider" ? "default" : user.role === "admin" ? "destructive" : "secondary"}>
+                      {user.role}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{renderDateCell(user)}</TableCell>
+                  <TableCell>{renderLoginCell(user)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   if (loading) {
     return (
@@ -388,189 +625,108 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">User-DB</h2>
-          <p className="text-muted-foreground">
-            {users.length} Benutzer gesamt • {filteredUsers.length} angezeigt
-          </p>
+          <p className="text-muted-foreground">{users.length} Benutzer gesamt</p>
         </div>
         <Button variant="outline" onClick={fetchUsers} size="icon">
           <RefreshCw className="w-4 h-4" />
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Suchen nach Name, E-Mail, ID, UUID..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as typeof roleFilter)}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Alle Rollen" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Alle Rollen</SelectItem>
-            <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="provider">Provider</SelectItem>
-            <SelectItem value="client">Client</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={specialFilter} onValueChange={(v) => setSpecialFilter(v as typeof specialFilter)}>
-          <SelectTrigger className="w-52">
-            <SelectValue placeholder="Spezialfilter" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Kein Spezialfilter</SelectItem>
-            <SelectItem value="never_logged_in">🚫 Nie eingeloggt</SelectItem>
-            <SelectItem value="email_unconfirmed">📧 E-Mail nicht bestätigt</SelectItem>
-            <SelectItem value="no_data">📭 Keine Pferde & Kunden</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* Global Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Globale Suche nach Name, E-Mail, ID (über alle Rollen)..."
+          value={globalSearch}
+          onChange={(e) => setGlobalSearch(e.target.value)}
+          className="pl-10"
+        />
       </div>
 
-      {/* Table */}
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                 <TableRow>
-                   <TableHead>ID</TableHead>
-                   <TableHead>Name / E-Mail</TableHead>
-                   <TableHead>Rolle</TableHead>
-                   <TableHead>Standort</TableHead>
-                   <TableHead>Pferde</TableHead>
-                   <TableHead>Kunden</TableHead>
-                   <TableHead>Status</TableHead>
-                   <TableHead>Erstellt</TableHead>
-                   <TableHead>Letzter Login</TableHead>
-                   <TableHead>E-Mail ✓</TableHead>
-                   <TableHead className="text-right">Aktionen</TableHead>
-                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id} className="group">
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <code className="text-xs font-mono bg-muted px-2 py-1 rounded">
-                          {user.readable_id || user.id.slice(0, 8)}
-                        </code>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                          onClick={() => copyToClipboard(user.id)}
-                        >
-                          <Copy className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{user.full_name || "—"}</p>
-                        <p className="text-xs text-muted-foreground">{user.email}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>{getRoleBadge(user.role)}</TableCell>
-                    <TableCell>
-                      {user.zip_code || user.city ? (
-                        <div className="flex items-center gap-1 text-sm">
-                          <MapPin className="w-3 h-3 text-muted-foreground" />
-                          <span>{user.zip_code} {user.city}</span>
-                        </div>
-                      ) : "—"}
-                    </TableCell>
-                    <TableCell className="text-center">{user.horse_count}</TableCell>
-                    <TableCell className="text-center">{user.customer_count}</TableCell>
-                    <TableCell>{getStatusBadge(user)}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Calendar className="w-3 h-3" />
-                        {format(new Date(user.created_at), "dd.MM.yy HH:mm", { locale: de })}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {user.last_sign_in_at ? (
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Clock className="w-3 h-3" />
-                          {format(new Date(user.last_sign_in_at), "dd.MM.yy HH:mm", { locale: de })}
-                        </div>
-                      ) : (
-                        <Badge variant="outline" className="text-orange-500 border-orange-500/30">Nie</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {user.email_confirmed_at ? (
-                        <span className="text-emerald-500 text-sm">✓</span>
-                      ) : (
-                        <Badge variant="outline" className="text-red-500 border-red-500/30">Nein</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEditDialog(user)}
-                        >
-                          <UserCog className="w-4 h-4 mr-1" />
-                          Plan
-                        </Button>
-                        {user.is_suspended ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleUnbanUser(user)}
-                          >
-                            <CheckCircle className="w-4 h-4 mr-1" />
-                            Entsperren
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedUser(user);
-                              setBanDialogOpen(true);
-                            }}
-                          >
-                            <Ban className="w-4 h-4 mr-1" />
-                            Ban
-                          </Button>
-                        )}
-                        {isMasterAdmin && (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedUser(user);
-                              setDeleteDialogOpen(true);
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filteredUsers.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
-                      Keine Benutzer gefunden
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+      {/* Global search results overlay */}
+      {globalSearchResults && globalSearchResults.length > 0 && (
+        renderGlobalSearchTable(globalSearchResults)
+      )}
+      {globalSearchResults && globalSearchResults.length === 0 && (
+        <Card><CardContent className="py-6 text-center text-muted-foreground">Keine Treffer für „{globalSearch}"</CardContent></Card>
+      )}
+
+      {/* Role Tabs (hidden when global search active) */}
+      {!globalSearchResults && (
+        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as RoleTab); setSpecialFilter("all"); }}>
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <TabsList className="grid grid-cols-4 w-full max-w-lg">
+              <TabsTrigger value="provider">Provider ({roleCounts.provider})</TabsTrigger>
+              <TabsTrigger value="client">Kunden ({roleCounts.client})</TabsTrigger>
+              <TabsTrigger value="partner">Partner ({roleCounts.partner})</TabsTrigger>
+              <TabsTrigger value="employee">Mitarbeiter ({roleCounts.employee})</TabsTrigger>
+            </TabsList>
+            <Select value={specialFilter} onValueChange={(v) => setSpecialFilter(v as typeof specialFilter)}>
+              <SelectTrigger className="w-52">
+                <SelectValue placeholder="Spezialfilter" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Kein Spezialfilter</SelectItem>
+                <SelectItem value="never_logged_in">🚫 Nie eingeloggt</SelectItem>
+                <SelectItem value="email_unconfirmed">📧 E-Mail nicht bestätigt</SelectItem>
+                <SelectItem value="no_data">📭 Keine Pferde & Kunden</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        </CardContent>
-      </Card>
+
+          <TabsContent value="provider">
+            <Card>
+              <CardContent className="p-0">
+                <div className="p-4 border-b">
+                  <p className="text-sm text-muted-foreground">{tabUsers.length} Provider angezeigt</p>
+                </div>
+                <div className="overflow-x-auto">{renderProviderTable(tabUsers)}</div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="client">
+            {/* Datenschutz-Banner */}
+            <div className="flex items-center gap-3 p-4 rounded-lg border border-orange-500/30 bg-orange-500/5 mb-4">
+              <ShieldAlert className="w-5 h-5 text-orange-500 shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-orange-500">Nur für Support – Datenschutz beachten</p>
+                <p className="text-xs text-muted-foreground">Kundendaten sind schreibgeschützt und dürfen nur bei Support-Anfragen eingesehen werden.</p>
+              </div>
+            </div>
+            <Card>
+              <CardContent className="p-0">
+                <div className="p-4 border-b">
+                  <p className="text-sm text-muted-foreground">{tabUsers.length} Kunden angezeigt</p>
+                </div>
+                <div className="overflow-x-auto">{renderClientTable(tabUsers)}</div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="partner">
+            <Card>
+              <CardContent className="p-0">
+                <div className="p-4 border-b">
+                  <p className="text-sm text-muted-foreground">{tabUsers.length} Partner angezeigt</p>
+                </div>
+                <div className="overflow-x-auto">{renderPartnerTable(tabUsers)}</div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="employee">
+            <Card>
+              <CardContent className="p-0">
+                <div className="p-4 border-b">
+                  <p className="text-sm text-muted-foreground">{tabUsers.length} Mitarbeiter angezeigt</p>
+                </div>
+                <div className="overflow-x-auto">{renderEmployeeTable(tabUsers)}</div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      )}
 
       {/* Force Plan Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
@@ -585,27 +741,18 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
             <div className="space-y-2">
               <Label>Plan Override</Label>
               <Select value={editPlan} onValueChange={setEditPlan}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {PLAN_OPTIONS.map((p) => (
                     <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                Override überschreibt Copecart-Subscription
-              </p>
+              <p className="text-xs text-muted-foreground">Override überschreibt Copecart-Subscription</p>
             </div>
-            
             <div className="space-y-2">
               <Label>Zugriff gültig bis</Label>
-              <Input
-                type="date"
-                value={editAccessValidUntil}
-                onChange={(e) => setEditAccessValidUntil(e.target.value)}
-              />
+              <Input type="date" value={editAccessValidUntil} onChange={(e) => setEditAccessValidUntil(e.target.value)} />
               <p className="text-xs text-muted-foreground">
                 {editPlan === "lifetime_grant" || editPlan === "employee" 
                   ? "Wird automatisch auf 2099 gesetzt wenn leer"
@@ -614,7 +761,6 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
                   : "Datum bis wann der Zugriff gültig ist"}
               </p>
             </div>
-
             <div className="p-3 rounded-lg bg-muted/50 text-sm space-y-1">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Aktueller Plan:</span>
@@ -629,8 +775,7 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Abbrechen</Button>
             <Button onClick={handleForcePlan} disabled={saving}>
-              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Speichern
+              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Speichern
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -641,25 +786,18 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Benutzer sperren</DialogTitle>
-            <DialogDescription>
-              Sperre {selectedUser?.full_name || selectedUser?.email} vom System
-            </DialogDescription>
+            <DialogDescription>Sperre {selectedUser?.full_name || selectedUser?.email} vom System</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Grund (optional)</Label>
-              <Textarea
-                placeholder="Warum wird dieser Benutzer gesperrt?"
-                value={banReason}
-                onChange={(e) => setBanReason(e.target.value)}
-              />
+              <Textarea placeholder="Warum wird dieser Benutzer gesperrt?" value={banReason} onChange={(e) => setBanReason(e.target.value)} />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setBanDialogOpen(false)}>Abbrechen</Button>
             <Button variant="destructive" onClick={handleBanUser} disabled={saving}>
-              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Sperren
+              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Sperren
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -671,16 +809,12 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Benutzer endgültig löschen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Dies löscht {selectedUser?.full_name || selectedUser?.email} permanent aus dem System.
-              Diese Aktion kann nicht rückgängig gemacht werden!
+              Dies löscht {selectedUser?.full_name || selectedUser?.email} permanent aus dem System. Diese Aktion kann nicht rückgängig gemacht werden!
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteUser}
-              className="bg-destructive text-destructive-foreground"
-            >
+            <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive text-destructive-foreground">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Endgültig löschen"}
             </AlertDialogAction>
           </AlertDialogFooter>
