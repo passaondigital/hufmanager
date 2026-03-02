@@ -524,13 +524,15 @@ export default function Auth() {
           setLoginPassword(password);
           setLoading(true);
           try {
+            console.log('[DemoLogin] Starting login for:', email);
             const { error } = await signIn(email, password);
             if (error) {
+              console.error('[DemoLogin] Auth error:', error.message, error);
               toast.error(error.message);
               setLoading(false);
             } else {
+              console.log('[DemoLogin] Success, redirecting...');
               // Demo accounts: hard redirect to avoid race conditions with React state
-              // This works reliably across all browsers (Chrome, Firefox, Opera, Edge)
               const roleMap: Record<string, string> = {
                 "hufbearbeiter.hufmanager@gmail.com": "/home",
                 "pferdebesitzer.hufmanager@gmail.com": "/client-home",
@@ -540,8 +542,9 @@ export default function Auth() {
               const target = roleMap[email.toLowerCase()] || "/home";
               window.location.replace(target);
             }
-          } catch (err) {
-            toast.error("Login fehlgeschlagen");
+          } catch (err: any) {
+            console.error('[DemoLogin] Unexpected error:', err?.message || err, err);
+            toast.error("Login fehlgeschlagen – bitte erneut versuchen");
             setLoading(false);
           }
         }}
