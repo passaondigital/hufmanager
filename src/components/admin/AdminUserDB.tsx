@@ -47,6 +47,10 @@ interface UserData {
   zip_code: string | null;
   city: string | null;
   horse_count: number;
+  customer_count: number;
+  has_logged_in: boolean | null;
+  last_sign_in_at: string | null;
+  email_confirmed_at: string | null;
 }
 
 interface AdminUserDBProps {
@@ -69,6 +73,7 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | "provider" | "client" | "admin">("all");
+  const [specialFilter, setSpecialFilter] = useState<"all" | "never_logged_in" | "email_unconfirmed" | "no_data">("all");
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [banDialogOpen, setBanDialogOpen] = useState(false);
@@ -111,31 +116,60 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
 
       if (horsesError) console.warn("Could not fetch horses:", horsesError);
 
+      // Fetch customer counts (access_grants where user is provider)
+      const { data: grants, error: grantsError } = await supabase
+        .from("access_grants")
+        .select("provider_id")
+        .eq("is_active", true);
+
+      if (grantsError) console.warn("Could not fetch grants:", grantsError);
+
+      // Fetch auth metadata (last_sign_in_at, email_confirmed_at) via admin function
+      const { data: authMeta, error: authError } = await supabase
+        .rpc("get_admin_auth_metadata");
+
+      if (authError) console.warn("Could not fetch auth metadata:", authError);
+
       // Build lookup maps
       const roleMap = new Map(roles?.map(r => [r.user_id, r.role]) || []);
       const horseCountMap = new Map<string, number>();
       horses?.forEach(h => {
         horseCountMap.set(h.owner_id, (horseCountMap.get(h.owner_id) || 0) + 1);
       });
+      const customerCountMap = new Map<string, number>();
+      grants?.forEach(g => {
+        customerCountMap.set(g.provider_id, (customerCountMap.get(g.provider_id) || 0) + 1);
+      });
+      const authMetaMap = new Map<string, { last_sign_in_at: string | null; email_confirmed_at: string | null }>();
+      (authMeta || []).forEach((m: any) => {
+        authMetaMap.set(m.user_id, { last_sign_in_at: m.last_sign_in_at, email_confirmed_at: m.email_confirmed_at });
+      });
 
       // Merge data
-      const usersWithData: UserData[] = (profiles || []).map(profile => ({
-        id: profile.id,
-        email: profile.email,
-        full_name: profile.full_name,
-        readable_id: profile.readable_id,
-        role: roleMap.get(profile.id) || "client",
-        subscription_status: profile.subscription_status,
-        subscription_plan: profile.subscription_plan,
-        plan_override: profile.plan_override,
-        is_suspended: profile.is_suspended,
-        suspended_reason: profile.suspended_reason,
-        created_at: profile.created_at,
-        created_by_provider_id: profile.created_by_provider_id,
-        zip_code: profile.zip_code,
-        city: profile.city,
-        horse_count: horseCountMap.get(profile.id) || 0,
-      }));
+      const usersWithData: UserData[] = (profiles || []).map(profile => {
+        const meta = authMetaMap.get(profile.id);
+        return {
+          id: profile.id,
+          email: profile.email,
+          full_name: profile.full_name,
+          readable_id: profile.readable_id,
+          role: roleMap.get(profile.id) || "client",
+          subscription_status: profile.subscription_status,
+          subscription_plan: profile.subscription_plan,
+          plan_override: profile.plan_override,
+          is_suspended: profile.is_suspended,
+          suspended_reason: profile.suspended_reason,
+          created_at: profile.created_at,
+          created_by_provider_id: profile.created_by_provider_id,
+          zip_code: profile.zip_code,
+          city: profile.city,
+          horse_count: horseCountMap.get(profile.id) || 0,
+          customer_count: customerCountMap.get(profile.id) || 0,
+          has_logged_in: profile.has_logged_in,
+          last_sign_in_at: meta?.last_sign_in_at || null,
+          email_confirmed_at: meta?.email_confirmed_at || null,
+        };
+      });
 
       setUsers(usersWithData);
     } catch (error) {
@@ -155,10 +189,19 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
         u.id.includes(searchTerm);
       
       const matchesRole = roleFilter === "all" || u.role === roleFilter;
+
+      let matchesSpecial = true;
+      if (specialFilter === "never_logged_in") {
+        matchesSpecial = !u.last_sign_in_at && !u.has_logged_in;
+      } else if (specialFilter === "email_unconfirmed") {
+        matchesSpecial = !u.email_confirmed_at;
+      } else if (specialFilter === "no_data") {
+        matchesSpecial = u.horse_count === 0 && u.customer_count === 0;
+      }
       
-      return matchesSearch && matchesRole;
+      return matchesSearch && matchesRole && matchesSpecial;
     });
-  }, [users, searchTerm, roleFilter]);
+  }, [users, searchTerm, roleFilter, specialFilter]);
 
   const openEditDialog = (user: UserData) => {
     setSelectedUser(user);
@@ -376,6 +419,17 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
             <SelectItem value="client">Client</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={specialFilter} onValueChange={(v) => setSpecialFilter(v as typeof specialFilter)}>
+          <SelectTrigger className="w-52">
+            <SelectValue placeholder="Spezialfilter" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Kein Spezialfilter</SelectItem>
+            <SelectItem value="never_logged_in">🚫 Nie eingeloggt</SelectItem>
+            <SelectItem value="email_unconfirmed">📧 E-Mail nicht bestätigt</SelectItem>
+            <SelectItem value="no_data">📭 Keine Pferde & Kunden</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Table */}
@@ -384,16 +438,19 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Name / E-Mail</TableHead>
-                  <TableHead>Rolle</TableHead>
-                  <TableHead>Standort</TableHead>
-                  <TableHead>Pferde</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Erstellt</TableHead>
-                  <TableHead className="text-right">Aktionen</TableHead>
-                </TableRow>
+                 <TableRow>
+                   <TableHead>ID</TableHead>
+                   <TableHead>Name / E-Mail</TableHead>
+                   <TableHead>Rolle</TableHead>
+                   <TableHead>Standort</TableHead>
+                   <TableHead>Pferde</TableHead>
+                   <TableHead>Kunden</TableHead>
+                   <TableHead>Status</TableHead>
+                   <TableHead>Erstellt</TableHead>
+                   <TableHead>Letzter Login</TableHead>
+                   <TableHead>E-Mail ✓</TableHead>
+                   <TableHead className="text-right">Aktionen</TableHead>
+                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUsers.map((user) => (
@@ -429,12 +486,30 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
                       ) : "—"}
                     </TableCell>
                     <TableCell className="text-center">{user.horse_count}</TableCell>
+                    <TableCell className="text-center">{user.customer_count}</TableCell>
                     <TableCell>{getStatusBadge(user)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <Calendar className="w-3 h-3" />
-                        {format(new Date(user.created_at), "dd.MM.yy")}
+                        {format(new Date(user.created_at), "dd.MM.yy HH:mm", { locale: de })}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {user.last_sign_in_at ? (
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Clock className="w-3 h-3" />
+                          {format(new Date(user.last_sign_in_at), "dd.MM.yy HH:mm", { locale: de })}
+                        </div>
+                      ) : (
+                        <Badge variant="outline" className="text-orange-500 border-orange-500/30">Nie</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {user.email_confirmed_at ? (
+                        <span className="text-emerald-500 text-sm">✓</span>
+                      ) : (
+                        <Badge variant="outline" className="text-red-500 border-red-500/30">Nein</Badge>
+                      )}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-1">
@@ -486,7 +561,7 @@ export function AdminUserDB({ isMasterAdmin }: AdminUserDBProps) {
                 ))}
                 {filteredUsers.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                       Keine Benutzer gefunden
                     </TableCell>
                   </TableRow>
