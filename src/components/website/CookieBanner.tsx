@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Cookie } from "lucide-react";
 import { Link } from "react-router-dom";
+import { initGA4 } from "@/lib/analytics";
 
 const CookieBanner = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -32,7 +33,7 @@ const CookieBanner = () => {
           </div>
           <div className="flex gap-3 w-full md:w-auto">
             <Button variant="outline" onClick={() => { localStorage.setItem("cookie-consent", "declined"); setIsVisible(false); }} className="flex-1 md:flex-none border-white/20 text-white hover:bg-white/10">Ablehnen</Button>
-            <Button onClick={() => { localStorage.setItem("cookie-consent", "accepted"); setIsVisible(false); }} className="flex-1 md:flex-none bg-primary hover:bg-primary/90 text-white">Akzeptieren</Button>
+            <Button onClick={() => { localStorage.setItem("cookie-consent", "accepted"); setIsVisible(false); initGA4(""); /* GA4 wird nach Consent geladen – ID wird aus useGA4 geholt */ }} className="flex-1 md:flex-none bg-primary hover:bg-primary/90 text-white">Akzeptieren</Button>
           </div>
         </div>
       </div>
