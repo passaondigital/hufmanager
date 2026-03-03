@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import Navbar from "@/components/website/Navbar";
+import { useGA4 } from "@/hooks/useGA4";
 import HeroV2 from "@/components/website/HeroV2";
 import ProblemSection from "@/components/website/ProblemSection";
 import IdentitySection from "@/components/website/IdentitySection";
@@ -22,6 +23,8 @@ import LatestBlogPosts from "@/components/website/LatestBlogPosts";
 import CookieBanner from "@/components/website/CookieBanner";
 
 const WebsiteHome = () => {
+  useGA4(); // GA4-Tracking für hufmanager.de (nach Cookie-Consent)
+
   useEffect(() => {
     // Set SEO meta tags
     document.title = "HufManager - Die All-in-One Plattform für Pferde-Profis";
