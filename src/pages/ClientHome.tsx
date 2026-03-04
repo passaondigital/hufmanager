@@ -212,7 +212,7 @@ export default function ClientHome() {
             </div>
             <div className="flex items-center gap-1">
               <DemoModeIndicator />
-              <DemoTourButton tourName="client" />
+              <DemoTourButton />
               <NotificationBell />
               <Button variant="ghost" size="icon" className="h-10 w-10 min-w-[40px]" onClick={toggleTheme}>
                 {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}

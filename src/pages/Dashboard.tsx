@@ -1,4 +1,4 @@
-import { Users, Calendar, TrendingUp, MessageSquare, Compass } from "lucide-react";
+import { Users, Calendar, TrendingUp, MessageSquare } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -13,8 +13,6 @@ import { useOnboarding } from "@/hooks/useOnboarding";
 import { ProviderSetupWizard } from "@/components/onboarding/ProviderSetupWizard";
 import { PushNotificationBanner } from "@/components/notifications/PushNotificationBanner";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
-import { useTour } from "@/components/tour/TourContext";
-import { Button } from "@/components/ui/button";
 import { StatGridSkeleton } from "@/components/ui/skeletons";
 import { MilestoneCelebration } from "@/components/growth/MilestoneCelebration";
 import { DemoTourButton } from "@/components/demo/DemoTourButton";
@@ -23,7 +21,6 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { showOnboarding, completeOnboarding } = useOnboarding();
   const { data: stats, isLoading } = useDashboardStats();
-  const { startTour } = useTour();
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Hufbearbeiter";
 
   // Fetch readable_id for the welcome header
@@ -69,16 +66,7 @@ const Dashboard = () => {
           subtitle="Tagesübersicht"
         />
         <div className="flex items-center gap-3">
-          <DemoTourButton tourName="dashboard" />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => startTour('dashboard')}
-            className="gap-2 text-muted-foreground hover:text-foreground"
-          >
-            <Compass className="h-4 w-4" />
-            Führung starten
-          </Button>
+          <DemoTourButton />
           <div className="lg:w-80" data-tour="invite-link">
             <ShareInviteLinkCard />
           </div>

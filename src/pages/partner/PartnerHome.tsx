@@ -229,7 +229,7 @@ export default function PartnerHome() {
           subtitle={partnerType ? typeConfig.label : undefined}
         />
         <div className="flex items-center gap-2">
-          <DemoTourButton tourName="partner" />
+          <DemoTourButton />
           {partnerType && (
             <Badge variant="secondary" className="text-xs flex items-center gap-1 shrink-0">
               <typeConfig.icon className={`h-3 w-3 ${typeConfig.color}`} />

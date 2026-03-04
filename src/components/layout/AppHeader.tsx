@@ -23,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { useAutoflowMode, AutoflowMode } from "@/hooks/useAutoflowMode";
 import { DemoModeIndicator } from "@/components/demo/DemoModeIndicator";
+import { DemoTourButton } from "@/components/demo/DemoTourButton";
 
 export function AppHeader() {
   const navigate = useNavigate();
@@ -176,6 +177,8 @@ export function AppHeader() {
 
         {/* Demo Mode Indicator */}
         <DemoModeIndicator />
+        {/* Demo Tour Repeat */}
+        <DemoTourButton />
 
         {/* User ID Badge */}
         {readableId && (
