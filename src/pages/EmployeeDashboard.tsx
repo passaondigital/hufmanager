@@ -229,7 +229,7 @@ const EmployeeDashboard = () => {
           readableId={profile.id ? `EID-${profile.id.substring(0, 6).toUpperCase()}` : undefined}
           subtitle={format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}
         />
-        <DemoTourButton tourName="employee" />
+        <DemoTourButton />
       </div>
 
       {/* Onboarding */}
