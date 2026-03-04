@@ -39,6 +39,8 @@ import { PostAppointmentReviewPrompt } from "@/components/client/PostAppointment
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { DemoTourButton } from "@/components/demo/DemoTourButton";
+import { DemoModeIndicator } from "@/components/demo/DemoModeIndicator";
 
 interface Horse {
   id: string;
@@ -209,6 +211,8 @@ export default function ClientHome() {
               </Badge>
             </div>
             <div className="flex items-center gap-1">
+              <DemoModeIndicator />
+              <DemoTourButton tourName="client" />
               <NotificationBell />
               <Button variant="ghost" size="icon" className="h-10 w-10 min-w-[40px]" onClick={toggleTheme}>
                 {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
@@ -298,7 +302,7 @@ export default function ClientHome() {
           <MyConnectionRequests />
 
           {/* Connected Provider Card - show if provider connected */}
-          {hasProvider === true && <ConnectedProviderCard />}
+          {hasProvider === true && <div data-tour="client-provider"><ConnectedProviderCard /></div>}
 
           {/* Provider Search - show if no provider connected */}
           {hasProvider === false && (
@@ -325,7 +329,7 @@ export default function ClientHome() {
           )}
 
           {/* Upcoming Appointments List */}
-          {user && <UpcomingAppointmentsList userId={user.id} />}
+          {user && <div data-tour="client-appointments"><UpcomingAppointmentsList userId={user.id} /></div>}
 
           {/* Appointment Checklist Widget */}
           {user && <AppointmentChecklistWidget userId={user.id} />}
@@ -382,6 +386,7 @@ export default function ClientHome() {
               variant="outline" 
               className="h-14 sm:h-16 flex-col gap-1 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-all min-h-[44px]"
               onClick={() => navigate("/client-chat")}
+              data-tour="client-chat"
             >
               <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               <span className="text-[9px] sm:text-[10px]">Chat</span>

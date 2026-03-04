@@ -1,25 +1,13 @@
 import { TourStep } from './SpotlightTour';
 
 /**
- * Dashboard-Tour: Hauptübersicht erklären
+ * Dashboard-Tour: Hauptübersicht erklären (Provider)
  */
 export const dashboardTourSteps: TourStep[] = [
   {
     target: '[data-tour="stats-grid"]',
     title: 'Deine Zahlen auf einen Blick',
-    description: 'Hier siehst du Kunden, Termine, Anfragen und Umsatz — alles tagesaktuell.',
-    position: 'bottom',
-  },
-  {
-    target: '[data-tour="recent-horses"]',
-    title: 'Letzte Pferde',
-    description: 'Schnellzugriff auf die Pferde, die du zuletzt bearbeitet hast. Ein Tap und du bist in der Akte.',
-    position: 'bottom',
-  },
-  {
-    target: '[data-tour="invite-link"]',
-    title: 'Kunden einladen',
-    description: 'Teile diesen Link mit deinen Kunden — sie sehen dann ihre Pferde-Akte und können Termine buchen.',
+    description: 'Kunden, Termine, Anfragen und Umsatz — alles tagesaktuell aus deinem Betrieb.',
     position: 'bottom',
   },
   {
@@ -29,9 +17,21 @@ export const dashboardTourSteps: TourStep[] = [
     position: 'bottom',
   },
   {
+    target: '[data-tour="invite-link"]',
+    title: 'Kunden einladen',
+    description: 'Teile diesen Link mit deinen Kunden — sie sehen dann ihre Pferde-Akte und können Termine buchen.',
+    position: 'bottom',
+  },
+  {
     target: '[data-tour="checklist"]',
-    title: 'Deine Checkliste',
-    description: 'Hier siehst du was noch fehlt. Arbeite die Punkte ab und dein HufManager ist vollständig eingerichtet.',
+    title: 'Erste Schritte',
+    description: 'Arbeite die Punkte ab und dein HufManager ist vollständig eingerichtet.',
+    position: 'bottom',
+  },
+  {
+    target: 'header',
+    title: 'So sieht es deine Kundin Maria',
+    description: 'Alles was du hier dokumentierst, sieht Maria Müller in ihrem Pferdeportal — in Echtzeit. Termine, Befunde, Rechnungen — alles vernetzt.',
     position: 'bottom',
   },
 ];
@@ -86,6 +86,108 @@ export const invoicesTourSteps: TourStep[] = [
     target: '[data-tour="create-invoice"]',
     title: 'Rechnung erstellen',
     description: 'Wähl den Kunden, die Leistung wird automatisch übernommen. PDF wird sofort generiert.',
+    position: 'bottom',
+  },
+];
+
+/**
+ * Partner-App Tour (Fachpartner / Tierarzt / Physio)
+ */
+export const partnerTourSteps: TourStep[] = [
+  {
+    target: '[data-tour="partner-kpi"]',
+    title: 'Dein Partner-Dashboard',
+    description: 'Betreute Pferde, Termine, Behandlungen und Umsatz — dein Praxis-Cockpit auf einen Blick.',
+    position: 'bottom',
+  },
+  {
+    target: '[data-tour="partner-horses"]',
+    title: 'Freigegebene Pferde',
+    description: 'Hier siehst du alle Pferde, die dir vom Besitzer freigegeben wurden — mit Akte und Historie.',
+    position: 'bottom',
+  },
+  {
+    target: '[data-tour="partner-appointments"]',
+    title: 'Deine Termine',
+    description: 'Plane Behandlungstermine für freigegebene Pferde. Der Besitzer wird automatisch informiert.',
+    position: 'bottom',
+  },
+  {
+    target: '[data-tour="partner-notes"]',
+    title: 'Behandlungsnotizen',
+    description: 'Dokumentiere Befunde, Therapien und Empfehlungen — alles wird in der Pferdeakte gespeichert.',
+    position: 'bottom',
+  },
+  {
+    target: 'header',
+    title: 'Vernetzung in Aktion',
+    description: 'Dein Behandlungsbericht zu Luna wird automatisch für Maria (Besitzerin) und den Hufbearbeiter sichtbar — DSGVO-konform und in Echtzeit.',
+    position: 'bottom',
+  },
+];
+
+/**
+ * Mitarbeiter-App Tour
+ */
+export const employeeTourSteps: TourStep[] = [
+  {
+    target: '[data-tour="employee-kpi"]',
+    title: 'Dein Arbeitstag',
+    description: 'Aufträge, erledigte Pferde, Arbeitszeit und Material — alles auf einen Blick.',
+    position: 'bottom',
+  },
+  {
+    target: '[data-tour="employee-tour"]',
+    title: 'Meine Tour',
+    description: 'Deine Tagesroute mit Navigation. Fahre Kunden effizient ab.',
+    position: 'bottom',
+  },
+  {
+    target: '[data-tour="employee-assignments"]',
+    title: 'Heutige Aufträge',
+    description: 'Dein Chef weist dir Pferde zu. Check ein, arbeite, check aus — automatische Zeiterfassung.',
+    position: 'bottom',
+  },
+  {
+    target: 'header',
+    title: 'Vernetzung in Aktion',
+    description: 'Wenn du bei Luna eincheckst und die Arbeit dokumentierst, sieht dein Chef und Maria (die Besitzerin) den Status in Echtzeit.',
+    position: 'bottom',
+  },
+];
+
+/**
+ * Pferdebesitzer-App Tour (Client)
+ */
+export const clientTourSteps: TourStep[] = [
+  {
+    target: '#pferde-section',
+    title: 'Deine Pferde',
+    description: 'Alle deine Pferde mit Akte, Fotos und Gesundheitsverlauf. Tippe auf ein Pferd für Details.',
+    position: 'bottom',
+  },
+  {
+    target: '[data-tour="client-provider"]',
+    title: 'Dein Hufbearbeiter',
+    description: 'Hier siehst du wer Zugriff auf deine Pferdeakten hat. Du entscheidest wer was sehen darf.',
+    position: 'bottom',
+  },
+  {
+    target: '[data-tour="client-appointments"]',
+    title: 'Termine & Buchung',
+    description: 'Sieh kommende Termine, bestätige sie oder buche direkt einen neuen Termin.',
+    position: 'bottom',
+  },
+  {
+    target: '[data-tour="client-chat"]',
+    title: 'Chat mit deinem Betreuer',
+    description: 'Direkte Kommunikation mit deinem Hufbearbeiter — Fragen, Fotos, Terminabsprachen.',
+    position: 'bottom',
+  },
+  {
+    target: 'header',
+    title: 'Vernetzung in Aktion',
+    description: 'Alles was dein Hufbearbeiter bei Luna dokumentiert, siehst du hier — Befunde, Fotos, Rechnungen. Und Dr. Lisa Meier (Physiotherapeutin) hat ebenfalls Zugriff, den du jederzeit widerrufen kannst.',
     position: 'bottom',
   },
 ];

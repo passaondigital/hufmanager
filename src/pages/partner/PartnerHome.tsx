@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { getPartnerTypeConfig } from "@/lib/partnerTypes";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { de } from "date-fns/locale";
+import { DemoTourButton } from "@/components/demo/DemoTourButton";
 
 // VERBESSERUNG 4: Onboarding Checklist
 interface ChecklistStep {
@@ -227,12 +228,15 @@ export default function PartnerHome() {
           readableId={profile?.readable_id}
           subtitle={partnerType ? typeConfig.label : undefined}
         />
-        {partnerType && (
-          <Badge variant="secondary" className="text-xs flex items-center gap-1 shrink-0">
-            <typeConfig.icon className={`h-3 w-3 ${typeConfig.color}`} />
-            {typeConfig.label}
-          </Badge>
-        )}
+        <div className="flex items-center gap-2">
+          <DemoTourButton tourName="partner" />
+          {partnerType && (
+            <Badge variant="secondary" className="text-xs flex items-center gap-1 shrink-0">
+              <typeConfig.icon className={`h-3 w-3 ${typeConfig.color}`} />
+              {typeConfig.label}
+            </Badge>
+          )}
+        </div>
       </div>
 
       {/* VERBESSERUNG 4: Onboarding Checklist */}
@@ -290,7 +294,7 @@ export default function PartnerHome() {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3" data-tour="partner-kpi">
         <Card className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => navigate("/partner-horses")}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -333,7 +337,7 @@ export default function PartnerHome() {
       </div>
 
       {/* Two columns: Upcoming + Recent */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 gap-6" data-tour="partner-appointments">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -392,7 +396,7 @@ export default function PartnerHome() {
       </div>
 
       {/* Horse Cards */}
-      <div>
+      <div data-tour="partner-horses">
         <h2 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
           <Heart className="h-5 w-5 text-primary" /> Freigegebene Pferde
         </h2>
