@@ -1,4 +1,7 @@
 import { Badge } from "@/components/ui/badge";
+import { DemoBadge } from "@/components/demo/DemoBadge";
+import { useAuth } from "@/hooks/useAuth";
+import { isDemoEmail } from "@/lib/demo-accounts";
 
 interface DashboardWelcomeHeaderProps {
   fullName?: string | null;
@@ -11,7 +14,9 @@ interface DashboardWelcomeHeaderProps {
  * Zeigt "Willkommen, [Vorname]" + #ID Badge darunter.
  */
 export function DashboardWelcomeHeader({ fullName, readableId, subtitle }: DashboardWelcomeHeaderProps) {
+  const { user } = useAuth();
   const firstName = fullName?.split(" ")[0];
+  const isDemo = isDemoEmail(user?.email);
 
   return (
     <div>
@@ -24,6 +29,7 @@ export function DashboardWelcomeHeader({ fullName, readableId, subtitle }: Dashb
             {readableId}
           </Badge>
         )}
+        {isDemo && <DemoBadge />}
         {subtitle && (
           <span className="text-sm text-muted-foreground">{subtitle}</span>
         )}
