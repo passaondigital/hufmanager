@@ -531,7 +531,11 @@ export default function Auth() {
               toast.error(error.message);
               setLoading(false);
             } else {
-              console.log('[DemoLogin] Success, redirecting...');
+              console.log('[DemoLogin] Success, seeding demo data...');
+              // Auto-seed demo data in background (fire & forget)
+              supabase.functions.invoke("setup-demo-accounts", { body: {} })
+                .then(res => console.log('[DemoLogin] Demo data seeded:', res.data))
+                .catch(err => console.warn('[DemoLogin] Demo seed skipped:', err));
               // Demo accounts: hard redirect to avoid race conditions with React state
               const roleMap: Record<string, string> = {
                 "hufbearbeiter.hufmanager@gmail.com": "/home",
