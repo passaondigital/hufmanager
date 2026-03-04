@@ -32,8 +32,8 @@ const CookieBanner = () => {
             </div>
           </div>
           <div className="flex gap-3 w-full md:w-auto">
-            <Button variant="outline" onClick={() => { localStorage.setItem("cookie-consent", "declined"); setIsVisible(false); }} className="flex-1 md:flex-none border-white/20 text-white hover:bg-white/10">Ablehnen</Button>
-            <Button onClick={() => { localStorage.setItem("cookie-consent", "accepted"); setIsVisible(false); initGA4(""); /* GA4 wird nach Consent geladen – ID wird aus useGA4 geholt */ }} className="flex-1 md:flex-none bg-primary hover:bg-primary/90 text-white">Akzeptieren</Button>
+            <Button variant="outline" onClick={() => { localStorage.setItem("cookie-consent", "essential-only"); setIsVisible(false); }} className="flex-1 md:flex-none border-white/20 text-white hover:bg-white/10">Nur notwendige</Button>
+            <Button onClick={() => { localStorage.setItem("cookie-consent", "accepted"); setIsVisible(false); initGA4(""); }} className="flex-1 md:flex-none bg-primary hover:bg-primary/90 text-white">Alle akzeptieren</Button>
           </div>
         </div>
       </div>
