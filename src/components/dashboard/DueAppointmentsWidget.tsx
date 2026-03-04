@@ -187,7 +187,7 @@ export function DueAppointmentsWidget() {
                 <span className="font-medium text-foreground truncate">
                   {horse.name}
                 </span>
-                {horse.is_overdue ? (
+                {horse.is_overdue && horse.days_until_due !== 0 ? (
                   <Badge variant="destructive" className="shrink-0">
                     {Math.abs(horse.days_until_due)} Tage überfällig
                   </Badge>
