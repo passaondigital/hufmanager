@@ -59,7 +59,7 @@ export function AppLayout() {
         </SheetContent>
       </Sheet>
 
-      <div className="flex-1 flex flex-col min-h-[100dvh] overflow-x-hidden">
+      <div className="flex-1 flex flex-col min-h-[100dvh] overflow-x-hidden lg:ml-64">
         {/* Mobile Header with Hamburger */}
         <header 
           className="lg:hidden h-14 max-h-14 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-3"
