@@ -5,15 +5,21 @@ import {
   customersTourSteps,
   calendarTourSteps,
   invoicesTourSteps,
+  partnerTourSteps,
+  employeeTourSteps,
+  clientTourSteps,
 } from './tourDefinitions';
 
-type TourName = 'dashboard' | 'customers' | 'calendar' | 'invoices';
+type TourName = 'dashboard' | 'customers' | 'calendar' | 'invoices' | 'partner' | 'employee' | 'client';
 
 const tourMap: Record<TourName, TourStep[]> = {
   dashboard: dashboardTourSteps,
   customers: customersTourSteps,
   calendar: calendarTourSteps,
   invoices: invoicesTourSteps,
+  partner: partnerTourSteps,
+  employee: employeeTourSteps,
+  client: clientTourSteps,
 };
 
 interface TourContextType {

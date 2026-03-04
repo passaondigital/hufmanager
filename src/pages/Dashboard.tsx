@@ -17,6 +17,7 @@ import { useTour } from "@/components/tour/TourContext";
 import { Button } from "@/components/ui/button";
 import { StatGridSkeleton } from "@/components/ui/skeletons";
 import { MilestoneCelebration } from "@/components/growth/MilestoneCelebration";
+import { DemoTourButton } from "@/components/demo/DemoTourButton";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -68,6 +69,7 @@ const Dashboard = () => {
           subtitle="Tagesübersicht"
         />
         <div className="flex items-center gap-3">
+          <DemoTourButton tourName="dashboard" />
           <Button
             variant="outline"
             size="sm"

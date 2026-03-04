@@ -20,6 +20,7 @@ import {
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, differenceInMinutes, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
 import { Link } from "react-router-dom";
+import { DemoTourButton } from "@/components/demo/DemoTourButton";
 
 const EmployeeDashboard = () => {
   const { user, signOut } = useAuth();
@@ -222,17 +223,20 @@ const EmployeeDashboard = () => {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      <DashboardWelcomeHeader
-        fullName={profile.full_name}
-        readableId={profile.id ? `EID-${profile.id.substring(0, 6).toUpperCase()}` : undefined}
-        subtitle={format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}
-      />
+      <div className="flex items-start justify-between gap-4">
+        <DashboardWelcomeHeader
+          fullName={profile.full_name}
+          readableId={profile.id ? `EID-${profile.id.substring(0, 6).toUpperCase()}` : undefined}
+          subtitle={format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}
+        />
+        <DemoTourButton tourName="employee" />
+      </div>
 
       {/* Onboarding */}
       <EmployeeOnboarding />
 
       {/* Quick Tour Link */}
-      <Link to="/employee/tour">
+      <Link to="/employee/tour" data-tour="employee-tour">
         <Card className="bg-primary/5 border-primary/20 hover:border-primary/40 transition-colors cursor-pointer">
           <CardContent className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -248,7 +252,7 @@ const EmployeeDashboard = () => {
       </Link>
 
       {/* 8 KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" data-tour="employee-kpi">
         <Card>
           <CardContent className="p-3 text-center">
             <Briefcase className="h-4 w-4 mx-auto mb-1 text-primary" />
@@ -347,7 +351,7 @@ const EmployeeDashboard = () => {
       </Card>
 
       {/* Assignments */}
-      <Card>
+      <Card data-tour="employee-assignments">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Heutige Aufträge</CardTitle>
           <CardDescription>Deine zugewiesenen Termine</CardDescription>
