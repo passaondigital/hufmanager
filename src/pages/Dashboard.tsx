@@ -10,7 +10,7 @@ import { FirstStepsChecklist } from "@/components/dashboard/FirstStepsChecklist"
 import { DashboardWelcomeHeader } from "@/components/dashboard/DashboardWelcomeHeader";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
-import { ProviderSetupWizard } from "@/components/onboarding/ProviderSetupWizard";
+import { OnboardingAssistant } from "@/components/onboarding/OnboardingAssistant";
 import { PushNotificationBanner } from "@/components/notifications/PushNotificationBanner";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { StatGridSkeleton } from "@/components/ui/skeletons";
@@ -46,9 +46,9 @@ const Dashboard = () => {
 
   return (
     <>
-      {/* Provider Onboarding - Setup Wizard */}
+      {/* Provider Onboarding - Setup Assistant */}
       {showOnboarding && (
-        <ProviderSetupWizard onComplete={completeOnboarding} />
+        <OnboardingAssistant onComplete={completeOnboarding} />
       )}
 
       <div className="space-y-6 pb-4">
