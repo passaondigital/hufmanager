@@ -392,7 +392,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
   return (
     <aside
       className={cn(
-        "h-screen bg-sidebar flex flex-col transition-all duration-300 border-r border-sidebar-border",
+        "fixed left-0 top-0 z-40 h-screen bg-sidebar flex flex-col transition-all duration-300 border-r border-sidebar-border",
         collapsed ? "w-[72px]" : "w-64"
       )}
     >
