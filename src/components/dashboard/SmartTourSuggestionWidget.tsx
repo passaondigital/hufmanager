@@ -138,7 +138,9 @@ export function SmartTourSuggestionWidget() {
     const groups = new Map<string, PLZGroup>();
     
     for (const horse of dueHorses) {
-      const prefix = horse.zip_code?.slice(0, 2) || "??";
+      // Skip horses with unknown/empty PLZ
+      if (!horse.zip_code || horse.zip_code.trim() === "") continue;
+      const prefix = horse.zip_code.slice(0, 2);
       const existing = groups.get(prefix);
       
       if (existing) {

@@ -3,10 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { isDemoEmail } from "@/lib/demo-accounts";
 
 export function PushNotificationBanner() {
   const { isSupported, isSubscribed, permission, loading, subscribe } = usePushNotifications();
   const [dismissed, setDismissed] = useState(false);
+  const { user } = useAuth();
 
   // Check if the user previously dismissed this banner
   useEffect(() => {
@@ -15,6 +18,22 @@ export function PushNotificationBanner() {
       setDismissed(true);
     }
   }, []);
+
+  // Track login count for real users
+  useEffect(() => {
+    if (user?.id && !isDemoEmail(user.email)) {
+      const key = `hm_login_count_${user.id}`;
+      const count = parseInt(localStorage.getItem(key) || "0", 10) + 1;
+      localStorage.setItem(key, String(count));
+    }
+  }, [user?.id]);
+
+  // Don't show for demo users
+  if (isDemoEmail(user?.email)) return null;
+
+  // Don't show before second login
+  const loginCount = parseInt(localStorage.getItem(`hm_login_count_${user?.id}`) || "0", 10);
+  if (loginCount < 2) return null;
 
   // Don't show if:
   // - Not supported

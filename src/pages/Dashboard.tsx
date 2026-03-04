@@ -2,12 +2,8 @@ import { Users, Calendar, TrendingUp, MessageSquare, Compass } from "lucide-reac
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { RecentCustomers } from "@/components/dashboard/RecentCustomers";
-import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointments";
-import { OverdueAssessmentsWidget } from "@/components/dashboard/OverdueAssessmentsWidget";
 import { DueAppointmentsWidget } from "@/components/dashboard/DueAppointmentsWidget";
 import { SmartTourSuggestionWidget } from "@/components/dashboard/SmartTourSuggestionWidget";
-import { RecentHorsesWidget } from "@/components/dashboard/RecentHorsesWidget";
 import { ShareInviteLinkCard } from "@/components/invite/ShareInviteLinkCard";
 import { HufrenteWidget } from "@/components/dashboard/HufrenteWidget";
 import { FirstStepsChecklist } from "@/components/dashboard/FirstStepsChecklist";
@@ -17,13 +13,10 @@ import { useOnboarding } from "@/hooks/useOnboarding";
 import { ProviderSetupWizard } from "@/components/onboarding/ProviderSetupWizard";
 import { PushNotificationBanner } from "@/components/notifications/PushNotificationBanner";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
-import { DemoCalendarEntry } from "@/components/demo/DemoCalendarEntry";
 import { useTour } from "@/components/tour/TourContext";
 import { Button } from "@/components/ui/button";
 import { StatGridSkeleton } from "@/components/ui/skeletons";
-import { FeatureDiscoveryHint } from "@/components/growth/FeatureDiscoveryHint";
 import { MilestoneCelebration } from "@/components/growth/MilestoneCelebration";
-import { SocialProofWidget } from "@/components/growth/SocialProofWidget";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -64,27 +57,8 @@ const Dashboard = () => {
       {/* Push Notification Banner */}
       <PushNotificationBanner />
 
-      {/* Demo Account Calendar Entry */}
-      <DemoCalendarEntry />
-
       {/* Growth: Milestone Celebrations */}
       <MilestoneCelebration />
-
-      {/* Growth: Feature Discovery */}
-      <FeatureDiscoveryHint />
-
-      {/* Growth: Social Proof */}
-      <SocialProofWidget />
-
-      {/* First Steps Checklist */}
-      <div data-tour="checklist">
-        <FirstStepsChecklist />
-      </div>
-
-      {/* Recent Horses Quick Access */}
-      <div data-tour="recent-horses">
-        <RecentHorsesWidget />
-      </div>
 
       {/* Welcome Section */}
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
@@ -109,7 +83,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* 1. KPI Stats Grid */}
       <div data-tour="stats-grid">
       {isLoading ? (
         <StatGridSkeleton />
@@ -167,25 +141,21 @@ const Dashboard = () => {
       )}
       </div>
 
-      {/* Due Appointments */}
+      {/* 2. Due Appointments */}
       <div data-tour="due-appointments">
         <DueAppointmentsWidget />
       </div>
 
-      {/* Hufrente Widget */}
-      <HufrenteWidget />
+      {/* 3. First Steps / Onboarding (only if not completed) */}
+      <div data-tour="checklist">
+        <FirstStepsChecklist />
+      </div>
 
-      {/* Smart Tour Suggestions */}
+      {/* 4. Smart Tour Suggestions */}
       <SmartTourSuggestionWidget />
 
-      {/* Overdue Assessments */}
-      <OverdueAssessmentsWidget />
-
-      {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <UpcomingAppointments />
-        <RecentCustomers />
-      </div>
+      {/* 5. Hufrente (nice to have, bottom) */}
+      <HufrenteWidget />
       </div>
     </>
   );
