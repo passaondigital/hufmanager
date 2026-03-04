@@ -394,8 +394,9 @@ export default function PartnerHome() {
       {/* Horse Cards */}
       <div>
         <h2 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-          <Heart className="h-5 w-5 text-primary" /> Meine Pferde
+          <Heart className="h-5 w-5 text-primary" /> Freigegebene Pferde
         </h2>
+        <p className="text-xs text-muted-foreground -mt-2 mb-3 ml-7">Nur Pferde die dir vom Besitzer explizit freigegeben wurden.</p>
         {grants.length === 0 ? (
           <Card className="border-dashed border-2 border-border">
             <CardContent className="p-8 text-center">

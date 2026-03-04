@@ -90,7 +90,7 @@ const getEmployeeNav = (permissions: Record<string, boolean>): NavigationConfig 
           { id: "material", label: "Material", iconName: "Package", path: "/employee/material" },
           { id: "absence", label: "Abwesenheiten", iconName: "CalendarOff", path: "/employee/abwesenheiten" },
           { id: "contract", label: "Vertrag", iconName: "FileText", path: "/employee/vertrag" },
-          { id: "services", label: "Leistungskatalog", iconName: "ShoppingBag", path: "/employee/angebot" },
+          
           { id: "notebook", label: "Mein Notizbuch", iconName: "Notebook", path: "/employee/notizbuch" },
         ],
       },
