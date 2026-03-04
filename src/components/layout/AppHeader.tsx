@@ -22,6 +22,7 @@ import { ConnectionStatus } from "@/components/offline/ConnectionStatus";
 import { supabase } from "@/integrations/supabase/client";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { useAutoflowMode, AutoflowMode } from "@/hooks/useAutoflowMode";
+import { DemoModeIndicator } from "@/components/demo/DemoModeIndicator";
 
 export function AppHeader() {
   const navigate = useNavigate();
@@ -172,6 +173,9 @@ export function AppHeader() {
         </Button>
 
         <NotificationBell />
+
+        {/* Demo Mode Indicator */}
+        <DemoModeIndicator />
 
         {/* User ID Badge */}
         {readableId && (
