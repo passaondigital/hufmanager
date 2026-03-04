@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { DashboardWelcomeHeader } from "@/components/dashboard/DashboardWelcomeHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -220,21 +221,18 @@ export default function PartnerHome() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">
-          Willkommen{profile?.full_name ? `, ${profile.full_name}` : ""}
-        </h1>
-        <div className="flex items-center gap-2 mt-1">
-          {profile?.readable_id && (
-            <Badge variant="outline" className="font-mono text-xs">{profile.readable_id}</Badge>
-          )}
-          {partnerType && (
-            <Badge variant="secondary" className="text-xs flex items-center gap-1">
-              <typeConfig.icon className={`h-3 w-3 ${typeConfig.color}`} />
-              {typeConfig.label}
-            </Badge>
-          )}
-        </div>
+      <div className="flex items-start justify-between gap-4">
+        <DashboardWelcomeHeader
+          fullName={profile?.full_name}
+          readableId={profile?.readable_id}
+          subtitle={partnerType ? typeConfig.label : undefined}
+        />
+        {partnerType && (
+          <Badge variant="secondary" className="text-xs flex items-center gap-1 shrink-0">
+            <typeConfig.icon className={`h-3 w-3 ${typeConfig.color}`} />
+            {typeConfig.label}
+          </Badge>
+        )}
       </div>
 
       {/* VERBESSERUNG 4: Onboarding Checklist */}

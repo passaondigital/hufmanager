@@ -1,4 +1,6 @@
 import { Users, Calendar, TrendingUp, MessageSquare, Compass } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentCustomers } from "@/components/dashboard/RecentCustomers";
 import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointments";
@@ -9,6 +11,7 @@ import { RecentHorsesWidget } from "@/components/dashboard/RecentHorsesWidget";
 import { ShareInviteLinkCard } from "@/components/invite/ShareInviteLinkCard";
 import { HufrenteWidget } from "@/components/dashboard/HufrenteWidget";
 import { FirstStepsChecklist } from "@/components/dashboard/FirstStepsChecklist";
+import { DashboardWelcomeHeader } from "@/components/dashboard/DashboardWelcomeHeader";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { ProviderSetupWizard } from "@/components/onboarding/ProviderSetupWizard";
@@ -28,6 +31,20 @@ const Dashboard = () => {
   const { data: stats, isLoading } = useDashboardStats();
   const { startTour } = useTour();
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Hufbearbeiter";
+
+  // Fetch readable_id for the welcome header
+  const { data: profileData } = useQuery({
+    queryKey: ["provider-profile-id", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("readable_id")
+        .eq("id", user!.id)
+        .single();
+      return data;
+    },
+    enabled: !!user,
+  });
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("de-DE", {
@@ -71,12 +88,11 @@ const Dashboard = () => {
 
       {/* Welcome Section */}
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{displayName}</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Tagesübersicht
-          </p>
-        </div>
+        <DashboardWelcomeHeader
+          fullName={displayName}
+          readableId={profileData?.readable_id}
+          subtitle="Tagesübersicht"
+        />
         <div className="flex items-center gap-3">
           <Button
             variant="outline"

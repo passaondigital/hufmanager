@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DashboardWelcomeHeader } from "@/components/dashboard/DashboardWelcomeHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -221,12 +222,11 @@ const EmployeeDashboard = () => {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      <div>
-        <h1 className="text-xl font-bold">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          {format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}
-        </p>
-      </div>
+      <DashboardWelcomeHeader
+        fullName={profile.full_name}
+        readableId={profile.id ? `EID-${profile.id.substring(0, 6).toUpperCase()}` : undefined}
+        subtitle={format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}
+      />
 
       {/* Onboarding */}
       <EmployeeOnboarding />
