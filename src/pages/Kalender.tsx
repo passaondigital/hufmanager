@@ -17,6 +17,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -326,7 +327,7 @@ const Kalender = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Kalender</h1>
+          <h1 className="text-2xl font-bold flex items-center gap-2">Kalender <HelpTip id="kalender.bereich" /></h1>
           <p className="text-muted-foreground">
             {filteredAppointments.length}
             {filteredAppointments.length !== appointments.length

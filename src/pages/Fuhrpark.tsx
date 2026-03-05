@@ -19,6 +19,7 @@ import {
   Droplets, ParkingCircle, FileText,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { format, differenceInDays } from "date-fns";
 import { de } from "date-fns/locale";
 import { useFuelPrices, getCheapestPrice, mapFuelType } from "@/hooks/useFuelPrices";
@@ -102,6 +103,7 @@ export default function Fuhrpark() {
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
           <Car className="h-7 w-7 text-primary" />
           Fuhrpark
+          <HelpTip id="fuhrpark.bereich" />
         </h1>
         <p className="text-muted-foreground mt-1">
           Fahrzeuge, Kosten & Kilometerstand verwalten

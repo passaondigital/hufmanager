@@ -4,6 +4,7 @@ import { EmployeeList, ProviderControlCenter } from "@/components/team";
 import { AbsenceManagement } from "@/components/team/AbsenceManagement";
 import { MaterialAssignment } from "@/components/team/MaterialAssignment";
 import { Users, LayoutDashboard, CalendarOff, Package } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 
 const TeamPage = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -11,7 +12,7 @@ const TeamPage = () => {
   return (
     <div className="container mx-auto py-6 px-4 max-w-7xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-1">Team-Verwaltung</h1>
+        <h1 className="text-2xl font-bold mb-1 flex items-center gap-2">Team-Verwaltung <HelpTip id="team.bereich" /></h1>
         <p className="text-muted-foreground">
           Verwalte dein Team, weise Termine zu und behalte den Überblick
         </p>

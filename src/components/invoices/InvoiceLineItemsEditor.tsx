@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Package, Plus, Trash2 } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 
 export interface InvoiceLineItem {
   id: string;
@@ -58,6 +59,7 @@ export function InvoiceLineItemsEditor({
         <Label className="text-base font-semibold flex items-center gap-2">
           <Package className="h-4 w-4" />
           Rechnungspositionen
+          <HelpTip id="rechnungen.position-hinzufuegen" />
         </Label>
         <Button
           type="button"
@@ -133,7 +135,7 @@ export function InvoiceLineItemsEditor({
               {/* Quantity and Price */}
               <div className="flex items-center gap-2 flex-wrap">
                 <div className="flex items-center gap-1.5">
-                  <Label className="text-xs text-muted-foreground shrink-0">Menge:</Label>
+                  <Label className="text-xs text-muted-foreground shrink-0 flex items-center gap-1">Menge: <HelpTip id="rechnungen.menge" /></Label>
                   <Input
                     type="number"
                     min="1"
@@ -144,7 +146,7 @@ export function InvoiceLineItemsEditor({
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <Label className="text-xs text-muted-foreground shrink-0">Preis €:</Label>
+                  <Label className="text-xs text-muted-foreground shrink-0 flex items-center gap-1">Preis €: <HelpTip id="rechnungen.einzel-preis" /></Label>
                   <Input
                     type="number"
                     step="0.01"
