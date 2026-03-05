@@ -136,9 +136,13 @@ export function CockpitReady({
                 {apt.status === "completed" && (
                   <Badge variant="secondary" className="text-xs bg-chart-2/10 text-chart-2">✓</Badge>
                 )}
-                {!apt.client?.geo_lat && (
-                  <Badge variant="outline" className="text-xs text-destructive border-destructive/30">
-                    Keine Koord.
+                {!apt.client?.geo_lat && !apt.client?.geo_lng && (
+                  <Badge variant="outline" className="text-xs text-muted-foreground border-muted-foreground/30">
+                    <MapPin className="h-3 w-3 mr-0.5" />
+                    {apt.client?.street || apt.client?.zip || apt.client?.city
+                      ? "Nur Adresse"
+                      : "Keine Adresse"
+                    }
                   </Badge>
                 )}
               </motion.div>
