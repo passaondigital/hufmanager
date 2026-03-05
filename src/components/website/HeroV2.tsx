@@ -24,13 +24,13 @@ const HeroV2 = () => {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <div className="space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/10 animate-fade-up">
-              <span className="text-xs font-semibold text-primary">Für Hufbearbeiter · Therapeuten · Trainer · und mehr</span>
+              <span className="text-xs font-semibold text-primary">Hufbearbeiter · Osteopathen · Physios · Dentisten · Trainer · Sattler</span>
             </div>
             <h1 className="font-sans text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-[1.08] tracking-tight animate-fade-up" style={{ animationDelay: "0ms" }}>
-              Die Plattform, die Pferde-Profis <span className="text-primary">den Rücken freihält.</span>
+              Der digitale Assistent für alle <span className="text-primary">mobilen Pferdeprofis.</span>
             </h1>
             <p className="text-xl md:text-2xl text-white/80 font-medium leading-snug animate-fade-up" style={{ animationDelay: "100ms" }}>
-              Mehr Zeit für das, was dir wirklich wichtig ist:
+              Hufbearbeiter, Osteopathen, Physios & Co. – ein Tool für deinen ganzen Arbeitstag.
             </p>
             <div className="flex flex-wrap gap-2 animate-fade-up" style={{ animationDelay: "150ms" }}>
               {highlights.map((item) => (
@@ -55,7 +55,7 @@ const HeroV2 = () => {
           <div className="relative animate-fade-up lg:pl-8" style={{ animationDelay: "300ms" }}>
             <div className="relative mx-auto max-w-[420px] lg:max-w-[500px]">
               <div className="absolute inset-0 bg-primary/20 blur-[80px] scale-75" />
-              <img src={heroHorse} alt="HufManager – Die Plattform für Pferde-Profis" className="relative w-full h-auto drop-shadow-2xl" />
+              <img src={heroHorse} alt="HufManager – Der digitale Assistent für alle mobilen Pferdeprofis" className="relative w-full h-auto drop-shadow-2xl" />
             </div>
           </div>
         </div>
