@@ -1,6 +1,7 @@
 // HufManager Service Worker for Push Notifications & Offline Support
 
 const CACHE_NAME = 'hufmanager-v2';
+const TILE_CACHE_NAME = 'hufmanager-tiles-v1';
 
 // Static assets to cache immediately
 const STATIC_ASSETS = [
@@ -24,7 +25,8 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
+          // Keep tile cache and current app cache, delete old ones
+          if (cacheName !== CACHE_NAME && cacheName !== TILE_CACHE_NAME) {
             console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
@@ -46,6 +48,32 @@ self.addEventListener('fetch', (event) => {
 
   // Skip Supabase API calls - let them use normal network behavior
   if (url.hostname.includes('supabase')) {
+    return;
+  }
+
+  // OSM Tile requests: cache-first with tile-specific cache
+  if (url.hostname === 'tile.openstreetmap.org') {
+    event.respondWith(
+      caches.open(TILE_CACHE_NAME).then((cache) => {
+        return cache.match(request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          return fetch(request).then((response) => {
+            if (response && response.ok) {
+              cache.put(request, response.clone());
+            }
+            return response;
+          }).catch(() => {
+            // Offline: return a 1x1 grey PNG as fallback tile
+            return new Response(
+              Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mO88f9/PQAJhAN0x1wNHwAAAABJRU5ErkJggg=='), c => c.charCodeAt(0)),
+              { headers: { 'Content-Type': 'image/png' } }
+            );
+          });
+        });
+      })
+    );
     return;
   }
 
@@ -200,5 +228,12 @@ self.addEventListener('sync', (event) => {
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+  if (event.data && event.data.type === 'CLEAR_TILE_CACHE') {
+    event.waitUntil(
+      caches.delete(TILE_CACHE_NAME).then(() => {
+        console.log('[SW] Tile cache cleared via message');
+      })
+    );
   }
 });
