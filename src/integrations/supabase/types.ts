@@ -1068,6 +1068,8 @@ export type Database = {
           updated_at: string
           user_id: string | null
           vat_id: string | null
+          vehicle_consumption_per_100km: number | null
+          vehicle_fuel_type: string | null
           website_active_pages: Json | null
           website_navigation: Json | null
           whatsapp_enabled: boolean | null
@@ -1131,6 +1133,8 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           vat_id?: string | null
+          vehicle_consumption_per_100km?: number | null
+          vehicle_fuel_type?: string | null
           website_active_pages?: Json | null
           website_navigation?: Json | null
           whatsapp_enabled?: boolean | null
@@ -1194,6 +1198,8 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           vat_id?: string | null
+          vehicle_consumption_per_100km?: number | null
+          vehicle_fuel_type?: string | null
           website_active_pages?: Json | null
           website_navigation?: Json | null
           whatsapp_enabled?: boolean | null
