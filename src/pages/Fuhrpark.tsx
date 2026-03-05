@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,6 +21,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { format, differenceInDays } from "date-fns";
 import { de } from "date-fns/locale";
+import { useFuelPrices, getCheapestPrice, mapFuelType } from "@/hooks/useFuelPrices";
 
 // ============= Types =============
 interface Vehicle {
@@ -425,14 +426,38 @@ function CostsTab() {
   });
 
   const { data: vehicles = [] } = useQuery({
-    queryKey: ["fuhrpark-vehicles", user?.id],
+    queryKey: ["fuhrpark-vehicles-full", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("provider_vehicles").select("id, name, brand, model, license_plate").eq("provider_id", user!.id);
+      const { data, error } = await supabase.from("provider_vehicles").select("id, name, brand, model, license_plate, fuel_type, average_consumption").eq("provider_id", user!.id);
       if (error) throw error;
       return data;
     },
     enabled: !!user?.id,
   });
+
+  // Fetch live fuel prices (browser GPS)
+  const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
+  useEffect(() => {
+    navigator.geolocation?.getCurrentPosition(
+      (pos) => setGpsCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {},
+      { timeout: 5000, maximumAge: 300000 }
+    );
+  }, []);
+
+  const { data: fuelData } = useFuelPrices({ lat: gpsCoords?.lat, lng: gpsCoords?.lng, enabled: !!gpsCoords });
+  const isFuel = costForm.cost_type === "fuel";
+
+  // Prefill price_per_liter when dialog opens with fuel type
+  useEffect(() => {
+    if (!dialogOpen || !isFuel || !fuelData?.stations?.length || costForm.price_per_liter) return;
+    const selectedVehicle = vehicles.find((v) => v.id === costForm.vehicle_id);
+    const fuelKey = mapFuelType(selectedVehicle?.fuel_type || null) || "diesel";
+    const { price } = getCheapestPrice(fuelData.stations, fuelKey);
+    if (price) {
+      setCostForm((prev) => ({ ...prev, price_per_liter: price }));
+    }
+  }, [dialogOpen, costForm.vehicle_id, fuelData, isFuel]);
 
   const { data: costs = [], isLoading } = useQuery({
     queryKey: ["fuhrpark-costs", user?.id],
@@ -494,7 +519,7 @@ function CostsTab() {
     return v?.name || `${v?.brand || ""} ${v?.model || ""}`.trim() || v?.license_plate || "–";
   };
 
-  const isFuel = costForm.cost_type === "fuel";
+  // isFuel defined above with hooks
 
   return (
     <div className="space-y-4">

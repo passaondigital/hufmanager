@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Tooltip,
@@ -9,8 +13,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Car, Info, MapPin, Plus } from "lucide-react";
+import { Car, Fuel, Info, MapPin, Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useFuelPrices, getCheapestPrice, mapFuelType } from "@/hooks/useFuelPrices";
 import type { InvoiceLineItem } from "./InvoiceLineItemsEditor";
 
 interface Client {
@@ -41,6 +46,7 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 }
 
 export function TravelCostEditor({ clientId, clients, onAddTravelCost }: TravelCostEditorProps) {
+  const { user } = useAuth();
   const [showTravelCost, setShowTravelCost] = useState(false);
   const [travelCostMode, setTravelCostMode] = useState<"kilometer" | "pauschale">("kilometer");
   const [travelKm, setTravelKm] = useState<string>("");
@@ -48,6 +54,57 @@ export function TravelCostEditor({ clientId, clients, onAddTravelCost }: TravelC
   const [flatAmount, setFlatAmount] = useState<string>("");
   const [flatDescription, setFlatDescription] = useState<string>("Anfahrtspauschale");
   const [calculatedTravelCost, setCalculatedTravelCost] = useState<number>(0);
+  const [useLiveFuel, setUseLiveFuel] = useState(false);
+  const [liveFuelCost, setLiveFuelCost] = useState<number | null>(null);
+
+  // Fetch primary vehicle for consumption data
+  const { data: primaryVehicle } = useQuery({
+    queryKey: ["primary-vehicle-for-travel", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("provider_vehicles")
+        .select("fuel_type, average_consumption")
+        .eq("provider_id", user!.id)
+        .eq("is_primary", true)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch live fuel prices
+  const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
+  useEffect(() => {
+    navigator.geolocation?.getCurrentPosition(
+      (pos) => setGpsCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {},
+      { timeout: 5000, maximumAge: 300000 }
+    );
+  }, []);
+
+  const { data: fuelData } = useFuelPrices({
+    lat: gpsCoords?.lat,
+    lng: gpsCoords?.lng,
+    enabled: !!gpsCoords && useLiveFuel,
+  });
+
+  // Calculate live fuel cost
+  useEffect(() => {
+    if (!useLiveFuel || !fuelData?.stations?.length || !primaryVehicle?.average_consumption) {
+      setLiveFuelCost(null);
+      return;
+    }
+    const km = parseFloat(travelKm) || 0;
+    const fuelKey = mapFuelType(primaryVehicle.fuel_type) || "diesel";
+    const { price } = getCheapestPrice(fuelData.stations, fuelKey);
+    if (price && km > 0) {
+      // km × 2 (hin+rück) × (consumption/100) × price
+      const cost = km * 2 * (primaryVehicle.average_consumption / 100) * price;
+      setLiveFuelCost(Math.round(cost * 100) / 100);
+    } else {
+      setLiveFuelCost(null);
+    }
+  }, [useLiveFuel, fuelData, travelKm, primaryVehicle]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("de-DE", {
@@ -96,8 +153,11 @@ export function TravelCostEditor({ clientId, clients, onAddTravelCost }: TravelC
   };
 
   const addTravelCostAsLineItem = () => {
+    const useLive = useLiveFuel && liveFuelCost !== null;
     const title = travelCostMode === "kilometer"
-      ? `Anfahrt: ${travelKm} km (Hin- und Rückfahrt)`
+      ? useLive
+        ? `Anfahrt: ${travelKm} km (Hin- und Rückfahrt) – Spritkosten live`
+        : `Anfahrt: ${travelKm} km (Hin- und Rückfahrt)`
       : flatDescription.trim() || "Anfahrtspauschale";
     
     const newLineItem: InvoiceLineItem = {
@@ -105,7 +165,7 @@ export function TravelCostEditor({ clientId, clients, onAddTravelCost }: TravelC
       inventory_item_id: null,
       title,
       quantity: 1,
-      unit_price: calculatedTravelCost,
+      unit_price: useLive ? liveFuelCost : calculatedTravelCost,
     };
     
     onAddTravelCost(newLineItem);
@@ -223,10 +283,33 @@ export function TravelCostEditor({ clientId, clients, onAddTravelCost }: TravelC
                   />
                   <span className="text-xs text-muted-foreground">€</span>
                 </div>
-                <p className="text-xs text-muted-foreground pl-0.5">
-                  Standard: 0,30€ - 0,60€. Dieser Wert multipliziert sich mit der doppelten Strecke (Hin/Rück).
-                </p>
+              <p className="text-xs text-muted-foreground pl-0.5">
+                Standard: 0,30€ - 0,60€. Dieser Wert multipliziert sich mit der doppelten Strecke (Hin/Rück).
+              </p>
               </div>
+
+              {/* Live Fuel Cost Toggle */}
+              {primaryVehicle?.average_consumption && (
+                <div className="flex items-center justify-between p-2 rounded-lg bg-muted/40 border border-dashed">
+                  <Label className="flex items-center gap-2 text-xs cursor-pointer">
+                    <Fuel className="h-3.5 w-3.5 text-primary" />
+                    Spritkosten live berechnen
+                  </Label>
+                  <Switch
+                    checked={useLiveFuel}
+                    onCheckedChange={setUseLiveFuel}
+                  />
+                </div>
+              )}
+
+              {useLiveFuel && liveFuelCost !== null && (
+                <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-primary/5 border border-primary/20">
+                  <span className="text-muted-foreground">
+                    {travelKm} km × 2 × {primaryVehicle?.average_consumption} l/100km × Live-Preis
+                  </span>
+                  <span className="font-semibold text-primary">{formatCurrency(liveFuelCost)}</span>
+                </div>
+              )}
               
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">
