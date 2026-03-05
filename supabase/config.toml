@@ -107,3 +107,6 @@ verify_jwt = false
 
 [functions.fuel-prices]
 verify_jwt = false
+
+[functions.get-route]
+verify_jwt = true

@@ -42,6 +42,7 @@ import { TourPdfExport } from "./TourPdfExport";
 import { NearbyCustomersPanel, NearbyCustomersMarkers } from "./NearbyCustomersLayer";
 import { StableGroupPanel } from "./StableGroupPanel";
 import { EmergencyModeButton } from "@/components/tour/EmergencyModeButton";
+import { calculateRoute } from "@/lib/routeService";
 
 import "leaflet/dist/leaflet.css";
 
@@ -332,7 +333,7 @@ export function TourManager() {
     return positions;
   }, [orderedAppointments, userLocation]);
 
-  // Calculate route using OSRM — DEBOUNCED (800ms)
+  // Calculate route using OpenRouteService — DEBOUNCED (800ms)
   useEffect(() => {
     if (routePositions.length < 2) {
       setRouteInfo(null);
@@ -345,19 +346,9 @@ export function TourManager() {
       setIsCalculatingRoute(true);
       
       try {
-        const coords = routePositions.map(p => `${p[1]},${p[0]}`).join(";");
-        const response = await fetch(
-          `https://router.project-osrm.org/route/v1/driving/${coords}?overview=false`
-        );
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.routes?.[0]) {
-            setRouteInfo({
-              distance: Math.round(data.routes[0].distance / 100) / 10,
-              duration: Math.round(data.routes[0].duration / 60),
-            });
-          }
+        const result = await calculateRoute(routePositions);
+        if (result) {
+          setRouteInfo(result);
         }
       } catch (error) {
         console.error("Error calculating route:", error);

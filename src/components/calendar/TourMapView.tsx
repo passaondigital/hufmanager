@@ -28,6 +28,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { calculateRoute as calculateRouteORS } from "@/lib/routeService";
 
 // Fix Leaflet default icon issue
 import "leaflet/dist/leaflet.css";
@@ -379,9 +380,9 @@ export const TourMapView = ({
     return positions;
   }, [orderedAppointments, userLocation]);
 
-  // Calculate route using OSRM
+  // Calculate route using OpenRouteService
   useEffect(() => {
-    const calculateRoute = async () => {
+    const doCalculateRoute = async () => {
       if (routePositions.length < 2) {
         setRouteInfo(null);
         return;
@@ -390,22 +391,9 @@ export const TourMapView = ({
       setIsCalculatingRoute(true);
       
       try {
-        const coords = routePositions
-          .map(p => `${p[1]},${p[0]}`)
-          .join(";");
-        
-        const response = await fetch(
-          `https://router.project-osrm.org/route/v1/driving/${coords}?overview=false`
-        );
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.routes?.[0]) {
-            setRouteInfo({
-              distance: Math.round(data.routes[0].distance / 100) / 10,
-              duration: Math.round(data.routes[0].duration / 60),
-            });
-          }
+        const result = await calculateRouteORS(routePositions);
+        if (result) {
+          setRouteInfo(result);
         }
       } catch (error) {
         console.error("Error calculating route:", error);
@@ -414,7 +402,7 @@ export const TourMapView = ({
       }
     };
 
-    calculateRoute();
+    doCalculateRoute();
   }, [routePositions]);
 
   const defaultCenter: [number, number] = [51.1657, 10.4515];
