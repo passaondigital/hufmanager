@@ -104,3 +104,6 @@ verify_jwt = false
 
 [functions.anomaly-detection]
 verify_jwt = false
+
+[functions.fuel-prices]
+verify_jwt = false

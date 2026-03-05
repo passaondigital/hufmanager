@@ -6,6 +6,7 @@ import { DueAppointmentsWidget } from "@/components/dashboard/DueAppointmentsWid
 import { SmartTourSuggestionWidget } from "@/components/dashboard/SmartTourSuggestionWidget";
 import { ShareInviteLinkCard } from "@/components/invite/ShareInviteLinkCard";
 import { HufrenteWidget } from "@/components/dashboard/HufrenteWidget";
+import { FuelPriceWidget } from "@/components/dashboard/FuelPriceWidget";
 import { FirstStepsChecklist } from "@/components/dashboard/FirstStepsChecklist";
 import { DashboardWelcomeHeader } from "@/components/dashboard/DashboardWelcomeHeader";
 import { useAuth } from "@/hooks/useAuth";
@@ -144,7 +145,10 @@ const Dashboard = () => {
       {/* 4. Smart Tour Suggestions */}
       <SmartTourSuggestionWidget />
 
-      {/* 5. Hufrente (nice to have, bottom) */}
+      {/* 5. Live Fuel Prices */}
+      <FuelPriceWidget />
+
+      {/* 6. Hufrente (nice to have, bottom) */}
       <HufrenteWidget />
       </div>
     </>
