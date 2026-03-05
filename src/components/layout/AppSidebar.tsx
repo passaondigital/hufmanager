@@ -191,9 +191,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       icon: Calendar,
       subItems: [
         { title: "Kalender", url: "/kalender", icon: Calendar, description: "Termine planen" },
-        { title: "Tour Manager", url: "/tour", icon: Map, description: "High-End Routenplanung", isBeta: true },
-        { title: "Zeit-Tracking", url: "/work-mode?tab=timer", icon: Timer, description: "Arbeitszeit erfassen" },
-        { title: "km-Tracker", url: "/work-mode?tab=mileage", icon: Route, description: "Fahrten dokumentieren" },
+        { title: "Tages-Cockpit", url: "/tour", icon: Calendar, description: "Tour · Zeit · km · Sprit" },
         { title: "HufCam Pro", url: "/work-mode?tab=hufcam", icon: Camera, description: "Foto-Dokumentation" },
         { title: "Hufanalyse", url: "/work-mode?tab=analyse", icon: FileCheck, description: "LTZ-Analyse-Bögen" },
         { title: "Feedback", url: "/auffassen", icon: Star, description: "Bewertungen sammeln" },
