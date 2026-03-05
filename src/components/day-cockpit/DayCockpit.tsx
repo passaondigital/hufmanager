@@ -1,0 +1,467 @@
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { calculateRoute } from "@/lib/routeService";
+import { prefetchTilesForRoute, clearTileCache } from "@/lib/tilePrefetch";
+import { useFuelPrices, getCheapestPrice, mapFuelType } from "@/hooks/useFuelPrices";
+import type { TourAppointment } from "@/components/tour-manager/TourCard";
+
+import { CockpitReady } from "./CockpitReady";
+import { CockpitUnderway } from "./CockpitUnderway";
+import { CockpitComplete } from "./CockpitComplete";
+
+export type CockpitState = "ready" | "underway" | "complete";
+
+export function DayCockpit() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const today = format(new Date(), "yyyy-MM-dd");
+
+  const [cockpitState, setCockpitState] = useState<CockpitState>("ready");
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [routeInfo, setRouteInfo] = useState<{ distance: number; duration: number } | null>(null);
+  const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
+  const [activeAppointmentIndex, setActiveAppointmentIndex] = useState(0);
+  const [tourId, setTourId] = useState<string | null>(null);
+  const [tourStartTime, setTourStartTime] = useState<Date | null>(null);
+  const [gpsTotalKm, setGpsTotalKm] = useState(0);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  const lastGpsRef = useRef<{ lat: number; lng: number } | null>(null);
+  const gpsWatchRef = useRef<number | null>(null);
+  const routeDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Online/offline detection
+  useEffect(() => {
+    const onOnline = () => setIsOnline(true);
+    const onOffline = () => setIsOnline(false);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+    };
+  }, []);
+
+  // Fetch today's appointments
+  const { data: appointments = [], isLoading } = useQuery({
+    queryKey: ["cockpit-appointments", today, user?.id],
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    queryFn: async () => {
+      if (!user?.id) return [];
+
+      const { data: aptData, error } = await supabase
+        .from("appointments")
+        .select(`
+          id, date, time, status, service_type, is_emergency, tour_order,
+          horses!inner(id, name, owner_id, latitude, longitude)
+        `)
+        .eq("date", today)
+        .eq("provider_id", user.id)
+        .neq("status", "cancelled")
+        .order("tour_order", { ascending: true, nullsFirst: false })
+        .order("time", { ascending: true });
+
+      if (error || !aptData) return [];
+
+      const ownerIds = [...new Set(
+        aptData.map(apt => apt.horses?.owner_id).filter((id): id is string => !!id)
+      )];
+
+      const { data: contacts } = ownerIds.length > 0
+        ? await supabase
+            .from("contacts")
+            .select("id, profile_id, full_name, street, zip_code, city")
+            .eq("provider_id", user.id)
+            .in("profile_id", ownerIds)
+        : { data: [] };
+
+      const { data: profiles } = ownerIds.length > 0
+        ? await supabase
+            .from("profiles")
+            .select("id, full_name, readable_id")
+            .in("id", ownerIds)
+        : { data: [] };
+
+      const contactMap = Object.fromEntries((contacts || []).map(c => [c.profile_id, c]));
+      const profileMap = Object.fromEntries((profiles || []).map(p => [p.id, p]));
+
+      const grouped: Record<string, TourAppointment> = {};
+      aptData.forEach(apt => {
+        const horse = apt.horses;
+        const contact = horse?.owner_id ? contactMap[horse.owner_id] : null;
+        const profile = horse?.owner_id ? profileMap[horse.owner_id] : null;
+
+        if (!grouped[apt.id]) {
+          grouped[apt.id] = {
+            id: apt.id,
+            date: apt.date,
+            time: apt.time,
+            status: apt.status,
+            service_type: apt.service_type,
+            is_emergency: apt.is_emergency,
+            horses: [],
+            horse_count: 0,
+            client: horse?.owner_id ? {
+              id: horse.owner_id,
+              readable_id: profile?.readable_id || undefined,
+              full_name: contact?.full_name || profile?.full_name || "Unbekannt",
+              geo_lat: horse.latitude || null,
+              geo_lng: horse.longitude || null,
+              street: contact?.street || null,
+              zip: contact?.zip_code || null,
+              city: contact?.city || null,
+            } : null,
+          };
+        }
+        if (horse) {
+          grouped[apt.id].horses?.push({ id: horse.id, name: horse.name, owner_id: horse.owner_id });
+          grouped[apt.id].horse_count = (grouped[apt.id].horse_count || 0) + 1;
+        }
+      });
+
+      return Object.values(grouped);
+    },
+    enabled: !!user?.id,
+  });
+
+  // Check for active tour on mount
+  useEffect(() => {
+    const checkActiveTour = async () => {
+      if (!user?.id) return;
+      const { data } = await supabase
+        .from("daily_tours")
+        .select("id, tour_active_since, tour_ended_at")
+        .eq("provider_id", user.id)
+        .eq("tour_date", today)
+        .maybeSingle();
+
+      if (data?.tour_active_since && !data.tour_ended_at) {
+        setTourId(data.id);
+        setTourStartTime(new Date(data.tour_active_since));
+        setCockpitState("underway");
+      } else if (data?.tour_ended_at) {
+        setTourId(data.id);
+        setCockpitState("complete");
+      }
+    };
+    checkActiveTour();
+  }, [user?.id, today]);
+
+  // Route positions
+  const routePositions = useMemo(() => {
+    const positions: [number, number][] = [];
+    if (userLocation) positions.push(userLocation);
+    appointments.forEach(apt => {
+      if (apt.client?.geo_lat && apt.client?.geo_lng) {
+        positions.push([apt.client.geo_lat, apt.client.geo_lng]);
+      }
+    });
+    return positions;
+  }, [appointments, userLocation]);
+
+  // Route calculation (debounced)
+  useEffect(() => {
+    if (routePositions.length < 2) { setRouteInfo(null); return; }
+    if (routeDebounceRef.current) clearTimeout(routeDebounceRef.current);
+    routeDebounceRef.current = setTimeout(async () => {
+      setIsCalculatingRoute(true);
+      try {
+        const result = await calculateRoute(routePositions);
+        if (result) setRouteInfo(result);
+      } catch (e) {
+        console.error("Route calc error:", e);
+      } finally {
+        setIsCalculatingRoute(false);
+      }
+    }, 800);
+    return () => { if (routeDebounceRef.current) clearTimeout(routeDebounceRef.current); };
+  }, [routePositions]);
+
+  // Vehicle & fuel data
+  const { data: vehicle } = useQuery({
+    queryKey: ["cockpit-vehicle", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("provider_vehicles")
+        .select("id, average_consumption, fuel_type, price_per_km")
+        .eq("provider_id", user!.id)
+        .eq("is_primary", true)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  const { data: fuelData } = useFuelPrices({
+    lat: userLocation?.[0],
+    lng: userLocation?.[1],
+    enabled: !!userLocation && !!vehicle?.average_consumption,
+  });
+
+  const fuelKey = mapFuelType(vehicle?.fuel_type) || "diesel";
+  const livePrice = fuelData?.stations
+    ? getCheapestPrice(fuelData.stations, fuelKey).price
+    : null;
+
+  const estimatedFuelCost = useMemo(() => {
+    if (!routeInfo?.distance || !vehicle?.average_consumption || !livePrice) return null;
+    return Math.round(routeInfo.distance * (vehicle.average_consumption / 100) * livePrice * 100) / 100;
+  }, [routeInfo?.distance, vehicle?.average_consumption, livePrice]);
+
+  // Haversine distance
+  const haversine = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+    const R = 6371;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLng = ((lng2 - lng1) * Math.PI) / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+      Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  };
+
+  // GPS tracking during tour
+  useEffect(() => {
+    if (cockpitState !== "underway" || !tourId) return;
+    if (!("geolocation" in navigator)) return;
+
+    gpsWatchRef.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        const { latitude, longitude, accuracy } = pos.coords;
+        setUserLocation([latitude, longitude]);
+
+        // Accumulate km
+        if (lastGpsRef.current) {
+          const d = haversine(lastGpsRef.current.lat, lastGpsRef.current.lng, latitude, longitude);
+          if (d > 0.05) { // 50m threshold
+            setGpsTotalKm(prev => prev + d);
+            lastGpsRef.current = { lat: latitude, lng: longitude };
+          }
+        } else {
+          lastGpsRef.current = { lat: latitude, lng: longitude };
+        }
+
+        // Save breadcrumb (100m threshold)
+        if (lastGpsRef.current) {
+          supabase.from("tour_breadcrumbs").insert({
+            tour_id: tourId,
+            provider_id: user!.id,
+            latitude, longitude, accuracy,
+            tour_date: today,
+          }).then(() => {});
+        }
+      },
+      (err) => console.error("GPS error:", err),
+      { enableHighAccuracy: true, maximumAge: 60000, timeout: 10000 }
+    );
+
+    return () => {
+      if (gpsWatchRef.current !== null) {
+        navigator.geolocation.clearWatch(gpsWatchRef.current);
+      }
+    };
+  }, [cockpitState, tourId, user?.id, today]);
+
+  // User location for "ready" state
+  useEffect(() => {
+    if (cockpitState !== "ready") return;
+    if (!("geolocation" in navigator)) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
+      () => {},
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, [cockpitState]);
+
+  // Start tour
+  const handleStartTour = async () => {
+    if (!user?.id) return;
+    try {
+      const { data: existing } = await supabase
+        .from("daily_tours")
+        .select("id")
+        .eq("provider_id", user.id)
+        .eq("tour_date", today)
+        .maybeSingle();
+
+      let newTourId: string;
+      if (existing) {
+        await supabase.from("daily_tours")
+          .update({ tour_active_since: new Date().toISOString(), tour_ended_at: null })
+          .eq("id", existing.id);
+        newTourId = existing.id;
+      } else {
+        const { data: newTour } = await supabase.from("daily_tours")
+          .insert({ provider_id: user.id, tour_date: today, tour_active_since: new Date().toISOString() })
+          .select("id").single();
+        newTourId = newTour!.id;
+      }
+
+      // Start work session
+      await supabase.from("work_sessions").insert({
+        provider_id: user.id,
+        started_at: new Date().toISOString(),
+        status: "active",
+        break_duration_minutes: 0,
+      });
+
+      // Create mileage log
+      await supabase.from("vehicle_mileage_logs").insert({
+        provider_id: user.id,
+        vehicle_id: vehicle?.id,
+        log_date: today,
+        odometer_start: 0,
+      });
+
+      setTourId(newTourId);
+      setTourStartTime(new Date());
+      setGpsTotalKm(0);
+      lastGpsRef.current = null;
+      setCockpitState("underway");
+
+      // Prefetch tiles
+      if (routePositions.length >= 2) {
+        prefetchTilesForRoute(routePositions).catch(console.error);
+      }
+    } catch (err) {
+      console.error("Start tour error:", err);
+    }
+  };
+
+  // Complete appointment
+  const handleCompleteAppointment = async (appointmentId: string) => {
+    await supabase.from("appointments")
+      .update({ status: "completed", completed_at: new Date().toISOString() })
+      .eq("id", appointmentId);
+
+    queryClient.invalidateQueries({ queryKey: ["cockpit-appointments"] });
+
+    // Move to next
+    if (activeAppointmentIndex < appointments.length - 1) {
+      setActiveAppointmentIndex(prev => prev + 1);
+    }
+  };
+
+  // Mark arrived
+  const handleArrived = async (appointmentId: string) => {
+    await supabase.from("appointments")
+      .update({ status: "in_progress" })
+      .eq("id", appointmentId);
+    queryClient.invalidateQueries({ queryKey: ["cockpit-appointments"] });
+
+    // Send push to client
+    const apt = appointments.find(a => a.id === appointmentId);
+    if (apt?.client?.id) {
+      await supabase.from("notifications").insert({
+        user_id: apt.client.id,
+        title: "Hufbearbeiter ist da!",
+        message: `Dein Hufbearbeiter ist bei dir angekommen.`,
+        type: "arrival",
+        link: "/client-home",
+      });
+    }
+  };
+
+  // End tour
+  const handleEndTour = async () => {
+    if (!tourId || !user?.id) return;
+
+    await supabase.from("daily_tours")
+      .update({
+        tour_ended_at: new Date().toISOString(),
+        total_distance_km: Math.round(gpsTotalKm * 10) / 10,
+      })
+      .eq("id", tourId);
+
+    // End work session
+    const { data: session } = await supabase
+      .from("work_sessions")
+      .select("id")
+      .eq("provider_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+    if (session) {
+      await supabase.from("work_sessions")
+        .update({ ended_at: new Date().toISOString(), status: "completed" })
+        .eq("id", session.id);
+    }
+
+    // Update mileage log
+    const { data: mLog } = await supabase
+      .from("vehicle_mileage_logs")
+      .select("id")
+      .eq("provider_id", user.id)
+      .eq("log_date", today)
+      .maybeSingle();
+    if (mLog) {
+      await supabase.from("vehicle_mileage_logs")
+        .update({ odometer_end: Math.round(gpsTotalKm * 10) / 10 })
+        .eq("id", mLog.id);
+    }
+
+    clearTileCache().catch(console.error);
+    setCockpitState("complete");
+  };
+
+  // Navigate external
+  const handleNavigate = (lat: number, lng: number) => {
+    const url = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+      ? `maps://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`
+      : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+    window.open(url, "_blank");
+  };
+
+  const activeAppointment = appointments[activeAppointmentIndex] || null;
+  const completedCount = appointments.filter(a => a.status === "completed").length;
+
+  if (cockpitState === "ready") {
+    return (
+      <CockpitReady
+        appointments={appointments}
+        isLoading={isLoading}
+        routeInfo={routeInfo}
+        isCalculatingRoute={isCalculatingRoute}
+        estimatedFuelCost={estimatedFuelCost}
+        livePrice={livePrice}
+        isOnline={isOnline}
+        onStartTour={handleStartTour}
+      />
+    );
+  }
+
+  if (cockpitState === "complete") {
+    return (
+      <CockpitComplete
+        gpsTotalKm={Math.round(gpsTotalKm * 10) / 10}
+        tourStartTime={tourStartTime}
+        completedCount={completedCount}
+        totalCount={appointments.length}
+        livePrice={livePrice}
+        vehicleConsumption={vehicle?.average_consumption}
+        pricePerKm={vehicle?.price_per_km}
+        isOnline={isOnline}
+        onDismiss={() => setCockpitState("ready")}
+      />
+    );
+  }
+
+  return (
+    <CockpitUnderway
+      appointments={appointments}
+      activeAppointment={activeAppointment}
+      activeIndex={activeAppointmentIndex}
+      userLocation={userLocation}
+      routePositions={routePositions}
+      gpsTotalKm={Math.round(gpsTotalKm * 10) / 10}
+      tourStartTime={tourStartTime}
+      completedCount={completedCount}
+      isOnline={isOnline}
+      onNavigate={handleNavigate}
+      onArrived={handleArrived}
+      onComplete={handleCompleteAppointment}
+      onEndTour={handleEndTour}
+    />
+  );
+}

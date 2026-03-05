@@ -1,10 +1,10 @@
-import { TourManager } from "@/components/tour-manager";
+import { DayCockpit } from "@/components/day-cockpit";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 const TourPage = () => {
   return (
     <ProtectedRoute allowedRoles={["provider", "admin"]}>
-      <TourManager />
+      <DayCockpit />
     </ProtectedRoute>
   );
 };
