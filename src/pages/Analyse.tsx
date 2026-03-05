@@ -18,6 +18,7 @@ import {
   BarChart3,
   Loader2,
 } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import {
   LineChart,
   Line,
@@ -70,7 +71,10 @@ const Analyse = () => {
       <div className="space-y-6 animate-fade-in">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Analyse</h1>
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              Analyse
+              <HelpTip id="analyse.bereich" />
+            </h1>
             <p className="text-muted-foreground mt-1">
               Geschäftsübersicht und Leistungskennzahlen
             </p>
@@ -90,7 +94,10 @@ const Analyse = () => {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Analyse</h1>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            Analyse
+            <HelpTip id="analyse.bereich" />
+          </h1>
           <p className="text-muted-foreground mt-1">
             Geschäftsübersicht und Leistungskennzahlen
           </p>
