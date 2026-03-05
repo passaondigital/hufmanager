@@ -42,7 +42,8 @@ Deno.serve(async (req) => {
     const validTypes = ['all', 'e5', 'e10', 'diesel'];
     const fuelType = validTypes.includes(type) ? type : 'all';
 
-    const url = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${latitude}&lng=${longitude}&rad=${radius}&sort=price&type=${fuelType}&apikey=${apiKey}`;
+    const sortParam = fuelType === 'all' ? 'dist' : 'price';
+    const url = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${latitude}&lng=${longitude}&rad=${radius}&sort=${sortParam}&type=${fuelType}&apikey=${apiKey}`;
 
     console.log('Fetching URL:', url.replace(apiKey!, '***'));
     const response = await fetch(url);
