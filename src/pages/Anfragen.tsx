@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MessageSquare, Phone, MapPin, Search, Filter, Calendar, AlertTriangle, HelpCircle, Loader2, Send } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -114,7 +115,10 @@ const Anfragen = () => {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Anfragen</h1>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            Anfragen
+            <HelpTip id="anfragen.bereich" />
+          </h1>
           <p className="text-muted-foreground mt-1">
             Neue Kundenanfragen über deine Webseite
           </p>

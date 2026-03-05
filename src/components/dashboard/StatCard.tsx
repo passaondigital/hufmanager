@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { HelpTip } from "@/components/ui/HelpTip";
 
 interface StatCardProps {
   title: string;
@@ -10,6 +11,7 @@ interface StatCardProps {
   icon: LucideIcon;
   iconColor?: "primary" | "accent" | "muted";
   navigateTo?: string;
+  helpTipId?: string;
 }
 
 export function StatCard({
@@ -20,6 +22,7 @@ export function StatCard({
   icon: Icon,
   iconColor = "primary",
   navigateTo,
+  helpTipId,
 }: StatCardProps) {
   const navigate = useNavigate();
 
@@ -39,7 +42,10 @@ export function StatCard({
     >
       <div className="flex items-start justify-between">
         <div className="space-y-1.5">
-          <p className="text-xs sm:text-sm font-medium text-muted-foreground leading-tight">{title}</p>
+          <p className="text-xs sm:text-sm font-medium text-muted-foreground leading-tight flex items-center gap-1">
+            {title}
+            {helpTipId && <HelpTip id={helpTipId} />}
+          </p>
           <p className="text-2xl sm:text-3xl font-bold text-foreground">{value}</p>
           {change && (
             <p

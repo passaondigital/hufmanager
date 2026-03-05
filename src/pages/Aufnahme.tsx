@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserPlus, PlusCircle, Send, Mail, Building2, User, CreditCard, Star } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import {
   Select,
   SelectContent,
@@ -536,7 +537,10 @@ const Aufnahme = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Aufnahme</h1>
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+          Aufnahme
+          <HelpTip id="aufnahme.bereich" />
+        </h1>
         <p className="text-muted-foreground mt-1">
           Neue Kunden und Pferde anlegen, KundenApp-Einladungen versenden
         </p>

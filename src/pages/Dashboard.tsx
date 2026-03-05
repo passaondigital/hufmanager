@@ -17,6 +17,7 @@ import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { StatGridSkeleton } from "@/components/ui/skeletons";
 import { MilestoneCelebration } from "@/components/growth/MilestoneCelebration";
 import { DemoTourButton } from "@/components/demo/DemoTourButton";
+import { HelpTip } from "@/components/ui/HelpTip";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -88,6 +89,7 @@ const Dashboard = () => {
             icon={Users}
             iconColor="primary"
             navigateTo="/customers"
+            helpTipId="dashboard.aktive-kunden"
           />
           <StatCard
             title="Termine diese Woche"
@@ -97,6 +99,7 @@ const Dashboard = () => {
             icon={Calendar}
             iconColor="accent"
             navigateTo="/calendar"
+            helpTipId="dashboard.termine-woche"
           />
           <StatCard
             title="Neue Anfragen"
@@ -106,6 +109,7 @@ const Dashboard = () => {
             icon={MessageSquare}
             iconColor="primary"
             navigateTo="/anfragen"
+            helpTipId="dashboard.neue-anfragen"
           />
           <StatCard
             title="Umsatz (Monat)"
@@ -127,29 +131,41 @@ const Dashboard = () => {
             icon={TrendingUp}
             iconColor="accent"
             navigateTo="/rechnungen"
+            helpTipId="dashboard.umsatz-monat"
           />
         </div>
       )}
       </div>
 
       {/* 2. Due Appointments */}
-      <div data-tour="due-appointments">
+      <div data-tour="due-appointments" className="relative">
+        <span className="absolute top-3 right-3 z-10"><HelpTip id="dashboard.faellige-termine" /></span>
         <DueAppointmentsWidget />
       </div>
 
       {/* 3. First Steps / Onboarding (only if not completed) */}
-      <div data-tour="checklist">
+      <div data-tour="checklist" className="relative">
+        <span className="absolute top-3 right-3 z-10"><HelpTip id="dashboard.erste-schritte" /></span>
         <FirstStepsChecklist />
       </div>
 
       {/* 4. Smart Tour Suggestions */}
-      <SmartTourSuggestionWidget />
+      <div className="relative">
+        <span className="absolute top-3 right-3 z-10"><HelpTip id="dashboard.tour-vorschlaege" /></span>
+        <SmartTourSuggestionWidget />
+      </div>
 
       {/* 5. Live Fuel Prices */}
-      <FuelPriceWidget />
+      <div className="relative">
+        <span className="absolute top-3 right-3 z-10"><HelpTip id="dashboard.spritpreise" /></span>
+        <FuelPriceWidget />
+      </div>
 
       {/* 6. Hufrente (nice to have, bottom) */}
-      <HufrenteWidget />
+      <div className="relative">
+        <span className="absolute top-3 right-3 z-10"><HelpTip id="dashboard.hufrente" /></span>
+        <HufrenteWidget />
+      </div>
       </div>
     </>
   );

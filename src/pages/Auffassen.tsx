@@ -26,6 +26,7 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import {
   Select,
   SelectContent,
@@ -381,7 +382,10 @@ const Auffassen = () => {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Auffassen</h1>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            Auffassen
+            <HelpTip id="auffassen.bereich" />
+          </h1>
           <p className="text-muted-foreground mt-1">
             Sammeln und verwalten Sie Kundenfeedback und Bewertungen
           </p>
