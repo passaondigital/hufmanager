@@ -12,6 +12,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PasswordRecoveryRedirect } from "@/components/auth/PasswordRecoveryRedirect";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { CockpitFullscreenProvider } from "@/components/day-cockpit/CockpitFullscreenContext";
 import { AuthLoadingScreen } from "@/components/auth/AuthLoadingScreen";
 import { ProfileGuardianScreen } from "@/components/auth/ProfileGuardianScreen";
 import { createIDBPersister, initImageSyncManager, QUERY_CACHE_MAX_AGE, STATIC_QUERY_KEYS } from "@/lib/offline";
@@ -226,6 +227,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
 
   return (
     <SubscriptionProvider>
+      <CockpitFullscreenProvider>
       <TourProvider>
       <TooltipProvider>
         <Toaster />
@@ -482,6 +484,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
         </PasswordRecoveryRedirect>
       </TooltipProvider>
       </TourProvider>
+      </CockpitFullscreenProvider>
     </SubscriptionProvider>
   );
 }

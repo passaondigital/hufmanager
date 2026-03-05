@@ -27,6 +27,7 @@ import { DemoStickyBanner } from "@/components/demo/DemoStickyBanner";
 import { TrialCountdownBanner } from "@/components/subscription/TrialCountdownBanner";
 import { useDemoActivityTracker } from "@/hooks/useDemoActivityTracker";
 import { useAutoflowMode, AutoflowMode } from "@/hooks/useAutoflowMode";
+import { useCockpitFullscreen } from "@/components/day-cockpit/CockpitFullscreenContext";
 
 export function AppLayout() {
   const location = useLocation();
@@ -35,6 +36,7 @@ export function AppLayout() {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { mode, updateMode, loading: autoflowLoading, MODE_LABELS } = useAutoflowMode();
+  const { isFullscreen } = useCockpitFullscreen();
   
   const modeColors: Record<AutoflowMode, string> = {
     basis: "text-blue-500",
@@ -44,6 +46,15 @@ export function AppLayout() {
   
   // Initialize demo activity tracker for automatic page view tracking
   useDemoActivityTracker();
+
+  // Fullscreen mode: render only the outlet, no chrome
+  if (isFullscreen) {
+    return (
+      <div className="min-h-[100dvh] w-full bg-background">
+        <Outlet />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[100dvh] flex w-full bg-background overflow-safe">
