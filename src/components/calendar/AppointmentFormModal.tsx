@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -45,6 +45,7 @@ import { addWeeks, format } from "date-fns";
 import { de } from "date-fns/locale";
 import { uploadFile } from "@/lib/storage";
 import { cn } from "@/lib/utils";
+import { useServicePresets } from "@/hooks/useServicePresets";
 
 const appointmentSchema = z.object({
   horseId: z.string().min(1, "Bitte wählen Sie ein Pferd aus"),
@@ -115,6 +116,33 @@ export function AppointmentFormModal({
     seriesCurrent: 1,
     seriesTotal: 5,
   });
+
+  // Fetch provider's profession_type
+  const { data: providerSettings } = useQuery({
+    queryKey: ["provider-profession", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("business_settings")
+        .select("profession_type")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user?.id,
+    staleTime: 15 * 60 * 1000,
+  });
+
+  const professionType = (providerSettings as any)?.profession_type || "hoof_care";
+
+  // Fetch service time presets for this profession
+  const { presets: servicePresets } = useServicePresets(professionType);
+
+  // Build a preset map for quick lookup
+  const presetMap = useMemo(() => {
+    const map: Record<string, typeof servicePresets[0]> = {};
+    servicePresets.forEach(p => { map[p.service_type] = p; });
+    return map;
+  }, [servicePresets]);
 
   // Fetch services with billing_type
   const { data: services = [] } = useQuery({
@@ -619,28 +647,56 @@ export function AppointmentFormModal({
             <Label>Service-Typ *</Label>
             <Select
               value={formData.serviceType}
-              onValueChange={(value) => setFormData({ ...formData, serviceType: value })}
+              onValueChange={(value) => {
+                const preset = presetMap[value];
+                setFormData(prev => ({
+                  ...prev,
+                  serviceType: value,
+                  duration: preset?.estimated_minutes || prev.duration,
+                }));
+              }}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {services.length > 0 ? (
-                  services.map((service: any) => (
-                    <SelectItem key={service.id} value={service.name}>
-                      {service.name}
-                      {service.billing_type === "flat_rate" && " (Pauschal)"}
-                      {service.billing_type === "series" && " (Serie)"}
-                    </SelectItem>
-                  ))
+                  services.map((service: any) => {
+                    const preset = presetMap[service.name];
+                    return (
+                      <SelectItem key={service.id} value={service.name}>
+                        <span className="flex items-center gap-2">
+                          {preset?.color_hex && (
+                            <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: preset.color_hex }} />
+                          )}
+                          {service.name}
+                          {preset && <span className="text-muted-foreground text-xs">({preset.estimated_minutes} Min.)</span>}
+                          {service.billing_type === "flat_rate" && " (Pauschal)"}
+                          {service.billing_type === "series" && " (Serie)"}
+                        </span>
+                      </SelectItem>
+                    );
+                  })
                 ) : (
-                  <>
-                    <SelectItem value="Barhuf">Barhuf</SelectItem>
-                    <SelectItem value="Beschlag">Beschlag</SelectItem>
-                    <SelectItem value="Korrektur">Korrektur</SelectItem>
-                    <SelectItem value="Notfall">Notfall</SelectItem>
-                    <SelectItem value="Kontrolle">Kontrolle</SelectItem>
-                  </>
+                  servicePresets.length > 0 ? (
+                    servicePresets.map((preset) => (
+                      <SelectItem key={preset.id} value={preset.service_type}>
+                        <span className="flex items-center gap-2">
+                          <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: preset.color_hex }} />
+                          {preset.service_type}
+                          <span className="text-muted-foreground text-xs">({preset.estimated_minutes} Min.)</span>
+                        </span>
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <>
+                      <SelectItem value="Barhuf">Barhuf</SelectItem>
+                      <SelectItem value="Beschlag">Beschlag</SelectItem>
+                      <SelectItem value="Korrektur">Korrektur</SelectItem>
+                      <SelectItem value="Notfall">Notfall</SelectItem>
+                      <SelectItem value="Kontrolle">Kontrolle</SelectItem>
+                    </>
+                  )
                 )}
               </SelectContent>
             </Select>

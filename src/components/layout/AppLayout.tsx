@@ -47,10 +47,25 @@ export function AppLayout() {
   // Initialize demo activity tracker for automatic page view tracking
   useDemoActivityTracker();
 
-  // Fullscreen mode: render only the outlet, no chrome
+  // Fullscreen mode: render only the outlet with a small burger overlay
   if (isFullscreen) {
     return (
-      <div className="min-h-[100dvh] w-full bg-background">
+      <div className="min-h-[100dvh] w-full bg-background relative">
+        {/* Burger icon overlay — half transparent, 24px, top-left */}
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          className="fixed top-3 left-3 z-[10000] flex items-center justify-center rounded-lg transition-all duration-300"
+          style={{ width: 36, height: 36, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}
+          aria-label="Menü öffnen"
+        >
+          <Menu className="h-5 w-5 text-white/80" />
+        </button>
+        {/* Sidebar Sheet for fullscreen mode */}
+        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+          <SheetContent side="left" className="p-0 w-64">
+            <AppSidebar onNavigate={() => setMobileMenuOpen(false)} />
+          </SheetContent>
+        </Sheet>
         <Outlet />
       </div>
     );
