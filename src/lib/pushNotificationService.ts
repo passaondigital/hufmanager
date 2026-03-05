@@ -47,6 +47,26 @@ export async function notifyTodayClients(
   if (!appointments?.length) return 0;
 
   const providerName = extraData?.providerName || "Dein Hufpfleger";
+
+  // If no name was provided, try to resolve it
+  let resolvedName = providerName;
+  if (resolvedName === "Dein Hufpfleger") {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", providerId)
+      .maybeSingle();
+    if (profile?.full_name) {
+      resolvedName = profile.full_name;
+    } else {
+      const { data: bs } = await supabase
+        .from("business_settings")
+        .select("business_name")
+        .eq("user_id", providerId)
+        .maybeSingle();
+      resolvedName = bs?.business_name || "Dein Hufpfleger";
+    }
+  }
   let sentCount = 0;
 
   // Collect unique client IDs
@@ -68,18 +88,18 @@ export async function notifyTodayClients(
 
     switch (type) {
       case "tour_start":
-        title = `${providerName} ist unterwegs 🚗`;
+        title = `${resolvedName} ist unterwegs 🚗`;
         body = appt.time
           ? `Dein Termin ist um ${(appt.time as string).slice(0, 5)} Uhr geplant.`
           : "Dein Termin steht heute an!";
         break;
       case "delay":
         title = `Verzögerung ⚠️`;
-        body = `${providerName} verspätet sich um ca. ${extraData?.delayMinutes || 0} Minuten.`;
+        body = `${resolvedName} verspätet sich um ca. ${extraData?.delayMinutes || 0} Minuten.`;
         break;
       case "arrived":
-        title = `${providerName} ist angekommen! 🐴`;
-        body = `${providerName} ist jetzt bei ${horse.name || "deinem Pferd"}.`;
+        title = `${resolvedName} ist angekommen! 🐴`;
+        body = `${resolvedName} ist jetzt bei ${horse.name || "deinem Pferd"}.`;
         break;
     }
 

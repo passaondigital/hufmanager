@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { HelpTip } from "@/components/ui/HelpTip";
 import { Calendar, Clock, CheckCircle2, MapPin, Truck, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
@@ -18,8 +19,10 @@ interface TodayAppointment {
   status: string;
   service_type: string | null;
   provider_id: string;
+  assigned_to_user_id: string | null;
   horse_name: string | null;
   provider_name: string | null;
+  provider_avatar: string | null;
 }
 
 interface TourInfo {
@@ -75,27 +78,78 @@ export function ClientTodayDashboard() {
 
       const { data: appts } = await supabase
         .from("appointments")
-        .select("id, date, time, status, service_type, provider_id, horse_id")
+        .select("id, date, time, status, service_type, provider_id, assigned_to_user_id, horse_id")
         .eq("date", today)
         .in("horse_id", horseIds)
         .neq("status", "cancelled")
         .order("time", { ascending: true });
 
       if (appts && appts.length > 0) {
-        // Get provider names
-        const providerIds = [...new Set(appts.map((a) => a.provider_id))];
-        const { data: providers } = await supabase
+        // Collect all user IDs that could be the responsible person
+        const allPersonIds = new Set<string>();
+        appts.forEach((a: any) => {
+          allPersonIds.add(a.provider_id);
+          if (a.assigned_to_user_id) allPersonIds.add(a.assigned_to_user_id);
+        });
+
+        // Fetch profiles for all relevant people
+        const { data: profiles } = await supabase
           .from("profiles")
-          .select("id, full_name")
-          .in("id", providerIds);
-        const providerMap = Object.fromEntries((providers || []).map((p) => [p.id, p.full_name]));
+          .select("id, full_name, avatar_url")
+          .in("id", [...allPersonIds]);
+        const profileMap = Object.fromEntries(
+          (profiles || []).map((p) => [p.id, p])
+        );
+
+        // Fetch employee profiles for assigned employees
+        const employeeIds = appts
+          .map((a: any) => a.assigned_to_user_id)
+          .filter((id: any): id is string => !!id);
+        let employeeMap: Record<string, { full_name: string; avatar_url: string | null }> = {};
+        if (employeeIds.length > 0) {
+          const { data: employees } = await supabase
+            .from("employee_profiles")
+            .select("user_id, full_name, avatar_url")
+            .in("user_id", employeeIds);
+          employeeMap = Object.fromEntries(
+            (employees || []).map((e) => [e.user_id, e])
+          );
+        }
+
+        // Fallback: business_settings for provider names
+        const providerIds = [...new Set(appts.map((a: any) => a.provider_id))];
+        const { data: bsData } = await supabase
+          .from("business_settings")
+          .select("user_id, business_name")
+          .in("user_id", providerIds);
+        const bsMap = Object.fromEntries(
+          (bsData || []).map((b) => [b.user_id, b.business_name])
+        );
 
         setAppointments(
-          appts.map((a) => ({
-            ...a,
-            horse_name: horseMap[a.horse_id] || null,
-            provider_name: providerMap[a.provider_id] || null,
-          }))
+          appts.map((a: any) => {
+            // If assigned to an employee, use employee name/avatar
+            const assignee = a.assigned_to_user_id
+              ? employeeMap[a.assigned_to_user_id] || profileMap[a.assigned_to_user_id]
+              : null;
+            const provider = profileMap[a.provider_id];
+
+            const displayName = assignee?.full_name
+              || provider?.full_name
+              || bsMap[a.provider_id]
+              || "Dein Hufpfleger";
+
+            const displayAvatar = (assignee as any)?.avatar_url
+              || provider?.avatar_url
+              || null;
+
+            return {
+              ...a,
+              horse_name: horseMap[a.horse_id] || null,
+              provider_name: displayName,
+              provider_avatar: displayAvatar,
+            };
+          })
         );
 
         // Check tour status
@@ -271,7 +325,7 @@ export function ClientTodayDashboard() {
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-sm">
-                  {appointments[0]?.provider_name || "Dein Hufpfleger"} ist unterwegs
+                  {appointments[0]?.provider_name} ist unterwegs
                 </h3>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <div className="w-2 h-2 rounded-full bg-green-600 animate-pulse" />
@@ -337,9 +391,14 @@ export function ClientTodayDashboard() {
           <Card key={appt.id} className="overflow-hidden">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <StatusIcon className={cn("h-6 w-6", config.color)} />
-                </div>
+                <Avatar className="h-12 w-12 shrink-0">
+                  {appt.provider_avatar && (
+                    <AvatarImage src={appt.provider_avatar} alt={appt.provider_name || ""} />
+                  )}
+                  <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                    {(appt.provider_name || "?").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-sm truncate">
@@ -353,8 +412,10 @@ export function ClientTodayDashboard() {
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                    <span className="truncate">mit {appt.provider_name}</span>
                     {appt.time && (
                       <>
+                        <span>•</span>
                         <Clock className="h-3 w-3" />
                         <span>{appt.time.slice(0, 5)} Uhr</span>
                       </>
