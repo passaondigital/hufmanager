@@ -29,6 +29,7 @@ import { format } from "date-fns";
 import { uploadFile, getStorageUrl } from "@/lib/storage";
 import { useStorageQuota, formatBytes } from "@/hooks/useStorageQuota";
 import { StorageQuotaIndicator } from "@/components/storage/StorageQuotaCard";
+import { TourCompletionSummary } from "./TourCompletionSummary";
 
 interface MileageLog {
   id: string;
@@ -68,6 +69,7 @@ export function MileageTracker() {
   const [isUploading, setIsUploading] = useState(false);
   const [stops, setStops] = useState<TourStop[]>([]);
   const [newStopName, setNewStopName] = useState("");
+  const [completedDistance, setCompletedDistance] = useState<number | null>(null);
 
   // Storage quota for provider
   const { checkQuota, trackUpload, usage, quota } = useStorageQuota("provider", user?.id || null);
@@ -240,6 +242,11 @@ export function MileageTracker() {
       queryClient.invalidateQueries({ queryKey: ["active-mileage-log"] });
       queryClient.invalidateQueries({ queryKey: ["recent-mileage-logs"] });
       queryClient.invalidateQueries({ queryKey: ["provider-vehicle"] });
+      
+      // Show completion summary
+      if (distance && distance > 0) {
+        setCompletedDistance(distance);
+      }
       
       const cost = (distance || 0) * (vehicle?.price_per_km || 0.30);
       toast({ 
@@ -758,7 +765,15 @@ export function MileageTracker() {
 
   // Default View
   return (
-    <Card>
+    <div className="space-y-4">
+      {/* Tour Completion Summary */}
+      {completedDistance !== null && completedDistance > 0 && (
+        <TourCompletionSummary
+          distanceKm={completedDistance}
+          onDismiss={() => setCompletedDistance(null)}
+        />
+      )}
+      <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Route className="h-5 w-5 text-primary" />
@@ -816,5 +831,6 @@ export function MileageTracker() {
         )}
       </CardContent>
     </Card>
+    </div>
   );
 }

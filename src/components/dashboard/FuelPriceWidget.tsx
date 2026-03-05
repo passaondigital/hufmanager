@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Fuel, MapPin, RefreshCw, Navigation, AlertCircle } from "lucide-react";
+import { FuelCostBanner } from "./FuelCostBanner";
 
 // Simple geocoding: Extract coords from business address PLZ
 // We'll use browser geolocation with fallback to business address geocoding
@@ -151,6 +152,9 @@ export function FuelPriceWidget() {
                 </Badge>
               </div>
             )}
+
+            {/* Contextual cost banner */}
+            <FuelCostBanner stations={stations} />
 
             <p className="text-[10px] text-muted-foreground text-right">
               Daten: CC BY 4.0 – Tankerkönig.de • 5 km Umkreis

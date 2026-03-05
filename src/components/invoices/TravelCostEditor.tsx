@@ -12,7 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Car, Fuel, Info, MapPin, Plus } from "lucide-react";
+import { Car, Fuel, Info, MapPin, Plus, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useFuelPrices, getCheapestPrice, mapFuelType } from "@/hooks/useFuelPrices";
 import type { FuelStation } from "@/hooks/useFuelPrices";
@@ -336,6 +336,38 @@ export function TravelCostEditor({ clientId, clients, onAddTravelCost }: TravelC
                     </p>
                   )}
                 </div>
+              )}
+
+              {/* Price comparison hint */}
+              {liveFuelPricePerLiter && consumption && (
+                (() => {
+                  const liveCostPerKm = (consumption / 100) * liveFuelPricePerLiter;
+                  const configuredPerKm = parseFloat(pricePerKm) || 0;
+                  const isLiveMore = liveCostPerKm > configuredPerKm && configuredPerKm > 0;
+                  const isLiveLess = liveCostPerKm < configuredPerKm && configuredPerKm > 0;
+                  
+                  if (isLiveMore) {
+                    return (
+                      <div className="flex items-start gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs">
+                        <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                        <span className="text-amber-700 dark:text-amber-300">
+                          Sprit heute teurer als dein eingestellter Pauschalsatz – Live-Berechnung empfohlen
+                        </span>
+                      </div>
+                    );
+                  }
+                  if (isLiveLess) {
+                    return (
+                      <div className="flex items-start gap-2 p-2 rounded-lg bg-green-500/10 border border-green-500/20 text-xs">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
+                        <span className="text-green-700 dark:text-green-300">
+                          Aktueller Spritpreis unter deiner Pauschale
+                        </span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()
               )}
 
               <div className="flex items-center justify-between text-xs">
