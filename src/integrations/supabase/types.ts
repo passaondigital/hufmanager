@@ -52,6 +52,7 @@ export type Database = {
       }
       access_grants: {
         Row: {
+          auto_revoke_on_last_appointment: boolean | null
           can_create_appointments: boolean | null
           can_view_basic: boolean | null
           can_view_medical: boolean | null
@@ -68,8 +69,10 @@ export type Database = {
           revoked_at: string | null
           status: string
           updated_at: string
+          valid_until: string | null
         }
         Insert: {
+          auto_revoke_on_last_appointment?: boolean | null
           can_create_appointments?: boolean | null
           can_view_basic?: boolean | null
           can_view_medical?: boolean | null
@@ -86,8 +89,10 @@ export type Database = {
           revoked_at?: string | null
           status?: string
           updated_at?: string
+          valid_until?: string | null
         }
         Update: {
+          auto_revoke_on_last_appointment?: boolean | null
           can_create_appointments?: boolean | null
           can_view_basic?: boolean | null
           can_view_medical?: boolean | null
@@ -104,6 +109,7 @@ export type Database = {
           revoked_at?: string | null
           status?: string
           updated_at?: string
+          valid_until?: string | null
         }
         Relationships: [
           {
@@ -510,6 +516,13 @@ export type Database = {
             foreignKeyName: "appointment_horses_appointment_id_fkey"
             columns: ["appointment_id"]
             isOneToOne: false
+            referencedRelation: "appointments_partner_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_horses_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
             referencedRelation: "safe_appointments"
             referencedColumns: ["id"]
           },
@@ -518,6 +531,20 @@ export type Database = {
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_horses_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_horses_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
             referencedColumns: ["id"]
           },
           {
@@ -563,6 +590,13 @@ export type Database = {
             foreignKeyName: "appointment_reminders_appointment_id_fkey"
             columns: ["appointment_id"]
             isOneToOne: false
+            referencedRelation: "appointments_partner_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_reminders_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
             referencedRelation: "safe_appointments"
             referencedColumns: ["id"]
           },
@@ -581,6 +615,8 @@ export type Database = {
           confirmation_token: string | null
           confirmed_at: string | null
           created_at: string
+          data_shared_with_employees: boolean | null
+          data_shared_with_partners: boolean | null
           date: string
           discount_amount: number | null
           discount_reason: string | null
@@ -630,6 +666,8 @@ export type Database = {
           confirmation_token?: string | null
           confirmed_at?: string | null
           created_at?: string
+          data_shared_with_employees?: boolean | null
+          data_shared_with_partners?: boolean | null
           date: string
           discount_amount?: number | null
           discount_reason?: string | null
@@ -679,6 +717,8 @@ export type Database = {
           confirmation_token?: string | null
           confirmed_at?: string | null
           created_at?: string
+          data_shared_with_employees?: boolean | null
+          data_shared_with_partners?: boolean | null
           date?: string
           discount_amount?: number | null
           discount_reason?: string | null
@@ -757,6 +797,20 @@ export type Database = {
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
             referencedColumns: ["id"]
           },
           {
@@ -2285,6 +2339,13 @@ export type Database = {
             foreignKeyName: "employee_assignments_appointment_id_fkey"
             columns: ["appointment_id"]
             isOneToOne: false
+            referencedRelation: "appointments_partner_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_assignments_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
             referencedRelation: "safe_appointments"
             referencedColumns: ["id"]
           },
@@ -3588,6 +3649,13 @@ export type Database = {
             foreignKeyName: "hoof_analyses_appointment_id_fkey"
             columns: ["appointment_id"]
             isOneToOne: false
+            referencedRelation: "appointments_partner_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hoof_analyses_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
             referencedRelation: "safe_appointments"
             referencedColumns: ["id"]
           },
@@ -3596,6 +3664,20 @@ export type Database = {
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hoof_analyses_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hoof_analyses_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
             referencedColumns: ["id"]
           },
           {
@@ -3644,6 +3726,20 @@ export type Database = {
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hoof_entries_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hoof_entries_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
             referencedColumns: ["id"]
           },
           {
@@ -3707,6 +3803,20 @@ export type Database = {
             foreignKeyName: "hoof_history_horse_id_fkey"
             columns: ["horse_id"]
             isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hoof_history_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hoof_history_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
             referencedRelation: "safe_horses"
             referencedColumns: ["id"]
           },
@@ -3761,6 +3871,13 @@ export type Database = {
             foreignKeyName: "hoof_photos_appointment_id_fkey"
             columns: ["appointment_id"]
             isOneToOne: false
+            referencedRelation: "appointments_partner_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hoof_photos_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
             referencedRelation: "safe_appointments"
             referencedColumns: ["id"]
           },
@@ -3769,6 +3886,20 @@ export type Database = {
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hoof_photos_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hoof_photos_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
             referencedColumns: ["id"]
           },
           {
@@ -3826,6 +3957,20 @@ export type Database = {
             foreignKeyName: "horse_diary_entries_horse_id_fkey"
             columns: ["horse_id"]
             isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_diary_entries_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_diary_entries_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
             referencedRelation: "safe_horses"
             referencedColumns: ["id"]
           },
@@ -3871,6 +4016,20 @@ export type Database = {
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_documents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_documents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
             referencedColumns: ["id"]
           },
           {
@@ -3931,6 +4090,20 @@ export type Database = {
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_health_logs_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_health_logs_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
             referencedColumns: ["id"]
           },
           {
@@ -4038,6 +4211,20 @@ export type Database = {
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_partner_access_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_partner_access_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
             referencedColumns: ["id"]
           },
           {
@@ -4454,6 +4641,13 @@ export type Database = {
             foreignKeyName: "invoice_appointments_appointment_id_fkey"
             columns: ["appointment_id"]
             isOneToOne: false
+            referencedRelation: "appointments_partner_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_appointments_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
             referencedRelation: "safe_appointments"
             referencedColumns: ["id"]
           },
@@ -4462,6 +4656,13 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_appointments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices_client_view"
             referencedColumns: ["id"]
           },
         ]
@@ -4510,6 +4711,13 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices_client_view"
             referencedColumns: ["id"]
           },
         ]
@@ -4643,10 +4851,31 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "invoices_credit_note_for_fkey"
+            columns: ["credit_note_for"]
+            isOneToOne: false
+            referencedRelation: "invoices_client_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "invoices_horse_id_fkey"
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
             referencedColumns: ["id"]
           },
           {
@@ -4840,6 +5069,13 @@ export type Database = {
             foreignKeyName: "media_assets_appointment_id_fkey"
             columns: ["appointment_id"]
             isOneToOne: false
+            referencedRelation: "appointments_partner_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_assets_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
             referencedRelation: "safe_appointments"
             referencedColumns: ["id"]
           },
@@ -4848,6 +5084,20 @@ export type Database = {
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_assets_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_assets_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
             referencedColumns: ["id"]
           },
           {
@@ -5103,6 +5353,20 @@ export type Database = {
             foreignKeyName: "office_documents_horse_id_fkey"
             columns: ["horse_id"]
             isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "office_documents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "office_documents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
             referencedRelation: "safe_horses"
             referencedColumns: ["id"]
           },
@@ -5263,6 +5527,20 @@ export type Database = {
             foreignKeyName: "partner_appointments_horse_id_fkey"
             columns: ["horse_id"]
             isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_appointments_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_appointments_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
             referencedRelation: "safe_horses"
             referencedColumns: ["id"]
           },
@@ -5412,6 +5690,20 @@ export type Database = {
             foreignKeyName: "partner_conversations_horse_id_fkey"
             columns: ["horse_id"]
             isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_conversations_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_conversations_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
             referencedRelation: "safe_horses"
             referencedColumns: ["id"]
           },
@@ -5451,6 +5743,20 @@ export type Database = {
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_data_consents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_data_consents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
             referencedColumns: ["id"]
           },
           {
@@ -5524,6 +5830,20 @@ export type Database = {
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_documents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_documents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
             referencedColumns: ["id"]
           },
           {
@@ -5691,6 +6011,20 @@ export type Database = {
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_invoices_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_invoices_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
             referencedColumns: ["id"]
           },
           {
@@ -5941,6 +6275,20 @@ export type Database = {
             foreignKeyName: "partner_treatment_notes_horse_id_fkey"
             columns: ["horse_id"]
             isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_treatment_notes_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_treatment_notes_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
             referencedRelation: "safe_horses"
             referencedColumns: ["id"]
           },
@@ -6021,6 +6369,20 @@ export type Database = {
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_treatment_plans_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_treatment_plans_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
             referencedColumns: ["id"]
           },
           {
@@ -6746,6 +7108,13 @@ export type Database = {
             foreignKeyName: "provider_documents_appointment_id_fkey"
             columns: ["appointment_id"]
             isOneToOne: false
+            referencedRelation: "appointments_partner_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_documents_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
             referencedRelation: "safe_appointments"
             referencedColumns: ["id"]
           },
@@ -6761,6 +7130,20 @@ export type Database = {
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_documents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_documents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
             referencedColumns: ["id"]
           },
           {
@@ -7142,6 +7525,20 @@ export type Database = {
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
             referencedColumns: ["id"]
           },
           {
@@ -8225,6 +8622,13 @@ export type Database = {
             foreignKeyName: "tour_emergency_status_emergency_appointment_id_fkey"
             columns: ["emergency_appointment_id"]
             isOneToOne: false
+            referencedRelation: "appointments_partner_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tour_emergency_status_emergency_appointment_id_fkey"
+            columns: ["emergency_appointment_id"]
+            isOneToOne: false
             referencedRelation: "safe_appointments"
             referencedColumns: ["id"]
           },
@@ -8486,6 +8890,13 @@ export type Database = {
             foreignKeyName: "vehicle_mileage_logs_appointment_id_fkey"
             columns: ["appointment_id"]
             isOneToOne: false
+            referencedRelation: "appointments_partner_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_mileage_logs_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
             referencedRelation: "safe_appointments"
             referencedColumns: ["id"]
           },
@@ -8670,6 +9081,13 @@ export type Database = {
             foreignKeyName: "work_sessions_appointment_id_fkey"
             columns: ["appointment_id"]
             isOneToOne: false
+            referencedRelation: "appointments_partner_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_sessions_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
             referencedRelation: "safe_appointments"
             referencedColumns: ["id"]
           },
@@ -8678,6 +9096,20 @@ export type Database = {
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_sessions_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_sessions_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
             referencedColumns: ["id"]
           },
           {
@@ -8727,6 +9159,442 @@ export type Database = {
           termin_zeit: string | null
         }
         Relationships: []
+      }
+      appointments_partner_view: {
+        Row: {
+          date: string | null
+          duration: number | null
+          horse_id: string | null
+          id: string | null
+          is_confirmed_by_client: boolean | null
+          location: string | null
+          notes: string | null
+          price: number | null
+          provider_id: string | null
+          service_type: string | null
+          status: string | null
+          time: string | null
+        }
+        Insert: {
+          date?: string | null
+          duration?: number | null
+          horse_id?: string | null
+          id?: string | null
+          is_confirmed_by_client?: boolean | null
+          location?: string | null
+          notes?: string | null
+          price?: number | null
+          provider_id?: string | null
+          service_type?: string | null
+          status?: string | null
+          time?: string | null
+        }
+        Update: {
+          date?: string | null
+          duration?: number | null
+          horse_id?: string | null
+          id?: string | null
+          is_confirmed_by_client?: boolean | null
+          location?: string | null
+          notes?: string | null
+          price?: number | null
+          provider_id?: string | null
+          service_type?: string | null
+          status?: string | null
+          time?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      horses_basic: {
+        Row: {
+          anamnesis_interval_months: number | null
+          app_source: string | null
+          birth_date: string | null
+          birth_year: number | null
+          breed: string | null
+          chip_number: string | null
+          color: string | null
+          created_at: string | null
+          deleted_at: string | null
+          discipline: string | null
+          equine_type: string | null
+          gender: string | null
+          height: string | null
+          height_cm: number | null
+          holding_type: string | null
+          hoof_data: Json | null
+          hoof_details: Json | null
+          hoof_measurements: Json | null
+          hoof_protection: string | null
+          hoof_type: string | null
+          housing: string | null
+          id: string | null
+          is_new_horse: boolean | null
+          last_anamnesis_date: string | null
+          last_appointment_date: string | null
+          latitude: number | null
+          location_name: string | null
+          longitude: number | null
+          name: string | null
+          next_appointment_due: string | null
+          nickname: string | null
+          official_name: string | null
+          organization_id: string | null
+          owner_id: string | null
+          photo_url: string | null
+          primary_location_id: string | null
+          readable_id: string | null
+          recall_interval_weeks: number | null
+          shoeing_interval: number | null
+          shoeing_status: string | null
+          stable_address_gps: Json | null
+          updated_at: string | null
+          usage: string | null
+          usage_type: Database["public"]["Enums"]["usage_type"] | null
+        }
+        Insert: {
+          anamnesis_interval_months?: number | null
+          app_source?: string | null
+          birth_date?: string | null
+          birth_year?: number | null
+          breed?: string | null
+          chip_number?: string | null
+          color?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          discipline?: string | null
+          equine_type?: string | null
+          gender?: string | null
+          height?: string | null
+          height_cm?: number | null
+          holding_type?: string | null
+          hoof_data?: Json | null
+          hoof_details?: Json | null
+          hoof_measurements?: Json | null
+          hoof_protection?: string | null
+          hoof_type?: string | null
+          housing?: string | null
+          id?: string | null
+          is_new_horse?: boolean | null
+          last_anamnesis_date?: string | null
+          last_appointment_date?: string | null
+          latitude?: number | null
+          location_name?: string | null
+          longitude?: number | null
+          name?: string | null
+          next_appointment_due?: string | null
+          nickname?: string | null
+          official_name?: string | null
+          organization_id?: string | null
+          owner_id?: string | null
+          photo_url?: string | null
+          primary_location_id?: string | null
+          readable_id?: string | null
+          recall_interval_weeks?: number | null
+          shoeing_interval?: number | null
+          shoeing_status?: string | null
+          stable_address_gps?: Json | null
+          updated_at?: string | null
+          usage?: string | null
+          usage_type?: Database["public"]["Enums"]["usage_type"] | null
+        }
+        Update: {
+          anamnesis_interval_months?: number | null
+          app_source?: string | null
+          birth_date?: string | null
+          birth_year?: number | null
+          breed?: string | null
+          chip_number?: string | null
+          color?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          discipline?: string | null
+          equine_type?: string | null
+          gender?: string | null
+          height?: string | null
+          height_cm?: number | null
+          holding_type?: string | null
+          hoof_data?: Json | null
+          hoof_details?: Json | null
+          hoof_measurements?: Json | null
+          hoof_protection?: string | null
+          hoof_type?: string | null
+          housing?: string | null
+          id?: string | null
+          is_new_horse?: boolean | null
+          last_anamnesis_date?: string | null
+          last_appointment_date?: string | null
+          latitude?: number | null
+          location_name?: string | null
+          longitude?: number | null
+          name?: string | null
+          next_appointment_due?: string | null
+          nickname?: string | null
+          official_name?: string | null
+          organization_id?: string | null
+          owner_id?: string | null
+          photo_url?: string | null
+          primary_location_id?: string | null
+          readable_id?: string | null
+          recall_interval_weeks?: number | null
+          shoeing_interval?: number | null
+          shoeing_status?: string | null
+          stable_address_gps?: Json | null
+          updated_at?: string | null
+          usage?: string | null
+          usage_type?: Database["public"]["Enums"]["usage_type"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horses_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horses_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horses_primary_location_id_fkey"
+            columns: ["primary_location_id"]
+            isOneToOne: false
+            referencedRelation: "client_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      horses_medical: {
+        Row: {
+          breed: string | null
+          contacts: Json | null
+          documents_urls: string[] | null
+          feeding_notes: string | null
+          health_issues_general: string | null
+          health_status: string | null
+          id: string | null
+          medical_history: string | null
+          name: string | null
+          owner_id: string | null
+          photo_url: string | null
+          readable_id: string | null
+          special_notes: string | null
+        }
+        Insert: {
+          breed?: string | null
+          contacts?: Json | null
+          documents_urls?: string[] | null
+          feeding_notes?: string | null
+          health_issues_general?: string | null
+          health_status?: string | null
+          id?: string | null
+          medical_history?: string | null
+          name?: string | null
+          owner_id?: string | null
+          photo_url?: string | null
+          readable_id?: string | null
+          special_notes?: string | null
+        }
+        Update: {
+          breed?: string | null
+          contacts?: Json | null
+          documents_urls?: string[] | null
+          feeding_notes?: string | null
+          health_issues_general?: string | null
+          health_status?: string | null
+          id?: string | null
+          medical_history?: string | null
+          name?: string | null
+          owner_id?: string | null
+          photo_url?: string | null
+          readable_id?: string | null
+          special_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horses_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horses_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices_client_view: {
+        Row: {
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          client_id: string | null
+          created_at: string | null
+          credit_note_for: string | null
+          customer_type: string | null
+          due_date: string | null
+          horse_id: string | null
+          id: string | null
+          invoice_number: string | null
+          issue_date: string | null
+          notes: string | null
+          paid_at: string | null
+          payment_method: string | null
+          payment_status: string | null
+          pdf_url: string | null
+          provider_id: string | null
+          signature_url: string | null
+          status: string | null
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          credit_note_for?: string | null
+          customer_type?: string | null
+          due_date?: string | null
+          horse_id?: string | null
+          id?: string | null
+          invoice_number?: string | null
+          issue_date?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          pdf_url?: string | null
+          provider_id?: string | null
+          signature_url?: string | null
+          status?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          credit_note_for?: string | null
+          customer_type?: string | null
+          due_date?: string | null
+          horse_id?: string | null
+          id?: string | null
+          invoice_number?: string | null
+          issue_date?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          pdf_url?: string | null
+          provider_id?: string | null
+          signature_url?: string | null
+          status?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_credit_note_for_fkey"
+            columns: ["credit_note_for"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_credit_note_for_fkey"
+            columns: ["credit_note_for"]
+            isOneToOne: false
+            referencedRelation: "invoices_client_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       safe_appointments: {
         Row: {
@@ -8813,6 +9681,20 @@ export type Database = {
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
             referencedColumns: ["id"]
           },
           {
@@ -9300,6 +10182,10 @@ export type Database = {
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_active_access_grant: {
+        Args: { _client_id: string; _provider_id: string }
+        Returns: boolean
       }
       has_role: {
         Args: {
