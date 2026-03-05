@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { calculateRoute } from "@/lib/routeService";
+import { notifyTodayClients } from "@/lib/pushNotificationService";
 import type { RouteResult, RouteStep } from "@/lib/routeService";
 import { prefetchTilesForRoute, clearTileCache } from "@/lib/tilePrefetch";
 import { useFuelPrices, getCheapestPrice, mapFuelType } from "@/hooks/useFuelPrices";
@@ -368,6 +369,16 @@ export function DayCockpit() {
       if (routePositions.length >= 2) {
         prefetchTilesForRoute(routePositions).catch(console.error);
       }
+
+      // Notify all today's clients that the tour has started
+      const { data: provProfile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      notifyTodayClients(user.id, "tour_start", {
+        providerName: provProfile?.full_name || "Dein Hufpfleger",
+      }).catch(console.error);
     } catch (err) {
       console.error("Start tour error:", err);
     }
@@ -395,6 +406,7 @@ export function DayCockpit() {
 
     const apt = appointments.find(a => a.id === appointmentId);
     if (apt?.client?.id) {
+      // In-app notification
       await supabase.from("notifications").insert({
         user_id: apt.client.id,
         title: "Hufbearbeiter ist da!",
@@ -402,6 +414,17 @@ export function DayCockpit() {
         type: "arrival",
         link: "/client-home",
       });
+
+      // Push notification
+      const { data: provProfile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user?.id)
+        .maybeSingle();
+      notifyTodayClients(user!.id, "arrived", {
+        clientId: apt.client.id,
+        providerName: provProfile?.full_name || "Dein Hufpfleger",
+      }).catch(console.error);
     }
   };
 

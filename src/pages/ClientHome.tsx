@@ -38,6 +38,7 @@ import { HorseIntervalReminderWidget } from "@/components/client/HorseIntervalRe
 import { HorseTipsWidget } from "@/components/client/HorseTipsWidget";
 import { PostAppointmentReviewPrompt } from "@/components/client/PostAppointmentReviewPrompt";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { ClientTodayDashboard } from "@/components/client/ClientTodayDashboard";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { DemoTourButton } from "@/components/demo/DemoTourButton";
@@ -242,8 +243,8 @@ export default function ClientHome() {
           {/* Interval Reminders */}
           <HorseIntervalReminderWidget />
 
-          {/* Live Tour Status - shows when provider is on tour */}
-          {user && <ProviderTourStatusWidget userId={user.id} />}
+          {/* TODAY DASHBOARD - Live status + appointments */}
+          {user && <ClientTodayDashboard />}
 
           {/* Hero Greeting with animation */}
           <motion.div 
