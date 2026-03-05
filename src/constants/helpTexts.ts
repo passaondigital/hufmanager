@@ -557,6 +557,49 @@ export const helpTexts: Record<string, Record<string, HelpTextEntry>> = {
       description: "Kontrolliere, wer Zugriff auf deine Pferdedaten hat – z.B. Tierärzte oder Fachpartner.",
     },
   },
+  // ─── Client App ─────────────────────────────────────────
+  client: {
+    "heute-termine": {
+      title: "Heutige Termine",
+      description: "Zeigt deine Termine für heute mit Live-Status deines Hufpflegers. Du siehst in Echtzeit, ob er unterwegs ist oder bereits angekommen.",
+    },
+    standorte: {
+      title: "Meine Standorte",
+      description: "Verwalte mehrere Stall-Standorte. Der Standardstandort wird bei neuen Terminen automatisch verwendet.",
+    },
+    benachrichtigungen: {
+      title: "Benachrichtigungen",
+      description: "Wähle, wie du benachrichtigt werden möchtest: Per Push, E-Mail oder beides. Stelle auch die Sprache deiner Benachrichtigungen ein.",
+    },
+    "naechster-termin": {
+      title: "Nächster Termin",
+      description: "Dein nächster geplanter Termin mit Countdown. Tippe darauf, um Details zu sehen.",
+    },
+    "pferde-liste": {
+      title: "Meine Pferde",
+      description: "Übersicht aller deiner registrierten Pferde. Tippe auf ein Pferd, um die Akte zu öffnen.",
+    },
+    "tour-status": {
+      title: "Tour-Status",
+      description: "Zeigt den Live-Fortschritt deines Hufpflegers auf seiner Tour. Du siehst, wie viele Stationen noch vor dir sind.",
+    },
+    profil: {
+      title: "Mein Profil",
+      description: "Verwalte deine persönlichen Daten, Standorte, Benachrichtigungseinstellungen und Notfallkontakte.",
+    },
+    rechnungen: {
+      title: "Meine Rechnungen",
+      description: "Übersicht aller Rechnungen deines Hufpflegers. Du kannst sie als PDF herunterladen.",
+    },
+    buchen: {
+      title: "Termin buchen",
+      description: "Buche einen neuen Termin bei deinem Hufpfleger. Wähle die Leistung, dein Pferd und deinen Wunschtermin.",
+    },
+    chat: {
+      title: "Chat",
+      description: "Schreibe deinem Hufpfleger eine Nachricht. Ideal für Rückfragen oder Terminänderungen.",
+    },
+  },
 };
 
 /**

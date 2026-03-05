@@ -18,6 +18,8 @@ import { DeleteAccountSection } from "@/components/client/DeleteAccountSection";
 import { DataExportSection } from "@/components/settings/DataExportSection";
 import { ClientAvatarUpload } from "@/components/client/ClientAvatarUpload";
 import { ProviderReferral } from "@/components/client/ProviderReferral";
+import { ClientLocationsManager } from "@/components/client/ClientLocationsManager";
+import { NotificationPreferences } from "@/components/client/NotificationPreferences";
 
 interface Profile {
   id: string;
@@ -207,7 +209,7 @@ export default function ClientProfile() {
           </CardContent>
         </Card>
 
-        {/* Stable Location */}
+        {/* Stable Location (legacy single location) */}
         <StableLocationCard
           userId={profile.id}
           stableStreet={profile.stable_street}
@@ -218,6 +220,9 @@ export default function ClientProfile() {
           onUpdate={fetchProfile}
         />
 
+        {/* Multiple Locations Manager */}
+        <ClientLocationsManager />
+
         {/* Emergency Contacts */}
         <EmergencyContactsCard
           userId={profile.id}
@@ -225,21 +230,8 @@ export default function ClientProfile() {
           onUpdate={fetchProfile}
         />
 
-        {/* Push Notifications */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Bell className="h-4 w-4 text-primary" />
-              Benachrichtigungen
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Erhalte Push-Benachrichtigungen auch wenn die App geschlossen ist.
-            </p>
-            <PushNotificationToggle />
-          </CardContent>
-        </Card>
+        {/* Notification Preferences (Push + Language) */}
+        <NotificationPreferences />
 
         {/* DACH Region Settings */}
         <Card>

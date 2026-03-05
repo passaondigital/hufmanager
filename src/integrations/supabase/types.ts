@@ -1299,6 +1299,83 @@ export type Database = {
           },
         ]
       }
+      client_locations: {
+        Row: {
+          address: string | null
+          city: string | null
+          client_id: string
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          lat: number | null
+          lng: number | null
+          name: string
+          notes: string | null
+          provider_id: string | null
+          updated_at: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          client_id: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          notes?: string | null
+          provider_id?: string | null
+          updated_at?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          client_id?: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          notes?: string | null
+          provider_id?: string | null
+          updated_at?: string | null
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_locations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_locations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_locations_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_locations_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_referrals: {
         Row: {
           channel: string
@@ -4058,6 +4135,7 @@ export type Database = {
           organization_id: string | null
           owner_id: string
           photo_url: string | null
+          primary_location_id: string | null
           readable_id: string | null
           recall_interval_weeks: number | null
           shoeing_interval: number | null
@@ -4111,6 +4189,7 @@ export type Database = {
           organization_id?: string | null
           owner_id: string
           photo_url?: string | null
+          primary_location_id?: string | null
           readable_id?: string | null
           recall_interval_weeks?: number | null
           shoeing_interval?: number | null
@@ -4164,6 +4243,7 @@ export type Database = {
           organization_id?: string | null
           owner_id?: string
           photo_url?: string | null
+          primary_location_id?: string | null
           readable_id?: string | null
           recall_interval_weeks?: number | null
           shoeing_interval?: number | null
@@ -4194,6 +4274,13 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horses_primary_location_id_fkey"
+            columns: ["primary_location_id"]
+            isOneToOne: false
+            referencedRelation: "client_locations"
             referencedColumns: ["id"]
           },
         ]
@@ -6217,6 +6304,8 @@ export type Database = {
           logo_url: string | null
           longitude: number | null
           mobile: string | null
+          notification_language: string | null
+          notification_preference: string | null
           onboarding_completed: boolean | null
           onboarding_dismissed: boolean | null
           order_authorization: boolean | null
@@ -6316,6 +6405,8 @@ export type Database = {
           logo_url?: string | null
           longitude?: number | null
           mobile?: string | null
+          notification_language?: string | null
+          notification_preference?: string | null
           onboarding_completed?: boolean | null
           onboarding_dismissed?: boolean | null
           order_authorization?: boolean | null
@@ -6415,6 +6506,8 @@ export type Database = {
           logo_url?: string | null
           longitude?: number | null
           mobile?: string | null
+          notification_language?: string | null
+          notification_preference?: string | null
           onboarding_completed?: boolean | null
           onboarding_dismissed?: boolean | null
           order_authorization?: boolean | null
