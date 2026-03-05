@@ -32,6 +32,7 @@ import {
   Info,
   Settings,
 } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { BusinessHoursEditor, defaultHours, type BusinessHours } from "@/components/BusinessHoursEditor";
 import { ReminderSettingsCard } from "@/components/ReminderSettingsCard";
 import { SubscriptionCard } from "@/components/subscription/SubscriptionCard";
@@ -390,7 +391,7 @@ const Management = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Management</h1>
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">Management <HelpTip id="einstellungen.geschaeftsname" /></h1>
         <p className="text-muted-foreground mt-1">
           Geschäftsdaten und Landingpage-Konfiguration
         </p>

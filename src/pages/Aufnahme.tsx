@@ -571,7 +571,7 @@ const Aufnahme = () => {
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">Vorname *</Label>
+                  <Label htmlFor="firstName" className="flex items-center gap-1">Vorname * <HelpTip id="aufnahme.kunde-vorname" /></Label>
                   <Input
                     id="firstName"
                     placeholder="Max"
@@ -580,7 +580,7 @@ const Aufnahme = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Nachname *</Label>
+                  <Label htmlFor="lastName" className="flex items-center gap-1">Nachname * <HelpTip id="aufnahme.kunde-nachname" /></Label>
                   <Input
                     id="lastName"
                     placeholder="Mustermann"
@@ -592,8 +592,8 @@ const Aufnahme = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">
-                    E-Mail {customerForm.sendInvitation && "*"}
+                  <Label htmlFor="email" className="flex items-center gap-1">
+                    E-Mail {customerForm.sendInvitation && "*"} <HelpTip id="aufnahme.kunde-email" />
                   </Label>
                   <Input
                     id="email"
@@ -604,7 +604,7 @@ const Aufnahme = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Telefon</Label>
+                  <Label htmlFor="phone" className="flex items-center gap-1">Telefon <HelpTip id="aufnahme.kunde-telefon" /></Label>
                   <Input
                     id="phone"
                     type="tel"

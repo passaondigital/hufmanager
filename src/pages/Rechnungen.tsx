@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FileText, Search, Plus, Eye, Download, Trash2, MoreVertical, Loader2, CheckCircle, Ban, Link2, Copy, FileSpreadsheet } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { CreateInvoiceModal } from "@/components/invoices/CreateInvoiceModal";
@@ -340,7 +341,7 @@ export default function Rechnungen() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Rechnungen</h1>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">Rechnungen <HelpTip id="rechnungen.bereich" /></h1>
           <p className="text-muted-foreground">Übersicht aller Kundenrechnungen</p>
         </div>
         <div className="flex items-center gap-2">

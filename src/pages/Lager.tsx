@@ -56,6 +56,7 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { SuppliersTab, PurchasingTab, RecipesTab } from "@/components/lager";
 
 interface GlobalProduct {
@@ -258,6 +259,7 @@ export default function Lager() {
         <h1 className="text-3xl font-bold flex items-center gap-3">
           <Warehouse className="h-8 w-8 text-primary" />
           Mein Lager
+          <HelpTip id="lager.bereich" />
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

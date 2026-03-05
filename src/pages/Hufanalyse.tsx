@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, ClipboardList, Eye, FileText } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { LTZAnalysisWizard, LTZAnalysisHistory, LTZComparisonView } from "@/components/hoof-analysis";
 import { AiDisclosure } from "@/components/legal/AiDisclosure";
 import { format } from "date-fns";
@@ -72,7 +73,7 @@ const Hufanalyse = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Hufanalyse</h1>
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">Hufanalyse <HelpTip id="hufanalyse.bereich" /></h1>
         <p className="text-muted-foreground mt-1">
           Professionelle Bearbeitungsbögen nach dem Leipziger Modell
         </p>
