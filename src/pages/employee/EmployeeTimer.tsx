@@ -1,6 +1,7 @@
 import { EmployeeTimeTracker } from "@/components/employee/EmployeeTimeTracker";
 import { EmployeeRoleGate } from "@/components/employee/EmployeeRoleGate";
 import { Clock, Info } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 
 const EmployeeTimer = () => {
   return (
@@ -9,6 +10,7 @@ const EmployeeTimer = () => {
         <h1 className="text-xl font-bold flex items-center gap-2">
           <Clock className="h-5 w-5 text-primary" />
           Zeiterfassung
+          <HelpTip id="mitarbeiter.timer" />
         </h1>
         <p className="text-sm text-muted-foreground">Arbeitszeiten dokumentieren</p>
       </div>

@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Receipt, Plus, Loader2, Euro, Search, Download } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -277,7 +278,7 @@ export default function PartnerInvoices() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Rechnungen</h1>
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">Rechnungen <HelpTip id="partner.rechnungen" /></h1>
         <Button onClick={() => { setForm(f => ({ ...f, tax_rate: defaultVatRate })); setCreateOpen(true); }} className="gap-2">
           <Plus className="h-4 w-4" /> Neue Rechnung
         </Button>

@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar, Plus, Clock, MapPin, ChevronLeft, ChevronRight, Loader2, Check, X as XIcon } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, startOfWeek, endOfWeek } from "date-fns";
 import { de } from "date-fns/locale";
 import { toast } from "sonner";
@@ -172,7 +173,7 @@ export default function PartnerCalendar() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Kalender</h1>
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">Kalender <HelpTip id="partner.kalender" /></h1>
         <Button onClick={handleCreateClick} className="gap-2">
           <Plus className="h-4 w-4" /> Neuer Termin
         </Button>

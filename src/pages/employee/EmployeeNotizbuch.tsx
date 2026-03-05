@@ -14,6 +14,7 @@ import {
   StickyNote,
   Lock,
 } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import {
@@ -137,6 +138,7 @@ const EmployeeNotizbuch = () => {
           <h1 className="text-xl font-bold flex items-center gap-2">
             <Notebook className="h-5 w-5 text-primary" />
             Mein Notizbuch
+            <HelpTip id="mitarbeiter.notizbuch" />
           </h1>
           <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
             <Lock className="h-3 w-3" />

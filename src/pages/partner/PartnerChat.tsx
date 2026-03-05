@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageSquare, Send, Plus, Loader2, ArrowLeft } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -207,7 +208,7 @@ export default function PartnerChat() {
   return (
     <div className="space-y-4 animate-fade-in h-[calc(100vh-12rem)] lg:h-[calc(100vh-8rem)]">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Chat</h1>
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">Chat <HelpTip id="partner.chat" /></h1>
         <Button onClick={() => setNewChatOpen(true)} size="sm" className="gap-1">
           <Plus className="h-4 w-4" /> Neue Unterhaltung
         </Button>

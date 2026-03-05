@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, FileText, Eye, Download, Search, Loader2, Mail, CreditCard } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -295,7 +296,7 @@ export default function ClientInvoices() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/client-home")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="font-semibold text-foreground">Rechnungen</h1>
+          <h1 className="font-semibold text-foreground flex items-center gap-2">Rechnungen <HelpTip id="kunden.rechnungen" /></h1>
         </div>
       </header>
 

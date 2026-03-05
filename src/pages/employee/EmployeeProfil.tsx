@@ -16,6 +16,7 @@ import {
   CheckCircle, XCircle, Key, Loader2, Download, Trash2, AlertTriangle,
   Camera, Save, Edit2, Globe,
 } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -186,7 +187,7 @@ const EmployeeProfil = () => {
   return (
     <div className="space-y-4 animate-fade-in max-w-lg mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Mein Profil</h1>
+        <h1 className="text-xl font-bold flex items-center gap-2">Mein Profil <HelpTip id="mitarbeiter.profil" /></h1>
         {!editing && (
           <Button variant="outline" size="sm" className="gap-1.5" onClick={startEditing}>
             <Edit2 className="h-3.5 w-3.5" /> Bearbeiten

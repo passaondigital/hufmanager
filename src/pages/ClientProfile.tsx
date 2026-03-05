@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, User, Loader2, Save, Bell, Globe } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { toast } from "sonner";
 import { StableLocationCard } from "@/components/client/StableLocationCard";
 import { EmergencyContactsCard } from "@/components/client/EmergencyContactsCard";
@@ -138,7 +139,7 @@ export default function ClientProfile() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/client-home")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="font-semibold text-lg">Mein Profil</h1>
+          <h1 className="font-semibold text-lg flex items-center gap-2">Mein Profil <HelpTip id="kunden.profil" /></h1>
         </div>
       </header>
 

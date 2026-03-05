@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CalendarOff, Plus, X } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -115,6 +116,7 @@ const EmployeeAbwesenheiten = () => {
           <h1 className="text-xl font-bold flex items-center gap-2">
             <CalendarOff className="h-5 w-5 text-primary" />
             Abwesenheiten
+            <HelpTip id="mitarbeiter.abwesenheiten" />
           </h1>
           <p className="text-sm text-muted-foreground">Urlaub, Krankheit und freie Tage</p>
         </div>

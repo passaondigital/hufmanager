@@ -14,6 +14,7 @@ import {
   MessageSquare, Moon, Sun, Bell, Camera, Heart, Calendar,
   Sparkles, Star, TrendingUp, Clock, AlertTriangle
 } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { UnconfirmedAppointmentsBanner } from "@/components/UnconfirmedAppointmentsBanner";
 import { CreateHorseModal } from "@/components/horse-detail/CreateHorseModal";
 import { ClientOnboarding } from "@/components/client/ClientOnboarding";
@@ -250,8 +251,8 @@ export default function ClientHome() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-2"
           >
-            <h1 className="text-responsive-h2 text-foreground tracking-tight">
-              Hallo {firstName}! 👋
+            <h1 className="text-responsive-h2 text-foreground tracking-tight flex items-center gap-2">
+              Hallo {firstName}! 👋 <HelpTip id="kunden.home" />
             </h1>
             <p className="text-muted-foreground text-base md:text-lg">
               Dein Pferdeportal auf einen Blick

@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FileText, Upload, Plus, Search, Loader2, ExternalLink, Trash2 } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -154,7 +155,7 @@ export default function PartnerDocuments() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Dokumente & Befunde</h1>
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">Dokumente & Befunde <HelpTip id="partner.dokumente" /></h1>
         <Button onClick={() => setUploadOpen(true)} className="gap-2">
           <Upload className="h-4 w-4" /> Hochladen
         </Button>

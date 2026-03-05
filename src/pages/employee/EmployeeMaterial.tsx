@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Package, Minus, Plus, ShoppingCart, Loader2 } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -102,6 +103,7 @@ const EmployeeMaterial = () => {
         <h1 className="text-xl font-bold flex items-center gap-2">
           <Package className="h-5 w-5 text-primary" />
           Mein Material
+          <HelpTip id="mitarbeiter.material" />
         </h1>
         <p className="text-sm text-muted-foreground">Zugewiesenes Material und Verbrauchsmeldung</p>
       </div>

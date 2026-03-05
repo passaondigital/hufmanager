@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, Users, UserPlus, ExternalLink, Copy, QrCode } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { toast } from "sonner";
 import { getPartnerTypeConfig } from "@/lib/partnerTypes";
 
@@ -104,7 +105,7 @@ export default function PartnerConnect() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-foreground">Netzwerk</h1>
+      <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">Netzwerk <HelpTip id="partner.netzwerk" /></h1>
 
       {/* Own profile card */}
       <Card className="bg-primary/5 border-primary/20">

@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User, Shield, X, Save, Loader2, Upload, Globe, Phone } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { toast } from "sonner";
 import { getPartnerTypeConfig, PARTNER_TYPE_OPTIONS } from "@/lib/partnerTypes";
 
@@ -169,7 +170,7 @@ export default function PartnerProfile() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-foreground">Mein Profil</h1>
+      <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">Mein Profil <HelpTip id="partner.profil" /></h1>
 
       {/* Profile Card with Avatar Upload */}
       <Card>

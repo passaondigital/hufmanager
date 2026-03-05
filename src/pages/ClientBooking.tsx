@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Scissors, Check, Loader2, Calendar, Clock } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -276,7 +277,7 @@ export default function ClientBooking() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/client-home")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="font-semibold text-foreground">Service buchen</h1>
+          <h1 className="font-semibold text-foreground flex items-center gap-2">Service buchen <HelpTip id="kunden.buchen" /></h1>
         </div>
       </header>
 
