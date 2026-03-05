@@ -7,6 +7,7 @@ import { SmartTourSuggestionWidget } from "@/components/dashboard/SmartTourSugge
 import { ShareInviteLinkCard } from "@/components/invite/ShareInviteLinkCard";
 import { HufrenteWidget } from "@/components/dashboard/HufrenteWidget";
 import { FuelPriceWidget } from "@/components/dashboard/FuelPriceWidget";
+import { MonthlyFuelInsight } from "@/components/dashboard/MonthlyFuelInsight";
 import { FirstStepsChecklist } from "@/components/dashboard/FirstStepsChecklist";
 import { DashboardWelcomeHeader } from "@/components/dashboard/DashboardWelcomeHeader";
 import { useAuth } from "@/hooks/useAuth";
@@ -160,6 +161,9 @@ const Dashboard = () => {
         <span className="absolute top-3 right-3 z-10"><HelpTip id="dashboard.spritpreise" /></span>
         <FuelPriceWidget />
       </div>
+
+      {/* 5b. Monthly Fuel Insight */}
+      <MonthlyFuelInsight />
 
       {/* 6. Hufrente (nice to have, bottom) */}
       <div className="relative">
