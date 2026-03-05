@@ -10,6 +10,7 @@ Deno.serve(async (req) => {
 
   try {
     const apiKey = Deno.env.get('TANKERKOENIG_API_KEY');
+    console.log('API key present:', !!apiKey, 'length:', apiKey?.length);
     if (!apiKey) {
       return new Response(
         JSON.stringify({ error: 'Tankerkönig API-Key nicht konfiguriert' }),
@@ -43,8 +44,10 @@ Deno.serve(async (req) => {
 
     const url = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${latitude}&lng=${longitude}&rad=${radius}&sort=price&type=${fuelType}&apikey=${apiKey}`;
 
+    console.log('Fetching URL:', url.replace(apiKey!, '***'));
     const response = await fetch(url);
     const data = await response.json();
+    console.log('API response ok:', data.ok, 'stations:', data.stations?.length, 'message:', data.message);
 
     if (!data.ok) {
       return new Response(
