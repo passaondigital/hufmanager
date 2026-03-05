@@ -6,6 +6,11 @@ import ProblemSection from "@/components/website/ProblemSection";
 import IdentitySection from "@/components/website/IdentitySection";
 import HorseEcosystem from "@/components/website/HorseEcosystem";
 import SolutionSection from "@/components/website/SolutionSection";
+import FeatureCockpitSection from "@/components/website/FeatureCockpitSection";
+import FeatureFuelSection from "@/components/website/FeatureFuelSection";
+import FeatureNavigationSection from "@/components/website/FeatureNavigationSection";
+import FeatureNotificationsSection from "@/components/website/FeatureNotificationsSection";
+import ProfessionsSection from "@/components/website/ProfessionsSection";
 import EcosystemSection from "@/components/website/EcosystemSection";
 import AudienceTabsSection from "@/components/website/AudienceTabsSection";
 import { DataSovereigntyBadge } from "@/components/shared/DataSovereigntyBadge";
@@ -15,6 +20,7 @@ import DemoSection from "@/components/website/DemoSection";
 import PricingV2 from "@/components/website/PricingV2";
 import TrustSection from "@/components/website/TrustSection";
 import ContactFormSection from "@/components/website/ContactFormSection";
+import ChangelogSection from "@/components/website/ChangelogSection";
 import HufrenteSection from "@/components/website/HufrenteSection";
 import FAQ from "@/components/website/FAQ";
 import FinalCTA from "@/components/website/FinalCTA";
@@ -23,15 +29,22 @@ import LatestBlogPosts from "@/components/website/LatestBlogPosts";
 import CookieBanner from "@/components/website/CookieBanner";
 
 const WebsiteHome = () => {
-  useGA4(); // GA4-Tracking für hufmanager.de (nach Cookie-Consent)
+  useGA4();
 
   useEffect(() => {
-    // Set SEO meta tags
-    document.title = "HufManager - Die All-in-One Plattform für Pferde-Profis";
+    document.title = "HufManager – App für Hufbearbeiter, Osteopathen & mobile Pferdeprofis";
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
-      metaDesc.setAttribute("content", "Terminplanung, Dokumentation, Rechnungen & Vernetzung für Hufbearbeiter, Therapeuten, Trainer & alle Pferde-Profis. 100% DSGVO-konform. Jetzt kostenlos starten!");
+      metaDesc.setAttribute("content", "Tages-Cockpit, Live-Navigation, Spritpreise, Kundenbenachrichtigung, Fahrtenbuch & Rechnungen – für Hufbearbeiter, Osteopathen, Physios & alle mobilen Pferdeprofis. 100% DSGVO-konform. Jetzt kostenlos starten!");
     }
+    // Add keywords meta
+    let metaKeywords = document.querySelector('meta[name="keywords"]');
+    if (!metaKeywords) {
+      metaKeywords = document.createElement("meta");
+      metaKeywords.setAttribute("name", "keywords");
+      document.head.appendChild(metaKeywords);
+    }
+    metaKeywords.setAttribute("content", "Hufbearbeiter App, Pferdeosteopath App, Pferdephysiotherapeut Software, mobile Pferdeprofis Tool, Hufpflege Software, Tourenplanung Pferde, Equine Dentist App, Reitlehrer Software, Sattler App");
   }, []);
 
   return (
@@ -42,6 +55,11 @@ const WebsiteHome = () => {
       <IdentitySection />
       <HorseEcosystem />
       <SolutionSection />
+      <FeatureCockpitSection />
+      <FeatureFuelSection />
+      <FeatureNavigationSection />
+      <FeatureNotificationsSection />
+      <ProfessionsSection />
       <EcosystemSection />
       <AudienceTabsSection />
       <section className="py-16 bg-zinc-950">
@@ -56,6 +74,7 @@ const WebsiteHome = () => {
       <ContactFormSection />
       <TrustSection />
       <LatestBlogPosts />
+      <ChangelogSection />
       <HufrenteSection />
       <FAQ />
       <FinalCTA />
