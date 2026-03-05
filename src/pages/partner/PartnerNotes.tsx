@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FileText } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 
 export default function PartnerNotes() {
   const { user } = useAuth();
@@ -45,7 +46,7 @@ export default function PartnerNotes() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-foreground">Behandlungsnotizen</h1>
+      <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">Behandlungsnotizen <HelpTip id="partner.notizen" /></h1>
 
       {Object.keys(grouped).length === 0 ? (
         <Card className="border-dashed border-2">

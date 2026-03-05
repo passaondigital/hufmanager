@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Download, Calendar, ExternalLink } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 
@@ -16,6 +17,7 @@ const EmployeeVertrag = () => {
       <h1 className="text-xl font-bold flex items-center gap-2">
         <FileText className="h-5 w-5 text-primary" />
         Mein Vertrag
+        <HelpTip id="mitarbeiter.vertrag" />
       </h1>
 
       <Card>

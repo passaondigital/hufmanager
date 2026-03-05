@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, MapPin, CheckCircle,
 } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import {
   format, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
   eachDayOfInterval, addWeeks, subWeeks, addMonths, subMonths,
@@ -88,6 +89,7 @@ const EmployeeCalendar = () => {
         <h1 className="text-xl font-bold flex items-center gap-2">
           <CalendarIcon className="h-5 w-5 text-primary" />
           Kalender
+          <HelpTip id="mitarbeiter.kalender" />
         </h1>
         <Tabs value={view} onValueChange={(v) => setView(v as any)}>
           <TabsList className="h-8">

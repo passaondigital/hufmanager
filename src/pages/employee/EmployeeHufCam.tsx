@@ -1,5 +1,6 @@
 import { HufCamProStandalone } from "@/components/hufcam";
 import { Camera } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 
 const EmployeeHufCam = () => {
   return (
@@ -8,6 +9,7 @@ const EmployeeHufCam = () => {
         <h1 className="text-xl font-bold flex items-center gap-2">
           <Camera className="h-5 w-5 text-primary" />
           HufCam Pro
+          <HelpTip id="mitarbeiter.hufcam" />
         </h1>
         <p className="text-sm text-muted-foreground">Professionelle Huf-Fotodokumentation</p>
       </div>

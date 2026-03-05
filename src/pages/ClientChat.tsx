@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, ArrowLeft, User, Loader2, MessageSquare, Paperclip, X, Film, FileText } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { PushNotificationToggle } from "@/components/notifications/PushNotificationToggle";
 import { ChatAttachment, getFileType, getFileEmoji } from "@/components/chat/ChatAttachment";
 import { cn } from "@/lib/utils";

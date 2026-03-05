@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Shield, Eye, Heart, Calendar, UserX, AlertTriangle, Stethoscope, Footprints, FileText } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { toast } from "@/hooks/use-toast";
 import { getPartnerTypeConfig } from "@/lib/partnerTypes";
@@ -238,7 +239,7 @@ export default function ClientPermissions() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="font-semibold text-foreground">Datenfreigabe & Zugriff</h1>
+            <h1 className="font-semibold text-foreground flex items-center gap-2">Datenfreigabe & Zugriff <HelpTip id="kunden.freigaben" /></h1>
             <p className="text-xs text-muted-foreground">Wer sieht meine Daten?</p>
           </div>
         </div>

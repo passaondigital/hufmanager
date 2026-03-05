@@ -429,6 +429,134 @@ export const helpTexts: Record<string, Record<string, HelpTextEntry>> = {
       description: "Unter diesem Wert bekommst du eine Warnung, dass Nachbestellung nötig ist.",
     },
   },
+
+  // ─── Partner-App ──────────────────────────────────────────
+  partner: {
+    home: {
+      title: "Partner-Dashboard",
+      description: "Deine Übersicht als Fachpartner. Hier siehst du freigegebene Pferde, anstehende Termine und aktuelle Anfragen.",
+    },
+    kalender: {
+      title: "Kalender",
+      description: "Dein Terminkalender als Fachpartner. Erstelle und verwalte Behandlungstermine.",
+    },
+    rechnungen: {
+      title: "Rechnungen",
+      description: "Erstelle Rechnungen für deine Behandlungen und verwalte offene Posten.",
+    },
+    chat: {
+      title: "Chat",
+      description: "Kommuniziere direkt mit Pferdebesitzern und Hufbearbeitern über Behandlungspläne.",
+    },
+    netzwerk: {
+      title: "Netzwerk",
+      description: "Vernetze dich mit Hufbearbeitern und anderen Fachpartnern in deiner Region.",
+    },
+    notizen: {
+      title: "Behandlungsnotizen",
+      description: "Deine Notizen zu einzelnen Pferden und Behandlungen, chronologisch sortiert.",
+    },
+    dokumente: {
+      title: "Dokumente & Befunde",
+      description: "Lade Befunde, Röntgenbilder und andere Dokumente hoch und ordne sie Pferden zu.",
+    },
+    behandlungsplaene: {
+      title: "Behandlungspläne",
+      description: "Erstelle strukturierte Behandlungspläne mit Zielen, Maßnahmen und Verlaufskontrolle.",
+    },
+    services: {
+      title: "Meine Leistungen",
+      description: "Verwalte deine angebotenen Dienstleistungen mit Preisen und Beschreibungen.",
+    },
+    profil: {
+      title: "Mein Profil",
+      description: "Bearbeite dein öffentliches Fachpartner-Profil, Qualifikationen und Kontaktdaten.",
+    },
+    einstellungen: {
+      title: "Einstellungen",
+      description: "Konfiguriere dein Partner-Konto, Benachrichtigungen und Datenschutz-Einstellungen.",
+    },
+  },
+
+  // ─── Mitarbeiter-App ──────────────────────────────────────
+  mitarbeiter: {
+    kalender: {
+      title: "Kalender",
+      description: "Deine zugewiesenen Termine. Hier siehst du, welche Pferde du heute bearbeiten musst.",
+    },
+    notizbuch: {
+      title: "Notizbuch",
+      description: "Persönliche Notizen zu Terminen und Pferden. Nur du kannst diese sehen.",
+    },
+    material: {
+      title: "Mein Material",
+      description: "Übersicht über dir zugewiesene Materialien und Werkzeuge.",
+    },
+    hufcam: {
+      title: "HufCam Pro",
+      description: "Fotografiere Hufe während der Bearbeitung für die Dokumentation.",
+    },
+    hufanalyse: {
+      title: "Hufanalyse",
+      description: "Erstelle Bearbeitungsbögen nach dem Leipziger Modell für zugewiesene Pferde.",
+    },
+    timer: {
+      title: "Zeiterfassung",
+      description: "Erfasse deine Arbeitszeiten pro Termin oder Tag für die Abrechnung.",
+    },
+    abwesenheiten: {
+      title: "Abwesenheiten",
+      description: "Melde Urlaub, Krankheit oder andere Abwesenheiten an deinen Arbeitgeber.",
+    },
+    vertrag: {
+      title: "Mein Vertrag",
+      description: "Einsicht in deine Vertragsdaten und Konditionen.",
+    },
+    profil: {
+      title: "Mein Profil",
+      description: "Bearbeite deine persönlichen Daten und Kontaktinformationen.",
+    },
+    chat: {
+      title: "Chat",
+      description: "Kommuniziere mit deinem Chef und Teamkollegen.",
+    },
+  },
+
+  // ─── Kunden-App ───────────────────────────────────────────
+  kunden: {
+    home: {
+      title: "Mein Dashboard",
+      description: "Deine Übersicht mit Pferden, nächsten Terminen und Nachrichten.",
+    },
+    pferde: {
+      title: "Meine Pferde",
+      description: "Alle deine registrierten Pferde mit Behandlungshistorie und Terminstatus.",
+    },
+    rechnungen: {
+      title: "Rechnungen",
+      description: "Alle Rechnungen deines Hufbearbeiters. Du kannst sie herunterladen und den Zahlungsstatus einsehen.",
+    },
+    buchen: {
+      title: "Service buchen",
+      description: "Buche einen Termin bei deinem Hufbearbeiter – wähle Service, Pferd und Wunschtermin.",
+    },
+    profil: {
+      title: "Mein Profil",
+      description: "Bearbeite deine Kontaktdaten und Adresse.",
+    },
+    chat: {
+      title: "Chat",
+      description: "Schreibe deinem Hufbearbeiter direkt eine Nachricht.",
+    },
+    stallboard: {
+      title: "Stallboard",
+      description: "Aktuelle Infos und Ankündigungen von deinem Hufbearbeiter für den Stall.",
+    },
+    freigaben: {
+      title: "Datenfreigabe",
+      description: "Kontrolliere, wer Zugriff auf deine Pferdedaten hat – z.B. Tierärzte oder Fachpartner.",
+    },
+  },
 };
 
 /**

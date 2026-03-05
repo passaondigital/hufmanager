@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ClipboardList } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 
 const EmployeeAnalyse = () => {
   const { user } = useAuth();
@@ -61,6 +62,7 @@ const EmployeeAnalyse = () => {
         <h1 className="text-xl font-bold flex items-center gap-2">
           <ClipboardList className="h-5 w-5 text-primary" />
           Hufanalyse
+          <HelpTip id="mitarbeiter.hufanalyse" />
         </h1>
         <p className="text-sm text-muted-foreground">
           Professionelle Bearbeitungsbögen nach LTZ-Standard

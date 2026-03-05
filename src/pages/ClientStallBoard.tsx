@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, MessageSquare, Plus, Send } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { toast } from "sonner";
@@ -132,7 +133,7 @@ export default function ClientStallBoard() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/client-home")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="font-bold text-lg">Stallboard</h1>
+          <h1 className="font-bold text-lg flex items-center gap-2">Stallboard <HelpTip id="kunden.stallboard" /></h1>
           <Button
             size="sm"
             className="ml-auto gap-1"

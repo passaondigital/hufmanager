@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Settings, Building2, CreditCard, Loader2, Save, Trash2, AlertTriangle, Bell, Globe } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -206,7 +207,7 @@ export default function PartnerSettings() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-foreground">Einstellungen</h1>
+      <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">Einstellungen <HelpTip id="partner.einstellungen" /></h1>
 
       <Tabs defaultValue="business" className="space-y-4">
         <TabsList className="grid w-full grid-cols-5">

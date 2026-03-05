@@ -17,6 +17,7 @@ import { getPartnerTypeConfig } from "@/lib/partnerTypes";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { de } from "date-fns/locale";
 import { DemoTourButton } from "@/components/demo/DemoTourButton";
+import { HelpTip } from "@/components/ui/HelpTip";
 
 // VERBESSERUNG 4: Onboarding Checklist
 interface ChecklistStep {
