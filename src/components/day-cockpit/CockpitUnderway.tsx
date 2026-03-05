@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Polyline, useMap } from "react-leaflet";
+import { useState, useEffect, useMemo } from "react";
+import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, useMap } from "react-leaflet";
 import L from "leaflet";
 import {
   Navigation, CheckCircle, MapPin, Clock, Route, WifiOff,
-  Square, Play
+  Square, Play, Volume2, VolumeX, ChevronRight
 } from "lucide-react";
+import { useTurnByTurn } from "@/hooks/useTurnByTurn";
 import type { TourAppointment } from "@/components/tour-manager/TourCard";
+import type { RouteStep } from "@/lib/routeService";
 import "leaflet/dist/leaflet.css";
 
 /* ── Leaflet Icons ── */
@@ -37,6 +39,32 @@ function MapAutoFit({ userPos, destPos }: { userPos: [number, number] | null; de
   return null;
 }
 
+/* ── Turn arrow mapping ── */
+function getTurnArrow(type: number): string {
+  switch (type) {
+    case 0: return "↑"; // left
+    case 1: return "↗"; // right
+    case 2: return "↑"; // sharp left
+    case 3: return "↗"; // sharp right
+    case 4: return "↰"; // slight left
+    case 5: return "↱"; // slight right
+    case 6: return "↑"; // straight
+    case 7: return "↻"; // enter roundabout
+    case 8: return "↻"; // exit roundabout
+    case 9: return "↩"; // u-turn
+    case 10: return "🏁"; // goal
+    case 11: return "🚀"; // depart
+    case 12: return "↰"; // keep left
+    case 13: return "↱"; // keep right
+    default: return "↑";
+  }
+}
+
+function formatDistance(meters: number): string {
+  if (meters >= 1000) return `${(meters / 1000).toFixed(1)} km`;
+  return `${Math.round(meters)} m`;
+}
+
 /* ── Props ── */
 interface CockpitUnderwayProps {
   appointments: TourAppointment[];
@@ -48,6 +76,8 @@ interface CockpitUnderwayProps {
   tourStartTime: Date | null;
   completedCount: number;
   isOnline: boolean;
+  routeGeometry?: GeoJSON.LineString;
+  routeSteps?: RouteStep[];
   onNavigate: (lat: number, lng: number) => void;
   onArrived: (id: string) => void;
   onComplete: (id: string) => void;
@@ -64,6 +94,8 @@ export function CockpitUnderway({
   tourStartTime,
   completedCount,
   isOnline,
+  routeGeometry,
+  routeSteps,
   onNavigate,
   onArrived,
   onComplete,
@@ -71,7 +103,7 @@ export function CockpitUnderway({
 }: CockpitUnderwayProps) {
   const [elapsed, setElapsed] = useState("00:00");
 
-  // Live timer — update every second for responsiveness
+  // Live timer
   useEffect(() => {
     if (!tourStartTime) return;
     const tick = () => {
@@ -92,6 +124,34 @@ export function CockpitUnderway({
       ? [activeAppointment.client.geo_lat, activeAppointment.client.geo_lng]
       : null;
 
+  // Turn-by-turn navigation
+  const routeCoords = routeGeometry?.coordinates as [number, number][] | undefined;
+  const { 
+    nextStep, distanceToNextTurn, speedKmh, arrived, arrivalTarget,
+    resetArrival, toggleSpeech, speechEnabled
+  } = useTurnByTurn(
+    routeSteps,
+    routeCoords,
+    userLocation,
+    nextPos,
+    activeAppointment?.client?.full_name || null,
+    routeSteps != null && routeSteps.length > 0
+  );
+
+  // Auto-arrival detection
+  useEffect(() => {
+    if (arrived && activeAppointment) {
+      // Toast-like behavior handled by parent via arrived state
+    }
+  }, [arrived, activeAppointment]);
+
+  // GeoJSON route line (convert [lng,lat] to [lat,lng] for Leaflet Polyline)
+  const routeLine = useMemo(() => {
+    if (!routeGeometry?.coordinates?.length) return null;
+    return (routeGeometry.coordinates as [number, number][]).map(([lng, lat]) => [lat, lng] as [number, number]);
+  }, [routeGeometry]);
+
+  // Fallback straight line
   const segment: [number, number][] = [];
   if (userLocation) segment.push(userLocation);
   if (nextPos) segment.push(nextPos);
@@ -109,14 +169,61 @@ export function CockpitUnderway({
         </div>
       )}
 
+      {/* ── TURN-BY-TURN BANNER ── */}
+      {nextStep && !allDone && !isArrived && (
+        <div className="flex items-center gap-3 px-4 py-3" style={{ background: "#1e3a5f", color: "#fff", zIndex: 600 }}>
+          <span className="text-3xl font-bold" style={{ minWidth: 40, textAlign: "center" }}>
+            {getTurnArrow(nextStep.type)}
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold truncate">{nextStep.instruction}</p>
+            {distanceToNextTurn != null && (
+              <p className="text-xs opacity-75">In {formatDistance(distanceToNextTurn)}</p>
+            )}
+          </div>
+          <button onClick={toggleSpeech} className="p-2 rounded-lg" style={{ background: "rgba(255,255,255,0.15)" }}>
+            {speechEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+          </button>
+        </div>
+      )}
+
+      {/* ── Arrival Toast ── */}
+      {arrived && activeAppointment && (
+        <div className="flex items-center gap-3 px-4 py-3" style={{ background: "#166534", color: "#fff", zIndex: 600 }}>
+          <MapPin className="h-5 w-5 flex-shrink-0" />
+          <p className="flex-1 text-sm font-bold">Angekommen bei {arrivalTarget}?</p>
+          <button
+            onClick={() => {
+              onArrived(activeAppointment.id);
+              resetArrival();
+            }}
+            className="px-4 py-1.5 rounded-lg text-sm font-bold"
+            style={{ background: "#22c55e", color: "#111" }}
+          >
+            Ja
+          </button>
+        </div>
+      )}
+
       {/* ── MAP: 55vh ── */}
       <div className="relative" style={{ height: "55vh", minHeight: "55vh" }}>
         {/* Transparent stats overlay */}
         <div className="absolute top-0 left-0 right-0 z-[500] flex items-center justify-between px-4 pt-3 pb-6 pointer-events-none"
           style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 100%)" }}>
-          <span className="text-white font-bold text-xl font-mono pointer-events-auto">
-            {gpsTotalKm} km
-          </span>
+          {/* Speed display */}
+          <div className="flex items-center gap-3 pointer-events-auto">
+            {speedKmh != null && (
+              <div className="flex items-baseline gap-1">
+                <span className="text-white font-bold text-2xl font-mono" style={{ color: speedKmh > 100 ? "#f97316" : "#22c55e" }}>
+                  {speedKmh}
+                </span>
+                <span className="text-white/60 text-xs">km/h</span>
+              </div>
+            )}
+            <span className="text-white font-bold text-xl font-mono">
+              {gpsTotalKm} km
+            </span>
+          </div>
           <span className="text-white/80 font-semibold text-sm pointer-events-auto">
             {completedCount}/{appointments.length} Termine
           </span>
@@ -135,16 +242,19 @@ export function CockpitUnderway({
           <MapAutoFit userPos={userLocation} destPos={nextPos} />
           {userLocation && <Marker position={userLocation} icon={userIcon} />}
           {nextPos && <Marker position={nextPos} icon={destIcon} />}
-          {segment.length > 1 && (
-            <Polyline positions={segment} pathOptions={{ color: "#F5970A", weight: 5, opacity: 0.9 }} />
-          )}
+          
+          {/* Real ORS route line or fallback straight line */}
+          {routeLine && routeLine.length > 1 ? (
+            <Polyline positions={routeLine} pathOptions={{ color: "#F5970A", weight: 6, opacity: 0.9 }} />
+          ) : segment.length > 1 ? (
+            <Polyline positions={segment} pathOptions={{ color: "#F5970A", weight: 5, opacity: 0.9, dashArray: "10 10" }} />
+          ) : null}
         </MapContainer>
       </div>
 
       {/* ── BOTTOM PANEL: 45vh ── */}
       <div className="flex-1 flex flex-col justify-between overflow-hidden" style={{ background: "#1a1a1a" }}>
         {allDone ? (
-          /* All done state */
           <div className="flex-1 flex flex-col items-center justify-center gap-3 px-5">
             <CheckCircle className="h-14 w-14" style={{ color: "#22c55e" }} />
             <p className="text-2xl font-bold text-white text-center">Alle Termine erledigt!</p>
@@ -153,13 +263,10 @@ export function CockpitUnderway({
             </p>
           </div>
         ) : activeAppointment ? (
-          /* Active appointment info */
           <div className="flex-1 flex flex-col px-5 pt-4 gap-3 overflow-auto">
-            {/* Client name */}
             <h2 className="text-2xl font-bold text-white leading-tight truncate">
               {activeAppointment.client?.full_name || "Unbekannt"}
             </h2>
-            {/* Address + horse */}
             <p className="text-sm leading-snug" style={{ color: "#999" }}>
               {[
                 activeAppointment.client?.street,
@@ -169,7 +276,14 @@ export function CockpitUnderway({
               {activeAppointment.horses?.length ? ` · ${activeAppointment.horses.map(h => h.name).join(", ")}` : ""}
             </p>
 
-            {/* Stats cards */}
+            {/* Service type badge */}
+            {activeAppointment.service_type && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold w-fit"
+                style={{ background: "#333", color: "#F5970A" }}>
+                {activeAppointment.service_type}
+              </span>
+            )}
+
             <div className="flex gap-3 mt-1">
               <div className="flex-1 rounded-xl p-3 text-center" style={{ background: "#222" }}>
                 <Clock className="h-5 w-5 mx-auto mb-1" style={{ color: "#F5970A" }} />
@@ -198,7 +312,6 @@ export function CockpitUnderway({
             </button>
           ) : activeAppointment ? (
             <div className="flex gap-3">
-              {/* Left button */}
               {!isArrived ? (
                 activeAppointment.client?.geo_lat && activeAppointment.client?.geo_lng ? (
                   <button
@@ -221,7 +334,6 @@ export function CockpitUnderway({
                 </button>
               )}
 
-              {/* Right button — primary action */}
               {!isArrived ? (
                 <button
                   onClick={() => onArrived(activeAppointment.id)}

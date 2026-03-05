@@ -19,9 +19,8 @@ serve(async (req) => {
       );
     }
 
-    const { coordinates } = await req.json();
+    const { coordinates, optimize, vehicle } = await req.json();
 
-    // Validate input
     if (!coordinates || !Array.isArray(coordinates) || coordinates.length < 2) {
       return new Response(
         JSON.stringify({ error: 'At least 2 coordinates required. Format: [[lng, lat], ...]' }),
@@ -36,9 +35,112 @@ serve(async (req) => {
       );
     }
 
-    // Call OpenRouteService Directions API
+    // If optimize=true, use ORS Optimization API (VROOM) for stop ordering
+    if (optimize && coordinates.length >= 3) {
+      const jobs = coordinates.slice(1).map((coord: number[], i: number) => ({
+        id: i + 1,
+        location: coord, // [lng, lat]
+      }));
+
+      const optimizeBody: any = {
+        jobs,
+        vehicles: [{
+          id: 1,
+          profile: "driving-car",
+          start: coordinates[0],
+          end: coordinates[0], // return to start
+        }],
+      };
+
+      // Add vehicle constraints if trailer info provided
+      if (vehicle?.trailerHeight) {
+        optimizeBody.vehicles[0].profile = "driving-hgv";
+      }
+
+      const optResponse = await fetch(
+        'https://api.openrouteservice.org/optimization',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': ORS_API_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(optimizeBody),
+        }
+      );
+
+      if (!optResponse.ok) {
+        const errText = await optResponse.text();
+        console.error('ORS Optimization error:', optResponse.status, errText);
+        // Fall through to regular directions
+      } else {
+        const optData = await optResponse.json();
+        const route = optData.routes?.[0];
+        if (route) {
+          const optimizedOrder = route.steps
+            .filter((s: any) => s.type === 'job')
+            .map((s: any) => s.job);
+
+          // Now get full directions with geometry for the optimized order
+          const orderedCoords = [coordinates[0]];
+          for (const jobId of optimizedOrder) {
+            orderedCoords.push(coordinates[jobId]); // jobId is 1-indexed into original slice
+          }
+
+          const dirResponse = await fetch(
+            'https://api.openrouteservice.org/v2/directions/driving-car/geojson',
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': ORS_API_KEY,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                coordinates: orderedCoords,
+                instructions: true,
+                language: 'de',
+              }),
+            }
+          );
+
+          if (dirResponse.ok) {
+            const dirData = await dirResponse.json();
+            const feature = dirData.features?.[0];
+            if (feature) {
+              const segments = feature.properties?.segments || [];
+              const steps: any[] = [];
+              segments.forEach((seg: any) => {
+                (seg.steps || []).forEach((step: any) => {
+                  steps.push({
+                    instruction: step.instruction,
+                    distance: step.distance,
+                    duration: step.duration,
+                    type: step.type,
+                    name: step.name,
+                    way_points: step.way_points,
+                  });
+                });
+              });
+
+              return new Response(
+                JSON.stringify({
+                  distance: feature.properties.summary.distance,
+                  duration: feature.properties.summary.duration,
+                  geometry: feature.geometry, // GeoJSON LineString
+                  steps,
+                  optimized_order: optimizedOrder,
+                }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              );
+            }
+          }
+        }
+      }
+    }
+
+    // Regular directions with geometry and instructions
     const response = await fetch(
-      'https://api.openrouteservice.org/v2/directions/driving-car',
+      'https://api.openrouteservice.org/v2/directions/driving-car/geojson',
       {
         method: 'POST',
         headers: {
@@ -47,8 +149,8 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           coordinates,
-          instructions: false,
-          geometry: false,
+          instructions: true,
+          language: 'de',
         }),
       }
     );
@@ -63,23 +165,36 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-
-    // Extract summary from ORS response
-    const route = data.routes?.[0];
-    if (!route) {
+    const feature = data.features?.[0];
+    if (!feature) {
       return new Response(
         JSON.stringify({ error: 'No route found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const result = {
-      distance: route.summary.distance, // meters
-      duration: route.summary.duration, // seconds
-    };
+    const segments = feature.properties?.segments || [];
+    const steps: any[] = [];
+    segments.forEach((seg: any) => {
+      (seg.steps || []).forEach((step: any) => {
+        steps.push({
+          instruction: step.instruction,
+          distance: step.distance,
+          duration: step.duration,
+          type: step.type,
+          name: step.name,
+          way_points: step.way_points,
+        });
+      });
+    });
 
     return new Response(
-      JSON.stringify(result),
+      JSON.stringify({
+        distance: feature.properties.summary.distance,
+        duration: feature.properties.summary.duration,
+        geometry: feature.geometry,
+        steps,
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {

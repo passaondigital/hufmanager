@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { calculateRoute } from "@/lib/routeService";
+import type { RouteResult, RouteStep } from "@/lib/routeService";
 import { prefetchTilesForRoute, clearTileCache } from "@/lib/tilePrefetch";
 import { useFuelPrices, getCheapestPrice, mapFuelType } from "@/hooks/useFuelPrices";
 import { geocodeAddress } from "@/lib/geocode";
@@ -24,7 +25,7 @@ export function DayCockpit() {
 
   const [cockpitState, setCockpitState] = useState<CockpitState>("ready");
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
-  const [routeInfo, setRouteInfo] = useState<{ distance: number; duration: number } | null>(null);
+  const [routeInfo, setRouteInfo] = useState<RouteResult | null>(null);
   const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
   const [activeAppointmentIndex, setActiveAppointmentIndex] = useState(0);
   const [tourId, setTourId] = useState<string | null>(null);
@@ -36,7 +37,7 @@ export function DayCockpit() {
   const gpsWatchRef = useRef<number | null>(null);
   const routeDebounceRef = useRef<ReturnType<typeof setTimeout>>();
 
-  // Always fullscreen — cockpit takes over the whole screen
+  // Always fullscreen
   useEffect(() => {
     setFullscreen(true);
     return () => setFullscreen(false);
@@ -66,45 +67,49 @@ export function DayCockpit() {
         .from("appointments")
         .select(`
           id, date, time, status, service_type, is_emergency, tour_order, horse_id, client_id,
+          location, duration,
           horses(id, name, owner_id, latitude, longitude)
         `)
         .eq("date", today)
         .eq("provider_id", user.id)
         .neq("status", "cancelled")
         .order("tour_order", { ascending: true, nullsFirst: false })
-        .order("time", { ascending: true });
+        .order("time", { ascending: true }) as any;
 
       if (error || !aptData) return [];
 
-      // Collect owner IDs from horses AND client_id fallback
       const ownerIds = [...new Set(
-        aptData.map(apt => apt.horses?.owner_id || apt.client_id).filter((id): id is string => !!id)
-      )];
+        (aptData as any[]).map((apt: any) => apt.horses?.owner_id || apt.client_id).filter((id: any): id is string => !!id)
+      )] as string[];
 
       const { data: contacts } = ownerIds.length > 0
         ? await supabase
             .from("contacts")
             .select("id, profile_id, full_name, street, zip_code, city")
             .eq("provider_id", user.id)
-            .in("profile_id", ownerIds)
+            .in("profile_id", ownerIds as string[])
         : { data: [] };
 
       const { data: profiles } = ownerIds.length > 0
         ? await supabase
             .from("profiles")
             .select("id, full_name, readable_id")
-            .in("id", ownerIds)
+            .in("id", ownerIds as string[])
         : { data: [] };
 
       const contactMap = Object.fromEntries((contacts || []).map(c => [c.profile_id, c]));
       const profileMap = Object.fromEntries((profiles || []).map(p => [p.id, p]));
 
       const grouped: Record<string, TourAppointment> = {};
-      aptData.forEach(apt => {
+      aptData.forEach((apt: any) => {
         const horse = apt.horses;
         const ownerId = horse?.owner_id || apt.client_id;
         const contact = ownerId ? contactMap[ownerId] : null;
         const profile = ownerId ? profileMap[ownerId] : null;
+
+        // Use appointment GPS if available, else horse coords
+        const geoLat = apt.appointment_lat || horse?.latitude || null;
+        const geoLng = apt.appointment_lng || horse?.longitude || null;
 
         if (!grouped[apt.id]) {
           grouped[apt.id] = {
@@ -120,8 +125,8 @@ export function DayCockpit() {
               id: ownerId,
               readable_id: profile?.readable_id || undefined,
               full_name: contact?.full_name || profile?.full_name || "Unbekannt",
-              geo_lat: horse?.latitude || null,
-              geo_lng: horse?.longitude || null,
+              geo_lat: geoLat,
+              geo_lng: geoLng,
               street: contact?.street || null,
               zip: contact?.zip_code || null,
               city: contact?.city || null,
@@ -134,7 +139,7 @@ export function DayCockpit() {
         }
       });
 
-      // Geocode missing coordinates
+      // Geocode missing coordinates and save to appointment
       const entries = Object.values(grouped);
       for (const apt of entries) {
         if (apt.client && !apt.client.geo_lat && !apt.client.geo_lng) {
@@ -144,7 +149,16 @@ export function DayCockpit() {
             if (result) {
               apt.client.geo_lat = result.lat;
               apt.client.geo_lng = result.lng;
-              // Save back to horse record for future use
+              // Save to appointment record (new columns via cast)
+              (supabase.from("appointments") as any)
+                .update({ 
+                  appointment_lat: result.lat, 
+                  appointment_lng: result.lng, 
+                  location_geocoded: true 
+                })
+                .eq("id", apt.id)
+                .then(() => {});
+              // Also save to horse
               const horseId = apt.horses?.[0]?.id;
               if (horseId) {
                 supabase.from("horses")
@@ -197,14 +211,16 @@ export function DayCockpit() {
     return positions;
   }, [appointments, userLocation]);
 
-  // Route calculation (debounced)
+  // Route calculation with ORS optimization
   useEffect(() => {
     if (routePositions.length < 2) { setRouteInfo(null); return; }
     if (routeDebounceRef.current) clearTimeout(routeDebounceRef.current);
     routeDebounceRef.current = setTimeout(async () => {
       setIsCalculatingRoute(true);
       try {
-        const result = await calculateRoute(routePositions);
+        const result = await calculateRoute(routePositions, {
+          optimize: routePositions.length >= 3,
+        });
         if (result) setRouteInfo(result);
       } catch (e) {
         console.error("Route calc error:", e);
@@ -266,10 +282,9 @@ export function DayCockpit() {
         const { latitude, longitude, accuracy } = pos.coords;
         setUserLocation([latitude, longitude]);
 
-        // Accumulate km - 30m threshold for accuracy
         if (lastGpsRef.current) {
           const d = haversine(lastGpsRef.current.lat, lastGpsRef.current.lng, latitude, longitude);
-          if (d > 0.03 && accuracy < 50) { // 30m threshold, only with decent accuracy
+          if (d > 0.03 && accuracy < 50) {
             setGpsTotalKm(prev => Math.round((prev + d) * 10) / 10);
             lastGpsRef.current = { lat: latitude, lng: longitude };
           }
@@ -277,7 +292,6 @@ export function DayCockpit() {
           lastGpsRef.current = { lat: latitude, lng: longitude };
         }
 
-        // Save breadcrumb (fire and forget)
         supabase.from("tour_breadcrumbs").insert({
           tour_id: tourId,
           provider_id: user!.id,
@@ -331,7 +345,6 @@ export function DayCockpit() {
         newTourId = newTour!.id;
       }
 
-      // Start work session
       await supabase.from("work_sessions").insert({
         provider_id: user.id,
         started_at: new Date().toISOString(),
@@ -339,7 +352,6 @@ export function DayCockpit() {
         break_duration_minutes: 0,
       });
 
-      // Create mileage log
       await supabase.from("vehicle_mileage_logs").insert({
         provider_id: user.id,
         vehicle_id: vehicle?.id,
@@ -353,7 +365,6 @@ export function DayCockpit() {
       lastGpsRef.current = null;
       setCockpitState("underway");
 
-      // Prefetch tiles
       if (routePositions.length >= 2) {
         prefetchTilesForRoute(routePositions).catch(console.error);
       }
@@ -370,7 +381,6 @@ export function DayCockpit() {
 
     queryClient.invalidateQueries({ queryKey: ["cockpit-appointments"] });
 
-    // Move to next
     if (activeAppointmentIndex < appointments.length - 1) {
       setActiveAppointmentIndex(prev => prev + 1);
     }
@@ -383,7 +393,6 @@ export function DayCockpit() {
       .eq("id", appointmentId);
     queryClient.invalidateQueries({ queryKey: ["cockpit-appointments"] });
 
-    // Send push to client
     const apt = appointments.find(a => a.id === appointmentId);
     if (apt?.client?.id) {
       await supabase.from("notifications").insert({
@@ -407,7 +416,6 @@ export function DayCockpit() {
       })
       .eq("id", tourId);
 
-    // End work session
     const { data: session } = await supabase
       .from("work_sessions")
       .select("id")
@@ -420,7 +428,6 @@ export function DayCockpit() {
         .eq("id", session.id);
     }
 
-    // Update mileage log
     const { data: mLog } = await supabase
       .from("vehicle_mileage_logs")
       .select("id")
@@ -490,6 +497,8 @@ export function DayCockpit() {
       tourStartTime={tourStartTime}
       completedCount={completedCount}
       isOnline={isOnline}
+      routeGeometry={routeInfo?.geometry}
+      routeSteps={routeInfo?.steps}
       onNavigate={handleNavigate}
       onArrived={handleArrived}
       onComplete={handleCompleteAppointment}
