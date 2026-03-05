@@ -1,10 +1,8 @@
 import { motion } from "framer-motion";
-import { 
-  Play, MapPin, Clock, Route, Fuel, Loader2, WifiOff, 
+import {
+  Play, MapPin, Clock, Route, Fuel, Loader2, WifiOff,
   AlertTriangle
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { TourAppointment } from "@/components/tour-manager/TourCard";
 
@@ -29,79 +27,70 @@ export function CockpitReady({
   isOnline,
   onStartTour,
 }: CockpitReadyProps) {
-  const formatCurrency = (v: number) =>
+  const fmt = (v: number) =>
     new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(v);
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-background">
-      {/* Offline Banner */}
+    <div className="fixed inset-0 flex flex-col" style={{ background: "#111" }}>
+      {/* Offline */}
       {!isOnline && (
-        <div className="bg-destructive text-destructive-foreground px-4 py-2 flex items-center gap-2 text-sm font-medium">
+        <div className="flex items-center gap-2 px-4 py-2 text-sm font-medium" style={{ background: "#dc2626", color: "#fff" }}>
           <WifiOff className="h-4 w-4" />
-          Offline – gecachte Daten verfügbar
+          Offline – gecachte Daten
         </div>
       )}
 
       {/* Header */}
-      <div className="px-4 pt-4 pb-2">
-        <h1 className="text-2xl font-bold">Tages-Cockpit</h1>
-        <p className="text-muted-foreground text-sm">
+      <div className="px-5 pt-5 pb-1">
+        <h1 className="text-2xl font-bold text-white">Tages-Cockpit</h1>
+        <p className="text-sm mt-0.5" style={{ color: "#999" }}>
           {new Date().toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}
         </p>
       </div>
 
-      {/* Stats Row */}
-      <div className="px-4 pb-3 flex gap-2">
-        <Badge variant="outline" className="h-9 px-3 gap-1.5 text-sm bg-muted/50">
-          <MapPin className="h-4 w-4 text-primary" />
-          {appointments.length} Termine
-        </Badge>
-        <Badge variant="outline" className="h-9 px-3 gap-1.5 text-sm bg-muted/50">
-          {isCalculatingRoute ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Route className="h-4 w-4 text-primary" />
-          )}
-          {routeInfo ? `${routeInfo.distance} km` : "—"}
-        </Badge>
-        <Badge variant="outline" className="h-9 px-3 gap-1.5 text-sm bg-muted/50">
-          <Clock className="h-4 w-4 text-primary" />
-          {routeInfo
-            ? `${Math.floor(routeInfo.duration / 60)}h ${routeInfo.duration % 60}m`
-            : "—"
-          }
-        </Badge>
+      {/* Stats */}
+      <div className="px-5 py-3 flex gap-2 flex-wrap">
+        <Stat icon={<MapPin className="h-4 w-4" />} label={`${appointments.length} Termine`} />
+        <Stat
+          icon={isCalculatingRoute ? <Loader2 className="h-4 w-4 animate-spin" /> : <Route className="h-4 w-4" />}
+          label={routeInfo ? `${routeInfo.distance} km` : "—"}
+        />
+        <Stat
+          icon={<Clock className="h-4 w-4" />}
+          label={routeInfo ? `${Math.floor(routeInfo.duration / 60)}h ${routeInfo.duration % 60}m` : "—"}
+        />
         {estimatedFuelCost !== null && (
-          <Badge variant="outline" className="h-9 px-3 gap-1.5 text-sm bg-muted/50">
-            <Fuel className="h-4 w-4 text-primary" />
-            {formatCurrency(estimatedFuelCost)}
-          </Badge>
+          <Stat icon={<Fuel className="h-4 w-4" />} label={fmt(estimatedFuelCost)} />
         )}
       </div>
 
-      {/* Appointment List */}
-      <ScrollArea className="flex-1 px-4">
+      {/* Appointment list */}
+      <ScrollArea className="flex-1 px-5">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <Loader2 className="h-8 w-8 animate-spin" style={{ color: "#666" }} />
           </div>
         ) : appointments.length === 0 ? (
           <div className="text-center py-20">
-            <MapPin className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-muted-foreground text-lg">Keine Termine heute</p>
+            <MapPin className="h-12 w-12 mx-auto mb-3" style={{ color: "#333" }} />
+            <p className="text-lg" style={{ color: "#666" }}>Keine Termine heute</p>
           </div>
         ) : (
-          <div className="space-y-2 pb-32">
+          <div className="space-y-2 pb-36">
             {appointments.map((apt, idx) => (
               <motion.div
                 key={apt.id}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                className="flex items-center gap-3 p-4 rounded-xl bg-card border shadow-sm"
+                transition={{ delay: idx * 0.04 }}
+                className="flex items-center gap-3 p-4"
+                style={{ background: "#1a1a1a", borderRadius: 12 }}
               >
-                {/* Number */}
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg">
+                {/* Number circle */}
+                <div
+                  className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg"
+                  style={{ background: "#F5970A", color: "#111" }}
+                >
                   {idx + 1}
                 </div>
 
@@ -109,67 +98,70 @@ export function CockpitReady({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     {apt.time && (
-                      <span className="text-lg font-bold font-mono">
+                      <span className="text-base font-bold font-mono text-white">
                         {apt.time.substring(0, 5)}
                       </span>
                     )}
-                    <span className="font-semibold truncate text-base">
+                    <span className="font-semibold truncate text-base text-white">
                       {apt.client?.full_name || "Unbekannt"}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-sm text-muted-foreground truncate">
-                      {apt.horses?.map(h => h.name).join(", ")}
-                    </span>
-                  </div>
-                  {apt.client?.city && (
-                    <p className="text-xs text-muted-foreground mt-0.5">
+                  {apt.horses?.length ? (
+                    <p className="text-sm truncate mt-0.5" style={{ color: "#999" }}>
+                      {apt.horses.map(h => h.name).join(", ")}
+                    </p>
+                  ) : null}
+                  {(apt.client?.street || apt.client?.city) && (
+                    <p className="text-xs mt-0.5" style={{ color: "#666" }}>
                       {[apt.client.street, apt.client.zip, apt.client.city].filter(Boolean).join(", ")}
                     </p>
                   )}
                 </div>
 
-                {/* Status */}
-                {apt.is_emergency && (
-                  <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0" />
-                )}
-                {apt.status === "completed" && (
-                  <Badge variant="secondary" className="text-xs bg-chart-2/10 text-chart-2">✓</Badge>
-                )}
-                {!apt.client?.geo_lat && !apt.client?.geo_lng && (
-                  <Badge variant="outline" className="text-xs text-muted-foreground border-muted-foreground/30">
-                    <MapPin className="h-3 w-3 mr-0.5" />
-                    {apt.client?.street || apt.client?.zip || apt.client?.city
-                      ? "Nur Adresse"
-                      : "Keine Adresse"
-                    }
-                  </Badge>
-                )}
+                {/* Badges */}
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  {apt.is_emergency && <AlertTriangle className="h-5 w-5" style={{ color: "#dc2626" }} />}
+                  {apt.status === "completed" && (
+                    <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "#22c55e20", color: "#22c55e" }}>✓</span>
+                  )}
+                </div>
               </motion.div>
             ))}
           </div>
         )}
       </ScrollArea>
 
-      {/* Bottom CTA - Daumen-Zone */}
+      {/* Bottom CTA */}
       {appointments.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 pb-6 bg-gradient-to-t from-background via-background to-transparent">
-          <Button
-            size="lg"
-            className="w-full h-16 text-xl font-bold gap-3 rounded-2xl shadow-xl"
+        <div className="fixed bottom-0 left-0 right-0 px-5 pb-6 pt-4"
+          style={{ background: "linear-gradient(to top, #111 60%, transparent)" }}>
+          <button
             onClick={onStartTour}
+            className="w-full flex items-center justify-center gap-3 font-bold text-xl"
+            style={{ height: 64, borderRadius: 12, background: "#F5970A", color: "#111" }}
           >
             <Play className="h-6 w-6" />
             Tour starten
-          </Button>
+          </button>
           {livePrice && (
-            <p className="text-center text-xs text-muted-foreground mt-2">
+            <p className="text-center text-xs mt-2" style={{ color: "#666" }}>
               <Fuel className="h-3 w-3 inline mr-1" />
-              Aktueller Spritpreis: {livePrice.toFixed(3)} €/L
+              Spritpreis: {livePrice.toFixed(3)} €/L
             </p>
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── Stat badge helper ── */
+function Stat({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5 px-3 h-8 rounded-full text-xs font-medium"
+      style={{ background: "#1a1a1a", color: "#ccc" }}>
+      <span style={{ color: "#F5970A" }}>{icon}</span>
+      {label}
     </div>
   );
 }
