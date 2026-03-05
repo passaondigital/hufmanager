@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { calculateRoute } from "@/lib/routeService";
 import { prefetchTilesForRoute, clearTileCache } from "@/lib/tilePrefetch";
 import { useFuelPrices, getCheapestPrice, mapFuelType } from "@/hooks/useFuelPrices";
+import { geocodeAddress } from "@/lib/geocode";
 import type { TourAppointment } from "@/components/tour-manager/TourCard";
 
 import { CockpitReady } from "./CockpitReady";
@@ -56,8 +57,8 @@ export function DayCockpit() {
       const { data: aptData, error } = await supabase
         .from("appointments")
         .select(`
-          id, date, time, status, service_type, is_emergency, tour_order,
-          horses!inner(id, name, owner_id, latitude, longitude)
+          id, date, time, status, service_type, is_emergency, tour_order, horse_id, client_id,
+          horses(id, name, owner_id, latitude, longitude)
         `)
         .eq("date", today)
         .eq("provider_id", user.id)
@@ -67,8 +68,9 @@ export function DayCockpit() {
 
       if (error || !aptData) return [];
 
+      // Collect owner IDs from horses AND client_id fallback
       const ownerIds = [...new Set(
-        aptData.map(apt => apt.horses?.owner_id).filter((id): id is string => !!id)
+        aptData.map(apt => apt.horses?.owner_id || apt.client_id).filter((id): id is string => !!id)
       )];
 
       const { data: contacts } = ownerIds.length > 0
@@ -92,8 +94,9 @@ export function DayCockpit() {
       const grouped: Record<string, TourAppointment> = {};
       aptData.forEach(apt => {
         const horse = apt.horses;
-        const contact = horse?.owner_id ? contactMap[horse.owner_id] : null;
-        const profile = horse?.owner_id ? profileMap[horse.owner_id] : null;
+        const ownerId = horse?.owner_id || apt.client_id;
+        const contact = ownerId ? contactMap[ownerId] : null;
+        const profile = ownerId ? profileMap[ownerId] : null;
 
         if (!grouped[apt.id]) {
           grouped[apt.id] = {
@@ -105,12 +108,12 @@ export function DayCockpit() {
             is_emergency: apt.is_emergency,
             horses: [],
             horse_count: 0,
-            client: horse?.owner_id ? {
-              id: horse.owner_id,
+            client: ownerId ? {
+              id: ownerId,
               readable_id: profile?.readable_id || undefined,
               full_name: contact?.full_name || profile?.full_name || "Unbekannt",
-              geo_lat: horse.latitude || null,
-              geo_lng: horse.longitude || null,
+              geo_lat: horse?.latitude || null,
+              geo_lng: horse?.longitude || null,
               street: contact?.street || null,
               zip: contact?.zip_code || null,
               city: contact?.city || null,
@@ -123,7 +126,30 @@ export function DayCockpit() {
         }
       });
 
-      return Object.values(grouped);
+      // Geocode missing coordinates
+      const entries = Object.values(grouped);
+      for (const apt of entries) {
+        if (apt.client && !apt.client.geo_lat && !apt.client.geo_lng) {
+          const { street, zip, city } = apt.client;
+          if (street || zip || city) {
+            const result = await geocodeAddress(street, zip, city);
+            if (result) {
+              apt.client.geo_lat = result.lat;
+              apt.client.geo_lng = result.lng;
+              // Save back to horse record for future use
+              const horseId = apt.horses?.[0]?.id;
+              if (horseId) {
+                supabase.from("horses")
+                  .update({ latitude: result.lat, longitude: result.lng })
+                  .eq("id", horseId)
+                  .then(() => {});
+              }
+            }
+          }
+        }
+      }
+
+      return entries;
     },
     enabled: !!user?.id,
   });
