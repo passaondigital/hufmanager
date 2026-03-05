@@ -376,8 +376,17 @@ export function DayCockpit() {
         .select("full_name")
         .eq("id", user.id)
         .maybeSingle();
+      let tourDisplayName = provProfile?.full_name;
+      if (!tourDisplayName) {
+        const { data: bs } = await supabase
+          .from("business_settings")
+          .select("business_name")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        tourDisplayName = bs?.business_name || "Dein Hufpfleger";
+      }
       notifyTodayClients(user.id, "tour_start", {
-        providerName: provProfile?.full_name || "Dein Hufpfleger",
+        providerName: tourDisplayName,
       }).catch(console.error);
     } catch (err) {
       console.error("Start tour error:", err);
@@ -406,24 +415,35 @@ export function DayCockpit() {
 
     const apt = appointments.find(a => a.id === appointmentId);
     if (apt?.client?.id) {
-      // In-app notification
-      await supabase.from("notifications").insert({
-        user_id: apt.client.id,
-        title: "Hufbearbeiter ist da!",
-        message: `Dein Hufbearbeiter ist bei dir angekommen.`,
-        type: "arrival",
-        link: "/client-home",
-      });
-
-      // Push notification
+      // Resolve provider display name
       const { data: provProfile } = await supabase
         .from("profiles")
         .select("full_name")
         .eq("id", user?.id)
         .maybeSingle();
+      let displayName = provProfile?.full_name;
+      if (!displayName) {
+        const { data: bs } = await supabase
+          .from("business_settings")
+          .select("business_name")
+          .eq("user_id", user?.id)
+          .maybeSingle();
+        displayName = bs?.business_name || "Dein Hufpfleger";
+      }
+
+      // In-app notification
+      await supabase.from("notifications").insert({
+        user_id: apt.client.id,
+        title: `${displayName} ist da! 🐴`,
+        message: `${displayName} ist bei dir angekommen.`,
+        type: "arrival",
+        link: "/client-home",
+      });
+
+      // Push notification
       notifyTodayClients(user!.id, "arrived", {
         clientId: apt.client.id,
-        providerName: provProfile?.full_name || "Dein Hufpfleger",
+        providerName: displayName,
       }).catch(console.error);
     }
   };

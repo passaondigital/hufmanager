@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Navigation, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import type { TourAppointment } from "./TourCard";
 
@@ -9,9 +10,11 @@ interface OnMyWayButtonProps {
   appointment: TourAppointment;
   userLocation: [number, number] | null;
   routeDurationMinutes: number | null;
+  providerDisplayName?: string;
 }
 
-export function OnMyWayButton({ appointment, userLocation, routeDurationMinutes }: OnMyWayButtonProps) {
+export function OnMyWayButton({ appointment, userLocation, routeDurationMinutes, providerDisplayName }: OnMyWayButtonProps) {
+  const { user } = useAuth();
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
@@ -26,11 +29,32 @@ export function OnMyWayButton({ appointment, userLocation, routeDurationMinutes 
 
       const horseName = appointment.horses?.[0]?.name || "Ihr Pferd";
 
+      // Resolve provider display name dynamically
+      let displayName = providerDisplayName;
+      if (!displayName && user?.id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (profile?.full_name) {
+          displayName = profile.full_name;
+        } else {
+          const { data: bs } = await supabase
+            .from("business_settings")
+            .select("business_name")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          displayName = bs?.business_name || "Dein Hufpfleger";
+        }
+      }
+      if (!displayName) displayName = "Dein Hufpfleger";
+
       // Create in-app notification for client
       await supabase.from("notifications").insert({
         user_id: appointment.client.id,
-        title: "🚗 Hufbearbeiter ist unterwegs!",
-        message: `Ihr Hufbearbeiter ist auf dem Weg zu ${horseName}. Geschätzte Ankunft: ${eta}. Bitte Pferd bereitstellen.`,
+        title: `🚗 ${displayName} ist unterwegs!`,
+        message: `${displayName} ist auf dem Weg zu ${horseName}. Geschätzte Ankunft: ${eta}. Bitte Pferd bereitstellen.`,
         type: "on_my_way",
         link: "/client-home",
       });
@@ -41,7 +65,7 @@ export function OnMyWayButton({ appointment, userLocation, routeDurationMinutes 
         await supabase.functions.invoke("send-push-notification", {
           body: {
             user_id: appointment.client.id,
-            title: "🚗 Hufbearbeiter unterwegs!",
+            title: `🚗 ${displayName} ist unterwegs!`,
             body: `Ankunft ${eta} – bitte ${horseName} bereitstellen.`,
             url: "/client-home",
           },
