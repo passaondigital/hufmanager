@@ -98,7 +98,7 @@ export function CockpitUnderway({
   const allDone = completedCount >= appointments.length && appointments.length > 0;
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-background">
+    <div className="fixed inset-0 flex flex-col bg-background z-[9999]">
       {/* Offline Banner */}
       {!isOnline && (
         <div className="bg-destructive text-destructive-foreground px-4 py-2 flex items-center gap-2 text-sm font-medium z-50">

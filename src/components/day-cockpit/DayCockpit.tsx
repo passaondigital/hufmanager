@@ -7,6 +7,7 @@ import { calculateRoute } from "@/lib/routeService";
 import { prefetchTilesForRoute, clearTileCache } from "@/lib/tilePrefetch";
 import { useFuelPrices, getCheapestPrice, mapFuelType } from "@/hooks/useFuelPrices";
 import { geocodeAddress } from "@/lib/geocode";
+import { useCockpitFullscreen } from "./CockpitFullscreenContext";
 import type { TourAppointment } from "@/components/tour-manager/TourCard";
 
 import { CockpitReady } from "./CockpitReady";
@@ -19,6 +20,7 @@ export function DayCockpit() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const today = format(new Date(), "yyyy-MM-dd");
+  const { setFullscreen } = useCockpitFullscreen();
 
   const [cockpitState, setCockpitState] = useState<CockpitState>("ready");
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
@@ -33,6 +35,12 @@ export function DayCockpit() {
   const lastGpsRef = useRef<{ lat: number; lng: number } | null>(null);
   const gpsWatchRef = useRef<number | null>(null);
   const routeDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Toggle fullscreen when cockpit state changes
+  useEffect(() => {
+    setFullscreen(cockpitState === "underway");
+    return () => setFullscreen(false);
+  }, [cockpitState, setFullscreen]);
 
   // Online/offline detection
   useEffect(() => {
@@ -258,29 +266,27 @@ export function DayCockpit() {
         const { latitude, longitude, accuracy } = pos.coords;
         setUserLocation([latitude, longitude]);
 
-        // Accumulate km
+        // Accumulate km - 30m threshold for accuracy
         if (lastGpsRef.current) {
           const d = haversine(lastGpsRef.current.lat, lastGpsRef.current.lng, latitude, longitude);
-          if (d > 0.05) { // 50m threshold
-            setGpsTotalKm(prev => prev + d);
+          if (d > 0.03 && accuracy < 50) { // 30m threshold, only with decent accuracy
+            setGpsTotalKm(prev => Math.round((prev + d) * 10) / 10);
             lastGpsRef.current = { lat: latitude, lng: longitude };
           }
         } else {
           lastGpsRef.current = { lat: latitude, lng: longitude };
         }
 
-        // Save breadcrumb (100m threshold)
-        if (lastGpsRef.current) {
-          supabase.from("tour_breadcrumbs").insert({
-            tour_id: tourId,
-            provider_id: user!.id,
-            latitude, longitude, accuracy,
-            tour_date: today,
-          }).then(() => {});
-        }
+        // Save breadcrumb (fire and forget)
+        supabase.from("tour_breadcrumbs").insert({
+          tour_id: tourId,
+          provider_id: user!.id,
+          latitude, longitude, accuracy,
+          tour_date: today,
+        }).then(() => {});
       },
       (err) => console.error("GPS error:", err),
-      { enableHighAccuracy: true, maximumAge: 60000, timeout: 10000 }
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
     );
 
     return () => {
