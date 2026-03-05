@@ -36,11 +36,11 @@ export function DayCockpit() {
   const gpsWatchRef = useRef<number | null>(null);
   const routeDebounceRef = useRef<ReturnType<typeof setTimeout>>();
 
-  // Toggle fullscreen when cockpit state changes
+  // Always fullscreen — cockpit takes over the whole screen
   useEffect(() => {
-    setFullscreen(cockpitState === "underway");
+    setFullscreen(true);
     return () => setFullscreen(false);
-  }, [cockpitState, setFullscreen]);
+  }, [setFullscreen]);
 
   // Online/offline detection
   useEffect(() => {

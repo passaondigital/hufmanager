@@ -1,11 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import {
-  CheckCircle, Clock, Route, Fuel, FileText, WifiOff, ArrowLeft
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { CheckCircle, Clock, Route, Fuel, FileText, WifiOff } from "lucide-react";
 
 interface CockpitCompleteProps {
   gpsTotalKm: number;
@@ -32,10 +28,10 @@ export function CockpitComplete({
 }: CockpitCompleteProps) {
   const navigate = useNavigate();
 
-  const formatCurrency = (v: number) =>
+  const fmt = (v: number) =>
     new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(v);
 
-  const totalDriveTime = useMemo(() => {
+  const driveTime = useMemo(() => {
     if (!tourStartTime) return "—";
     const diff = Date.now() - tourStartTime.getTime();
     const h = Math.floor(diff / 3600000);
@@ -43,7 +39,7 @@ export function CockpitComplete({
     return `${h}h ${m}m`;
   }, [tourStartTime]);
 
-  const realFuelCost = useMemo(() => {
+  const fuelCost = useMemo(() => {
     if (!vehicleConsumption || !livePrice || gpsTotalKm <= 0) return null;
     return Math.round(gpsTotalKm * (vehicleConsumption / 100) * livePrice * 100) / 100;
   }, [gpsTotalKm, vehicleConsumption, livePrice]);
@@ -54,98 +50,86 @@ export function CockpitComplete({
   }, [gpsTotalKm, pricePerKm]);
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-background">
-      {/* Offline Banner */}
+    <div className="fixed inset-0 flex flex-col" style={{ background: "#111" }}>
       {!isOnline && (
-        <div className="bg-destructive text-destructive-foreground px-4 py-2 flex items-center gap-2 text-sm font-medium">
-          <WifiOff className="h-4 w-4" />
-          Offline
+        <div className="flex items-center gap-2 px-4 py-1.5 text-xs font-medium" style={{ background: "#dc2626", color: "#fff" }}>
+          <WifiOff className="h-3.5 w-3.5" /> Offline
         </div>
       )}
 
-      <div className="flex-1 flex flex-col items-center justify-center p-6 gap-6">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: "spring", duration: 0.5 }}
-        >
-          <CheckCircle className="h-20 w-20 text-chart-2" />
+      <div className="flex-1 flex flex-col items-center justify-center px-6 gap-5">
+        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", duration: 0.5 }}>
+          <CheckCircle className="h-20 w-20" style={{ color: "#22c55e" }} />
         </motion.div>
 
         <div className="text-center">
-          <h1 className="text-3xl font-bold">Tour beendet!</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-3xl font-bold text-white">Tour beendet!</h1>
+          <p className="mt-1" style={{ color: "#999" }}>
             {completedCount}/{totalCount} Termine erledigt
           </p>
         </div>
 
-        {/* Summary cards */}
-        <div className="w-full max-w-md space-y-3">
-          <div className="flex items-center justify-between p-4 rounded-xl bg-card border">
-            <div className="flex items-center gap-3">
-              <Route className="h-5 w-5 text-primary" />
-              <span className="text-base">Gesamt-km</span>
-            </div>
-            <span className="text-xl font-bold font-mono">{gpsTotalKm} km</span>
-          </div>
-
-          <div className="flex items-center justify-between p-4 rounded-xl bg-card border">
-            <div className="flex items-center gap-3">
-              <Clock className="h-5 w-5 text-primary" />
-              <span className="text-base">Fahrzeit</span>
-            </div>
-            <span className="text-xl font-bold font-mono">{totalDriveTime}</span>
-          </div>
-
-          {realFuelCost !== null && (
-            <div className="flex items-center justify-between p-4 rounded-xl bg-card border">
-              <div className="flex items-center gap-3">
-                <Fuel className="h-5 w-5 text-primary" />
-                <div>
-                  <span className="text-base">Spritkosten</span>
-                  {livePrice && (
-                    <p className="text-xs text-muted-foreground">
-                      {livePrice.toFixed(3)} €/L Live-Preis
-                    </p>
-                  )}
-                </div>
-              </div>
-              <span className="text-xl font-bold text-primary">{formatCurrency(realFuelCost)}</span>
-            </div>
+        {/* Summary */}
+        <div className="w-full max-w-sm space-y-2">
+          <SummaryRow icon={<Route className="h-5 w-5" />} label="Gesamt-km" value={`${gpsTotalKm} km`} />
+          <SummaryRow icon={<Clock className="h-5 w-5" />} label="Fahrzeit" value={driveTime} />
+          {fuelCost !== null && (
+            <SummaryRow
+              icon={<Fuel className="h-5 w-5" />}
+              label="Spritkosten"
+              value={fmt(fuelCost)}
+              sub={livePrice ? `${livePrice.toFixed(3)} €/L` : undefined}
+              highlight
+            />
           )}
-
           {flatCost !== null && (
-            <div className="flex items-center justify-between p-4 rounded-xl bg-card border">
-              <div className="flex items-center gap-3">
-                <Route className="h-5 w-5 text-muted-foreground" />
-                <span className="text-base text-muted-foreground">Pauschale</span>
-              </div>
-              <span className="text-lg font-semibold text-muted-foreground">{formatCurrency(flatCost)}</span>
-            </div>
+            <SummaryRow icon={<Route className="h-5 w-5" />} label="Pauschale" value={fmt(flatCost)} dim />
           )}
         </div>
       </div>
 
-      {/* Bottom actions */}
-      <div className="p-4 pb-6 space-y-3">
-        <Button
-          size="lg"
-          className="w-full h-14 text-lg font-bold gap-2 rounded-2xl shadow-xl"
+      {/* CTA */}
+      <div className="px-5 pb-6 pt-3 space-y-3">
+        <button
           onClick={() => navigate("/rechnungen")}
+          className="w-full flex items-center justify-center gap-2 font-bold text-lg"
+          style={{ height: 56, borderRadius: 12, background: "#F5970A", color: "#111" }}
         >
           <FileText className="h-5 w-5" />
-          Rechnung erstellen
-        </Button>
-        <Button
-          size="lg"
-          variant="outline"
-          className="w-full h-12 text-base gap-2 rounded-2xl"
+          Rechnungen erstellen
+        </button>
+        <button
           onClick={onDismiss}
+          className="w-full flex items-center justify-center gap-2 font-medium text-sm"
+          style={{ height: 48, borderRadius: 12, background: "#222", color: "#999" }}
         >
-          <ArrowLeft className="h-5 w-5" />
           Zurück zum Cockpit
-        </Button>
+        </button>
       </div>
+    </div>
+  );
+}
+
+function SummaryRow({
+  icon, label, value, sub, highlight, dim,
+}: {
+  icon: React.ReactNode; label: string; value: string; sub?: string; highlight?: boolean; dim?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between p-4" style={{ background: "#1a1a1a", borderRadius: 12 }}>
+      <div className="flex items-center gap-3">
+        <span style={{ color: dim ? "#666" : "#F5970A" }}>{icon}</span>
+        <div>
+          <span className="text-base" style={{ color: dim ? "#666" : "#ccc" }}>{label}</span>
+          {sub && <p className="text-xs" style={{ color: "#666" }}>{sub}</p>}
+        </div>
+      </div>
+      <span
+        className="text-xl font-bold font-mono"
+        style={{ color: highlight ? "#F5970A" : dim ? "#666" : "#fff" }}
+      >
+        {value}
+      </span>
     </div>
   );
 }
