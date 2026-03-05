@@ -158,63 +158,52 @@ export function CockpitUnderway({
       </button>
 
       {/* Bottom Panel - Active Appointment */}
-      <AnimatePresence>
-        {panelExpanded && (
-          <motion.div
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 50, opacity: 0 }}
-            className="flex-1 flex flex-col overflow-hidden"
-          >
-            {allDone ? (
-              /* All done */
-              <div className="flex-1 flex flex-col items-center justify-center p-6 gap-4">
-                <CheckCircle className="h-16 w-16 text-chart-2" />
-                <p className="text-2xl font-bold text-center">Alle Termine erledigt!</p>
-                <p className="text-muted-foreground text-center">
-                  {gpsTotalKm} km gefahren · {elapsed} Fahrzeit
+      <div className={`flex-1 flex flex-col overflow-hidden ${panelExpanded ? "" : "hidden"}`}>
+        {allDone ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-6 pb-28 gap-4">
+            <CheckCircle className="h-16 w-16 text-chart-2" />
+            <p className="text-2xl font-bold text-center">Alle Termine erledigt!</p>
+            <p className="text-muted-foreground text-center">
+              {gpsTotalKm} km gefahren · {elapsed} Fahrzeit
+            </p>
+          </div>
+        ) : activeAppointment ? (
+          <div className="flex-1 flex flex-col p-4 pb-28 gap-3 overflow-auto">
+            {/* Client & Horse */}
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                Termin {activeIndex + 1} von {appointments.length}
+              </p>
+              <h2 className="text-2xl font-bold mt-1">
+                {activeAppointment.client?.full_name || "Unbekannt"}
+              </h2>
+              <p className="text-lg text-muted-foreground">
+                {activeAppointment.horses?.map(h => h.name).join(", ")}
+              </p>
+              {activeAppointment.client?.city && (
+                <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {[activeAppointment.client.street, activeAppointment.client.zip, activeAppointment.client.city].filter(Boolean).join(", ")}
                 </p>
-              </div>
-            ) : activeAppointment ? (
-              /* Active appointment details */
-              <div className="flex-1 flex flex-col p-4 gap-3 overflow-auto">
-                {/* Client & Horse */}
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                    Termin {activeIndex + 1} von {appointments.length}
-                  </p>
-                  <h2 className="text-2xl font-bold mt-1">
-                    {activeAppointment.client?.full_name || "Unbekannt"}
-                  </h2>
-                  <p className="text-lg text-muted-foreground">
-                    {activeAppointment.horses?.map(h => h.name).join(", ")}
-                  </p>
-                  {activeAppointment.client?.city && (
-                    <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-                      <MapPin className="h-3.5 w-3.5" />
-                      {[activeAppointment.client.street, activeAppointment.client.zip, activeAppointment.client.city].filter(Boolean).join(", ")}
-                    </p>
-                  )}
-                </div>
+              )}
+            </div>
 
-                {/* Live stats */}
-                <div className="flex gap-3">
-                  <div className="flex-1 rounded-xl bg-muted/50 p-3 text-center">
-                    <Clock className="h-5 w-5 text-primary mx-auto mb-1" />
-                    <p className="text-2xl font-bold font-mono">{elapsed}</p>
-                    <p className="text-xs text-muted-foreground">Fahrzeit</p>
-                  </div>
-                  <div className="flex-1 rounded-xl bg-muted/50 p-3 text-center">
-                    <Route className="h-5 w-5 text-primary mx-auto mb-1" />
-                    <p className="text-2xl font-bold font-mono">{gpsTotalKm}</p>
-                    <p className="text-xs text-muted-foreground">km bisher</p>
-                  </div>
-                </div>
+            {/* Live stats */}
+            <div className="flex gap-3">
+              <div className="flex-1 rounded-xl bg-muted/50 p-3 text-center">
+                <Clock className="h-5 w-5 text-primary mx-auto mb-1" />
+                <p className="text-2xl font-bold font-mono">{elapsed}</p>
+                <p className="text-xs text-muted-foreground">Fahrzeit</p>
               </div>
-            ) : null}
-          </motion.div>
-        )}
-      </AnimatePresence>
+              <div className="flex-1 rounded-xl bg-muted/50 p-3 text-center">
+                <Route className="h-5 w-5 text-primary mx-auto mb-1" />
+                <p className="text-2xl font-bold font-mono">{gpsTotalKm}</p>
+                <p className="text-xs text-muted-foreground">km bisher</p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </div>
 
       {/* Bottom action buttons - Daumen-Zone */}
       <div className="fixed bottom-0 left-0 right-0 p-4 pb-6 bg-gradient-to-t from-background via-background to-transparent z-20">
