@@ -87,8 +87,9 @@ serve(async (req) => {
             orderedCoords.push(coordinates[jobId]); // jobId is 1-indexed into original slice
           }
 
+          const profile = vehicle?.trailerHeight ? "driving-hgv" : "driving-car";
           const dirResponse = await fetch(
-            'https://api.openrouteservice.org/v2/directions/driving-car/geojson',
+            `https://api.openrouteservice.org/v2/directions/${profile}/geojson`,
             {
               method: 'POST',
               headers: {
@@ -138,20 +139,31 @@ serve(async (req) => {
       }
     }
 
-    // Regular directions with geometry and instructions
+    // Regular directions - use HGV profile if trailer
+    const profile = vehicle?.trailerHeight ? "driving-hgv" : "driving-car";
+    const dirBody: any = {
+      coordinates,
+      instructions: true,
+      language: 'de',
+    };
+    if (vehicle?.trailerHeight) {
+      dirBody.options = {
+        vehicle_type: "hgv",
+        ...(vehicle.trailerHeight && { height: vehicle.trailerHeight / 100 }),
+        ...(vehicle.trailerWeight && { weight: vehicle.trailerWeight }),
+        ...(vehicle.trailerLength && { length: vehicle.trailerLength / 100 }),
+      };
+    }
+
     const response = await fetch(
-      'https://api.openrouteservice.org/v2/directions/driving-car/geojson',
+      `https://api.openrouteservice.org/v2/directions/${profile}/geojson`,
       {
         method: 'POST',
         headers: {
           'Authorization': ORS_API_KEY,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          coordinates,
-          instructions: true,
-          language: 'de',
-        }),
+        body: JSON.stringify(dirBody),
       }
     );
 

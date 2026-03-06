@@ -117,25 +117,8 @@ export function AppointmentFormModal({
     seriesTotal: 5,
   });
 
-  // Fetch provider's profession_type
-  const { data: providerSettings } = useQuery({
-    queryKey: ["provider-profession", user?.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("business_settings")
-        .select("profession_type")
-        .eq("user_id", user!.id)
-        .maybeSingle();
-      return data;
-    },
-    enabled: !!user?.id,
-    staleTime: 15 * 60 * 1000,
-  });
-
-  const professionType = (providerSettings as any)?.profession_type || "hoof_care";
-
-  // Fetch service time presets for this profession
-  const { presets: servicePresets } = useServicePresets(professionType);
+  // Fetch service time presets (provider-specific from DB)
+  const { presets: servicePresets, colorMap } = useServicePresets();
 
   // Build a preset map for quick lookup
   const presetMap = useMemo(() => {
@@ -170,6 +153,35 @@ export function AppointmentFormModal({
       return data;
     },
   });
+
+  // Fetch client locations for selected horse's owner
+  const selectedHorseOwnerId = horses.find((h: any) => h.id === formData.horseId)?.owner_id;
+  const { data: clientLocations = [] } = useQuery({
+    queryKey: ["client-locations", selectedHorseOwnerId, user?.id],
+    queryFn: async () => {
+      if (!selectedHorseOwnerId || !user?.id) return [];
+      const { data } = await supabase
+        .from("client_locations")
+        .select("*")
+        .eq("client_id", selectedHorseOwnerId)
+        .eq("provider_id", user.id)
+        .order("is_default", { ascending: false });
+      return data || [];
+    },
+    enabled: !!selectedHorseOwnerId && !!user?.id,
+  });
+
+  // Auto-select default location when horse changes
+  const prevHorseRef = useRef(formData.horseId);
+  useEffect(() => {
+    if (formData.horseId !== prevHorseRef.current) {
+      prevHorseRef.current = formData.horseId;
+      const defaultLoc = clientLocations.find((l: any) => l.is_default);
+      if (defaultLoc) {
+        setFormData(prev => ({ ...prev, location: defaultLoc.name + (defaultLoc.address ? `, ${defaultLoc.address}` : "") }));
+      }
+    }
+  }, [formData.horseId, clientLocations]);
 
   // Fetch service price overrides for the current service
   const { data: priceOverrides = [] } = useQuery({
@@ -934,12 +946,41 @@ export function AppointmentFormModal({
 
           <div className="space-y-2">
             <Label>Ort</Label>
-            <Input
-              value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              placeholder="z.B. Reitstall Sonnenhof"
-              maxLength={255}
-            />
+            {clientLocations.length > 0 ? (
+              <div className="space-y-2">
+                <Select
+                  value={formData.location}
+                  onValueChange={(v) => setFormData({ ...formData, location: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Standort wählen..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clientLocations.map((loc: any) => (
+                      <SelectItem key={loc.id} value={loc.name + (loc.address ? `, ${loc.address}` : "")}>
+                        {loc.name}{loc.is_default ? " ⭐" : ""}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="__custom__">✏️ Freitext eingeben</SelectItem>
+                  </SelectContent>
+                </Select>
+                {formData.location === "__custom__" && (
+                  <Input
+                    value=""
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    placeholder="z.B. Reitstall Sonnenhof"
+                    maxLength={255}
+                  />
+                )}
+              </div>
+            ) : (
+              <Input
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                placeholder="z.B. Reitstall Sonnenhof"
+                maxLength={255}
+              />
+            )}
           </div>
 
           <div className="space-y-2">
