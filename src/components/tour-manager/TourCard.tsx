@@ -46,6 +46,12 @@ export interface TourAppointment {
     city?: string | null;
   } | null;
   horse_count?: number;
+  /** Color from service_time_presets */
+  service_color?: string | null;
+  /** Buffer minutes after this appointment */
+  buffer_minutes?: number | null;
+  /** Estimated service duration in minutes */
+  estimated_minutes?: number | null;
 }
 
 interface TourCardProps {
@@ -344,14 +350,21 @@ export function TourCard({
                 <span className="text-xs text-muted-foreground font-mono">#{clientId}</span>
               )}
             </div>
+            {/* Service type badge */}
+            {appointment.service_type && (
+              <span
+                className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[11px] font-bold"
+                style={{
+                  background: appointment.service_color ? `${appointment.service_color}20` : "hsl(var(--muted))",
+                  color: appointment.service_color || "hsl(var(--muted-foreground))",
+                }}
+              >
+                <span className="w-2 h-2 rounded-full" style={{ background: appointment.service_color || "hsl(var(--muted-foreground))" }} />
+                {appointment.service_type}
+              </span>
+            )}
             <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
               <span>🐴 {horseCount} Pferd{horseCount !== 1 ? "e" : ""}</span>
-              {appointment.service_type && (
-                <>
-                  <span>•</span>
-                  <span>{appointment.service_type}</span>
-                </>
-              )}
             </div>
           </div>
 

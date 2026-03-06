@@ -10,6 +10,7 @@ import { prefetchTilesForRoute, clearTileCache } from "@/lib/tilePrefetch";
 import { useFuelPrices, getCheapestPrice, mapFuelType } from "@/hooks/useFuelPrices";
 import { geocodeAddress } from "@/lib/geocode";
 import { useCockpitFullscreen } from "./CockpitFullscreenContext";
+import { useServicePresets } from "@/hooks/useServicePresets";
 import type { TourAppointment } from "@/components/tour-manager/TourCard";
 
 import { CockpitReady } from "./CockpitReady";
@@ -23,6 +24,7 @@ export function DayCockpit() {
   const queryClient = useQueryClient();
   const today = format(new Date(), "yyyy-MM-dd");
   const { setFullscreen } = useCockpitFullscreen();
+  const { presets } = useServicePresets();
 
   const [cockpitState, setCockpitState] = useState<CockpitState>("ready");
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
@@ -185,6 +187,21 @@ export function DayCockpit() {
     enabled: !!user?.id,
   });
 
+  // Enrich appointments with preset color/buffer/duration
+  const enrichedAppointments = useMemo(() => {
+    if (!presets.length) return appointments;
+    const presetMap = Object.fromEntries(presets.map(p => [p.service_type, p]));
+    return appointments.map(apt => {
+      const preset = apt.service_type ? presetMap[apt.service_type] : null;
+      return {
+        ...apt,
+        service_color: preset?.color_hex || null,
+        buffer_minutes: preset?.buffer_minutes || null,
+        estimated_minutes: preset?.estimated_minutes || null,
+      };
+    });
+  }, [appointments, presets]);
+
   // Check for active tour on mount
   useEffect(() => {
     const checkActiveTour = async () => {
@@ -212,13 +229,13 @@ export function DayCockpit() {
   const routePositions = useMemo(() => {
     const positions: [number, number][] = [];
     if (userLocation) positions.push(userLocation);
-    appointments.forEach(apt => {
+    enrichedAppointments.forEach(apt => {
       if (apt.client?.geo_lat && apt.client?.geo_lng) {
         positions.push([apt.client.geo_lat, apt.client.geo_lng]);
       }
     });
     return positions;
-  }, [appointments, userLocation]);
+  }, [enrichedAppointments, userLocation]);
 
   // Route calculation with ORS optimization
   useEffect(() => {
@@ -508,8 +525,8 @@ export function DayCockpit() {
     setFullscreen(true);
   };
 
-  const activeAppointment = appointments[activeAppointmentIndex] || null;
-  const completedCount = appointments.filter(a => a.status === "completed").length;
+  const activeAppointment = enrichedAppointments[activeAppointmentIndex] || null;
+  const completedCount = enrichedAppointments.filter(a => a.status === "completed").length;
 
   // Pause/Resume handlers (must be before early returns)
   const handlePause = useCallback(() => {
@@ -536,7 +553,7 @@ export function DayCockpit() {
   if (cockpitState === "ready") {
     return (
       <CockpitReady
-        appointments={appointments}
+        appointments={enrichedAppointments}
         isLoading={isLoading}
         routeInfo={routeInfo}
         isCalculatingRoute={isCalculatingRoute}
@@ -566,7 +583,7 @@ export function DayCockpit() {
 
   return (
     <CockpitUnderway
-      appointments={appointments}
+      appointments={enrichedAppointments}
       activeAppointment={activeAppointment}
       activeIndex={activeAppointmentIndex}
       userLocation={userLocation}

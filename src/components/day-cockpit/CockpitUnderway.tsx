@@ -360,7 +360,11 @@ export function CockpitUnderway({
             {/* Service type badge */}
             {activeAppointment.service_type && (
               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold w-fit"
-                style={{ background: "#333", color: "#F5970A" }}>
+                style={{
+                  background: activeAppointment.service_color ? `${activeAppointment.service_color}20` : "#333",
+                  color: activeAppointment.service_color || "#F5970A",
+                }}>
+                <span className="w-2 h-2 rounded-full" style={{ background: activeAppointment.service_color || "#F5970A" }} />
                 {activeAppointment.service_type}
               </span>
             )}
