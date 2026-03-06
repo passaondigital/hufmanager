@@ -102,8 +102,7 @@ Deno.serve(async (req) => {
     // ── CHECK 3: Invoices without valid provider ──
     const { data: invoicesCheck } = await supabase
       .from("invoices")
-      .select("id, provider_id")
-      .is("deleted_at", null);
+      .select("id, provider_id");
 
     const orphanInvoices = invoicesCheck?.filter((i) => !validProfileIds.has(i.provider_id)) || [];
 
@@ -122,7 +121,7 @@ Deno.serve(async (req) => {
       .select("id")
       .not("invitation_token", "is", null)
       .eq("status", "pending")
-      .lt("invitation_expires_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+      .lt("invitation_sent_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
 
     if (expiredInvites && expiredInvites.length > 0) {
       const ids = expiredInvites.map((e) => e.id);

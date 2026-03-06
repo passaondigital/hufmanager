@@ -48,15 +48,15 @@ Deno.serve(async (req) => {
     // ── ANOMALY 2: Unusual data access patterns ──
     const { data: heavyUsers } = await supabase
       .from("performance_metrics")
-      .select("user_id")
+      .select("user_role")
       .gte("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
-      .not("user_id", "is", null)
+      .not("user_role", "is", null)
       .limit(1000);
 
     // Count per user
     const userCounts = new Map<string, number>();
     (heavyUsers || []).forEach((row) => {
-      const uid = row.user_id as string;
+      const uid = row.user_role as string;
       userCounts.set(uid, (userCounts.get(uid) || 0) + 1);
     });
     const suspiciousUsers = Array.from(userCounts.entries()).filter(([, count]) => count > 200);
@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
       .select("metric_name, baseline_value, last_measured_at")
       .like("metric_name", "table_count_%");
 
-    const tables = ["profiles", "appointments", "horses"];
+    const tables = ["profiles", "horses"];
     for (const table of tables) {
       const baseline = baselines?.find((b) => b.metric_name === `table_count_${table}`);
       if (!baseline) continue;
