@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Polyline, useMap } from "react-leaflet
 import L from "leaflet";
 import {
   Navigation, CheckCircle, MapPin, Clock, Route, WifiOff,
-  Square, Play, Volume2, VolumeX, ChevronRight, Pause, Compass, AlertTriangle, UserX
+  Square, Play, Volume2, VolumeX, ChevronRight, Pause, Compass, AlertTriangle, UserX, Siren
 } from "lucide-react";
 import { useTurnByTurn } from "@/hooks/useTurnByTurn";
 import type { TourAppointment } from "@/components/tour-manager/TourCard";
@@ -116,6 +116,7 @@ interface CockpitUnderwayProps {
   onResume?: () => void;
   onReportDelay?: () => void;
   onNoShow?: (id: string) => void;
+  onEmergencyAdd?: () => void;
 }
 
 export function CockpitUnderway({
@@ -139,6 +140,7 @@ export function CockpitUnderway({
   onResume,
   onReportDelay,
   onNoShow,
+  onEmergencyAdd,
 }: CockpitUnderwayProps) {
   const [elapsed, setElapsed] = useState("00:00");
   const [bearing, setBearing] = useState(0);
@@ -472,15 +474,23 @@ export function CockpitUnderway({
                   </button>
                 )}
               </div>
-              {/* Delay / Pause / End row */}
+              {/* Delay / Emergency / Pause / End row */}
               <div className="flex gap-2">
                 <button
                   onClick={onReportDelay}
                   className="flex items-center justify-center gap-1.5 font-bold text-sm"
-                  style={{ height: 44, borderRadius: 10, background: "#f59e0b20", color: "#f59e0b", paddingInline: 12 }}
+                  style={{ height: 44, borderRadius: 10, background: "#f59e0b20", color: "#f59e0b", paddingInline: 10 }}
                 >
                   <AlertTriangle className="h-4 w-4" />
                   Verspätung
+                </button>
+                <button
+                  onClick={onEmergencyAdd}
+                  className="flex items-center justify-center gap-1.5 font-bold text-sm"
+                  style={{ height: 44, borderRadius: 10, background: "#dc262630", color: "#ef4444", paddingInline: 10 }}
+                >
+                  <Siren className="h-4 w-4" />
+                  Notfall
                 </button>
                 <button
                   onClick={isPaused ? onResume : onPause}
@@ -493,7 +503,7 @@ export function CockpitUnderway({
                 <button
                   onClick={onEndTour}
                   className="flex items-center justify-center gap-1.5 font-bold text-sm"
-                  style={{ height: 44, borderRadius: 10, background: "#dc262630", color: "#dc2626", paddingInline: 12 }}
+                  style={{ height: 44, borderRadius: 10, background: "#dc262630", color: "#dc2626", paddingInline: 10 }}
                 >
                   <Square className="h-4 w-4" />
                   Ende

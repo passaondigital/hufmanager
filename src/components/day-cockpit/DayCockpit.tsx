@@ -19,6 +19,7 @@ import { CockpitUnderway } from "./CockpitUnderway";
 import { CockpitComplete } from "./CockpitComplete";
 import { DelayReportSheet } from "./DelayReportSheet";
 import { NoShowSheet } from "./NoShowSheet";
+import { EmergencyAppointmentSheet, type EmergencyFormData } from "./EmergencyAppointmentSheet";
 
 export type CockpitState = "ready" | "underway" | "complete";
 
@@ -47,6 +48,8 @@ export function DayCockpit() {
   const [noShowSheetOpen, setNoShowSheetOpen] = useState(false);
   const [noShowAppointmentId, setNoShowAppointmentId] = useState<string | null>(null);
   const [isNoShowSending, setIsNoShowSending] = useState(false);
+  const [emergencySheetOpen, setEmergencySheetOpen] = useState(false);
+  const [isEmergencySending, setIsEmergencySending] = useState(false);
 
   const lastGpsRef = useRef<{ lat: number; lng: number } | null>(null);
   const gpsWatchRef = useRef<number | null>(null);
@@ -654,6 +657,107 @@ export function DayCockpit() {
     }
   }, [noShowAppointmentId, user?.id, enrichedAppointments, activeAppointmentIndex, queryClient]);
 
+  // Emergency appointment handler
+  const handleEmergencyConfirm = useCallback(async (formData: EmergencyFormData) => {
+    if (!user?.id) return;
+    setIsEmergencySending(true);
+    try {
+      const dateStr = format(new Date(), "yyyy-MM-dd");
+      const insertIdx = formData.insertAfterIndex;
+
+      // Determine horse_id — if no horse selected, use first horse from contact or create placeholder
+      let horseId = formData.horseId;
+      if (!horseId && formData.contactId) {
+        // Find contact's profile_id to get their first horse
+        const { data: contact } = await supabase
+          .from("contacts")
+          .select("profile_id")
+          .eq("id", formData.contactId)
+          .maybeSingle();
+        if (contact?.profile_id) {
+          const { data: firstHorse } = await supabase
+            .from("horses")
+            .select("id")
+            .eq("owner_id", contact.profile_id)
+            .is("deleted_at", null)
+            .limit(1)
+            .maybeSingle();
+          if (firstHorse) horseId = firstHorse.id;
+        }
+      }
+
+      if (!horseId) {
+        const { toast } = await import("@/hooks/use-toast");
+        toast({ title: "Kein Pferd gefunden", description: "Bitte wähle ein Pferd aus.", variant: "destructive" });
+        setIsEmergencySending(false);
+        return;
+      }
+
+      // Determine client_id from contact
+      let clientId: string | null = null;
+      if (formData.contactId) {
+        const { data: contact } = await supabase
+          .from("contacts")
+          .select("profile_id")
+          .eq("id", formData.contactId)
+          .maybeSingle();
+        clientId = contact?.profile_id || null;
+      }
+
+      // Create the emergency appointment
+      const { error } = await supabase.from("appointments").insert({
+        horse_id: horseId,
+        provider_id: user.id,
+        client_id: clientId,
+        date: dateStr,
+        time: format(new Date(), "HH:mm"),
+        service_type: formData.serviceType,
+        notes: formData.notes || "Notfall-Termin während Tour",
+        status: "scheduled",
+        is_emergency: true,
+        added_during_tour: true,
+        tour_order: insertIdx + 2, // After the insert position
+      });
+
+      if (error) throw error;
+
+      // Notify affected clients about delay
+      const { data: provProfile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      let displayName = provProfile?.full_name;
+      if (!displayName) {
+        const { data: bs } = await supabase
+          .from("business_settings")
+          .select("business_name")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        displayName = bs?.business_name || "Dein Hufpfleger";
+      }
+
+      await notifyTodayClients(user.id, "delay", {
+        delayMinutes: 30,
+        providerName: displayName,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["cockpit-appointments"] });
+
+      const { toast } = await import("@/hooks/use-toast");
+      toast({
+        title: "Notfall eingeplant 🚨",
+        description: `Notfall-Termin wurde in die Tour eingeschoben. Betroffene Kunden informiert.`,
+      });
+
+      setEmergencySheetOpen(false);
+    } catch (err) {
+      console.error("Emergency appointment error:", err);
+    } finally {
+      setIsEmergencySending(false);
+    }
+  }, [user?.id, queryClient]);
+
   // Adjusted tour start time (accounts for pauses)
   const adjustedTourStartTime = useMemo(() => {
     if (!tourStartTime) return null;
@@ -716,6 +820,7 @@ export function DayCockpit() {
         onResume={handleResume}
         onReportDelay={() => setDelaySheetOpen(true)}
         onNoShow={handleNoShow}
+        onEmergencyAdd={() => setEmergencySheetOpen(true)}
       />
       <DelayReportSheet
         open={delaySheetOpen}
@@ -729,6 +834,14 @@ export function DayCockpit() {
         onConfirm={handleNoShowConfirm}
         isSending={isNoShowSending}
         clientName={enrichedAppointments.find(a => a.id === noShowAppointmentId)?.client?.full_name}
+      />
+      <EmergencyAppointmentSheet
+        open={emergencySheetOpen}
+        onOpenChange={setEmergencySheetOpen}
+        onConfirm={handleEmergencyConfirm}
+        isSending={isEmergencySending}
+        appointments={enrichedAppointments}
+        activeIndex={activeAppointmentIndex}
       />
     </>
   );
