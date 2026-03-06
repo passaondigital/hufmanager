@@ -46,6 +46,7 @@ import { de } from "date-fns/locale";
 import { uploadFile } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { useServicePresets } from "@/hooks/useServicePresets";
+import { sendTypedPush, resolveProviderDisplayName } from "@/lib/pushNotificationService";
 
 const appointmentSchema = z.object({
   horseId: z.string().min(1, "Bitte wählen Sie ein Pferd aus"),
@@ -322,7 +323,7 @@ export function AppointmentFormModal({
         setUploadProgress({ current: 0, total: 0, fileName: "" });
       }
     },
-    onSuccess: (createdAppointments) => {
+    onSuccess: async (createdAppointments) => {
       // Clean up file previews
       pendingEvidence.forEach(item => {
         if (item.preview) URL.revokeObjectURL(item.preview);
@@ -335,6 +336,30 @@ export function AppointmentFormModal({
       queryClient.invalidateQueries({ queryKey: ["media-assets-for-visits"] });
       queryClient.invalidateQueries({ queryKey: ["visit-evidence"] });
       queryClient.invalidateQueries({ queryKey: ["recent-horses"] });
+
+      // Send push notification to horse owner(s)
+      if (user?.id && createdAppointments.length > 0) {
+        const providerName = await resolveProviderDisplayName(user.id);
+        const firstAppt = createdAppointments[0];
+        
+        // Get horse owner
+        const { data: horse } = await supabase
+          .from("horses")
+          .select("owner_id, name")
+          .eq("id", firstAppt.horse_id)
+          .maybeSingle();
+
+        if (horse?.owner_id && horse.owner_id !== user.id) {
+          const dateStr = format(new Date(firstAppt.date), "dd.MM.yyyy");
+          const timeStr = firstAppt.time ? (firstAppt.time as string).slice(0, 5) : undefined;
+          
+          sendTypedPush(horse.owner_id, "appointment_created", {
+            providerName,
+            horseName: horse.name,
+            time: timeStr ? `${dateStr} um ${timeStr}` : dateStr,
+          }).catch(console.error);
+        }
+      }
 
       // Step D: Show success toast and close modal
       const count = createdAppointments.length;
