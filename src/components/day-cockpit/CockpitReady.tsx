@@ -10,6 +10,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { TourAppointment } from "@/components/tour-manager/TourCard";
+import { TeamOverviewSection } from "./TeamOverviewSection";
 
 interface CockpitReadyProps {
   appointments: TourAppointment[];
@@ -84,6 +85,9 @@ export function CockpitReady({
           <Stat icon={<Fuel className="h-4 w-4" />} label={fmt(estimatedFuelCost)} />
         )}
       </div>
+
+      {/* Team overview */}
+      <TeamOverviewSection />
 
       {/* Appointment list */}
       <ScrollArea className="flex-1 px-5">

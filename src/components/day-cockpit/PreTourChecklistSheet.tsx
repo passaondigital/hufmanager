@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, Circle, Wrench, Fuel, MapPin, Smartphone, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Circle, Wrench, Fuel, MapPin, Smartphone, ShieldCheck, Bell, BellOff } from "lucide-react";
 import {
   Drawer,
   DrawerContent,
@@ -29,12 +29,14 @@ const DEFAULT_CHECKLIST: ChecklistItem[] = [
 interface PreTourChecklistSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
+  onConfirm: (options: { notifyClients: boolean }) => void;
   isStarting?: boolean;
+  appointmentCount?: number;
 }
 
-export function PreTourChecklistSheet({ open, onOpenChange, onConfirm, isStarting }: PreTourChecklistSheetProps) {
+export function PreTourChecklistSheet({ open, onOpenChange, onConfirm, isStarting, appointmentCount }: PreTourChecklistSheetProps) {
   const [checked, setChecked] = useState<Set<string>>(new Set());
+  const [notifyClients, setNotifyClients] = useState(true);
 
   const toggle = (id: string) => {
     setChecked(prev => {
@@ -48,9 +50,9 @@ export function PreTourChecklistSheet({ open, onOpenChange, onConfirm, isStartin
   const allChecked = checked.size === DEFAULT_CHECKLIST.length;
 
   const handleConfirm = () => {
-    onConfirm();
-    // Reset for next time
+    onConfirm({ notifyClients });
     setChecked(new Set());
+    setNotifyClients(true);
   };
 
   return (
@@ -95,6 +97,34 @@ export function PreTourChecklistSheet({ open, onOpenChange, onConfirm, isStartin
               </motion.button>
             );
           })}
+
+          {/* Notify clients toggle */}
+          <div className="pt-2 border-t" style={{ borderColor: "#333" }}>
+            <button
+              onClick={() => setNotifyClients(!notifyClients)}
+              className="w-full flex items-center gap-3 p-3 rounded-xl transition-colors"
+              style={{
+                background: notifyClients ? "#22c55e15" : "#222",
+                border: notifyClients ? "1px solid #22c55e40" : "1px solid transparent",
+              }}
+            >
+              {notifyClients ? (
+                <Bell className="h-6 w-6 flex-shrink-0" style={{ color: "#22c55e" }} />
+              ) : (
+                <BellOff className="h-6 w-6 flex-shrink-0" style={{ color: "#555" }} />
+              )}
+              <div className="text-left flex-1">
+                <span className="text-sm font-medium block" style={{ color: notifyClients ? "#fff" : "#aaa" }}>
+                  Kunden benachrichtigen
+                </span>
+                <span className="text-[11px]" style={{ color: "#666" }}>
+                  {notifyClients
+                    ? `${appointmentCount || 0} Kunden erhalten eine Push-Nachricht`
+                    : "Keine Benachrichtigung beim Start"}
+                </span>
+              </div>
+            </button>
+          </div>
         </div>
 
         <DrawerFooter className="gap-2">
