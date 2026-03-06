@@ -30,8 +30,6 @@ Deno.serve(async (req) => {
     }> = [];
 
     // ── CHECK 1: Orphaned auth users (no profile) ──
-    const { data: orphanedUsers } = await supabase.rpc("execute_sql", { sql: "" }).maybeSingle();
-    // Use direct query instead
     const { count: profileCount } = await supabase
       .from("profiles")
       .select("id", { count: "exact", head: true });
