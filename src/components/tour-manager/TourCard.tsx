@@ -119,16 +119,9 @@ export function TourCard({
       return;
     }
     
-    const lat = appointment.client!.geo_lat;
-    const lng = appointment.client!.geo_lng;
-    
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const url = isIOS 
-      ? `maps://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`
-      : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
-    
-    window.open(url, "_blank");
-  }, [appointment, hasCoordinates]);
+    // In-app navigation – no external maps
+    toast.info("Route wird auf der Karte angezeigt");
+  }, [hasCoordinates]);
 
   const handleSendEta = async () => {
     if (!appointment.client?.id) {
@@ -399,14 +392,15 @@ export function TourCard({
               </Button>
             )}
             
-            <Button
+             <Button
               variant="secondary"
               size="sm"
               className="h-11 gap-1.5 min-h-[44px] min-w-[44px]"
               onClick={handleNavigate}
               disabled={!hasCoordinates}
+              title="Route anzeigen"
             >
-              <Navigation className="h-4 w-4" />
+              <MapPin className="h-4 w-4" />
             </Button>
             
             <Button

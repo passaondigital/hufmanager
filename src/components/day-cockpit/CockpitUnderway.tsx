@@ -419,8 +419,8 @@ export function CockpitUnderway({
                       className="flex-1 flex items-center justify-center gap-2 font-bold text-base text-white"
                       style={{ height: 56, borderRadius: 12, background: "#333" }}
                     >
-                      <Navigation className="h-5 w-5" />
-                      Navigieren
+                      <MapPin className="h-5 w-5" />
+                      Zur Karte
                     </button>
                   ) : null
                 ) : (

@@ -503,12 +503,9 @@ export function DayCockpit() {
     setCockpitState("complete");
   };
 
-  // Navigate external
-  const handleNavigate = (lat: number, lng: number) => {
-    const url = /iPhone|iPad|iPod/i.test(navigator.userAgent)
-      ? `maps://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`
-      : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
-    window.open(url, "_blank");
+  // In-app navigation: ensure fullscreen cockpit mode with map visible
+  const handleNavigate = (_lat: number, _lng: number) => {
+    setFullscreen(true);
   };
 
   const activeAppointment = appointments[activeAppointmentIndex] || null;
