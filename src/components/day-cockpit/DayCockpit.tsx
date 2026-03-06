@@ -17,6 +17,7 @@ import type { TourAppointment } from "@/components/tour-manager/TourCard";
 import { CockpitReady } from "./CockpitReady";
 import { CockpitUnderway } from "./CockpitUnderway";
 import { CockpitComplete } from "./CockpitComplete";
+import { DelayReportSheet } from "./DelayReportSheet";
 
 export type CockpitState = "ready" | "underway" | "complete";
 
@@ -40,6 +41,8 @@ export function DayCockpit() {
   const [pausedElapsed, setPausedElapsed] = useState(0); // ms accumulated during pauses
   const pauseStartRef = useRef<number | null>(null);
   const [geocodeProgress, setGeocodeProgress] = useState<{ current: number; total: number } | null>(null);
+  const [delaySheetOpen, setDelaySheetOpen] = useState(false);
+  const [isDelayingSending, setIsDelayingSending] = useState(false);
 
   const lastGpsRef = useRef<{ lat: number; lng: number } | null>(null);
   const gpsWatchRef = useRef<number | null>(null);
@@ -539,6 +542,46 @@ export function DayCockpit() {
     setFullscreen(true); // Hide sidebar
   }, [setFullscreen]);
 
+  // Delay report handler
+  const handleDelayConfirm = useCallback(async (delayMinutes: number) => {
+    if (!user?.id) return;
+    setIsDelayingSending(true);
+    try {
+      const { data: provProfile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      let displayName = provProfile?.full_name;
+      if (!displayName) {
+        const { data: bs } = await supabase
+          .from("business_settings")
+          .select("business_name")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        displayName = bs?.business_name || "Dein Hufpfleger";
+      }
+
+      const sentCount = await notifyTodayClients(user.id, "delay", {
+        delayMinutes,
+        providerName: displayName,
+      });
+
+      // Toast via a simple in-app notification approach
+      const { toast } = await import("@/hooks/use-toast");
+      toast({
+        title: "Kunden informiert ✅",
+        description: `${sentCount} Kunde${sentCount !== 1 ? "n" : ""} über ${delayMinutes} min Verspätung informiert.`,
+      });
+
+      setDelaySheetOpen(false);
+    } catch (err) {
+      console.error("Delay report error:", err);
+    } finally {
+      setIsDelayingSending(false);
+    }
+  }, [user?.id]);
+
   // Adjusted tour start time (accounts for pauses)
   const adjustedTourStartTime = useMemo(() => {
     if (!tourStartTime) return null;
@@ -579,25 +622,34 @@ export function DayCockpit() {
   }
 
   return (
-    <CockpitUnderway
-      appointments={enrichedAppointments}
-      activeAppointment={activeAppointment}
-      activeIndex={activeAppointmentIndex}
-      userLocation={userLocation}
-      routePositions={routePositions}
-      gpsTotalKm={Math.round(gpsTotalKm * 10) / 10}
-      tourStartTime={adjustedTourStartTime}
-      completedCount={completedCount}
-      isOnline={isOnline}
-      routeGeometry={routeInfo?.geometry}
-      routeSteps={routeInfo?.steps}
-      isPaused={isPaused}
-      onNavigate={handleNavigate}
-      onArrived={handleArrived}
-      onComplete={handleCompleteAppointment}
-      onEndTour={handleEndTour}
-      onPause={handlePause}
-      onResume={handleResume}
-    />
+    <>
+      <CockpitUnderway
+        appointments={enrichedAppointments}
+        activeAppointment={activeAppointment}
+        activeIndex={activeAppointmentIndex}
+        userLocation={userLocation}
+        routePositions={routePositions}
+        gpsTotalKm={Math.round(gpsTotalKm * 10) / 10}
+        tourStartTime={adjustedTourStartTime}
+        completedCount={completedCount}
+        isOnline={isOnline}
+        routeGeometry={routeInfo?.geometry}
+        routeSteps={routeInfo?.steps}
+        isPaused={isPaused}
+        onNavigate={handleNavigate}
+        onArrived={handleArrived}
+        onComplete={handleCompleteAppointment}
+        onEndTour={handleEndTour}
+        onPause={handlePause}
+        onResume={handleResume}
+        onReportDelay={() => setDelaySheetOpen(true)}
+      />
+      <DelayReportSheet
+        open={delaySheetOpen}
+        onOpenChange={setDelaySheetOpen}
+        onConfirm={handleDelayConfirm}
+        isSending={isDelayingSending}
+      />
+    </>
   );
 }

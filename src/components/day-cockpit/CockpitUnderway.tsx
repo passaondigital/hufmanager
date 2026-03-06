@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Polyline, useMap } from "react-leaflet
 import L from "leaflet";
 import {
   Navigation, CheckCircle, MapPin, Clock, Route, WifiOff,
-  Square, Play, Volume2, VolumeX, ChevronRight, Pause, Compass
+  Square, Play, Volume2, VolumeX, ChevronRight, Pause, Compass, AlertTriangle
 } from "lucide-react";
 import { useTurnByTurn } from "@/hooks/useTurnByTurn";
 import type { TourAppointment } from "@/components/tour-manager/TourCard";
@@ -114,6 +114,7 @@ interface CockpitUnderwayProps {
   onEndTour: () => void;
   onPause?: () => void;
   onResume?: () => void;
+  onReportDelay?: () => void;
 }
 
 export function CockpitUnderway({
@@ -135,6 +136,7 @@ export function CockpitUnderway({
   onEndTour,
   onPause,
   onResume,
+  onReportDelay,
 }: CockpitUnderwayProps) {
   const [elapsed, setElapsed] = useState("00:00");
   const [bearing, setBearing] = useState(0);
@@ -458,8 +460,16 @@ export function CockpitUnderway({
                   </button>
                 )}
               </div>
-              {/* Pause / End row */}
-              <div className="flex gap-3">
+              {/* Delay / Pause / End row */}
+              <div className="flex gap-2">
+                <button
+                  onClick={onReportDelay}
+                  className="flex items-center justify-center gap-1.5 font-bold text-sm"
+                  style={{ height: 44, borderRadius: 10, background: "#f59e0b20", color: "#f59e0b", paddingInline: 12 }}
+                >
+                  <AlertTriangle className="h-4 w-4" />
+                  Verspätung
+                </button>
                 <button
                   onClick={isPaused ? onResume : onPause}
                   className="flex-1 flex items-center justify-center gap-2 font-bold text-sm text-white"
@@ -470,11 +480,11 @@ export function CockpitUnderway({
                 </button>
                 <button
                   onClick={onEndTour}
-                  className="flex-1 flex items-center justify-center gap-2 font-bold text-sm"
-                  style={{ height: 44, borderRadius: 10, background: "#dc262630", color: "#dc2626" }}
+                  className="flex items-center justify-center gap-1.5 font-bold text-sm"
+                  style={{ height: 44, borderRadius: 10, background: "#dc262630", color: "#dc2626", paddingInline: 12 }}
                 >
                   <Square className="h-4 w-4" />
-                  Beenden
+                  Ende
                 </button>
               </div>
             </>
