@@ -797,17 +797,31 @@ export function TourManager() {
                     items={orderedAppointments.map(a => a.id)}
                     strategy={verticalListSortingStrategy}
                   >
-                    <div className="space-y-3 pb-4">
+                    <div className="space-y-0 pb-4">
                       <AnimatePresence>
                         {orderedAppointments.map((apt, index) => (
-                          <TourCard
-                            key={apt.id}
-                            appointment={apt}
-                            index={index}
-                            userId={user?.id || ""}
-                            onOpenChat={handleOpenChat}
-                            onStatusChange={() => refetch()}
-                          />
+                          <div key={apt.id}>
+                            <TourCard
+                              appointment={apt}
+                              index={index}
+                              userId={user?.id || ""}
+                              onOpenChat={handleOpenChat}
+                              onStatusChange={() => refetch()}
+                            />
+                            {/* Buffer separator between cards */}
+                            {apt.buffer_minutes != null && apt.buffer_minutes > 0 && index < orderedAppointments.length - 1 && (
+                              <div className="flex items-center gap-2 px-4 py-2">
+                                <div className="flex-1 h-px bg-border" />
+                                <span className="text-[11px] font-medium text-muted-foreground whitespace-nowrap">
+                                  {apt.buffer_minutes} min Puffer
+                                </span>
+                                <div className="flex-1 h-px bg-border" />
+                              </div>
+                            )}
+                            {(!apt.buffer_minutes || apt.buffer_minutes <= 0) && index < orderedAppointments.length - 1 && (
+                              <div className="h-3" />
+                            )}
+                          </div>
                         ))}
                       </AnimatePresence>
                     </div>
