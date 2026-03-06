@@ -20,6 +20,7 @@ import { CockpitComplete } from "./CockpitComplete";
 import { DelayReportSheet } from "./DelayReportSheet";
 import { NoShowSheet } from "./NoShowSheet";
 import { EmergencyAppointmentSheet, type EmergencyFormData } from "./EmergencyAppointmentSheet";
+import { PreTourChecklistSheet } from "./PreTourChecklistSheet";
 
 export type CockpitState = "ready" | "underway" | "complete";
 
@@ -50,6 +51,8 @@ export function DayCockpit() {
   const [isNoShowSending, setIsNoShowSending] = useState(false);
   const [emergencySheetOpen, setEmergencySheetOpen] = useState(false);
   const [isEmergencySending, setIsEmergencySending] = useState(false);
+  const [checklistOpen, setChecklistOpen] = useState(false);
+  const [isTourStarting, setIsTourStarting] = useState(false);
 
   const lastGpsRef = useRef<{ lat: number; lng: number } | null>(null);
   const gpsWatchRef = useRef<number | null>(null);
@@ -764,19 +767,37 @@ export function DayCockpit() {
     return new Date(tourStartTime.getTime() + pausedElapsed + (isPaused && pauseStartRef.current ? Date.now() - pauseStartRef.current : 0));
   }, [tourStartTime, pausedElapsed, isPaused]);
 
+  const handleChecklistConfirm = async () => {
+    setIsTourStarting(true);
+    try {
+      await handleStartTour();
+    } finally {
+      setIsTourStarting(false);
+      setChecklistOpen(false);
+    }
+  };
+
   if (cockpitState === "ready") {
     return (
-      <CockpitReady
-        appointments={enrichedAppointments}
-        isLoading={isLoading}
-        routeInfo={routeInfo}
-        isCalculatingRoute={isCalculatingRoute}
-        estimatedFuelCost={estimatedFuelCost}
-        livePrice={livePrice}
-        isOnline={isOnline}
-        geocodeProgress={geocodeProgress}
-        onStartTour={handleStartTour}
-      />
+      <>
+        <CockpitReady
+          appointments={enrichedAppointments}
+          isLoading={isLoading}
+          routeInfo={routeInfo}
+          isCalculatingRoute={isCalculatingRoute}
+          estimatedFuelCost={estimatedFuelCost}
+          livePrice={livePrice}
+          isOnline={isOnline}
+          geocodeProgress={geocodeProgress}
+          onStartTour={() => setChecklistOpen(true)}
+        />
+        <PreTourChecklistSheet
+          open={checklistOpen}
+          onOpenChange={setChecklistOpen}
+          onConfirm={handleChecklistConfirm}
+          isStarting={isTourStarting}
+        />
+      </>
     );
   }
 
