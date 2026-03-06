@@ -611,6 +611,18 @@ export const helpTexts: Record<string, Record<string, HelpTextEntry>> = {
       title: "Nächste Termine",
       description: "Deine nächsten Termine auf einen Blick – mit Pferd, Uhrzeit und zuständigem Betreuer.",
     },
+    horses: {
+      title: "Meine Pferde",
+      description: "Hier siehst du all deine Pferde mit Rasse, Alter und Standort. Tippe auf ein Pferd für Details wie Hufzustand und letzten Behandlungsbericht.",
+    },
+    locations: {
+      title: "Meine Ställe",
+      description: "Verwalte deine Stallstandorte. Der Standard-Stall wird automatisch für neue Termine verwendet. GPS-Koordinaten helfen deinem Hufpfleger bei der Navigation.",
+    },
+    notifications: {
+      title: "Benachrichtigungen",
+      description: "Wähle wie du benachrichtigt werden möchtest – per Push, E-Mail oder beides. Stelle auch die Sprache deiner Benachrichtigungen ein.",
+    },
   },
   // ─── Onboarding ────────────────────────────────────────────
   onboarding: {
