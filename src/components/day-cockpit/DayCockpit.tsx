@@ -62,8 +62,9 @@ export function DayCockpit() {
   // Fetch today's appointments
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ["cockpit-appointments", today, user?.id],
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
+    staleTime: 60_000, // 1 min – refresh more often so new appointments show up
+    gcTime: 5 * 60 * 1000,
+    retry: 2,
     queryFn: async () => {
       if (!user?.id) return [];
 
@@ -80,7 +81,11 @@ export function DayCockpit() {
         .order("tour_order", { ascending: true, nullsFirst: false })
         .order("time", { ascending: true }) as any;
 
-      if (error || !aptData) return [];
+      if (error) {
+        console.error("[DayCockpit] Appointment query error:", error.message, error.code, error.details);
+        throw error; // Don't return [] – let React Query handle retry
+      }
+      if (!aptData) return [];
 
       const ownerIds = [...new Set(
         (aptData as any[]).map((apt: any) => apt.horses?.owner_id || apt.client_id).filter((id: any): id is string => !!id)

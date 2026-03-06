@@ -187,10 +187,12 @@ function App() {
       persistOptions={{
         persister,
         maxAge: QUERY_CACHE_MAX_AGE,
-        buster: "v2", // Increment when schema changes
+        buster: "v3", // Increment when schema changes – v3: fix stale cockpit cache
         dehydrateOptions: {
           shouldDehydrateQuery: (query) => {
-            // Always persist queries for offline use
+            // Don't persist cockpit queries – they're daily/realtime
+            const key = query.queryKey[0] as string;
+            if (key?.startsWith("cockpit-")) return false;
             return query.state.status === "success";
           },
         },
