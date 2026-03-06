@@ -600,6 +600,20 @@ export const helpTexts: Record<string, Record<string, HelpTextEntry>> = {
       description: "Schreibe deinem Hufpfleger eine Nachricht. Ideal für Rückfragen oder Terminänderungen.",
     },
   },
+  // ─── Onboarding ────────────────────────────────────────────
+  onboarding: {
+    "profession-type": {
+      title: "Berufsgruppe",
+      description: "Wähle deinen Beruf – HufManager passt Service-Typen, Zeitpuffer und Kalenderfarben automatisch an deine Tätigkeit an.",
+    },
+  },
+  // ─── Fahrzeug ────────────────────────────────────────────
+  fahrzeug: {
+    anhaenger: {
+      title: "Anhänger-Profil",
+      description: "Mit Anhänger plant HufManager deine Route ohne Unterführungen und Höhenbeschränkungen. Gib die Maße deines Anhängers ein für optimale Routenplanung.",
+    },
+  },
 };
 
 /**

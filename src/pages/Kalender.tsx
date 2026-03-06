@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { useServicePresets } from "@/hooks/useServicePresets";
 import { AppointmentFormModal } from "@/components/calendar/AppointmentFormModal";
 import { CalendarSyncModal } from "@/components/calendar/CalendarSyncModal";
 import { AppointmentTooltip } from "@/components/calendar/AppointmentTooltip";
@@ -47,7 +48,8 @@ const localizer = dateFnsLocalizer({
 
 const DnDCalendar = withDragAndDrop(Calendar);
 
-const SERVICE_COLORS: Record<string, { bg: string; border: string }> = {
+// Fallback colors if no preset color exists
+const FALLBACK_COLORS: Record<string, { bg: string; border: string }> = {
   Barhuf: { bg: "hsl(142, 76%, 36%)", border: "hsl(142, 76%, 26%)" },
   Beschlag: { bg: "hsl(25, 95%, 53%)", border: "hsl(25, 95%, 43%)" },
   Korrektur: { bg: "hsl(45, 93%, 47%)", border: "hsl(45, 93%, 37%)" },
@@ -94,6 +96,7 @@ const messages = {
 const Kalender = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { colorMap: presetColors } = useServicePresets();
 
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -234,14 +237,18 @@ const Kalender = () => {
 
   const eventStyleGetter = useCallback((event: CalendarEvent) => {
     const serviceType = event.resource.service_type || "Kontrolle";
-    const colors = SERVICE_COLORS[serviceType] || SERVICE_COLORS.Kontrolle;
+    // Use dynamic preset color, then fallback
+    const presetHex = presetColors[serviceType];
+    const fallback = FALLBACK_COLORS[serviceType] || FALLBACK_COLORS.Kontrolle;
+    const bgColor = presetHex || fallback.bg;
+    const borderColor = presetHex ? presetHex : fallback.border;
     const isConfirmed = event.resource.is_confirmed_by_client;
     const isSelected = selectedIds.includes(event.id);
 
     return {
       style: {
-        backgroundColor: colors.bg,
-        borderColor: isSelected ? "hsl(var(--primary))" : colors.border,
+        backgroundColor: bgColor,
+        borderColor: isSelected ? "hsl(var(--primary))" : borderColor,
         borderWidth: isSelected ? "3px" : "2px",
         borderStyle: isConfirmed ? "solid" : "dashed",
         color: "white",
@@ -250,7 +257,7 @@ const Kalender = () => {
         boxShadow: isSelected ? "0 0 0 2px hsl(var(--primary) / 0.3)" : undefined,
       },
     };
-  }, [selectedIds]);
+  }, [selectedIds, presetColors]);
 
   const handleSelectSlot = useCallback((slotInfo: SlotInfo) => {
     setSelectedDate(slotInfo.start);

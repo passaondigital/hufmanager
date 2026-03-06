@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { ProfessionSelector } from './ProfessionSelector';
 
 interface OnboardingWizardProps {
   onComplete: () => Promise<void>;
@@ -22,6 +23,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
   const [locationGranted, setLocationGranted] = useState(false);
   const [notificationsGranted, setNotificationsGranted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [professionDone, setProfessionDone] = useState(false);
 
   const requestLocation = async () => {
     try {
@@ -122,7 +124,20 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
 
   // Provider slides
   const providerSlides = [
-    // Slide 0: Welcome
+    // Slide 0: Profession Selection
+    <div key="profession">
+      {user && (
+        <ProfessionSelector
+          userId={user.id}
+          onComplete={() => {
+            setProfessionDone(true);
+            handleNext();
+          }}
+        />
+      )}
+    </div>,
+
+    // Slide 1: Welcome
     <div key="welcome" className="text-center space-y-6">
       <div className="relative mx-auto w-32 h-32">
         <img 

@@ -6,12 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Car, Plus, Fuel, Calendar, Shield, Edit2, Save, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { HelpTip } from "@/components/ui/HelpTip";
 
 interface Vehicle {
   id: string;
@@ -377,6 +379,63 @@ function VehicleForm({ formData, setFormData, onSubmit, isLoading, onCancel }: V
               onChange={(e) => updateField("travel_cost_flat", parseFloat(e.target.value) || 0)}
             />
           </div>
+        </div>
+      </div>
+
+      <div className="border-t pt-4 mt-4">
+        <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+          Anhänger
+          <HelpTip id="fahrzeug.anhaenger" />
+        </h4>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <Checkbox
+              id="hasTrailer"
+              checked={(formData as any).has_trailer || false}
+              onCheckedChange={(checked) => setFormData({ ...formData, has_trailer: !!checked } as any)}
+            />
+            <Label htmlFor="hasTrailer" className="cursor-pointer">
+              Ich fahre mit Anhänger
+            </Label>
+          </div>
+          
+          {(formData as any).has_trailer && (
+            <div className="grid grid-cols-3 gap-3 ml-6">
+              <div className="space-y-1">
+                <Label className="text-xs">Höhe (cm)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={500}
+                  value={(formData as any).trailer_height_cm || ""}
+                  onChange={(e) => setFormData({ ...formData, trailer_height_cm: parseInt(e.target.value) || null } as any)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Gewicht (kg)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={10000}
+                  value={(formData as any).trailer_weight_kg || ""}
+                  onChange={(e) => setFormData({ ...formData, trailer_weight_kg: parseInt(e.target.value) || null } as any)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Länge (cm)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={1500}
+                  value={(formData as any).trailer_length_cm || ""}
+                  onChange={(e) => setFormData({ ...formData, trailer_length_cm: parseInt(e.target.value) || null } as any)}
+                />
+              </div>
+              <p className="col-span-3 text-xs text-muted-foreground">
+                Mit Anhänger plant HufManager deine Route ohne Unterführungen und Höhenbeschränkungen.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
