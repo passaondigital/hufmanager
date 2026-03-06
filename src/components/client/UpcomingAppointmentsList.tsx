@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -204,7 +205,8 @@ export function UpcomingAppointmentsList({ userId }: UpcomingAppointmentsListPro
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
-            Kommende Termine ({appointments.length})
+            Nächste Termine ({appointments.length})
+            <HelpTip id="client.dashboard-upcoming" />
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">

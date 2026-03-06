@@ -243,8 +243,15 @@ export default function ClientHome() {
           {/* Interval Reminders */}
           <HorseIntervalReminderWidget />
 
-          {/* TODAY DASHBOARD - Live status + appointments */}
+          {/* TODAY DASHBOARD - Live status + Hero card + Timeline */}
           {user && <ClientTodayDashboard />}
+
+          {/* Upcoming Appointments (next 3, after today) */}
+          {user && (
+            <div data-tour="client-upcoming" className="relative">
+              <UpcomingAppointmentsList userId={user.id} />
+            </div>
+          )}
 
           {/* Hero Greeting with animation */}
           <motion.div 
@@ -330,8 +337,7 @@ export default function ClientHome() {
             </motion.div>
           )}
 
-          {/* Upcoming Appointments List */}
-          {user && <div data-tour="client-appointments"><UpcomingAppointmentsList userId={user.id} /></div>}
+          {/* Upcoming appointments already shown above via ClientTodayDashboard section */}
 
           {/* Appointment Checklist Widget */}
           {user && <AppointmentChecklistWidget userId={user.id} />}

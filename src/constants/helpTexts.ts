@@ -599,6 +599,18 @@ export const helpTexts: Record<string, Record<string, HelpTextEntry>> = {
       title: "Chat",
       description: "Schreibe deinem Hufpfleger eine Nachricht. Ideal für Rückfragen oder Terminänderungen.",
     },
+    "dashboard-hero": {
+      title: "Heutiger Termin",
+      description: "Hier siehst du deinen heutigen Termin und wann dein Profi bei dir ist. Der Status wird live aktualisiert.",
+    },
+    "dashboard-timeline": {
+      title: "Status-Timeline",
+      description: "Diese Leiste zeigt dir live, wo sich dein Termin gerade befindet – von der Planung bis zum Abschluss.",
+    },
+    "dashboard-upcoming": {
+      title: "Nächste Termine",
+      description: "Deine nächsten Termine auf einen Blick – mit Pferd, Uhrzeit und zuständigem Betreuer.",
+    },
   },
   // ─── Onboarding ────────────────────────────────────────────
   onboarding: {
