@@ -23,12 +23,12 @@ export default function FeatureCockpitSection() {
     <section className="py-20 md:py-28 bg-black" id="cockpit">
       <div className="container">
         <div className="text-center mb-14">
-          <span className="text-primary font-bold text-sm uppercase tracking-widest">Neu: Tages-Cockpit</span>
+          <span className="text-primary font-bold text-sm uppercase tracking-widest">Tages-Cockpit</span>
           <h2 className="font-sans text-3xl md:text-4xl lg:text-5xl font-extrabold text-white mt-4">
-            Dein Arbeitstag auf einen Blick
+            Dein Arbeitstag – <span className="text-primary">organisiert, navigiert, abgerechnet.</span>
           </h2>
           <p className="text-white/60 text-lg mt-4 max-w-2xl mx-auto">
-            Von der Routenplanung bis zur Rechnung – das Cockpit ist dein digitaler Co-Pilot für jeden Außendienst-Tag.
+            Optimierte Route mit einem Tap. Turn-by-Turn Navigation direkt im Tool. Automatisches Fahrtenbuch + Rechnung.
           </p>
         </div>
 

@@ -2,18 +2,20 @@ import { Sparkles } from "lucide-react";
 
 const entries = [
   {
-    date: "05. März 2026",
-    title: "Tages-Cockpit & Navigation Update",
+    date: "06. März 2026",
+    title: "Client-App & Berufsgruppen-Update",
+    isNew: true,
     items: [
-      "🗺️ Tages-Cockpit launched – dein Arbeitstag auf einen Blick",
-      "⛽ Live-Spritpreise via Tankerkönig – günstigste Tankstelle auf der Route",
-      "🧭 Turn-by-Turn Navigation mit OpenRouteService – DSGVO-konform",
-      "📒 Automatisches Fahrtenbuch – GPS-basiert, §6 EStG konform",
-      "📲 Kundenbenachrichtigung in Echtzeit – Push-Notifications",
-      "❓ HelpTips in der gesamten App – kontextbezogene Hilfe überall",
-      "🏷️ Auftragstyp-Zeitpuffer je Berufsgruppe",
-      "📍 Mehrere Standorte pro Kunde (Ställe)",
-      "🚐 Anhänger-Profil für Routenplanung",
+      "✅ Tages-Cockpit für alle Berufsgruppen",
+      "✅ Turn-by-Turn Navigation (ORS, EU-Server)",
+      "✅ Live-Spritpreise (Tankerkönig API)",
+      "✅ Automatisches Fahrtenbuch §6 EStG",
+      "✅ Kundenbenachrichtigung in Echtzeit",
+      "✅ Client-App: Status-Timeline live",
+      "✅ Mehrere Pferdestandorte pro Kunde",
+      "✅ Berufsgruppen-Onboarding (9 Typen)",
+      "✅ Anhänger-Routing (Höhenbeschränkungen)",
+      "✅ HelpTips in der gesamten App",
     ],
   },
 ];
@@ -40,7 +42,10 @@ export default function ChangelogSection() {
                   <Sparkles className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs text-primary font-semibold uppercase tracking-wider">{entry.date}</p>
+                  <p className="text-xs text-primary font-semibold uppercase tracking-wider flex items-center gap-2">
+                    {entry.date}
+                    {entry.isNew && <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full">🆕 NEU</span>}
+                  </p>
                   <h3 className="text-lg font-bold text-white">{entry.title}</h3>
                 </div>
               </div>

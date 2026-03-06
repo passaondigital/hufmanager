@@ -10,6 +10,7 @@ import FeatureCockpitSection from "@/components/website/FeatureCockpitSection";
 import FeatureFuelSection from "@/components/website/FeatureFuelSection";
 import FeatureNavigationSection from "@/components/website/FeatureNavigationSection";
 import FeatureNotificationsSection from "@/components/website/FeatureNotificationsSection";
+import FeatureLogbookSection from "@/components/website/FeatureLogbookSection";
 import ProfessionsSection from "@/components/website/ProfessionsSection";
 import EcosystemSection from "@/components/website/EcosystemSection";
 import AudienceTabsSection from "@/components/website/AudienceTabsSection";
@@ -35,16 +36,15 @@ const WebsiteHome = () => {
     document.title = "HufManager – App für Hufbearbeiter, Osteopathen & mobile Pferdeprofis";
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
-      metaDesc.setAttribute("content", "Tages-Cockpit, Live-Navigation, Spritpreise, Kundenbenachrichtigung, Fahrtenbuch & Rechnungen – für Hufbearbeiter, Osteopathen, Physios & alle mobilen Pferdeprofis. 100% DSGVO-konform. Jetzt kostenlos starten!");
+      metaDesc.setAttribute("content", "HufManager ist die digitale Lösung für alle mobilen Pferdeprofis. Tages-Cockpit, Turn-by-Turn Navigation, Live-Spritpreise, automatisches Fahrtenbuch und Kundenbenachrichtigung in Echtzeit.");
     }
-    // Add keywords meta
     let metaKeywords = document.querySelector('meta[name="keywords"]');
     if (!metaKeywords) {
       metaKeywords = document.createElement("meta");
       metaKeywords.setAttribute("name", "keywords");
       document.head.appendChild(metaKeywords);
     }
-    metaKeywords.setAttribute("content", "Hufbearbeiter App, Pferdeosteopath App, Pferdephysiotherapeut Software, mobile Pferdeprofis Tool, Hufpflege Software, Tourenplanung Pferde, Equine Dentist App, Reitlehrer Software, Sattler App");
+    metaKeywords.setAttribute("content", "Hufbearbeiter App, Pferdeosteopath App, Pferdephysiotherapeut Software, Equine Dentist Tool, mobile Pferdeprofis, digitales Fahrtenbuch Pferd, Terminplanung Pferdeprofis, Hufpflege Software, Tourenplanung Pferde, Reitlehrer Software, Sattler App");
   }, []);
 
   return (
@@ -58,6 +58,7 @@ const WebsiteHome = () => {
       <FeatureCockpitSection />
       <FeatureFuelSection />
       <FeatureNavigationSection />
+      <FeatureLogbookSection />
       <FeatureNotificationsSection />
       <ProfessionsSection />
       <EcosystemSection />

@@ -39,10 +39,10 @@ const HeroV2 = () => {
             </div>
             <div className="flex flex-col sm:flex-row gap-4 pt-4 animate-fade-up" style={{ animationDelay: "200ms" }}>
               <Button size="lg" className="glow-orange text-lg font-bold bg-primary hover:bg-primary/90 text-white" asChild>
-                <a href="#demo"><Play className="mr-2 h-5 w-5" />Demo ansehen</a>
+                <a href="#demo">Kostenlos testen</a>
               </Button>
               <Button variant="outline" size="lg" className="text-lg font-semibold border-white/20 text-white hover:bg-white/10" asChild>
-                <a href="#pricing">Preise ansehen<ArrowRight className="ml-2 h-5 w-5" /></a>
+                <a href="#demo"><Play className="mr-2 h-5 w-5" />Demo ansehen</a>
               </Button>
             </div>
             <div className="flex flex-wrap gap-3 pt-2 animate-fade-up" style={{ animationDelay: "300ms" }}>
