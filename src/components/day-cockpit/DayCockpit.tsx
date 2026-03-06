@@ -18,6 +18,7 @@ import { CockpitReady } from "./CockpitReady";
 import { CockpitUnderway } from "./CockpitUnderway";
 import { CockpitComplete } from "./CockpitComplete";
 import { DelayReportSheet } from "./DelayReportSheet";
+import { NoShowSheet } from "./NoShowSheet";
 
 export type CockpitState = "ready" | "underway" | "complete";
 
@@ -43,6 +44,9 @@ export function DayCockpit() {
   const [geocodeProgress, setGeocodeProgress] = useState<{ current: number; total: number } | null>(null);
   const [delaySheetOpen, setDelaySheetOpen] = useState(false);
   const [isDelayingSending, setIsDelayingSending] = useState(false);
+  const [noShowSheetOpen, setNoShowSheetOpen] = useState(false);
+  const [noShowAppointmentId, setNoShowAppointmentId] = useState<string | null>(null);
+  const [isNoShowSending, setIsNoShowSending] = useState(false);
 
   const lastGpsRef = useRef<{ lat: number; lng: number } | null>(null);
   const gpsWatchRef = useRef<number | null>(null);
@@ -582,6 +586,74 @@ export function DayCockpit() {
     }
   }, [user?.id]);
 
+  // No-show handler
+  const handleNoShow = useCallback((appointmentId: string) => {
+    setNoShowAppointmentId(appointmentId);
+    setNoShowSheetOpen(true);
+  }, []);
+
+  const handleNoShowConfirm = useCallback(async (notes: string) => {
+    if (!noShowAppointmentId || !user?.id) return;
+    setIsNoShowSending(true);
+    try {
+      // Update appointment status
+      await supabase.from("appointments")
+        .update({
+          status: "no_show",
+          completion_notes: notes || "Kunde nicht angetroffen",
+          completed_at: new Date().toISOString(),
+        })
+        .eq("id", noShowAppointmentId);
+
+      // Notify client
+      const apt = enrichedAppointments.find(a => a.id === noShowAppointmentId);
+      if (apt?.client?.id) {
+        const { data: provProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user.id)
+          .maybeSingle();
+        let displayName = provProfile?.full_name;
+        if (!displayName) {
+          const { data: bs } = await supabase
+            .from("business_settings")
+            .select("business_name")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          displayName = bs?.business_name || "Dein Hufpfleger";
+        }
+
+        await supabase.from("notifications").insert({
+          user_id: apt.client.id,
+          title: "Termin verpasst 😕",
+          message: `${displayName} war heute bei dir – leider warst du nicht da. Bitte melde dich für einen neuen Termin.`,
+          type: "no_show",
+          link: "/client-home",
+        });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["cockpit-appointments"] });
+
+      // Auto-advance to next appointment
+      if (activeAppointmentIndex < enrichedAppointments.length - 1) {
+        setActiveAppointmentIndex(prev => prev + 1);
+      }
+
+      const { toast } = await import("@/hooks/use-toast");
+      toast({
+        title: "Nicht angetroffen ✅",
+        description: `${apt?.client?.full_name || "Kunde"} wurde als nicht angetroffen markiert.`,
+      });
+
+      setNoShowSheetOpen(false);
+      setNoShowAppointmentId(null);
+    } catch (err) {
+      console.error("No-show error:", err);
+    } finally {
+      setIsNoShowSending(false);
+    }
+  }, [noShowAppointmentId, user?.id, enrichedAppointments, activeAppointmentIndex, queryClient]);
+
   // Adjusted tour start time (accounts for pauses)
   const adjustedTourStartTime = useMemo(() => {
     if (!tourStartTime) return null;
@@ -643,12 +715,20 @@ export function DayCockpit() {
         onPause={handlePause}
         onResume={handleResume}
         onReportDelay={() => setDelaySheetOpen(true)}
+        onNoShow={handleNoShow}
       />
       <DelayReportSheet
         open={delaySheetOpen}
         onOpenChange={setDelaySheetOpen}
         onConfirm={handleDelayConfirm}
         isSending={isDelayingSending}
+      />
+      <NoShowSheet
+        open={noShowSheetOpen}
+        onOpenChange={setNoShowSheetOpen}
+        onConfirm={handleNoShowConfirm}
+        isSending={isNoShowSending}
+        clientName={enrichedAppointments.find(a => a.id === noShowAppointmentId)?.client?.full_name}
       />
     </>
   );
