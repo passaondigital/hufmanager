@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, useMap } from "react-leaflet";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { MapContainer, TileLayer, Marker, Polyline, useMap } from "react-leaflet";
 import L from "leaflet";
 import {
   Navigation, CheckCircle, MapPin, Clock, Route, WifiOff,
-  Square, Play, Volume2, VolumeX, ChevronRight
+  Square, Play, Volume2, VolumeX, ChevronRight, Pause, Compass
 } from "lucide-react";
 import { useTurnByTurn } from "@/hooks/useTurnByTurn";
 import type { TourAppointment } from "@/components/tour-manager/TourCard";
@@ -25,17 +25,46 @@ const destIcon = L.divIcon({
   iconAnchor: [14, 14],
 });
 
-/* ── Map auto-fit ── */
-function MapAutoFit({ userPos, destPos }: { userPos: [number, number] | null; destPos: [number, number] | null }) {
+/* ── Map auto-fit + bearing rotation ── */
+function MapBearingController({ userPos, destPos, bearing, followMode }: { 
+  userPos: [number, number] | null; destPos: [number, number] | null; bearing: number; followMode: boolean 
+}) {
   const map = useMap();
+  const initialFitDone = useRef(false);
+
   useEffect(() => {
-    if (userPos && destPos) {
+    if (!initialFitDone.current && userPos && destPos) {
       const bounds = L.latLngBounds([userPos, destPos]);
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15, animate: true });
-    } else if (userPos) {
+      initialFitDone.current = true;
+    } else if (!initialFitDone.current && userPos) {
       map.setView(userPos, 14, { animate: true });
+      initialFitDone.current = true;
     }
   }, [userPos, destPos, map]);
+
+  // Follow user and rotate map with bearing
+  useEffect(() => {
+    if (!followMode || !userPos) return;
+    map.setView(userPos, map.getZoom(), { animate: true, duration: 0.5 });
+  }, [userPos, followMode, map]);
+
+  // Apply CSS rotation for bearing
+  useEffect(() => {
+    const container = map.getContainer();
+    if (followMode && bearing !== 0) {
+      container.style.transition = "transform 0.5s ease-out";
+      container.style.transform = `rotate(${-bearing}deg)`;
+    } else {
+      container.style.transition = "transform 0.5s ease-out";
+      container.style.transform = "rotate(0deg)";
+    }
+    return () => {
+      container.style.transform = "";
+      container.style.transition = "";
+    };
+  }, [bearing, followMode, map]);
+
   return null;
 }
 
@@ -78,10 +107,13 @@ interface CockpitUnderwayProps {
   isOnline: boolean;
   routeGeometry?: GeoJSON.LineString;
   routeSteps?: RouteStep[];
+  isPaused?: boolean;
   onNavigate: (lat: number, lng: number) => void;
   onArrived: (id: string) => void;
   onComplete: (id: string) => void;
   onEndTour: () => void;
+  onPause?: () => void;
+  onResume?: () => void;
 }
 
 export function CockpitUnderway({
@@ -96,12 +128,41 @@ export function CockpitUnderway({
   isOnline,
   routeGeometry,
   routeSteps,
+  isPaused,
   onNavigate,
   onArrived,
   onComplete,
   onEndTour,
+  onPause,
+  onResume,
 }: CockpitUnderwayProps) {
   const [elapsed, setElapsed] = useState("00:00");
+  const [bearing, setBearing] = useState(0);
+  const [followMode, setFollowMode] = useState(true);
+  const prevLocationRef = useRef<[number, number] | null>(null);
+
+  // Bearing calculation from GPS movement
+  useEffect(() => {
+    if (!userLocation || isPaused) return;
+    const prev = prevLocationRef.current;
+    if (prev) {
+      const [lat1, lng1] = prev;
+      const [lat2, lng2] = userLocation;
+      const dLng = ((lng2 - lng1) * Math.PI) / 180;
+      const lat1Rad = (lat1 * Math.PI) / 180;
+      const lat2Rad = (lat2 * Math.PI) / 180;
+      const y = Math.sin(dLng) * Math.cos(lat2Rad);
+      const x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLng);
+      let deg = (Math.atan2(y, x) * 180) / Math.PI;
+      if (deg < 0) deg += 360;
+      // Only update bearing if distance > 10m (avoid jitter when stationary)
+      const dist = Math.sqrt((lat2 - lat1) ** 2 + (lng2 - lng1) ** 2) * 111000;
+      if (dist > 10) {
+        setBearing(Math.round(deg));
+      }
+    }
+    prevLocationRef.current = userLocation;
+  }, [userLocation, isPaused]);
 
   // Live timer
   useEffect(() => {
@@ -224,9 +285,29 @@ export function CockpitUnderway({
               {gpsTotalKm} km
             </span>
           </div>
-          <span className="text-white/80 font-semibold text-sm pointer-events-auto">
-            {completedCount}/{appointments.length} Termine
-          </span>
+          <div className="flex items-center gap-2 pointer-events-auto">
+            <span className="text-white/80 font-semibold text-sm">
+              {completedCount}/{appointments.length} Termine
+            </span>
+            {/* North arrow / compass */}
+            <button
+              onClick={() => {
+                setFollowMode(!followMode);
+                if (followMode) setBearing(0);
+              }}
+              className="w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+              title={followMode ? "Nordausrichtung" : "Fahrtrichtung folgen"}
+            >
+              <Compass
+                className="h-5 w-5 text-white"
+                style={{
+                  transform: followMode ? `rotate(${bearing}deg)` : "rotate(0deg)",
+                  transition: "transform 0.5s ease-out",
+                }}
+              />
+            </button>
+          </div>
         </div>
 
         <MapContainer
@@ -239,7 +320,7 @@ export function CockpitUnderway({
           attributionControl={false}
         >
           <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          <MapAutoFit userPos={userLocation} destPos={nextPos} />
+          <MapBearingController userPos={userLocation} destPos={nextPos} bearing={bearing} followMode={followMode} />
           {userLocation && <Marker position={userLocation} icon={userIcon} />}
           {nextPos && <Marker position={nextPos} icon={destIcon} />}
           
@@ -299,6 +380,24 @@ export function CockpitUnderway({
           </div>
         ) : null}
 
+        {/* ── PAUSE OVERLAY ── */}
+        {isPaused && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 z-10"
+            style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
+            <Pause className="h-16 w-16 text-white/50" />
+            <p className="text-xl font-bold text-white">Tour pausiert</p>
+            <p className="text-sm text-white/60">{elapsed} · {gpsTotalKm} km</p>
+            <button
+              onClick={onResume}
+              className="flex items-center justify-center gap-2 font-bold text-lg px-8"
+              style={{ height: 56, borderRadius: 12, background: "#F5970A", color: "#111" }}
+            >
+              <Play className="h-5 w-5" />
+              Weiterfahren
+            </button>
+          </div>
+        )}
+
         {/* ── ACTION BUTTONS — Daumen-Zone ── */}
         <div className="px-4 pb-6 pt-3 space-y-3">
           {allDone ? (
@@ -311,49 +410,70 @@ export function CockpitUnderway({
               Tour beenden
             </button>
           ) : activeAppointment ? (
-            <div className="flex gap-3">
-              {!isArrived ? (
-                activeAppointment.client?.geo_lat && activeAppointment.client?.geo_lng ? (
+            <>
+              <div className="flex gap-3">
+                {!isArrived ? (
+                  activeAppointment.client?.geo_lat && activeAppointment.client?.geo_lng ? (
+                    <button
+                      onClick={() => onNavigate(activeAppointment.client!.geo_lat!, activeAppointment.client!.geo_lng!)}
+                      className="flex-1 flex items-center justify-center gap-2 font-bold text-base text-white"
+                      style={{ height: 56, borderRadius: 12, background: "#333" }}
+                    >
+                      <Navigation className="h-5 w-5" />
+                      Navigieren
+                    </button>
+                  ) : null
+                ) : (
                   <button
-                    onClick={() => onNavigate(activeAppointment.client!.geo_lat!, activeAppointment.client!.geo_lng!)}
+                    onClick={() => onArrived(activeAppointment.id)}
                     className="flex-1 flex items-center justify-center gap-2 font-bold text-base text-white"
                     style={{ height: 56, borderRadius: 12, background: "#333" }}
                   >
-                    <Navigation className="h-5 w-5" />
-                    Navigieren
+                    <Play className="h-5 w-5" />
+                    Termin starten
                   </button>
-                ) : null
-              ) : (
-                <button
-                  onClick={() => onArrived(activeAppointment.id)}
-                  className="flex-1 flex items-center justify-center gap-2 font-bold text-base text-white"
-                  style={{ height: 56, borderRadius: 12, background: "#333" }}
-                >
-                  <Play className="h-5 w-5" />
-                  Termin starten
-                </button>
-              )}
+                )}
 
-              {!isArrived ? (
+                {!isArrived ? (
+                  <button
+                    onClick={() => onArrived(activeAppointment.id)}
+                    className="flex-1 flex items-center justify-center gap-2 font-bold text-base"
+                    style={{ height: 56, borderRadius: 12, background: "#F5970A", color: "#111" }}
+                  >
+                    <MapPin className="h-5 w-5" />
+                    Angekommen
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => onComplete(activeAppointment.id)}
+                    className="flex-1 flex items-center justify-center gap-2 font-bold text-base"
+                    style={{ height: 56, borderRadius: 12, background: "#22c55e", color: "#111" }}
+                  >
+                    <CheckCircle className="h-5 w-5" />
+                    Erledigt
+                  </button>
+                )}
+              </div>
+              {/* Pause / End row */}
+              <div className="flex gap-3">
                 <button
-                  onClick={() => onArrived(activeAppointment.id)}
-                  className="flex-1 flex items-center justify-center gap-2 font-bold text-base"
-                  style={{ height: 56, borderRadius: 12, background: "#F5970A", color: "#111" }}
+                  onClick={isPaused ? onResume : onPause}
+                  className="flex-1 flex items-center justify-center gap-2 font-bold text-sm text-white"
+                  style={{ height: 44, borderRadius: 10, background: isPaused ? "#F5970A" : "#333" }}
                 >
-                  <MapPin className="h-5 w-5" />
-                  Angekommen
+                  {isPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                  {isPaused ? "Weiter" : "Pause"}
                 </button>
-              ) : (
                 <button
-                  onClick={() => onComplete(activeAppointment.id)}
-                  className="flex-1 flex items-center justify-center gap-2 font-bold text-base"
-                  style={{ height: 56, borderRadius: 12, background: "#22c55e", color: "#111" }}
+                  onClick={onEndTour}
+                  className="flex-1 flex items-center justify-center gap-2 font-bold text-sm"
+                  style={{ height: 44, borderRadius: 10, background: "#dc262630", color: "#dc2626" }}
                 >
-                  <CheckCircle className="h-5 w-5" />
-                  Erledigt
+                  <Square className="h-4 w-4" />
+                  Beenden
                 </button>
-              )}
-            </div>
+              </div>
+            </>
           ) : null}
         </div>
       </div>
