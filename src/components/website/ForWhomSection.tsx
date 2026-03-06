@@ -2,21 +2,22 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Check, X } from "lucide-react";
 
 const forYou = [
-  "Du mobil arbeitest und Kunden an verschiedenen Orten besuchst",
-  "Du Kalender, Navi und Buchhaltung in einer App haben willst",
-  "Deine Kunden immer wissen sollen wann du kommst – ohne WhatsApp",
-  "Du als Einzelkämpfer oder kleines Team (bis ~10 Personen) arbeitest",
-  "Du im DACH-Raum tätig bist",
+  "Du mobil arbeitest und deine Kunden an verschiedenen Orten besuchst",
+  "Du jeden Tag Termine, Routen und Rechnungen unter einen Hut bringen musst",
+  "Du aufgehört hast Lust zu haben drei verschiedene Apps für Kalender, Navi und Buchhaltung zu öffnen",
+  "Du willst dass deine Kunden immer wissen wann du kommst – ohne WhatsApp-Nachrichten",
+  "Du als Einzelkämpfer oder mit einem kleinen Team arbeitest",
+  "Du in Deutschland, Österreich oder der Schweiz tätig bist",
   "Du bereit bist 30 Minuten zu investieren um danach Stunden zu sparen",
-  "Du Hufbearbeiter, Osteopath, Physio, Dentist, Reitlehrer, Sattler, Massage oder mobiler Tierarzt bist",
+  "Du Hufbearbeiter, Osteopath, Physio, Equine Dentist, Reitlehrer, Sattler, Massage-Therapeut oder mobiler Tierarzt bist",
 ];
 
 const notForYou = [
   "Du eine stationäre Praxis hast und Kunden zu dir kommen",
-  "Du ein Team von 10+ Mitarbeitern mit komplexer HR-Verwaltung führst",
-  "Du eine vollständige Buchhaltung wie DATEV suchst – HufManager ergänzt sie, ersetzt sie nicht",
-  "Du keine digitalen Tools in deinem Arbeitsalltag möchtest",
-  "Du außerhalb des DACH-Raums arbeitest",
+  "Du ein großes Team von 10+ Mitarbeitern führst mit komplexer HR-Verwaltung",
+  "Du eine fertige Buchhaltungssoftware wie DATEV oder lexoffice suchst – HufManager ergänzt sie, ersetzt sie nicht vollständig",
+  "Du keine Smartphones oder digitalen Tools in deinem Arbeitsalltag möchtest",
+  "Du außerhalb des DACH-Raums arbeitest (internationale Märkte folgen)",
   "Du ein reines Verwaltungstool ohne Mobilfunktionen suchst",
 ];
 
@@ -71,7 +72,7 @@ export default function ForWhomSection() {
 
         <div className="text-center mt-12 space-y-6">
           <p className="text-white/60 text-lg max-w-2xl mx-auto italic">
-            "HufManager ist kein Tool für jeden – und das ist gut so. Wer mobil mit Pferden arbeitet, für den haben wir jedes Detail durchdacht."
+            "HufManager ist kein Tool für jeden – und das ist gut so. Wer mobil mit Pferden arbeitet, für den haben wir jeden Detail durchdacht."
           </p>
           <Button size="lg" className="glow-orange text-lg font-bold bg-primary hover:bg-primary/90 text-white" asChild>
             <a href="#demo">Jetzt kostenlos testen <ArrowRight className="ml-2 h-5 w-5" /></a>
