@@ -638,6 +638,48 @@ export const helpTexts: Record<string, Record<string, HelpTextEntry>> = {
       description: "Mit Anhänger plant HufManager deine Route ohne Unterführungen und Höhenbeschränkungen. Gib die Maße deines Anhängers ein für optimale Routenplanung.",
     },
   },
+  // ─── Tages-Cockpit ──────────────────────────────────────
+  cockpit: {
+    bereit: {
+      title: "Tour bereit",
+      description: "Deine Termine für heute in optimierter Reihenfolge. Prüfe die Route und starte mit einem Tap.",
+    },
+    unterwegs: {
+      title: "Unterwegs-Modus",
+      description: "Navigation läuft. Du siehst die Karte, Sprachansagen, Geschwindigkeit und die nächste Station.",
+    },
+    abschluss: {
+      title: "Tour-Zusammenfassung",
+      description: "Übersicht über deine erledigten Termine, gefahrene Kilometer und Umsatz des Tages.",
+    },
+    "tour-card": {
+      title: "Termin-Karte",
+      description: "Zeigt Kunde, Pferd, Uhrzeit und Auftragstyp. Der farbige Badge kennzeichnet den Service-Typ.",
+    },
+    tempoanzeige: {
+      title: "Geschwindigkeitsanzeige",
+      description: "Zeigt dein aktuelles Tempo. Grün = Landstraße, Gelb = innerorts, Rot = über dem Limit.",
+    },
+    navigation: {
+      title: "Turn-by-Turn Navigation",
+      description: "Sprachnavigation auf Deutsch, DSGVO-konform über EU-Server. Funktioniert auch offline.",
+    },
+    spritpreise: {
+      title: "Live-Spritpreise",
+      description: "Zeigt die günstigste Tankstelle auf deiner Route – live über die Tankerkönig API.",
+    },
+    fahrtenbuch: {
+      title: "Fahrtenbuch-Export",
+      description: "Automatisches Fahrtenbuch nach §6 EStG. GPS-basierte km-Erfassung, Export als PDF oder CSV.",
+    },
+  },
+  // ─── Kalender-Erweiterungen ─────────────────────────────
+  "kalender-erweitert": {
+    "service-time-presets": {
+      title: "Auftragstyp-Zeitpuffer",
+      description: "Jeder Auftragstyp hat einen automatischen Zeitpuffer. So vermeidest du Stress durch zu eng getaktete Termine.",
+    },
+  },
 };
 
 /**
