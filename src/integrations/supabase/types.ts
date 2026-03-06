@@ -606,6 +606,8 @@ export type Database = {
         Row: {
           added_during_tour: boolean | null
           applied_price: number | null
+          appointment_lat: number | null
+          appointment_lng: number | null
           assigned_to_user_id: string | null
           base_price: number | null
           client_id: string | null
@@ -633,6 +635,7 @@ export type Database = {
           is_multi_horse: boolean | null
           is_series_appointment: boolean | null
           location: string | null
+          location_geocoded: boolean | null
           notes: string | null
           organization_id: string | null
           price: number | null
@@ -657,6 +660,8 @@ export type Database = {
         Insert: {
           added_during_tour?: boolean | null
           applied_price?: number | null
+          appointment_lat?: number | null
+          appointment_lng?: number | null
           assigned_to_user_id?: string | null
           base_price?: number | null
           client_id?: string | null
@@ -684,6 +689,7 @@ export type Database = {
           is_multi_horse?: boolean | null
           is_series_appointment?: boolean | null
           location?: string | null
+          location_geocoded?: boolean | null
           notes?: string | null
           organization_id?: string | null
           price?: number | null
@@ -708,6 +714,8 @@ export type Database = {
         Update: {
           added_during_tour?: boolean | null
           applied_price?: number | null
+          appointment_lat?: number | null
+          appointment_lng?: number | null
           assigned_to_user_id?: string | null
           base_price?: number | null
           client_id?: string | null
@@ -735,6 +743,7 @@ export type Database = {
           is_multi_horse?: boolean | null
           is_series_appointment?: boolean | null
           location?: string | null
+          location_geocoded?: boolean | null
           notes?: string | null
           organization_id?: string | null
           price?: number | null
@@ -1101,6 +1110,7 @@ export type Database = {
           phone: string | null
           primary_color: string | null
           privacy: string | null
+          profession_type: string | null
           reminder_custom_text: string | null
           reminder_intervals: Json | null
           reviews_layout: string | null
@@ -1166,6 +1176,7 @@ export type Database = {
           phone?: string | null
           primary_color?: string | null
           privacy?: string | null
+          profession_type?: string | null
           reminder_custom_text?: string | null
           reminder_intervals?: Json | null
           reviews_layout?: string | null
@@ -1231,6 +1242,7 @@ export type Database = {
           phone?: string | null
           primary_color?: string | null
           privacy?: string | null
+          profession_type?: string | null
           reminder_custom_text?: string | null
           reminder_intervals?: Json | null
           reviews_layout?: string | null
@@ -6685,6 +6697,7 @@ export type Database = {
           preferred_currency: string | null
           price_group: string
           price_group_label: string | null
+          profession_type: string | null
           readable_id: string | null
           reliability_score: number | null
           reminder_1h: boolean | null
@@ -6786,6 +6799,7 @@ export type Database = {
           preferred_currency?: string | null
           price_group?: string
           price_group_label?: string | null
+          profession_type?: string | null
           readable_id?: string | null
           reliability_score?: number | null
           reminder_1h?: boolean | null
@@ -6887,6 +6901,7 @@ export type Database = {
           preferred_currency?: string | null
           price_group?: string
           price_group_label?: string | null
+          profession_type?: string | null
           readable_id?: string | null
           reliability_score?: number | null
           reminder_1h?: boolean | null
@@ -7237,6 +7252,7 @@ export type Database = {
           created_at: string
           current_odometer: number | null
           fuel_type: string | null
+          has_trailer: boolean | null
           id: string
           initial_odometer: number | null
           insurance_company: string | null
@@ -7252,6 +7268,9 @@ export type Database = {
           provider_id: string
           status: string | null
           tax_yearly: number | null
+          trailer_height_cm: number | null
+          trailer_length_cm: number | null
+          trailer_weight_kg: number | null
           travel_cost_flat: number | null
           tuev_date: string | null
           updated_at: string
@@ -7266,6 +7285,7 @@ export type Database = {
           created_at?: string
           current_odometer?: number | null
           fuel_type?: string | null
+          has_trailer?: boolean | null
           id?: string
           initial_odometer?: number | null
           insurance_company?: string | null
@@ -7281,6 +7301,9 @@ export type Database = {
           provider_id: string
           status?: string | null
           tax_yearly?: number | null
+          trailer_height_cm?: number | null
+          trailer_length_cm?: number | null
+          trailer_weight_kg?: number | null
           travel_cost_flat?: number | null
           tuev_date?: string | null
           updated_at?: string
@@ -7295,6 +7318,7 @@ export type Database = {
           created_at?: string
           current_odometer?: number | null
           fuel_type?: string | null
+          has_trailer?: boolean | null
           id?: string
           initial_odometer?: number | null
           insurance_company?: string | null
@@ -7310,6 +7334,9 @@ export type Database = {
           provider_id?: string
           status?: string | null
           tax_yearly?: number | null
+          trailer_height_cm?: number | null
+          trailer_length_cm?: number | null
+          trailer_weight_kg?: number | null
           travel_cost_flat?: number | null
           tuev_date?: string | null
           updated_at?: string
@@ -7843,6 +7870,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      service_time_presets: {
+        Row: {
+          buffer_minutes: number
+          color_hex: string
+          created_at: string
+          estimated_minutes: number
+          id: string
+          provider_id: string
+          service_type: string
+          updated_at: string
+        }
+        Insert: {
+          buffer_minutes?: number
+          color_hex?: string
+          created_at?: string
+          estimated_minutes?: number
+          id?: string
+          provider_id: string
+          service_type: string
+          updated_at?: string
+        }
+        Update: {
+          buffer_minutes?: number
+          color_hex?: string
+          created_at?: string
+          estimated_minutes?: number
+          id?: string
+          provider_id?: string
+          service_type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       services: {
         Row: {
@@ -10016,6 +10076,10 @@ export type Database = {
           p_file_size_bytes: number
         }
         Returns: Json
+      }
+      create_default_service_presets: {
+        Args: { _profession_type: string; _provider_id: string }
+        Returns: undefined
       }
       create_emergency_otp: {
         Args: { _client_id: string; _provider_id: string }
