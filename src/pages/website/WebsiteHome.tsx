@@ -23,6 +23,7 @@ import TrustSection from "@/components/website/TrustSection";
 import ContactFormSection from "@/components/website/ContactFormSection";
 import ChangelogSection from "@/components/website/ChangelogSection";
 import HufrenteSection from "@/components/website/HufrenteSection";
+import ForWhomSection from "@/components/website/ForWhomSection";
 import FAQ from "@/components/website/FAQ";
 import FinalCTA from "@/components/website/FinalCTA";
 import FooterNew from "@/components/website/FooterNew";
@@ -77,6 +78,7 @@ const WebsiteHome = () => {
       <LatestBlogPosts />
       <ChangelogSection />
       <HufrenteSection />
+      <ForWhomSection />
       <FAQ />
       <FinalCTA />
       <FooterNew />
