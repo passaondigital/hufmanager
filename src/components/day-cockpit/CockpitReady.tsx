@@ -4,6 +4,11 @@ import {
   AlertTriangle, Timer
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { TourAppointment } from "@/components/tour-manager/TourCard";
 
 interface CockpitReadyProps {
@@ -14,6 +19,7 @@ interface CockpitReadyProps {
   estimatedFuelCost: number | null;
   livePrice: number | null;
   isOnline: boolean;
+  geocodeProgress: { current: number; total: number } | null;
   onStartTour: () => void;
 }
 
@@ -25,6 +31,7 @@ export function CockpitReady({
   estimatedFuelCost,
   livePrice,
   isOnline,
+  geocodeProgress,
   onStartTour,
 }: CockpitReadyProps) {
   const fmt = (v: number) =>
@@ -35,6 +42,11 @@ export function CockpitReady({
   const totalBufferMinutes = appointments.reduce((sum, a) => sum + (a.buffer_minutes || 0), 0);
   const driveMinutes = routeInfo?.duration || 0;
   const totalMinutes = totalServiceMinutes + totalBufferMinutes + driveMinutes;
+
+  // Appointments missing coordinates
+  const missingCoords = appointments.filter(a => !a.client?.geo_lat || !a.client?.geo_lng);
+  const isGeocoding = !!geocodeProgress;
+  const canStartTour = missingCoords.length === 0 && !isGeocoding;
 
   return (
     <div className="fixed inset-0 flex flex-col" style={{ background: "#111" }}>
@@ -142,6 +154,18 @@ export function CockpitReady({
 
                   {/* Badges */}
                   <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {(!apt.client?.geo_lat || !apt.client?.geo_lng) && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "#92400e30", color: "#fbbf24" }}>
+                            <MapPin className="h-4 w-4 inline" />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="left">
+                          <p className="text-sm">Keine Koordinaten – Adresse prüfen</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
                     {apt.is_emergency && <AlertTriangle className="h-5 w-5" style={{ color: "#dc2626" }} />}
                     {apt.status === "completed" && (
                       <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "#22c55e20", color: "#22c55e" }}>✓</span>
@@ -173,14 +197,28 @@ export function CockpitReady({
       {appointments.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 px-5 pb-6 pt-4"
           style={{ background: "linear-gradient(to top, #111 60%, transparent)" }}>
-          <button
-            onClick={onStartTour}
-            className="w-full flex items-center justify-center gap-3 font-bold text-xl"
-            style={{ height: 64, borderRadius: 12, background: "#F5970A", color: "#111" }}
-          >
-            <Play className="h-6 w-6" />
-            Tour starten
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={canStartTour ? onStartTour : undefined}
+                disabled={!canStartTour}
+                className="w-full flex items-center justify-center gap-3 font-bold text-xl disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ height: 64, borderRadius: 12, background: canStartTour ? "#F5970A" : "#555", color: "#111" }}
+              >
+                {isGeocoding ? (
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                ) : (
+                  <Play className="h-6 w-6" />
+                )}
+                Tour starten
+              </button>
+            </TooltipTrigger>
+            {!canStartTour && (
+              <TooltipContent side="top">
+                <p className="text-sm">Bitte erst Adressen der Termine prüfen</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
           {livePrice && (
             <p className="text-center text-xs mt-2" style={{ color: "#666" }}>
               <Fuel className="h-3 w-3 inline mr-1" />

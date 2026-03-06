@@ -110,3 +110,6 @@ verify_jwt = false
 
 [functions.get-route]
 verify_jwt = true
+
+[functions.geocode-missing-appointments]
+verify_jwt = false

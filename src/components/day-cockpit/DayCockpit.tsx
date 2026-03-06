@@ -9,6 +9,7 @@ import type { RouteResult, RouteStep } from "@/lib/routeService";
 import { prefetchTilesForRoute, clearTileCache } from "@/lib/tilePrefetch";
 import { useFuelPrices, getCheapestPrice, mapFuelType } from "@/hooks/useFuelPrices";
 import { geocodeAddress } from "@/lib/geocode";
+import { geocodeAppointmentAndSave } from "@/lib/geocodeAppointment";
 import { useCockpitFullscreen } from "./CockpitFullscreenContext";
 import { useServicePresets } from "@/hooks/useServicePresets";
 import type { TourAppointment } from "@/components/tour-manager/TourCard";
@@ -38,6 +39,7 @@ export function DayCockpit() {
   const [isPaused, setIsPaused] = useState(false);
   const [pausedElapsed, setPausedElapsed] = useState(0); // ms accumulated during pauses
   const pauseStartRef = useRef<number | null>(null);
+  const [geocodeProgress, setGeocodeProgress] = useState<{ current: number; total: number } | null>(null);
 
   const lastGpsRef = useRef<{ lat: number; lng: number } | null>(null);
   const gpsWatchRef = useRef<number | null>(null);
@@ -150,36 +152,29 @@ export function DayCockpit() {
         }
       });
 
-      // Geocode missing coordinates and save to appointment
+      // Geocode missing coordinates using prioritized address chain
       const entries = Object.values(grouped);
-      for (const apt of entries) {
-        if (apt.client && !apt.client.geo_lat && !apt.client.geo_lng) {
-          const { street, zip, city } = apt.client;
-          if (street || zip || city) {
-            const result = await geocodeAddress(street, zip, city);
-            if (result) {
-              apt.client.geo_lat = result.lat;
-              apt.client.geo_lng = result.lng;
-              // Save to appointment record (new columns via cast)
-              (supabase.from("appointments") as any)
-                .update({ 
-                  appointment_lat: result.lat, 
-                  appointment_lng: result.lng, 
-                  location_geocoded: true 
-                })
-                .eq("id", apt.id)
-                .then(() => {});
-              // Also save to horse
-              const horseId = apt.horses?.[0]?.id;
-              if (horseId) {
-                supabase.from("horses")
-                  .update({ latitude: result.lat, longitude: result.lng })
-                  .eq("id", horseId)
-                  .then(() => {});
-              }
-            }
+      const missingCoords = entries.filter(
+        apt => apt.client && !apt.client.geo_lat && !apt.client.geo_lng
+      );
+
+      if (missingCoords.length > 0) {
+        setGeocodeProgress({ current: 0, total: missingCoords.length });
+        let done = 0;
+        for (const apt of missingCoords) {
+          const result = await geocodeAppointmentAndSave(apt.id, {
+            clientId: apt.client?.id,
+            horseId: apt.horses?.[0]?.id,
+            location: null, // location not in select; address chain handles it
+          });
+          if (result && apt.client) {
+            apt.client.geo_lat = result.lat;
+            apt.client.geo_lng = result.lng;
           }
+          done++;
+          setGeocodeProgress({ current: done, total: missingCoords.length });
         }
+        setGeocodeProgress(null);
       }
 
       return entries;
@@ -560,6 +555,7 @@ export function DayCockpit() {
         estimatedFuelCost={estimatedFuelCost}
         livePrice={livePrice}
         isOnline={isOnline}
+        geocodeProgress={geocodeProgress}
         onStartTour={handleStartTour}
       />
     );

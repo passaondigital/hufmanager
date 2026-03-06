@@ -337,6 +337,21 @@ export function AppointmentFormModal({
       queryClient.invalidateQueries({ queryKey: ["visit-evidence"] });
       queryClient.invalidateQueries({ queryKey: ["recent-horses"] });
 
+      // Background geocoding for appointments without coordinates
+      if (createdAppointments?.length) {
+        import("@/lib/geocodeAppointment").then(({ geocodeAppointmentAndSave }) => {
+          for (const apt of createdAppointments) {
+            if (!apt.appointment_lat || !apt.appointment_lng) {
+              geocodeAppointmentAndSave(apt.id, {
+                clientId: apt.client_id,
+                horseId: apt.horse_id,
+                location: apt.location,
+              }).catch(console.error);
+            }
+          }
+        }).catch(console.error);
+      }
+
       // Send push notification to horse owner(s)
       if (user?.id && createdAppointments.length > 0) {
         const providerName = await resolveProviderDisplayName(user.id);
