@@ -10084,6 +10084,7 @@ export type Database = {
         }[]
       }
       get_or_assign_provider_for_client: { Args: never; Returns: string }
+      get_owner_horse_ids: { Args: { _owner_id: string }; Returns: string[] }
       get_partner_invitation: { Args: { p_token: string }; Returns: Json }
       get_partner_shared_data: {
         Args: { p_partner_email: string }
@@ -10187,6 +10188,10 @@ export type Database = {
         Args: { _client_id: string; _provider_id: string }
         Returns: boolean
       }
+      has_horse_partner_access: {
+        Args: { _horse_id: string; _partner_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -10209,6 +10214,10 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_employee_of_provider: {
         Args: { _provider_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_horse_owner: {
+        Args: { _horse_id: string; _user_id: string }
         Returns: boolean
       }
       is_master_admin: { Args: never; Returns: boolean }
