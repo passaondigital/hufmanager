@@ -41,7 +41,7 @@ export function CockpitReady({
       )}
 
       {/* Header */}
-      <div className="px-5 pt-5 pb-1">
+      <div className="pl-14 pr-5 pt-5 pb-1">
         <h1 className="text-2xl font-bold text-white">Tages-Cockpit</h1>
         <p className="text-sm mt-0.5" style={{ color: "#999" }}>
           {new Date().toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}

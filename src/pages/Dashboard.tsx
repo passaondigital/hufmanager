@@ -24,21 +24,34 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { showOnboarding, completeOnboarding } = useOnboarding();
   const { data: stats, isLoading } = useDashboardStats();
-  const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Hufbearbeiter";
-
-  // Fetch readable_id for the welcome header
+  // Fetch profile + business name for welcome header
   const { data: profileData } = useQuery({
     queryKey: ["provider-profile-id", user?.id],
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("readable_id")
+        .select("readable_id, full_name")
         .eq("id", user!.id)
         .single();
       return data;
     },
     enabled: !!user,
   });
+
+  const { data: businessData } = useQuery({
+    queryKey: ["business-name", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("business_settings")
+        .select("business_name")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const displayName = profileData?.full_name || businessData?.business_name || null;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("de-DE", {
