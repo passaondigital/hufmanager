@@ -33,6 +33,9 @@ export function DayCockpit() {
   const [tourStartTime, setTourStartTime] = useState<Date | null>(null);
   const [gpsTotalKm, setGpsTotalKm] = useState(0);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isPaused, setIsPaused] = useState(false);
+  const [pausedElapsed, setPausedElapsed] = useState(0); // ms accumulated during pauses
+  const pauseStartRef = useRef<number | null>(null);
 
   const lastGpsRef = useRef<{ lat: number; lng: number } | null>(null);
   const gpsWatchRef = useRef<number | null>(null);
@@ -273,9 +276,16 @@ export function DayCockpit() {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   };
 
-  // GPS tracking during tour
+  // GPS tracking during tour (pauses when isPaused)
   useEffect(() => {
-    if (cockpitState !== "underway" || !tourId) return;
+    if (cockpitState !== "underway" || !tourId || isPaused) {
+      // Clear watch when paused
+      if (gpsWatchRef.current !== null) {
+        navigator.geolocation.clearWatch(gpsWatchRef.current);
+        gpsWatchRef.current = null;
+      }
+      return;
+    }
     if (!("geolocation" in navigator)) return;
 
     gpsWatchRef.current = navigator.geolocation.watchPosition(
@@ -307,9 +317,10 @@ export function DayCockpit() {
     return () => {
       if (gpsWatchRef.current !== null) {
         navigator.geolocation.clearWatch(gpsWatchRef.current);
+        gpsWatchRef.current = null;
       }
     };
-  }, [cockpitState, tourId, user?.id, today]);
+  }, [cockpitState, tourId, isPaused, user?.id, today]);
 
   // User location for "ready" state
   useEffect(() => {
@@ -498,6 +509,28 @@ export function DayCockpit() {
   const activeAppointment = appointments[activeAppointmentIndex] || null;
   const completedCount = appointments.filter(a => a.status === "completed").length;
 
+  // Pause/Resume handlers (must be before early returns)
+  const handlePause = useCallback(() => {
+    setIsPaused(true);
+    pauseStartRef.current = Date.now();
+    setFullscreen(false); // Show sidebar
+  }, [setFullscreen]);
+
+  const handleResume = useCallback(() => {
+    if (pauseStartRef.current) {
+      setPausedElapsed(prev => prev + (Date.now() - pauseStartRef.current!));
+    }
+    pauseStartRef.current = null;
+    setIsPaused(false);
+    setFullscreen(true); // Hide sidebar
+  }, [setFullscreen]);
+
+  // Adjusted tour start time (accounts for pauses)
+  const adjustedTourStartTime = useMemo(() => {
+    if (!tourStartTime) return null;
+    return new Date(tourStartTime.getTime() + pausedElapsed + (isPaused && pauseStartRef.current ? Date.now() - pauseStartRef.current : 0));
+  }, [tourStartTime, pausedElapsed, isPaused]);
+
   if (cockpitState === "ready") {
     return (
       <CockpitReady
@@ -537,15 +570,18 @@ export function DayCockpit() {
       userLocation={userLocation}
       routePositions={routePositions}
       gpsTotalKm={Math.round(gpsTotalKm * 10) / 10}
-      tourStartTime={tourStartTime}
+      tourStartTime={adjustedTourStartTime}
       completedCount={completedCount}
       isOnline={isOnline}
       routeGeometry={routeInfo?.geometry}
       routeSteps={routeInfo?.steps}
+      isPaused={isPaused}
       onNavigate={handleNavigate}
       onArrived={handleArrived}
       onComplete={handleCompleteAppointment}
       onEndTour={handleEndTour}
+      onPause={handlePause}
+      onResume={handleResume}
     />
   );
 }
