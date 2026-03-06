@@ -1,12 +1,12 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Footprints, Calendar, MessageSquare, User } from "lucide-react";
+import { Home, Footprints, MapPin, Calendar, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
   { path: "/client-home", label: "Home", icon: Home },
-  { path: "/client-home", hash: "#pferde", label: "Pferde", icon: Footprints },
+  { path: "/client-horses", label: "Pferde", icon: Footprints },
   { path: "/client-booking", label: "Buchen", icon: Calendar },
-  { path: "/client-chat", label: "Chat", icon: MessageSquare },
+  { path: "/client-locations", label: "Ställe", icon: MapPin },
   { path: "/client-profile", label: "Profil", icon: User },
 ];
 
@@ -14,24 +14,10 @@ export function ClientBottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isActive = (tab: typeof tabs[0]) => {
-    if (tab.hash) return false; // "Pferde" is a scroll target, never "active" per se
-    return location.pathname === tab.path;
-  };
+  const isActive = (tab: typeof tabs[0]) => location.pathname === tab.path;
 
   const handleClick = (tab: typeof tabs[0]) => {
-    if (tab.hash) {
-      if (location.pathname === "/client-home") {
-        document.getElementById("pferde-section")?.scrollIntoView({ behavior: "smooth" });
-      } else {
-        navigate("/client-home");
-        setTimeout(() => {
-          document.getElementById("pferde-section")?.scrollIntoView({ behavior: "smooth" });
-        }, 300);
-      }
-    } else {
-      navigate(tab.path);
-    }
+    navigate(tab.path);
   };
 
   return (
