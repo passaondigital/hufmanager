@@ -26,6 +26,7 @@ import { EmergencyVetWidget } from "@/components/client/EmergencyVetWidget";
 import { AppointmentChecklistWidget } from "@/components/client/AppointmentChecklistWidget";
 import { ProviderTourStatusWidget } from "@/components/client/ProviderTourStatusWidget";
 import { PushNotificationBanner } from "@/components/notifications/PushNotificationBanner";
+import { ClientPushPermissionBanner } from "@/components/client/ClientPushPermissionBanner";
 import { ServiceHistoryWidget } from "@/components/client/ServiceHistoryWidget";
 import { ProviderSelector } from "@/components/client/ProviderSelector";
 import { ClientBottomNav } from "@/components/client/ClientBottomNav";
@@ -228,8 +229,8 @@ export default function ClientHome() {
 
         {/* Main content with safe bottom padding */}
         <main className="px-4 py-6 max-w-lg mx-auto space-y-6 pb-safe" style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom, 0px))" }}>
-          {/* Push Notification Banner */}
-          <PushNotificationBanner />
+          {/* Personalized Push Permission Banner for clients */}
+          <ClientPushPermissionBanner />
 
           {/* Unconfirmed Appointments Banner */}
           <UnconfirmedAppointmentsBanner />
