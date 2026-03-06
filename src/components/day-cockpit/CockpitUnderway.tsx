@@ -328,7 +328,7 @@ export function CockpitUnderway({
           {routeLine && routeLine.length > 1 ? (
             <Polyline positions={routeLine} pathOptions={{ color: "#F5970A", weight: 6, opacity: 0.9 }} />
           ) : segment.length > 1 ? (
-            <Polyline positions={segment} pathOptions={{ color: "#F5970A", weight: 5, opacity: 0.9, dashArray: "10 10" }} />
+            <Polyline positions={segment} pathOptions={{ color: "#F5970A", weight: 5, opacity: 0.7 }} />
           ) : null}
         </MapContainer>
       </div>
@@ -419,8 +419,8 @@ export function CockpitUnderway({
                       className="flex-1 flex items-center justify-center gap-2 font-bold text-base text-white"
                       style={{ height: 56, borderRadius: 12, background: "#333" }}
                     >
-                      <MapPin className="h-5 w-5" />
-                      Zur Karte
+                      <Navigation className="h-5 w-5" />
+                      GPS zentrieren
                     </button>
                   ) : null
                 ) : (
