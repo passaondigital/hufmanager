@@ -15,7 +15,7 @@ const entries = [
       "✅ Mehrere Pferdestandorte pro Kunde",
       "✅ Berufsgruppen-Onboarding (9 Typen)",
       "✅ Anhänger-Routing (Höhenbeschränkungen)",
-      "✅ HelpTips in der gesamten App",
+      "✅ HelpTips, FAQ + Glossar aktualisiert",
     ],
   },
 ];
