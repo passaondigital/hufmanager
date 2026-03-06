@@ -363,8 +363,8 @@ export function DayCockpit() {
     );
   }, [cockpitState]);
 
-  // Start tour
-  const handleStartTour = async () => {
+  // Start tour (notifyClients controls whether push is sent)
+  const handleStartTour = async (notifyClients = true) => {
     if (!user?.id) return;
     try {
       const { data: existing } = await supabase
@@ -411,24 +411,26 @@ export function DayCockpit() {
         prefetchTilesForRoute(routePositions).catch(console.error);
       }
 
-      // Notify all today's clients that the tour has started
-      const { data: provProfile } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", user.id)
-        .maybeSingle();
-      let tourDisplayName = provProfile?.full_name;
-      if (!tourDisplayName) {
-        const { data: bs } = await supabase
-          .from("business_settings")
-          .select("business_name")
-          .eq("user_id", user.id)
+      // Notify all today's clients that the tour has started (if opted-in)
+      if (notifyClients) {
+        const { data: provProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user.id)
           .maybeSingle();
-        tourDisplayName = bs?.business_name || "Dein Hufpfleger";
+        let tourDisplayName = provProfile?.full_name;
+        if (!tourDisplayName) {
+          const { data: bs } = await supabase
+            .from("business_settings")
+            .select("business_name")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          tourDisplayName = bs?.business_name || "Dein Hufpfleger";
+        }
+        notifyTodayClients(user.id, "tour_start", {
+          providerName: tourDisplayName,
+        }).catch(console.error);
       }
-      notifyTodayClients(user.id, "tour_start", {
-        providerName: tourDisplayName,
-      }).catch(console.error);
     } catch (err) {
       console.error("Start tour error:", err);
     }
@@ -767,10 +769,10 @@ export function DayCockpit() {
     return new Date(tourStartTime.getTime() + pausedElapsed + (isPaused && pauseStartRef.current ? Date.now() - pauseStartRef.current : 0));
   }, [tourStartTime, pausedElapsed, isPaused]);
 
-  const handleChecklistConfirm = async () => {
+  const handleChecklistConfirm = async (options: { notifyClients: boolean }) => {
     setIsTourStarting(true);
     try {
-      await handleStartTour();
+      await handleStartTour(options.notifyClients);
     } finally {
       setIsTourStarting(false);
       setChecklistOpen(false);
@@ -796,6 +798,7 @@ export function DayCockpit() {
           onOpenChange={setChecklistOpen}
           onConfirm={handleChecklistConfirm}
           isStarting={isTourStarting}
+          appointmentCount={enrichedAppointments.length}
         />
       </>
     );
