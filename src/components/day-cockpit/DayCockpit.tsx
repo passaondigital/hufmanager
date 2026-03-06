@@ -576,6 +576,7 @@ export function DayCockpit() {
         vehicleConsumption={vehicle?.average_consumption}
         pricePerKm={vehicle?.price_per_km}
         isOnline={isOnline}
+        appointments={enrichedAppointments}
         onDismiss={() => setCockpitState("ready")}
       />
     );
