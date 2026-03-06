@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Polyline, useMap } from "react-leaflet
 import L from "leaflet";
 import {
   Navigation, CheckCircle, MapPin, Clock, Route, WifiOff,
-  Square, Play, Volume2, VolumeX, ChevronRight, Pause, Compass, AlertTriangle
+  Square, Play, Volume2, VolumeX, ChevronRight, Pause, Compass, AlertTriangle, UserX
 } from "lucide-react";
 import { useTurnByTurn } from "@/hooks/useTurnByTurn";
 import type { TourAppointment } from "@/components/tour-manager/TourCard";
@@ -115,6 +115,7 @@ interface CockpitUnderwayProps {
   onPause?: () => void;
   onResume?: () => void;
   onReportDelay?: () => void;
+  onNoShow?: (id: string) => void;
 }
 
 export function CockpitUnderway({
@@ -137,6 +138,7 @@ export function CockpitUnderway({
   onPause,
   onResume,
   onReportDelay,
+  onNoShow,
 }: CockpitUnderwayProps) {
   const [elapsed, setElapsed] = useState("00:00");
   const [bearing, setBearing] = useState(0);
@@ -441,14 +443,24 @@ export function CockpitUnderway({
                 )}
 
                 {!isArrived ? (
-                  <button
-                    onClick={() => onArrived(activeAppointment.id)}
-                    className="flex-1 flex items-center justify-center gap-2 font-bold text-base"
-                    style={{ height: 56, borderRadius: 12, background: "#F5970A", color: "#111" }}
-                  >
-                    <MapPin className="h-5 w-5" />
-                    Angekommen
-                  </button>
+                  <>
+                    <button
+                      onClick={() => onArrived(activeAppointment.id)}
+                      className="flex-1 flex items-center justify-center gap-2 font-bold text-base"
+                      style={{ height: 56, borderRadius: 12, background: "#F5970A", color: "#111" }}
+                    >
+                      <MapPin className="h-5 w-5" />
+                      Angekommen
+                    </button>
+                    <button
+                      onClick={() => onNoShow?.(activeAppointment.id)}
+                      className="flex items-center justify-center gap-1.5 font-bold text-sm"
+                      style={{ height: 56, borderRadius: 12, background: "#f59e0b20", color: "#f59e0b", paddingInline: 14 }}
+                      title="Nicht angetroffen"
+                    >
+                      <UserX className="h-5 w-5" />
+                    </button>
+                  </>
                 ) : (
                   <button
                     onClick={() => onComplete(activeAppointment.id)}
