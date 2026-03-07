@@ -7,7 +7,7 @@ export function mergeContractTemplate(
   variables: Record<string, string>
 ): string {
   return Object.entries(variables).reduce(
-    (html, [key, value]) => html.replaceAll(`{{${key}}}`, value),
+    (html, [key, value]) => html.split(`{{${key}}}`).join(value),
     templateHtml
   );
 }
