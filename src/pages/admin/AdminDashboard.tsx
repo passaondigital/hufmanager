@@ -6,7 +6,7 @@ import { useLogout } from "@/hooks/useLogout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Shield, Users, Database, Bug, Activity, Crown, Plus, Zap, Package, BookOpen, Brain, AlertTriangle, PiggyBank, Link2, Globe } from "lucide-react";
+import { Loader2, Shield, Users, Database, Bug, Activity, Crown, Plus, Zap, Package, BookOpen, Brain, AlertTriangle, PiggyBank, Link2, Globe, ScrollText } from "lucide-react";
 import { toast } from "sonner";
 
 // Admin Views
