@@ -14,7 +14,7 @@ const Impressum = () => (
           </div>
           <div>
             <h2 className="text-xl font-semibold text-white mb-2">Kontakt</h2>
-            <p>Telefon: 015209007017<br />E-Mail: teamhufmanager@gmail.com</p>
+            <p>Telefon: 015209007017<br />E-Mail: support@hufmanager.de / teamhufmanager@gmail.com</p>
           </div>
           <div>
             <h2 className="text-xl font-semibold text-white mb-2">Gewerbeanmeldung</h2>
