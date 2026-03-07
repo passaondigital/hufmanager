@@ -113,3 +113,6 @@ verify_jwt = true
 
 [functions.geocode-missing-appointments]
 verify_jwt = false
+
+[functions.admin-notifications]
+verify_jwt = false
