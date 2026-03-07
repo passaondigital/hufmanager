@@ -73,11 +73,11 @@ export function AdminInvoiceModal({ open, onOpenChange, editInvoice, onSaved }: 
     const timer = setTimeout(async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("id, full_name, email, address, readable_id, plan")
+        .select("id, full_name, email, address, readable_id, subscription_plan")
         .or(`full_name.ilike.%${providerSearch}%,email.ilike.%${providerSearch}%,readable_id.ilike.%${providerSearch}%`)
         .eq("role", "provider")
         .limit(10);
-      if (data) setProviders(data as Provider[]);
+      if (data) setProviders(data.map((d: any) => ({ ...d, plan: d.subscription_plan })) as Provider[]);
     }, 300);
     return () => clearTimeout(timer);
   }, [providerSearch]);
@@ -187,7 +187,7 @@ export function AdminInvoiceModal({ open, onOpenChange, editInvoice, onSaved }: 
   const previewPdf = () => {
     const doc = generateAdminInvoicePdf(buildPdfData());
     const pdfUrl = doc.output("bloburl");
-    window.open(pdfUrl as string, "_blank");
+    window.open(pdfUrl.toString(), "_blank");
   };
 
   const saveInvoice = async (andSend = false) => {
