@@ -117,13 +117,13 @@ export function ProviderManualActions({
           break;
         }
         case "suspend": {
-          await supabase.from("profiles").update({ plan_status: "suspended" }).eq("id", providerId);
+          await supabase.from("profiles").update({ is_suspended: true, suspended_at: new Date().toISOString(), suspended_reason: "Manuell durch Admin gesperrt" }).eq("id", providerId);
           await logTimeline("access_suspended", "Zugang gesperrt", "Manuell durch Admin", "🔒");
           toast.success("Zugang gesperrt");
           break;
         }
         case "unsuspend": {
-          await supabase.from("profiles").update({ plan_status: "active" }).eq("id", providerId);
+          await supabase.from("profiles").update({ is_suspended: false, suspended_at: null, suspended_reason: null }).eq("id", providerId);
           await logTimeline("access_reactivated", "Zugang reaktiviert", "Manuell durch Admin", "🔓");
           toast.success("Zugang reaktiviert");
           break;

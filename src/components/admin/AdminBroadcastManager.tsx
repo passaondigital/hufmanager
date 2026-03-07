@@ -45,7 +45,7 @@ export function AdminBroadcastManager() {
     if (providerIds.length > 0) {
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, full_name, email, plan, readable_id")
+        .select("id, full_name, email, subscription_plan, readable_id")
         .in("id", providerIds)
         .is("deleted_at", null);
 
