@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { Loader2, Save, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,6 +31,10 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
   const isEdit = !!contract;
 
   const [providers, setProviders] = useState<any[]>([]);
+  const [providerSearch, setProviderSearch] = useState("");
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<any>(null);
   const [templates, setTemplates] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -51,7 +56,6 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
 
   useEffect(() => {
     if (open) {
-      fetchProviders();
       fetchTemplates();
       if (contract) {
         setForm({
@@ -69,23 +73,55 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
           notes: contract.notes || "",
           status: contract.status || "draft",
         });
+        // Set selected provider for edit mode
+        setSelectedProvider({
+          id: contract.provider_id,
+          full_name: contract.provider_name || "",
+          email: contract.provider_email || "",
+          readable_id: contract.provider_pid || "",
+        });
       }
     }
   }, [open, contract]);
 
-  const fetchProviders = async () => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("id, full_name, email, readable_id")
-      .eq("deleted_at", null)
-      .order("full_name");
-    // Filter to providers only via user_roles
-    if (data) {
-      const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "provider");
-      const providerIds = new Set(roles?.map(r => r.user_id) || []);
-      setProviders(data.filter(p => providerIds.has(p.id)));
+  // Search providers
+  useEffect(() => {
+    if (providerSearch.length < 2) {
+      setProviders([]);
+      setShowDropdown(false);
+      return;
     }
-  };
+    setSearchLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "provider");
+        const providerIds = roles?.map(r => r.user_id) || [];
+        if (!providerIds.length) {
+          setProviders([]);
+          setShowDropdown(true);
+          setSearchLoading(false);
+          return;
+        }
+        const { data } = await supabase
+          .from("profiles")
+          .select("id, full_name, email, readable_id, subscription_plan")
+          .or(`full_name.ilike.%${providerSearch}%,email.ilike.%${providerSearch}%,readable_id.ilike.%${providerSearch}%`)
+          .in("id", providerIds)
+          .is("deleted_at", null)
+          .limit(8);
+        setProviders(data || []);
+        setShowDropdown(true);
+      } catch (err) {
+        console.error("Provider search error:", err);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [providerSearch]);
 
   const fetchTemplates = async () => {
     const { data } = await supabase
@@ -106,7 +142,7 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
   };
 
   const buildVariables = (): Record<string, string> => {
-    const provider = providers.find(p => p.id === form.provider_id);
+    const provider = selectedProvider;
     const planName = form.plan.charAt(0).toUpperCase() + form.plan.slice(1);
     const monthlyStr = form.plan_price_monthly.toFixed(2).replace(".", ",") + " €";
     const yearlyStr = form.plan_price_yearly.toFixed(2).replace(".", ",") + " €";
@@ -161,13 +197,21 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
     };
   };
 
-  const handleProviderChange = (providerId: string) => {
-    const p = providers.find(pr => pr.id === providerId);
+  const handleProviderSelect = (p: any) => {
+    setSelectedProvider(p);
+    setProviderSearch("");
+    setProviders([]);
+    setShowDropdown(false);
     setForm(prev => ({
       ...prev,
-      provider_id: providerId,
-      provider_pid: p?.readable_id || "",
+      provider_id: p.id,
+      provider_pid: p.readable_id || "",
     }));
+    // Auto-fill plan from provider's subscription
+    const plan = p.subscription_plan?.toLowerCase();
+    if (plan && PLAN_PRICES[plan]) {
+      handlePlanChange(plan);
+    }
   };
 
   const handlePlanChange = (plan: string) => {
@@ -241,16 +285,59 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
           {/* Provider */}
           <div className="space-y-2">
             <Label>Provider</Label>
-            <Select value={form.provider_id} onValueChange={handleProviderChange}>
-              <SelectTrigger><SelectValue placeholder="Provider auswählen..." /></SelectTrigger>
-              <SelectContent>
-                {providers.map(p => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.full_name || p.email} ({p.readable_id})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {selectedProvider ? (
+              <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50">
+                <div className="flex-1">
+                  <p className="font-medium">{selectedProvider.full_name || selectedProvider.email}</p>
+                  <div className="flex gap-2 mt-1">
+                    {selectedProvider.readable_id && <Badge variant="outline">{selectedProvider.readable_id}</Badge>}
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => { setSelectedProvider(null); setForm(prev => ({ ...prev, provider_id: "", provider_pid: "" })); }}>
+                  Ändern
+                </Button>
+              </div>
+            ) : (
+              <div className="relative">
+                <div className="relative">
+                  <Input
+                    placeholder="Provider suchen (Name, E-Mail, PID)..."
+                    value={providerSearch}
+                    onChange={(e) => setProviderSearch(e.target.value)}
+                    onFocus={() => providers.length > 0 && setShowDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                  />
+                  {searchLoading && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+                {showDropdown && providerSearch.length >= 2 && (
+                  <div className="absolute z-50 w-full mt-1 bg-popover border rounded-lg shadow-lg max-h-56 overflow-y-auto">
+                    {providers.length > 0 ? (
+                      providers.map((p) => (
+                        <button
+                          key={p.id}
+                          className="w-full text-left px-3 py-2.5 hover:bg-muted transition-colors border-b last:border-b-0"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => handleProviderSelect(p)}
+                        >
+                          <p className="font-medium text-sm">{p.full_name || p.email}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs text-muted-foreground">{p.email}</span>
+                            {p.readable_id && <Badge variant="outline" className="text-[10px] px-1 py-0">{p.readable_id}</Badge>}
+                            {p.subscription_plan && <Badge variant="secondary" className="text-[10px] px-1 py-0">{p.subscription_plan}</Badge>}
+                          </div>
+                        </button>
+                      ))
+                    ) : !searchLoading ? (
+                      <div className="px-3 py-4 text-sm text-muted-foreground text-center">
+                        Kein Provider gefunden – Name, E-Mail oder PID eingeben
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Template */}
