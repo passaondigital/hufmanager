@@ -13,9 +13,9 @@ import { mergeContractTemplate } from "@/lib/contractMerge";
 
 const PLAN_PRICES: Record<string, { monthly: number; yearly: number }> = {
   starter: { monthly: 9.90, yearly: 99 },
-  pro: { monthly: 29, yearly: 290 },
-  duo: { monthly: 49, yearly: 490 },
-  team: { monthly: 79, yearly: 790 },
+  pro: { monthly: 29, yearly: 348 },
+  duo: { monthly: 49, yearly: 588 },
+  team: { monthly: 79, yearly: 948 },
 };
 
 interface AdminContractModalProps {
@@ -39,7 +39,7 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
     template_id: "",
     plan: "pro",
     plan_price_monthly: 29,
-    plan_price_yearly: 290,
+    plan_price_yearly: 348,
     custom_price: "",
     period_start: new Date().toISOString().split("T")[0],
     period_end: "",
@@ -60,7 +60,7 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
           template_id: contract.template_id || "",
           plan: contract.plan || "pro",
           plan_price_monthly: contract.plan_price_monthly || 29,
-          plan_price_yearly: contract.plan_price_yearly || 290,
+          plan_price_yearly: contract.plan_price_yearly || 348,
           custom_price: contract.custom_price?.toString() || "",
           period_start: contract.period_start || new Date().toISOString().split("T")[0],
           period_end: contract.period_end || "",
