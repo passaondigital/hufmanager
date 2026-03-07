@@ -29,7 +29,7 @@ const Datenschutz = () => (
               Herr Pascal Schmid<br />
               Maienweg 1b<br />
               67659 Kaiserslautern<br />
-              E-Mail: kontakt@barhufserviceschmid.de<br />
+              E-Mail: support@hufmanager.de<br />
               Telefon: 015209007017
             </p>
           </div>

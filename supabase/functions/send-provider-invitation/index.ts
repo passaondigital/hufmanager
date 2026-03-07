@@ -239,7 +239,7 @@ serve(async (req: Request): Promise<Response> => {
             </div>
             
             <p style="color: #666;">
-              Bei Fragen erreichst du uns unter <a href="mailto:support@hufmanager.de" style="color: #F47B20;">support@hufmanager.de</a>
+              Bei Fragen erreichst du uns unter <a href="mailto:support@hufmanager.de" style="color: #F47B20;">support@hufmanager.de</a> oder <a href="mailto:teamhufmanager@gmail.com" style="color: #F47B20;">teamhufmanager@gmail.com</a>
             </p>
           </div>
           <div class="footer">
