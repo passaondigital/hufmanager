@@ -285,16 +285,59 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
           {/* Provider */}
           <div className="space-y-2">
             <Label>Provider</Label>
-            <Select value={form.provider_id} onValueChange={handleProviderChange}>
-              <SelectTrigger><SelectValue placeholder="Provider auswählen..." /></SelectTrigger>
-              <SelectContent>
-                {providers.map(p => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.full_name || p.email} ({p.readable_id})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {selectedProvider ? (
+              <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50">
+                <div className="flex-1">
+                  <p className="font-medium">{selectedProvider.full_name || selectedProvider.email}</p>
+                  <div className="flex gap-2 mt-1">
+                    {selectedProvider.readable_id && <Badge variant="outline">{selectedProvider.readable_id}</Badge>}
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => { setSelectedProvider(null); setForm(prev => ({ ...prev, provider_id: "", provider_pid: "" })); }}>
+                  Ändern
+                </Button>
+              </div>
+            ) : (
+              <div className="relative">
+                <div className="relative">
+                  <Input
+                    placeholder="Provider suchen (Name, E-Mail, PID)..."
+                    value={providerSearch}
+                    onChange={(e) => setProviderSearch(e.target.value)}
+                    onFocus={() => providers.length > 0 && setShowDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                  />
+                  {searchLoading && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+                {showDropdown && providerSearch.length >= 2 && (
+                  <div className="absolute z-50 w-full mt-1 bg-popover border rounded-lg shadow-lg max-h-56 overflow-y-auto">
+                    {providers.length > 0 ? (
+                      providers.map((p) => (
+                        <button
+                          key={p.id}
+                          className="w-full text-left px-3 py-2.5 hover:bg-muted transition-colors border-b last:border-b-0"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => handleProviderSelect(p)}
+                        >
+                          <p className="font-medium text-sm">{p.full_name || p.email}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs text-muted-foreground">{p.email}</span>
+                            {p.readable_id && <Badge variant="outline" className="text-[10px] px-1 py-0">{p.readable_id}</Badge>}
+                            {p.subscription_plan && <Badge variant="secondary" className="text-[10px] px-1 py-0">{p.subscription_plan}</Badge>}
+                          </div>
+                        </button>
+                      ))
+                    ) : !searchLoading ? (
+                      <div className="px-3 py-4 text-sm text-muted-foreground text-center">
+                        Kein Provider gefunden – Name, E-Mail oder PID eingeben
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Template */}
