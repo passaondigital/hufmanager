@@ -56,7 +56,8 @@ import {
   Bug,
   Download,
   Target,
-  PiggyBank
+  PiggyBank,
+  ScrollText
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -80,6 +81,8 @@ import { RetentionDashboard } from "@/components/admin/RetentionDashboard";
 import { AdminHufrenteOverview } from "@/components/admin/AdminHufrenteOverview";
 import { AdminManualPayments } from "@/components/admin/AdminManualPayments";
 import { AdminContractTracking } from "@/components/admin/AdminContractTracking";
+import { AdminInvoices } from "@/components/admin/AdminInvoices";
+import { AdminContractManager } from "@/components/admin/AdminContractManager";
 import { isDemoEmail } from "@/lib/demo-accounts";
 
 // Horse icon fallback since lucide doesn't have it
@@ -1157,6 +1160,14 @@ export default function MissionControl() {
                 <Euro className="w-4 h-4" />
                 <span className="hidden md:inline">Zahlungen</span>
               </TabsTrigger>
+              <TabsTrigger value="invoices" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <FileText className="w-4 h-4" />
+                <span className="hidden md:inline">Rechnungen</span>
+              </TabsTrigger>
+              <TabsTrigger value="contracts" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <ScrollText className="w-4 h-4" />
+                <span className="hidden md:inline">Verträge</span>
+              </TabsTrigger>
               <TabsTrigger value="compliance" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
                 <Shield className="w-4 h-4" />
                 <span className="hidden md:inline">Compliance</span>
@@ -2195,6 +2206,14 @@ export default function MissionControl() {
 
           <TabsContent value="payments" className="space-y-6">
             <AdminManualPayments />
+          </TabsContent>
+
+          <TabsContent value="invoices" className="space-y-6">
+            <AdminInvoices />
+          </TabsContent>
+
+          <TabsContent value="contracts" className="space-y-6">
+            <AdminContractManager />
           </TabsContent>
 
           <TabsContent value="compliance" className="space-y-6">
