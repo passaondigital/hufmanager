@@ -40,6 +40,9 @@ interface Provider {
   address?: string;
   readable_id?: string;
   plan?: string;
+  city?: string;
+  zip_code?: string;
+  street?: string;
 }
 
 interface AdminInvoiceModalProps {
@@ -52,6 +55,7 @@ interface AdminInvoiceModalProps {
 export function AdminInvoiceModal({ open, onOpenChange, editInvoice, onSaved }: AdminInvoiceModalProps) {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [providerSearch, setProviderSearch] = useState("");
+  const [searchLoading, setSearchLoading] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [invoiceDate, setInvoiceDate] = useState<Date>(new Date());
@@ -66,18 +70,55 @@ export function AdminInvoiceModal({ open, onOpenChange, editInvoice, onSaved }: 
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
 
-  // Search providers
+  // Search providers via user_roles join
   useEffect(() => {
-    if (providerSearch.length < 2) return;
+    if (providerSearch.length < 2) {
+      setProviders([]);
+      setShowDropdown(false);
+      return;
+    }
+    setSearchLoading(true);
     const timer = setTimeout(async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, full_name, email, address, readable_id, subscription_plan")
-        .or(`full_name.ilike.%${providerSearch}%,email.ilike.%${providerSearch}%,readable_id.ilike.%${providerSearch}%`)
-        .eq("role", "provider")
-        .limit(10);
-      if (data) setProviders(data.map((d: any) => ({ ...d, plan: d.subscription_plan })) as Provider[]);
+      try {
+        // First get provider user_ids
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "provider");
+        const providerIds = roles?.map(r => r.user_id) || [];
+        if (!providerIds.length) {
+          setProviders([]);
+          setShowDropdown(true);
+          setSearchLoading(false);
+          return;
+        }
+        const { data } = await supabase
+          .from("profiles")
+          .select("id, full_name, email, readable_id, subscription_plan, street, city, zip_code")
+          .or(`full_name.ilike.%${providerSearch}%,email.ilike.%${providerSearch}%,readable_id.ilike.%${providerSearch}%`)
+          .in("id", providerIds)
+          .is("deleted_at", null)
+          .limit(8);
+        const mapped = (data || []).map((d: any) => ({
+          id: d.id,
+          full_name: d.full_name || "",
+          email: d.email || "",
+          readable_id: d.readable_id,
+          plan: d.subscription_plan,
+          street: d.street,
+          city: d.city,
+          zip_code: d.zip_code,
+          address: [d.street, d.zip_code, d.city].filter(Boolean).join(", "),
+        })) as Provider[];
+        setProviders(mapped);
+        setShowDropdown(true);
+      } catch (err) {
+        console.error("Provider search error:", err);
+      } finally {
+        setSearchLoading(false);
+      }
     }, 300);
     return () => clearTimeout(timer);
   }, [providerSearch]);
@@ -87,6 +128,7 @@ export function AdminInvoiceModal({ open, onOpenChange, editInvoice, onSaved }: 
     setSelectedProvider(p);
     setProviderSearch("");
     setProviders([]);
+    setShowDropdown(false);
     // Auto-fill first item from plan
     const plan = p.plan?.toLowerCase() || "";
     const planConfig = PLAN_DEFAULTS[plan];
@@ -363,23 +405,41 @@ export function AdminInvoiceModal({ open, onOpenChange, editInvoice, onSaved }: 
                 </div>
               ) : (
                 <div className="relative">
-                  <Input
-                    placeholder="Provider suchen (Name, E-Mail, PID)..."
-                    value={providerSearch}
-                    onChange={(e) => setProviderSearch(e.target.value)}
-                  />
-                  {providers.length > 0 && (
-                    <div className="absolute z-50 w-full mt-1 bg-popover border rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                      {providers.map((p) => (
-                        <button
-                          key={p.id}
-                          className="w-full text-left px-3 py-2 hover:bg-muted transition-colors"
-                          onClick={() => selectProvider(p)}
-                        >
-                          <p className="font-medium text-sm">{p.full_name}</p>
-                          <p className="text-xs text-muted-foreground">{p.email} · {p.readable_id}</p>
-                        </button>
-                      ))}
+                  <div className="relative">
+                    <Input
+                      placeholder="Provider suchen (Name, E-Mail, PID)..."
+                      value={providerSearch}
+                      onChange={(e) => setProviderSearch(e.target.value)}
+                      onFocus={() => providers.length > 0 && setShowDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                    />
+                    {searchLoading && (
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
+                  {showDropdown && providerSearch.length >= 2 && (
+                    <div className="absolute z-50 w-full mt-1 bg-popover border rounded-lg shadow-lg max-h-56 overflow-y-auto">
+                      {providers.length > 0 ? (
+                        providers.map((p) => (
+                          <button
+                            key={p.id}
+                            className="w-full text-left px-3 py-2.5 hover:bg-muted transition-colors border-b last:border-b-0"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => selectProvider(p)}
+                          >
+                            <p className="font-medium text-sm">{p.full_name}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-xs text-muted-foreground">{p.email}</span>
+                              {p.readable_id && <Badge variant="outline" className="text-[10px] px-1 py-0">{p.readable_id}</Badge>}
+                              {p.plan && <Badge variant="secondary" className="text-[10px] px-1 py-0">{p.plan}</Badge>}
+                            </div>
+                          </button>
+                        ))
+                      ) : !searchLoading ? (
+                        <div className="px-3 py-4 text-sm text-muted-foreground text-center">
+                          Kein Provider gefunden – Name, E-Mail oder PID eingeben
+                        </div>
+                      ) : null}
                     </div>
                   )}
                 </div>
