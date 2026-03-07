@@ -60,8 +60,9 @@ export function AdminBroadcastManager() {
       contracts?.forEach((c) => contractMap.set(c.provider_id, c.payment_method || "copecart"));
 
       setProviders(
-        (profiles || []).map((p) => ({
+        (profiles || []).map((p: any) => ({
           ...p,
+          plan: p.subscription_plan || "starter",
           payment_method: contractMap.get(p.id) || "copecart",
         }))
       );
