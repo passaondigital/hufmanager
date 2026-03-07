@@ -267,7 +267,7 @@ export default function Verarbeitungsverzeichnis() {
 
         {/* Info */}
         <div className="rounded-lg border bg-muted/50 p-4 text-sm text-muted-foreground">
-          <strong>Verantwortlicher:</strong> PASSAON – Pascal Schmid · 
+          <strong>Verantwortlicher:</strong> Pascal Schmid (HufManager) · 
           <strong> Datenschutzbeauftragter:</strong> datenschutz@hufmanager.de · 
           <strong> System:</strong> HufManager (hufmanager.lovable.app) · 
           <strong> Infrastruktur:</strong> Supabase (eu-central-1, Frankfurt)

@@ -85,7 +85,7 @@ Zweck der Verarbeitung ist die Bereitstellung eines digitalen Systems zur:
 
 Eine Verarbeitung besonderer Kategorien personenbezogener Daten im Sinne von Art. 9 DSGVO ist nicht vorgesehen.
 
-6. PASSAON-ID-System (besondere Systemarchitektur)
+6. HufManager-ID-System (besondere Systemarchitektur)
 
 HufManager nutzt ein mehrstufiges ID-System zur strukturellen Trennung, Sicherung und kontrollierten Verknüpfung von Daten:
 • #kid – KundenID / Pferdebesitzer
