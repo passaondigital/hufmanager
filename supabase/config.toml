@@ -119,3 +119,9 @@ verify_jwt = false
 
 [functions.send-admin-invoice]
 verify_jwt = true
+
+[functions.check-overdue-invoices]
+verify_jwt = false
+
+[functions.auto-generate-invoices]
+verify_jwt = false

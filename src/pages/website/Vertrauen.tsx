@@ -406,8 +406,8 @@ const Vertrauen = () => (
               <Building2 className="w-6 h-6 text-primary" />
             </div>
           </div>
-          <h3 className="text-white font-bold text-lg mb-1">PASSAON</h3>
-          <p className="text-white/50 text-sm mb-6">Betreiber von HufManager</p>
+          <h3 className="text-white font-bold text-lg mb-1">HufManager</h3>
+          <p className="text-white/50 text-sm mb-6">Pascal Schmid – Betreiber</p>
           <div className="grid sm:grid-cols-2 gap-4 text-left max-w-md mx-auto">
             <div>
               <p className="text-white/40 text-xs uppercase tracking-wide mb-1">Verantwortlicher</p>

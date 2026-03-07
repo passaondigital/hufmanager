@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 const THRESHOLDS = [10, 25, 50, 100];
-const PASCAL_EMAIL = "passaondigital@gmail.com";
+const PASCAL_EMAIL = "teamhufmanager@gmail.com";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {

@@ -21,16 +21,18 @@ import { AdminKIDataHub } from "@/components/admin/AdminKIDataHub";
 import { AdminRevenue } from "@/components/admin/AdminRevenue";
 import { AdminConnections } from "@/components/admin/AdminConnections";
 import { AdminHealthDashboard } from "@/components/admin/AdminHealthDashboard";
+import { AdminContractManager } from "@/components/admin/AdminContractManager";
 import { AdminInvoices } from "@/components/admin/AdminInvoices";
 import { HeartPulse, FileText } from "lucide-react";
 
-type AdminView = "users" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "invoices" | "connections" | "domains" | "self-healing";
+type AdminView = "users" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "invoices" | "contracts" | "connections" | "domains" | "self-healing";
 
 const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "users", label: "User-DB", icon: Users },
   { id: "horses", label: "Pferde-DB", icon: Database },
   { id: "revenue", label: "Einnahmen", icon: PiggyBank },
   { id: "invoices", label: "Rechnungen", icon: FileText },
+  { id: "contracts", label: "Verträge", icon: FileText },
   { id: "catalog", label: "Produktkatalog", icon: Package },
   { id: "docs", label: "System & Doku", icon: BookOpen },
   { id: "ki-hub", label: "KI-Daten-Hub", icon: Brain },
@@ -84,7 +86,7 @@ export default function AdminDashboard() {
 
     setIsAdmin(!!data);
     
-    // Check if master admin (passaondigital@gmail.com)
+    // Check if master admin
     setIsMasterAdmin(user.email === "passaondigital@gmail.com");
   };
 
@@ -207,6 +209,7 @@ export default function AdminDashboard() {
         {activeView === "horses" && <AdminHorseDB isMasterAdmin={isMasterAdmin} />}
         {activeView === "revenue" && <AdminRevenue />}
         {activeView === "invoices" && <AdminInvoices />}
+        {activeView === "contracts" && <AdminContractManager />}
         {activeView === "connections" && <AdminConnections />}
         {activeView === "domains" && (
           <div className="p-8">
