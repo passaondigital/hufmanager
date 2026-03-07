@@ -6,7 +6,7 @@ import { useLogout } from "@/hooks/useLogout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Shield, Users, Database, Bug, Activity, Crown, Plus, Zap, Package, BookOpen, Brain, AlertTriangle, PiggyBank, Link2, Globe } from "lucide-react";
+import { Loader2, Shield, Users, Database, Bug, Activity, Crown, Plus, Zap, Package, BookOpen, Brain, AlertTriangle, PiggyBank, Link2, Globe, ScrollText } from "lucide-react";
 import { toast } from "sonner";
 
 // Admin Views
@@ -32,7 +32,7 @@ const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ cla
   { id: "horses", label: "Pferde-DB", icon: Database },
   { id: "revenue", label: "Einnahmen", icon: PiggyBank },
   { id: "invoices", label: "Rechnungen", icon: FileText },
-  { id: "contracts", label: "Verträge", icon: FileText },
+  { id: "contracts", label: "Verträge", icon: ScrollText },
   { id: "catalog", label: "Produktkatalog", icon: Package },
   { id: "docs", label: "System & Doku", icon: BookOpen },
   { id: "ki-hub", label: "KI-Daten-Hub", icon: Brain },
