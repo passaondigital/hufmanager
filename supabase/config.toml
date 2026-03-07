@@ -125,3 +125,9 @@ verify_jwt = false
 
 [functions.auto-generate-invoices]
 verify_jwt = false
+
+[functions.onboard-provider]
+verify_jwt = false
+
+[functions.legal-change-reminders]
+verify_jwt = false
