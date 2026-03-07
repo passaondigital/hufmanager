@@ -90,10 +90,75 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
   const fetchTemplates = async () => {
     const { data } = await supabase
       .from("contract_templates")
-      .select("id, name, plan, type")
+      .select("id, name, plan, type, variables, content_html")
       .eq("is_active", true)
       .order("name");
     if (data) setTemplates(data);
+  };
+
+  const handleTemplateChange = (templateId: string) => {
+    setForm(prev => ({ ...prev, template_id: templateId }));
+    // Auto-fill plan from template if available
+    const tmpl = templates.find(t => t.id === templateId);
+    if (tmpl?.plan && tmpl.plan !== "all" && PLAN_PRICES[tmpl.plan]) {
+      handlePlanChange(tmpl.plan);
+    }
+  };
+
+  const buildVariables = (): Record<string, string> => {
+    const provider = providers.find(p => p.id === form.provider_id);
+    const planName = form.plan.charAt(0).toUpperCase() + form.plan.slice(1);
+    const monthlyStr = form.plan_price_monthly.toFixed(2).replace(".", ",") + " €";
+    const yearlyStr = form.plan_price_yearly.toFixed(2).replace(".", ",") + " €";
+    const bonusYearStr = ((form.plan_price_monthly * 10)).toFixed(2).replace(".", ",") + " €";
+    
+    const planLimits: Record<string, { pferde: string; nutzer: string }> = {
+      starter: { pferde: "1–10", nutzer: "1" },
+      pro: { pferde: "11–75", nutzer: "1" },
+      duo: { pferde: "76–150", nutzer: "2" },
+      team: { pferde: "151+", nutzer: "Unbegrenzt" },
+    };
+    const limits = planLimits[form.plan] || { pferde: "–", nutzer: "–" };
+
+    const featuresByPlan: Record<string, Record<string, string>> = {
+      starter: { FEATURE_COCKPIT: "✅", FEATURE_NAV: "✅", FEATURE_SPRIT: "✅", FEATURE_FAHRTENBUCH: "✅", FEATURE_RECHNUNGEN: "✅", FEATURE_PFERDEAKTE: "✅", FEATURE_KI: "❌", FEATURE_TEAM: "❌", FEATURE_CONNECT: "❌" },
+      pro: { FEATURE_COCKPIT: "✅", FEATURE_NAV: "✅", FEATURE_SPRIT: "✅", FEATURE_FAHRTENBUCH: "✅", FEATURE_RECHNUNGEN: "✅", FEATURE_PFERDEAKTE: "✅", FEATURE_KI: "✅", FEATURE_TEAM: "❌", FEATURE_CONNECT: "✅" },
+      duo: { FEATURE_COCKPIT: "✅", FEATURE_NAV: "✅", FEATURE_SPRIT: "✅", FEATURE_FAHRTENBUCH: "✅", FEATURE_RECHNUNGEN: "✅", FEATURE_PFERDEAKTE: "✅", FEATURE_KI: "✅", FEATURE_TEAM: "✅", FEATURE_CONNECT: "✅" },
+      team: { FEATURE_COCKPIT: "✅", FEATURE_NAV: "✅", FEATURE_SPRIT: "✅", FEATURE_FAHRTENBUCH: "✅", FEATURE_RECHNUNGEN: "✅", FEATURE_PFERDEAKTE: "✅", FEATURE_KI: "✅", FEATURE_TEAM: "✅", FEATURE_CONNECT: "✅" },
+    };
+    const features = featuresByPlan[form.plan] || featuresByPlan.pro;
+
+    const paymentLabels: Record<string, string> = {
+      copecart: "CopeCart",
+      bank_transfer: "Überweisung",
+      cash: "Barzahlung",
+    };
+
+    const today = new Date().toLocaleDateString("de-DE");
+    const periodEnd = form.period_end || (form.period_start ? new Date(new Date(form.period_start).setFullYear(new Date(form.period_start).getFullYear() + 1)).toISOString().split("T")[0] : "");
+
+    return {
+      ANBIETER_ADRESSE: "Adresse folgt nach PostIdent",
+      PLAN_NAME: planName,
+      PLAN_PREIS_MONAT: monthlyStr,
+      PLAN_PREIS_JAHR: yearlyStr,
+      PROVIDER_PID: form.provider_pid || provider?.readable_id || "",
+      NUTZER_FIRMA: provider?.full_name || "",
+      NUTZER_NAME: provider?.full_name || "",
+      NUTZER_ADRESSE: "",
+      NUTZER_EMAIL: provider?.email || "",
+      NUTZER_TELEFON: "",
+      PREIS_JAHR_1: bonusYearStr,
+      VERTRAG_START: form.period_start,
+      VERTRAG_ENDE: periodEnd,
+      ZAHLUNGSART: paymentLabels[form.payment_method] || form.payment_method,
+      ZAHLUNG_DATUM: "",
+      PLAN_PFERDE_LIMIT: limits.pferde,
+      PLAN_NUTZER_LIMIT: limits.nutzer,
+      ...features,
+      VERTRAG_NR: "",
+      DATUM: today,
+    };
   };
 
   const handleProviderChange = (providerId: string) => {
