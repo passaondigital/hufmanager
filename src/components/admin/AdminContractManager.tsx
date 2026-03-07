@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   FileText, Plus, Send, MoreHorizontal, Loader2, Download, Eye, Ban,
-  Clock, AlertTriangle, BookOpen,
+  Clock, AlertTriangle, BookOpen, Shield, Radio, Settings,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -16,6 +16,9 @@ import { de } from "date-fns/locale";
 import { AdminContractModal } from "./AdminContractModal";
 import { AdminTemplateManager } from "./AdminTemplateManager";
 import { AdminDunningManager } from "./AdminDunningManager";
+import { AdminComplianceManager } from "./AdminComplianceManager";
+import { AdminBroadcastManager } from "./AdminBroadcastManager";
+import { AdminAutomationSettings } from "./AdminAutomationSettings";
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   draft: { label: "Entwurf", className: "bg-muted text-muted-foreground" },
@@ -95,8 +98,17 @@ export function AdminContractManager() {
           <TabsTrigger value="dunning" className="gap-1.5">
             <AlertTriangle className="h-4 w-4" /> Mahnwesen
           </TabsTrigger>
+          <TabsTrigger value="compliance" className="gap-1.5">
+            <Shield className="h-4 w-4" /> Compliance
+          </TabsTrigger>
+          <TabsTrigger value="broadcast" className="gap-1.5">
+            <Radio className="h-4 w-4" /> Broadcast
+          </TabsTrigger>
           <TabsTrigger value="deadlines" className="gap-1.5">
             <Clock className="h-4 w-4" /> Fristen
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="gap-1.5">
+            <Settings className="h-4 w-4" /> Automatisierung
           </TabsTrigger>
         </TabsList>
 
@@ -198,6 +210,16 @@ export function AdminContractManager() {
           <AdminDunningManager />
         </TabsContent>
 
+        {/* Compliance Tab */}
+        <TabsContent value="compliance">
+          <AdminComplianceManager />
+        </TabsContent>
+
+        {/* Broadcast Tab */}
+        <TabsContent value="broadcast">
+          <AdminBroadcastManager />
+        </TabsContent>
+
         {/* Deadlines Tab */}
         <TabsContent value="deadlines" className="space-y-4">
           <h3 className="text-lg font-semibold">Bevorstehende Fristen (60 Tage)</h3>
@@ -235,6 +257,11 @@ export function AdminContractManager() {
                 })}
             </div>
           )}
+        </TabsContent>
+
+        {/* Automation Settings Tab */}
+        <TabsContent value="settings">
+          <AdminAutomationSettings />
         </TabsContent>
       </Tabs>
 

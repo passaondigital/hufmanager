@@ -16,7 +16,10 @@ import {
   PawPrint,
   ShieldCheck,
   Save,
+  Clock,
 } from "lucide-react";
+import { ProviderTimeline } from "./ProviderTimeline";
+import { ProviderManualActions } from "./ProviderManualActions";
 
 interface ProviderDetailPanelProps {
   providerId: string;
@@ -321,6 +324,23 @@ export function ProviderDetailPanel({ providerId, providerEmail }: ProviderDetai
           )}
         </div>
       </div>
+
+      {/* Timeline */}
+      <div className="space-y-2 pt-2 border-t">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          <Clock className="w-4 h-4 text-primary" /> Timeline
+        </div>
+        <ProviderTimeline providerId={providerId} />
+      </div>
+
+      {/* Manual Actions */}
+      <ProviderManualActions
+        providerId={providerId}
+        providerName={clients?.[0]?.full_name || providerEmail || providerId}
+        providerEmail={providerEmail}
+        providerPlan="pro"
+        onRefresh={loadData}
+      />
     </div>
   );
 }

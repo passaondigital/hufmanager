@@ -16,12 +16,15 @@ import {
   CreditCard,
   Calendar,
   Hash,
+  PenTool,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { CancellationSheet } from "./CancellationSheet";
+import { ContractSignSheet } from "./ContractSignSheet";
+import { LegalChangeBanner } from "./LegalChangeBanner";
 
 const PLAN_LABELS: Record<string, string> = {
   starter: "Starter",
@@ -60,7 +63,7 @@ export function ManagementTab() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showCancellation, setShowCancellation] = useState(false);
-
+  const [showSigning, setShowSigning] = useState(false);
   useEffect(() => {
     if (user?.id) fetchData();
   }, [user?.id]);
@@ -108,8 +111,29 @@ export function ManagementTab() {
     );
   }
 
+  const needsSigning = contract && contract.status === "sent" && !contract.provider_signed_at;
+
   return (
     <div className="space-y-6">
+      {/* Legal Change Banners */}
+      <LegalChangeBanner />
+
+      {/* Contract Signing Banner */}
+      {needsSigning && (
+        <Alert className="border-primary/30 bg-primary/5">
+          <PenTool className="h-4 w-4 text-primary" />
+          <AlertDescription className="space-y-2">
+            <p className="font-medium">📄 Vertrag unterzeichnen</p>
+            <p className="text-sm text-muted-foreground">
+              Bitte unterzeichne deinen Vertrag, um alle Funktionen nutzen zu können.
+            </p>
+            <Button size="sm" onClick={() => setShowSigning(true)}>
+              <PenTool className="h-3.5 w-3.5 mr-1.5" /> Jetzt unterzeichnen
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Sektion A: Mein Abonnement */}
       <Card>
         <CardHeader>
@@ -334,6 +358,16 @@ export function ManagementTab() {
         currentPlan={currentPlan}
         onCancelled={fetchData}
       />
+
+      {/* Contract Signing Sheet */}
+      {contract && (
+        <ContractSignSheet
+          open={showSigning}
+          onOpenChange={setShowSigning}
+          contract={contract}
+          onSigned={fetchData}
+        />
+      )}
     </div>
   );
 }
