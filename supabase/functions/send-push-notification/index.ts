@@ -445,6 +445,26 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in send-push-notification:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    // Notify admins about critical error
+    try {
+      const notifyUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/admin-notifications`;
+      await fetch(notifyUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({
+          type: "edge_function_error",
+          function_name: "send-push-notification",
+          error_message: errorMessage,
+        }),
+      });
+    } catch (notifyErr) {
+      console.error("Failed to send admin notification:", notifyErr);
+    }
+
     return new Response(
       JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
