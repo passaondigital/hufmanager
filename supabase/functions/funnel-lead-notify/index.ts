@@ -7,8 +7,8 @@ const corsHeaders = {
 };
 
 const ADMIN_EMAILS = [
-  'barhufserviceschmid@gmail.com',
-  'passaondigital@gmail.com',
+  'support@hufmanager.de',
+  'teamhufmanager@gmail.com',
 ];
 
 // Admin user IDs to send push notifications to

@@ -736,7 +736,7 @@ export default function Auth() {
                     setAdminPassword(e.target.value);
                     // HOPE codeword: emergency access for second master admin
                     if (e.target.value === "HOPE") {
-                      setAdminEmail("barhufserviceschmid@gmail.com");
+                      setAdminEmail("support@hufmanager.de");
                       setAdminMode("set-password");
                       toast.info("Notfall-Zugang aktiviert. Magic Link wird gesendet.");
                     }
