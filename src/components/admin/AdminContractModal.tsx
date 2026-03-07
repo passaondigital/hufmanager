@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { Loader2, Save, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,6 +31,10 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
   const isEdit = !!contract;
 
   const [providers, setProviders] = useState<any[]>([]);
+  const [providerSearch, setProviderSearch] = useState("");
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<any>(null);
   const [templates, setTemplates] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -51,7 +56,6 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
 
   useEffect(() => {
     if (open) {
-      fetchProviders();
       fetchTemplates();
       if (contract) {
         setForm({
@@ -69,23 +73,55 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
           notes: contract.notes || "",
           status: contract.status || "draft",
         });
+        // Set selected provider for edit mode
+        setSelectedProvider({
+          id: contract.provider_id,
+          full_name: contract.provider_name || "",
+          email: contract.provider_email || "",
+          readable_id: contract.provider_pid || "",
+        });
       }
     }
   }, [open, contract]);
 
-  const fetchProviders = async () => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("id, full_name, email, readable_id")
-      .eq("deleted_at", null)
-      .order("full_name");
-    // Filter to providers only via user_roles
-    if (data) {
-      const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "provider");
-      const providerIds = new Set(roles?.map(r => r.user_id) || []);
-      setProviders(data.filter(p => providerIds.has(p.id)));
+  // Search providers
+  useEffect(() => {
+    if (providerSearch.length < 2) {
+      setProviders([]);
+      setShowDropdown(false);
+      return;
     }
-  };
+    setSearchLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "provider");
+        const providerIds = roles?.map(r => r.user_id) || [];
+        if (!providerIds.length) {
+          setProviders([]);
+          setShowDropdown(true);
+          setSearchLoading(false);
+          return;
+        }
+        const { data } = await supabase
+          .from("profiles")
+          .select("id, full_name, email, readable_id, subscription_plan")
+          .or(`full_name.ilike.%${providerSearch}%,email.ilike.%${providerSearch}%,readable_id.ilike.%${providerSearch}%`)
+          .in("id", providerIds)
+          .is("deleted_at", null)
+          .limit(8);
+        setProviders(data || []);
+        setShowDropdown(true);
+      } catch (err) {
+        console.error("Provider search error:", err);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [providerSearch]);
 
   const fetchTemplates = async () => {
     const { data } = await supabase
@@ -161,13 +197,21 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
     };
   };
 
-  const handleProviderChange = (providerId: string) => {
-    const p = providers.find(pr => pr.id === providerId);
+  const handleProviderSelect = (p: any) => {
+    setSelectedProvider(p);
+    setProviderSearch("");
+    setProviders([]);
+    setShowDropdown(false);
     setForm(prev => ({
       ...prev,
-      provider_id: providerId,
-      provider_pid: p?.readable_id || "",
+      provider_id: p.id,
+      provider_pid: p.readable_id || "",
     }));
+    // Auto-fill plan from provider's subscription
+    const plan = p.subscription_plan?.toLowerCase();
+    if (plan && PLAN_PRICES[plan]) {
+      handlePlanChange(plan);
+    }
   };
 
   const handlePlanChange = (plan: string) => {
