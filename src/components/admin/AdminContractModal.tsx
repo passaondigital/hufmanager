@@ -142,7 +142,7 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
   };
 
   const buildVariables = (): Record<string, string> => {
-    const provider = providers.find(p => p.id === form.provider_id);
+    const provider = selectedProvider;
     const planName = form.plan.charAt(0).toUpperCase() + form.plan.slice(1);
     const monthlyStr = form.plan_price_monthly.toFixed(2).replace(".", ",") + " €";
     const yearlyStr = form.plan_price_yearly.toFixed(2).replace(".", ",") + " €";
