@@ -233,7 +233,7 @@ export function PaymentSettingsCard() {
                       className="bg-[#F47B20] hover:bg-[#F47B20]/90"
                     >
                       <a 
-                        href="https://copecart.com/users/sign_up?cp=barhufserviceschmid&language=de" 
+                        href="https://copecart.com/users/sign_up?cp=hufmanager&language=de" 
                         target="_blank" 
                         rel="noopener noreferrer"
                       >

@@ -387,7 +387,7 @@ const ROLLOUT_PLAN: PlanStep[] = [
       "CREATE TABLE admin_revenue_log (Copecart-Transaktionen)",
       "CREATE TABLE admin_expenses (Ausgaben-Tracking)",
       "RLS auf agent_data_hub aktivieren (nur Admins)",
-      "barhufserviceschmid@gmail.com in master_admins eintragen",
+      "support@hufmanager.de in master_admins eintragen",
     ],
   },
   {
@@ -452,7 +452,7 @@ const ROLLOUT_PLAN: PlanStep[] = [
     details: [
       "HOPE-Codewort auf Auth-Seite → Magic-Link für Master-Admins",
       "isMasterAdmin über DB statt Hardcoded-Email",
-      "2. Master-Admin: barhufserviceschmid@gmail.com",
+      "2. Master-Admin: support@hufmanager.de",
       "Zurück-Button im Admin verbessern",
     ],
   },
