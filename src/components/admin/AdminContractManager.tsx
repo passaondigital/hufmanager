@@ -210,6 +210,16 @@ export function AdminContractManager() {
           <AdminDunningManager />
         </TabsContent>
 
+        {/* Compliance Tab */}
+        <TabsContent value="compliance">
+          <AdminComplianceManager />
+        </TabsContent>
+
+        {/* Broadcast Tab */}
+        <TabsContent value="broadcast">
+          <AdminBroadcastManager />
+        </TabsContent>
+
         {/* Deadlines Tab */}
         <TabsContent value="deadlines" className="space-y-4">
           <h3 className="text-lg font-semibold">Bevorstehende Fristen (60 Tage)</h3>
@@ -247,6 +257,11 @@ export function AdminContractManager() {
                 })}
             </div>
           )}
+        </TabsContent>
+
+        {/* Automation Settings Tab */}
+        <TabsContent value="settings">
+          <AdminAutomationSettings />
         </TabsContent>
       </Tabs>
 
