@@ -256,7 +256,7 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
           {/* Template */}
           <div className="space-y-2">
             <Label>Vorlage (optional)</Label>
-            <Select value={form.template_id} onValueChange={v => setForm(prev => ({ ...prev, template_id: v }))}>
+            <Select value={form.template_id} onValueChange={handleTemplateChange}>
               <SelectTrigger><SelectValue placeholder="Vorlage wählen..." /></SelectTrigger>
               <SelectContent>
                 {templates.map(t => (
