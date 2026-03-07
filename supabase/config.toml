@@ -116,3 +116,6 @@ verify_jwt = false
 
 [functions.admin-notifications]
 verify_jwt = false
+
+[functions.send-admin-invoice]
+verify_jwt = true
