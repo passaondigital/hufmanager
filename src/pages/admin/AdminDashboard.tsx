@@ -32,7 +32,7 @@ const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ cla
   { id: "horses", label: "Pferde-DB", icon: Database },
   { id: "revenue", label: "Einnahmen", icon: PiggyBank },
   { id: "invoices", label: "Rechnungen", icon: FileText },
-  { id: "contracts", label: "Verträge", icon: FileText },
+  { id: "contracts", label: "Verträge", icon: ScrollText },
   { id: "catalog", label: "Produktkatalog", icon: Package },
   { id: "docs", label: "System & Doku", icon: BookOpen },
   { id: "ki-hub", label: "KI-Daten-Hub", icon: Brain },
