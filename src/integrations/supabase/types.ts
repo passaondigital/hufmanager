@@ -192,6 +192,182 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_contracts: {
+        Row: {
+          admin_signature: string | null
+          admin_signed_at: string | null
+          auto_renew: boolean | null
+          cancellation_effective_date: string | null
+          cancellation_reason: string | null
+          cancellation_requested_at: string | null
+          content_html: string | null
+          contract_number: string
+          created_at: string | null
+          custom_price: number | null
+          id: string
+          notes: string | null
+          payment_method: string | null
+          pdf_url: string | null
+          period_end: string | null
+          period_start: string
+          plan: string
+          plan_price_monthly: number | null
+          plan_price_yearly: number | null
+          provider_id: string | null
+          provider_pid: string | null
+          provider_signature: string | null
+          provider_signed_at: string | null
+          sent_at: string | null
+          status: string | null
+          template_id: string | null
+          updated_at: string | null
+          variables_used: Json | null
+        }
+        Insert: {
+          admin_signature?: string | null
+          admin_signed_at?: string | null
+          auto_renew?: boolean | null
+          cancellation_effective_date?: string | null
+          cancellation_reason?: string | null
+          cancellation_requested_at?: string | null
+          content_html?: string | null
+          contract_number?: string
+          created_at?: string | null
+          custom_price?: number | null
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          pdf_url?: string | null
+          period_end?: string | null
+          period_start: string
+          plan: string
+          plan_price_monthly?: number | null
+          plan_price_yearly?: number | null
+          provider_id?: string | null
+          provider_pid?: string | null
+          provider_signature?: string | null
+          provider_signed_at?: string | null
+          sent_at?: string | null
+          status?: string | null
+          template_id?: string | null
+          updated_at?: string | null
+          variables_used?: Json | null
+        }
+        Update: {
+          admin_signature?: string | null
+          admin_signed_at?: string | null
+          auto_renew?: boolean | null
+          cancellation_effective_date?: string | null
+          cancellation_reason?: string | null
+          cancellation_requested_at?: string | null
+          content_html?: string | null
+          contract_number?: string
+          created_at?: string | null
+          custom_price?: number | null
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          pdf_url?: string | null
+          period_end?: string | null
+          period_start?: string
+          plan?: string
+          plan_price_monthly?: number | null
+          plan_price_yearly?: number | null
+          provider_id?: string | null
+          provider_pid?: string | null
+          provider_signature?: string | null
+          provider_signed_at?: string | null
+          sent_at?: string | null
+          status?: string | null
+          template_id?: string | null
+          updated_at?: string | null
+          variables_used?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_contracts_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_contracts_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_contracts_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "contract_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_dunning_log: {
+        Row: {
+          created_at: string | null
+          due_date: string
+          fee: number | null
+          id: string
+          invoice_id: string
+          level: number
+          notes: string | null
+          provider_id: string | null
+          sent_at: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          due_date: string
+          fee?: number | null
+          id?: string
+          invoice_id: string
+          level: number
+          notes?: string | null
+          provider_id?: string | null
+          sent_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          due_date?: string
+          fee?: number | null
+          id?: string
+          invoice_id?: string
+          level?: number
+          notes?: string | null
+          provider_id?: string | null
+          sent_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_dunning_log_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "admin_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_dunning_log_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_dunning_log_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_expenses: {
         Row: {
           amount: number
@@ -243,6 +419,169 @@ export type Database = {
           {
             foreignKeyName: "admin_expenses_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_invoice_items: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          invoice_id: string
+          position: number
+          quantity: number | null
+          total: number
+          unit: string | null
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: string
+          invoice_id: string
+          position?: number
+          quantity?: number | null
+          total: number
+          unit?: string | null
+          unit_price: number
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          invoice_id?: string
+          position?: number
+          quantity?: number | null
+          total?: number
+          unit?: string | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "admin_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_invoices: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          discount: number | null
+          due_date: string | null
+          id: string
+          invoice_number: string
+          kleinunternehmer: boolean | null
+          notes: string | null
+          paid_at: string | null
+          payment_method: string | null
+          payment_source: string | null
+          pdf_url: string | null
+          period_end: string
+          period_start: string
+          plan: string
+          provider_address: string | null
+          provider_email: string
+          provider_id: string | null
+          provider_name: string
+          provider_pid: string | null
+          sent_at: string | null
+          status: string | null
+          subtotal: number
+          total: number
+          updated_at: string | null
+          vat_amount: number | null
+          vat_rate: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          discount?: number | null
+          due_date?: string | null
+          id?: string
+          invoice_number?: string
+          kleinunternehmer?: boolean | null
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_source?: string | null
+          pdf_url?: string | null
+          period_end: string
+          period_start: string
+          plan: string
+          provider_address?: string | null
+          provider_email: string
+          provider_id?: string | null
+          provider_name: string
+          provider_pid?: string | null
+          sent_at?: string | null
+          status?: string | null
+          subtotal: number
+          total: number
+          updated_at?: string | null
+          vat_amount?: number | null
+          vat_rate?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          discount?: number | null
+          due_date?: string | null
+          id?: string
+          invoice_number?: string
+          kleinunternehmer?: boolean | null
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_source?: string | null
+          pdf_url?: string | null
+          period_end?: string
+          period_start?: string
+          plan?: string
+          provider_address?: string | null
+          provider_email?: string
+          provider_id?: string | null
+          provider_name?: string
+          provider_pid?: string | null
+          sent_at?: string | null
+          status?: string | null
+          subtotal?: number
+          total?: number
+          updated_at?: string | null
+          vat_amount?: number | null
+          vat_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_invoices_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_invoices_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_invoices_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_invoices_provider_id_fkey"
+            columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "safe_provider_profiles"
             referencedColumns: ["id"]
@@ -1586,6 +1925,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      contract_templates: {
+        Row: {
+          content_html: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          plan: string | null
+          type: string
+          updated_at: string | null
+          variables: Json | null
+          version: string
+        }
+        Insert: {
+          content_html: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          plan?: string | null
+          type: string
+          updated_at?: string | null
+          variables?: Json | null
+          version?: string
+        }
+        Update: {
+          content_html?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          plan?: string | null
+          type?: string
+          updated_at?: string | null
+          variables?: Json | null
+          version?: string
+        }
+        Relationships: []
       }
       conversations: {
         Row: {
