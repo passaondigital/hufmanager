@@ -187,6 +187,12 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
     }
     setSaving(true);
     try {
+      const variables = buildVariables();
+      const selectedTemplate = templates.find(t => t.id === form.template_id);
+      const contentHtml = selectedTemplate?.content_html
+        ? mergeContractTemplate(selectedTemplate.content_html, variables)
+        : null;
+
       const payload = {
         provider_id: form.provider_id,
         provider_pid: form.provider_pid,
@@ -201,6 +207,8 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
         payment_method: form.payment_method,
         notes: form.notes || null,
         status: status || form.status,
+        content_html: contentHtml,
+        variables_used: selectedTemplate ? variables : null,
       };
 
       if (isEdit) {
