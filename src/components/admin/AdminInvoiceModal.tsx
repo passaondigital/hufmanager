@@ -20,9 +20,9 @@ import { generateAdminInvoicePdf, generateAdminInvoicePdfBlob, type AdminInvoice
 
 const PLAN_DEFAULTS: Record<string, { label: string; monthly: number; yearly: number }> = {
   starter: { label: "Starter", monthly: 9.9, yearly: 99 },
-  pro: { label: "Pro", monthly: 29, yearly: 290 },
-  duo: { label: "Duo", monthly: 49, yearly: 490 },
-  team: { label: "Team", monthly: 79, yearly: 790 },
+  pro: { label: "Pro", monthly: 29, yearly: 348 },
+  duo: { label: "Duo", monthly: 49, yearly: 588 },
+  team: { label: "Team", monthly: 79, yearly: 948 },
 };
 
 interface LineItem {

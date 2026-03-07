@@ -395,7 +395,7 @@ const Management = () => {
       <div>
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">Management <HelpTip id="einstellungen.geschaeftsname" /></h1>
         <p className="text-muted-foreground mt-1">
-          Geschäftsdaten und Landingpage-Konfiguration
+          Abonnement, Rechnungen & Verträge
         </p>
       </div>
 
