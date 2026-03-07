@@ -16,12 +16,15 @@ import {
   CreditCard,
   Calendar,
   Hash,
+  PenTool,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { CancellationSheet } from "./CancellationSheet";
+import { ContractSignSheet } from "./ContractSignSheet";
+import { LegalChangeBanner } from "./LegalChangeBanner";
 
 const PLAN_LABELS: Record<string, string> = {
   starter: "Starter",
@@ -60,7 +63,7 @@ export function ManagementTab() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showCancellation, setShowCancellation] = useState(false);
-
+  const [showSigning, setShowSigning] = useState(false);
   useEffect(() => {
     if (user?.id) fetchData();
   }, [user?.id]);
