@@ -210,6 +210,7 @@ export default function AdminDashboard() {
         {activeView === "revenue" && <AdminRevenue />}
         {activeView === "invoices" && <AdminInvoices />}
         {activeView === "contracts" && <AdminContractManager />}
+        {activeView === "connections" && <AdminConnections />}
         {activeView === "domains" && (
           <div className="p-8">
             <div className="max-w-lg mx-auto text-center space-y-4 py-16">
