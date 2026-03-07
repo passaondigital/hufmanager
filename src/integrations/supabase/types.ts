@@ -729,6 +729,33 @@ export type Database = {
           },
         ]
       }
+      admin_settings: {
+        Row: {
+          description: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       ai_chat_messages: {
         Row: {
           content: string
@@ -5362,6 +5389,91 @@ export type Database = {
         }
         Relationships: []
       }
+      legal_change_confirmations: {
+        Row: {
+          action: string | null
+          confirmed_at: string | null
+          created_at: string | null
+          id: string
+          notification_id: string
+          provider_id: string
+          reminder_count: number | null
+        }
+        Insert: {
+          action?: string | null
+          confirmed_at?: string | null
+          created_at?: string | null
+          id?: string
+          notification_id: string
+          provider_id: string
+          reminder_count?: number | null
+        }
+        Update: {
+          action?: string | null
+          confirmed_at?: string | null
+          created_at?: string | null
+          id?: string
+          notification_id?: string
+          provider_id?: string
+          reminder_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_change_confirmations_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "legal_change_notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legal_change_confirmations_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legal_change_confirmations_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_change_notifications: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          effective_date: string
+          id: string
+          requires_action: boolean | null
+          summary: string
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          effective_date: string
+          id?: string
+          requires_action?: boolean | null
+          summary: string
+          title: string
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          effective_date?: string
+          id?: string
+          requires_action?: boolean | null
+          summary?: string
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       magic_links: {
         Row: {
           created_at: string
@@ -7616,6 +7728,60 @@ export type Database = {
             foreignKeyName: "provider_portal_credentials_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: true
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_timeline_events: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          event_type: string
+          icon: string | null
+          id: string
+          is_auto: boolean | null
+          metadata: Json | null
+          provider_id: string
+          title: string
+          triggered_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          event_type: string
+          icon?: string | null
+          id?: string
+          is_auto?: boolean | null
+          metadata?: Json | null
+          provider_id: string
+          title: string
+          triggered_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          event_type?: string
+          icon?: string | null
+          id?: string
+          is_auto?: boolean | null
+          metadata?: Json | null
+          provider_id?: string
+          title?: string
+          triggered_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_timeline_events_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_timeline_events_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "safe_provider_profiles"
             referencedColumns: ["id"]
           },
