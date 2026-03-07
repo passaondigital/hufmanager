@@ -336,9 +336,9 @@ export function ProviderDetailPanel({ providerId, providerEmail }: ProviderDetai
       {/* Manual Actions */}
       <ProviderManualActions
         providerId={providerId}
-        providerName={providers?.[0]?.full_name || providerEmail || providerId}
+        providerName={clients?.[0]?.full_name || providerEmail || providerId}
         providerEmail={providerEmail}
-        providerPlan={providers?.[0]?.plan || "pro"}
+        providerPlan="pro"
         onRefresh={loadData}
       />
     </div>
