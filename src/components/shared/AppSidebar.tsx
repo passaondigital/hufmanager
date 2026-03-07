@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useLogout } from "@/hooks/useLogout";
 import { ChevronDown, LogOut, LifeBuoy, Package } from "lucide-react";
@@ -289,10 +289,20 @@ interface MobileSidebarProps extends AppSidebarProps {
 }
 
 export function MobileAppSidebar({ open, onOpenChange, ...props }: MobileSidebarProps) {
+  const location = useLocation();
+  const prevPath = React.useRef(location.pathname);
+
+  React.useEffect(() => {
+    if (prevPath.current !== location.pathname && open) {
+      onOpenChange(false);
+    }
+    prevPath.current = location.pathname;
+  }, [location.pathname, open, onOpenChange]);
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="left" className="p-0 w-72">
-        <div className="h-full" onClick={() => onOpenChange(false)}>
+        <div className="h-full">
           <AppSidebar {...props} mobile />
         </div>
       </SheetContent>
