@@ -27,6 +27,7 @@ import {
   Bell,
   Crown,
   FileText,
+  Briefcase,
   AlertTriangle,
   Star,
   Info,
@@ -48,6 +49,7 @@ import { AppSettingsCard } from "@/components/settings/AppSettingsCard";
 import { KiSettingsCard } from "@/components/settings/KiSettingsCard";
 import { CompanyLocationCard } from "@/components/settings/CompanyLocationCard";
 import { TutorialSettingsCard } from "@/components/settings/TutorialSettingsCard";
+import { ManagementTab } from "@/components/management/ManagementTab";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -410,7 +412,7 @@ const Management = () => {
       )}
 
       <Tabs defaultValue="business" className="w-full">
-        <TabsList className="grid w-full max-w-4xl grid-cols-9">
+        <TabsList className="grid w-full max-w-5xl grid-cols-10">
           <TabsTrigger value="business" className="gap-2">
             <Building className="h-4 w-4" />
             <span className="hidden sm:inline">Geschäft</span>
@@ -449,6 +451,10 @@ const Management = () => {
           <TabsTrigger value="app" className="gap-2">
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">App</span>
+          </TabsTrigger>
+          <TabsTrigger value="b2b-management" className="gap-2">
+            <Briefcase className="h-4 w-4" />
+            <span className="hidden sm:inline">Management</span>
           </TabsTrigger>
         </TabsList>
 
@@ -912,6 +918,11 @@ Steuernummer: 12/345/67890
           <AppSettingsCard />
           <KiSettingsCard />
           <TutorialSettingsCard />
+        </TabsContent>
+
+        {/* B2B Management Tab */}
+        <TabsContent value="b2b-management" className="mt-6">
+          <ManagementTab />
         </TabsContent>
       </Tabs>
     </div>
