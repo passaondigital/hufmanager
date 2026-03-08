@@ -7604,6 +7604,118 @@ export type Database = {
         }
         Relationships: []
       }
+      preview_feedback: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          id: string
+          preview_link_id: string
+          provider_id: string
+          rating: number | null
+          reviewer_ip: string | null
+          reviewer_name: string | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          preview_link_id: string
+          provider_id: string
+          rating?: number | null
+          reviewer_ip?: string | null
+          reviewer_name?: string | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          preview_link_id?: string
+          provider_id?: string
+          rating?: number | null
+          reviewer_ip?: string | null
+          reviewer_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preview_feedback_preview_link_id_fkey"
+            columns: ["preview_link_id"]
+            isOneToOne: false
+            referencedRelation: "preview_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preview_feedback_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preview_feedback_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      preview_links: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          feedback_count: number | null
+          id: string
+          is_active: boolean | null
+          label: string | null
+          last_viewed_at: string | null
+          link_type: string | null
+          provider_id: string
+          token: string
+          view_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string
+          feedback_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          label?: string | null
+          last_viewed_at?: string | null
+          link_type?: string | null
+          provider_id: string
+          token: string
+          view_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          feedback_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          label?: string | null
+          last_viewed_at?: string | null
+          link_type?: string | null
+          provider_id?: string
+          token?: string
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preview_links_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preview_links_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       price_groups: {
         Row: {
           created_at: string
@@ -11512,6 +11624,7 @@ export type Database = {
         Args: { p_partner_id: string }
         Returns: string
       }
+      generate_preview_token: { Args: never; Returns: string }
       generate_random_id: { Args: { prefix: string }; Returns: string }
       get_active_emergency_for_provider: {
         Args: { p_provider_id: string }
