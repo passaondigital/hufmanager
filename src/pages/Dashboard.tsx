@@ -1,32 +1,25 @@
-import { Users, Calendar, TrendingUp, MessageSquare } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { StatCard } from "@/components/dashboard/StatCard";
-import { DueAppointmentsWidget } from "@/components/dashboard/DueAppointmentsWidget";
-import { SmartTourSuggestionWidget } from "@/components/dashboard/SmartTourSuggestionWidget";
-import { ShareInviteLinkCard } from "@/components/invite/ShareInviteLinkCard";
-import { HufrenteWidget } from "@/components/dashboard/HufrenteWidget";
-import { FuelPriceWidget } from "@/components/dashboard/FuelPriceWidget";
-import { RecentDocumentsWidget } from "@/components/office/RecentDocumentsWidget";
-import { MonthlyFuelInsight } from "@/components/dashboard/MonthlyFuelInsight";
-import { FirstStepsChecklist } from "@/components/dashboard/FirstStepsChecklist";
-import { DashboardWelcomeHeader } from "@/components/dashboard/DashboardWelcomeHeader";
-import { QuickWinBanner } from "@/components/dashboard/QuickWinBanner";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { ProviderSetupWizard } from "@/components/onboarding/ProviderSetupWizard";
 import { PushNotificationBanner } from "@/components/notifications/PushNotificationBanner";
-import { useDashboardStats } from "@/hooks/useDashboardStats";
-import { StatGridSkeleton } from "@/components/ui/skeletons";
 import { MilestoneCelebration } from "@/components/growth/MilestoneCelebration";
-import { DemoTourButton } from "@/components/demo/DemoTourButton";
-import { HelpTip } from "@/components/ui/HelpTip";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { CompactOnboardingBanner } from "@/components/dashboard/CompactOnboardingBanner";
+import { WeekCalendarWidget } from "@/components/dashboard/WeekCalendarWidget";
+import { DueMapWidget } from "@/components/dashboard/DueMapWidget";
+import { TodayCockpitWidget } from "@/components/dashboard/TodayCockpitWidget";
+import { LeadsWidget } from "@/components/dashboard/LeadsWidget";
+import { CompactFuelWidget } from "@/components/dashboard/CompactFuelWidget";
+import { CompactDocumentsWidget } from "@/components/dashboard/CompactDocumentsWidget";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { showOnboarding, completeOnboarding } = useOnboarding();
-  const { data: stats, isLoading } = useDashboardStats();
-  // Fetch profile + business name for welcome header
+  const isMobile = useIsMobile();
+
   const { data: profileData } = useQuery({
     queryKey: ["provider-profile-id", user?.id],
     queryFn: async () => {
@@ -55,142 +48,50 @@ const Dashboard = () => {
 
   const displayName = profileData?.full_name || businessData?.business_name || null;
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("de-DE", {
-      style: "currency",
-      currency: "EUR",
-    }).format(amount);
-  };
-
   return (
     <>
-      {/* Provider Onboarding - Full-Screen Setup Wizard */}
       {showOnboarding && (
         <ProviderSetupWizard onComplete={completeOnboarding} />
       )}
 
-      <div className="space-y-6 pb-4">
-      {/* Push Notification Banner */}
-      <PushNotificationBanner />
+      <div className="space-y-4 pb-4">
+        {/* Zone A: Sticky Header */}
+        <DashboardHeader fullName={displayName} />
 
-      {/* Quick-Win Banner for providers with few clients */}
-      <QuickWinBanner />
+        {/* Banners (compact) */}
+        <PushNotificationBanner />
+        <MilestoneCelebration />
+        <CompactOnboardingBanner />
 
-      {/* Growth: Milestone Celebrations */}
-      <MilestoneCelebration />
-
-      {/* Welcome Section */}
-      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-        <DashboardWelcomeHeader
-          fullName={displayName}
-          readableId={profileData?.readable_id}
-          subtitle="Tagesübersicht"
-        />
-        <div className="flex items-center gap-3">
-          <DemoTourButton />
-          <div className="lg:w-80" data-tour="invite-link">
-            <ShareInviteLinkCard />
+        {/* Main Content: Zone B + Zone C */}
+        {isMobile ? (
+          /* Mobile: stacked layout */
+          <div className="space-y-4">
+            <TodayCockpitWidget />
+            <WeekCalendarWidget />
+            <LeadsWidget />
+            <DueMapWidget />
+            <CompactFuelWidget />
+            <CompactDocumentsWidget />
           </div>
-        </div>
-      </div>
+        ) : (
+          /* Desktop: 60/40 split */
+          <div className="grid grid-cols-5 gap-4">
+            {/* Zone B: Main (3/5 = 60%) */}
+            <div className="col-span-3 space-y-4">
+              <WeekCalendarWidget />
+              <DueMapWidget />
+            </div>
 
-      {/* 1. KPI Stats Grid */}
-      <div data-tour="stats-grid">
-      {isLoading ? (
-        <StatGridSkeleton />
-      ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard
-            title="Aktive Kunden"
-            value={stats?.activeClients || 0}
-            change={stats?.activeClientsChange || "0 aktiv"}
-            changeType="neutral"
-            icon={Users}
-            iconColor="primary"
-            navigateTo="/customers"
-            helpTipId="dashboard.aktive-kunden"
-          />
-          <StatCard
-            title="Termine diese Woche"
-            value={stats?.appointmentsThisWeek || 0}
-            change={`${stats?.appointmentsToday || 0} heute`}
-            changeType="neutral"
-            icon={Calendar}
-            iconColor="accent"
-            navigateTo="/calendar"
-            helpTipId="dashboard.termine-woche"
-          />
-          <StatCard
-            title="Neue Anfragen"
-            value={stats?.newLeads || 0}
-            change={stats?.unreadLeads ? `${stats.unreadLeads} ungelesen` : "Keine neuen"}
-            changeType={stats?.unreadLeads ? "positive" : "neutral"}
-            icon={MessageSquare}
-            iconColor="primary"
-            navigateTo="/anfragen"
-            helpTipId="dashboard.neue-anfragen"
-          />
-          <StatCard
-            title="Umsatz (Monat)"
-            value={formatCurrency(stats?.monthlyRevenue || 0)}
-            change={
-              stats?.revenueChangePercent !== undefined
-                ? `${stats.revenueChangePercent >= 0 ? "+" : ""}${stats.revenueChangePercent}% vs. Vormonat`
-                : "Keine Daten"
-            }
-            changeType={
-              stats?.revenueChangePercent !== undefined
-                ? stats.revenueChangePercent > 0
-                  ? "positive"
-                  : stats.revenueChangePercent < 0
-                  ? "negative"
-                  : "neutral"
-                : "neutral"
-            }
-            icon={TrendingUp}
-            iconColor="accent"
-            navigateTo="/rechnungen"
-            helpTipId="dashboard.umsatz-monat"
-          />
-        </div>
-      )}
-      </div>
-
-      {/* 2. Due Appointments */}
-      <div data-tour="due-appointments" className="relative">
-        <span className="absolute top-3 right-3 z-10"><HelpTip id="dashboard.faellige-termine" /></span>
-        <DueAppointmentsWidget />
-      </div>
-
-      {/* 3. First Steps / Onboarding (only if not completed) */}
-      <div data-tour="checklist" className="relative">
-        <span className="absolute top-3 right-3 z-10"><HelpTip id="dashboard.erste-schritte" /></span>
-        <FirstStepsChecklist />
-      </div>
-
-      {/* 4. Smart Tour Suggestions */}
-      <div className="relative">
-        <span className="absolute top-3 right-3 z-10"><HelpTip id="dashboard.tour-vorschlaege" /></span>
-        <SmartTourSuggestionWidget />
-      </div>
-
-      {/* 5. Live Fuel Prices */}
-      <div className="relative">
-        <span className="absolute top-3 right-3 z-10"><HelpTip id="dashboard.spritpreise" /></span>
-        <FuelPriceWidget />
-      </div>
-
-      {/* 5b. Monthly Fuel Insight */}
-      <MonthlyFuelInsight />
-
-      {/* 5c. Recent Documents */}
-      <RecentDocumentsWidget />
-
-      {/* 6. Hufrente (nice to have, bottom) */}
-      <div className="relative">
-        <span className="absolute top-3 right-3 z-10"><HelpTip id="dashboard.hufrente" /></span>
-        <HufrenteWidget />
-      </div>
+            {/* Zone C: Sidebar (2/5 = 40%) */}
+            <div className="col-span-2 space-y-3">
+              <TodayCockpitWidget />
+              <LeadsWidget />
+              <CompactFuelWidget />
+              <CompactDocumentsWidget />
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

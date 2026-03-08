@@ -48,7 +48,6 @@ export function LeadsWidget() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">{lead.name}</p>
               <p className="text-[11px] text-muted-foreground">
-                {lead.zip_code ? `PLZ ${lead.zip_code} · ` : ""}
                 {formatDistanceToNow(new Date(lead.created_at), { locale: de, addSuffix: true })}
               </p>
             </div>
