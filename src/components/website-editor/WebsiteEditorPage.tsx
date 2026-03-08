@@ -9,18 +9,24 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Globe, ExternalLink, Loader2, GripVertical, Sparkles, Search, Settings, FileText, BarChart3, MessageSquare } from "lucide-react";
+import { Globe, ExternalLink, Loader2, GripVertical, Sparkles, Search, Settings, FileText, BarChart3, MessageSquare, Eye, Smartphone, Monitor } from "lucide-react";
 import { WEBSITE_PAGE_TYPES } from "@/data/websitePageTypes";
 import { WebsiteSEOSettings } from "./WebsiteSEOSettings";
 import { WebsiteLeadSettings } from "./WebsiteLeadSettings";
 import { WebsiteBlogManager } from "./WebsiteBlogManager";
 import { WebsiteOnboarding } from "./WebsiteOnboarding";
 import { DomainWaitlistCard } from "./DomainWaitlistCard";
+import { TemplateSelector } from "@/components/landing/TemplateSelector";
+import { FAQEditor } from "@/components/landing/FAQEditor";
+import { ServiceAreaQualificationsEditor } from "@/components/landing/ServiceAreaQualificationsEditor";
+import { SectionManager } from "@/components/landing/SectionManager";
 
 export const WebsiteEditorPage = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [previewMode, setPreviewMode] = useState<'mobile' | 'desktop'>('mobile');
+  const [showPreview, setShowPreview] = useState(false);
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ["business-settings-website", user?.id],
@@ -28,7 +34,7 @@ export const WebsiteEditorPage = () => {
       if (!user?.id) return null;
       const { data, error } = await supabase
         .from("business_settings")
-        .select("id, user_id, business_name, owner_name, subdomain, primary_color, phone, website_active_pages, whatsapp_enabled, whatsapp_number, exit_intent_enabled, google_search_console_code, google_analytics_id, facebook_pixel_id, meta_description, impressum_text, hero_headline, logo_url, address, about_text, social_instagram, social_facebook, social_tiktok, social_website")
+        .select("id, user_id, business_name, owner_name, subdomain, primary_color, phone, website_active_pages, whatsapp_enabled, whatsapp_number, exit_intent_enabled, google_search_console_code, google_analytics_id, facebook_pixel_id, meta_description, impressum_text, hero_headline, logo_url, address, about_text, social_instagram, social_facebook, social_tiktok, social_website, landing_template")
         .eq("user_id", user.id)
         .maybeSingle();
       if (error) throw error;
@@ -38,18 +44,13 @@ export const WebsiteEditorPage = () => {
   });
 
   const activePages: string[] = (settings?.website_active_pages as string[]) || ["home", "contact", "impressum", "datenschutz"];
+  const currentTemplate = (settings as any)?.landing_template || "classic";
 
   const togglePageMutation = useMutation({
     mutationFn: async ({ pageId, enabled }: { pageId: string; enabled: boolean }) => {
       if (!user?.id) throw new Error("Not authenticated");
-      const newPages = enabled
-        ? [...activePages, pageId]
-        : activePages.filter((p) => p !== pageId);
-      
-      const { error } = await supabase
-        .from("business_settings")
-        .update({ website_active_pages: newPages })
-        .eq("user_id", user.id);
+      const newPages = enabled ? [...activePages, pageId] : activePages.filter((p) => p !== pageId);
+      const { error } = await supabase.from("business_settings").update({ website_active_pages: newPages }).eq("user_id", user.id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -58,10 +59,21 @@ export const WebsiteEditorPage = () => {
     },
   });
 
+  const templateMutation = useMutation({
+    mutationFn: async (template: string) => {
+      if (!user?.id) throw new Error("Not authenticated");
+      const { error } = await supabase.from("business_settings").update({ landing_template: template } as any).eq("user_id", user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["business-settings-website"] });
+      toast({ title: "Template gespeichert" });
+    },
+  });
+
   const subdomain = settings?.subdomain;
   const websiteUrl = subdomain ? `${window.location.origin}/p/${subdomain}` : null;
 
-  // Check if first time (no subdomain = show onboarding)
   if (!isLoading && !subdomain && !showOnboarding) {
     return <WebsiteOnboarding onComplete={() => setShowOnboarding(true)} />;
   }
@@ -77,7 +89,7 @@ export const WebsiteEditorPage = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Globe className="h-6 w-6 text-primary" />
@@ -87,23 +99,29 @@ export const WebsiteEditorPage = () => {
             Deine professionelle Website — besser als Wix, in 15 Minuten fertig.
           </p>
         </div>
-        {websiteUrl && (
-          <Button variant="outline" asChild>
-            <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="gap-2">
-              <ExternalLink className="h-4 w-4" />
-              Website ansehen
-            </a>
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {websiteUrl && (
+            <>
+              <Button variant="outline" onClick={() => setShowPreview(!showPreview)} className="gap-2">
+                <Eye className="h-4 w-4" />
+                {showPreview ? "Vorschau schließen" : "Vorschau"}
+              </Button>
+              <Button variant="outline" asChild>
+                <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="gap-2">
+                  <ExternalLink className="h-4 w-4" />
+                  Öffnen
+                </a>
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Live URL */}
       {websiteUrl && (
         <Card className="border-primary/20 bg-primary/5">
           <CardContent className="flex items-center gap-3 py-3">
-            <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
-              Live
-            </Badge>
+            <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">Live</Badge>
             <code className="text-sm font-mono text-foreground">{websiteUrl}</code>
             <Button size="sm" variant="ghost" onClick={() => { navigator.clipboard.writeText(websiteUrl); toast({ title: "Link kopiert!" }); }}>
               Kopieren
@@ -112,20 +130,81 @@ export const WebsiteEditorPage = () => {
         </Card>
       )}
 
-      {/* Domain Teaser */}
+      {/* Preview iframe */}
+      {showPreview && websiteUrl && (
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Live-Vorschau</CardTitle>
+              <div className="flex gap-1 border rounded-lg p-0.5">
+                <Button
+                  variant={previewMode === 'mobile' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setPreviewMode('mobile')}
+                  className="gap-1 h-7 px-2"
+                >
+                  <Smartphone className="h-3.5 w-3.5" /> Mobil
+                </Button>
+                <Button
+                  variant={previewMode === 'desktop' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setPreviewMode('desktop')}
+                  className="gap-1 h-7 px-2"
+                >
+                  <Monitor className="h-3.5 w-3.5" /> Desktop
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-center bg-muted/30 rounded-lg p-4">
+              <iframe
+                src={websiteUrl}
+                className="border rounded-lg bg-white shadow-sm transition-all"
+                style={{
+                  width: previewMode === 'mobile' ? '375px' : '100%',
+                  height: previewMode === 'mobile' ? '667px' : '600px',
+                  maxWidth: '100%',
+                }}
+                title="Website-Vorschau"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <DomainWaitlistCard />
 
       <Tabs defaultValue="pages" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="pages" className="gap-1.5"><FileText className="h-4 w-4" />Seiten</TabsTrigger>
+          <TabsTrigger value="content" className="gap-1.5"><Sparkles className="h-4 w-4" />Inhalte</TabsTrigger>
           <TabsTrigger value="blog" className="gap-1.5"><Sparkles className="h-4 w-4" />Blog</TabsTrigger>
           <TabsTrigger value="leads" className="gap-1.5"><MessageSquare className="h-4 w-4" />Leads</TabsTrigger>
           <TabsTrigger value="seo" className="gap-1.5"><Search className="h-4 w-4" />SEO</TabsTrigger>
           <TabsTrigger value="settings" className="gap-1.5"><Settings className="h-4 w-4" />Extras</TabsTrigger>
         </TabsList>
 
-        {/* PAGES TAB */}
         <TabsContent value="pages" className="mt-6 space-y-4">
+          {/* Template Selector */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">🎨 Design-Vorlage</CardTitle>
+              <CardDescription>Wähle ein Layout für deine Website</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TemplateSelector
+                value={currentTemplate}
+                onChange={(t) => templateMutation.mutate(t)}
+                primaryColor={settings?.primary_color || "#F5970A"}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Section Manager */}
+          <SectionManager />
+
+          {/* Page toggles */}
           <Card>
             <CardHeader>
               <CardTitle>Seiten verwalten</CardTitle>
@@ -146,9 +225,7 @@ export const WebsiteEditorPage = () => {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      {page.required && (
-                        <Badge variant="secondary" className="text-xs">Pflicht</Badge>
-                      )}
+                      {page.required && <Badge variant="secondary" className="text-xs">Pflicht</Badge>}
                       <Switch
                         checked={isActive}
                         onCheckedChange={(checked) => togglePageMutation.mutate({ pageId: page.id, enabled: checked })}
@@ -162,22 +239,24 @@ export const WebsiteEditorPage = () => {
           </Card>
         </TabsContent>
 
-        {/* BLOG TAB */}
+        {/* CONTENT TAB - FAQ + Service Area + Qualifications */}
+        <TabsContent value="content" className="mt-6 space-y-4">
+          <FAQEditor />
+          <ServiceAreaQualificationsEditor />
+        </TabsContent>
+
         <TabsContent value="blog" className="mt-6">
           <WebsiteBlogManager />
         </TabsContent>
 
-        {/* LEADS TAB */}
         <TabsContent value="leads" className="mt-6">
           <WebsiteLeadSettings settings={settings} />
         </TabsContent>
 
-        {/* SEO TAB */}
         <TabsContent value="seo" className="mt-6">
           <WebsiteSEOSettings settings={settings} />
         </TabsContent>
 
-        {/* EXTRAS TAB */}
         <TabsContent value="settings" className="mt-6 space-y-4">
           <WebsiteExtrasSettings settings={settings} />
         </TabsContent>
@@ -219,7 +298,6 @@ function WebsiteExtrasSettings({ settings }: { settings: any }) {
 
   return (
     <div className="space-y-4">
-      {/* WhatsApp */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">💬 WhatsApp-Button</CardTitle>
@@ -236,7 +314,6 @@ function WebsiteExtrasSettings({ settings }: { settings: any }) {
         </CardContent>
       </Card>
 
-      {/* Exit Intent */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">🚪 Exit-Intent Popup</CardTitle>
@@ -250,11 +327,10 @@ function WebsiteExtrasSettings({ settings }: { settings: any }) {
         </CardContent>
       </Card>
 
-      {/* Analytics */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">📊 Analytics & Tracking</CardTitle>
-          <CardDescription>Optional: Google Analytics & Facebook Pixel (nur mit Cookie-Einwilligung)</CardDescription>
+          <CardDescription>Nur mit Cookie-Einwilligung aktiv (DSGVO-konform)</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div>

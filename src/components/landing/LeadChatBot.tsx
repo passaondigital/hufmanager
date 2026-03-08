@@ -181,7 +181,7 @@ export function LeadChatBot({ providerId, providerName, providerLogo, primaryCol
   return (
     <>
       {/* Floating Action Button */}
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-20 right-6 z-50">
         {/* Speech Bubble */}
         {showBubble && !isOpen && (
           <div 
@@ -216,7 +216,7 @@ export function LeadChatBot({ providerId, providerName, providerLogo, primaryCol
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-[340px] max-w-[calc(100vw-48px)] bg-background border border-border rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
+        <div className="fixed bottom-36 right-6 z-50 w-[340px] max-w-[calc(100vw-48px)] bg-background border border-border rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
           {/* Header */}
           <div 
             className="flex items-center gap-3 p-4 border-b border-border"

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -31,6 +32,7 @@ export function LandingContactForm({ providerId, providerName, primaryColor = "#
     horse_name: "",
     message: "",
   });
+  const [dsgvoConsent, setDsgvoConsent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -46,7 +48,11 @@ export function LandingContactForm({ providerId, providerName, primaryColor = "#
     e.preventDefault();
     setErrors({});
 
-    // Validate form
+    if (!dsgvoConsent) {
+      setErrors({ dsgvo: "Bitte stimmen Sie der Datenschutzerklärung zu." });
+      return;
+    }
+
     const validation = contactSchema.safeParse(formData);
     if (!validation.success) {
       const fieldErrors: Record<string, string> = {};
@@ -82,7 +88,6 @@ export function LandingContactForm({ providerId, providerName, primaryColor = "#
       toast.success("Nachricht gesendet! Wir melden uns bald.");
     } catch (error: any) {
       console.error("Error submitting contact form:", error);
-      // Handle rate limit error from database trigger
       if (error?.message?.includes("Zu viele Anfragen") || error?.message?.includes("vorübergehend nicht verfügbar")) {
         toast.error(error.message);
       } else {
@@ -187,6 +192,21 @@ export function LandingContactForm({ providerId, providerName, primaryColor = "#
             {errors.message && <p className="text-xs text-destructive">{errors.message}</p>}
           </div>
 
+          <div className="flex items-start gap-2">
+            <Checkbox
+              id="dsgvo-contact"
+              checked={dsgvoConsent}
+              onCheckedChange={(v) => {
+                setDsgvoConsent(!!v);
+                if (errors.dsgvo) setErrors((prev) => ({ ...prev, dsgvo: "" }));
+              }}
+            />
+            <label htmlFor="dsgvo-contact" className="text-xs text-muted-foreground leading-tight cursor-pointer">
+              Ich stimme der Verarbeitung meiner Daten gemäß der Datenschutzerklärung zu. *
+            </label>
+          </div>
+          {errors.dsgvo && <p className="text-xs text-destructive">{errors.dsgvo}</p>}
+
           <Button
             type="submit"
             className="w-full gap-2"
@@ -205,10 +225,6 @@ export function LandingContactForm({ providerId, providerName, primaryColor = "#
               </>
             )}
           </Button>
-
-          <p className="text-xs text-center text-muted-foreground">
-            Mit dem Absenden stimmen Sie unserer Datenschutzerklärung zu.
-          </p>
         </form>
       </CardContent>
     </Card>

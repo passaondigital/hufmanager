@@ -1468,6 +1468,7 @@ export type Database = {
           imprint: string | null
           ki_features_enabled: boolean
           kleine_unternehmer: boolean | null
+          landing_template: string | null
           logo_url: string | null
           meta_description: string | null
           mwst_pflichtig: boolean | null
@@ -1477,11 +1478,13 @@ export type Database = {
           primary_color: string | null
           privacy: string | null
           profession_type: string | null
+          qualifications: Json | null
           reminder_custom_text: string | null
           reminder_intervals: Json | null
           reviews_layout: string | null
           rksv_enabled: boolean | null
           section_order: Json | null
+          service_area_text: string | null
           social_facebook: string | null
           social_instagram: string | null
           social_tiktok: string | null
@@ -1534,6 +1537,7 @@ export type Database = {
           imprint?: string | null
           ki_features_enabled?: boolean
           kleine_unternehmer?: boolean | null
+          landing_template?: string | null
           logo_url?: string | null
           meta_description?: string | null
           mwst_pflichtig?: boolean | null
@@ -1543,11 +1547,13 @@ export type Database = {
           primary_color?: string | null
           privacy?: string | null
           profession_type?: string | null
+          qualifications?: Json | null
           reminder_custom_text?: string | null
           reminder_intervals?: Json | null
           reviews_layout?: string | null
           rksv_enabled?: boolean | null
           section_order?: Json | null
+          service_area_text?: string | null
           social_facebook?: string | null
           social_instagram?: string | null
           social_tiktok?: string | null
@@ -1600,6 +1606,7 @@ export type Database = {
           imprint?: string | null
           ki_features_enabled?: boolean
           kleine_unternehmer?: boolean | null
+          landing_template?: string | null
           logo_url?: string | null
           meta_description?: string | null
           mwst_pflichtig?: boolean | null
@@ -1609,11 +1616,13 @@ export type Database = {
           primary_color?: string | null
           privacy?: string | null
           profession_type?: string | null
+          qualifications?: Json | null
           reminder_custom_text?: string | null
           reminder_intervals?: Json | null
           reviews_layout?: string | null
           rksv_enabled?: boolean | null
           section_order?: Json | null
+          service_area_text?: string | null
           social_facebook?: string | null
           social_instagram?: string | null
           social_tiktok?: string | null
@@ -7691,6 +7700,93 @@ export type Database = {
           },
         ]
       }
+      provider_faqs: {
+        Row: {
+          answer: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          provider_id: string
+          question: string
+          sort_order: number | null
+        }
+        Insert: {
+          answer: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          provider_id: string
+          question: string
+          sort_order?: number | null
+        }
+        Update: {
+          answer?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          provider_id?: string
+          question?: string
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_faqs_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_faqs_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_page_views: {
+        Row: {
+          created_at: string | null
+          id: string
+          page: string
+          provider_id: string | null
+          referrer: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          page?: string
+          provider_id?: string | null
+          referrer?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          page?: string
+          provider_id?: string | null
+          referrer?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_page_views_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_page_views_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       provider_payment_settings: {
         Row: {
           copecart_vendor_id: string | null
@@ -10750,6 +10846,15 @@ export type Database = {
       get_public_business_landing: {
         Args: { subdomain_input: string }
         Returns: Json
+      }
+      get_public_faqs: {
+        Args: { provider_id_input: string }
+        Returns: {
+          answer: string
+          id: string
+          question: string
+          sort_order: number
+        }[]
       }
       get_public_feedbacks: {
         Args: { provider_id_input: string }

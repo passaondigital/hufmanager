@@ -21,10 +21,18 @@ const DEFAULT_SECTIONS: Section[] = [
   { id: "about", label: "Über mich", description: "Persönliche Vorstellung", enabled: true },
   { id: "highlights", label: "Angebote (Highlight)", description: "Große Preis-Karten (max. 3)", enabled: true },
   { id: "services", label: "Service-Liste", description: "Kompakte Preisliste", enabled: true },
+  { id: "list_items", label: "Preisliste (Liste)", description: "Services als kompakte Liste", enabled: true },
+  { id: "shop_grid", label: "Shop / Produkte", description: "Produkte im Grid-Layout", enabled: false },
+  { id: "before_after", label: "Vorher / Nachher", description: "Vorher/Nachher Bildvergleich", enabled: true },
   { id: "gallery", label: "Galerie", description: "Vorher/Nachher Bilder", enabled: true },
+  { id: "faq", label: "FAQ", description: "Häufig gestellte Fragen", enabled: false },
+  { id: "service_area", label: "Einzugsgebiet", description: "Dein Tätigkeitsgebiet", enabled: false },
+  { id: "qualifications", label: "Ausbildung", description: "Zertifikate & Qualifikationen", enabled: false },
   { id: "reviews", label: "Bewertungen", description: "Kundenstimmen & Rezensionen", enabled: true },
   { id: "contact", label: "Kontakt", description: "Kontaktformular", enabled: true },
 ];
+
+const LOCKED_SECTIONS = ["hero", "contact"];
 
 export const SectionManager = () => {
   const { user } = useAuth();
@@ -47,7 +55,6 @@ export const SectionManager = () => {
     enabled: !!user?.id,
   });
 
-  // Load section order from settings
   useEffect(() => {
     if (settings?.section_order && Array.isArray(settings.section_order)) {
       const orderArray = settings.section_order as string[];
@@ -59,7 +66,6 @@ export const SectionManager = () => {
         })
         .filter(Boolean) as Section[];
 
-      // Add any missing sections as disabled
       DEFAULT_SECTIONS.forEach((defaultSec) => {
         if (!orderedSections.find((s) => s.id === defaultSec.id)) {
           orderedSections.push({ ...defaultSec, enabled: false });
@@ -99,14 +105,11 @@ export const SectionManager = () => {
     },
   });
 
-  const handleDragStart = (index: number) => {
-    setDraggedIndex(index);
-  };
+  const handleDragStart = (index: number) => setDraggedIndex(index);
 
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
     if (draggedIndex === null || draggedIndex === index) return;
-
     const newSections = [...sections];
     const [draggedItem] = newSections.splice(draggedIndex, 1);
     newSections.splice(index, 0, draggedItem);
@@ -114,14 +117,11 @@ export const SectionManager = () => {
     setDraggedIndex(index);
   };
 
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
-  };
+  const handleDragEnd = () => setDraggedIndex(null);
 
   const toggleSection = (index: number) => {
     const newSections = [...sections];
-    // Hero and Contact must always be enabled
-    if (newSections[index].id === "hero" || newSections[index].id === "contact") {
+    if (LOCKED_SECTIONS.includes(newSections[index].id)) {
       toast({ title: "Hinweis", description: "Diese Sektion kann nicht deaktiviert werden." });
       return;
     }
@@ -165,12 +165,10 @@ export const SectionManager = () => {
             )}
           >
             <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm text-foreground">{section.label}</p>
               <p className="text-xs text-muted-foreground truncate">{section.description}</p>
             </div>
-
             <div className="flex items-center gap-2">
               {section.enabled ? (
                 <Eye className="h-4 w-4 text-primary" />
@@ -180,7 +178,7 @@ export const SectionManager = () => {
               <Switch
                 checked={section.enabled}
                 onCheckedChange={() => toggleSection(index)}
-                disabled={section.id === "hero" || section.id === "contact"}
+                disabled={LOCKED_SECTIONS.includes(section.id)}
               />
             </div>
           </div>

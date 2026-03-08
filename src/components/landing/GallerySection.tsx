@@ -57,6 +57,7 @@ export const GallerySection = ({ images, primaryColor = "#F47B20" }: GallerySect
               <img
                 src={image.url}
                 alt={image.caption || `Bild ${index + 1}`}
+                loading="lazy"
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
