@@ -90,9 +90,35 @@ export function LeadChatBot({ providerId, providerName, providerLogo, primaryCol
       if (type === 'notfall') {
         addBotMessage("Bei Notfällen erreichst du mich am schnellsten telefonisch. Hinterlasse mir trotzdem deine PLZ und Nummer – ich rufe zurück!");
       }
-      addBotMessage("Alles klar. Wo steht das Pferd? (PLZ)");
-      setStep('postal');
+      addBotMessage(`Bevor ich deine Anfrage weiterleite – darf ich deine Kontaktdaten an ${providerName} übermitteln?`);
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        type: 'buttons' as const,
+        content: 'Datenschutz-Einwilligung',
+        buttons: [
+          { id: 'termin' as LeadType, label: '✅ Ja, einverstanden', icon: null },
+          { id: 'notfall' as LeadType, label: '❌ Nein danke', icon: null },
+        ],
+      }]);
+      setStep('consent');
     }, 500);
+  };
+
+  const handleConsentResponse = (accepted: boolean) => {
+    if (accepted) {
+      setDsgvoConsent(true);
+      addUserMessage('Ja, einverstanden');
+      setTimeout(() => {
+        addBotMessage("Alles klar. Wo steht das Pferd? (PLZ)");
+        setStep('postal');
+      }, 500);
+    } else {
+      addUserMessage('Nein danke');
+      setTimeout(() => {
+        addBotMessage("Kein Problem! Du kannst mich jederzeit über die Website kontaktieren. 👋");
+        setStep('done');
+      }, 500);
+    }
   };
 
   const handlePostalSubmit = () => {
