@@ -158,7 +158,7 @@ export default function PartnerPublicProfile() {
 
         <div className="relative max-w-3xl mx-auto px-4 py-16 md:py-24">
           <div className="text-center space-y-6">
-            <Avatar className="h-28 w-28 mx-auto ring-4 shadow-2xl" style={{ ringColor: `${primaryColor}30` }}>
+            <Avatar className="h-28 w-28 mx-auto ring-4 ring-primary/20 shadow-2xl">
               <AvatarImage src={data.avatar_url || data.logo_url || undefined} />
               <AvatarFallback className="bg-muted text-primary text-3xl font-bold">
                 {(data.full_name || "P").substring(0, 2).toUpperCase()}
