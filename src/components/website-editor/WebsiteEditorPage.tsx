@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Globe, ExternalLink, Loader2, GripVertical, Sparkles, Search, Settings, FileText, BarChart3, MessageSquare, Eye, Smartphone, Monitor } from "lucide-react";
+import { Globe, ExternalLink, Loader2, GripVertical, Sparkles, Search, Settings, FileText, BarChart3, MessageSquare, Eye, Smartphone, Monitor, Code } from "lucide-react";
 import { WEBSITE_PAGE_TYPES } from "@/data/websitePageTypes";
 import { WebsiteSEOSettings } from "./WebsiteSEOSettings";
 import { WebsiteLeadSettings } from "./WebsiteLeadSettings";
