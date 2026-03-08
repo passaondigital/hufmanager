@@ -8,7 +8,12 @@ import { CanvasBlockComponent } from "./CanvasBlock";
 import { EditorToolbar } from "./EditorToolbar";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { CanvasBrandingPanel } from "./CanvasBrandingPanel";
+import { SaveAsTemplateDialog } from "@/components/office/SaveAsTemplateDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
 import type { CanvasBlockType } from "./types";
+import type { Json } from "@/integrations/supabase/types";
 
 interface CanvasEditorProps {
   document: CanvasDocument;
@@ -17,17 +22,27 @@ interface CanvasEditorProps {
   onExportPdf: () => void;
   onBack: () => void;
   saving?: boolean;
+  horses?: { id: string; name: string; breed: string | null }[];
 }
 
 const LS_KEY_PREFIX = "hm_office_autosave_";
 
 type PanelTab = "properties" | "branding";
 
-export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onBack, saving }: CanvasEditorProps) {
-  const [zoom, setZoom] = useState(0.85);
+export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onBack, saving, horses }: CanvasEditorProps) {
+  const { user } = useAuth();
+  const [zoom, setZoom] = useState(() => {
+    // Auto-scale for mobile
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      return Math.min(0.85, (window.innerWidth - 32) / CANVAS_WIDTH);
+    }
+    return 0.85;
+  });
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [hasUnsaved, setHasUnsaved] = useState(false);
   const [panelTab, setPanelTab] = useState<PanelTab>("properties");
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [savingTemplate, setSavingTemplate] = useState(false);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -46,9 +61,9 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
   }, [doc]);
 
-  // Load from localStorage on mount – only for existing docs (with id), never for new/template docs
+  // Load from localStorage on mount – only for existing docs
   useEffect(() => {
-    if (!doc.id) return; // New docs & templates: don't overwrite with stale localStorage
+    if (!doc.id) return;
     const key = LS_KEY_PREFIX + doc.id;
     try {
       const saved = localStorage.getItem(key);
@@ -111,7 +126,7 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
   const handleDeleteBlock = useCallback(() => {
     if (!selectedBlockId) return;
     const block = doc.blocks.find((b) => b.id === selectedBlockId);
-    if (block?.locked) return; // Can't delete locked blocks
+    if (block?.locked) return;
     onChange({ ...doc, blocks: doc.blocks.filter((b) => b.id !== selectedBlockId) });
     setSelectedBlockId(null);
   }, [doc, onChange, selectedBlockId]);
@@ -123,7 +138,7 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
       id: crypto.randomUUID(),
       x: selectedBlock.x + 20,
       y: selectedBlock.y + 20,
-      locked: false, // Duplicates are always unlocked
+      locked: false,
     };
     onChange({ ...doc, blocks: [...doc.blocks, clone] });
     setSelectedBlockId(clone.id);
@@ -145,6 +160,38 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
     setSelectedBlockId(null);
   }, []);
 
+  const handleHorseChange = useCallback((horseId: string | undefined) => {
+    if (!horseId) {
+      onChange({ ...doc, horse_id: undefined });
+      return;
+    }
+    const horse = horses?.find(h => h.id === horseId);
+    onChange({ ...doc, horse_id: horseId });
+    // Also save horse_name for display on cards (handled by parent save)
+  }, [doc, onChange, horses]);
+
+  const handleSaveAsTemplate = useCallback(async (name: string, category: string) => {
+    if (!user) return;
+    setSavingTemplate(true);
+    try {
+      const { error } = await supabase.from("office_templates").insert({
+        provider_id: user.id,
+        name,
+        category,
+        blocks: JSON.parse(JSON.stringify(doc.blocks || [])) as Json,
+        branding: JSON.parse(JSON.stringify(doc.branding || {})) as Json,
+        is_preset: false,
+      });
+      if (error) throw error;
+      toast({ title: "✓ Vorlage gespeichert" });
+      setSaveTemplateOpen(false);
+    } catch {
+      toast({ title: "Fehler", description: "Vorlage konnte nicht gespeichert werden.", variant: "destructive" });
+    } finally {
+      setSavingTemplate(false);
+    }
+  }, [user, doc]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -159,7 +206,6 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
         e.preventDefault();
         handleSave();
       }
-      // Ctrl+L to toggle lock
       if ((e.metaKey || e.ctrlKey) && e.key === "l") {
         e.preventDefault();
         handleToggleLock();
@@ -209,6 +255,10 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
         hasUnsaved={hasUnsaved}
         onToggleBranding={() => setPanelTab(panelTab === "branding" ? "properties" : "branding")}
         brandingActive={panelTab === "branding"}
+        horses={horses}
+        selectedHorseId={doc.horse_id}
+        onHorseChange={handleHorseChange}
+        onSaveAsTemplate={() => setSaveTemplateOpen(true)}
       />
 
       {/* Main area: Canvas + Properties */}
@@ -216,7 +266,8 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
         {/* Canvas area */}
         <div
           ref={canvasContainerRef}
-          className="flex-1 overflow-auto bg-muted/30 flex items-start justify-center p-8"
+          className="flex-1 overflow-auto bg-muted/30 flex items-start justify-center p-4 md:p-8"
+          style={{ touchAction: "pinch-zoom" }}
           onClick={handleCanvasClick}
         >
           <div
@@ -241,7 +292,7 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
               <rect width="100%" height="100%" fill="url(#grid)" />
             </svg>
 
-            {/* Branding header (logo + company) */}
+            {/* Branding header */}
             {(doc.branding?.logoUrl || doc.branding?.companyName) && (
               <div className="absolute top-0 left-0 right-0 flex items-center gap-3 px-4 pt-3 pointer-events-none z-[5]" style={{ color: doc.branding?.headingColor || undefined }}>
                 {doc.branding?.logoUrl && (
@@ -286,7 +337,6 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
 
         {/* Properties / Branding Panel */}
         <div className="w-64 border-l bg-card shrink-0 hidden md:flex flex-col">
-          {/* Panel tabs */}
           <div className="flex border-b shrink-0">
             <button
               onClick={() => setPanelTab("properties")}
@@ -318,6 +368,14 @@ export function CanvasEditor({ document: doc, onChange, onSave, onExportPdf, onB
           </div>
         </div>
       </div>
+
+      {/* Save as Template Dialog */}
+      <SaveAsTemplateDialog
+        open={saveTemplateOpen}
+        onOpenChange={setSaveTemplateOpen}
+        onSave={handleSaveAsTemplate}
+        saving={savingTemplate}
+      />
     </div>
   );
 }

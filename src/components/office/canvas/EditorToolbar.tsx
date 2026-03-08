@@ -3,10 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuTrigger, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
   Plus, Type, AlignJustify, CheckSquare, ChevronDown,
   Star, CalendarDays, ImagePlus, PenLine, PenTool,
   Bone, Info, ZoomIn, ZoomOut, Save,
   FileDown, ArrowLeft, FileEdit, CheckCircle2, Palette,
+  MoreVertical, FolderPlus, X,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -47,6 +52,10 @@ interface EditorToolbarProps {
   hasUnsaved?: boolean;
   onToggleBranding?: () => void;
   brandingActive?: boolean;
+  horses?: { id: string; name: string; breed: string | null }[];
+  selectedHorseId?: string;
+  onHorseChange?: (horseId: string | undefined) => void;
+  onSaveAsTemplate?: () => void;
 }
 
 export function EditorToolbar({
@@ -54,8 +63,11 @@ export function EditorToolbar({
   zoom, onZoomIn, onZoomOut, saving,
   title, onTitleChange, status, onToggleStatus, hasUnsaved,
   onToggleBranding, brandingActive,
+  horses, selectedHorseId, onHorseChange, onSaveAsTemplate,
 }: EditorToolbarProps) {
   const [toolsOpen, setToolsOpen] = useState(false);
+
+  const selectedHorse = horses?.find(h => h.id === selectedHorseId);
 
   return (
     <div className="flex items-center gap-2 px-3 py-2 border-b bg-card shrink-0 overflow-x-auto">
@@ -91,12 +103,48 @@ export function EditorToolbar({
 
       <div className="h-5 w-px bg-border mx-1 shrink-0" />
 
+      {/* Horse Picker - compact */}
+      {horses && horses.length > 0 && onHorseChange && (
+        <div className="shrink-0 hidden sm:flex items-center">
+          {selectedHorse ? (
+            <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-xs">
+              <span>🐴</span>
+              <span className="font-medium max-w-[120px] truncate">
+                {selectedHorse.name}
+                {selectedHorse.breed ? ` (${selectedHorse.breed})` : ""}
+              </span>
+              <button
+                onClick={() => onHorseChange(undefined)}
+                className="p-0.5 rounded-full hover:bg-primary/20"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ) : (
+            <select
+              value=""
+              onChange={(e) => onHorseChange(e.target.value || undefined)}
+              className="text-xs bg-transparent border rounded px-2 py-1 text-muted-foreground max-w-[160px]"
+            >
+              <option value="">🐴 Pferd verknüpfen</option>
+              {horses.map(h => (
+                <option key={h.id} value={h.id}>
+                  {h.name}{h.breed ? ` (${h.breed})` : ""}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+      )}
+
+      <div className="h-5 w-px bg-border mx-1 shrink-0 hidden sm:block" />
+
       {/* Add Block Tool */}
       <Popover open={toolsOpen} onOpenChange={setToolsOpen}>
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs shrink-0">
             <Plus className="h-3.5 w-3.5" />
-            Baustein
+            <span className="hidden sm:inline">Baustein</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-72 p-3" align="start" sideOffset={8}>
@@ -137,10 +185,10 @@ export function EditorToolbar({
         </Button>
       )}
 
-      <div className="h-5 w-px bg-border mx-1 shrink-0" />
+      <div className="h-5 w-px bg-border mx-1 shrink-0 hidden sm:block" />
 
-      {/* Zoom */}
-      <div className="flex items-center gap-1 shrink-0">
+      {/* Zoom - hide on mobile */}
+      <div className="hidden sm:flex items-center gap-1 shrink-0">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant="ghost" size="icon" onClick={onZoomOut} className="h-7 w-7">
@@ -172,6 +220,43 @@ export function EditorToolbar({
           <Save className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">{saving ? "Speichert..." : "Speichern"}</span>
         </Button>
+
+        {/* More menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {onSaveAsTemplate && (
+              <DropdownMenuItem onClick={onSaveAsTemplate}>
+                <FolderPlus className="h-4 w-4 mr-2" />
+                Als Vorlage speichern
+              </DropdownMenuItem>
+            )}
+            {/* Mobile-only: horse picker */}
+            {horses && horses.length > 0 && onHorseChange && (
+              <>
+                <DropdownMenuSeparator />
+                {horses.slice(0, 8).map(h => (
+                  <DropdownMenuItem
+                    key={h.id}
+                    onClick={() => onHorseChange(h.id)}
+                    className={selectedHorseId === h.id ? "bg-primary/10" : ""}
+                  >
+                    🐴 {h.name}{h.breed ? ` (${h.breed})` : ""}
+                  </DropdownMenuItem>
+                ))}
+                {selectedHorseId && (
+                  <DropdownMenuItem onClick={() => onHorseChange(undefined)} className="text-muted-foreground">
+                    <X className="h-4 w-4 mr-2" /> Pferd entfernen
+                  </DropdownMenuItem>
+                )}
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
