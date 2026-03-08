@@ -212,15 +212,9 @@ export default function Auth() {
           description: "Überprüfen Sie E-Mail und Passwort.",
         });
       } else if (error.message.includes("User not found")) {
-        // User actually doesn't exist - show pricing modal for providers
-        if (loginMode === "provider") {
-          openPricingModal(
-            "Noch kein Account?",
-            "Wähle jetzt dein Paket und starte mit HufManager."
-          );
-        } else {
-          toast.error("Kein Konto mit dieser E-Mail gefunden");
-        }
+        toast.error("Kein Konto mit dieser E-Mail gefunden", {
+          description: "Registrieren Sie sich zuerst.",
+        });
       } else {
         toast.error(error.message);
       }
