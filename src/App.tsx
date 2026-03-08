@@ -278,6 +278,9 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/p/:slug" element={<ProviderLanding />} />
             <Route path="/p/:slug/:page" element={<ProviderLanding />} />
             
+            {/* Preview Links (öffentlich, kein Auth) */}
+            <Route path="/preview/:token" element={<PreviewLanding />} />
+
             {/* Einladungs-Links für Kunden */}
             <Route path="/connect/:slug" element={<ConnectForm />} />
             
