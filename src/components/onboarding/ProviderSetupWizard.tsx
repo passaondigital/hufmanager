@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, Sparkles, Building2, Euro, Calendar, FileText, Loader2, Check, ArrowRight } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Sparkles, Loader2, Check, ArrowRight, MapPin, Phone, Building2, Users, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { CountrySelectionStep } from './CountrySelectionStep';
 import { SetupCompleteScreen } from './SetupCompleteScreen';
 import { TaxCountry, getDACHConfig, getCurrencyForCountry } from '@/lib/dachConfig';
+import { format, addDays } from 'date-fns';
 
 interface ProviderSetupWizardProps {
   onComplete: () => void;
@@ -19,40 +20,56 @@ interface ProviderSetupWizardProps {
 
 type WizardPhase = 'welcome' | 'steps' | 'complete';
 
+interface OnboardingResult {
+  horseName?: string;
+  clientName?: string;
+  appointmentDate?: string;
+  appointmentTime?: string;
+  clientId?: string;
+}
+
 export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
   const { user } = useAuth();
   const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Hufbearbeiter';
   const [phase, setPhase] = useState<WizardPhase>('welcome');
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [result, setResult] = useState<OnboardingResult>({});
   
-  // Form state
+  // Step 1: Betrieb
   const [taxCountry, setTaxCountry] = useState<TaxCountry>('DE');
   const [businessName, setBusinessName] = useState('');
-  const [defaultPrice, setDefaultPrice] = useState('');
-  const [horseName, setHorseName] = useState('');
-  const [ownerName, setOwnerName] = useState('');
-  const [ownerPhone, setOwnerPhone] = useState('');
-  const [impressumText, setImpressumText] = useState('');
+  const [zipCode, setZipCode] = useState('');
+  const [phone, setPhone] = useState('');
 
-  const totalSteps = 5;
+  // Step 2: Erster Kunde
+  const [clientName, setClientName] = useState('');
+  const [horseName, setHorseName] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+
+  // Step 3: Erster Termin
+  const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
+  const [appointmentDate, setAppointmentDate] = useState(tomorrow);
+  const [appointmentTime, setAppointmentTime] = useState('08:00');
+
+  const totalSteps = 4;
   const progress = ((currentStep + 1) / totalSteps) * 100;
-  const currencySymbol = taxCountry === 'CH' ? 'CHF' : '€';
 
   const canProceed = () => {
     switch (currentStep) {
-      case 0: return true; // country
+      case 0: return true; // country always ok
       case 1: return businessName.trim().length >= 2;
-      case 2: return defaultPrice.trim().length > 0 && !isNaN(parseFloat(defaultPrice));
-      case 3: return horseName.trim().length >= 2 && ownerName.trim().length >= 2;
-      case 4: return impressumText.trim().length >= 20;
+      case 2: return true; // client step is skippable
+      case 3: return true; // appointment step is skippable
       default: return false;
     }
   };
 
-  const canSkip = (step: number) => step === 3 || step === 4; // Horse & Impressum skippable
-
   const handleNext = async () => {
+    // Save step 1 data immediately when moving to step 2
+    if (currentStep === 1 && user) {
+      await saveBusinessData();
+    }
     if (currentStep < totalSteps - 1) {
       setCurrentStep(currentStep + 1);
     } else {
@@ -68,90 +85,122 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
     }
   };
 
+  const saveBusinessData = async () => {
+    if (!user) return;
+    const config = getDACHConfig(taxCountry);
+    const currency = getCurrencyForCountry(taxCountry);
+
+    const { data: existing } = await supabase
+      .from('business_settings')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const payload = {
+      business_name: businessName.trim() || undefined,
+      tax_country: taxCountry,
+      currency,
+      default_vat_rate: config.defaultVatRate,
+      swiss_rounding: taxCountry === 'CH',
+      country: taxCountry,
+      kleine_unternehmer: true,
+      phone: phone.trim() || undefined,
+      address: zipCode.trim() || undefined,
+    };
+
+    if (existing) {
+      await supabase.from('business_settings').update(payload).eq('user_id', user.id);
+    } else {
+      await supabase.from('business_settings').insert({ user_id: user.id, ...payload });
+    }
+
+    // Update profile
+    await supabase.from('profiles').update({
+      country: taxCountry,
+      preferred_currency: currency,
+      zip_code: zipCode.trim() || undefined,
+      mobile: phone.trim() || undefined,
+    }).eq('id', user.id);
+  };
+
   const handleComplete = async () => {
     if (!user) return;
     setIsSubmitting(true);
-    
-    const config = getDACHConfig(taxCountry);
-    const currency = getCurrencyForCountry(taxCountry);
-    
+
     try {
-      // Save business settings
-      const { data: existingSettings } = await supabase
-        .from('business_settings')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      const settingsPayload = {
-        business_name: businessName.trim() || undefined,
-        tax_country: taxCountry,
-        currency: currency,
-        default_vat_rate: config.defaultVatRate,
-        swiss_rounding: taxCountry === 'CH',
-        impressum_text: impressumText.trim() || undefined,
-        country: taxCountry,
-        kleine_unternehmer: true,
-        rksv_enabled: false,
-        mwst_pflichtig: false,
-      };
-
-      if (existingSettings) {
-        await supabase.from('business_settings').update(settingsPayload).eq('user_id', user.id);
-      } else {
-        await supabase.from('business_settings').insert({ user_id: user.id, ...settingsPayload });
+      // Save business data if not saved yet
+      if (businessName.trim()) {
+        await saveBusinessData();
       }
 
-      // Create default service if price given
-      if (defaultPrice.trim()) {
-        const priceValue = parseFloat(defaultPrice.replace(',', '.'));
-        const { data: existingService } = await supabase
-          .from('offers')
-          .select('id')
-          .eq('provider_id', user.id)
-          .eq('title', 'Ausschneiden')
-          .maybeSingle();
+      let createdClientId: string | undefined;
+      let createdHorseId: string | undefined;
 
-        if (!existingService) {
-          await supabase.from('offers').insert({
-            provider_id: user.id,
-            title: 'Ausschneiden',
-            price: priceValue,
-            price_type: 'fixed',
-            is_active: true,
-            sort_order: 0,
-            offer_type: 'service',
-          });
-        }
-      }
-
-      // Create first client + horse if provided
-      if (ownerName.trim() && horseName.trim()) {
-        const { data: newContact } = await supabase
-          .from('contacts')
+      // Create ghost profile + horse if client data provided
+      if (clientName.trim() && horseName.trim()) {
+        // Create ghost profile for client
+        const { data: ghostProfile } = await supabase
+          .from('profiles')
           .insert({
-            provider_id: user.id,
-            full_name: ownerName.trim(),
-            phone: ownerPhone.trim() || null,
-            category: 'client',
-          })
+            full_name: clientName.trim(),
+            mobile: clientPhone.trim() || null,
+            created_by_provider_id: user.id,
+            onboarding_completed: false as boolean,
+          } as any)
           .select('id')
           .single();
 
-        if (newContact) {
-          await supabase.from('horses').insert({
-            name: horseName.trim(),
-            owner_id: user.id,
+        if (ghostProfile) {
+          createdClientId = ghostProfile.id;
+
+          // Create contact
+          await supabase.from('contacts').insert({
+            provider_id: user.id,
+            full_name: clientName.trim(),
+            phone: clientPhone.trim() || null,
+            category: 'client',
+            profile_id: ghostProfile.id,
           });
+
+          // Create horse with ghost profile as owner
+          const { data: horseData } = await supabase.from('horses').insert({
+            name: horseName.trim(),
+            owner_id: ghostProfile.id,
+          }).select('id').single();
+
+          if (horseData) {
+            createdHorseId = horseData.id;
+          }
+
+          // Access grant is auto-created by trigger
         }
       }
 
+      // Create appointment if date provided and horse exists
+      if (appointmentDate && createdHorseId && createdClientId) {
+        await supabase.from('appointments').insert({
+          provider_id: user.id,
+          horse_id: createdHorseId,
+          client_id: createdClientId,
+          date: appointmentDate,
+          time: appointmentTime || '08:00',
+          status: 'planned',
+          service_type: 'Ausschneiden',
+        });
+      }
+
       // Mark onboarding complete
-      await supabase.from('profiles').update({ 
+      await supabase.from('profiles').update({
         onboarding_completed: true,
-        country: taxCountry,
-        preferred_currency: currency,
       }).eq('id', user.id);
+
+      setResult({
+        horseName: horseName.trim() || undefined,
+        clientName: clientName.trim() || undefined,
+        appointmentDate: appointmentDate || undefined,
+        appointmentTime: appointmentTime || undefined,
+        clientId: createdClientId,
+      });
 
       setPhase('complete');
     } catch (error) {
@@ -182,13 +231,16 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
 
           <div className="space-y-3">
             <h1 className="text-3xl font-bold text-foreground">
-              Schön dass du da bist, {displayName}!
+              Willkommen bei HufManager!
             </h1>
+            <p className="text-xl text-muted-foreground">
+              Hallo {displayName}!
+            </p>
             <p className="text-lg text-muted-foreground">
               In <strong className="text-foreground">3 Minuten</strong> bist du startklar.
             </p>
             <p className="text-sm text-muted-foreground">
-              Wir richten gemeinsam deinen HufManager ein — Schritt für Schritt.
+              Wir richten alles gemeinsam ein.
             </p>
           </div>
 
@@ -196,9 +248,9 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
             <Button
               size="lg"
               onClick={() => setPhase('steps')}
-              className="gap-2 h-14 px-8 text-lg font-semibold w-full"
+              className="gap-2 h-14 px-8 text-lg font-semibold w-full bg-[#F5970A] hover:bg-[#E08A09] text-white"
             >
-              Einrichtung starten
+              Los geht's
               <ArrowRight className="h-5 w-5" />
             </Button>
             <Button
@@ -222,105 +274,177 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
 
   // ──────── COMPLETE SCREEN ────────
   if (phase === 'complete') {
-    return <SetupCompleteScreen displayName={displayName} onContinue={onComplete} />;
+    return (
+      <SetupCompleteScreen
+        displayName={displayName}
+        horseName={result.horseName}
+        clientName={result.clientName}
+        appointmentDate={result.appointmentDate}
+        appointmentTime={result.appointmentTime}
+        clientId={result.clientId}
+        onContinue={onComplete}
+      />
+    );
   }
 
   // ──────── STEP CONTENT ────────
   const stepMeta = [
     { icon: '🌍', label: 'Land' },
     { icon: '🏢', label: 'Betrieb' },
-    { icon: '💶', label: 'Preis' },
-    { icon: '🐴', label: 'Pferd' },
-    { icon: '📋', label: 'Impressum' },
+    { icon: '👥', label: 'Kunde' },
+    { icon: '📅', label: 'Termin' },
   ];
 
   const steps = [
+    // Step 0: Country
     <CountrySelectionStep key="country" value={taxCountry} onChange={setTaxCountry} />,
 
-    // Business Name
+    // Step 1: Business – Name + PLZ + Telefon
     <div key="business" className="space-y-6">
       <div className="text-center space-y-2">
         <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
           <Building2 className="h-8 w-8 text-primary" />
         </div>
-        <h2 className="text-2xl font-bold text-foreground">Wie heißt dein Huf-Business?</h2>
-        <p className="text-muted-foreground">
-          Dieser Name erscheint auf Rechnungen und deiner Webseite.
-        </p>
-      </div>
-      <div className="space-y-3">
-        <Label htmlFor="businessName" className="text-base">Firmenname</Label>
-        <Input id="businessName" value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="z.B. Hufpflege Schmidt" className="h-14 text-lg" autoFocus />
-      </div>
-    </div>,
-
-    // Price
-    <div key="price" className="space-y-6">
-      <div className="text-center space-y-2">
-        <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-          <Euro className="h-8 w-8 text-primary" />
-        </div>
-        <h2 className="text-2xl font-bold text-foreground">Was kostet Ausschneiden?</h2>
-        <p className="text-muted-foreground">Dein Standard-Preis. Du kannst später weitere Services anlegen.</p>
-      </div>
-      <div className="space-y-3">
-        <Label htmlFor="defaultPrice" className="text-base">Preis in {currencySymbol}</Label>
-        <div className="relative">
-          <Input id="defaultPrice" type="text" inputMode="decimal" value={defaultPrice} onChange={(e) => setDefaultPrice(e.target.value)} placeholder="z.B. 45" className="h-14 text-lg pl-12" />
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{currencySymbol}</span>
-        </div>
-      </div>
-    </div>,
-
-    // First Horse + Client
-    <div key="horse" className="space-y-6">
-      <div className="text-center space-y-2">
-        <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-          <span className="text-3xl">🐴</span>
-        </div>
-        <h2 className="text-2xl font-bold text-foreground">Dein erstes Kunden-Pferd</h2>
-        <p className="text-muted-foreground">Name, Besitzer, fertig. Dauert 30 Sekunden.</p>
+        <h2 className="text-2xl font-bold text-foreground">Dein Betrieb</h2>
+        <p className="text-muted-foreground">Nur das Nötigste – den Rest kannst du später ergänzen.</p>
       </div>
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="horseName" className="text-base">Pferdename</Label>
-          <Input id="horseName" value={horseName} onChange={(e) => setHorseName(e.target.value)} placeholder="z.B. Bella" className="h-12 text-lg" />
+          <Label htmlFor="businessName" className="text-base">Name / Betriebsname *</Label>
+          <Input
+            id="businessName"
+            value={businessName}
+            onChange={(e) => setBusinessName(e.target.value)}
+            placeholder="z.B. Hufpflege Schmidt"
+            className="h-14 text-lg"
+            autoFocus
+          />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="ownerName" className="text-base">Besitzer</Label>
-          <Input id="ownerName" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} placeholder="z.B. Maria Müller" className="h-12 text-lg" />
+          <Label htmlFor="zipCode" className="text-base flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-muted-foreground" />
+            PLZ / Ort
+          </Label>
+          <Input
+            id="zipCode"
+            value={zipCode}
+            onChange={(e) => setZipCode(e.target.value)}
+            placeholder="z.B. 80331 München"
+            className="h-12 text-lg"
+          />
+          <p className="text-xs text-muted-foreground">Für Routenplanung & Tourenoptimierung</p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="ownerPhone" className="text-base">Telefon (optional)</Label>
-          <Input id="ownerPhone" type="tel" value={ownerPhone} onChange={(e) => setOwnerPhone(e.target.value)} placeholder="z.B. 0171 1234567" className="h-12 text-lg" />
+          <Label htmlFor="phone" className="text-base flex items-center gap-2">
+            <Phone className="h-4 w-4 text-muted-foreground" />
+            Telefon
+          </Label>
+          <Input
+            id="phone"
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="z.B. 0171 1234567"
+            className="h-12 text-lg"
+          />
+          <p className="text-xs text-muted-foreground">Für WhatsApp-Einladungen an Kunden</p>
         </div>
       </div>
     </div>,
 
-    // Impressum
-    <div key="impressum" className="space-y-6">
+    // Step 2: Erster Kunde + Pferd
+    <div key="client" className="space-y-6">
       <div className="text-center space-y-2">
         <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-          <FileText className="h-8 w-8 text-primary" />
+          <Users className="h-8 w-8 text-primary" />
         </div>
-        <h2 className="text-2xl font-bold text-foreground">Impressum hinterlegen</h2>
-        <p className="text-muted-foreground">
-          Pflichtangabe für deine öffentliche Seite. Ohne Impressum bleibt dein Profil offline.
-        </p>
+        <h2 className="text-2xl font-bold text-foreground">Leg deinen ersten Kunden an</h2>
+        <p className="text-muted-foreground">Dauert 30 Sekunden. Alles andere später.</p>
       </div>
-      <div className="space-y-3">
-        <Label htmlFor="impressumText" className="text-base">Impressum</Label>
-        <textarea
-          id="impressumText"
-          value={impressumText}
-          onChange={(e) => setImpressumText(e.target.value)}
-          placeholder={"Max Mustermann\nMusterstraße 1\n12345 Musterstadt\nTel: 0123 456789\nE-Mail: info@example.de"}
-          className="w-full min-h-[140px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        />
-        <p className="text-xs text-muted-foreground">Mindestens: Name, Anschrift, E-Mail.</p>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="clientName" className="text-base">Kundenname</Label>
+          <Input
+            id="clientName"
+            value={clientName}
+            onChange={(e) => setClientName(e.target.value)}
+            placeholder="z.B. Maria Müller"
+            className="h-12 text-lg"
+            autoFocus
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="horseName" className="text-base">Pferdename</Label>
+          <Input
+            id="horseName"
+            value={horseName}
+            onChange={(e) => setHorseName(e.target.value)}
+            placeholder="z.B. Bella"
+            className="h-12 text-lg"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="clientPhone" className="text-base">Telefon (optional)</Label>
+          <Input
+            id="clientPhone"
+            type="tel"
+            value={clientPhone}
+            onChange={(e) => setClientPhone(e.target.value)}
+            placeholder="z.B. 0171 9876543"
+            className="h-12 text-lg"
+          />
+        </div>
       </div>
     </div>,
+
+    // Step 3: Erster Termin
+    <div key="appointment" className="space-y-6">
+      <div className="text-center space-y-2">
+        <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+          <Calendar className="h-8 w-8 text-primary" />
+        </div>
+        <h2 className="text-2xl font-bold text-foreground">
+          {clientName.trim() ? `Wann besuchst du ${clientName.trim().split(' ')[0]}?` : 'Dein erster Termin'}
+        </h2>
+        <p className="text-muted-foreground">
+          {horseName.trim() ? `Termin für ${horseName.trim()}` : 'Wann ist dein nächster Besuch?'}
+        </p>
+      </div>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="appointmentDate" className="text-base">Datum</Label>
+          <Input
+            id="appointmentDate"
+            type="date"
+            value={appointmentDate}
+            onChange={(e) => setAppointmentDate(e.target.value)}
+            className="h-12 text-lg"
+            min={format(new Date(), 'yyyy-MM-dd')}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="appointmentTime" className="text-base">Uhrzeit</Label>
+          <Input
+            id="appointmentTime"
+            type="time"
+            value={appointmentTime}
+            onChange={(e) => setAppointmentTime(e.target.value)}
+            className="h-12 text-lg"
+          />
+        </div>
+      </div>
+      {(!clientName.trim() || !horseName.trim()) && (
+        <div className="p-3 rounded-lg bg-muted/50 border border-border">
+          <p className="text-xs text-muted-foreground text-center">
+            💡 Du hast im vorherigen Schritt keinen Kunden angelegt. Du kannst Termine auch später im Kalender erstellen.
+          </p>
+        </div>
+      )}
+    </div>,
   ];
+
+  const isSkippable = currentStep >= 2; // Kunde & Termin skippable
+  const isLastStep = currentStep === totalSteps - 1;
 
   return (
     <div className="fixed inset-0 z-50 bg-background flex items-center justify-center p-4">
@@ -334,7 +458,7 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
             <span className="text-sm font-medium text-primary">{Math.round(progress)}%</span>
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden">
-            <motion.div className="h-full bg-primary" initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.3 }} />
+            <motion.div className="h-full bg-[#F5970A]" initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.3 }} />
           </div>
         </div>
 
@@ -355,15 +479,19 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
               </Button>
 
               <div className="flex items-center gap-2">
-                {canSkip(currentStep) && (
+                {isSkippable && (
                   <Button variant="ghost" size="sm" onClick={handleSkip} className="text-xs text-muted-foreground">
-                    Später erledigen
+                    Überspringen
                   </Button>
                 )}
-                <Button onClick={handleNext} disabled={(!canProceed() && !canSkip(currentStep)) || isSubmitting} className="gap-2 min-w-[120px]">
+                <Button
+                  onClick={handleNext}
+                  disabled={(!canProceed() && !isSkippable) || isSubmitting}
+                  className="gap-2 min-w-[120px] bg-[#F5970A] hover:bg-[#E08A09] text-white"
+                >
                   {isSubmitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : currentStep === totalSteps - 1 ? (
+                  ) : isLastStep ? (
                     <>
                       <Sparkles className="h-4 w-4" />
                       Fertig!
@@ -388,9 +516,9 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
               className={cn(
                 'flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all text-sm',
                 step < currentStep
-                  ? 'bg-primary border-primary text-primary-foreground'
+                  ? 'bg-[#F5970A] border-[#F5970A] text-white'
                   : step === currentStep
-                    ? 'border-primary text-primary'
+                    ? 'border-[#F5970A] text-[#F5970A]'
                     : 'border-muted text-muted-foreground'
               )}
             >
