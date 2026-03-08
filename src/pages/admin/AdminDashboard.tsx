@@ -24,7 +24,11 @@ import { AdminHealthDashboard } from "@/components/admin/AdminHealthDashboard";
 import { AdminContractManager } from "@/components/admin/AdminContractManager";
 import { AdminInvoices } from "@/components/admin/AdminInvoices";
 import { AdminDomainPanel } from "@/components/admin/AdminDomainPanel";
-import { HeartPulse, FileText } from "lucide-react";
+import { AffiliateCenter } from "@/components/admin/AffiliateCenter";
+import { CooperationCenter } from "@/components/admin/CooperationCenter";
+import { HMTeamCenter } from "@/components/admin/HMTeamCenter";
+import { EducationCenter } from "@/components/admin/EducationCenter";
+import { HeartPulse, FileText, Handshake, Building2, UsersRound, GraduationCap } from "lucide-react";
 
 type AdminView = "users" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "invoices" | "contracts" | "connections" | "domains" | "self-healing";
 
