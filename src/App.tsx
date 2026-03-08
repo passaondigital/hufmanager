@@ -398,6 +398,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/lager" element={<Lager />} />
               <Route path="/team" element={<Team />} />
               <Route path="/mein-office" element={<MeinOffice />} />
+              <Route path="/mein-office/:id" element={<OfficeEditor />} />
               <Route path="/support" element={<Support />} />
               <Route path="/hilfe" element={<Hilfe />} />
               <Route path="/status" element={<Status />} />
