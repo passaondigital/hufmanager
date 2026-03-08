@@ -369,58 +369,6 @@ export default function Auth() {
             </TabsList>
             
             <TabsContent value="login" className="mt-6">
-              {/* Login Mode Toggle - Profi vs Kunde vs Team */}
-              <div className="mb-5">
-                <div className="grid grid-cols-3 gap-2 p-1.5 bg-muted rounded-xl border border-border">
-                  <button
-                    type="button"
-                    onClick={() => setLoginMode("provider")}
-                    className={cn(
-                      "flex flex-col items-center gap-1.5 px-2 py-3 rounded-lg text-sm font-semibold transition-all duration-200 min-h-[52px]",
-                      loginMode === "provider"
-                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    )}
-                  >
-                    <Hammer className="h-5 w-5" />
-                    Hufbearbeiter
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLoginMode("client")}
-                    className={cn(
-                      "flex flex-col items-center gap-1.5 px-2 py-3 rounded-lg text-sm font-semibold transition-all duration-200 min-h-[52px]",
-                      loginMode === "client"
-                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    )}
-                  >
-                    <Heart className="h-5 w-5" />
-                    Pferdebesitzer
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLoginMode("team")}
-                    className={cn(
-                      "flex flex-col items-center gap-1.5 px-2 py-3 rounded-lg text-sm font-semibold transition-all duration-200 min-h-[52px]",
-                      loginMode === "team"
-                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    )}
-                  >
-                    <Users className="h-5 w-5" />
-                    Team & Partner
-                  </button>
-                </div>
-                <p className="text-xs text-muted-foreground text-center mt-2">
-                  {loginMode === "provider" 
-                    ? "Für Hufschmiede, Hufpfleger & Betriebsinhaber" 
-                    : loginMode === "client"
-                    ? "Für Pferdebesitzer – kostenloser Zugang"
-                    : "Für Mitarbeiter & Fachpartner (Tierärzte, Therapeuten etc.)"}
-                </p>
-              </div>
-
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="login-email" className="text-foreground font-medium text-sm">E-Mail</Label>
