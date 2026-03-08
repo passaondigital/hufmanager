@@ -255,19 +255,26 @@ export default function ClientHome() {
             </div>
           )}
 
-          {/* Hero Greeting with animation */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-2"
-          >
-            <h1 className="text-responsive-h2 text-foreground tracking-tight flex items-center gap-2">
-              Hallo {firstName}! 👋 <HelpTip id="kunden.home" />
-            </h1>
-            <p className="text-muted-foreground text-base md:text-lg">
-              Dein Pferdeportal auf einen Blick
-            </p>
-          </motion.div>
+          {/* Welcome Hero Card – WOW moment with real data */}
+          {user && horses.length > 0 && (
+            <WelcomeHeroCard userId={user.id} firstName={firstName} />
+          )}
+
+          {/* Hero Greeting (shown when no horses / fallback) */}
+          {horses.length === 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-2"
+            >
+              <h1 className="text-responsive-h2 text-foreground tracking-tight flex items-center gap-2">
+                Hallo {firstName}! 👋 <HelpTip id="kunden.home" />
+              </h1>
+              <p className="text-muted-foreground text-base md:text-lg">
+                Dein Pferdeportal auf einen Blick
+              </p>
+            </motion.div>
+          )}
 
           {/* Quick Stats Cards */}
           {horses.length > 0 && (
