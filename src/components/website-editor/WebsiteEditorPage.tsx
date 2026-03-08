@@ -189,6 +189,22 @@ export const WebsiteEditorPage = () => {
         </TabsList>
 
         <TabsContent value="pages" className="mt-6 space-y-4">
+          {/* Visual Editor CTA */}
+          <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10">
+            <CardContent className="flex items-center justify-between py-4">
+              <div>
+                <p className="font-semibold text-foreground">✨ Neuer visueller Landing-Editor</p>
+                <p className="text-sm text-muted-foreground">Split-Screen mit Live-Vorschau — wie Wix, nur besser.</p>
+              </div>
+              <Button asChild className="gap-2">
+                <a href="/landing-editor">
+                  <Sparkles className="h-4 w-4" />
+                  Editor öffnen
+                </a>
+              </Button>
+            </CardContent>
+          </Card>
+
           {/* Template Selector */}
           <Card>
             <CardHeader>
