@@ -73,6 +73,10 @@ interface BusinessSettings {
   qualifications: { title: string; year: string; institution?: string }[] | null;
   google_analytics_id: string | null;
   facebook_pixel_id: string | null;
+  horses_treated: number | null;
+  years_experience: number | null;
+  service_area_km: number | null;
+  instagram_posts: { image_url: string; caption?: string; post_url?: string }[] | null;
 }
 
 interface Service {
