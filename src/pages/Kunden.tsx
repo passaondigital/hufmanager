@@ -497,6 +497,18 @@ const Kunden = () => {
                             +{clientHorses.length - 3} weitere
                           </span>
                         )}
+                        
+                        {/* Invite Button - only for non-active clients */}
+                        {!client.has_logged_in && (
+                          <InviteClientButton
+                            clientId={client.id}
+                            clientName={client.full_name}
+                            clientPhone={client.phone}
+                            clientEmail={client.email}
+                            horseName={clientHorses[0]?.name}
+                            compact
+                          />
+                        )}
                       </div>
                     </div>
 
