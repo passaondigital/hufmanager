@@ -96,6 +96,7 @@ const EmergencyDashboard = lazy(() => import("@/pages/EmergencyDashboard"));
 const PriceGroupManagement = lazy(() => import("@/pages/PriceGroupManagement"));
 const EmployeeTour = lazy(() => import("@/pages/EmployeeTour"));
 const MeinOffice = lazy(() => import("@/pages/MeinOffice"));
+const OfficeEditor = lazy(() => import("@/pages/OfficeEditor"));
 const Hilfe = lazy(() => import("@/pages/Hilfe"));
 const Docs = lazy(() => import("@/pages/Docs"));
 const Status = lazy(() => import("@/pages/Status"));
