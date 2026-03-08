@@ -119,34 +119,8 @@ export function FirstStepsChecklist() {
     }
   };
 
-  const items: ChecklistItem[] = [
-    {
-      id: "businessSetup",
-      title: "Firmenname einrichten",
-      description: "Gib deinem Huf-Business einen Namen",
-      icon: Building2,
-      completed: checklistState.businessSetup,
-      action: () => navigate("/services"),
-      actionLabel: "Einrichten",
-    },
-    {
-      id: "impressumSetup",
-      title: "Impressum hinterlegen",
-      description: "Pflichtangabe für deine öffentliche Seite (DSGVO)",
-      icon: FileText,
-      completed: checklistState.impressumSetup,
-      action: () => navigate("/management"),
-      actionLabel: "Hinterlegen",
-    },
-    {
-      id: "firstService",
-      title: "Erste Dienstleistung anlegen",
-      description: "Leg deinen Standard-Service an (z.B. Ausschneiden)",
-      icon: Package,
-      completed: checklistState.firstService,
-      action: () => navigate("/angebote"),
-      actionLabel: "Anlegen",
-    },
+  // Core 3 steps first (Aha-Moment in 5 min), then optional extras
+  const coreItems: ChecklistItem[] = [
     {
       id: "firstClient",
       title: "Ersten Kunden hinzufügen",
@@ -174,16 +148,40 @@ export function FirstStepsChecklist() {
       action: () => navigate("/calendar"),
       actionLabel: "Planen",
     },
+  ];
+
+  const extraItems: ChecklistItem[] = [
+    {
+      id: "businessSetup",
+      title: "Firmenname einrichten",
+      description: "Gib deinem Huf-Business einen Namen",
+      icon: Building2,
+      completed: checklistState.businessSetup,
+      action: () => navigate("/services"),
+      actionLabel: "Einrichten",
+    },
+    {
+      id: "firstService",
+      title: "Erste Dienstleistung anlegen",
+      description: "Standard-Service anlegen (z.B. Ausschneiden)",
+      icon: Package,
+      completed: checklistState.firstService,
+      action: () => navigate("/angebote"),
+      actionLabel: "Anlegen",
+    },
     {
       id: "firstInvoice",
       title: "Erste Rechnung erstellen",
-      description: "Schließe deinen ersten Job ab und stelle eine Rechnung",
+      description: "Job abschließen und Rechnung stellen",
       icon: FileText,
       completed: checklistState.firstInvoice,
       action: () => navigate("/rechnungen"),
       actionLabel: "Erstellen",
     },
   ];
+
+  // Show core items first, then extras
+  const items = [...coreItems, ...extraItems];
 
   const completedCount = items.filter((item) => item.completed).length;
   const progressPercent = Math.round((completedCount / items.length) * 100);
