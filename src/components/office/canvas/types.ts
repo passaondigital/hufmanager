@@ -79,7 +79,7 @@ export interface CanvasDocument {
   branding?: CanvasBranding;
   horse_id?: string;
   contact_id?: string;
-  status: "draft" | "completed";
+  status: "draft" | "completed" | "archived";
   template_id?: string;
   created_at?: string;
   updated_at?: string;

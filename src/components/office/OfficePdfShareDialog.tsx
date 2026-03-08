@@ -43,7 +43,7 @@ export function OfficePdfShareDialog({ open, onOpenChange, document: doc }: Offi
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+            <CheckCircle2 className="h-5 w-5 text-primary" />
             PDF erstellt!
           </DialogTitle>
         </DialogHeader>

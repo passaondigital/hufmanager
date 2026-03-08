@@ -245,7 +245,7 @@ function DocumentRow({
       </div>
       <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
         <button onClick={onToggleFavorite} className="p-1.5 rounded hover:bg-muted transition-colors">
-          <Heart className={cn("h-3.5 w-3.5", doc.is_favorite ? "fill-red-500 text-red-500" : "text-muted-foreground/40")} />
+          <Heart className={cn("h-3.5 w-3.5", doc.is_favorite ? "fill-destructive text-destructive" : "text-muted-foreground/40")} />
         </button>
         <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onExport}>
           <FileDown className="h-3.5 w-3.5" />
