@@ -402,7 +402,8 @@ const ProviderLanding = () => {
   // Build home page sections
   const qualifications = settings.qualifications as any;
   const sectionMap: Record<string, React.ReactNode> = {
-    hero: <LandingHero key="hero" settings={settings} primaryColor={primaryColor} intakeStatus={intakeStatus} onScrollToContact={scrollToContact} />,
+    hero: <LandingHero key="hero" settings={settings} primaryColor={primaryColor} intakeStatus={intakeStatus} onScrollToContact={scrollToContact} onBooking={services.length > 0 ? () => setBookingOpen(true) : undefined} />,
+    trust_counters: (settings.horses_treated || settings.years_experience || settings.service_area_km) ? <LandingTrustCounters key="trust_counters" horsesTreated={settings.horses_treated || 0} yearsExperience={settings.years_experience || 0} serviceAreaKm={settings.service_area_km || 0} primaryColor={primaryColor} /> : null,
     about: settings.about_text ? <LandingAbout key="about" aboutText={settings.about_text} /> : null,
     services: services.length > 0 ? <LandingServices key="services" services={services} primaryColor={primaryColor} onBook={handleServiceBook} onRequest={handleServiceRequest} /> : null,
     highlights: offers.filter(o => o.display_mode === 'highlight_card' || !o.display_mode).length > 0 ? <LandingHighlights key="highlights" offers={offers.filter(o => (o.display_mode === 'highlight_card' || !o.display_mode) && !o.title.toUpperCase().includes('BALANCE'))} primaryColor={primaryColor} /> : null,
@@ -410,6 +411,7 @@ const ProviderLanding = () => {
     shop_grid: offers.filter(o => o.display_mode === 'shop_grid').length > 0 ? <LandingShopGrid key="shop_grid" offers={offers.filter(o => o.display_mode === 'shop_grid')} primaryColor={primaryColor} /> : null,
     before_after: galleryImages.length > 0 ? <LandingBeforeAfter key="before_after" galleryImages={galleryImages} primaryColor={primaryColor} /> : null,
     gallery: settings.gallery_images && settings.gallery_images.length > 0 ? <GallerySection key="gallery" images={settings.gallery_images} primaryColor={primaryColor} /> : null,
+    instagram: Array.isArray(settings.instagram_posts) && settings.instagram_posts.length > 0 ? <LandingInstagramFeed key="instagram" posts={settings.instagram_posts} instagramHandle={settings.social_instagram} primaryColor={primaryColor} /> : null,
     faq: faqs.length > 0 ? <LandingFAQ key="faq" faqs={faqs} primaryColor={primaryColor} /> : null,
     service_area: settings.service_area_text ? <LandingServiceArea key="service_area" serviceAreaText={settings.service_area_text} primaryColor={primaryColor} /> : null,
     qualifications: Array.isArray(qualifications) && qualifications.length > 0 ? <LandingQualifications key="qualifications" qualifications={qualifications} primaryColor={primaryColor} /> : null,
