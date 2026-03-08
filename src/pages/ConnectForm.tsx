@@ -29,6 +29,7 @@ const ConnectForm = () => {
     email: "",
     password: "",
   });
+  const [dsgvoConsent, setDsgvoConsent] = useState(false);
 
   // Validate magic link and get provider + client info
   const { data: linkData, isLoading, error } = useQuery({
