@@ -63,6 +63,7 @@ const ClientNotifications = lazy(() => import("@/pages/ClientNotifications"));
 const ProviderLanding = lazy(() => import("@/pages/ProviderLanding"));
 const WidgetPage = lazy(() => import("@/pages/WidgetPage"));
 const MeineWebsite = lazy(() => import("@/pages/MeineWebsite"));
+const LandingEditor = lazy(() => import("@/pages/LandingEditor"));
 const ProviderHorseDetail = lazy(() => import("@/pages/ProviderHorseDetail"));
 const ImportCenter = lazy(() => import("@/pages/ImportCenter"));
 const ConnectForm = lazy(() => import("@/pages/ConnectForm"));
@@ -407,6 +408,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/pferd/:id" element={<ProviderHorseDetail />} />
               {/* Meine Website - Provider Website Editor */}
               <Route path="/meine-website" element={<MeineWebsite />} />
+              <Route path="/landing-editor" element={<LandingEditor />} />
             </Route>
 
             {/* --- 3. CLIENT (PFERDEBESITZER) ROUTES --- */}
