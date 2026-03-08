@@ -278,9 +278,14 @@ const PricingV2 = () => (
           </div>
         </div>
 
-        <p className="text-center text-white/30 text-sm mt-8">
-          14 Tage kostenlos testen · Monatlich kündbar · Keine Kreditkarte nötig
-        </p>
+        <div className="text-center mt-8 space-y-2">
+          <p className="text-white/50 text-sm font-medium">
+            Alle Pläne: 14 Tage kostenlos. Keine Kreditkarte. Kündigung per E-Mail.
+          </p>
+          <p className="text-white/30 text-xs">
+            Monatlich kündbar · Kein Vertrag · Kein Risiko
+          </p>
+        </div>
       </div>
     </div>
   </section>
