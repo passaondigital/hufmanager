@@ -24,9 +24,13 @@ import { AdminHealthDashboard } from "@/components/admin/AdminHealthDashboard";
 import { AdminContractManager } from "@/components/admin/AdminContractManager";
 import { AdminInvoices } from "@/components/admin/AdminInvoices";
 import { AdminDomainPanel } from "@/components/admin/AdminDomainPanel";
-import { HeartPulse, FileText } from "lucide-react";
+import { AffiliateCenter } from "@/components/admin/AffiliateCenter";
+import { CooperationCenter } from "@/components/admin/CooperationCenter";
+import { HMTeamCenter } from "@/components/admin/HMTeamCenter";
+import { EducationCenter } from "@/components/admin/EducationCenter";
+import { HeartPulse, FileText, Handshake, Building2, UsersRound, GraduationCap } from "lucide-react";
 
-type AdminView = "users" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "invoices" | "contracts" | "connections" | "domains" | "self-healing";
+type AdminView = "users" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "invoices" | "contracts" | "connections" | "domains" | "self-healing" | "affiliates" | "cooperations" | "hm_team" | "education";
 
 const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "users", label: "User-DB", icon: Users },
@@ -35,6 +39,10 @@ const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ cla
   { id: "invoices", label: "Rechnungen", icon: FileText },
   { id: "contracts", label: "Verträge", icon: ScrollText },
   { id: "catalog", label: "Produktkatalog", icon: Package },
+  { id: "affiliates", label: "Affiliates", icon: Handshake },
+  { id: "cooperations", label: "Kooperationen", icon: Building2 },
+  { id: "education", label: "Hufschulen", icon: GraduationCap },
+  { id: "hm_team", label: "HM Team", icon: UsersRound },
   { id: "docs", label: "System & Doku", icon: BookOpen },
   { id: "ki-hub", label: "KI-Daten-Hub", icon: Brain },
   { id: "connections", label: "HM Connect", icon: Link2 },
@@ -219,6 +227,10 @@ export default function AdminDashboard() {
         {activeView === "dev" && <AdminDevZentrale />}
         {activeView === "health" && <AdminSystemHealth />}
         {activeView === "self-healing" && <AdminHealthDashboard />}
+        {activeView === "affiliates" && <AffiliateCenter />}
+        {activeView === "cooperations" && <CooperationCenter />}
+        {activeView === "hm_team" && <HMTeamCenter />}
+        {activeView === "education" && <EducationCenter />}
       </main>
 
       {/* Quick Note FAB */}

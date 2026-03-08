@@ -185,6 +185,16 @@ function App() {
     };
   }, []);
 
+  // Affiliate ?ref= tracking
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (ref && ref.length <= 20 && /^[A-Z0-9-]+$/i.test(ref)) {
+      localStorage.setItem("huf_affiliate_ref", ref.toUpperCase());
+      localStorage.setItem("huf_affiliate_ref_ts", Date.now().toString());
+    }
+  }, []);
+
   return (
     <PersistQueryClientProvider
       client={queryClient}

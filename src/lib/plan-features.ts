@@ -24,6 +24,9 @@ export const PLAN_FEATURE_MAP: Record<string, Record<string, string>> = {
     widget_custom_style: "disabled",
     widget_white_label: "disabled",
     custom_domain_addon: "disabled",
+    affiliate_program: "disabled",
+    cooperation_visibility: "disabled",
+    education_certificates: "public",
   },
   pro: {
     module_invoicing: "public",
@@ -46,6 +49,9 @@ export const PLAN_FEATURE_MAP: Record<string, Record<string, string>> = {
     widget_custom_style: "public",
     widget_white_label: "disabled",
     custom_domain_addon: "public",
+    affiliate_program: "public",
+    cooperation_visibility: "public",
+    education_certificates: "public",
   },
   duo: {
     module_invoicing: "public",
@@ -68,6 +74,9 @@ export const PLAN_FEATURE_MAP: Record<string, Record<string, string>> = {
     widget_custom_style: "public",
     widget_white_label: "disabled",
     custom_domain_addon: "public",
+    affiliate_program: "public",
+    cooperation_visibility: "public",
+    education_certificates: "public",
   },
   team: {
     module_invoicing: "public",
@@ -90,6 +99,9 @@ export const PLAN_FEATURE_MAP: Record<string, Record<string, string>> = {
     widget_custom_style: "public",
     widget_white_label: "public",
     custom_domain_addon: "public",
+    affiliate_program: "public",
+    cooperation_visibility: "public",
+    education_certificates: "public",
   },
 };
 
