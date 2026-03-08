@@ -13,6 +13,8 @@ import { LandingContact } from "@/components/landing/sections/LandingContact";
 import { LandingFAQ } from "@/components/landing/sections/LandingFAQ";
 import { LandingServiceArea } from "@/components/landing/sections/LandingServiceArea";
 import { LandingQualifications } from "@/components/landing/sections/LandingQualifications";
+import { LandingTrustCounters } from "@/components/landing/sections/LandingTrustCounters";
+import { LandingInstagramFeed } from "@/components/landing/sections/LandingInstagramFeed";
 import { GallerySection } from "@/components/landing/GallerySection";
 import { ReviewsSection } from "@/components/landing/ReviewsSection";
 import { LegalFooter } from "@/components/landing/LegalFooter";
@@ -26,6 +28,8 @@ import { WebsiteLeadForm } from "@/components/landing/WebsiteLeadForm";
 import { WhatsAppButton } from "@/components/landing/WhatsAppButton";
 import { ExitIntentPopup } from "@/components/landing/ExitIntentPopup";
 import { WebsiteTrustBadges } from "@/components/landing/WebsiteTrustBadges";
+import { BookingSheet } from "@/components/landing/BookingSheet";
+import { StickyMobileCTA } from "@/components/landing/StickyMobileCTA";
 import { toast } from "@/hooks/use-toast";
 import DOMPurify from "dompurify";
 import { format } from "date-fns";
@@ -69,6 +73,10 @@ interface BusinessSettings {
   qualifications: { title: string; year: string; institution?: string }[] | null;
   google_analytics_id: string | null;
   facebook_pixel_id: string | null;
+  horses_treated: number | null;
+  years_experience: number | null;
+  service_area_km: number | null;
+  instagram_posts: { image_url: string; caption?: string; post_url?: string }[] | null;
 }
 
 interface Service {
@@ -117,7 +125,7 @@ interface FAQ {
   answer: string;
 }
 
-const DEFAULT_SECTION_ORDER = ["hero", "about", "services", "highlights", "list_items", "shop_grid", "before_after", "gallery", "faq", "service_area", "qualifications", "reviews", "contact"];
+const DEFAULT_SECTION_ORDER = ["hero", "trust_counters", "about", "services", "highlights", "list_items", "shop_grid", "before_after", "gallery", "instagram", "faq", "service_area", "qualifications", "reviews", "contact"];
 
 const ProviderLanding = () => {
   const { slug, page } = useParams<{ slug: string; page?: string }>();
@@ -133,6 +141,7 @@ const ProviderLanding = () => {
   const [error, setError] = useState<string | null>(null);
   const [profileIncomplete, setProfileIncomplete] = useState(false);
   const [inquiryModal, setInquiryModal] = useState<{ open: boolean; serviceName: string }>({ open: false, serviceName: "" });
+  const [bookingOpen, setBookingOpen] = useState(false);
 
   useEffect(() => {
     const fetchProviderData = async () => {
@@ -393,7 +402,8 @@ const ProviderLanding = () => {
   // Build home page sections
   const qualifications = settings.qualifications as any;
   const sectionMap: Record<string, React.ReactNode> = {
-    hero: <LandingHero key="hero" settings={settings} primaryColor={primaryColor} intakeStatus={intakeStatus} onScrollToContact={scrollToContact} />,
+    hero: <LandingHero key="hero" settings={settings} primaryColor={primaryColor} intakeStatus={intakeStatus} onScrollToContact={scrollToContact} onBooking={services.length > 0 ? () => setBookingOpen(true) : undefined} />,
+    trust_counters: (settings.horses_treated || settings.years_experience || settings.service_area_km) ? <LandingTrustCounters key="trust_counters" horsesTreated={settings.horses_treated || 0} yearsExperience={settings.years_experience || 0} serviceAreaKm={settings.service_area_km || 0} primaryColor={primaryColor} /> : null,
     about: settings.about_text ? <LandingAbout key="about" aboutText={settings.about_text} /> : null,
     services: services.length > 0 ? <LandingServices key="services" services={services} primaryColor={primaryColor} onBook={handleServiceBook} onRequest={handleServiceRequest} /> : null,
     highlights: offers.filter(o => o.display_mode === 'highlight_card' || !o.display_mode).length > 0 ? <LandingHighlights key="highlights" offers={offers.filter(o => (o.display_mode === 'highlight_card' || !o.display_mode) && !o.title.toUpperCase().includes('BALANCE'))} primaryColor={primaryColor} /> : null,
@@ -401,6 +411,7 @@ const ProviderLanding = () => {
     shop_grid: offers.filter(o => o.display_mode === 'shop_grid').length > 0 ? <LandingShopGrid key="shop_grid" offers={offers.filter(o => o.display_mode === 'shop_grid')} primaryColor={primaryColor} /> : null,
     before_after: galleryImages.length > 0 ? <LandingBeforeAfter key="before_after" galleryImages={galleryImages} primaryColor={primaryColor} /> : null,
     gallery: settings.gallery_images && settings.gallery_images.length > 0 ? <GallerySection key="gallery" images={settings.gallery_images} primaryColor={primaryColor} /> : null,
+    instagram: Array.isArray(settings.instagram_posts) && settings.instagram_posts.length > 0 ? <LandingInstagramFeed key="instagram" posts={settings.instagram_posts} instagramHandle={settings.social_instagram} primaryColor={primaryColor} /> : null,
     faq: faqs.length > 0 ? <LandingFAQ key="faq" faqs={faqs} primaryColor={primaryColor} /> : null,
     service_area: settings.service_area_text ? <LandingServiceArea key="service_area" serviceAreaText={settings.service_area_text} primaryColor={primaryColor} /> : null,
     qualifications: Array.isArray(qualifications) && qualifications.length > 0 ? <LandingQualifications key="qualifications" qualifications={qualifications} primaryColor={primaryColor} /> : null,
@@ -487,6 +498,24 @@ const ProviderLanding = () => {
       )}
 
       <ServiceInquiryModal open={inquiryModal.open} onOpenChange={(open) => setInquiryModal({ ...inquiryModal, open })} serviceName={inquiryModal.serviceName} providerId={settings.user_id} primaryColor={primaryColor} />
+
+      {services.length > 0 && (
+        <BookingSheet
+          open={bookingOpen}
+          onOpenChange={setBookingOpen}
+          services={services}
+          providerId={settings.user_id}
+          providerName={providerName}
+          primaryColor={primaryColor}
+        />
+      )}
+
+      <StickyMobileCTA
+        primaryColor={primaryColor}
+        onBooking={services.length > 0 ? () => setBookingOpen(true) : scrollToContact}
+        whatsappNumber={settings.whatsapp_enabled ? settings.whatsapp_number : null}
+        providerName={providerName}
+      />
 
       <CookieConsentBanner primaryColor={primaryColor} />
     </div>

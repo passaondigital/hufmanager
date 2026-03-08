@@ -18,6 +18,7 @@ interface Section {
 
 const DEFAULT_SECTIONS: Section[] = [
   { id: "hero", label: "Hero / Header", description: "Logo, Name und Slogan", enabled: true },
+  { id: "trust_counters", label: "Vertrauens-Zähler", description: "Pferde, Jahre, Gebiet", enabled: false },
   { id: "about", label: "Über mich", description: "Persönliche Vorstellung", enabled: true },
   { id: "highlights", label: "Angebote (Highlight)", description: "Große Preis-Karten (max. 3)", enabled: true },
   { id: "services", label: "Service-Liste", description: "Kompakte Preisliste", enabled: true },
@@ -25,6 +26,7 @@ const DEFAULT_SECTIONS: Section[] = [
   { id: "shop_grid", label: "Shop / Produkte", description: "Produkte im Grid-Layout", enabled: false },
   { id: "before_after", label: "Vorher / Nachher", description: "Vorher/Nachher Bildvergleich", enabled: true },
   { id: "gallery", label: "Galerie", description: "Vorher/Nachher Bilder", enabled: true },
+  { id: "instagram", label: "Instagram Feed", description: "Manueller Instagram-Bilder Feed", enabled: false },
   { id: "faq", label: "FAQ", description: "Häufig gestellte Fragen", enabled: false },
   { id: "service_area", label: "Einzugsgebiet", description: "Dein Tätigkeitsgebiet", enabled: false },
   { id: "qualifications", label: "Ausbildung", description: "Zertifikate & Qualifikationen", enabled: false },

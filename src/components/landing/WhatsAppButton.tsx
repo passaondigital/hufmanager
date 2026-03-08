@@ -15,7 +15,7 @@ export const WhatsAppButton = ({ phoneNumber, providerName }: Props) => {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-6 right-6 z-40 bg-green-500 hover:bg-green-600 text-white rounded-full p-4 shadow-lg transition-all hover:scale-110"
+      className="fixed bottom-6 right-6 z-40 bg-green-500 hover:bg-green-600 text-white rounded-full p-4 shadow-lg transition-all hover:scale-110 hidden md:flex"
       aria-label="WhatsApp kontaktieren"
     >
       <MessageCircle className="h-6 w-6" />

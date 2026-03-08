@@ -1462,10 +1462,12 @@ export type Database = {
           google_search_console_code: string | null
           hero_headline: string | null
           hero_image_url: string | null
+          horses_treated: number | null
           iban: string | null
           id: string
           impressum_text: string | null
           imprint: string | null
+          instagram_posts: Json | null
           ki_features_enabled: boolean
           kleine_unternehmer: boolean | null
           landing_template: string | null
@@ -1484,6 +1486,7 @@ export type Database = {
           reviews_layout: string | null
           rksv_enabled: boolean | null
           section_order: Json | null
+          service_area_km: number | null
           service_area_text: string | null
           social_facebook: string | null
           social_instagram: string | null
@@ -1507,6 +1510,7 @@ export type Database = {
           website_navigation: Json | null
           whatsapp_enabled: boolean | null
           whatsapp_number: string | null
+          years_experience: number | null
         }
         Insert: {
           about_text?: string | null
@@ -1531,10 +1535,12 @@ export type Database = {
           google_search_console_code?: string | null
           hero_headline?: string | null
           hero_image_url?: string | null
+          horses_treated?: number | null
           iban?: string | null
           id?: string
           impressum_text?: string | null
           imprint?: string | null
+          instagram_posts?: Json | null
           ki_features_enabled?: boolean
           kleine_unternehmer?: boolean | null
           landing_template?: string | null
@@ -1553,6 +1559,7 @@ export type Database = {
           reviews_layout?: string | null
           rksv_enabled?: boolean | null
           section_order?: Json | null
+          service_area_km?: number | null
           service_area_text?: string | null
           social_facebook?: string | null
           social_instagram?: string | null
@@ -1576,6 +1583,7 @@ export type Database = {
           website_navigation?: Json | null
           whatsapp_enabled?: boolean | null
           whatsapp_number?: string | null
+          years_experience?: number | null
         }
         Update: {
           about_text?: string | null
@@ -1600,10 +1608,12 @@ export type Database = {
           google_search_console_code?: string | null
           hero_headline?: string | null
           hero_image_url?: string | null
+          horses_treated?: number | null
           iban?: string | null
           id?: string
           impressum_text?: string | null
           imprint?: string | null
+          instagram_posts?: Json | null
           ki_features_enabled?: boolean
           kleine_unternehmer?: boolean | null
           landing_template?: string | null
@@ -1622,6 +1632,7 @@ export type Database = {
           reviews_layout?: string | null
           rksv_enabled?: boolean | null
           section_order?: Json | null
+          service_area_km?: number | null
           service_area_text?: string | null
           social_facebook?: string | null
           social_instagram?: string | null
@@ -1645,6 +1656,7 @@ export type Database = {
           website_navigation?: Json | null
           whatsapp_enabled?: boolean | null
           whatsapp_number?: string | null
+          years_experience?: number | null
         }
         Relationships: []
       }
@@ -5325,6 +5337,8 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          lead_quality: string | null
+          lead_score: number | null
           lead_type: string
           message: string | null
           name: string | null
@@ -5339,6 +5353,8 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          lead_quality?: string | null
+          lead_score?: number | null
           lead_type?: string
           message?: string | null
           name?: string | null
@@ -5353,6 +5369,8 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          lead_quality?: string | null
+          lead_score?: number | null
           lead_type?: string
           message?: string | null
           name?: string | null
