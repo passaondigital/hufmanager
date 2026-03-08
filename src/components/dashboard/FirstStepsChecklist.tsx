@@ -202,9 +202,13 @@ export function FirstStepsChecklist() {
               <Sparkles className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-lg">Erste Schritte</CardTitle>
+              <CardTitle className="text-lg">
+                {coreCompleted ? "🎉 Super! Kern-Setup erledigt" : "In 5 Minuten startklar"}
+              </CardTitle>
               <CardDescription className="text-sm">
-                {completedCount}/{items.length} erledigt – {progressPercent}% abgeschlossen
+                {coreCompleted 
+                  ? `Noch ${items.length - completedCount} optionale Schritte übrig`
+                  : `${completedCount}/${coreItems.length} Kern-Schritte erledigt – Kunde → Pferd → Termin`}
               </CardDescription>
             </div>
           </div>
