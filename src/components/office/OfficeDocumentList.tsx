@@ -188,7 +188,7 @@ function DocumentCard({
             onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
             className="shrink-0 p-1 rounded hover:bg-muted transition-colors"
           >
-            <Heart className={cn("h-4 w-4", doc.is_favorite ? "fill-red-500 text-red-500" : "text-muted-foreground/40")} />
+            <Heart className={cn("h-4 w-4", doc.is_favorite ? "fill-destructive text-destructive" : "text-muted-foreground/40")} />
           </button>
         </div>
         <div className="flex gap-1 mt-3 pt-3 border-t" onClick={(e) => e.stopPropagation()}>
