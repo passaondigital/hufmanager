@@ -63,6 +63,7 @@ const ClientNotifications = lazy(() => import("@/pages/ClientNotifications"));
 const ProviderLanding = lazy(() => import("@/pages/ProviderLanding"));
 const WidgetPage = lazy(() => import("@/pages/WidgetPage"));
 const MeineWebsite = lazy(() => import("@/pages/MeineWebsite"));
+const LandingEditor = lazy(() => import("@/pages/LandingEditor"));
 const ProviderHorseDetail = lazy(() => import("@/pages/ProviderHorseDetail"));
 const ImportCenter = lazy(() => import("@/pages/ImportCenter"));
 const ConnectForm = lazy(() => import("@/pages/ConnectForm"));
