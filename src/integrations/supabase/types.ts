@@ -756,6 +756,198 @@ export type Database = {
         }
         Relationships: []
       }
+      affiliate_conversions: {
+        Row: {
+          affiliate_id: string | null
+          amount_cents: number | null
+          confirmed_at: string | null
+          conversion_type: string | null
+          converted_provider_id: string | null
+          created_at: string | null
+          id: string
+          paid_at: string | null
+          plan_type: string | null
+          referrer_code: string | null
+          source_url: string | null
+          status: string | null
+        }
+        Insert: {
+          affiliate_id?: string | null
+          amount_cents?: number | null
+          confirmed_at?: string | null
+          conversion_type?: string | null
+          converted_provider_id?: string | null
+          created_at?: string | null
+          id?: string
+          paid_at?: string | null
+          plan_type?: string | null
+          referrer_code?: string | null
+          source_url?: string | null
+          status?: string | null
+        }
+        Update: {
+          affiliate_id?: string | null
+          amount_cents?: number | null
+          confirmed_at?: string | null
+          conversion_type?: string | null
+          converted_provider_id?: string | null
+          created_at?: string | null
+          id?: string
+          paid_at?: string | null
+          plan_type?: string | null
+          referrer_code?: string | null
+          source_url?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_conversions_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_conversions_converted_provider_id_fkey"
+            columns: ["converted_provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_conversions_converted_provider_id_fkey"
+            columns: ["converted_provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliate_payouts: {
+        Row: {
+          affiliate_id: string | null
+          amount_cents: number
+          created_at: string | null
+          id: string
+          notes: string | null
+          paid_at: string | null
+          payout_method: string | null
+          period_from: string | null
+          period_to: string | null
+          reference: string | null
+          status: string | null
+        }
+        Insert: {
+          affiliate_id?: string | null
+          amount_cents: number
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payout_method?: string | null
+          period_from?: string | null
+          period_to?: string | null
+          reference?: string | null
+          status?: string | null
+        }
+        Update: {
+          affiliate_id?: string | null
+          amount_cents?: number
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payout_method?: string | null
+          period_from?: string | null
+          period_to?: string | null
+          reference?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_payouts_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliates: {
+        Row: {
+          affiliate_type: string | null
+          code: string
+          commission_percent: number | null
+          commission_rate_cents: number | null
+          commission_type: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          minimum_payout_cents: number | null
+          name: string
+          notes: string | null
+          payout_iban: string | null
+          payout_method: string | null
+          payout_paypal: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          affiliate_type?: string | null
+          code: string
+          commission_percent?: number | null
+          commission_rate_cents?: number | null
+          commission_type?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          minimum_payout_cents?: number | null
+          name: string
+          notes?: string | null
+          payout_iban?: string | null
+          payout_method?: string | null
+          payout_paypal?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          affiliate_type?: string | null
+          code?: string
+          commission_percent?: number | null
+          commission_rate_cents?: number | null
+          commission_type?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          minimum_payout_cents?: number | null
+          name?: string
+          notes?: string | null
+          payout_iban?: string | null
+          payout_method?: string | null
+          payout_paypal?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliates_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliates_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_chat_messages: {
         Row: {
           content: string
@@ -2078,6 +2270,75 @@ export type Database = {
           },
         ]
       }
+      cooperation_partners: {
+        Row: {
+          badge_color: string | null
+          badge_text: string | null
+          category: string
+          company_name: string
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          contract_signed_at: string | null
+          contract_url: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          logo_url: string | null
+          notes: string | null
+          priority: number | null
+          revenue_share_percent: number | null
+          status: string | null
+          updated_at: string | null
+          visibility: string | null
+          website: string | null
+        }
+        Insert: {
+          badge_color?: string | null
+          badge_text?: string | null
+          category: string
+          company_name: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          contract_signed_at?: string | null
+          contract_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          notes?: string | null
+          priority?: number | null
+          revenue_share_percent?: number | null
+          status?: string | null
+          updated_at?: string | null
+          visibility?: string | null
+          website?: string | null
+        }
+        Update: {
+          badge_color?: string | null
+          badge_text?: string | null
+          category?: string
+          company_name?: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          contract_signed_at?: string | null
+          contract_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          notes?: string | null
+          priority?: number | null
+          revenue_share_percent?: number | null
+          status?: string | null
+          updated_at?: string | null
+          visibility?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       customer_domains: {
         Row: {
           auto_renew: boolean | null
@@ -2453,6 +2714,198 @@ export type Database = {
             columns: ["app_id"]
             isOneToOne: false
             referencedRelation: "ecosystem_apps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      education_courses: {
+        Row: {
+          certificate_title: string | null
+          certificate_validity_years: number | null
+          course_type: string | null
+          created_at: string | null
+          description: string | null
+          duration_days: number | null
+          duration_hours: number | null
+          id: string
+          is_active: boolean | null
+          location: string | null
+          max_participants: number | null
+          next_date: string | null
+          price_cents: number | null
+          school_id: string | null
+          sort_order: number | null
+          title: string
+        }
+        Insert: {
+          certificate_title?: string | null
+          certificate_validity_years?: number | null
+          course_type?: string | null
+          created_at?: string | null
+          description?: string | null
+          duration_days?: number | null
+          duration_hours?: number | null
+          id?: string
+          is_active?: boolean | null
+          location?: string | null
+          max_participants?: number | null
+          next_date?: string | null
+          price_cents?: number | null
+          school_id?: string | null
+          sort_order?: number | null
+          title: string
+        }
+        Update: {
+          certificate_title?: string | null
+          certificate_validity_years?: number | null
+          course_type?: string | null
+          created_at?: string | null
+          description?: string | null
+          duration_days?: number | null
+          duration_hours?: number | null
+          id?: string
+          is_active?: boolean | null
+          location?: string | null
+          max_participants?: number | null
+          next_date?: string | null
+          price_cents?: number | null
+          school_id?: string | null
+          sort_order?: number | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "education_courses_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "education_schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      education_enrollments: {
+        Row: {
+          completed_at: string | null
+          course_id: string | null
+          grade: string | null
+          id: string
+          notes: string | null
+          registered_at: string | null
+          status: string | null
+          student_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          course_id?: string | null
+          grade?: string | null
+          id?: string
+          notes?: string | null
+          registered_at?: string | null
+          status?: string | null
+          student_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          course_id?: string | null
+          grade?: string | null
+          id?: string
+          notes?: string | null
+          registered_at?: string | null
+          status?: string | null
+          student_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "education_enrollments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "education_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "education_enrollments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "education_enrollments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      education_schools: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          description: string | null
+          founded_year: number | null
+          id: string
+          logo_url: string | null
+          owner_id: string | null
+          region: string | null
+          school_name: string
+          slug: string | null
+          social_instagram: string | null
+          specialty: string[] | null
+          status: string | null
+          verified: boolean | null
+          verified_at: string | null
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          description?: string | null
+          founded_year?: number | null
+          id?: string
+          logo_url?: string | null
+          owner_id?: string | null
+          region?: string | null
+          school_name: string
+          slug?: string | null
+          social_instagram?: string | null
+          specialty?: string[] | null
+          status?: string | null
+          verified?: boolean | null
+          verified_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          description?: string | null
+          founded_year?: number | null
+          id?: string
+          logo_url?: string | null
+          owner_id?: string | null
+          region?: string | null
+          school_name?: string
+          slug?: string | null
+          social_instagram?: string | null
+          specialty?: string[] | null
+          status?: string | null
+          verified?: boolean | null
+          verified_at?: string | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "education_schools_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "education_schools_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -3984,6 +4437,64 @@ export type Database = {
         }
         Relationships: []
       }
+      hm_activity_log: {
+        Row: {
+          action: string
+          admin_user_id: string | null
+          created_at: string | null
+          details: Json | null
+          id: string
+          ip_address: string | null
+          staff_id: string | null
+          target_id: string | null
+          target_table: string | null
+        }
+        Insert: {
+          action: string
+          admin_user_id?: string | null
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          staff_id?: string | null
+          target_id?: string | null
+          target_table?: string | null
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string | null
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          staff_id?: string | null
+          target_id?: string | null
+          target_table?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hm_activity_log_admin_user_id_fkey"
+            columns: ["admin_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hm_activity_log_admin_user_id_fkey"
+            columns: ["admin_user_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hm_activity_log_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "hm_staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hm_connect_invitations: {
         Row: {
           accepted_at: string | null
@@ -4031,6 +4542,63 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      hm_staff: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          email: string
+          full_name: string
+          hired_at: string | null
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          permissions: Json | null
+          role: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          email: string
+          full_name: string
+          hired_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          permissions?: Json | null
+          role?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          email?: string
+          full_name?: string
+          hired_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          permissions?: Json | null
+          role?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hm_staff_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hm_staff_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       hoof_analyses: {
         Row: {
@@ -7191,6 +7759,7 @@ export type Database = {
         Row: {
           access_valid_until: string | null
           address: string | null
+          affiliate_opt_in: boolean | null
           affiliate_slug: string | null
           avatar_url: string | null
           bank_name: string | null
@@ -7210,6 +7779,7 @@ export type Database = {
           deleted_at: string | null
           digital_signature_url: string | null
           ecosystem_id: string | null
+          education_verified: boolean | null
           email: string | null
           emergency_contacts: Json | null
           feature_flags: Json | null
@@ -7261,12 +7831,15 @@ export type Database = {
           price_group_label: string | null
           profession_type: string | null
           readable_id: string | null
+          referred_at: string | null
+          referred_by_code: string | null
           reliability_score: number | null
           reminder_1h: boolean | null
           reminder_6h: boolean | null
           reminder_evening: boolean | null
           reminder_text: string | null
           role: string | null
+          show_cooperation_badges: boolean | null
           stable_city: string | null
           stable_latitude: number | null
           stable_longitude: number | null
@@ -7293,6 +7866,7 @@ export type Database = {
         Insert: {
           access_valid_until?: string | null
           address?: string | null
+          affiliate_opt_in?: boolean | null
           affiliate_slug?: string | null
           avatar_url?: string | null
           bank_name?: string | null
@@ -7312,6 +7886,7 @@ export type Database = {
           deleted_at?: string | null
           digital_signature_url?: string | null
           ecosystem_id?: string | null
+          education_verified?: boolean | null
           email?: string | null
           emergency_contacts?: Json | null
           feature_flags?: Json | null
@@ -7363,12 +7938,15 @@ export type Database = {
           price_group_label?: string | null
           profession_type?: string | null
           readable_id?: string | null
+          referred_at?: string | null
+          referred_by_code?: string | null
           reliability_score?: number | null
           reminder_1h?: boolean | null
           reminder_6h?: boolean | null
           reminder_evening?: boolean | null
           reminder_text?: string | null
           role?: string | null
+          show_cooperation_badges?: boolean | null
           stable_city?: string | null
           stable_latitude?: number | null
           stable_longitude?: number | null
@@ -7395,6 +7973,7 @@ export type Database = {
         Update: {
           access_valid_until?: string | null
           address?: string | null
+          affiliate_opt_in?: boolean | null
           affiliate_slug?: string | null
           avatar_url?: string | null
           bank_name?: string | null
@@ -7414,6 +7993,7 @@ export type Database = {
           deleted_at?: string | null
           digital_signature_url?: string | null
           ecosystem_id?: string | null
+          education_verified?: boolean | null
           email?: string | null
           emergency_contacts?: Json | null
           feature_flags?: Json | null
@@ -7465,12 +8045,15 @@ export type Database = {
           price_group_label?: string | null
           profession_type?: string | null
           readable_id?: string | null
+          referred_at?: string | null
+          referred_by_code?: string | null
           reliability_score?: number | null
           reminder_1h?: boolean | null
           reminder_6h?: boolean | null
           reminder_evening?: boolean | null
           reminder_text?: string | null
           role?: string | null
+          show_cooperation_badges?: boolean | null
           stable_city?: string | null
           stable_latitude?: number | null
           stable_longitude?: number | null
@@ -7558,6 +8141,80 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_certifications: {
+        Row: {
+          certificate_title: string
+          certificate_url: string | null
+          course_id: string | null
+          created_at: string | null
+          id: string
+          is_public: boolean | null
+          issued_at: string | null
+          issuer_name: string | null
+          provider_id: string | null
+          school_id: string | null
+          valid_until: string | null
+          verified: boolean | null
+        }
+        Insert: {
+          certificate_title: string
+          certificate_url?: string | null
+          course_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_public?: boolean | null
+          issued_at?: string | null
+          issuer_name?: string | null
+          provider_id?: string | null
+          school_id?: string | null
+          valid_until?: string | null
+          verified?: boolean | null
+        }
+        Update: {
+          certificate_title?: string
+          certificate_url?: string | null
+          course_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_public?: boolean | null
+          issued_at?: string | null
+          issuer_name?: string | null
+          provider_id?: string | null
+          school_id?: string | null
+          valid_until?: string | null
+          verified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_certifications_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "education_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_certifications_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_certifications_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_certifications_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "education_schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       provider_contracts: {
         Row: {
           avv_signed_at: string | null
@@ -7610,6 +8267,52 @@ export type Database = {
             foreignKeyName: "provider_contracts_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: true
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_cooperations: {
+        Row: {
+          cooperation_id: string | null
+          id: string
+          joined_at: string | null
+          provider_id: string | null
+          status: string | null
+        }
+        Insert: {
+          cooperation_id?: string | null
+          id?: string
+          joined_at?: string | null
+          provider_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          cooperation_id?: string | null
+          id?: string
+          joined_at?: string | null
+          provider_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_cooperations_cooperation_id_fkey"
+            columns: ["cooperation_id"]
+            isOneToOne: false
+            referencedRelation: "cooperation_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_cooperations_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_cooperations_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "safe_provider_profiles"
             referencedColumns: ["id"]
           },
