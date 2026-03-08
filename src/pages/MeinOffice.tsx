@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,30 +8,24 @@ import { toast } from "@/hooks/use-toast";
 import { FileText, Plus, LayoutTemplate, FolderOpen, Star, Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CanvasDocument, CanvasBlock } from "@/components/office/canvas/types";
-import { CanvasEditor } from "@/components/office/canvas/CanvasEditor";
 import { FARRIER_TEMPLATES } from "@/components/office/canvas/templates";
-import { exportCanvasToPdf } from "@/components/office/canvas/canvasPdfExport";
 import { OfficeDocumentList } from "@/components/office/OfficeDocumentList";
 import { OfficeTemplateGallery } from "@/components/office/OfficeTemplateGallery";
 import { OfficeRenameDialog } from "@/components/office/OfficeRenameDialog";
-import { OfficePdfShareDialog } from "@/components/office/OfficePdfShareDialog";
 import { OfficeEmptyState } from "@/components/office/OfficeEmptyState";
 import { OfficeStatsBar } from "@/components/office/OfficeStatsBar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 
-type ViewMode = "list" | "editor";
 type TabId = "documents" | "templates" | "favorites" | "archive";
 
 export default function MeinOffice() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [view, setView] = useState<ViewMode>("list");
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabId>("documents");
-  const [editingDoc, setEditingDoc] = useState<CanvasDocument | null>(null);
-  const [renameDoc, setRenameDoc] = useState<CanvasDocument | null>(null);
-  const [pdfShareDoc, setPdfShareDoc] = useState<CanvasDocument | null>(null);
+  const [renameDoc, setRenameDoc] = useState<ExtendedCanvasDocument | null>(null);
 
   const { data: documents = [] } = useQuery({
     queryKey: ["office-documents", user?.id],
@@ -65,44 +60,6 @@ export default function MeinOffice() {
     enabled: !!user,
   });
 
-  const saveMutation = useMutation({
-    mutationFn: async (doc: ExtendedCanvasDocument) => {
-      if (!user) throw new Error("Nicht angemeldet");
-      const payload = {
-        provider_id: user.id,
-        title: doc.title || "Unbenanntes Dokument",
-        blocks: JSON.parse(JSON.stringify(doc.blocks || [])) as Json,
-        branding: JSON.parse(JSON.stringify(doc.branding || {})) as Json,
-        horse_id: doc.horse_id || null,
-        horse_name: doc.horse_name || null,
-        contact_id: doc.contact_id || null,
-        status: doc.status || "draft",
-        template_id: doc.template_id || null,
-        template_type: doc.template_type || null,
-        color_tag: doc.color_tag || "default",
-        is_favorite: doc.is_favorite || false,
-        last_edited_at: new Date().toISOString(),
-      };
-      if (doc.id) {
-        const { data, error } = await supabase.from("office_documents").update(payload).eq("id", doc.id).select().single();
-        if (error) throw error;
-        return data;
-      } else {
-        const { data, error } = await supabase.from("office_documents").insert(payload).select().single();
-        if (error) throw error;
-        return data;
-      }
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["office-documents"] });
-      if (editingDoc) setEditingDoc({ ...editingDoc, id: data.id } as ExtendedCanvasDocument);
-      toast({ title: "✓ Gespeichert" });
-    },
-    onError: () => {
-      toast({ title: "Fehler", description: "Speichern fehlgeschlagen.", variant: "destructive" });
-    },
-  });
-
   const deleteDocMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("office_documents").delete().eq("id", id);
@@ -135,67 +92,79 @@ export default function MeinOffice() {
     },
   });
 
-  const handleCreateFromTemplate = useCallback((templateIndex: number) => {
+  const handleCreateFromTemplate = useCallback(async (templateIndex: number) => {
+    if (!user) return;
     const template = FARRIER_TEMPLATES[templateIndex];
     const dateStr = format(new Date(), "dd.MM.yy", { locale: de });
-    const newDoc: ExtendedCanvasDocument = {
+    const payload = {
+      provider_id: user.id,
       title: `${template.name} – ${dateStr}`,
-      blocks: JSON.parse(JSON.stringify(template.blocks)),
-      branding: template.branding,
+      blocks: JSON.parse(JSON.stringify(template.blocks)) as Json,
+      branding: JSON.parse(JSON.stringify(template.branding || {})) as Json,
       template_id: template.id,
       template_type: template.category,
       status: "draft",
       color_tag: "default",
       is_favorite: false,
+      last_edited_at: new Date().toISOString(),
     };
-    setEditingDoc(newDoc);
-    setView("editor");
-  }, []);
+    const { data, error } = await supabase.from("office_documents").insert(payload).select().single();
+    if (error) {
+      toast({ title: "Fehler", description: "Dokument konnte nicht erstellt werden.", variant: "destructive" });
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ["office-documents"] });
+    navigate(`/mein-office/${data.id}`);
+  }, [user, queryClient, navigate]);
 
-  const handleCreateBlank = useCallback(() => {
-    setEditingDoc({
+  const handleCreateBlank = useCallback(async () => {
+    if (!user) return;
+    const payload = {
+      provider_id: user.id,
+      title: "Neues Dokument",
+      blocks: "[]" as unknown as Json,
+      status: "draft",
+      color_tag: "default",
+      is_favorite: false,
+      last_edited_at: new Date().toISOString(),
+    };
+    const { data, error } = await supabase.from("office_documents").insert(payload).select().single();
+    if (error) {
+      toast({ title: "Fehler", variant: "destructive" });
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ["office-documents"] });
+    // Open rename dialog, then navigate
+    setRenameDoc({
+      id: data.id,
       title: "Neues Dokument",
       blocks: [],
       status: "draft",
       color_tag: "default",
       is_favorite: false,
     } as ExtendedCanvasDocument);
-    setView("editor");
-  }, []);
+  }, [user, queryClient]);
 
   const handleOpenDocument = useCallback((doc: ExtendedCanvasDocument) => {
     if (doc.title === "Neues Dokument" || !doc.title) {
       setRenameDoc(doc);
     } else {
-      setEditingDoc(doc);
-      setView("editor");
+      navigate(`/mein-office/${doc.id}`);
     }
-  }, []);
+  }, [navigate]);
 
   const handleRenameConfirm = useCallback((title: string) => {
-    if (!renameDoc) return;
-    const updated = { ...renameDoc, title };
-    setEditingDoc(updated);
+    if (!renameDoc?.id) return;
+    supabase.from("office_documents").update({ title }).eq("id", renameDoc.id).then();
+    queryClient.invalidateQueries({ queryKey: ["office-documents"] });
     setRenameDoc(null);
-    setView("editor");
-    if (updated.id) {
-      supabase.from("office_documents").update({ title }).eq("id", updated.id).then();
-      queryClient.invalidateQueries({ queryKey: ["office-documents"] });
-    }
-  }, [renameDoc, queryClient]);
+    navigate(`/mein-office/${renameDoc.id}`);
+  }, [renameDoc, queryClient, navigate]);
 
-  const handleExportPdf = useCallback(async (doc?: CanvasDocument) => {
-    const target = doc || editingDoc;
-    if (!target) return;
-    try {
-      const pdf = await exportCanvasToPdf(target as CanvasDocument);
-      pdf.save(`${target.title || "Dokument"}.pdf`);
-      toast({ title: "✓ PDF exportiert" });
-      if (doc) setPdfShareDoc(doc as ExtendedCanvasDocument);
-    } catch {
-      toast({ title: "PDF-Fehler", description: "Export fehlgeschlagen.", variant: "destructive" });
-    }
-  }, [editingDoc]);
+  const handleExportPdf = useCallback(async (doc: ExtendedCanvasDocument) => {
+    // Navigate to editor which handles PDF export
+    navigate(`/mein-office/${doc.id}`);
+  }, [navigate]);
 
   // Filtered lists
   const activeDocuments = useMemo(() => documents.filter(d => d.status !== "archived"), [documents]);
@@ -209,21 +178,6 @@ export default function MeinOffice() {
     completed: documents.filter(d => d.status === "completed").length,
     avgBlocks: activeDocuments.length > 0 ? Math.round(activeDocuments.reduce((s, d) => s + (d.blocks?.length || 0), 0) / activeDocuments.length) : 0,
   }), [documents, activeDocuments]);
-
-  if (view === "editor" && editingDoc) {
-    return (
-      <div className="h-[calc(100vh-4rem)] lg:h-[calc(100vh-8rem)]">
-        <CanvasEditor
-          document={editingDoc}
-          onChange={setEditingDoc as (doc: CanvasDocument) => void}
-          onSave={() => saveMutation.mutate(editingDoc as ExtendedCanvasDocument)}
-          onExportPdf={() => handleExportPdf()}
-          onBack={() => setView("list")}
-          saving={saveMutation.isPending}
-        />
-      </div>
-    );
-  }
 
   const tabs: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }>; count?: number }[] = [
     { id: "documents", label: "Dokumente", icon: FolderOpen, count: activeDocuments.length || undefined },
@@ -319,7 +273,7 @@ export default function MeinOffice() {
           documents={currentDocs}
           onOpenDocument={handleOpenDocument}
           onDeleteDocument={(id) => deleteDocMutation.mutate(id)}
-          onExportPdf={(doc) => handleExportPdf(doc)}
+          onExportPdf={handleExportPdf}
           onToggleFavorite={(id, fav) => toggleFavoriteMutation.mutate({ id, is_favorite: fav })}
           onArchive={(id) => archiveMutation.mutate(id)}
           isArchiveView={activeTab === "archive"}
@@ -332,13 +286,6 @@ export default function MeinOffice() {
         onOpenChange={(open) => { if (!open) setRenameDoc(null); }}
         currentTitle={renameDoc?.title || ""}
         onConfirm={handleRenameConfirm}
-      />
-
-      {/* PDF Share Dialog */}
-      <OfficePdfShareDialog
-        open={!!pdfShareDoc}
-        onOpenChange={(open) => { if (!open) setPdfShareDoc(null); }}
-        document={pdfShareDoc}
       />
 
       {/* Mobile FAB */}
@@ -361,4 +308,5 @@ export interface ExtendedCanvasDocument extends CanvasDocument {
   is_favorite?: boolean;
   last_edited_at?: string;
   pdf_generated_at?: string;
+  pdf_url?: string;
 }

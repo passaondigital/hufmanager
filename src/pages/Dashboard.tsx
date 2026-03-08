@@ -7,6 +7,7 @@ import { SmartTourSuggestionWidget } from "@/components/dashboard/SmartTourSugge
 import { ShareInviteLinkCard } from "@/components/invite/ShareInviteLinkCard";
 import { HufrenteWidget } from "@/components/dashboard/HufrenteWidget";
 import { FuelPriceWidget } from "@/components/dashboard/FuelPriceWidget";
+import { RecentDocumentsWidget } from "@/components/office/RecentDocumentsWidget";
 import { MonthlyFuelInsight } from "@/components/dashboard/MonthlyFuelInsight";
 import { FirstStepsChecklist } from "@/components/dashboard/FirstStepsChecklist";
 import { DashboardWelcomeHeader } from "@/components/dashboard/DashboardWelcomeHeader";
@@ -181,6 +182,9 @@ const Dashboard = () => {
 
       {/* 5b. Monthly Fuel Insight */}
       <MonthlyFuelInsight />
+
+      {/* 5c. Recent Documents */}
+      <RecentDocumentsWidget />
 
       {/* 6. Hufrente (nice to have, bottom) */}
       <div className="relative">

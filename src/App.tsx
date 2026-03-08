@@ -96,6 +96,7 @@ const EmergencyDashboard = lazy(() => import("@/pages/EmergencyDashboard"));
 const PriceGroupManagement = lazy(() => import("@/pages/PriceGroupManagement"));
 const EmployeeTour = lazy(() => import("@/pages/EmployeeTour"));
 const MeinOffice = lazy(() => import("@/pages/MeinOffice"));
+const OfficeEditor = lazy(() => import("@/pages/OfficeEditor"));
 const Hilfe = lazy(() => import("@/pages/Hilfe"));
 const Docs = lazy(() => import("@/pages/Docs"));
 const Status = lazy(() => import("@/pages/Status"));
@@ -397,6 +398,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/lager" element={<Lager />} />
               <Route path="/team" element={<Team />} />
               <Route path="/mein-office" element={<MeinOffice />} />
+              <Route path="/mein-office/:id" element={<OfficeEditor />} />
               <Route path="/support" element={<Support />} />
               <Route path="/hilfe" element={<Hilfe />} />
               <Route path="/status" element={<Status />} />
@@ -499,6 +501,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner-guv" element={<GuV />} />
               <Route path="/partner-analyse" element={<Analyse />} />
               <Route path="/partner-office" element={<MeinOffice />} />
+              <Route path="/partner-office/:id" element={<OfficeEditor />} />
               <Route path="/partner-lager" element={<Lager />} />
               <Route path="/partner-autoflow" element={<AutoFlow />} />
               <Route path="/partner-management" element={<Management />} />
