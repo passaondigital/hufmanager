@@ -70,12 +70,12 @@ const ConnectForm = () => {
         // Get client profile
         const { data: profile } = await supabase
           .from("profiles")
-          .select("full_name, first_name, email")
+          .select("full_name, email")
           .eq("id", mlData.client_id)
           .maybeSingle();
 
         if (profile) {
-          clientName = profile.first_name || profile.full_name?.split(" ")[0] || null;
+          clientName = profile.full_name?.split(" ")[0] || null;
           clientEmail = profile.email;
         }
 
