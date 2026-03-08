@@ -212,15 +212,9 @@ export default function Auth() {
           description: "Überprüfen Sie E-Mail und Passwort.",
         });
       } else if (error.message.includes("User not found")) {
-        // User actually doesn't exist - show pricing modal for providers
-        if (loginMode === "provider") {
-          openPricingModal(
-            "Noch kein Account?",
-            "Wähle jetzt dein Paket und starte mit HufManager."
-          );
-        } else {
-          toast.error("Kein Konto mit dieser E-Mail gefunden");
-        }
+        toast.error("Kein Konto mit dieser E-Mail gefunden", {
+          description: "Registrieren Sie sich zuerst.",
+        });
       } else {
         toast.error(error.message);
       }
@@ -359,7 +353,7 @@ export default function Auth() {
             className="mx-auto h-16 sm:h-20 w-auto mb-2"
           />
           <CardTitle className="text-2xl font-bold text-foreground sr-only">HufManager</CardTitle>
-          <CardDescription className="text-sm text-muted-foreground">Melden Sie sich an oder erstellen Sie ein Konto</CardDescription>
+          <CardDescription className="text-sm text-muted-foreground">Für alle Rollen – du wirst automatisch weitergeleitet</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
@@ -369,58 +363,6 @@ export default function Auth() {
             </TabsList>
             
             <TabsContent value="login" className="mt-6">
-              {/* Login Mode Toggle - Profi vs Kunde vs Team */}
-              <div className="mb-5">
-                <div className="grid grid-cols-3 gap-2 p-1.5 bg-muted rounded-xl border border-border">
-                  <button
-                    type="button"
-                    onClick={() => setLoginMode("provider")}
-                    className={cn(
-                      "flex flex-col items-center gap-1.5 px-2 py-3 rounded-lg text-sm font-semibold transition-all duration-200 min-h-[52px]",
-                      loginMode === "provider"
-                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    )}
-                  >
-                    <Hammer className="h-5 w-5" />
-                    Hufbearbeiter
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLoginMode("client")}
-                    className={cn(
-                      "flex flex-col items-center gap-1.5 px-2 py-3 rounded-lg text-sm font-semibold transition-all duration-200 min-h-[52px]",
-                      loginMode === "client"
-                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    )}
-                  >
-                    <Heart className="h-5 w-5" />
-                    Pferdebesitzer
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLoginMode("team")}
-                    className={cn(
-                      "flex flex-col items-center gap-1.5 px-2 py-3 rounded-lg text-sm font-semibold transition-all duration-200 min-h-[52px]",
-                      loginMode === "team"
-                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    )}
-                  >
-                    <Users className="h-5 w-5" />
-                    Team & Partner
-                  </button>
-                </div>
-                <p className="text-xs text-muted-foreground text-center mt-2">
-                  {loginMode === "provider" 
-                    ? "Für Hufschmiede, Hufpfleger & Betriebsinhaber" 
-                    : loginMode === "client"
-                    ? "Für Pferdebesitzer – kostenloser Zugang"
-                    : "Für Mitarbeiter & Fachpartner (Tierärzte, Therapeuten etc.)"}
-                </p>
-              </div>
-
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="login-email" className="text-foreground font-medium text-sm">E-Mail</Label>

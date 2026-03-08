@@ -41,7 +41,6 @@ export function FirstStepsChecklist() {
   const navigate = useNavigate();
   const [checklistState, setChecklistState] = useState({
     businessSetup: false,
-    impressumSetup: false,
     firstService: false,
     firstClient: false,
     firstHorse: false,
@@ -64,7 +63,7 @@ export function FirstStepsChecklist() {
       // Check business settings
       const { data: businessData } = await supabase
         .from("business_settings")
-        .select("business_name, impressum_text")
+        .select("business_name")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -105,7 +104,6 @@ export function FirstStepsChecklist() {
 
       setChecklistState({
         businessSetup: !!businessData?.business_name,
-        impressumSetup: !!(businessData?.impressum_text && businessData.impressum_text.trim().length > 0),
         firstService: (servicesData?.length ?? 0) > 0,
         firstClient: (clientsData?.length ?? 0) > 0,
         firstHorse: (horsesData?.length ?? 0) > 0,
@@ -119,34 +117,8 @@ export function FirstStepsChecklist() {
     }
   };
 
-  const items: ChecklistItem[] = [
-    {
-      id: "businessSetup",
-      title: "Firmenname einrichten",
-      description: "Gib deinem Huf-Business einen Namen",
-      icon: Building2,
-      completed: checklistState.businessSetup,
-      action: () => navigate("/services"),
-      actionLabel: "Einrichten",
-    },
-    {
-      id: "impressumSetup",
-      title: "Impressum hinterlegen",
-      description: "Pflichtangabe für deine öffentliche Seite (DSGVO)",
-      icon: FileText,
-      completed: checklistState.impressumSetup,
-      action: () => navigate("/management"),
-      actionLabel: "Hinterlegen",
-    },
-    {
-      id: "firstService",
-      title: "Erste Dienstleistung anlegen",
-      description: "Leg deinen Standard-Service an (z.B. Ausschneiden)",
-      icon: Package,
-      completed: checklistState.firstService,
-      action: () => navigate("/angebote"),
-      actionLabel: "Anlegen",
-    },
+  // Core 3 steps first (Aha-Moment in 5 min), then optional extras
+  const coreItems: ChecklistItem[] = [
     {
       id: "firstClient",
       title: "Ersten Kunden hinzufügen",
@@ -174,10 +146,31 @@ export function FirstStepsChecklist() {
       action: () => navigate("/calendar"),
       actionLabel: "Planen",
     },
+  ];
+
+  const extraItems: ChecklistItem[] = [
+    {
+      id: "businessSetup",
+      title: "Firmenname einrichten",
+      description: "Gib deinem Huf-Business einen Namen",
+      icon: Building2,
+      completed: checklistState.businessSetup,
+      action: () => navigate("/services"),
+      actionLabel: "Einrichten",
+    },
+    {
+      id: "firstService",
+      title: "Erste Dienstleistung anlegen",
+      description: "Standard-Service anlegen (z.B. Ausschneiden)",
+      icon: Package,
+      completed: checklistState.firstService,
+      action: () => navigate("/angebote"),
+      actionLabel: "Anlegen",
+    },
     {
       id: "firstInvoice",
       title: "Erste Rechnung erstellen",
-      description: "Schließe deinen ersten Job ab und stelle eine Rechnung",
+      description: "Job abschließen und Rechnung stellen",
       icon: FileText,
       completed: checklistState.firstInvoice,
       action: () => navigate("/rechnungen"),
@@ -185,7 +178,11 @@ export function FirstStepsChecklist() {
     },
   ];
 
+  // Show core items first, then extras
+  const items = [...coreItems, ...extraItems];
+
   const completedCount = items.filter((item) => item.completed).length;
+  const coreCompleted = coreItems.every((i) => i.completed);
   const progressPercent = Math.round((completedCount / items.length) * 100);
   const allCompleted = completedCount === items.length;
 
@@ -203,9 +200,13 @@ export function FirstStepsChecklist() {
               <Sparkles className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-lg">Erste Schritte</CardTitle>
+              <CardTitle className="text-lg">
+                {coreCompleted ? "🎉 Super! Kern-Setup erledigt" : "In 5 Minuten startklar"}
+              </CardTitle>
               <CardDescription className="text-sm">
-                {completedCount}/{items.length} erledigt – {progressPercent}% abgeschlossen
+                {coreCompleted 
+                  ? `Noch ${items.length - completedCount} optionale Schritte übrig`
+                  : `${completedCount}/${coreItems.length} Kern-Schritte erledigt – Kunde → Pferd → Termin`}
               </CardDescription>
             </div>
           </div>

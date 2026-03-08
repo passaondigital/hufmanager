@@ -40,31 +40,14 @@ export function WelcomeHeroCard({ userId, firstName }: WelcomeHeroCardProps) {
     const fetchHeroData = async () => {
       const today = new Date().toISOString().split("T")[0];
 
-      // Parallel: horse, last visit, next appointment, provider
-      const [horsesRes, lastVisitRes, nextApptRes, grantRes] = await Promise.all([
+      // First get horse + provider in parallel
+      const [horsesRes, grantRes] = await Promise.all([
         supabase
           .from("horses")
           .select("id, name, photo_url")
           .eq("owner_id", userId)
           .is("deleted_at", null)
           .order("created_at", { ascending: true })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from("appointments")
-          .select("date, service_type")
-          .eq("status", "completed")
-          .lt("date", today)
-          .order("date", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from("appointments")
-          .select("date, time")
-          .gte("date", today)
-          .neq("status", "cancelled")
-          .order("date", { ascending: true })
-          .order("time", { ascending: true })
           .limit(1)
           .maybeSingle(),
         supabase
@@ -75,6 +58,33 @@ export function WelcomeHeroCard({ userId, firstName }: WelcomeHeroCardProps) {
           .limit(1)
           .maybeSingle(),
       ]);
+
+      const horseId = horsesRes.data?.id;
+
+      // Then fetch appointments scoped to this horse
+      const [lastVisitRes, nextApptRes] = horseId
+        ? await Promise.all([
+            supabase
+              .from("appointments")
+              .select("date, service_type")
+              .eq("horse_id", horseId)
+              .eq("status", "completed")
+              .lt("date", today)
+              .order("date", { ascending: false })
+              .limit(1)
+              .maybeSingle(),
+            supabase
+              .from("appointments")
+              .select("date, time")
+              .eq("horse_id", horseId)
+              .gte("date", today)
+              .neq("status", "cancelled")
+              .order("date", { ascending: true })
+              .order("time", { ascending: true })
+              .limit(1)
+              .maybeSingle(),
+          ])
+        : [{ data: null }, { data: null }];
 
       let providerName: string | null = null;
       if (grantRes.data?.provider_id) {
