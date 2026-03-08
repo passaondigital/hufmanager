@@ -20,6 +20,10 @@ export const PLAN_FEATURE_MAP: Record<string, Record<string, string>> = {
     autoflow_feedback: "disabled",
     autoflow_checkin: "disabled",
     beta_features: "disabled",
+    widget_embed: "public",
+    widget_custom_style: "disabled",
+    widget_white_label: "disabled",
+    custom_domain_addon: "disabled",
   },
   pro: {
     module_invoicing: "public",
@@ -38,6 +42,10 @@ export const PLAN_FEATURE_MAP: Record<string, Record<string, string>> = {
     autoflow_feedback: "public",
     autoflow_checkin: "public",
     beta_features: "disabled",
+    widget_embed: "public",
+    widget_custom_style: "public",
+    widget_white_label: "disabled",
+    custom_domain_addon: "public",
   },
   duo: {
     module_invoicing: "public",
@@ -56,6 +64,10 @@ export const PLAN_FEATURE_MAP: Record<string, Record<string, string>> = {
     autoflow_feedback: "public",
     autoflow_checkin: "public",
     beta_features: "disabled",
+    widget_embed: "public",
+    widget_custom_style: "public",
+    widget_white_label: "disabled",
+    custom_domain_addon: "public",
   },
   team: {
     module_invoicing: "public",
@@ -74,6 +86,10 @@ export const PLAN_FEATURE_MAP: Record<string, Record<string, string>> = {
     autoflow_feedback: "public",
     autoflow_checkin: "public",
     beta_features: "public",
+    widget_embed: "public",
+    widget_custom_style: "public",
+    widget_white_label: "public",
+    custom_domain_addon: "public",
   },
 };
 

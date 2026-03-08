@@ -23,6 +23,7 @@ import { AdminConnections } from "@/components/admin/AdminConnections";
 import { AdminHealthDashboard } from "@/components/admin/AdminHealthDashboard";
 import { AdminContractManager } from "@/components/admin/AdminContractManager";
 import { AdminInvoices } from "@/components/admin/AdminInvoices";
+import { AdminDomainPanel } from "@/components/admin/AdminDomainPanel";
 import { HeartPulse, FileText } from "lucide-react";
 
 type AdminView = "users" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "invoices" | "contracts" | "connections" | "domains" | "self-healing";
@@ -211,20 +212,7 @@ export default function AdminDashboard() {
         {activeView === "invoices" && <AdminInvoices />}
         {activeView === "contracts" && <AdminContractManager />}
         {activeView === "connections" && <AdminConnections />}
-        {activeView === "domains" && (
-          <div className="p-8">
-            <div className="max-w-lg mx-auto text-center space-y-4 py-16">
-              <div className="p-4 bg-muted rounded-full w-fit mx-auto">
-                <Globe className="h-10 w-10 text-muted-foreground" />
-              </div>
-              <h2 className="text-2xl font-bold text-foreground">Domain-Reseller</h2>
-              <p className="text-muted-foreground">
-                Demnächst: Eigene Domains für Provider verkaufen. Registrar-Anbindung, TLD-Preisliste, Ablaufverwaltung & Umsatz-Tracking.
-              </p>
-              <Badge variant="secondary" className="text-sm">🚧 In Vorbereitung</Badge>
-            </div>
-          </div>
-        )}
+        {activeView === "domains" && <AdminDomainPanel />}
         {activeView === "catalog" && <AdminProductCatalog />}
         {activeView === "docs" && <AdminSystemDoku />}
         {activeView === "ki-hub" && <AdminKIDataHub />}
