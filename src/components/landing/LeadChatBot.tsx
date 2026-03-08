@@ -335,7 +335,7 @@ export function LeadChatBot({ providerId, providerName, providerLogo, primaryCol
           </div>
 
           {/* Input */}
-          {step !== 'greeting' && step !== 'type' && step !== 'done' && (
+          {step !== 'greeting' && step !== 'type' && step !== 'consent' && step !== 'done' && (
             <form onSubmit={handleSubmit} className="p-4 border-t border-border">
               <div className="flex gap-2">
                 <Input
