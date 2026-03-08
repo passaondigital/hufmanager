@@ -184,6 +184,7 @@ export function FirstStepsChecklist() {
   const items = [...coreItems, ...extraItems];
 
   const completedCount = items.filter((item) => item.completed).length;
+  const coreCompleted = coreItems.every((i) => i.completed);
   const progressPercent = Math.round((completedCount / items.length) * 100);
   const allCompleted = completedCount === items.length;
 
