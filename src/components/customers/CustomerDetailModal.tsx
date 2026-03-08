@@ -403,7 +403,17 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
               city={customer.city}
             />
 
-            {/* Customer Info Section */}
+            {/* Ghost Profile Banner - shown for non-registered clients */}
+            {!customer.has_logged_in && (
+              <GhostProfileBanner
+                clientId={customer.id}
+                clientName={customer.full_name}
+                clientPhone={customer.phone_mobile || customer.phone}
+                clientEmail={customer.email}
+                horseName={horses[0]?.name}
+              />
+            )}
+
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-foreground">Stammdaten</h3>
