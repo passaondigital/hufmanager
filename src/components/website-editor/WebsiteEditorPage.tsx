@@ -20,6 +20,8 @@ import { TemplateSelector } from "@/components/landing/TemplateSelector";
 import { FAQEditor } from "@/components/landing/FAQEditor";
 import { ServiceAreaQualificationsEditor } from "@/components/landing/ServiceAreaQualificationsEditor";
 import { SectionManager } from "@/components/landing/SectionManager";
+import { WidgetGeneratorTab } from "./WidgetGeneratorTab";
+import { DomainSection } from "@/components/domain/DomainSection";
 
 export const WebsiteEditorPage = () => {
   const { user } = useAuth();
