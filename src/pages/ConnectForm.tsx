@@ -1,149 +1,199 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { CheckCircle, Loader2, Footprints, User, MapPin } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { CheckCircle, Loader2, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { z } from "zod";
 
-// Input validation schema
-const formSchema = z.object({
-  name: z.string().trim().min(2, "Name muss mindestens 2 Zeichen haben").max(100, "Name darf maximal 100 Zeichen haben"),
-  phone: z.string().trim().max(30, "Telefonnummer darf maximal 30 Zeichen haben").optional().or(z.literal("")),
-  email: z.string().trim().email("Ungültige E-Mail-Adresse").max(255, "E-Mail darf maximal 255 Zeichen haben").optional().or(z.literal("")),
-  horse_name: z.string().trim().min(2, "Pferdename muss mindestens 2 Zeichen haben").max(100, "Pferdename darf maximal 100 Zeichen haben"),
-  stable_location: z.string().trim().max(200, "Stallname darf maximal 200 Zeichen haben").optional().or(z.literal("")),
-  message: z.string().trim().max(1000, "Nachricht darf maximal 1000 Zeichen haben").optional().or(z.literal("")),
+const registerSchema = z.object({
+  name: z.string().trim().min(2, "Name muss mindestens 2 Zeichen haben").max(100),
+  email: z.string().trim().email("Ungültige E-Mail-Adresse").max(255),
+  password: z.string().min(8, "Passwort muss mindestens 8 Zeichen haben"),
 });
 
 const ConnectForm = () => {
   const { slug } = useParams<{ slug: string }>();
-  const [submitted, setSubmitted] = useState(false);
+  const navigate = useNavigate();
+  const [step, setStep] = useState<"welcome" | "register" | "success">("welcome");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    phone: "",
     email: "",
-    horse_name: "",
-    stable_location: "",
-    message: "",
+    password: "",
   });
 
-  // Fetch magic link via secure RPC function (prevents enumeration)
-  const { data: magicLink, isLoading, error } = useQuery({
-    queryKey: ["magic-link-public", slug],
+  // Validate magic link and get provider + client info
+  const { data: linkData, isLoading, error } = useQuery({
+    queryKey: ["connect-form", slug],
     queryFn: async () => {
       if (!slug) throw new Error("No slug");
-      
-      // Use SECURITY DEFINER function instead of direct table access
+
       const { data, error } = await supabase.rpc("validate_magic_link", {
         slug_input: slug,
       });
-      
+
       if (error) throw error;
-      
-      // Cast to expected type - function returns JSONB
-      const result = data as { valid: boolean; id?: string; provider_id?: string; provider_name?: string; provider_avatar?: string | null } | null;
-      
-      // Function returns { valid: false } if not found
+
+      const result = data as {
+        valid: boolean;
+        id?: string;
+        provider_id?: string;
+        provider_name?: string;
+        provider_avatar?: string | null;
+      } | null;
+
       if (!result || !result.valid) {
         throw new Error("Invalid magic link");
       }
-      
-      // Transform to match expected structure
+
+      // Try to get client info from magic_links.client_id
+      let clientName: string | null = null;
+      let horseName: string | null = null;
+      let horsePhoto: string | null = null;
+      let clientEmail: string | null = null;
+
+      // Get client_id from magic_links
+      const { data: mlData } = await supabase
+        .from("magic_links")
+        .select("client_id")
+        .eq("slug", slug)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (mlData?.client_id) {
+        // Get client profile
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name, first_name, email")
+          .eq("id", mlData.client_id)
+          .maybeSingle();
+
+        if (profile) {
+          clientName = profile.first_name || profile.full_name?.split(" ")[0] || null;
+          clientEmail = profile.email;
+        }
+
+        // Get first horse
+        const { data: horse } = await supabase
+          .from("horses")
+          .select("name, photo_url")
+          .eq("owner_id", mlData.client_id)
+          .is("deleted_at", null)
+          .limit(1)
+          .maybeSingle();
+
+        if (horse) {
+          horseName = horse.name;
+          horsePhoto = horse.photo_url;
+        }
+      }
+
       return {
         id: result.id,
-        provider_id: result.provider_id,
-        profiles: {
-          full_name: result.provider_name,
-          avatar_url: result.provider_avatar,
-        },
+        providerId: result.provider_id,
+        providerName: result.provider_name || "Dein Hufbearbeiter",
+        providerAvatar: result.provider_avatar,
+        clientName,
+        clientEmail,
+        horseName,
+        horsePhoto,
+        clientId: mlData?.client_id,
       };
     },
     enabled: !!slug,
   });
 
-  const submitMutation = useMutation({
-    mutationFn: async (validatedData: z.infer<typeof formSchema>) => {
-      if (!magicLink?.provider_id) throw new Error("No provider");
+  // Pre-fill form when data loads
+  const prefillDone = useState(false);
+  if (linkData && !prefillDone[0]) {
+    if (linkData.clientName && !formData.name) {
+      setFormData(prev => ({
+        ...prev,
+        name: linkData.clientName || "",
+        email: linkData.clientEmail || "",
+      }));
+    }
+    prefillDone[1](true);
+  }
 
-      // Build message with validated and trimmed data
-      const messageContent = [
-        `Pferd: ${validatedData.horse_name}`,
-        validatedData.stable_location ? `Stall: ${validatedData.stable_location}` : null,
-        validatedData.message || null,
-      ].filter(Boolean).join("\n\n");
-
-      // Create lead entry with validated data
-      const { error: leadError } = await supabase
-        .from("leads")
-        .insert({
-          provider_id: magicLink.provider_id,
-          name: validatedData.name,
-          phone: validatedData.phone || null,
-          email: validatedData.email || null,
-          message: messageContent,
-          source: "magic_link",
-          lead_type: "termin",
-          status: "neu",
-        });
-
-      if (leadError) throw leadError;
-
-      // Create contact entry with validated data
-      const { error: contactError } = await supabase
-        .from("contacts")
-        .insert({
-          provider_id: magicLink.provider_id,
-          category: "lead",
-          full_name: validatedData.name,
-          phone: validatedData.phone || null,
-          email: validatedData.email || null,
-          notes: `Pferd: ${validatedData.horse_name}${validatedData.stable_location ? `\nStall: ${validatedData.stable_location}` : ""}`,
-          source: "magic_link",
-        });
-
-      if (contactError) throw contactError;
-
-      // Update usage count atomically
-      await supabase.rpc("increment_magic_link_uses", { link_id: magicLink.id });
-
-      return true;
-    },
-    onSuccess: () => {
-      setSubmitted(true);
-    },
-    onError: (error) => {
-      console.error("Form submission error:", error);
-      toast({
-        title: "Fehler",
-        description: "Deine Anfrage konnte nicht gesendet werden. Bitte versuche es später erneut.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate form data with zod schema
-    const result = formSchema.safeParse(formData);
-    
+  const handleRegister = async () => {
+    const result = registerSchema.safeParse(formData);
     if (!result.success) {
-      const firstError = result.error.errors[0];
       toast({
         title: "Ungültige Eingabe",
-        description: firstError.message,
+        description: result.error.errors[0].message,
         variant: "destructive",
       });
       return;
     }
-    
-    submitMutation.mutate(result.data);
+
+    setIsSubmitting(true);
+    try {
+      // Store invite code for post-login processing
+      if (slug) {
+        sessionStorage.setItem("huf_invite_code", slug);
+      }
+
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: result.data.email,
+        password: result.data.password,
+        options: {
+          data: {
+            full_name: result.data.name,
+            role: "client",
+          },
+        },
+      });
+
+      if (signUpError) {
+        if (signUpError.message.includes("already registered")) {
+          // Try to sign in instead
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: result.data.email,
+            password: result.data.password,
+          });
+
+          if (signInError) {
+            toast({
+              title: "Bereits registriert",
+              description: "Bitte melde dich mit deinem bestehenden Passwort an.",
+              variant: "destructive",
+            });
+            setIsSubmitting(false);
+            return;
+          }
+        } else {
+          throw signUpError;
+        }
+      }
+
+      // Increment usage
+      if (linkData?.id) {
+        await supabase.rpc("increment_magic_link_uses", { link_id: linkData.id });
+      }
+
+      setStep("success");
+
+      // Redirect after short delay
+      setTimeout(() => {
+        navigate("/client-home");
+      }, 2000);
+    } catch (err: any) {
+      console.error("Registration error:", err);
+      toast({
+        title: "Fehler",
+        description: err.message || "Registrierung fehlgeschlagen. Bitte versuche es erneut.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isLoading) {
@@ -154,7 +204,7 @@ const ConnectForm = () => {
     );
   }
 
-  if (error || !magicLink) {
+  if (error || !linkData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="max-w-md w-full">
@@ -169,7 +219,8 @@ const ConnectForm = () => {
     );
   }
 
-  if (submitted) {
+  // Step 3: Success
+  if (step === "success") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="max-w-md w-full">
@@ -177,9 +228,80 @@ const ConnectForm = () => {
             <div className="mx-auto w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
               <CheckCircle className="h-8 w-8 text-green-500" />
             </div>
-            <h2 className="text-xl font-semibold">Anfrage gesendet!</h2>
+            <h2 className="text-xl font-semibold">Willkommen bei HufManager! 🐴</h2>
             <p className="text-muted-foreground">
-              {(magicLink.profiles as any)?.full_name || "Der Hufbearbeiter"} wird sich in Kürze bei dir melden.
+              Du wirst gleich weitergeleitet...
+            </p>
+            <Loader2 className="h-5 w-5 animate-spin mx-auto text-primary" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Step 1: Welcome
+  if (step === "welcome") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="max-w-md w-full overflow-hidden">
+          {/* Horse photo banner */}
+          {linkData.horsePhoto && (
+            <div className="h-40 overflow-hidden">
+              <img
+                src={linkData.horsePhoto}
+                alt={linkData.horseName || "Pferd"}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+
+          <CardContent className="py-8 text-center space-y-6">
+            <div className="space-y-2">
+              <span className="text-4xl">🐴</span>
+              <h1 className="text-2xl font-bold text-foreground">
+                Willkommen bei HufManager
+              </h1>
+              <p className="text-muted-foreground">
+                <strong>{linkData.providerName}</strong> hat dich eingeladen.
+              </p>
+            </div>
+
+            {linkData.horseName && (
+              <div className="rounded-lg border border-border bg-muted/30 p-4">
+                <p className="text-sm text-muted-foreground">Dein Pferd</p>
+                <p className="text-lg font-semibold text-foreground">{linkData.horseName}</p>
+                <p className="text-xs text-muted-foreground mt-1">ist bereits angelegt ✅</p>
+              </div>
+            )}
+
+            <div className="space-y-2 text-left">
+              <p className="text-sm font-medium text-foreground">Das bekommst du:</p>
+              <ul className="text-sm text-muted-foreground space-y-1.5">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
+                  Kommende Termine im Blick
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
+                  Behandlungsberichte einsehen
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
+                  Direkt mit {linkData.providerName.split(" ")[0]} chatten
+                </li>
+              </ul>
+            </div>
+
+            <Button
+              className="w-full min-h-[48px] text-base gap-2"
+              onClick={() => setStep("register")}
+            >
+              Jetzt einrichten
+              <ArrowRight className="h-5 w-5" />
+            </Button>
+
+            <p className="text-xs text-muted-foreground">
+              Kostenlos • Keine App-Installation nötig
             </p>
           </CardContent>
         </Card>
@@ -187,24 +309,26 @@ const ConnectForm = () => {
     );
   }
 
+  // Step 2: Register
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="max-w-lg w-full">
+      <Card className="max-w-md w-full">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">
-            Trag dich bei {(magicLink.profiles as any)?.full_name || "mir"} ein
-          </CardTitle>
+          <CardTitle className="text-xl">Zugangsdaten erstellen</CardTitle>
           <CardDescription>
-            Fülle das Formular aus und du wirst als Interessent hinzugefügt.
+            Nur das Nötigste – in 30 Sekunden fertig
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleRegister();
+            }}
+            className="space-y-4"
+          >
             <div className="space-y-2">
-              <Label htmlFor="name" className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                Dein Name *
-              </Label>
+              <Label htmlFor="name">Dein Name</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -212,89 +336,72 @@ const ConnectForm = () => {
                 placeholder="Max Mustermann"
                 required
                 maxLength={100}
+                autoComplete="name"
+                className="min-h-[44px] text-base"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="phone">Telefon</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="+49 123 456789"
-                  maxLength={30}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">E-Mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="max@example.com"
-                  maxLength={255}
-                />
-              </div>
-            </div>
-
             <div className="space-y-2">
-              <Label htmlFor="horse_name" className="flex items-center gap-2">
-                <Footprints className="h-4 w-4" />
-                Name deines Pferdes *
-              </Label>
+              <Label htmlFor="email">E-Mail</Label>
               <Input
-                id="horse_name"
-                value={formData.horse_name}
-                onChange={(e) => setFormData({ ...formData, horse_name: e.target.value })}
-                placeholder="Blitz"
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="max@example.com"
                 required
-                maxLength={100}
+                maxLength={255}
+                autoComplete="email"
+                className="min-h-[44px] text-base"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="stable" className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                Stallname / Ort
-              </Label>
-              <Input
-                id="stable"
-                value={formData.stable_location}
-                onChange={(e) => setFormData({ ...formData, stable_location: e.target.value })}
-                placeholder="Reiterhof Sonnenschein, Musterstadt"
-                maxLength={200}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="message">Nachricht (optional, max. 1000 Zeichen)</Label>
-              <Textarea
-                id="message"
-                value={formData.message}
-                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                placeholder="z.B. Wann ist der beste Zeitraum für einen Termin?"
-                rows={3}
-                maxLength={1000}
-              />
+              <Label htmlFor="password">Passwort</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="Mindestens 8 Zeichen"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  className="min-h-[44px] text-base pr-12"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
             </div>
 
             <Button
               type="submit"
-              className="w-full"
-              disabled={submitMutation.isPending}
+              className="w-full min-h-[48px] text-base"
+              disabled={isSubmitting}
             >
-              {submitMutation.isPending ? (
+              {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Wird gesendet...
+                  Wird erstellt...
                 </>
               ) : (
-                "Anfrage absenden"
+                "Zugangsdaten erstellen"
               )}
             </Button>
+
+            <p className="text-xs text-center text-muted-foreground">
+              Mit der Registrierung akzeptierst du die{" "}
+              <a href="/datenschutz" className="underline" target="_blank">
+                Datenschutzerklärung
+              </a>
+              .
+            </p>
           </form>
         </CardContent>
       </Card>
