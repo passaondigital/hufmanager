@@ -10,6 +10,9 @@ import { LandingListItems } from "@/components/landing/sections/LandingListItems
 import { LandingShopGrid } from "@/components/landing/sections/LandingShopGrid";
 import { LandingBeforeAfter } from "@/components/landing/sections/LandingBeforeAfter";
 import { LandingContact } from "@/components/landing/sections/LandingContact";
+import { LandingFAQ } from "@/components/landing/sections/LandingFAQ";
+import { LandingServiceArea } from "@/components/landing/sections/LandingServiceArea";
+import { LandingQualifications } from "@/components/landing/sections/LandingQualifications";
 import { GallerySection } from "@/components/landing/GallerySection";
 import { ReviewsSection } from "@/components/landing/ReviewsSection";
 import { LegalFooter } from "@/components/landing/LegalFooter";
@@ -27,8 +30,10 @@ import { toast } from "@/hooks/use-toast";
 import DOMPurify from "dompurify";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 type IntakeStatus = 'open' | 'waitlist' | 'closed';
+type LandingTemplate = 'classic' | 'modern' | 'minimal';
 
 interface BusinessSettings {
   id: string;
@@ -59,6 +64,11 @@ interface BusinessSettings {
   whatsapp_number: string | null;
   exit_intent_enabled: boolean | null;
   website_active_pages: string[] | null;
+  landing_template: LandingTemplate | null;
+  service_area_text: string | null;
+  qualifications: { title: string; year: string; institution?: string }[] | null;
+  google_analytics_id: string | null;
+  facebook_pixel_id: string | null;
 }
 
 interface Service {
@@ -101,7 +111,13 @@ interface BlogPost {
   published_at: string;
 }
 
-const DEFAULT_SECTION_ORDER = ["hero", "about", "services", "highlights", "list_items", "shop_grid", "before_after", "gallery", "reviews", "contact"];
+interface FAQ {
+  id: string;
+  question: string;
+  answer: string;
+}
+
+const DEFAULT_SECTION_ORDER = ["hero", "about", "services", "highlights", "list_items", "shop_grid", "before_after", "gallery", "faq", "service_area", "qualifications", "reviews", "contact"];
 
 const ProviderLanding = () => {
   const { slug, page } = useParams<{ slug: string; page?: string }>();
@@ -113,6 +129,7 @@ const ProviderLanding = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [profileIncomplete, setProfileIncomplete] = useState(false);
   const [inquiryModal, setInquiryModal] = useState<{ open: boolean; serviceName: string }>({ open: false, serviceName: "" });
@@ -142,13 +159,14 @@ const ProviderLanding = () => {
         setSettings(typedBusinessData);
 
         // Fetch all data in parallel
-        const [offersRes, servicesRes, feedbackRes, reviewsRes, blogRes, hoofRes] = await Promise.all([
+        const [offersRes, servicesRes, feedbackRes, reviewsRes, blogRes, hoofRes, faqsRes] = await Promise.all([
           supabase.from('offers').select('id, title, description, price, price_type, features, is_active, image_url, offer_type, display_mode, media_url, external_link, billing_type').eq('provider_id', typedBusinessData.user_id).eq('is_active', true).neq('display_mode', 'hidden').order('sort_order').limit(20),
           supabase.from('services').select('id, name, description, base_price, duration, booking_action').eq('provider_id', typedBusinessData.user_id).eq('is_active', true).order('name').limit(10),
           supabase.rpc('get_public_feedbacks', { provider_id_input: typedBusinessData.user_id }),
           supabase.rpc('get_public_reviews', { provider_id_input: typedBusinessData.user_id }),
           supabase.from('provider_blog_posts').select('id, title, slug, excerpt, content, category, featured_image_url, published_at').eq('owner_id', typedBusinessData.user_id).eq('is_published', true).order('published_at', { ascending: false }).limit(20),
           supabase.from('hoof_photos').select('id, photo_url, hoof_position, notes, horse_id, horses!inner(name, owner_id)').order('created_at', { ascending: false }).limit(20),
+          supabase.rpc('get_public_faqs', { provider_id_input: typedBusinessData.user_id }),
         ]);
 
         if (offersRes.data) setOffers(offersRes.data);
@@ -159,6 +177,7 @@ const ProviderLanding = () => {
         if (feedbackRes.data) setFeedbacks(feedbackRes.data);
         if (reviewsRes.data) setReviews(reviewsRes.data as Review[]);
         if (blogRes.data) setBlogPosts(blogRes.data as BlogPost[]);
+        if (faqsRes.data) setFaqs(faqsRes.data as FAQ[]);
 
         if (hoofRes.data && hoofRes.data.length >= 2) {
           const pairs: GalleryImage[] = [];
@@ -174,6 +193,15 @@ const ProviderLanding = () => {
           }
           setGalleryImages(pairs.slice(0, 6));
         }
+
+        // Track page view (anonymous, fire-and-forget)
+        supabase.from('provider_page_views').insert({
+          provider_id: typedBusinessData.user_id,
+          page: window.location.pathname,
+          referrer: document.referrer || null,
+          user_agent: navigator.userAgent || null,
+        }).then(() => {});
+
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -183,16 +211,17 @@ const ProviderLanding = () => {
     fetchProviderData();
   }, [slug]);
 
-  const primaryColor = settings?.primary_color || '#F47B20';
+  const primaryColor = settings?.primary_color || '#F5970A';
   const intakeStatus: IntakeStatus = (settings?.client_intake_status as IntakeStatus) || 'open';
   const activePages: string[] = (settings?.website_active_pages as string[]) || ["home", "contact", "impressum", "datenschutz"];
+  const template: LandingTemplate = (settings?.landing_template as LandingTemplate) || 'classic';
   const sectionOrder = useMemo(() => {
     const order = settings?.section_order;
     if (Array.isArray(order) && order.length > 0) return order;
     return DEFAULT_SECTION_ORDER;
   }, [settings?.section_order]);
   const providerName = settings?.owner_name || settings?.business_name || 'Hufbearbeiter';
-  const isMultiPage = activePages.length > 4; // More than just home+contact+legal
+  const isMultiPage = activePages.length > 4;
 
   const handleServiceRequest = (serviceName: string) => setInquiryModal({ open: true, serviceName });
   const handleServiceBook = (serviceName: string) => {
@@ -200,6 +229,30 @@ const ProviderLanding = () => {
     toast({ title: `Buchung für: ${serviceName}`, description: "Bitte füllen Sie das Kontaktformular aus." });
   };
   const scrollToContact = () => document.getElementById('kontakt')?.scrollIntoView({ behavior: 'smooth' });
+
+  // Template-specific CSS classes
+  const templateClasses = useMemo(() => {
+    switch (template) {
+      case 'modern':
+        return {
+          heroExtra: 'min-h-screen',
+          sectionSpacing: 'py-20',
+          reviewsLayout: 'marquee' as const,
+        };
+      case 'minimal':
+        return {
+          heroExtra: '',
+          sectionSpacing: 'py-12',
+          reviewsLayout: 'grid' as const,
+        };
+      default: // classic
+        return {
+          heroExtra: '',
+          sectionSpacing: 'py-16',
+          reviewsLayout: (settings?.reviews_layout || 'grid') as any,
+        };
+    }
+  }, [template, settings?.reviews_layout]);
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -239,14 +292,12 @@ const ProviderLanding = () => {
       case "kontakt": return `Kontakt & Termin | ${name}${city ? ` ${city}` : ""}`;
       case "blog": return `Blog | ${name} — Fachwissen rund ums Pferd`;
       case "referenzen": return `Bewertungen | ${name} Hufpflege`;
-      default: return undefined; // Let LandingSEOHead handle default
+      default: return undefined;
     }
   };
 
   const seoTitle = getSeoTitle();
-  if (seoTitle) {
-    document.title = seoTitle;
-  }
+  if (seoTitle) document.title = seoTitle;
 
   // Render sub-pages
   const renderSubPage = () => {
@@ -263,7 +314,6 @@ const ProviderLanding = () => {
             <WebsiteTrustBadges primaryColor={primaryColor} />
           </div>
         );
-
       case "leistungen":
         return (
           <div className="max-w-5xl mx-auto px-4 py-16">
@@ -275,7 +325,6 @@ const ProviderLanding = () => {
             )}
           </div>
         );
-
       case "galerie":
         return (
           <div className="max-w-5xl mx-auto px-4 py-16">
@@ -289,7 +338,6 @@ const ProviderLanding = () => {
             )}
           </div>
         );
-
       case "kontakt":
         return (
           <div className="max-w-3xl mx-auto px-4 py-16">
@@ -302,7 +350,6 @@ const ProviderLanding = () => {
             />
           </div>
         );
-
       case "referenzen":
         return (
           <div className="max-w-5xl mx-auto px-4 py-16">
@@ -314,10 +361,8 @@ const ProviderLanding = () => {
             )}
           </div>
         );
-
       case "blog":
         return <BlogPage blogPosts={blogPosts} slug={slug!} primaryColor={primaryColor} />;
-
       case "impressum":
         return (
           <div className="max-w-3xl mx-auto px-4 py-16">
@@ -329,7 +374,6 @@ const ProviderLanding = () => {
             )}
           </div>
         );
-
       case "datenschutz":
         return (
           <div className="max-w-3xl mx-auto px-4 py-16">
@@ -341,13 +385,13 @@ const ProviderLanding = () => {
             )}
           </div>
         );
-
       default:
         return null;
     }
   };
 
   // Build home page sections
+  const qualifications = settings.qualifications as any;
   const sectionMap: Record<string, React.ReactNode> = {
     hero: <LandingHero key="hero" settings={settings} primaryColor={primaryColor} intakeStatus={intakeStatus} onScrollToContact={scrollToContact} />,
     about: settings.about_text ? <LandingAbout key="about" aboutText={settings.about_text} /> : null,
@@ -357,17 +401,19 @@ const ProviderLanding = () => {
     shop_grid: offers.filter(o => o.display_mode === 'shop_grid').length > 0 ? <LandingShopGrid key="shop_grid" offers={offers.filter(o => o.display_mode === 'shop_grid')} primaryColor={primaryColor} /> : null,
     before_after: galleryImages.length > 0 ? <LandingBeforeAfter key="before_after" galleryImages={galleryImages} primaryColor={primaryColor} /> : null,
     gallery: settings.gallery_images && settings.gallery_images.length > 0 ? <GallerySection key="gallery" images={settings.gallery_images} primaryColor={primaryColor} /> : null,
-    reviews: reviews.length > 0 ? <ReviewsSection key="reviews" reviews={reviews} primaryColor={primaryColor} layout={settings.reviews_layout || 'grid'} /> : feedbacks.length > 0 ? <ReviewsSection key="reviews-legacy" reviews={feedbacks.map(f => ({ id: f.id, reviewer_name: f.customer_name, rating: f.rating, text: f.text, created_at: '' }))} primaryColor={primaryColor} layout="grid" /> : null,
+    faq: faqs.length > 0 ? <LandingFAQ key="faq" faqs={faqs} primaryColor={primaryColor} /> : null,
+    service_area: settings.service_area_text ? <LandingServiceArea key="service_area" serviceAreaText={settings.service_area_text} primaryColor={primaryColor} /> : null,
+    qualifications: Array.isArray(qualifications) && qualifications.length > 0 ? <LandingQualifications key="qualifications" qualifications={qualifications} primaryColor={primaryColor} /> : null,
+    reviews: reviews.length > 0 ? <ReviewsSection key="reviews" reviews={reviews} primaryColor={primaryColor} layout={templateClasses.reviewsLayout} /> : feedbacks.length > 0 ? <ReviewsSection key="reviews-legacy" reviews={feedbacks.map(f => ({ id: f.id, reviewer_name: f.customer_name, rating: f.rating, text: f.text, created_at: '' }))} primaryColor={primaryColor} layout="grid" /> : null,
     contact: intakeStatus !== 'closed' ? <LandingContact key="contact" providerId={settings.user_id} providerName={providerName} primaryColor={primaryColor} /> : null,
   };
 
   const isSubPage = page && page !== "";
 
   return (
-    <div className="min-h-screen bg-background">
-      <LandingSEOHead settings={settings} />
+    <div className={cn("min-h-screen bg-background", template === 'minimal' && "bg-white")}>
+      <LandingSEOHead settings={settings} currentPage={page} />
 
-      {/* Multi-page navbar */}
       {isMultiPage && (
         <WebsiteNavbar
           slug={slug!}
@@ -379,24 +425,20 @@ const ProviderLanding = () => {
         />
       )}
 
-      {/* Intake Status */}
       {!isSubPage && (
         <div className="fixed top-4 right-4 z-50">
           <IntakeStatusBadge status={intakeStatus} />
         </div>
       )}
 
-      {/* Page content */}
       {isSubPage ? (
         <main className="min-h-[60vh]">
           {renderSubPage()}
         </main>
       ) : (
         <>
-          {/* Trust badges on home */}
           {sectionOrder.map((sectionKey) => sectionMap[sectionKey] || null)}
-          
-          {/* Blog preview on home if blog active */}
+
           {activePages.includes("blog") && blogPosts.length > 0 && (
             <section className="py-16 px-4 bg-muted/30">
               <div className="max-w-5xl mx-auto">
@@ -423,7 +465,6 @@ const ProviderLanding = () => {
         </>
       )}
 
-      {/* Footer */}
       <LegalFooter
         businessName={settings.business_name || providerName}
         impressumText={settings.impressum_text}
@@ -435,20 +476,16 @@ const ProviderLanding = () => {
         socialWebsite={settings.social_website}
       />
 
-      {/* Lead Chat Bot */}
       <LeadChatBot providerId={settings.user_id} providerName={providerName} providerLogo={settings.logo_url} primaryColor={primaryColor} />
 
-      {/* WhatsApp Button */}
       {settings.whatsapp_enabled && settings.whatsapp_number && (
         <WhatsAppButton phoneNumber={settings.whatsapp_number} providerName={providerName} />
       )}
 
-      {/* Exit Intent Popup */}
       {settings.exit_intent_enabled && (
         <ExitIntentPopup providerId={settings.user_id} providerName={providerName} primaryColor={primaryColor} />
       )}
 
-      {/* Service Inquiry Modal */}
       <ServiceInquiryModal open={inquiryModal.open} onOpenChange={(open) => setInquiryModal({ ...inquiryModal, open })} serviceName={inquiryModal.serviceName} providerId={settings.user_id} primaryColor={primaryColor} />
 
       <CookieConsentBanner primaryColor={primaryColor} />
@@ -464,8 +501,6 @@ function BlogPage({ blogPosts, slug, primaryColor }: { blogPosts: BlogPost[]; sl
   if (postSlug) {
     const post = blogPosts.find((p) => p.slug === postSlug);
     if (!post) return <div className="max-w-3xl mx-auto px-4 py-16"><p className="text-muted-foreground">Artikel nicht gefunden.</p></div>;
-    
-    // Set SEO for individual post
     document.title = post.title;
 
     return (
@@ -474,7 +509,7 @@ function BlogPage({ blogPosts, slug, primaryColor }: { blogPosts: BlogPost[]; sl
           <ArrowLeft className="h-4 w-4" /> Alle Artikel
         </Link>
         {post.featured_image_url && (
-          <img src={post.featured_image_url} alt={post.title} className="w-full aspect-video object-cover rounded-lg mb-6" />
+          <img src={post.featured_image_url} alt={post.title} className="w-full aspect-video object-cover rounded-lg mb-6" loading="lazy" />
         )}
         <p className="text-sm text-muted-foreground mb-2">
           {post.published_at && format(new Date(post.published_at), "dd. MMMM yyyy", { locale: de })}
