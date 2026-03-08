@@ -386,7 +386,7 @@ const ConnectForm = () => {
             <Button
               type="submit"
               className="w-full min-h-[48px] text-base"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !dsgvoConsent}
             >
               {isSubmitting ? (
                 <>
@@ -398,16 +398,26 @@ const ConnectForm = () => {
               )}
             </Button>
 
-            <p className="text-xs text-center text-muted-foreground">
-              Mit der Registrierung akzeptierst du die{" "}
-              <a href="/datenschutz" className="underline" target="_blank">
-                Datenschutzerklärung
-              </a>
-              .
-            </p>
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="connect-dsgvo"
+                checked={dsgvoConsent}
+                onCheckedChange={(v) => setDsgvoConsent(v === true)}
+                className="mt-0.5"
+              />
+              <Label htmlFor="connect-dsgvo" className="text-xs leading-relaxed cursor-pointer text-muted-foreground">
+                Ich stimme zu, dass meine Daten von{" "}
+                <strong>{linkData?.providerName}</strong>{" "}
+                über HufManager verarbeitet werden.{" "}
+                <a href="/datenschutz" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                  Datenschutzerklärung
+                </a> *
+              </Label>
+            </div>
           </form>
         </CardContent>
       </Card>
+      <CookieConsentBanner />
     </div>
   );
 };

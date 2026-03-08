@@ -157,6 +157,7 @@ export function LeadChatBot({ providerId, providerName, providerLogo, primaryCol
           phone: inputValue,
           source: 'chatbot',
           status: 'neu',
+          dsgvo_consent: dsgvoConsent,
         });
 
       if (error) throw error;
