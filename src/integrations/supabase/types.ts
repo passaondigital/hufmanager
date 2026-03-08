@@ -1454,6 +1454,7 @@ export type Database = {
           currency: string | null
           custom_domain: string | null
           default_vat_rate: number | null
+          domain_connection_type: string | null
           email: string | null
           exit_intent_enabled: boolean | null
           facebook_pixel_id: string | null
@@ -1494,6 +1495,7 @@ export type Database = {
           social_website: string | null
           stripe_public_key: string | null
           subdomain: string | null
+          subdomain_active: boolean | null
           swiss_rounding: boolean | null
           tax_country: string | null
           tax_number: string | null
@@ -1527,6 +1529,7 @@ export type Database = {
           currency?: string | null
           custom_domain?: string | null
           default_vat_rate?: number | null
+          domain_connection_type?: string | null
           email?: string | null
           exit_intent_enabled?: boolean | null
           facebook_pixel_id?: string | null
@@ -1567,6 +1570,7 @@ export type Database = {
           social_website?: string | null
           stripe_public_key?: string | null
           subdomain?: string | null
+          subdomain_active?: boolean | null
           swiss_rounding?: boolean | null
           tax_country?: string | null
           tax_number?: string | null
@@ -1600,6 +1604,7 @@ export type Database = {
           currency?: string | null
           custom_domain?: string | null
           default_vat_rate?: number | null
+          domain_connection_type?: string | null
           email?: string | null
           exit_intent_enabled?: boolean | null
           facebook_pixel_id?: string | null
@@ -1640,6 +1645,7 @@ export type Database = {
           social_website?: string | null
           stripe_public_key?: string | null
           subdomain?: string | null
+          subdomain_active?: boolean | null
           swiss_rounding?: boolean | null
           tax_country?: string | null
           tax_number?: string | null
@@ -2077,8 +2083,11 @@ export type Database = {
           auto_renew: boolean | null
           created_at: string | null
           dns_records: Json | null
+          dns_verified: boolean | null
+          dns_verified_at: string | null
           domain_name: string
           expires_at: string | null
+          hosting_plan: string | null
           id: string
           nameservers: Json | null
           owner_id: string
@@ -2087,6 +2096,8 @@ export type Database = {
           registered_at: string | null
           registrar_reference: string | null
           renewal_price_cents: number | null
+          ssl_expires_at: string | null
+          ssl_status: string | null
           status: string
           tld: string
           updated_at: string | null
@@ -2095,8 +2106,11 @@ export type Database = {
           auto_renew?: boolean | null
           created_at?: string | null
           dns_records?: Json | null
+          dns_verified?: boolean | null
+          dns_verified_at?: string | null
           domain_name: string
           expires_at?: string | null
+          hosting_plan?: string | null
           id?: string
           nameservers?: Json | null
           owner_id: string
@@ -2105,6 +2119,8 @@ export type Database = {
           registered_at?: string | null
           registrar_reference?: string | null
           renewal_price_cents?: number | null
+          ssl_expires_at?: string | null
+          ssl_status?: string | null
           status?: string
           tld: string
           updated_at?: string | null
@@ -2113,8 +2129,11 @@ export type Database = {
           auto_renew?: boolean | null
           created_at?: string | null
           dns_records?: Json | null
+          dns_verified?: boolean | null
+          dns_verified_at?: string | null
           domain_name?: string
           expires_at?: string | null
+          hosting_plan?: string | null
           id?: string
           nameservers?: Json | null
           owner_id?: string
@@ -2123,6 +2142,8 @@ export type Database = {
           registered_at?: string | null
           registrar_reference?: string | null
           renewal_price_cents?: number | null
+          ssl_expires_at?: string | null
+          ssl_status?: string | null
           status?: string
           tld?: string
           updated_at?: string | null

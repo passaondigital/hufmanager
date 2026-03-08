@@ -103,7 +103,7 @@ export default function WidgetPage() {
           ? supabase.rpc("get_public_reviews", { provider_id_input: typed.user_id }).then(r => r)
           : Promise.resolve({ data: [] as any[], error: null });
 
-        const [svcRes, revRes] = await Promise.all(promises);
+        const [svcRes, revRes] = await Promise.all([svcPromise, revPromise]);
         if (svcRes.data) setServices(svcRes.data.filter((s: any) => !s.name.toUpperCase().includes("BALANCE")).slice(0, 6));
         if (revRes.data) setReviews(revRes.data);
       } catch (err: any) {
