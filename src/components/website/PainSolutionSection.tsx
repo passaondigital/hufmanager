@@ -14,7 +14,7 @@ const pairs = [
     solution: "Digitale Pferdeakte: Fotos, Befunde, Huf-Verlauf – alles an einem Ort.",
   },
   {
-    pain: "Kunden fragen ständig: „Wann kommst du?" „Was hat das Pferd?" „Schick nochmal die Rechnung!"",
+    pain: "Kunden fragen ständig: Wann kommst du? Was hat das Pferd? Schick nochmal die Rechnung!",
     solution: "Kunden-App: Dein Kunde sieht Termine, Befunde und Rechnungen selbst – kostenlos.",
   },
 ];
