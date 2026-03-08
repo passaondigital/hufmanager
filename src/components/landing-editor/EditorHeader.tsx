@@ -47,6 +47,7 @@ export const EditorHeader = ({ editor }: EditorHeaderProps) => {
           )}
           Speichern
         </Button>
+        <SharePreviewSheet />
         {editor.websiteUrl && (
           <Button variant="outline" size="sm" asChild className="gap-1">
             <a href={editor.websiteUrl} target="_blank" rel="noopener noreferrer">

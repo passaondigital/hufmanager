@@ -78,6 +78,9 @@ export const StatsPanel = ({ editor }: StatsPanelProps) => {
           💡 Tipp: Teile deinen Link in Social Media und WhatsApp-Gruppen, um mehr Besucher zu bekommen.
         </p>
       </div>
+
+      {/* Preview Feedback Section */}
+      <PreviewFeedbackPanel />
     </div>
   );
 };
