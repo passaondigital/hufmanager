@@ -104,7 +104,6 @@ export function FirstStepsChecklist() {
 
       setChecklistState({
         businessSetup: !!businessData?.business_name,
-        impressumSetup: !!(businessData?.impressum_text && businessData.impressum_text.trim().length > 0),
         firstService: (servicesData?.length ?? 0) > 0,
         firstClient: (clientsData?.length ?? 0) > 0,
         firstHorse: (horsesData?.length ?? 0) > 0,
