@@ -141,6 +141,7 @@ const ProviderLanding = () => {
   const [error, setError] = useState<string | null>(null);
   const [profileIncomplete, setProfileIncomplete] = useState(false);
   const [inquiryModal, setInquiryModal] = useState<{ open: boolean; serviceName: string }>({ open: false, serviceName: "" });
+  const [bookingOpen, setBookingOpen] = useState(false);
 
   useEffect(() => {
     const fetchProviderData = async () => {
