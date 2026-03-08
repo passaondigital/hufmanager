@@ -41,7 +41,6 @@ export function FirstStepsChecklist() {
   const navigate = useNavigate();
   const [checklistState, setChecklistState] = useState({
     businessSetup: false,
-    impressumSetup: false,
     firstService: false,
     firstClient: false,
     firstHorse: false,
