@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import SignatureCanvas from "react-signature-canvas";
+import DOMPurify from "dompurify";
 
 interface ContractSignSheetProps {
   open: boolean;
