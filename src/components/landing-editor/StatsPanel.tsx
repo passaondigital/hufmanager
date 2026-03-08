@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { PreviewFeedbackPanel } from "./PreviewFeedbackPanel";
 import { formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
 
@@ -77,6 +78,9 @@ export const StatsPanel = ({ editor }: StatsPanelProps) => {
           💡 Tipp: Teile deinen Link in Social Media und WhatsApp-Gruppen, um mehr Besucher zu bekommen.
         </p>
       </div>
+
+      {/* Preview Feedback Section */}
+      <PreviewFeedbackPanel />
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { SharePreviewSheet } from "./SharePreviewSheet";
 
 interface EditorHeaderProps {
   editor: any;
@@ -46,6 +47,7 @@ export const EditorHeader = ({ editor }: EditorHeaderProps) => {
           )}
           Speichern
         </Button>
+        <SharePreviewSheet />
         {editor.websiteUrl && (
           <Button variant="outline" size="sm" asChild className="gap-1">
             <a href={editor.websiteUrl} target="_blank" rel="noopener noreferrer">

@@ -127,6 +127,7 @@ const PartnerInvoices = lazy(() => import("@/pages/partner/PartnerInvoices"));
 const PartnerSettings = lazy(() => import("@/pages/partner/PartnerSettings"));
 const PartnerConnect = lazy(() => import("@/pages/partner/PartnerConnect"));
 const PartnerPublicProfile = lazy(() => import("@/pages/partner/PartnerPublicProfile"));
+const PreviewLanding = lazy(() => import("@/pages/PreviewLanding"));
 
 // Layouts (lazy)
 const EmployeeAppLayout = lazy(() => import("@/components/employee/EmployeeAppLayout").then(m => ({ default: m.EmployeeAppLayout })));
@@ -277,6 +278,9 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/p/:slug" element={<ProviderLanding />} />
             <Route path="/p/:slug/:page" element={<ProviderLanding />} />
             
+            {/* Preview Links (öffentlich, kein Auth) */}
+            <Route path="/preview/:token" element={<PreviewLanding />} />
+
             {/* Einladungs-Links für Kunden */}
             <Route path="/connect/:slug" element={<ConnectForm />} />
             

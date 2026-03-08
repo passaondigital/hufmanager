@@ -105,6 +105,14 @@ export const PLAN_FEATURE_MAP: Record<string, Record<string, string>> = {
   },
 };
 
+/** Preview link limits per plan */
+export const PREVIEW_LINK_LIMITS: Record<string, { maxLinks: number; maxDays: number; feedbackEnabled: boolean }> = {
+  starter: { maxLinks: 1, maxDays: 7, feedbackEnabled: false },
+  pro: { maxLinks: 5, maxDays: 30, feedbackEnabled: true },
+  duo: { maxLinks: 10, maxDays: 30, feedbackEnabled: true },
+  team: { maxLinks: 999, maxDays: 999, feedbackEnabled: true },
+};
+
 /**
  * Normalize a payment amount to monthly MRR.
  * If the period spans > 60 days, divide by the number of months.
