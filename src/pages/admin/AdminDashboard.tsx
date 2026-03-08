@@ -23,6 +23,12 @@ import { AdminConnections } from "@/components/admin/AdminConnections";
 import { AdminHealthDashboard } from "@/components/admin/AdminHealthDashboard";
 import { AdminContractManager } from "@/components/admin/AdminContractManager";
 import { AdminInvoices } from "@/components/admin/AdminInvoices";
+import { AdminDomainPanel } from "@/components/admin/AdminDomainPanel";
+import { AdminRevenue } from "@/components/admin/AdminRevenue";
+import { AdminConnections } from "@/components/admin/AdminConnections";
+import { AdminHealthDashboard } from "@/components/admin/AdminHealthDashboard";
+import { AdminContractManager } from "@/components/admin/AdminContractManager";
+import { AdminInvoices } from "@/components/admin/AdminInvoices";
 import { HeartPulse, FileText } from "lucide-react";
 
 type AdminView = "users" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "invoices" | "contracts" | "connections" | "domains" | "self-healing";
