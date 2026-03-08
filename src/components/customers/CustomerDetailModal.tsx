@@ -72,6 +72,7 @@ import { CustomerLocationMap, CustomerLocationPlaceholder } from "@/components/c
 import { CustomerQuickActions } from "@/components/customers/CustomerQuickActions";
 import { CustomerHorseCards } from "@/components/customers/CustomerHorseCards";
 import { CustomerGalleryPreview } from "@/components/customers/CustomerGalleryPreview";
+import { GhostProfileBanner, InviteClientButton } from "@/components/customers/InviteClientButton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
