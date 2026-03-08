@@ -36,10 +36,10 @@ const WebsiteHome = () => {
   useGA4();
 
   useEffect(() => {
-    document.title = "HufManager – Schluss mit Zetteln und WhatsApp-Chaos | App für mobile Pferdeprofis";
+    document.title = "HufManager – Software für Hufpflegeprofis";
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
-      metaDesc.setAttribute("content", "HufManager ist die All-in-One App für Hufbearbeiter, Osteopathen & mobile Pferdeprofis. Termine, Pferde, Rechnungen, Navigation – alles in einer App. 14 Tage kostenlos testen.");
+      metaDesc.setAttribute("content", "Die Praxissoftware für Barhufpfleger & Hufschmiede. Termine, Befunde, Rechnungen, Website – alles in einem. Jetzt 14 Tage kostenlos.");
     }
     let metaKeywords = document.querySelector('meta[name="keywords"]');
     if (!metaKeywords) {
@@ -48,6 +48,39 @@ const WebsiteHome = () => {
       document.head.appendChild(metaKeywords);
     }
     metaKeywords.setAttribute("content", "Hufbearbeiter App, Pferdeosteopath App, Pferdephysiotherapeut Software, Equine Dentist Tool, mobile Pferdeprofis, digitales Fahrtenbuch Pferd, Terminplanung Pferdeprofis, Hufpflege Software, Tourenplanung Pferde, Reitlehrer Software, Sattler App");
+
+    // Schema.org JSON-LD
+    const existingLd = document.querySelector('script[data-huf-schema]');
+    if (!existingLd) {
+      const ldScript = document.createElement("script");
+      ldScript.type = "application/ld+json";
+      ldScript.setAttribute("data-huf-schema", "true");
+      ldScript.textContent = JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "HufManager",
+        "description": "Die Praxissoftware für Hufpflegeprofis",
+        "url": "https://hufmanager.de",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web, iOS, Android",
+        "offers": {
+          "@type": "AggregateOffer",
+          "lowPrice": "9.90",
+          "highPrice": "79.00",
+          "priceCurrency": "EUR"
+        },
+        "author": {
+          "@type": "Person",
+          "name": "Pascal Schmid"
+        }
+      });
+      document.head.appendChild(ldScript);
+    }
+
+    return () => {
+      const ldScript = document.querySelector('script[data-huf-schema]');
+      if (ldScript) ldScript.remove();
+    };
   }, []);
 
   return (
