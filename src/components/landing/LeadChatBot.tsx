@@ -294,10 +294,16 @@ export function LeadChatBot({ providerId, providerName, providerLogo, primaryCol
                       <div className="flex flex-wrap gap-2">
                         {msg.buttons?.map((btn) => (
                           <Button
-                            key={btn.id}
+                            key={btn.id + btn.label}
                             variant="outline"
                             size="sm"
-                            onClick={() => handleTypeSelect(btn.id)}
+                            onClick={() => {
+                              if (step === 'consent') {
+                                handleConsentResponse(btn.label.includes('Ja'));
+                              } else {
+                                handleTypeSelect(btn.id);
+                              }
+                            }}
                             className="gap-1.5"
                             style={{ 
                               borderColor: primaryColor,
