@@ -4,11 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle, Loader2, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { z } from "zod";
+import { CookieConsentBanner } from "@/components/landing/CookieConsentBanner";
 
 const registerSchema = z.object({
   name: z.string().trim().min(2, "Name muss mindestens 2 Zeichen haben").max(100),
