@@ -15,7 +15,7 @@ import { WebsiteSEOSettings } from "./WebsiteSEOSettings";
 import { WebsiteLeadSettings } from "./WebsiteLeadSettings";
 import { WebsiteBlogManager } from "./WebsiteBlogManager";
 import { WebsiteOnboarding } from "./WebsiteOnboarding";
-import { DomainWaitlistCard } from "./DomainWaitlistCard";
+
 import { TemplateSelector } from "@/components/landing/TemplateSelector";
 import { FAQEditor } from "@/components/landing/FAQEditor";
 import { ServiceAreaQualificationsEditor } from "@/components/landing/ServiceAreaQualificationsEditor";
