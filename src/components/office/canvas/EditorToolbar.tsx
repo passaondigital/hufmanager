@@ -42,7 +42,7 @@ interface EditorToolbarProps {
   saving?: boolean;
   title: string;
   onTitleChange: (t: string) => void;
-  status: "draft" | "completed";
+  status: "draft" | "completed" | "archived";
   onToggleStatus: () => void;
   hasUnsaved?: boolean;
   onToggleBranding?: () => void;
