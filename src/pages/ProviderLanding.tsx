@@ -499,6 +499,24 @@ const ProviderLanding = () => {
 
       <ServiceInquiryModal open={inquiryModal.open} onOpenChange={(open) => setInquiryModal({ ...inquiryModal, open })} serviceName={inquiryModal.serviceName} providerId={settings.user_id} primaryColor={primaryColor} />
 
+      {services.length > 0 && (
+        <BookingSheet
+          open={bookingOpen}
+          onOpenChange={setBookingOpen}
+          services={services}
+          providerId={settings.user_id}
+          providerName={providerName}
+          primaryColor={primaryColor}
+        />
+      )}
+
+      <StickyMobileCTA
+        primaryColor={primaryColor}
+        onBooking={services.length > 0 ? () => setBookingOpen(true) : scrollToContact}
+        whatsappNumber={settings.whatsapp_enabled ? settings.whatsapp_number : null}
+        providerName={providerName}
+      />
+
       <CookieConsentBanner primaryColor={primaryColor} />
     </div>
   );
