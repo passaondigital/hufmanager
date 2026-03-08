@@ -259,6 +259,9 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             {/* Domain-basierte Weiche: www.hufmanager.de → LP, app.hufmanager.de → Dashboard */}
             <Route path="/" element={<Index />} />
             
+            {/* Widget Embeds (öffentlich, kein Auth) */}
+            <Route path="/widget/:slug/:type" element={<WidgetPage />} />
+            
             {/* Provider Website (Multi-Page) */}
             <Route path="/p/:slug" element={<ProviderLanding />} />
             <Route path="/p/:slug/:page" element={<ProviderLanding />} />

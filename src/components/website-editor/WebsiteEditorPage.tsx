@@ -260,6 +260,14 @@ export const WebsiteEditorPage = () => {
           <WebsiteSEOSettings settings={settings} />
         </TabsContent>
 
+        <TabsContent value="embed" className="mt-6">
+          <WidgetGeneratorTab
+            subdomain={subdomain || ""}
+            businessName={settings?.business_name || settings?.owner_name || "Mein Betrieb"}
+            primaryColor={settings?.primary_color || "#F5970A"}
+          />
+        </TabsContent>
+
         <TabsContent value="settings" className="mt-6 space-y-4">
           <WebsiteExtrasSettings settings={settings} />
         </TabsContent>
