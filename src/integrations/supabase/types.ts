@@ -6437,42 +6437,60 @@ export type Database = {
         Row: {
           blocks: Json
           branding: Json | null
+          color_tag: string | null
           contact_id: string | null
           created_at: string
           horse_id: string | null
+          horse_name: string | null
           id: string
+          is_favorite: boolean | null
+          last_edited_at: string | null
+          pdf_generated_at: string | null
           pdf_url: string | null
           provider_id: string
           status: string
           template_id: string | null
+          template_type: string | null
           title: string
           updated_at: string
         }
         Insert: {
           blocks?: Json
           branding?: Json | null
+          color_tag?: string | null
           contact_id?: string | null
           created_at?: string
           horse_id?: string | null
+          horse_name?: string | null
           id?: string
+          is_favorite?: boolean | null
+          last_edited_at?: string | null
+          pdf_generated_at?: string | null
           pdf_url?: string | null
           provider_id: string
           status?: string
           template_id?: string | null
+          template_type?: string | null
           title: string
           updated_at?: string
         }
         Update: {
           blocks?: Json
           branding?: Json | null
+          color_tag?: string | null
           contact_id?: string | null
           created_at?: string
           horse_id?: string | null
+          horse_name?: string | null
           id?: string
+          is_favorite?: boolean | null
+          last_edited_at?: string | null
+          pdf_generated_at?: string | null
           pdf_url?: string | null
           provider_id?: string
           status?: string
           template_id?: string | null
+          template_type?: string | null
           title?: string
           updated_at?: string
         }
@@ -6523,43 +6541,52 @@ export type Database = {
       }
       office_templates: {
         Row: {
+          added_at: string | null
           blocks: Json
           branding: Json | null
           category: string
           created_at: string
           description: string | null
           id: string
+          is_featured: boolean | null
           is_preset: boolean
           name: string
           provider_id: string
           sort_order: number | null
           updated_at: string
+          use_count: number | null
         }
         Insert: {
+          added_at?: string | null
           blocks?: Json
           branding?: Json | null
           category?: string
           created_at?: string
           description?: string | null
           id?: string
+          is_featured?: boolean | null
           is_preset?: boolean
           name: string
           provider_id: string
           sort_order?: number | null
           updated_at?: string
+          use_count?: number | null
         }
         Update: {
+          added_at?: string | null
           blocks?: Json
           branding?: Json | null
           category?: string
           created_at?: string
           description?: string | null
           id?: string
+          is_featured?: boolean | null
           is_preset?: boolean
           name?: string
           provider_id?: string
           sort_order?: number | null
           updated_at?: string
+          use_count?: number | null
         }
         Relationships: []
       }
