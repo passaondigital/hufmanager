@@ -50,7 +50,7 @@ export default function MeinOffice() {
         horse_id: d.horse_id || undefined,
         horse_name: d.horse_name || undefined,
         contact_id: d.contact_id || undefined,
-        status: (d.status || "draft") as "draft" | "completed",
+        status: (d.status || "draft") as "draft" | "completed" | "archived",
         template_id: d.template_id || undefined,
         template_type: d.template_type || undefined,
         color_tag: d.color_tag || "default",
