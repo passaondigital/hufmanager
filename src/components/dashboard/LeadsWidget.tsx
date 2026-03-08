@@ -16,7 +16,7 @@ export function LeadsWidget() {
     queryFn: async () => {
       const { data } = await supabase
         .from("leads")
-        .select("id, name, zip_code, created_at, status")
+        .select("id, name, created_at, status")
         .eq("provider_id", user!.id)
         .eq("status", "neu")
         .order("created_at", { ascending: false })
