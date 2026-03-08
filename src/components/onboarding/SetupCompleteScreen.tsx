@@ -1,14 +1,43 @@
 import { motion } from 'framer-motion';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import { Sparkles, ArrowRight, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfettiEffect } from './ConfettiEffect';
+import { format, parseISO } from 'date-fns';
+import { de } from 'date-fns/locale';
 
 interface SetupCompleteScreenProps {
   displayName: string;
+  horseName?: string;
+  clientName?: string;
+  appointmentDate?: string;
+  appointmentTime?: string;
+  clientId?: string;
   onContinue: () => void;
 }
 
-export function SetupCompleteScreen({ displayName, onContinue }: SetupCompleteScreenProps) {
+export function SetupCompleteScreen({
+  displayName,
+  horseName,
+  clientName,
+  appointmentDate,
+  appointmentTime,
+  clientId,
+  onContinue,
+}: SetupCompleteScreenProps) {
+  const hasData = horseName || clientName || appointmentDate;
+
+  const handleWhatsAppInvite = () => {
+    const providerName = displayName;
+    const horseText = horseName ? ` für ${horseName}` : '';
+    const message = `Hallo${clientName ? ` ${clientName.split(' ')[0]}` : ''}! 🐴\n\nIch nutze jetzt den HufManager${horseText}. Damit hast du alle Infos zu deinem Pferd direkt auf dem Handy – Termine, Befunde und mehr.\n\nHier ist dein Zugang:\nhttps://hufmanager.lovable.app\n\nViele Grüße,\n${providerName}`;
+    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
+  const formattedDate = appointmentDate
+    ? format(parseISO(appointmentDate), 'EEEE, dd. MMMM', { locale: de })
+    : null;
+
   return (
     <>
       <ConfettiEffect />
@@ -17,7 +46,7 @@ export function SetupCompleteScreen({ displayName, onContinue }: SetupCompleteSc
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.5, type: 'spring', bounce: 0.4 }}
-          className="w-full max-w-md text-center space-y-8"
+          className="w-full max-w-md text-center space-y-6"
         >
           {/* Trophy icon */}
           <motion.div
@@ -26,7 +55,7 @@ export function SetupCompleteScreen({ displayName, onContinue }: SetupCompleteSc
             transition={{ delay: 0.3 }}
             className="mx-auto w-24 h-24 rounded-3xl bg-primary/10 flex items-center justify-center"
           >
-            <span className="text-6xl">🏆</span>
+            <span className="text-6xl">✅</span>
           </motion.div>
 
           {/* Headline */}
@@ -34,47 +63,75 @@ export function SetupCompleteScreen({ displayName, onContinue }: SetupCompleteSc
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5 }}
-            className="space-y-3"
+            className="space-y-2"
           >
             <h1 className="text-3xl font-bold text-foreground">
               Du bist startklar!
             </h1>
-            <p className="text-lg text-muted-foreground">
-              Perfekt, {displayName}. Dein HufManager ist eingerichtet 
-              und bereit für den ersten Einsatz.
-            </p>
+            {hasData ? (
+              <div className="bg-muted/30 rounded-xl p-4 text-left space-y-3 mt-4">
+                {horseName && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">🐴</span>
+                    <div>
+                      <p className="font-medium text-foreground">{horseName}</p>
+                      {clientName && <p className="text-sm text-muted-foreground">Besitzer: {clientName}</p>}
+                    </div>
+                  </div>
+                )}
+                {appointmentDate && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">📅</span>
+                    <div>
+                      <p className="font-medium text-foreground">Nächster Termin</p>
+                      <p className="text-sm text-muted-foreground">
+                        {formattedDate}{appointmentTime ? ` um ${appointmentTime} Uhr` : ''}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-lg text-muted-foreground">
+                Dein HufManager ist eingerichtet und bereit.
+              </p>
+            )}
           </motion.div>
 
-          {/* Quick tips */}
+          {/* WhatsApp CTA */}
+          {clientName && (
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.7 }}
+            >
+              <Button
+                size="lg"
+                onClick={handleWhatsAppInvite}
+                className="gap-2 h-14 px-6 text-base font-semibold w-full bg-[#25D366] hover:bg-[#1DA851] text-white"
+              >
+                <MessageCircle className="h-5 w-5" />
+                {clientName.split(' ')[0]} zur App einladen
+              </Button>
+              <p className="text-xs text-muted-foreground mt-2">
+                Öffnet WhatsApp mit fertigem Einladungstext
+              </p>
+            </motion.div>
+          )}
+
+          {/* Dashboard CTA */}
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.7 }}
-            className="bg-muted/30 rounded-xl p-4 text-left space-y-2"
-          >
-            <p className="text-sm font-medium text-foreground flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              Was als nächstes?
-            </p>
-            <ul className="text-sm text-muted-foreground space-y-1.5 ml-6">
-              <li>• Starte die <strong>Führung</strong> im Dashboard für einen Überblick</li>
-              <li>• Plane deinen <strong>ersten Termin</strong> im Kalender</li>
-              <li>• Lade Kunden über den <strong>Einladungslink</strong> ein</li>
-            </ul>
-          </motion.div>
-
-          {/* CTA */}
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.9 }}
+            transition={{ delay: clientName ? 0.9 : 0.7 }}
           >
             <Button
               size="lg"
               onClick={onContinue}
-              className="gap-2 h-14 px-8 text-lg font-semibold"
+              variant={clientName ? 'outline' : 'default'}
+              className={`gap-2 h-14 px-8 text-lg font-semibold w-full ${!clientName ? 'bg-[#F5970A] hover:bg-[#E08A09] text-white' : ''}`}
             >
-              Los geht's
+              Zum Dashboard
               <ArrowRight className="h-5 w-5" />
             </Button>
           </motion.div>
