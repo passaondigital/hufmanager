@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { SharePreviewSheet } from "./SharePreviewSheet";
 
 interface EditorHeaderProps {
   editor: any;
