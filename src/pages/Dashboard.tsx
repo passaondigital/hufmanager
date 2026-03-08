@@ -10,9 +10,10 @@ import { FuelPriceWidget } from "@/components/dashboard/FuelPriceWidget";
 import { MonthlyFuelInsight } from "@/components/dashboard/MonthlyFuelInsight";
 import { FirstStepsChecklist } from "@/components/dashboard/FirstStepsChecklist";
 import { DashboardWelcomeHeader } from "@/components/dashboard/DashboardWelcomeHeader";
+import { QuickWinBanner } from "@/components/dashboard/QuickWinBanner";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
-import { OnboardingAssistant } from "@/components/onboarding/OnboardingAssistant";
+import { ProviderSetupWizard } from "@/components/onboarding/ProviderSetupWizard";
 import { PushNotificationBanner } from "@/components/notifications/PushNotificationBanner";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { StatGridSkeleton } from "@/components/ui/skeletons";
@@ -62,14 +63,17 @@ const Dashboard = () => {
 
   return (
     <>
-      {/* Provider Onboarding - Setup Assistant */}
+      {/* Provider Onboarding - Full-Screen Setup Wizard */}
       {showOnboarding && (
-        <OnboardingAssistant onComplete={completeOnboarding} />
+        <ProviderSetupWizard onComplete={completeOnboarding} />
       )}
 
       <div className="space-y-6 pb-4">
       {/* Push Notification Banner */}
       <PushNotificationBanner />
+
+      {/* Quick-Win Banner for providers with few clients */}
+      <QuickWinBanner />
 
       {/* Growth: Milestone Celebrations */}
       <MilestoneCelebration />
