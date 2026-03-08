@@ -227,6 +227,10 @@ export default function AdminDashboard() {
         {activeView === "dev" && <AdminDevZentrale />}
         {activeView === "health" && <AdminSystemHealth />}
         {activeView === "self-healing" && <AdminHealthDashboard />}
+        {activeView === "affiliates" && <AffiliateCenter />}
+        {activeView === "cooperations" && <CooperationCenter />}
+        {activeView === "hm_team" && <HMTeamCenter />}
+        {activeView === "education" && <EducationCenter />}
       </main>
 
       {/* Quick Note FAB */}

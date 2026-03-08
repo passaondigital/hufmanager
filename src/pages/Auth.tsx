@@ -273,6 +273,17 @@ export default function Auth() {
           // Token will be processed after email confirmation + login
           // Keep it in sessionStorage
         }
+
+        // Affiliate ref tracking – store for post-confirmation processing
+        const refCode = localStorage.getItem("huf_affiliate_ref");
+        const refTs = localStorage.getItem("huf_affiliate_ref_ts");
+        const isRefValid = refTs && Date.now() - parseInt(refTs) < 30 * 24 * 60 * 60 * 1000;
+        if (refCode && isRefValid) {
+          sessionStorage.setItem("huf_pending_ref", refCode);
+          localStorage.removeItem("huf_affiliate_ref");
+          localStorage.removeItem("huf_affiliate_ref_ts");
+        }
+
         toast.success("Registrierung erfolgreich! Bitte bestätigen Sie Ihre E-Mail.");
       }
     } catch (err: any) {
