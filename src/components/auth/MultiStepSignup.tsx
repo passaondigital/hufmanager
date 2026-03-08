@@ -257,10 +257,64 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
                   <Label htmlFor="s-pw">Passwort</Label>
                   <Input
                     id="s-pw" type="password" autoComplete="new-password"
-                    placeholder="Mindestens 6 Zeichen" value={password}
+                    placeholder="Min. 8 Zeichen, 1 Großbuchstabe, 1 Zahl" value={password}
                     onChange={(e) => setPassword(e.target.value)} className="h-[52px] text-base"
                     onKeyDown={(e) => e.key === "Enter" && canProceed() && handleNext()}
                   />
+                  {/* Password strength indicator */}
+                  {password.length > 0 && (
+                    <div className="space-y-1">
+                      <Progress 
+                        value={
+                          (password.length >= 8 ? 33 : 0) + 
+                          (/[A-Z]/.test(password) ? 33 : 0) + 
+                          (/[0-9]/.test(password) ? 34 : 0)
+                        } 
+                        className="h-1.5"
+                      />
+                      <div className="flex flex-wrap gap-2 text-[11px]">
+                        <span className={password.length >= 8 ? "text-green-500" : "text-muted-foreground"}>
+                          {password.length >= 8 ? "✓" : "○"} 8+ Zeichen
+                        </span>
+                        <span className={/[A-Z]/.test(password) ? "text-green-500" : "text-muted-foreground"}>
+                          {/[A-Z]/.test(password) ? "✓" : "○"} Großbuchstabe
+                        </span>
+                        <span className={/[0-9]/.test(password) ? "text-green-500" : "text-muted-foreground"}>
+                          {/[0-9]/.test(password) ? "✓" : "○"} Zahl
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* DSGVO Consent Checkboxes */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id="agb-consent"
+                      checked={agbAccepted}
+                      onCheckedChange={(v) => setAgbAccepted(v === true)}
+                      className="mt-0.5"
+                    />
+                    <Label htmlFor="agb-consent" className="text-sm leading-relaxed cursor-pointer text-muted-foreground">
+                      Ich akzeptiere die{" "}
+                      <a href="/agb" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">AGB</a> und{" "}
+                      <a href="/agb" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Nutzungsbedingungen</a>. *
+                    </Label>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id="privacy-consent"
+                      checked={privacyAccepted}
+                      onCheckedChange={(v) => setPrivacyAccepted(v === true)}
+                      className="mt-0.5"
+                    />
+                    <Label htmlFor="privacy-consent" className="text-sm leading-relaxed cursor-pointer text-muted-foreground">
+                      Ich habe die{" "}
+                      <a href="/datenschutz" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Datenschutzerklärung</a>{" "}
+                      gelesen und stimme zu. *
+                    </Label>
+                  </div>
                 </div>
               </div>
             </div>
