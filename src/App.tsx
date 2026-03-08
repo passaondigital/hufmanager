@@ -408,6 +408,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/pferd/:id" element={<ProviderHorseDetail />} />
               {/* Meine Website - Provider Website Editor */}
               <Route path="/meine-website" element={<MeineWebsite />} />
+              <Route path="/landing-editor" element={<LandingEditor />} />
             </Route>
 
             {/* --- 3. CLIENT (PFERDEBESITZER) ROUTES --- */}
