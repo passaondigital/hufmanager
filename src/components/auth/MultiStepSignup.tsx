@@ -55,7 +55,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
       case 0: return fullName.trim().length >= 2;
       case 1: return true;
       case 2: return true; // country always selected
-      case 3: return email.includes("@") && password.length >= 6;
+      case 3: return email.includes("@") && password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password) && agbAccepted && privacyAccepted;
       case 4: return true; // business name optional
       default: return false;
     }
