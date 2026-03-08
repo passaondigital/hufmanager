@@ -145,8 +145,8 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
             full_name: clientName.trim(),
             mobile: clientPhone.trim() || null,
             created_by_provider_id: user.id,
-            onboarding_completed: false,
-          })
+            onboarding_completed: false as boolean,
+          } as any)
           .select('id')
           .single();
 
