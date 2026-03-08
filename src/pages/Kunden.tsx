@@ -12,16 +12,13 @@ import {
   ChevronRight,
   Filter,
   Navigation,
-  CheckCircle,
-  Clock,
   Users,
-  ShieldCheck,
-  UserPlus,
   X,
   Download,
   FileSpreadsheet,
 } from "lucide-react";
 import { ClientBadges } from "@/components/customers/ClientStatusBadges";
+import { InviteClientButton, InviteStatusBadge } from "@/components/customers/InviteClientButton";
 import {
   Select,
   SelectContent,
@@ -432,21 +429,10 @@ const Kunden = () => {
                           lifecycleStatus={client.lifecycle_status}
                           size="sm"
                         />
-                        {client.has_logged_in ? (
-                          <Badge className="bg-green-500/10 text-green-600 gap-1">
-                            <CheckCircle className="h-3 w-3" />
-                            aktiv
-                          </Badge>
-                        ) : client.invited_at ? (
-                          <Badge variant="secondary" className="gap-1">
-                            <Clock className="h-3 w-3" />
-                            eingeladen
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-muted-foreground">
-                            ausstehend
-                          </Badge>
-                        )}
+                        <InviteStatusBadge
+                          hasLoggedIn={client.has_logged_in}
+                          invitedAt={client.invited_at}
+                        />
                       </div>
 
                       <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-3">
@@ -465,7 +451,7 @@ const Kunden = () => {
                       </div>
 
                       {/* Horses Count & Preview */}
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2 items-center">
                         <Badge variant="secondary" className="gap-1">
                           {clientHorses.length} {clientHorses.length === 1 ? "Pferd" : "Pferde"}
                         </Badge>
@@ -506,6 +492,18 @@ const Kunden = () => {
                           <span className="text-sm text-muted-foreground px-2 py-1">
                             +{clientHorses.length - 3} weitere
                           </span>
+                        )}
+                        
+                        {/* Invite Button - only for non-active clients */}
+                        {!client.has_logged_in && (
+                          <InviteClientButton
+                            clientId={client.id}
+                            clientName={client.full_name}
+                            clientPhone={client.phone}
+                            clientEmail={client.email}
+                            horseName={clientHorses[0]?.name}
+                            compact
+                          />
                         )}
                       </div>
                     </div>

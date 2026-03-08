@@ -5476,30 +5476,54 @@ export type Database = {
       }
       magic_links: {
         Row: {
+          client_id: string | null
           created_at: string
           id: string
           is_active: boolean | null
+          last_sent_at: string | null
           provider_id: string
+          sent_via: string | null
           slug: string
           uses_count: number | null
         }
         Insert: {
+          client_id?: string | null
           created_at?: string
           id?: string
           is_active?: boolean | null
+          last_sent_at?: string | null
           provider_id: string
+          sent_via?: string | null
           slug: string
           uses_count?: number | null
         }
         Update: {
+          client_id?: string | null
           created_at?: string
           id?: string
           is_active?: boolean | null
+          last_sent_at?: string | null
           provider_id?: string
+          sent_via?: string | null
           slug?: string
           uses_count?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "magic_links_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "magic_links_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       master_admins: {
         Row: {
