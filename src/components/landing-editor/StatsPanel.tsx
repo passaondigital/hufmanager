@@ -33,9 +33,9 @@ export const StatsPanel = ({ editor }: StatsPanelProps) => {
           .eq("provider_id", user.id),
         supabase
           .from("provider_page_views")
-          .select("viewed_at")
+          .select("created_at")
           .eq("provider_id", user.id)
-          .order("viewed_at", { ascending: false })
+          .order("created_at", { ascending: false })
           .limit(1),
       ]);
 
