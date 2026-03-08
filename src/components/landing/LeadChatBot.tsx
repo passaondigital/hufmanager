@@ -32,6 +32,7 @@ export function LeadChatBot({ providerId, providerName, providerLogo, primaryCol
   const [leadType, setLeadType] = useState<LeadType | null>(null);
   const [postalCode, setPostalCode] = useState('');
   const [phone, setPhone] = useState('');
+  const [dsgvoConsent, setDsgvoConsent] = useState(false);
   const [saving, setSaving] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
