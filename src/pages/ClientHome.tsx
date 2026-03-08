@@ -260,19 +260,37 @@ export default function ClientHome() {
             <WelcomeHeroCard userId={user.id} firstName={firstName} />
           )}
 
-          {/* Hero Greeting (shown when no horses / fallback) */}
-          {horses.length === 0 && (
+          {/* Empty State: No horse yet – provider is setting up */}
+          {horses.length === 0 && !loading && (
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="space-y-2"
             >
-              <h1 className="text-responsive-h2 text-foreground tracking-tight flex items-center gap-2">
-                Hallo {firstName}! 👋 <HelpTip id="kunden.home" />
-              </h1>
-              <p className="text-muted-foreground text-base md:text-lg">
-                Dein Pferdeportal auf einen Blick
-              </p>
+              <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/10 shadow-lg">
+                <CardContent className="p-6 text-center space-y-4">
+                  <div className="text-5xl">👋</div>
+                  <div className="space-y-1">
+                    <h2 className="text-2xl font-bold text-foreground">
+                      Willkommen, {firstName}!
+                    </h2>
+                    <p className="text-muted-foreground">
+                      {hasProvider 
+                        ? "Dein Hufbearbeiter richtet dein Profil gerade ein. Du wirst benachrichtigt, sobald alles bereit ist."
+                        : "Verbinde dich mit deinem Hufbearbeiter, um loszulegen."
+                      }
+                    </p>
+                  </div>
+                  {hasProvider ? (
+                    <Button 
+                      className="w-full gap-2"
+                      onClick={() => navigate("/client-chat")}
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      Nachricht schicken
+                    </Button>
+                  ) : null}
+                </CardContent>
+              </Card>
             </motion.div>
           )}
 

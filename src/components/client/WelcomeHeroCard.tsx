@@ -208,14 +208,28 @@ export function WelcomeHeroCard({ userId, firstName }: WelcomeHeroCardProps) {
             )}
           </div>
 
-          {/* CTA */}
-          <Button
-            className="w-full gap-2"
-            onClick={() => navigate(`/client-horse/${data.horse!.id}`)}
-          >
-            Pferd ansehen
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          {/* CTAs */}
+          <div className="space-y-2">
+            <Button
+              className="w-full gap-2"
+              onClick={() => navigate(`/client-horse/${data.horse!.id}`)}
+            >
+              Pferd ansehen
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+
+            {/* If no appointments at all, offer contact CTA */}
+            {!data.lastVisit && !data.nextAppointment && data.providerName && (
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                onClick={() => navigate("/client-chat")}
+              >
+                <MessageCircle className="h-4 w-4" />
+                {data.providerName} kontaktieren
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
     </motion.div>
