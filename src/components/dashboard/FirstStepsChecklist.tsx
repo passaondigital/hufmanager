@@ -63,7 +63,7 @@ export function FirstStepsChecklist() {
       // Check business settings
       const { data: businessData } = await supabase
         .from("business_settings")
-        .select("business_name, impressum_text")
+        .select("business_name")
         .eq("user_id", user.id)
         .maybeSingle();
 
