@@ -353,7 +353,7 @@ export default function Auth() {
             className="mx-auto h-16 sm:h-20 w-auto mb-2"
           />
           <CardTitle className="text-2xl font-bold text-foreground sr-only">HufManager</CardTitle>
-          <CardDescription className="text-sm text-muted-foreground">Melden Sie sich an oder erstellen Sie ein Konto</CardDescription>
+          <CardDescription className="text-sm text-muted-foreground">Für alle Rollen – du wirst automatisch weitergeleitet</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
