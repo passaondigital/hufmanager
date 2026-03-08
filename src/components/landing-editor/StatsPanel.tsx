@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { PreviewFeedbackPanel } from "./PreviewFeedbackPanel";
 import { formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
 
