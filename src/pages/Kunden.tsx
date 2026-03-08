@@ -22,6 +22,7 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 import { ClientBadges } from "@/components/customers/ClientStatusBadges";
+import { InviteClientButton, InviteStatusBadge } from "@/components/customers/InviteClientButton";
 import {
   Select,
   SelectContent,
