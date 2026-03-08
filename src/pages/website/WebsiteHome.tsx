@@ -3,6 +3,7 @@ import Navbar from "@/components/website/Navbar";
 import { useGA4 } from "@/hooks/useGA4";
 import HeroV2 from "@/components/website/HeroV2";
 import ProblemSection from "@/components/website/ProblemSection";
+import PainSolutionSection from "@/components/website/PainSolutionSection";
 import IdentitySection from "@/components/website/IdentitySection";
 import HorseEcosystem from "@/components/website/HorseEcosystem";
 import SolutionSection from "@/components/website/SolutionSection";
@@ -19,6 +20,7 @@ import PillarsSection from "@/components/website/PillarsSection";
 import OfflineSection from "@/components/website/OfflineSection";
 import DemoSection from "@/components/website/DemoSection";
 import PricingV2 from "@/components/website/PricingV2";
+import TestimonialsSection from "@/components/website/TestimonialsSection";
 import TrustSection from "@/components/website/TrustSection";
 import ContactFormSection from "@/components/website/ContactFormSection";
 import ChangelogSection from "@/components/website/ChangelogSection";
@@ -34,10 +36,10 @@ const WebsiteHome = () => {
   useGA4();
 
   useEffect(() => {
-    document.title = "HufManager – App für Hufbearbeiter, Osteopathen & mobile Pferdeprofis";
+    document.title = "HufManager – Schluss mit Zetteln und WhatsApp-Chaos | App für mobile Pferdeprofis";
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
-      metaDesc.setAttribute("content", "HufManager ist die digitale Lösung für alle mobilen Pferdeprofis. Tages-Cockpit, Turn-by-Turn Navigation, Live-Spritpreise, automatisches Fahrtenbuch und Kundenbenachrichtigung in Echtzeit.");
+      metaDesc.setAttribute("content", "HufManager ist die All-in-One App für Hufbearbeiter, Osteopathen & mobile Pferdeprofis. Termine, Pferde, Rechnungen, Navigation – alles in einer App. 14 Tage kostenlos testen.");
     }
     let metaKeywords = document.querySelector('meta[name="keywords"]');
     if (!metaKeywords) {
@@ -53,6 +55,7 @@ const WebsiteHome = () => {
       <Navbar />
       <HeroV2 />
       <ProblemSection />
+      <PainSolutionSection />
       <IdentitySection />
       <HorseEcosystem />
       <SolutionSection />
@@ -73,6 +76,7 @@ const WebsiteHome = () => {
       <OfflineSection />
       <DemoSection />
       <PricingV2 />
+      <TestimonialsSection />
       <ContactFormSection />
       <TrustSection />
       <LatestBlogPosts />
