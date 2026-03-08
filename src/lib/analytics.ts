@@ -22,9 +22,17 @@ export function initGA4(measurementId: string) {
   if (!measurementId || isInitialized) return;
   if (typeof window === "undefined") return;
 
-  // Prüfe ob Cookie-Consent gegeben wurde
-  const consent = localStorage.getItem("cookie-consent");
-  if (consent !== "accepted") return;
+  // Prüfe ob Cookie-Consent gegeben wurde (unified key)
+  const consent = localStorage.getItem("huf_cookie_consent");
+  if (consent !== "all") {
+    // Also check legacy JSON format from CookieConsentBanner
+    try {
+      const parsed = consent ? JSON.parse(consent) : null;
+      if (!parsed?.analytics) return;
+    } catch {
+      return;
+    }
+  }
 
   isInitialized = true;
 

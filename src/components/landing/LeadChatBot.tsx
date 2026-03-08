@@ -13,7 +13,7 @@ interface LeadChatBotProps {
   primaryColor: string;
 }
 
-type ChatStep = 'greeting' | 'type' | 'postal' | 'phone' | 'done';
+type ChatStep = 'greeting' | 'type' | 'consent' | 'postal' | 'phone' | 'done';
 type LeadType = 'termin' | 'notfall' | 'frage';
 
 interface Message {
@@ -32,6 +32,7 @@ export function LeadChatBot({ providerId, providerName, providerLogo, primaryCol
   const [leadType, setLeadType] = useState<LeadType | null>(null);
   const [postalCode, setPostalCode] = useState('');
   const [phone, setPhone] = useState('');
+  const [dsgvoConsent, setDsgvoConsent] = useState(false);
   const [saving, setSaving] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -89,9 +90,35 @@ export function LeadChatBot({ providerId, providerName, providerLogo, primaryCol
       if (type === 'notfall') {
         addBotMessage("Bei Notfällen erreichst du mich am schnellsten telefonisch. Hinterlasse mir trotzdem deine PLZ und Nummer – ich rufe zurück!");
       }
-      addBotMessage("Alles klar. Wo steht das Pferd? (PLZ)");
-      setStep('postal');
+      addBotMessage(`Bevor ich deine Anfrage weiterleite – darf ich deine Kontaktdaten an ${providerName} übermitteln?`);
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        type: 'buttons' as const,
+        content: 'Datenschutz-Einwilligung',
+        buttons: [
+          { id: 'termin' as LeadType, label: '✅ Ja, einverstanden', icon: null },
+          { id: 'notfall' as LeadType, label: '❌ Nein danke', icon: null },
+        ],
+      }]);
+      setStep('consent');
     }, 500);
+  };
+
+  const handleConsentResponse = (accepted: boolean) => {
+    if (accepted) {
+      setDsgvoConsent(true);
+      addUserMessage('Ja, einverstanden');
+      setTimeout(() => {
+        addBotMessage("Alles klar. Wo steht das Pferd? (PLZ)");
+        setStep('postal');
+      }, 500);
+    } else {
+      addUserMessage('Nein danke');
+      setTimeout(() => {
+        addBotMessage("Kein Problem! Du kannst mich jederzeit über die Website kontaktieren. 👋");
+        setStep('done');
+      }, 500);
+    }
   };
 
   const handlePostalSubmit = () => {
@@ -130,6 +157,7 @@ export function LeadChatBot({ providerId, providerName, providerLogo, primaryCol
           phone: inputValue,
           source: 'chatbot',
           status: 'neu',
+          dsgvo_consent: dsgvoConsent,
         });
 
       if (error) throw error;
@@ -266,10 +294,16 @@ export function LeadChatBot({ providerId, providerName, providerLogo, primaryCol
                       <div className="flex flex-wrap gap-2">
                         {msg.buttons?.map((btn) => (
                           <Button
-                            key={btn.id}
+                            key={btn.id + btn.label}
                             variant="outline"
                             size="sm"
-                            onClick={() => handleTypeSelect(btn.id)}
+                            onClick={() => {
+                              if (step === 'consent') {
+                                handleConsentResponse(btn.label.includes('Ja'));
+                              } else {
+                                handleTypeSelect(btn.id);
+                              }
+                            }}
                             className="gap-1.5"
                             style={{ 
                               borderColor: primaryColor,
@@ -301,7 +335,7 @@ export function LeadChatBot({ providerId, providerName, providerLogo, primaryCol
           </div>
 
           {/* Input */}
-          {step !== 'greeting' && step !== 'type' && step !== 'done' && (
+          {step !== 'greeting' && step !== 'type' && step !== 'consent' && step !== 'done' && (
             <form onSubmit={handleSubmit} className="p-4 border-t border-border">
               <div className="flex gap-2">
                 <Input

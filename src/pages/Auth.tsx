@@ -34,7 +34,10 @@ const loginSchema = z.object({
 const signupSchema = z.object({
   fullName: z.string().min(2, "Name muss mindestens 2 Zeichen lang sein"),
   email: z.string().email("Ungültige E-Mail-Adresse"),
-  password: z.string().min(6, "Passwort muss mindestens 6 Zeichen lang sein"),
+  password: z.string()
+    .min(8, "Mindestens 8 Zeichen")
+    .regex(/[A-Z]/, "Mindestens ein Großbuchstabe")
+    .regex(/[0-9]/, "Mindestens eine Zahl"),
 });
 
 type RoleOption = "provider" | "client";

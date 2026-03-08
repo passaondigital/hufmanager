@@ -4,11 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle, Loader2, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { z } from "zod";
+import { CookieConsentBanner } from "@/components/landing/CookieConsentBanner";
 
 const registerSchema = z.object({
   name: z.string().trim().min(2, "Name muss mindestens 2 Zeichen haben").max(100),
@@ -27,6 +29,7 @@ const ConnectForm = () => {
     email: "",
     password: "",
   });
+  const [dsgvoConsent, setDsgvoConsent] = useState(false);
 
   // Validate magic link and get provider + client info
   const { data: linkData, isLoading, error } = useQuery({
@@ -383,7 +386,7 @@ const ConnectForm = () => {
             <Button
               type="submit"
               className="w-full min-h-[48px] text-base"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !dsgvoConsent}
             >
               {isSubmitting ? (
                 <>
@@ -395,16 +398,26 @@ const ConnectForm = () => {
               )}
             </Button>
 
-            <p className="text-xs text-center text-muted-foreground">
-              Mit der Registrierung akzeptierst du die{" "}
-              <a href="/datenschutz" className="underline" target="_blank">
-                Datenschutzerklärung
-              </a>
-              .
-            </p>
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="connect-dsgvo"
+                checked={dsgvoConsent}
+                onCheckedChange={(v) => setDsgvoConsent(v === true)}
+                className="mt-0.5"
+              />
+              <Label htmlFor="connect-dsgvo" className="text-xs leading-relaxed cursor-pointer text-muted-foreground">
+                Ich stimme zu, dass meine Daten von{" "}
+                <strong>{linkData?.providerName}</strong>{" "}
+                über HufManager verarbeitet werden.{" "}
+                <a href="/datenschutz" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                  Datenschutzerklärung
+                </a> *
+              </Label>
+            </div>
           </form>
         </CardContent>
       </Card>
+      <CookieConsentBanner />
     </div>
   );
 };

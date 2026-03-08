@@ -8,7 +8,13 @@ const CookieBanner = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const consent = localStorage.getItem("cookie-consent");
+    // Migrate legacy key
+    const legacy = localStorage.getItem("cookie-consent");
+    if (legacy && !localStorage.getItem("huf_cookie_consent")) {
+      localStorage.setItem("huf_cookie_consent", legacy === "accepted" ? "all" : "essential");
+      localStorage.removeItem("cookie-consent");
+    }
+    const consent = localStorage.getItem("huf_cookie_consent");
     if (!consent) {
       const timer = setTimeout(() => setIsVisible(true), 1000);
       return () => clearTimeout(timer);
@@ -32,8 +38,8 @@ const CookieBanner = () => {
             </div>
           </div>
           <div className="flex gap-3 w-full md:w-auto">
-            <Button variant="outline" onClick={() => { localStorage.setItem("cookie-consent", "essential-only"); setIsVisible(false); }} className="flex-1 md:flex-none border-white/20 text-white hover:bg-white/10">Nur notwendige</Button>
-            <Button onClick={() => { localStorage.setItem("cookie-consent", "accepted"); setIsVisible(false); initGA4(""); }} className="flex-1 md:flex-none bg-primary hover:bg-primary/90 text-white">Alle akzeptieren</Button>
+            <Button variant="outline" onClick={() => { localStorage.setItem("huf_cookie_consent", "essential"); setIsVisible(false); }} className="flex-1 md:flex-none border-white/20 text-white hover:bg-white/10">Nur notwendige</Button>
+            <Button onClick={() => { localStorage.setItem("huf_cookie_consent", "all"); setIsVisible(false); initGA4(""); }} className="flex-1 md:flex-none bg-primary hover:bg-primary/90 text-white">Alle akzeptieren</Button>
           </div>
         </div>
       </div>

@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import SignatureCanvas from "react-signature-canvas";
+import DOMPurify from "dompurify";
 
 interface ContractSignSheetProps {
   open: boolean;
@@ -96,7 +97,10 @@ export function ContractSignSheet({ open, onOpenChange, contract, onSigned }: Co
             {contract?.content_html ? (
               <div
                 className="prose prose-sm dark:prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ __html: contract.content_html }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(contract.content_html, {
+                  ALLOWED_TAGS: ['p','h1','h2','h3','h4','strong','em','ul','ol','li','table','tr','td','th','br','span','div'],
+                  ALLOWED_ATTR: ['style','class']
+                }) }}
               />
             ) : (
               <p className="text-sm text-muted-foreground">
