@@ -42,7 +42,7 @@ export const StatsPanel = ({ editor }: StatsPanelProps) => {
       return {
         views30d: viewsRes.count || 0,
         totalLeads: leadsRes.count || 0,
-        lastVisit: latestViewRes.data?.[0]?.viewed_at || null,
+        lastVisit: (latestViewRes.data?.[0] as any)?.created_at || null,
       };
     },
     enabled: !!user?.id,
