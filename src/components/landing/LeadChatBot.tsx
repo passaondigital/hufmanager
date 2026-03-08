@@ -13,7 +13,7 @@ interface LeadChatBotProps {
   primaryColor: string;
 }
 
-type ChatStep = 'greeting' | 'type' | 'postal' | 'phone' | 'done';
+type ChatStep = 'greeting' | 'type' | 'consent' | 'postal' | 'phone' | 'done';
 type LeadType = 'termin' | 'notfall' | 'frage';
 
 interface Message {
