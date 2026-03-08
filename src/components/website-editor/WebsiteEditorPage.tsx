@@ -175,15 +175,16 @@ export const WebsiteEditorPage = () => {
         </Card>
       )}
 
-      <DomainWaitlistCard />
+      <DomainSection subdomain={subdomain || null} />
 
       <Tabs defaultValue="pages" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="pages" className="gap-1.5"><FileText className="h-4 w-4" />Seiten</TabsTrigger>
           <TabsTrigger value="content" className="gap-1.5"><Sparkles className="h-4 w-4" />Inhalte</TabsTrigger>
           <TabsTrigger value="blog" className="gap-1.5"><Sparkles className="h-4 w-4" />Blog</TabsTrigger>
           <TabsTrigger value="leads" className="gap-1.5"><MessageSquare className="h-4 w-4" />Leads</TabsTrigger>
           <TabsTrigger value="seo" className="gap-1.5"><Search className="h-4 w-4" />SEO</TabsTrigger>
+          <TabsTrigger value="embed" className="gap-1.5"><Code className="h-4 w-4" />Einbetten</TabsTrigger>
           <TabsTrigger value="settings" className="gap-1.5"><Settings className="h-4 w-4" />Extras</TabsTrigger>
         </TabsList>
 
