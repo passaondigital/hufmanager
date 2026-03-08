@@ -183,6 +183,9 @@ const Dashboard = () => {
       {/* 5b. Monthly Fuel Insight */}
       <MonthlyFuelInsight />
 
+      {/* 5c. Recent Documents */}
+      <RecentDocumentsWidget />
+
       {/* 6. Hufrente (nice to have, bottom) */}
       <div className="relative">
         <span className="absolute top-3 right-3 z-10"><HelpTip id="dashboard.hufrente" /></span>

@@ -501,6 +501,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner-guv" element={<GuV />} />
               <Route path="/partner-analyse" element={<Analyse />} />
               <Route path="/partner-office" element={<MeinOffice />} />
+              <Route path="/partner-office/:id" element={<OfficeEditor />} />
               <Route path="/partner-lager" element={<Lager />} />
               <Route path="/partner-autoflow" element={<AutoFlow />} />
               <Route path="/partner-management" element={<Management />} />
