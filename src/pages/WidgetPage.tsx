@@ -95,20 +95,13 @@ export default function WidgetPage() {
         const needsServices = ["services", "booking", "full"].includes(widgetType);
         const needsReviews = ["reviews", "full"].includes(widgetType);
 
-        const promises: Promise<any>[] = [];
-        if (needsServices) {
-          promises.push(
-            supabase.from("services").select("id, name, description, base_price, duration, booking_action")
-              .eq("provider_id", typed.user_id).eq("is_active", true).order("name").limit(10)
-          );
-        } else {
-          promises.push(Promise.resolve({ data: [] }));
-        }
-        if (needsReviews) {
-          promises.push(supabase.rpc("get_public_reviews", { provider_id_input: typed.user_id }));
-        } else {
-          promises.push(Promise.resolve({ data: [] }));
-        }
+        const svcPromise = needsServices
+          ? supabase.from("services").select("id, name, description, base_price, duration, booking_action")
+              .eq("provider_id", typed.user_id).eq("is_active", true).order("name").limit(10).then(r => r)
+          : Promise.resolve({ data: [] as any[], error: null });
+        const revPromise = needsReviews
+          ? supabase.rpc("get_public_reviews", { provider_id_input: typed.user_id }).then(r => r)
+          : Promise.resolve({ data: [] as any[], error: null });
 
         const [svcRes, revRes] = await Promise.all(promises);
         if (svcRes.data) setServices(svcRes.data.filter((s: any) => !s.name.toUpperCase().includes("BALANCE")).slice(0, 6));
