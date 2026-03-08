@@ -29,6 +29,7 @@ import { PushNotificationBanner } from "@/components/notifications/PushNotificat
 import { ClientPushPermissionBanner } from "@/components/client/ClientPushPermissionBanner";
 import { ServiceHistoryWidget } from "@/components/client/ServiceHistoryWidget";
 import { ProviderSelector } from "@/components/client/ProviderSelector";
+import { WelcomeHeroCard } from "@/components/client/WelcomeHeroCard";
 import { ClientBottomNav } from "@/components/client/ClientBottomNav";
 import { ConnectedProviderCard } from "@/components/client/ConnectedProviderCard";
 import { PendingConnectionRequests } from "@/components/network/PendingConnectionRequests";
