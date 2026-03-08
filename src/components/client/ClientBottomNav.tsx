@@ -1,12 +1,11 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Footprints, MapPin, Calendar, User } from "lucide-react";
+import { Home, Calendar, MessageSquare, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
   { path: "/client-home", label: "Home", icon: Home },
-  { path: "/client-horses", label: "Pferde", icon: Footprints },
   { path: "/client-booking", label: "Buchen", icon: Calendar },
-  { path: "/client-locations", label: "Ställe", icon: MapPin },
+  { path: "/client-chat", label: "Chat", icon: MessageSquare },
   { path: "/client-profile", label: "Profil", icon: User },
 ];
 
