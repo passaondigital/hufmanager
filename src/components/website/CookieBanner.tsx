@@ -8,7 +8,13 @@ const CookieBanner = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const consent = localStorage.getItem("cookie-consent");
+    // Migrate legacy key
+    const legacy = localStorage.getItem("cookie-consent");
+    if (legacy && !localStorage.getItem("huf_cookie_consent")) {
+      localStorage.setItem("huf_cookie_consent", legacy === "accepted" ? "all" : "essential");
+      localStorage.removeItem("cookie-consent");
+    }
+    const consent = localStorage.getItem("huf_cookie_consent");
     if (!consent) {
       const timer = setTimeout(() => setIsVisible(true), 1000);
       return () => clearTimeout(timer);
