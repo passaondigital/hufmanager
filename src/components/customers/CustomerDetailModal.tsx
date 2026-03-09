@@ -401,6 +401,7 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
               street={customer.street}
               zipCode={customer.zip_code}
               city={customer.city}
+              customerName={customer.full_name}
             />
 
             {/* Ghost Profile Banner - shown for non-registered clients */}
