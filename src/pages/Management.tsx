@@ -46,6 +46,7 @@ import { DataExportSection } from "@/components/settings/DataExportSection";
 import { DeleteProviderAccountSection } from "@/components/settings/DeleteProviderAccountSection";
 import { PaymentSettingsCard } from "@/components/settings/PaymentSettingsCard";
 import { AppSettingsCard } from "@/components/settings/AppSettingsCard";
+import { CommunicationSettingsCard } from "@/components/settings/CommunicationSettingsCard";
 import { KiSettingsCard } from "@/components/settings/KiSettingsCard";
 import { CompanyLocationCard } from "@/components/settings/CompanyLocationCard";
 import { TutorialSettingsCard } from "@/components/settings/TutorialSettingsCard";
@@ -915,6 +916,7 @@ Steuernummer: 12/345/67890
 
         {/* App Settings Tab */}
         <TabsContent value="app" className="mt-6 space-y-6">
+          <CommunicationSettingsCard />
           <AppSettingsCard />
           <KiSettingsCard />
           <TutorialSettingsCard />
