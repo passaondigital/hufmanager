@@ -54,6 +54,7 @@ const typeConfig: Record<string, { label: string; icon: React.ReactNode; classNa
 
 const Anfragen = () => {
   const { user } = useAuth();
+  const { isWhatsApp } = useCommunicationMode();
   const navigate = useNavigate();
   const [filter, setFilter] = useState("alle");
   const [search, setSearch] = useState("");
