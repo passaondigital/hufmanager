@@ -473,7 +473,7 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
     </div>,
   ];
 
-  const isSkippable = currentStep >= 2; // Kunde & Termin skippable
+  const isSkippable = currentStep >= 2; // Communication, Kunde & Termin skippable
   const isLastStep = currentStep === totalSteps - 1;
 
   return (
