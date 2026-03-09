@@ -21,12 +21,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { FileText, Download, Eye, Trash2, MoreVertical, Plus, Loader2 } from "lucide-react";
+import { FileText, Download, Eye, Trash2, MoreVertical, Plus, Loader2, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
 import { CreateInvoiceModal } from "./CreateInvoiceModal";
 import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
+import { useCommunicationMode } from "@/hooks/useCommunicationMode";
+import { openWhatsApp, waTextInvoice } from "@/lib/whatsappTemplates";
 
 interface Invoice {
   id: string;
