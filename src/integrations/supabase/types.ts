@@ -3747,25 +3747,46 @@ export type Database = {
           content: string
           conversation_id: string
           created_at: string
+          deleted_at: string | null
+          deleted_for_all: boolean | null
           id: string
           is_read: boolean | null
+          read_at: string | null
+          reply_to_content: string | null
+          reply_to_id: string | null
           sender_id: string
+          voice_duration_seconds: number | null
+          voice_url: string | null
         }
         Insert: {
           content: string
           conversation_id: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_for_all?: boolean | null
           id?: string
           is_read?: boolean | null
+          read_at?: string | null
+          reply_to_content?: string | null
+          reply_to_id?: string | null
           sender_id: string
+          voice_duration_seconds?: number | null
+          voice_url?: string | null
         }
         Update: {
           content?: string
           conversation_id?: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_for_all?: boolean | null
           id?: string
           is_read?: boolean | null
+          read_at?: string | null
+          reply_to_content?: string | null
+          reply_to_id?: string | null
           sender_id?: string
+          voice_duration_seconds?: number | null
+          voice_url?: string | null
         }
         Relationships: [
           {
@@ -3773,6 +3794,13 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "employee_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "employee_messages"
             referencedColumns: ["id"]
           },
         ]
@@ -6254,33 +6282,86 @@ export type Database = {
           },
         ]
       }
+      message_reactions: {
+        Row: {
+          created_at: string | null
+          emoji: string
+          id: string | null
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          emoji: string
+          id?: string | null
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          emoji?: string
+          id?: string | null
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string
           conversation_id: string
           created_at: string
+          deleted_at: string | null
+          deleted_for_all: boolean | null
           id: string
           image_url: string | null
           is_read: boolean | null
+          read_at: string | null
+          reply_to_content: string | null
+          reply_to_id: string | null
           sender_id: string
+          voice_duration_seconds: number | null
+          voice_url: string | null
         }
         Insert: {
           content: string
           conversation_id: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_for_all?: boolean | null
           id?: string
           image_url?: string | null
           is_read?: boolean | null
+          read_at?: string | null
+          reply_to_content?: string | null
+          reply_to_id?: string | null
           sender_id: string
+          voice_duration_seconds?: number | null
+          voice_url?: string | null
         }
         Update: {
           content?: string
           conversation_id?: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_for_all?: boolean | null
           id?: string
           image_url?: string | null
           is_read?: boolean | null
+          read_at?: string | null
+          reply_to_content?: string | null
+          reply_to_id?: string | null
           sender_id?: string
+          voice_duration_seconds?: number | null
+          voice_url?: string | null
         }
         Relationships: [
           {
@@ -6288,6 +6369,13 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
         ]
