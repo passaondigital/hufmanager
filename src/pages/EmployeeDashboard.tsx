@@ -15,12 +15,21 @@ import { EmployeeOnboarding } from "@/components/employee/EmployeeOnboarding";
 import { EmployeeRoleGate } from "@/components/employee/EmployeeRoleGate";
 import {
   MapPin, Clock, CheckCircle, Play, Square, Camera, FileText,
-  ChevronRight, Calendar, User, Briefcase, Route, Package, CalendarOff, Timer,
+  ChevronRight, ChevronLeft, Calendar, User, Briefcase, Route, Package, CalendarOff, Timer,
 } from "lucide-react";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, differenceInMinutes, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
 import { Link } from "react-router-dom";
 import { DemoTourButton } from "@/components/demo/DemoTourButton";
+
+type Section = "profil" | "zeiten";
+
+const SECTION_LABELS: Record<Section, string> = {
+  profil: "Mein Profil",
+  zeiten: "Meine Zeiten",
+};
+
+const SECTION_ORDER: Section[] = ["profil", "zeiten"];
 
 const EmployeeDashboard = () => {
   const { user, signOut } = useAuth();
@@ -28,6 +37,7 @@ const EmployeeDashboard = () => {
   const queryClient = useQueryClient();
   const { data: profile, isLoading: profileLoading } = useEmployeeProfile();
   const [docAssignment, setDocAssignment] = useState<any>(null);
+  const [activeSection, setActiveSection] = useState<Section | null>(null);
 
   // Fetch today's assignments
   const { data: assignments, isLoading: assignmentsLoading } = useQuery({
@@ -193,8 +203,6 @@ const EmployeeDashboard = () => {
     ? differenceInMinutes(new Date(), parseISO(activeTimeRecord.start_time)) - (activeTimeRecord.break_minutes || 0)
     : 0;
 
-  const getInitials = (name: string) => name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
-
   if (profileLoading) {
     return (
       <div className="max-w-lg mx-auto space-y-4 p-4">
@@ -221,8 +229,146 @@ const EmployeeDashboard = () => {
 
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
+  // ── Sub-page: Mein Profil ──
+  if (activeSection === "profil") {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <SubPageHeader
+          section="profil"
+          onBack={() => setActiveSection(null)}
+          onNavigate={setActiveSection}
+        />
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Mein Profil</CardTitle>
+            <CardDescription>Deine Kontaktdaten und Rolle</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                {profile.full_name?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "?"}
+              </div>
+              <div>
+                <p className="font-semibold">{profile.full_name || "—"}</p>
+                <p className="text-sm text-muted-foreground capitalize">{profile.role || "Mitarbeiter"}</p>
+              </div>
+            </div>
+            {profile.phone && (
+              <div className="text-sm text-muted-foreground flex items-center gap-2">
+                <span>📞</span> {profile.phone}
+              </div>
+            )}
+            <div className="text-sm text-muted-foreground flex items-center gap-2">
+              <span>📧</span> {user?.email || "—"}
+            </div>
+            <div className="grid grid-cols-2 gap-3 pt-3">
+              <Card>
+                <CardContent className="p-3 text-center">
+                  <CheckCircle className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                  <p className="text-lg font-bold">{completedTotal}</p>
+                  <p className="text-[10px] text-muted-foreground">Pferde gesamt</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-3 text-center">
+                  <Package className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                  <p className="text-lg font-bold">{materialCount}</p>
+                  <p className="text-[10px] text-muted-foreground">Materialien</p>
+                </CardContent>
+              </Card>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // ── Sub-page: Meine Zeiten ──
+  if (activeSection === "zeiten") {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <SubPageHeader
+          section="zeiten"
+          onBack={() => setActiveSection(null)}
+          onNavigate={setActiveSection}
+        />
+        {/* Active time indicator */}
+        {activeTimeRecord && (
+          <Card className="border-primary/30 bg-primary/5">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Timer className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="font-semibold text-sm">Läuft seit {format(parseISO(activeTimeRecord.start_time), "HH:mm")} Uhr</p>
+                  <p className="text-xs text-muted-foreground">{Math.floor(todayMins / 60)}h {todayMins % 60}m bisher</p>
+                </div>
+              </div>
+              <Badge>Aktiv</Badge>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Week overview */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Meine Woche</CardTitle>
+            <CardDescription>{Math.floor(weekTotalMins / 60)}h {weekTotalMins % 60}m diese Woche</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-7 gap-1">
+              {days.map((day) => {
+                const dayStr = format(day, "yyyy-MM-dd");
+                const isToday = format(new Date(), "yyyy-MM-dd") === dayStr;
+                const dayRecord = weekRecords.find((r: any) => r.date === dayStr);
+                const dayMins = dayRecord
+                  ? differenceInMinutes(parseISO((dayRecord as any).end_time), parseISO((dayRecord as any).start_time)) - ((dayRecord as any).break_minutes || 0)
+                  : 0;
+
+                return (
+                  <div
+                    key={dayStr}
+                    className={`text-center p-1.5 rounded-lg text-xs ${isToday ? "bg-primary/10 border border-primary/30" : "bg-muted/30"}`}
+                  >
+                    <p className="font-medium">{format(day, "EE", { locale: de })}</p>
+                    <p className={`text-[10px] ${isToday ? "text-primary font-bold" : "text-muted-foreground"}`}>
+                      {format(day, "dd")}
+                    </p>
+                    {dayMins > 0 && (
+                      <p className="text-[10px] text-primary font-medium mt-0.5">{Math.floor(dayMins / 60)}h</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pending absences */}
+        {pendingAbsences > 0 && (
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <CalendarOff className="h-5 w-5 text-amber-500" />
+              <div>
+                <p className="text-sm font-medium">{pendingAbsences} offene Abwesenheitsanträge</p>
+                <p className="text-xs text-muted-foreground">Warten auf Genehmigung</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Availability */}
+        <Card>
+          <CardContent className="pt-6">
+            <EmployeeAvailabilityManager employeeId={profile.id} providerId={profile.provider_id} isEmployeeView />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // ── Main Tile Overview ──
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-start justify-between gap-4">
         <DashboardWelcomeHeader
           fullName={profile.full_name}
@@ -251,104 +397,70 @@ const EmployeeDashboard = () => {
         </Card>
       </Link>
 
-      {/* 8 KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" data-tour="employee-kpi">
-        <Card>
-          <CardContent className="p-3 text-center">
+      {/* Tile Section: Mein Profil */}
+      <section className="space-y-3">
+        <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Mein Bereich</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => setActiveSection("profil")}
+            className="relative flex flex-col items-start text-left min-h-[160px] rounded-xl border bg-card p-5 transition-all hover:border-primary/50 hover:shadow-sm"
+          >
+            <User className="h-8 w-8 text-amber-500 mb-2" />
+            <span className="text-base font-semibold">Mein Profil</span>
+            <span className="text-xs text-muted-foreground mt-0.5">Name, Foto, Kontakt</span>
+            <div className="flex-1" />
+            <span className="text-xs text-muted-foreground mt-3 truncate w-full">
+              {profile.full_name || "—"}
+            </span>
+            <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary">
+              Bearbeiten <ChevronRight className="h-3 w-3" />
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveSection("zeiten")}
+            className="relative flex flex-col items-start text-left min-h-[160px] rounded-xl border bg-card p-5 transition-all hover:border-primary/50 hover:shadow-sm"
+          >
+            <Clock className="h-8 w-8 text-amber-500 mb-2" />
+            <span className="text-base font-semibold">Meine Zeiten</span>
+            <span className="text-xs text-muted-foreground mt-0.5">Check-in/out, Übersicht</span>
+            <div className="flex-1" />
+            <span className="text-xs text-muted-foreground mt-3 truncate w-full">
+              {activeTimeRecord ? "⏱ Läuft" : `${Math.floor(weekTotalMins / 60)}h diese Woche`}
+            </span>
+            <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary">
+              Anzeigen <ChevronRight className="h-3 w-3" />
+            </span>
+          </button>
+        </div>
+      </section>
+
+      {/* KPI Cards (compact 4-grid) */}
+      <section className="space-y-3">
+        <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Heute</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" data-tour="employee-kpi">
+          <Card><CardContent className="p-3 text-center">
             <Briefcase className="h-4 w-4 mx-auto mb-1 text-primary" />
             <p className="text-lg font-bold">{assignments?.length || 0}</p>
-            <p className="text-[10px] text-muted-foreground">Aufträge heute</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 text-center">
+            <p className="text-[10px] text-muted-foreground">Aufträge</p>
+          </CardContent></Card>
+          <Card><CardContent className="p-3 text-center">
             <CheckCircle className="h-4 w-4 mx-auto mb-1 text-primary" />
             <p className="text-lg font-bold">{assignments?.filter((a) => a.status === "checked_out").length || 0}</p>
-            <p className="text-[10px] text-muted-foreground">Erledigt heute</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 text-center">
+            <p className="text-[10px] text-muted-foreground">Erledigt</p>
+          </CardContent></Card>
+          <Card><CardContent className="p-3 text-center">
             <Clock className="h-4 w-4 mx-auto mb-1 text-primary" />
             <p className="text-lg font-bold">{assignments?.filter((a) => ["checked_in", "working"].includes(a.status)).length || 0}</p>
             <p className="text-[10px] text-muted-foreground">Aktiv</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 text-center">
+          </CardContent></Card>
+          <Card><CardContent className="p-3 text-center">
             <Timer className="h-4 w-4 mx-auto mb-1 text-primary" />
             <p className="text-lg font-bold">{activeTimeRecord ? `${Math.floor(todayMins / 60)}h` : "—"}</p>
-            <p className="text-[10px] text-muted-foreground">Stunden heute</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 text-center">
-            <Calendar className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-            <p className="text-lg font-bold">{Math.floor(weekTotalMins / 60)}h {weekTotalMins % 60}m</p>
-            <p className="text-[10px] text-muted-foreground">Diese Woche</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 text-center">
-            <CheckCircle className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-            <p className="text-lg font-bold">{completedTotal}</p>
-            <p className="text-[10px] text-muted-foreground">Pferde gesamt</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 text-center">
-            <Package className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-            <p className="text-lg font-bold">{materialCount}</p>
-            <p className="text-[10px] text-muted-foreground">Materialien</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 text-center">
-            <CalendarOff className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-            <p className="text-lg font-bold">{pendingAbsences}</p>
-            <p className="text-[10px] text-muted-foreground">Offene Anträge</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Mini Weekly Calendar */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Meine Woche</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-7 gap-1">
-            {days.map((day) => {
-              const dayStr = format(day, "yyyy-MM-dd");
-              const isToday = format(new Date(), "yyyy-MM-dd") === dayStr;
-              // Count assignments for this day (simplified)
-              const dayAssignments = assignments?.filter(
-                (a) => a.appointment?.date === dayStr
-              ) || [];
-              const doneCount = dayAssignments.filter((a) => a.status === "checked_out").length;
-              const openCount = dayAssignments.length - doneCount;
-
-              return (
-                <div
-                  key={dayStr}
-                  className={`text-center p-1.5 rounded-lg text-xs ${isToday ? "bg-primary/10 border border-primary/30" : "bg-muted/30"}`}
-                >
-                  <p className="font-medium">{format(day, "EE", { locale: de })}</p>
-                  <p className={`text-[10px] ${isToday ? "text-primary font-bold" : "text-muted-foreground"}`}>
-                    {format(day, "dd")}
-                  </p>
-                  {(doneCount > 0 || openCount > 0) && (
-                    <div className="flex justify-center gap-0.5 mt-0.5">
-                      {doneCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
-                      {openCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+            <p className="text-[10px] text-muted-foreground">Stunden</p>
+          </CardContent></Card>
+        </div>
+      </section>
 
       {/* Assignments */}
       <Card data-tour="employee-assignments">
@@ -405,7 +517,6 @@ const EmployeeDashboard = () => {
                     </div>
                   )}
 
-                  {/* Action Buttons — restricted for 'view' role */}
                   {role === "view" ? (
                     <p className="text-xs text-muted-foreground italic">Nur Ansichtsmodus — Check-in nicht verfügbar.</p>
                   ) : (
@@ -434,15 +545,6 @@ const EmployeeDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Availability */}
-      {profile && (
-        <Card>
-          <CardContent className="pt-6">
-            <EmployeeAvailabilityManager employeeId={profile.id} providerId={profile.provider_id} isEmployeeView />
-          </CardContent>
-        </Card>
-      )}
-
       {/* Documentation Form */}
       {docAssignment && profile && (
         <EmployeeDocumentationForm
@@ -460,5 +562,33 @@ const EmployeeDashboard = () => {
     </div>
   );
 };
+
+// ── Sub-page header with breadcrumb + prev/next ──
+function SubPageHeader({
+  section,
+  onBack,
+  onNavigate,
+}: {
+  section: Section;
+  onBack: () => void;
+  onNavigate: (s: Section) => void;
+}) {
+  const idx = SECTION_ORDER.indexOf(section);
+  const prev = idx > 0 ? SECTION_ORDER[idx - 1] : null;
+  const next = idx < SECTION_ORDER.length - 1 ? SECTION_ORDER[idx + 1] : null;
+
+  return (
+    <div className="space-y-1">
+      <Button variant="ghost" size="sm" className="gap-1 -ml-2 text-muted-foreground" onClick={onBack}>
+        <ChevronLeft className="h-4 w-4" /> Zurück
+      </Button>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <span className="hover:text-foreground cursor-pointer" onClick={onBack}>Mein Bereich</span>
+        <span>›</span>
+        <span className="text-foreground font-medium">{SECTION_LABELS[section]}</span>
+      </div>
+    </div>
+  );
+}
 
 export default EmployeeDashboard;
