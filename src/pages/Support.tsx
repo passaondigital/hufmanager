@@ -71,7 +71,7 @@ const Support = () => {
     setIsSubmitting(true);
 
     // Create mailto link with pre-filled content
-    const mailtoUrl = `mailto:support@hufmanager.de?subject=${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(
+    const mailtoUrl = `mailto:support@hufmanager.de?(formData.subject)}&body=${encodeURIComponent(
       `Von: ${user?.email || "Unbekannt"}\n\n${formData.message}`
     )}`;
 
@@ -174,8 +174,7 @@ const Support = () => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => window.location.href = "mailto:support@hufmanager.de?cc=teamhufmanager@gmail.com"}
-                className="gap-2"
+                onClick={() => window.location.href = "mailto:support@hufmanager.de?cc=teamhufmanager@gmail.com="gap-2"
               >
                 <Mail className="h-4 w-4" />
                 Direkt per E-Mail
