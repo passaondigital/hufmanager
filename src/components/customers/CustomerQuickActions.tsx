@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Phone, Mail, MessageCircle, Navigation } from "lucide-react";
 import { toast } from "sonner";
+import { useCommunicationMode } from "@/hooks/useCommunicationMode";
+import { openWhatsApp, waTextGeneral } from "@/lib/whatsappTemplates";
 
 interface CustomerQuickActionsProps {
   phone?: string | null;
@@ -10,6 +12,7 @@ interface CustomerQuickActionsProps {
   street?: string | null;
   zipCode?: string | null;
   city?: string | null;
+  customerName?: string | null;
 }
 
 export function CustomerQuickActions({
@@ -20,7 +23,10 @@ export function CustomerQuickActions({
   street,
   zipCode,
   city,
+  customerName,
 }: CustomerQuickActionsProps) {
+  const { isWhatsApp } = useCommunicationMode();
+
   const handleCall = () => {
     if (phone) {
       window.location.href = `tel:${phone}`;
@@ -39,12 +45,7 @@ export function CustomerQuickActions({
 
   const handleWhatsApp = () => {
     if (phone) {
-      // Clean phone number for WhatsApp
-      const cleanPhone = phone.replace(/\D/g, "");
-      const formattedPhone = cleanPhone.startsWith("0") 
-        ? `49${cleanPhone.substring(1)}` 
-        : cleanPhone;
-      window.open(`https://wa.me/${formattedPhone}`, "_blank");
+      openWhatsApp(phone, waTextGeneral(customerName || ""));
     } else {
       toast.error("Keine Telefonnummer für WhatsApp hinterlegt");
     }
@@ -72,50 +73,66 @@ export function CustomerQuickActions({
   const hasNavigation = (latitude && longitude) || (street && zipCode && city);
 
   return (
-    <div className="grid grid-cols-4 gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        className="flex flex-col items-center gap-1 h-auto py-3"
-        onClick={handleCall}
-        disabled={!phone}
-      >
-        <Phone className="h-5 w-5 text-green-600" />
-        <span className="text-xs">Anrufen</span>
-      </Button>
+    <div className="space-y-2">
+      {/* WhatsApp primary button when in WA mode */}
+      {isWhatsApp && (
+        <Button
+          className="w-full gap-2 bg-[#F5970A] hover:bg-[#F5970A]/90 text-white h-12 text-base font-semibold"
+          onClick={handleWhatsApp}
+          disabled={!phone}
+        >
+          <MessageCircle className="h-5 w-5" />
+          Per WhatsApp schreiben
+        </Button>
+      )}
       
-      <Button
-        variant="outline"
-        size="sm"
-        className="flex flex-col items-center gap-1 h-auto py-3"
-        onClick={handleEmail}
-        disabled={!email}
-      >
-        <Mail className="h-5 w-5 text-blue-600" />
-        <span className="text-xs">Mail</span>
-      </Button>
-      
-      <Button
-        variant="outline"
-        size="sm"
-        className="flex flex-col items-center gap-1 h-auto py-3"
-        onClick={handleWhatsApp}
-        disabled={!phone}
-      >
-        <MessageCircle className="h-5 w-5 text-green-500" />
-        <span className="text-xs">WhatsApp</span>
-      </Button>
-      
-      <Button
-        variant="outline"
-        size="sm"
-        className="flex flex-col items-center gap-1 h-auto py-3"
-        onClick={handleNavigate}
-        disabled={!hasNavigation}
-      >
-        <Navigation className="h-5 w-5 text-primary" />
-        <span className="text-xs">Route</span>
-      </Button>
+      <div className={`grid ${isWhatsApp ? "grid-cols-3" : "grid-cols-4"} gap-2`}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex flex-col items-center gap-1 h-auto py-3"
+          onClick={handleCall}
+          disabled={!phone}
+        >
+          <Phone className="h-5 w-5 text-green-600" />
+          <span className="text-xs">Anrufen</span>
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex flex-col items-center gap-1 h-auto py-3"
+          onClick={handleEmail}
+          disabled={!email}
+        >
+          <Mail className="h-5 w-5 text-blue-600" />
+          <span className="text-xs">Mail</span>
+        </Button>
+        
+        {!isWhatsApp && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex flex-col items-center gap-1 h-auto py-3"
+            onClick={handleWhatsApp}
+            disabled={!phone}
+          >
+            <MessageCircle className="h-5 w-5 text-green-500" />
+            <span className="text-xs">WhatsApp</span>
+          </Button>
+        )}
+        
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex flex-col items-center gap-1 h-auto py-3"
+          onClick={handleNavigate}
+          disabled={!hasNavigation}
+        >
+          <Navigation className="h-5 w-5 text-primary" />
+          <span className="text-xs">Route</span>
+        </Button>
+      </div>
     </div>
   );
 }
