@@ -145,7 +145,7 @@ serve(async (req: Request) => {
     const emailPayload: any = {
       from: "HufManager <support@hufmanager.de>",
       to: [recipient_email],
-      cc: ["teamhufmanager@gmail.com"],
+      cc: ["support@hufmanager.de"],
       subject: `Ihre Rechnung von HufManager – Nr. ${invoice_number}`,
       html: htmlBody,
     };

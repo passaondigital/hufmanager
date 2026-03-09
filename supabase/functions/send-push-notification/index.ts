@@ -210,7 +210,7 @@ async function generateVapidToken(
   const payload = {
     aud: audience,
     exp: expiration,
-    sub: 'mailto:teamhufmanager@gmail.com',
+    sub: 'mailto:support@hufmanager.de',
   };
 
   const headerB64 = base64urlEncode(new TextEncoder().encode(JSON.stringify(header)));

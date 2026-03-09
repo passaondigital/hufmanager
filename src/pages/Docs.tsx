@@ -179,7 +179,7 @@ const legalDocs: DocSection[] = [
   {
     id: "behoerden-kontakt",
     title: "Kontakt für Behördenanfragen",
-    content: "Anfragen von Datenschutzbehörden, Aufsichtsbehörden oder Strafverfolgungsbehörden richten Sie bitte an:\n\n**E-Mail:** support@hufmanager.de / teamhufmanager@gmail.com\n\n**Postadresse:**\nHufManager\nz.Hd. Datenschutzbeauftragter\n[Adresse auf Anfrage]\n\n**Reaktionszeit:** Wir antworten auf Behördenanfragen innerhalb von 72 Stunden.\n\n**Zuständige Aufsichtsbehörde:**\nLandesbeauftragte(r) für Datenschutz und Informationsfreiheit des jeweiligen Bundeslandes.",
+    content: "Anfragen von Datenschutzbehörden, Aufsichtsbehörden oder Strafverfolgungsbehörden richten Sie bitte an:\n\n**E-Mail:** support@hufmanager.de\n\n**Postadresse:**\nPascal Schmid (Barhufserviceschmid)\nc/o Postflex #10643\nEmsdettener Str. 10\n48268 Greven\n\n**Reaktionszeit:** Wir antworten auf Behördenanfragen innerhalb von 72 Stunden.\n\n**Zuständige Aufsichtsbehörde:**\nLandesbeauftragte(r) für Datenschutz und Informationsfreiheit des jeweiligen Bundeslandes.",
   },
 ];
 

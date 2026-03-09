@@ -96,7 +96,7 @@ export default function AdminDashboard() {
     setIsAdmin(!!data);
     
     // Check if master admin
-    setIsMasterAdmin(user.email === "passaondigital@gmail.com");
+    setIsMasterAdmin(user.email === "support@hufmanager.de");
   };
 
   const handleViewChange = (view: AdminView) => {

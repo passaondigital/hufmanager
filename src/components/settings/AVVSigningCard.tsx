@@ -30,8 +30,8 @@ und
 
 Auftragsverarbeiter:
 HufManager – betrieben durch
-Pascal Schmid, Barhufserviceschmid, Einzelunternehmen, Hauptstrasse 19, 54426 Talling (D)
-support@hufmanager.de / teamhufmanager@gmail.com
+Pascal Schmid, Barhufserviceschmid, Einzelunternehmen, c/o Postflex #10643, Emsdettener Str. 10, 48268 Greven (D)
+support@hufmanager.de
 – nachfolgend „HufManager" genannt –
 
 2. Gegenstand und Dauer der Verarbeitung
@@ -291,9 +291,9 @@ export function AVVSigningCard() {
     doc.setFont("helvetica", "bold");
     doc.text("Auftragsverarbeiter:", margin, 85);
     doc.setFont("helvetica", "normal");
-    doc.text("HufManager GmbH", margin, 92);
-    doc.text("Musterstraße 123", margin, 99);
-    doc.text("12345 Musterstadt", margin, 106);
+    doc.text("Pascal Schmid (Barhufserviceschmid)", margin, 92);
+    doc.text("c/o Postflex #10643, Emsdettener Str. 10", margin, 99);
+    doc.text("48268 Greven", margin, 106);
     
     // Contract text (simplified for PDF)
     doc.setFontSize(9);

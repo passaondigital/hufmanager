@@ -220,7 +220,7 @@ serve(async (req: Request) => {
         await resend.emails.send({
           from: "HufManager <support@hufmanager.de>",
           to: [profile.email],
-          cc: ["teamhufmanager@gmail.com"],
+          cc: ["support@hufmanager.de"],
           subject: "Dein HufManager-Nutzungsvertrag",
           html: `
             <!DOCTYPE html>

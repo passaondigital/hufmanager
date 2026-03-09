@@ -71,7 +71,7 @@ const Support = () => {
     setIsSubmitting(true);
 
     // Create mailto link with pre-filled content
-    const mailtoUrl = `mailto:support@hufmanager.de?cc=teamhufmanager@gmail.com&subject=${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(
+    const mailtoUrl = `mailto:support@hufmanager.de?(formData.subject)}&body=${encodeURIComponent(
       `Von: ${user?.email || "Unbekannt"}\n\n${formData.message}`
     )}`;
 
@@ -174,7 +174,7 @@ const Support = () => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => window.location.href = "mailto:support@hufmanager.de?cc=teamhufmanager@gmail.com"}
+                onClick={() => window.location.href = "mailto:support@hufmanager.de"}
                 className="gap-2"
               >
                 <Mail className="h-4 w-4" />
@@ -195,12 +195,11 @@ const Support = () => {
             <div>
               <p className="font-medium text-foreground">E-Mail Support</p>
               <a
-                href="mailto:support@hufmanager.de?cc=teamhufmanager@gmail.com"
+                href="mailto:support@hufmanager.de"
                 className="text-primary hover:underline"
               >
                 support@hufmanager.de
               </a>
-              <span className="text-muted-foreground text-sm ml-1">/ teamhufmanager@gmail.com</span>
               <p className="text-sm text-muted-foreground mt-1">
                 Wir antworten in der Regel innerhalb von 24 Stunden.
               </p>

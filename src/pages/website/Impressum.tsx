@@ -9,50 +9,54 @@ const Impressum = () => (
         <h1 className="text-4xl font-bold mb-8 text-white">Impressum</h1>
         <section className="space-y-6 text-white/70">
           <div>
-            <h2 className="text-xl font-semibold text-white mb-2">Angaben gemäß § 5 TMG</h2>
             <p>
               Pascal Schmid<br />
-              (Barhufservice Schmid)<br />
-              c/o Postflex #10643<br />
+              Barhufserviceschmid<br />
               Emsdettener Str. 10<br />
+              c/o Postflex #10643<br />
               48268 Greven
             </p>
           </div>
+
           <div>
             <h2 className="text-xl font-semibold text-white mb-2">Kontakt</h2>
             <p>
-              E-Mail: support@hufmanager.de<br />
-              Website: www.hufmanager.de
+              Telefon: 015209007017<br />
+              E-Mail: support@hufmanager.de
             </p>
           </div>
+
           <div>
-            <h2 className="text-xl font-semibold text-white mb-2">Steuernummer</h2>
-            <p>43/150/40518</p>
+            <h2 className="text-xl font-semibold text-white mb-2">Umsatzsteuer-ID</h2>
+            <p>
+              Umsatzsteuer-Identifikationsnummer gemäß § 27 a Umsatzsteuergesetz:<br /><br />
+              Steuernummer: 43/150/40518<br /><br />
+              Gemäß § 19 UStG wird keine Umsatzsteuer ausgewiesen.
+            </p>
           </div>
-          <div>
-            <h2 className="text-xl font-semibold text-white mb-2">Umsatzsteuer</h2>
-            <p>Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.</p>
-          </div>
+
           <div>
             <h2 className="text-xl font-semibold text-white mb-2">Gewerbeanmeldung</h2>
-            <p>Die Gewerbeerlaubnis nach § 14 GewO oder § 55c GewO wurde am 15.08.2019 erteilt.</p>
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold text-white mb-2">Verantwortlich für den Inhalt</h2>
             <p>
-              Verantwortlicher i.S.d. § 18 Abs. 2 MStV:<br />
+              Die Gewerbeerlaubnis nach § 14 GewO wurde am 15.08.2019 von folgender Stelle erteilt: Gemeinde Morbach.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-xl font-semibold text-white mb-2">Redaktionell verantwortlich</h2>
+            <p>
               Pascal Schmid<br />
               c/o Postflex #10643<br />
               Emsdettener Str. 10<br />
               48268 Greven
             </p>
           </div>
+
           <div>
-            <h2 className="text-xl font-semibold text-white mb-2">Verbraucherstreitbeilegung/Universalschlichtungsstelle</h2>
-            <p>Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>
-          </div>
-          <div className="pt-4 text-sm">
-            <p>Quelle: <a href="https://www.e-recht24.de" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">e-recht24.de</a></p>
+            <h2 className="text-xl font-semibold text-white mb-2">Verbraucherstreitbeilegung</h2>
+            <p>
+              Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.
+            </p>
           </div>
         </section>
       </div>

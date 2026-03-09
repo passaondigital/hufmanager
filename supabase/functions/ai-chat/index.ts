@@ -196,7 +196,7 @@ WICHTIGE REGELN:
 - Verwende Hufpflege-Fachsprache nur wenn der Nutzer sie benutzt
 - Für Kunden: Einfache Sprache, keine Fachbegriffe, bei Gesundheitsfragen immer an Tierarzt verweisen
 - Sage "Ich bin mir nicht sicher" wenn du etwas nicht weißt — rate nicht
-- Bei Support-Anfragen verweise auf: support@hufmanager.de oder teamhufmanager@gmail.com`
+- Bei Support-Anfragen verweise auf: support@hufmanager.de`
           },
           ...messages,
         ],

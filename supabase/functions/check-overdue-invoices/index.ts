@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 const ADMIN_EMAIL = "support@hufmanager.de";
-const CC_EMAIL = "teamhufmanager@gmail.com";
+const CC_EMAIL = "support@hufmanager.de";
 
 const DUNNING_CONFIG = [
   { level: 1, daysOverdue: 3, fee: 0, subject: "Zahlungserinnerung", tone: "freundlich" },
