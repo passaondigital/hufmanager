@@ -263,20 +263,18 @@ export function useHufChat({ conversationId, enabled = true }: UseHufChatOptions
       // Stop typing indicator
       presenceChannelRef.current?.track({ typing: false });
 
-      const insertPayload: Record<string, unknown> = {
-        conversation_id: conversationId,
-        sender_id: user.id,
-        content: messageContent,
-        image_url: imageUrl,
-        voice_url: voiceUrl,
-        voice_duration_seconds: voiceDuration,
-        reply_to_id: replyTo?.id || null,
-        reply_to_content: replyTo?.content || null,
-      };
-
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("messages")
-        .insert(insertPayload)
+        .insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          content: messageContent,
+          image_url: imageUrl,
+          voice_url: voiceUrl,
+          voice_duration_seconds: voiceDuration,
+          reply_to_id: replyTo?.id || null,
+          reply_to_content: replyTo?.content || null,
+        })
         .select("id, conversation_id, sender_id, content, is_read, read_at, created_at, image_url, voice_url, voice_duration_seconds, deleted_at, deleted_for_all, reply_to_id, reply_to_content")
         .single();
 
