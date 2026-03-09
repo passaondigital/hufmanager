@@ -30,8 +30,8 @@ und
 
 Auftragsverarbeiter:
 HufManager – betrieben durch
-Pascal Schmid, Barhufserviceschmid, Einzelunternehmen, Hauptstrasse 19, 54426 Talling (D)
-support@hufmanager.de / teamhufmanager@gmail.com
+Pascal Schmid, Barhufserviceschmid, Einzelunternehmen, c/o Postflex #10643, Emsdettener Str. 10, 48268 Greven (D)
+support@hufmanager.de
 – nachfolgend „HufManager" genannt –
 
 2. Gegenstand und Dauer der Verarbeitung
