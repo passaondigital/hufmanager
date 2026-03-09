@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { CountrySelectionStep } from './CountrySelectionStep';
+import { CommunicationModeSelector } from './CommunicationModeSelector';
 import { SetupCompleteScreen } from './SetupCompleteScreen';
 import { TaxCountry, getDACHConfig, getCurrencyForCountry } from '@/lib/dachConfig';
 import { format, addDays } from 'date-fns';
