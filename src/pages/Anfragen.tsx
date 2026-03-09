@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MessageSquare, Phone, MapPin, Search, Filter, Calendar, AlertTriangle, HelpCircle, Loader2, Send } from "lucide-react";
+import { MessageSquare, MessageCircle, Phone, MapPin, Search, Filter, Calendar, AlertTriangle, HelpCircle, Loader2, Send } from "lucide-react";
 import { HelpTip } from "@/components/ui/HelpTip";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { BroadcastModal } from "@/components/broadcast/BroadcastModal";
+import { useCommunicationMode } from "@/hooks/useCommunicationMode";
+import { openWhatsApp, waTextLeadReply } from "@/lib/whatsappTemplates";
 
 interface Lead {
   id: string;

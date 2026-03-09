@@ -6,14 +6,27 @@ import { Download, MessageCircle, Mail, CheckCircle2 } from "lucide-react";
 import type { ExtendedCanvasDocument } from "@/pages/MeinOffice";
 import { exportCanvasToPdf } from "@/components/office/canvas/canvasPdfExport";
 import type { CanvasDocument } from "@/components/office/canvas/types";
+import { useCommunicationMode } from "@/hooks/useCommunicationMode";
+import { openWhatsApp, waTextPdfShare } from "@/lib/whatsappTemplates";
 
 interface OfficePdfShareDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   document: ExtendedCanvasDocument | null;
+  /** Optional: Kundenname für vorausgefüllte WhatsApp-Nachricht */
+  customerName?: string | null;
+  /** Optional: Telefonnummer des Kunden */
+  customerPhone?: string | null;
+  /** Optional: Pferdename */
+  horseName?: string | null;
 }
 
-export function OfficePdfShareDialog({ open, onOpenChange, document: doc }: OfficePdfShareDialogProps) {
+export function OfficePdfShareDialog({ 
+  open, onOpenChange, document: doc,
+  customerName, customerPhone, horseName,
+}: OfficePdfShareDialogProps) {
+  const { isWhatsApp } = useCommunicationMode();
+
   if (!doc) return null;
 
   const handleDownload = async () => {
@@ -24,10 +37,20 @@ export function OfficePdfShareDialog({ open, onOpenChange, document: doc }: Offi
   };
 
   const handleWhatsApp = () => {
-    const text = encodeURIComponent(
-      `Hallo, hier ist der Bericht "${doc.title}" vom ${new Date().toLocaleDateString("de-DE")}.`
-    );
-    window.open(`https://wa.me/?text=${text}`, "_blank");
+    if (isWhatsApp && customerPhone) {
+      const text = waTextPdfShare(
+        customerName || "",
+        horseName || doc.title || "Dokument",
+        new Date().toLocaleDateString("de-DE"),
+      );
+      openWhatsApp(customerPhone, text);
+    } else {
+      // Fallback: generic WhatsApp share
+      const text = encodeURIComponent(
+        `Hallo, hier ist der Bericht "${doc.title}" vom ${new Date().toLocaleDateString("de-DE")}.`
+      );
+      window.open(`https://wa.me/?text=${text}`, "_blank");
+    }
   };
 
   const handleEmail = () => {
@@ -52,10 +75,20 @@ export function OfficePdfShareDialog({ open, onOpenChange, document: doc }: Offi
             <Download className="h-4 w-4" />
             Herunterladen
           </Button>
-          <Button variant="outline" className="w-full justify-start gap-3 h-11" onClick={handleWhatsApp}>
-            <MessageCircle className="h-4 w-4" />
-            Per WhatsApp teilen
-          </Button>
+          {isWhatsApp ? (
+            <Button 
+              className="w-full justify-start gap-3 h-11 bg-[#F5970A] hover:bg-[#F5970A]/90 text-white"
+              onClick={handleWhatsApp}
+            >
+              <MessageCircle className="h-4 w-4" />
+              Per WhatsApp teilen
+            </Button>
+          ) : (
+            <Button variant="outline" className="w-full justify-start gap-3 h-11" onClick={handleWhatsApp}>
+              <MessageCircle className="h-4 w-4" />
+              Per WhatsApp teilen
+            </Button>
+          )}
           <Button variant="outline" className="w-full justify-start gap-3 h-11" onClick={handleEmail}>
             <Mail className="h-4 w-4" />
             Per E-Mail senden
