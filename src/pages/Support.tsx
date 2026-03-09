@@ -174,7 +174,8 @@ const Support = () => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => window.location.href = "mailto:support@hufmanager.de?cc=teamhufmanager@gmail.com="gap-2"
+                onClick={() => window.location.href = "mailto:support@hufmanager.de"}
+                className="gap-2"
               >
                 <Mail className="h-4 w-4" />
                 Direkt per E-Mail
