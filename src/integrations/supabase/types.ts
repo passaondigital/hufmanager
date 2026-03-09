@@ -1639,6 +1639,7 @@ export type Database = {
           bic: string | null
           business_name: string | null
           client_intake_status: string | null
+          communication_mode: string | null
           copecart_customer_portal_url: string | null
           copecart_vendor_id: string | null
           country: string | null
@@ -1714,6 +1715,7 @@ export type Database = {
           bic?: string | null
           business_name?: string | null
           client_intake_status?: string | null
+          communication_mode?: string | null
           copecart_customer_portal_url?: string | null
           copecart_vendor_id?: string | null
           country?: string | null
@@ -1789,6 +1791,7 @@ export type Database = {
           bic?: string | null
           business_name?: string | null
           client_intake_status?: string | null
+          communication_mode?: string | null
           copecart_customer_portal_url?: string | null
           copecart_vendor_id?: string | null
           country?: string | null
