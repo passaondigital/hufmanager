@@ -10,7 +10,7 @@ const Impressum = () => (
         <section className="space-y-6 text-white/70">
           <div>
             <h2 className="text-xl font-semibold text-white mb-2">Angaben gemäß § 5 TMG</h2>
-            <p>Pascal Schmid<br />Barhufserviceschmid<br />Laurentiusstrasse 34<br />54497 Morscheid Riedenburg</p>
+            <p>Pascal Schmid<br />(Barhufservice Schmid)<br />c/o Postflex #10643<br />Emsdettener Str. 10<br />48268 Greven</p>
           </div>
           <div>
             <h2 className="text-xl font-semibold text-white mb-2">Kontakt</h2>
