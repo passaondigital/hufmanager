@@ -28,11 +28,12 @@ const Datenschutz = () => (
             <h2 className="text-2xl font-semibold mb-4">3. Allgemeine Hinweise und Pflichtinformationen</h2>
             <h3 className="text-xl font-semibold mb-2">Hinweis zur verantwortlichen Stelle</h3>
             <p className="mb-4">
-              Herr Pascal Schmid<br />
-              Laurentiusstrasse 34<br />
-              54497 Morscheid Riedenburg<br />
-              E-Mail: support@hufmanager.de<br />
-              Telefon: 015209007017
+              Pascal Schmid<br />
+              (Barhufservice Schmid)<br />
+              c/o Postflex #10643<br />
+              Emsdettener Str. 10<br />
+              48268 Greven<br />
+              E-Mail: support@hufmanager.de
             </p>
           </div>
           <div>

@@ -174,7 +174,7 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
     const periodEnd = form.period_end || (form.period_start ? new Date(new Date(form.period_start).setFullYear(new Date(form.period_start).getFullYear() + 1)).toISOString().split("T")[0] : "");
 
     return {
-      ANBIETER_ADRESSE: "Adresse folgt nach PostIdent",
+      ANBIETER_ADRESSE: "Pascal Schmid (Barhufservice Schmid)\nc/o Postflex #10643\nEmsdettener Str. 10\n48268 Greven",
       PLAN_NAME: planName,
       PLAN_PREIS_MONAT: monthlyStr,
       PLAN_PREIS_JAHR: yearlyStr,

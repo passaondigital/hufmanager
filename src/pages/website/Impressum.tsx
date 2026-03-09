@@ -10,10 +10,10 @@ const Impressum = () => (
         <section className="space-y-6 text-white/70">
           <div>
             <h2 className="text-xl font-semibold text-white mb-2">Angaben gemäß § 5 TMG</h2>
-            <p>Pascal Schmid<br />(Barhufservice Schmid)<br />c/o Postflex #10643<br />Emsdettener Str. 10<br />48268 Greven>48268 Greven>48268 Greven</p>
+            <p>Pascal Schmid<br />(Barhufservice Schmid)<br />c/o Postflex #10643<br />Emsdettener Str. 10<br />48268 Greven>48268 Greven>48268 Greven>48268 Greven</p>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-white mb-2">KoE-Mail: support@hufmanager.de<br />Website: www.br />Website: www.ail: support@hufmanager.de</p>
+            <h2 className="text-xl font-semibold text-wE-Mail: support@hufmanager.de<br />Website: www.br />Website: www.br />Website: www.ail: support@hufmanager.de</p>
           </div>
           <div>
             <h2 className="text-xl font-semibold text-white mb-2">Steuernummer</h2>
@@ -25,12 +25,11 @@ const Impressum = () => (
           </div>
           <div>
             <h2 className="text-xl font-semibold text-white mb-2">Gewerbeanmeldung</h2>
-            <p>Die Gewerbeerlaubnis nach § 14 GewO oder § 55c GewO wuerteilt: Gemeinde Morbach.</p>
+            <p>Die Gewerbeerlaubnis nach § 14 GewO oerteiltp>
           </div>
           <div>
             <h2 className="text-xl font-semibold text-white mb-2">Verantwortlich für den Inhalt</h2>
-            <p>Verantwortlicher i.S.d. §18 Abs. 2 MStV: Pascal Schmid</p>
-          </div>
+            <p>Verantwortlicher i.S.d. §18 Abs. 2 MStV: Pasca 18 Abs. 2 MStV:<br />Pascal Schmid<br />c/o Postflex #10643<br />Emsdettener Str. 10<br />48268 Greven
           <div>
             <h2 className="text-xl font-semibold text-white mb-2">Verbraucherstreitbeilegung/Universalschlichtungsstelle</h2>
             <p>Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>
