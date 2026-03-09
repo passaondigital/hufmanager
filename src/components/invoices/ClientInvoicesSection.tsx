@@ -286,6 +286,19 @@ export function ClientInvoicesSection({ clientId, clientName, horses = [] }: Cli
                           <Download className="h-4 w-4 mr-2" />
                           Herunterladen
                         </DropdownMenuItem>
+                        {isWhatsApp && clientProfile?.phone && (
+                          <DropdownMenuItem onClick={() => {
+                            const amount = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2 }).format(invoice.total_amount);
+                            const dueDate = invoice.due_date ? format(new Date(invoice.due_date), "dd.MM.yyyy", { locale: de }) : undefined;
+                            openWhatsApp(
+                              clientProfile.phone!,
+                              waTextInvoice(clientName || "", invoice.invoice_number || "–", `${amount}€`, dueDate)
+                            );
+                          }}>
+                            <MessageCircle className="h-4 w-4 mr-2 text-green-500" />
+                            Per WhatsApp senden
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem
                           onClick={() => setInvoiceToDelete(invoice)}
                           className="text-destructive focus:text-destructive"
