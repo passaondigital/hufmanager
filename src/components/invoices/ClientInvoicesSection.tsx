@@ -62,6 +62,7 @@ interface ClientInvoicesSectionProps {
 
 export function ClientInvoicesSection({ clientId, clientName, horses = [] }: ClientInvoicesSectionProps) {
   const { user } = useAuth();
+  const { isWhatsApp } = useCommunicationMode();
   const queryClient = useQueryClient();
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
