@@ -53,15 +53,18 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
   const [appointmentDate, setAppointmentDate] = useState(tomorrow);
   const [appointmentTime, setAppointmentTime] = useState('08:00');
 
-  const totalSteps = 4;
+  const [commModeSelected, setCommModeSelected] = useState(false);
+
+  const totalSteps = 5;
   const progress = ((currentStep + 1) / totalSteps) * 100;
 
   const canProceed = () => {
     switch (currentStep) {
       case 0: return true; // country always ok
       case 1: return businessName.trim().length >= 2;
-      case 2: return true; // client step is skippable
-      case 3: return true; // appointment step is skippable
+      case 2: return true; // communication step is skippable
+      case 3: return true; // client step is skippable
+      case 4: return true; // appointment step is skippable
       default: return false;
     }
   };
