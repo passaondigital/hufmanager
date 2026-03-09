@@ -121,6 +121,36 @@ export const SettingsPanel = ({ editor }: SettingsPanelProps) => {
         </div>
       </div>
 
+      {/* Rechtliches */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold">⚖️ Rechtliches</h3>
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground">
+            Noch kein Impressum?{" "}
+            <a
+              href="https://partner.e-recht24.de/go.cgi?pid=1130&wmid=18&cpid=1&prid=1&subid=hufmanager&target=eRecht24_Impressumgenerator"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#F5970A] hover:underline font-medium"
+            >
+              Bei eRecht24 erstellen →
+            </a>
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Keine Datenschutzerklärung?{" "}
+            <a
+              href="https://partner.e-recht24.de/go.cgi?pid=1130&wmid=17&cpid=1&prid=1&subid=hufmanager&target=Datenschutzgenerator_Startseite"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#F5970A] hover:underline font-medium"
+            >
+              Bei eRecht24 erstellen →
+            </a>
+          </p>
+          <p className="text-[10px] text-muted-foreground mt-1">* Affiliate-Link</p>
+        </div>
+      </div>
+
       {/* Domain */}
       {settings.subdomain && (
         <div className="space-y-3">

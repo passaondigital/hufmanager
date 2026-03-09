@@ -221,6 +221,15 @@ export function useWebsiteEditor() {
       setHasChanges(false);
       setLastSaved(new Date());
       queryClient.invalidateQueries({ queryKey: ["landing-editor-settings"] });
+      
+      // One-time eRecht24 hint when subdomain is set
+      if (settings.subdomain && !localStorage.getItem("erecht24_hint_shown")) {
+        localStorage.setItem("erecht24_hint_shown", "true");
+        toast({
+          title: "✓ Landingpage gespeichert!",
+          description: "Vergiss nicht: Du brauchst ein Impressum und eine Datenschutzerklärung. → eRecht24 empfohlen (Management › Rechtliches)",
+        });
+      }
     },
     onError: () => {
       toast({ title: "Fehler beim Speichern", variant: "destructive" });
