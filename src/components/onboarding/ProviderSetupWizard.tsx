@@ -295,6 +295,7 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
   const stepMeta = [
     { icon: '🌍', label: 'Land' },
     { icon: '🏢', label: 'Betrieb' },
+    { icon: '💬', label: 'Kommunikation' },
     { icon: '👥', label: 'Kunde' },
     { icon: '📅', label: 'Termin' },
   ];
