@@ -767,6 +767,43 @@ const Management = () => {
 
         {/* Legal / Rechtliches */}
         <TabsContent value="legal" className="mt-6 space-y-6">
+          {/* eRecht24 Empfehlung */}
+          <Card className="animate-slide-up">
+            <CardContent className="pt-6 space-y-3">
+              <div className="flex items-start gap-3">
+                <span className="text-lg">💡</span>
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-foreground">Tipp: Rechtssichere Texte</p>
+                  <p className="text-sm text-muted-foreground">
+                    Für deine Landingpage benötigst du ein Impressum und eine Datenschutzerklärung.
+                    Wir empfehlen eRecht24 – vom Rechtsanwalt geprüft, immer DSGVO-aktuell.
+                  </p>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <a
+                      href="https://partner.e-recht24.de/go.cgi?pid=1130&wmid=18&cpid=1&prid=1&subid=hufmanager&target=eRecht24_Impressumgenerator"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-[#F5970A] hover:underline"
+                    >
+                      Impressum erstellen →
+                    </a>
+                    <a
+                      href="https://partner.e-recht24.de/go.cgi?pid=1130&wmid=17&cpid=1&prid=1&subid=hufmanager&target=Datenschutzgenerator_Startseite"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-[#F5970A] hover:underline"
+                    >
+                      Datenschutzerklärung erstellen →
+                    </a>
+                  </div>
+                  <p className="text-xs text-muted-foreground pt-1">
+                    * Affiliate-Link – wir erhalten eine kleine Provision wenn du eRecht24 buchst.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* AVV Signing Card */}
           <AVVSigningCard />
 
