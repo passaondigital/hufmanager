@@ -11856,6 +11856,10 @@ export type Database = {
           title: string
         }[]
       }
+      get_public_partner_profile: {
+        Args: { p_partner_id: string }
+        Returns: Json
+      }
       get_public_review_provider: {
         Args: { provider_id_input: string }
         Returns: Json
