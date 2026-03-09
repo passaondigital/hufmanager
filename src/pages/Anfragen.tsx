@@ -273,6 +273,19 @@ const Anfragen = () => {
                         Als kontaktiert markieren
                       </Button>
                     )}
+                    {isWhatsApp && lead.phone && (
+                      <Button 
+                        size="sm"
+                        className="gap-1 bg-[#F5970A] hover:bg-[#F5970A]/90 text-white"
+                        onClick={() => {
+                          openWhatsApp(lead.phone!, waTextLeadReply(lead.name || ""));
+                          updateStatus.mutate({ id: lead.id, status: 'kontaktiert' });
+                        }}
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        Via WhatsApp antworten
+                      </Button>
+                    )}
                     {lead.phone && (
                       <Button size="sm" asChild>
                         <a href={`tel:${lead.phone}`}>
@@ -281,21 +294,22 @@ const Anfragen = () => {
                         </a>
                       </Button>
                     )}
-                    <Button 
-                      variant="secondary" 
-                      size="sm"
-                      onClick={() => {
-                        // Navigate with URL parameter for better routing
-                        const params = new URLSearchParams();
-                        if (lead.name) params.set('name', lead.name);
-                        if (lead.phone) params.set('phone', lead.phone);
-                        if (lead.email) params.set('email', lead.email);
-                        navigate(`/chat?${params.toString()}`);
-                      }}
-                    >
-                      <MessageSquare className="h-4 w-4 mr-1" />
-                      Chat starten
-                    </Button>
+                    {!isWhatsApp && (
+                      <Button 
+                        variant="secondary" 
+                        size="sm"
+                        onClick={() => {
+                          const params = new URLSearchParams();
+                          if (lead.name) params.set('name', lead.name);
+                          if (lead.phone) params.set('phone', lead.phone);
+                          if (lead.email) params.set('email', lead.email);
+                          navigate(`/chat?${params.toString()}`);
+                        }}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-1" />
+                        Chat starten
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>
