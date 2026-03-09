@@ -71,7 +71,7 @@ const Support = () => {
     setIsSubmitting(true);
 
     // Create mailto link with pre-filled content
-    const mailtoUrl = `mailto:support@hufmanager.de?cc=teamhufmanager@gmail.com&subject=${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(
+    const mailtoUrl = `mailto:support@hufmanager.de?subject=${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(
       `Von: ${user?.email || "Unbekannt"}\n\n${formData.message}`
     )}`;
 
