@@ -357,7 +357,32 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
       </div>
     </div>,
 
-    // Step 2: Erster Kunde + Pferd
+    // Step 2: Communication Mode
+    <div key="communication" className="space-y-6">
+      <CommunicationModeSelector
+        onSelect={async (mode, number) => {
+          if (!user) return;
+          const { data: existing } = await supabase
+            .from('business_settings')
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          const payload: Record<string, unknown> = { communication_mode: mode };
+          if (mode === 'whatsapp' && number) payload.whatsapp_number = number;
+
+          if (existing) {
+            await supabase.from('business_settings').update(payload).eq('user_id', user.id);
+          } else {
+            await supabase.from('business_settings').insert({ user_id: user.id, ...payload });
+          }
+          setCommModeSelected(true);
+        }}
+        onSkip={() => handleSkip()}
+      />
+    </div>,
+
+    // Step 3: Erster Kunde + Pferd
     <div key="client" className="space-y-6">
       <div className="text-center space-y-2">
         <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
