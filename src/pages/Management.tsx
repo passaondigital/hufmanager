@@ -915,6 +915,7 @@ Steuernummer: 12/345/67890
 
         {/* App Settings Tab */}
         <TabsContent value="app" className="mt-6 space-y-6">
+          <CommunicationSettingsCard />
           <AppSettingsCard />
           <KiSettingsCard />
           <TutorialSettingsCard />
