@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, Sparkles, Loader2, Check, ArrowRight, MapPin, Phone, Building2, Users, Calendar } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Sparkles, Loader2, Check, ArrowRight, MapPin, Phone, Building2, Users, Calendar, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
