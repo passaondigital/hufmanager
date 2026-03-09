@@ -200,7 +200,7 @@ export default function Verarbeitungsverzeichnis() {
     doc.text("Verzeichnis von Verarbeitungstätigkeiten", 14, 15);
     doc.setFontSize(10);
     doc.text("gemäß Art. 30 DSGVO (EU 2016/679)", 14, 22);
-    doc.text(`Verantwortlicher: PASSAON – Pascal Schmid`, 14, 28);
+    doc.text(`Verantwortlicher: HufManager – Pascal Schmid`, 14, 28);
     doc.text(`Stand: ${format(new Date(lastModified), "dd.MM.yyyy HH:mm", { locale: de })} Uhr`, 14, 34);
     doc.text(`Exportiert am: ${format(new Date(), "dd.MM.yyyy HH:mm", { locale: de })} Uhr`, 14, 40);
 

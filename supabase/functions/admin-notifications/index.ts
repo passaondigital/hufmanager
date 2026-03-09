@@ -8,7 +8,6 @@ const corsHeaders = {
 
 const ADMIN_EMAILS = [
   "support@hufmanager.de",
-  "teamhufmanager@gmail.com",
 ];
 
 type NotificationType =

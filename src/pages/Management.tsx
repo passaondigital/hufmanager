@@ -840,14 +840,15 @@ const Management = () => {
                 rows={12}
                 placeholder={`Beispiel:
 
-Max Mustermann
-Musterstraße 1
-12345 Musterstadt
+Pascal Schmid
+c/o Postflex #10643
+Emsdettener Str. 10
+48268 Greven
 
-Telefon: 0123 456789
-E-Mail: info@beispiel.de
+Telefon: 015209007017
+E-Mail: support@hufmanager.de
 
-Steuernummer: 12/345/67890
+Steuernummer: 43/150/40518
 ...`}
                 value={formData.impressum_text}
                 onChange={(e) => setFormData({ ...formData, impressum_text: e.target.value })}

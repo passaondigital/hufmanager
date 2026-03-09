@@ -291,9 +291,9 @@ export function AVVSigningCard() {
     doc.setFont("helvetica", "bold");
     doc.text("Auftragsverarbeiter:", margin, 85);
     doc.setFont("helvetica", "normal");
-    doc.text("HufManager GmbH", margin, 92);
-    doc.text("Musterstraße 123", margin, 99);
-    doc.text("12345 Musterstadt", margin, 106);
+    doc.text("Pascal Schmid (Barhufserviceschmid)", margin, 92);
+    doc.text("c/o Postflex #10643, Emsdettener Str. 10", margin, 99);
+    doc.text("48268 Greven", margin, 106);
     
     // Contract text (simplified for PDF)
     doc.setFontSize(9);

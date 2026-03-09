@@ -194,12 +194,11 @@ const Support = () => {
             <div>
               <p className="font-medium text-foreground">E-Mail Support</p>
               <a
-                href="mailto:support@hufmanager.de?cc=teamhufmanager@gmail.com"
+                href="mailto:support@hufmanager.de"
                 className="text-primary hover:underline"
               >
                 support@hufmanager.de
               </a>
-              <span className="text-muted-foreground text-sm ml-1">/ teamhufmanager@gmail.com</span>
               <p className="text-sm text-muted-foreground mt-1">
                 Wir antworten in der Regel innerhalb von 24 Stunden.
               </p>

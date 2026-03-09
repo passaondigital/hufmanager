@@ -48,7 +48,7 @@ export function PaymentBlockedScreen({ portalUrl }: PaymentBlockedScreenProps) {
             </Button>
             
             <a 
-              href="mailto:support@hufmanager.de?cc=teamhufmanager@gmail.com"
+              href="mailto:support@hufmanager.de"
               className="block text-center text-sm text-primary hover:underline"
             >
               Hilfe benötigt? Kontaktiere den Support
