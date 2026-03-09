@@ -221,6 +221,25 @@ export function useWebsiteEditor() {
       setHasChanges(false);
       setLastSaved(new Date());
       queryClient.invalidateQueries({ queryKey: ["landing-editor-settings"] });
+      
+      // One-time eRecht24 hint when subdomain is set
+      if (settings.subdomain && !localStorage.getItem("erecht24_hint_shown")) {
+        localStorage.setItem("erecht24_hint_shown", "true");
+        toast({
+          title: "✓ Landingpage gespeichert!",
+          description: "Vergiss nicht: Du brauchst ein Impressum und eine Datenschutzerklärung für deine Seite.",
+          action: (
+            <a
+              href="https://partner.e-recht24.de/go.cgi?pid=1130&wmid=23&cpid=1&prid=1&subid=hufmanager&target=default-tab-website"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-medium text-[#F5970A] hover:underline whitespace-nowrap"
+            >
+              Jetzt bei eRecht24 →
+            </a>
+          ),
+        });
+      }
     },
     onError: () => {
       toast({ title: "Fehler beim Speichern", variant: "destructive" });
