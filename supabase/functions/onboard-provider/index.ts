@@ -99,7 +99,7 @@ serve(async (req: Request) => {
 
     // Build template variables
     const variables: Record<string, string> = {
-      ANBIETER_ADRESSE: "Adresse folgt nach PostIdent",
+      ANBIETER_ADRESSE: "Pascal Schmid (Barhufservice Schmid)\nc/o Postflex #10643\nEmsdettener Str. 10\n48268 Greven",
       PLAN_NAME: planName,
       PLAN_PREIS_MONAT: prices.monthly.toFixed(2).replace(".", ",") + " €",
       PLAN_PREIS_JAHR: prices.yearly.toFixed(2).replace(".", ",") + " €",

@@ -10,11 +10,20 @@ const Impressum = () => (
         <section className="space-y-6 text-white/70">
           <div>
             <h2 className="text-xl font-semibold text-white mb-2">Angaben gemäß § 5 TMG</h2>
-            <p>Pascal Schmid<br />Barhufserviceschmid<br />Laurentiusstrasse 34<br />54497 Morscheid Riedenburg</p>
+            <p>
+              Pascal Schmid<br />
+              (Barhufservice Schmid)<br />
+              c/o Postflex #10643<br />
+              Emsdettener Str. 10<br />
+              48268 Greven
+            </p>
           </div>
           <div>
             <h2 className="text-xl font-semibold text-white mb-2">Kontakt</h2>
-            <p>Telefon: 015209007017<br />E-Mail: support@hufmanager.de</p>
+            <p>
+              E-Mail: support@hufmanager.de<br />
+              Website: www.hufmanager.de
+            </p>
           </div>
           <div>
             <h2 className="text-xl font-semibold text-white mb-2">Steuernummer</h2>
@@ -22,15 +31,21 @@ const Impressum = () => (
           </div>
           <div>
             <h2 className="text-xl font-semibold text-white mb-2">Umsatzsteuer</h2>
-            <p>Gemäß §19 UStG wird keine Umsatzsteuer berechnet.</p>
+            <p>Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.</p>
           </div>
           <div>
             <h2 className="text-xl font-semibold text-white mb-2">Gewerbeanmeldung</h2>
-            <p>Die Gewerbeerlaubnis nach § 14 GewO oder § 55c GewO wurde am 15.08.2019 von folgender Stelle erteilt: Gemeinde Morbach.</p>
+            <p>Die Gewerbeerlaubnis nach § 14 GewO oder § 55c GewO wurde am 15.08.2019 erteilt.</p>
           </div>
           <div>
             <h2 className="text-xl font-semibold text-white mb-2">Verantwortlich für den Inhalt</h2>
-            <p>Verantwortlicher i.S.d. §18 Abs. 2 MStV: Pascal Schmid</p>
+            <p>
+              Verantwortlicher i.S.d. § 18 Abs. 2 MStV:<br />
+              Pascal Schmid<br />
+              c/o Postflex #10643<br />
+              Emsdettener Str. 10<br />
+              48268 Greven
+            </p>
           </div>
           <div>
             <h2 className="text-xl font-semibold text-white mb-2">Verbraucherstreitbeilegung/Universalschlichtungsstelle</h2>
