@@ -264,7 +264,7 @@ export function RoleAVVSigningCard({ role }: RoleAVVSigningCardProps) {
             .from("partner_contracts" as any)
             .select("id, avv_signed_at, avv_version")
             .eq("partner_id", user.id)
-            .maybeSingle();
+            .maybeSingle() as any;
           if (contract?.avv_signed_at) {
             setExistingAgreement({
               id: contract.id,
@@ -278,7 +278,7 @@ export function RoleAVVSigningCard({ role }: RoleAVVSigningCardProps) {
             .from("employee_contracts" as any)
             .select("id, avv_signed_at, avv_version")
             .eq("employee_user_id", user.id)
-            .maybeSingle();
+            .maybeSingle() as any;
           if (contract?.avv_signed_at) {
             setExistingAgreement({
               id: contract.id,
