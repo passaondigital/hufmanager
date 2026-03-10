@@ -261,13 +261,39 @@ export function AVVSigningCard() {
           .eq("id", user.id)
           .single();
 
-        if (profile) {
-          setFormData((prev) => ({
-            ...prev,
-            name: profile.full_name || "",
-            signatureCity: profile.city || "",
-          }));
+        // Get business settings for address pre-fill
+        const { data: biz } = await supabase
+          .from("business_settings")
+          .select("address, business_name, owner_name")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        // Parse address if available (format: "Street, ZIP City" or similar)
+        let prefillStreet = "";
+        let prefillZip = "";
+        let prefillCity = profile?.city || "";
+
+        if (biz?.address) {
+          const addr = biz.address;
+          // Try to extract ZIP and city from address
+          const zipMatch = addr.match(/(\d{4,5})\s+(.+)/);
+          if (zipMatch) {
+            prefillZip = zipMatch[1];
+            prefillCity = prefillCity || zipMatch[2];
+            prefillStreet = addr.substring(0, addr.indexOf(zipMatch[0])).replace(/,\s*$/, "").trim();
+          } else {
+            prefillStreet = addr;
+          }
         }
+
+        setFormData((prev) => ({
+          ...prev,
+          name: biz?.business_name || biz?.owner_name || profile?.full_name || "",
+          street: prefillStreet || prev.street,
+          zipCode: prefillZip || prev.zipCode,
+          city: prefillCity || prev.city,
+          signatureCity: prefillCity || prev.signatureCity,
+        }));
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
