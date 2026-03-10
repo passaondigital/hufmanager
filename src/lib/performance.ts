@@ -9,7 +9,7 @@ interface MetricEntry {
   metric_type: string;
   value_ms: number;
   route: string;
-  metadata: Record<string, unknown>;
+  metadata: { connection_type: string; device_memory: number | null; user_agent: string };
 }
 
 let metricsBuffer: MetricEntry[] = [];
