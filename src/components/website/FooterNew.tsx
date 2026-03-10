@@ -51,6 +51,7 @@ const FooterNew = () => (
               <Link to="/datenschutz" className="block text-white/50 hover:text-white transition-colors text-sm">Datenschutz</Link>
               <Link to="/agb" className="block text-white/50 hover:text-white transition-colors text-sm">AGB</Link>
               <Link to="/vertrauen" className="block text-white/50 hover:text-white transition-colors text-sm">Trust & Security</Link>
+              <Link to="/widerruf" className="block text-white/50 hover:text-white transition-colors text-sm">Widerruf</Link>
             </nav>
 
             {/* Contact */}

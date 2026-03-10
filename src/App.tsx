@@ -302,6 +302,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/datenschutz" element={<WebsiteDatenschutz />} />
             <Route path="/agb" element={<WebsiteAGB />} />
             <Route path="/vertrauen" element={<WebsiteVertrauen />} />
+            <Route path="/widerruf" element={<WebsiteWiderruf />} />
             
             {/* Öffentliche Blog-Seiten */}
             <Route path="/blog" element={<Blog />} />
