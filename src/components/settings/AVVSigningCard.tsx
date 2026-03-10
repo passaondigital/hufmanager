@@ -295,8 +295,8 @@ export function AVVSigningCard() {
     // Title
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
-    doc.text("Auftragsverarbeitungsvertrag (AVV)", margin, 25);
-    doc.text("gemäß Art. 28 DSGVO", margin, 33);
+    doc.text("Vertrag über Auftragsverarbeitung", margin, 25);
+    doc.text("im Sinne von Art. 28 Abs. 3 DSGVO", margin, 33);
     
     // Separator
     doc.setDrawColor(200, 200, 200);
