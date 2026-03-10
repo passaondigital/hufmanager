@@ -321,7 +321,8 @@ export function AVVSigningCard() {
     // Contract text (simplified for PDF)
     doc.setFontSize(9);
     let yPos = 120;
-    const lines = doc.splitTextToSize(AVV_TEXT, contentWidth);
+    const avvContent = getAvvText(formData.name, formData.street, `${formData.zipCode} ${formData.city}`);
+    const lines = doc.splitTextToSize(avvContent, contentWidth);
     
     for (const line of lines) {
       if (yPos > 250) {
