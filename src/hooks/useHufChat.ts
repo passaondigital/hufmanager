@@ -54,7 +54,7 @@ export function useHufChat({ conversationId, enabled = true }: UseHufChatOptions
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   
   const presenceChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Load messages ────────────────────────────
   const loadMessages = useCallback(async () => {

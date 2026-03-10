@@ -103,7 +103,7 @@ export function BreadcrumbsReplay({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   // Fetch breadcrumbs for the selected date
   const { data: breadcrumbs = [], isLoading } = useQuery({

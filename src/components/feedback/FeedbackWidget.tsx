@@ -62,7 +62,7 @@ export function FeedbackWidget({ className }: FeedbackWidgetProps) {
   
   // Hide on chat routes to avoid overlapping send buttons
   const isHiddenRoute = HIDDEN_ON_ROUTES.some(route => location.pathname.startsWith(route));
-  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawHistory, setDrawHistory] = useState<ImageData[]>([]);
 

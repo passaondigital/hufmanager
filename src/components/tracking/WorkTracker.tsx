@@ -58,7 +58,7 @@ export function WorkTracker({
   const [odometerEndPhoto, setOdometerEndPhoto] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startPhotoRef = useRef<HTMLInputElement>(null);
   const endPhotoRef = useRef<HTMLInputElement>(null);
 

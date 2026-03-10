@@ -30,7 +30,7 @@ interface WorkSession {
 export function WorkTimer() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   const [elapsed, setElapsed] = useState(0);
   const [isOnBreak, setIsOnBreak] = useState(false);
