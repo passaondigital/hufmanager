@@ -138,22 +138,28 @@ export default function Auth() {
 
   if (!authLoading && user && role && !forceLogin) {
     if (role === "provider" && !onboardingChecked) {
-      // Wait for onboarding check
-    } else if (role === "provider" && needsOnboarding) {
-      return <Navigate to="/welcome" replace />;
-    } else {
-      if (redirectTo) {
-        return <Navigate to={redirectTo} replace />;
-      }
-      const roleToPath: Record<string, string> = {
-        admin: "/admin/mission-control",
-        provider: "/home",
-        employee: "/employee",
-        partner: "/partner-home",
-        client: "/client-home",
-      };
-      return <Navigate to={roleToPath[role] || "/home"} replace />;
+      // Show loading while checking onboarding status
+      return (
+        <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
+          <img src="/hufmanager-logo.png" alt="HufManager" className="h-24 w-auto animate-pulse" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
     }
+    if (role === "provider" && needsOnboarding) {
+      return <Navigate to="/welcome" replace />;
+    }
+    if (redirectTo) {
+      return <Navigate to={redirectTo} replace />;
+    }
+    const roleToPath: Record<string, string> = {
+      admin: "/admin/mission-control",
+      provider: "/home",
+      employee: "/employee",
+      partner: "/partner-home",
+      client: "/client-home",
+    };
+    return <Navigate to={roleToPath[role] || "/home"} replace />;
   }
 
   const openPricingModal = (title: string, description: string) => {
