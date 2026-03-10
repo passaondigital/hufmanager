@@ -302,13 +302,32 @@ export function RoleAVVSigningCard({ role }: RoleAVVSigningCardProps) {
         let prefillCity = profile?.city || "";
 
         // For providers/partners, try business_settings
-        if (role === "provider" || role === "partner") {
-          const table = role === "provider" ? "business_settings" : "partner_business_settings";
-          const idCol = role === "provider" ? "user_id" : "partner_id";
+        if (role === "provider") {
           const { data: biz } = await supabase
-            .from(table)
+            .from("business_settings")
             .select("address, business_name, owner_name")
-            .eq(idCol, user.id)
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (biz) {
+            prefillName = biz.business_name || biz.owner_name || prefillName;
+            if (biz.address) {
+              const addr = biz.address;
+              const zipMatch = addr.match(/(\d{4,5})\s+(.+)/);
+              if (zipMatch) {
+                prefillZip = zipMatch[1];
+                prefillCity = prefillCity || zipMatch[2];
+                prefillStreet = addr.substring(0, addr.indexOf(zipMatch[0])).replace(/,\s*$/, "").trim();
+              } else {
+                prefillStreet = addr;
+              }
+            }
+          }
+        } else if (role === "partner") {
+          const { data: biz } = await supabase
+            .from("partner_business_settings")
+            .select("address, business_name, owner_name")
+            .eq("partner_id", user.id)
             .maybeSingle();
 
           if (biz) {
