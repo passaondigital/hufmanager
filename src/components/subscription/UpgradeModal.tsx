@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Lock, Check, ArrowRight, Sparkles, Crown, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSubscription } from "@/hooks/useSubscription";
+import { WiderrufsausschlussCheckbox } from "@/components/consent/WiderrufsausschlussCheckbox";
+import { logConsent } from "@/lib/consent";
 
 interface UpgradeModalProps {
   open: boolean;
@@ -50,14 +53,27 @@ const PLAN_ORDER = ["starter", "advanced", "pro"];
 
 export function UpgradeModal({ open, onOpenChange, featureName, requiredPlan = "pro" }: UpgradeModalProps) {
   const { plan } = useSubscription();
+  const [widerrufAccepted, setWiderrufAccepted] = useState(false);
+  const [widerrufError, setWiderrufError] = useState(false);
 
   // Show only plans above current
   const currentIndex = plan ? PLAN_ORDER.indexOf(plan) : -1;
   const requiredIndex = PLAN_ORDER.indexOf(requiredPlan);
   const upgradePlans = PLANS.filter((_, i) => i > currentIndex && i >= requiredIndex);
 
+  const handleUpgrade = async (checkoutUrl: string) => {
+    if (!widerrufAccepted) {
+      setWiderrufError(true);
+      return;
+    }
+
+    await logConsent("widerrufsausschluss");
+    window.open(checkoutUrl, "_blank");
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) { setWiderrufAccepted(false); setWiderrufError(false); } }}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
@@ -114,10 +130,7 @@ export function UpgradeModal({ open, onOpenChange, featureName, requiredPlan = "
                 </ul>
 
                 <Button
-                  onClick={() => {
-                    window.open(p.checkoutUrl, "_blank");
-                    onOpenChange(false);
-                  }}
+                  onClick={() => handleUpgrade(p.checkoutUrl)}
                   className="w-full h-11 text-sm gap-2"
                   variant={isHighlighted ? "default" : "secondary"}
                 >
@@ -127,6 +140,15 @@ export function UpgradeModal({ open, onOpenChange, featureName, requiredPlan = "
               </div>
             );
           })}
+        </div>
+
+        {/* Widerrufsausschluss Checkbox */}
+        <div className="border-t border-border pt-4">
+          <WiderrufsausschlussCheckbox
+            checked={widerrufAccepted}
+            onCheckedChange={(v) => { setWiderrufAccepted(v); if (v) setWiderrufError(false); }}
+            error={widerrufError}
+          />
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
