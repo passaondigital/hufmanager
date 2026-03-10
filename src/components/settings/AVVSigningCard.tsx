@@ -422,7 +422,7 @@ export function AVVSigningCard() {
           .insert({
             provider_id: user.id,
             agreement_type: "AVV",
-            version: "1.0",
+            version: "2.0",
             accepted_at: new Date().toISOString(),
             document_url: filePath,
           });
