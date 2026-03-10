@@ -211,6 +211,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   sessionStorage.removeItem("partner_invite_token");
                 }
               }
+              // Log pending widerrufsausschluss consent from registration
+              const pendingWiderruf = sessionStorage.getItem("hm_pending_widerruf_consent");
+              if (pendingWiderruf) {
+                try {
+                  await supabase.from("consent_log").insert({
+                    user_id: session.user.id,
+                    consent_type: "widerrufsausschluss",
+                    accepted_at: pendingWiderruf,
+                    ip_address: null,
+                  });
+                } catch (err) {
+                  console.error("Error logging widerruf consent:", err);
+                } finally {
+                  sessionStorage.removeItem("hm_pending_widerruf_consent");
+                }
+              }
             }
           }, 0);
         } else {
