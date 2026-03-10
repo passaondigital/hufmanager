@@ -116,6 +116,7 @@ const EmployeeAnalyse = lazy(() => import("@/pages/employee/EmployeeAnalyse"));
 const EmployeeChat = lazy(() => import("@/pages/employee/EmployeeChat"));
 const EmployeeCalendar = lazy(() => import("@/pages/employee/EmployeeCalendar"));
 const PartnerHome = lazy(() => import("@/pages/partner/PartnerHome"));
+const PartnerRechtliches = lazy(() => import("@/pages/partner/PartnerRechtliches"));
 const PartnerHorseView = lazy(() => import("@/pages/partner/PartnerHorseView"));
 const PartnerNotes = lazy(() => import("@/pages/partner/PartnerNotes"));
 const PartnerChat = lazy(() => import("@/pages/partner/PartnerChat"));
