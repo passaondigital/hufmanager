@@ -411,7 +411,7 @@ export function AVVSigningCard() {
           .update({
             accepted_at: new Date().toISOString(),
             document_url: filePath,
-            version: "1.0",
+            version: "2.0",
           })
           .eq("id", existingEntry.id);
         
