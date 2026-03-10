@@ -9,9 +9,7 @@ interface MetricEntry {
   metric_type: string;
   value_ms: number;
   route: string;
-  connection_type: string;
-  device_memory: number | null;
-  user_agent: string;
+  metadata: Record<string, unknown>;
 }
 
 let metricsBuffer: MetricEntry[] = [];
@@ -31,9 +29,11 @@ function bufferMetric(name: string, value: number) {
     metric_type: name,
     value_ms: Math.round(value * 100) / 100,
     route: window.location.pathname,
-    connection_type: getConnectionType(),
-    device_memory: getDeviceMemory(),
-    user_agent: navigator.userAgent.slice(0, 200),
+    metadata: {
+      connection_type: getConnectionType(),
+      device_memory: getDeviceMemory(),
+      user_agent: navigator.userAgent.slice(0, 200),
+    },
   });
 
   // Flush every 10s or when buffer has 10+ entries
