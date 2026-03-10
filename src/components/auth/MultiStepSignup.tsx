@@ -324,6 +324,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
                     error={widerrufError}
                   />
                 </div>
+              </div>
             </div>
           )}
 
