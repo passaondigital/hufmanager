@@ -83,6 +83,7 @@ const WebsiteImpressum = lazy(() => import("@/pages/website/Impressum"));
 const WebsiteDatenschutz = lazy(() => import("@/pages/website/Datenschutz"));
 const WebsiteAGB = lazy(() => import("@/pages/website/AGB"));
 const WebsiteVertrauen = lazy(() => import("@/pages/website/Vertrauen"));
+const WebsiteWiderruf = lazy(() => import("@/pages/website/Widerruf"));
 const Glossar = lazy(() => import("@/pages/Glossar"));
 const Lager = lazy(() => import("@/pages/Lager"));
 const Ausgaben = lazy(() => import("@/pages/Ausgaben"));
