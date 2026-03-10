@@ -1,11 +1,13 @@
 import { useEmployeeProfile } from "@/hooks/useEmployees";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Download, Calendar, ExternalLink } from "lucide-react";
+import { FileText, Download, Calendar } from "lucide-react";
 import { HelpTip } from "@/components/ui/HelpTip";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { Separator } from "@/components/ui/separator";
+import { RoleAVVSigningCard } from "@/components/settings/RoleAVVSigningCard";
 
 const EmployeeVertrag = () => {
   const { data: profile } = useEmployeeProfile();
@@ -13,7 +15,7 @@ const EmployeeVertrag = () => {
   if (!profile) return null;
 
   return (
-    <div className="space-y-4 animate-fade-in max-w-lg mx-auto">
+    <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
       <h1 className="text-xl font-bold flex items-center gap-2">
         <FileText className="h-5 w-5 text-primary" />
         Mein Vertrag
@@ -68,6 +70,10 @@ const EmployeeVertrag = () => {
           )}
         </CardContent>
       </Card>
+
+      <Separator />
+
+      <RoleAVVSigningCard role="employee" />
     </div>
   );
 };

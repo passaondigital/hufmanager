@@ -111,6 +111,7 @@ const PARTNER_NAV: NavigationConfig = {
           children: [
             { label: "Profil", path: "/partner-management?tab=profile", iconName: "User" },
             { label: "Abo & Module", path: "/partner-management?tab=subscription", iconName: "CreditCard" },
+            { label: "Rechtliches", path: "/partner-rechtliches", iconName: "Scale" },
             { label: "1. Hilfe Kunden Center", path: "/partner-notfall", iconName: "AlertTriangle" },
           ],
         },
