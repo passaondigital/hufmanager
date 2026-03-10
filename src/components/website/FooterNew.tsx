@@ -55,6 +55,15 @@ const FooterNew = () => (
               <Link to="/agb" className="block text-white/50 hover:text-white transition-colors text-sm">AGB</Link>
               <Link to="/vertrauen" className="block text-white/50 hover:text-white transition-colors text-sm">Trust & Security</Link>
               <Link to="/widerruf" className="block text-white/50 hover:text-white transition-colors text-sm">Widerruf</Link>
+              <div className="flex flex-wrap gap-3 pt-3">
+                <Link to="/impressum">
+                  <img src={erecht24Impressum} alt="eRecht24 Impressum Siegel" className="h-auto w-[120px] max-w-[190px] opacity-70 hover:opacity-100 transition-opacity" />
+                </Link>
+                <Link to="/datenschutz">
+                  <img src={erecht24Datenschutz} alt="eRecht24 Datenschutz Siegel" className="h-auto w-[120px] max-w-[190px] opacity-70 hover:opacity-100 transition-opacity" />
+                </Link>
+                <img src={erecht24Agentur} alt="eRecht24 Agentur Partner Siegel" className="h-auto w-[120px] max-w-[190px] opacity-70" />
+              </div>
             </nav>
 
             {/* Contact */}
