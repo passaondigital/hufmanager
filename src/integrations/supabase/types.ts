@@ -3519,6 +3519,30 @@ export type Database = {
           },
         ]
       }
+      employee_contracts: {
+        Row: {
+          avv_signed_at: string | null
+          avv_version: string | null
+          created_at: string
+          employee_user_id: string
+          id: string
+        }
+        Insert: {
+          avv_signed_at?: string | null
+          avv_version?: string | null
+          created_at?: string
+          employee_user_id: string
+          id?: string
+        }
+        Update: {
+          avv_signed_at?: string | null
+          avv_version?: string | null
+          created_at?: string
+          employee_user_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
       employee_conversations: {
         Row: {
           created_at: string
@@ -6928,6 +6952,30 @@ export type Database = {
           updated_at?: string
           vat_id?: string | null
           website?: string | null
+        }
+        Relationships: []
+      }
+      partner_contracts: {
+        Row: {
+          avv_signed_at: string | null
+          avv_version: string | null
+          created_at: string
+          id: string
+          partner_id: string
+        }
+        Insert: {
+          avv_signed_at?: string | null
+          avv_version?: string | null
+          created_at?: string
+          id?: string
+          partner_id: string
+        }
+        Update: {
+          avv_signed_at?: string | null
+          avv_version?: string | null
+          created_at?: string
+          id?: string
+          partner_id?: string
         }
         Relationships: []
       }

@@ -116,6 +116,7 @@ const EmployeeAnalyse = lazy(() => import("@/pages/employee/EmployeeAnalyse"));
 const EmployeeChat = lazy(() => import("@/pages/employee/EmployeeChat"));
 const EmployeeCalendar = lazy(() => import("@/pages/employee/EmployeeCalendar"));
 const PartnerHome = lazy(() => import("@/pages/partner/PartnerHome"));
+const PartnerRechtliches = lazy(() => import("@/pages/partner/PartnerRechtliches"));
 const PartnerHorseView = lazy(() => import("@/pages/partner/PartnerHorseView"));
 const PartnerNotes = lazy(() => import("@/pages/partner/PartnerNotes"));
 const PartnerChat = lazy(() => import("@/pages/partner/PartnerChat"));
@@ -508,6 +509,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner-autoflow" element={<AutoFlow />} />
               <Route path="/partner-management" element={<Management />} />
               <Route path="/partner-support" element={<Support />} />
+              <Route path="/partner-rechtliches" element={<PartnerRechtliches />} />
             </Route>
 
             {/* Fallback für alles andere */}

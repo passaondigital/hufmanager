@@ -1,71 +1,125 @@
 import { useState, useEffect, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Shield, CheckCircle, XCircle, Search, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { isDemoEmail } from "@/lib/demo-accounts";
 
-interface ProviderContract {
-  provider_id: string;
+interface ContractRow {
+  user_id: string;
   email: string | null;
   full_name: string | null;
   avv_signed_at: string | null;
-  avv_version: string | null;
-  terms_accepted_at: string | null;
-  privacy_accepted_at: string | null;
+}
+
+const StatusIcon = ({ date }: { date: string | null }) =>
+  date ? <CheckCircle className="w-4 h-4 text-green-500" /> : <XCircle className="w-4 h-4 text-red-400" />;
+
+function ContractTable({ data, loading, search, showMissing }: { data: ContractRow[]; loading: boolean; search: string; showMissing: boolean }) {
+  const filtered = useMemo(() => {
+    let list = data;
+    if (search) {
+      const s = search.toLowerCase();
+      list = list.filter(p => p.email?.toLowerCase().includes(s) || p.full_name?.toLowerCase().includes(s));
+    }
+    if (showMissing) list = list.filter(p => !p.avv_signed_at);
+    return list;
+  }, [data, search, showMissing]);
+
+  if (loading) return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div>;
+
+  return (
+    <Card>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>E-Mail</TableHead>
+            <TableHead className="text-center">AVV</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filtered.length === 0 ? (
+            <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-8">Keine Einträge gefunden</TableCell></TableRow>
+          ) : filtered.map(p => (
+            <TableRow key={p.user_id}>
+              <TableCell className="font-medium">{p.full_name || "–"}</TableCell>
+              <TableCell className="text-sm text-muted-foreground">{p.email}</TableCell>
+              <TableCell className="text-center">
+                <div className="flex flex-col items-center gap-0.5">
+                  <StatusIcon date={p.avv_signed_at} />
+                  {p.avv_signed_at && <span className="text-[10px] text-muted-foreground">{format(parseISO(p.avv_signed_at), "dd.MM.yy")}</span>}
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </Card>
+  );
 }
 
 export function AdminContractTracking() {
-  const [data, setData] = useState<ProviderContract[]>([]);
+  const [providers, setProviders] = useState<ContractRow[]>([]);
+  const [partners, setPartners] = useState<ContractRow[]>([]);
+  const [employees, setEmployees] = useState<ContractRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showMissing, setShowMissing] = useState(false);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchAll(); }, []);
 
-  const fetchData = async () => {
+  const fetchAll = async () => {
     setLoading(true);
     try {
-      // Get all providers
-      const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "provider");
-      const ids = roles?.map(r => r.user_id) || [];
-      if (ids.length === 0) { setData([]); setLoading(false); return; }
+      // --- Providers ---
+      const { data: provRoles } = await supabase.from("user_roles").select("user_id").eq("role", "provider");
+      const provIds = provRoles?.map(r => r.user_id) || [];
+      let provRows: ContractRow[] = [];
+      if (provIds.length > 0) {
+        const { data: profiles } = await supabase.from("profiles").select("id, email, full_name").in("id", provIds).is("deleted_at", null);
+        const { data: contracts } = await supabase.from("provider_contracts").select("provider_id, avv_signed_at, avv_version");
+        const cMap = new Map((contracts || []).map(c => [c.provider_id, c]));
+        provRows = (profiles || []).filter(p => !isDemoEmail(p.email)).map(p => ({
+          user_id: p.id, email: p.email, full_name: p.full_name,
+          avv_signed_at: cMap.get(p.id)?.avv_signed_at || null,
+        }));
+      }
+      setProviders(provRows);
 
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, email, full_name")
-        .in("id", ids)
-        .is("deleted_at", null);
+      // --- Partners ---
+      const { data: partRoles } = await supabase.from("user_roles").select("user_id").eq("role", "partner");
+      const partIds = partRoles?.map(r => r.user_id) || [];
+      let partRows: ContractRow[] = [];
+      if (partIds.length > 0) {
+        const { data: profiles } = await supabase.from("profiles").select("id, email, full_name").in("id", partIds).is("deleted_at", null);
+        const { data: contracts } = await supabase.from("partner_contracts" as any).select("partner_id, avv_signed_at") as any;
+        const cMap = new Map((contracts?.data || contracts || []).map((c: any) => [c.partner_id, c]));
+        partRows = (profiles || []).filter(p => !isDemoEmail(p.email)).map(p => ({
+          user_id: p.id, email: p.email, full_name: p.full_name,
+          avv_signed_at: (cMap.get(p.id) as any)?.avv_signed_at || null,
+        }));
+      }
+      setPartners(partRows);
 
-      // Get contracts
-      const { data: contracts } = await supabase
-        .from("provider_contracts")
-        .select("provider_id, avv_signed_at, avv_version, terms_accepted_at, terms_version, privacy_accepted_at");
-
-      const contractMap = new Map((contracts || []).map(c => [c.provider_id, c]));
-
-      const merged: ProviderContract[] = (profiles || [])
-        .filter(p => !isDemoEmail(p.email))
-        .map(p => {
-          const c = contractMap.get(p.id);
-          return {
-            provider_id: p.id,
-            email: p.email,
-            full_name: p.full_name,
-            avv_signed_at: c?.avv_signed_at || null,
-            avv_version: c?.avv_version || null,
-            terms_accepted_at: c?.terms_accepted_at || null,
-            privacy_accepted_at: c?.privacy_accepted_at || null,
-          };
-        });
-
-      setData(merged);
+      // --- Employees ---
+      const { data: empRoles } = await supabase.from("user_roles").select("user_id").eq("role", "employee");
+      const empIds = empRoles?.map(r => r.user_id) || [];
+      let empRows: ContractRow[] = [];
+      if (empIds.length > 0) {
+        const { data: profiles } = await supabase.from("profiles").select("id, email, full_name").in("id", empIds).is("deleted_at", null);
+        const { data: contracts } = await supabase.from("employee_contracts" as any).select("employee_user_id, avv_signed_at") as any;
+        const cMap = new Map((contracts?.data || contracts || []).map((c: any) => [c.employee_user_id, c]));
+        empRows = (profiles || []).filter(p => !isDemoEmail(p.email)).map(p => ({
+          user_id: p.id, email: p.email, full_name: p.full_name,
+          avv_signed_at: (cMap.get(p.id) as any)?.avv_signed_at || null,
+        }));
+      }
+      setEmployees(empRows);
     } catch (err) {
       console.error(err);
     } finally {
@@ -73,27 +127,14 @@ export function AdminContractTracking() {
     }
   };
 
-  const filtered = useMemo(() => {
-    let list = data;
-    if (search) {
-      const s = search.toLowerCase();
-      list = list.filter(p => p.email?.toLowerCase().includes(s) || p.full_name?.toLowerCase().includes(s));
-    }
-    if (showMissing) {
-      list = list.filter(p => !p.avv_signed_at);
-    }
-    return list;
-  }, [data, search, showMissing]);
-
-  const stats = useMemo(() => ({
+  const statsFor = (data: ContractRow[]) => ({
     total: data.length,
-    avvSigned: data.filter(p => p.avv_signed_at).length,
-    termsSigned: data.filter(p => p.terms_accepted_at).length,
-    privacySigned: data.filter(p => p.privacy_accepted_at).length,
-  }), [data]);
+    signed: data.filter(p => p.avv_signed_at).length,
+  });
 
-  const StatusIcon = ({ date }: { date: string | null }) =>
-    date ? <CheckCircle className="w-4 h-4 text-green-500" /> : <XCircle className="w-4 h-4 text-red-400" />;
+  const pStats = statsFor(providers);
+  const partStats = statsFor(partners);
+  const empStats = statsFor(employees);
 
   return (
     <div className="space-y-6">
@@ -102,33 +143,41 @@ export function AdminContractTracking() {
           <Shield className="w-5 h-5 text-primary" />
           AVV & Vertragsübersicht
         </h2>
-        <p className="text-sm text-muted-foreground">Compliance-Status aller Provider (Demo ausgeschlossen)</p>
+        <p className="text-sm text-muted-foreground">Compliance-Status aller Nutzer (Demo ausgeschlossen)</p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Global Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
         <Card className="p-4">
-          <p className="text-2xl font-bold">{stats.total}</p>
-          <p className="text-xs text-muted-foreground">Provider gesamt</p>
+          <p className="text-2xl font-bold">{pStats.total}</p>
+          <p className="text-xs text-muted-foreground">Provider</p>
         </Card>
         <Card className="p-4">
-          <p className="text-2xl font-bold text-green-500">{stats.avvSigned}</p>
-          <p className="text-xs text-muted-foreground">AVV unterschrieben</p>
+          <p className="text-2xl font-bold text-green-500">{pStats.signed}</p>
+          <p className="text-xs text-muted-foreground">Provider AVV ✓</p>
         </Card>
         <Card className="p-4">
-          <p className="text-2xl font-bold text-amber-500">{stats.total - stats.avvSigned}</p>
-          <p className="text-xs text-muted-foreground">AVV ausstehend</p>
+          <p className="text-2xl font-bold">{partStats.total}</p>
+          <p className="text-xs text-muted-foreground">Partner</p>
         </Card>
         <Card className="p-4">
-          <p className="text-2xl font-bold">{stats.termsSigned}</p>
-          <p className="text-xs text-muted-foreground">AGB akzeptiert</p>
+          <p className="text-2xl font-bold text-green-500">{partStats.signed}</p>
+          <p className="text-xs text-muted-foreground">Partner AVV ✓</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-2xl font-bold">{empStats.total}</p>
+          <p className="text-xs text-muted-foreground">Mitarbeiter</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-2xl font-bold text-green-500">{empStats.signed}</p>
+          <p className="text-xs text-muted-foreground">MA AVV ✓</p>
         </Card>
       </div>
 
-      {stats.total - stats.avvSigned > 0 && (
+      {(pStats.total - pStats.signed + partStats.total - partStats.signed + empStats.total - empStats.signed) > 0 && (
         <div className="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-sm">
           <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-          <span>{stats.total - stats.avvSigned} Provider haben noch keinen AVV unterschrieben. Diese müssen persönlich kontaktiert werden.</span>
+          <span>{pStats.total - pStats.signed + partStats.total - partStats.signed + empStats.total - empStats.signed} Nutzer haben noch keinen AVV unterschrieben.</span>
         </div>
       )}
 
@@ -144,51 +193,22 @@ export function AdminContractTracking() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
-      ) : (
-        <Card>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Provider</TableHead>
-                <TableHead>E-Mail</TableHead>
-                <TableHead className="text-center">AVV</TableHead>
-                <TableHead className="text-center">AGB</TableHead>
-                <TableHead className="text-center">Datenschutz</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Keine Provider gefunden</TableCell></TableRow>
-              ) : filtered.map(p => (
-                <TableRow key={p.provider_id}>
-                  <TableCell className="font-medium">{p.full_name || "–"}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{p.email}</TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex flex-col items-center gap-0.5">
-                      <StatusIcon date={p.avv_signed_at} />
-                      {p.avv_signed_at && <span className="text-[10px] text-muted-foreground">{format(parseISO(p.avv_signed_at), "dd.MM.yy")}</span>}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex flex-col items-center gap-0.5">
-                      <StatusIcon date={p.terms_accepted_at} />
-                      {p.terms_accepted_at && <span className="text-[10px] text-muted-foreground">{format(parseISO(p.terms_accepted_at), "dd.MM.yy")}</span>}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex flex-col items-center gap-0.5">
-                      <StatusIcon date={p.privacy_accepted_at} />
-                      {p.privacy_accepted_at && <span className="text-[10px] text-muted-foreground">{format(parseISO(p.privacy_accepted_at), "dd.MM.yy")}</span>}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
-      )}
+      <Tabs defaultValue="providers">
+        <TabsList>
+          <TabsTrigger value="providers">Provider ({pStats.total})</TabsTrigger>
+          <TabsTrigger value="partners">Partner ({partStats.total})</TabsTrigger>
+          <TabsTrigger value="employees">Mitarbeiter ({empStats.total})</TabsTrigger>
+        </TabsList>
+        <TabsContent value="providers" className="mt-4">
+          <ContractTable data={providers} loading={loading} search={search} showMissing={showMissing} />
+        </TabsContent>
+        <TabsContent value="partners" className="mt-4">
+          <ContractTable data={partners} loading={loading} search={search} showMissing={showMissing} />
+        </TabsContent>
+        <TabsContent value="employees" className="mt-4">
+          <ContractTable data={employees} loading={loading} search={search} showMissing={showMissing} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
