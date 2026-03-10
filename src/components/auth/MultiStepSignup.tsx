@@ -318,8 +318,12 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
                       gelesen und stimme zu. *
                     </Label>
                   </div>
+                  <WiderrufsausschlussCheckbox
+                    checked={widerrufAccepted}
+                    onCheckedChange={(v) => { setWiderrufAccepted(v); if (v) setWiderrufError(false); }}
+                    error={widerrufError}
+                  />
                 </div>
-              </div>
             </div>
           )}
 
