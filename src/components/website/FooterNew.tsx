@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
 import { Shield, Server, Smartphone, Lock } from "lucide-react";
 import logo from "@/assets/lp/hufmanager-logo.png";
+import erecht24Agentur from "@/assets/erecht24-agenturpartner.png";
+import erecht24Impressum from "@/assets/erecht24-impressum.png";
+import erecht24Datenschutz from "@/assets/erecht24-datenschutz.png";
 
 const trustBadges = [
   { icon: Lock, label: "SSL" },
