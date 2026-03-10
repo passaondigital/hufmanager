@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Check, Crown, Sparkles, Zap, ArrowRight, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDemoActivityTracker } from "@/hooks/useDemoActivityTracker";
+import { WiderrufsausschlussCheckbox } from "@/components/consent/WiderrufsausschlussCheckbox";
+import { logConsent } from "@/lib/consent";
 
 interface PricingModalProps {
   open: boolean;
@@ -104,8 +107,18 @@ export function PricingModal({
   isDemoContext = false,
 }: PricingModalProps) {
   const { trackCopecartClick } = useDemoActivityTracker();
+  const [widerrufAccepted, setWiderrufAccepted] = useState(false);
+  const [widerrufError, setWiderrufError] = useState(false);
 
-  const handleSelectPlan = (planId: string, checkoutUrl: string) => {
+  const handleSelectPlan = async (planId: string, checkoutUrl: string) => {
+    if (!widerrufAccepted) {
+      setWiderrufError(true);
+      return;
+    }
+
+    // Log consent
+    await logConsent("widerrufsausschluss");
+
     // Track the click for demo analytics
     trackCopecartClick(planId, checkoutUrl);
 
@@ -122,7 +135,7 @@ export function PricingModal({
     : PRICING_PLANS;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) { setWiderrufAccepted(false); setWiderrufError(false); } }}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto p-4 md:p-6">
         <DialogHeader className="text-center pb-4">
           <DialogTitle className="text-xl md:text-2xl font-bold">
@@ -236,6 +249,15 @@ export function PricingModal({
               </div>
             );
           })}
+        </div>
+
+        {/* Widerrufsausschluss Checkbox */}
+        <div className="border-t border-border pt-4">
+          <WiderrufsausschlussCheckbox
+            checked={widerrufAccepted}
+            onCheckedChange={(v) => { setWiderrufAccepted(v); if (v) setWiderrufError(false); }}
+            error={widerrufError}
+          />
         </div>
 
         <p className="text-center text-xs text-muted-foreground">

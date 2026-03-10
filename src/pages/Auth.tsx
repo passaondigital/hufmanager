@@ -453,6 +453,8 @@ export default function Auth() {
                       }
                       // Store country for profile update after email confirmation
                       sessionStorage.setItem("hm_pending_country", data.country);
+                      // Store widerrufsausschluss consent for logging after email confirmation
+                      sessionStorage.setItem("hm_pending_widerruf_consent", new Date().toISOString());
                       toast.success("Registrierung erfolgreich! Bitte bestätigen Sie Ihre E-Mail.");
                     }
                   } catch (err: any) {

@@ -2084,6 +2084,33 @@ export type Database = {
         }
         Relationships: []
       }
+      consent_log: {
+        Row: {
+          accepted_at: string
+          consent_type: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          consent_type: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          consent_type?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       contacts: {
         Row: {
           category: Database["public"]["Enums"]["contact_category"]

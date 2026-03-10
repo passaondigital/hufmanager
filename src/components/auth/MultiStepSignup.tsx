@@ -9,6 +9,7 @@ import { Loader2, Hammer, Heart, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ConfettiEffect } from "@/components/onboarding/ConfettiEffect";
 import { DACH_COUNTRIES, type DachCountry } from "@/lib/dach";
+import { WiderrufsausschlussCheckbox } from "@/components/consent/WiderrufsausschlussCheckbox";
 
 interface MultiStepSignupProps {
   onComplete: (data: {
@@ -44,6 +45,8 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
   const [showWelcome, setShowWelcome] = useState(false);
   const [agbAccepted, setAgbAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [widerrufAccepted, setWiderrufAccepted] = useState(false);
+  const [widerrufError, setWiderrufError] = useState(false);
 
   const firstName = fullName.split(" ")[0] || "";
 
@@ -55,7 +58,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
       case 0: return fullName.trim().length >= 2;
       case 1: return true;
       case 2: return true; // country always selected
-      case 3: return email.includes("@") && password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password) && agbAccepted && privacyAccepted;
+      case 3: return email.includes("@") && password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password) && agbAccepted && privacyAccepted && widerrufAccepted;
       case 4: return true; // business name optional
       default: return false;
     }
@@ -315,6 +318,11 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
                       gelesen und stimme zu. *
                     </Label>
                   </div>
+                  <WiderrufsausschlussCheckbox
+                    checked={widerrufAccepted}
+                    onCheckedChange={(v) => { setWiderrufAccepted(v); if (v) setWiderrufError(false); }}
+                    error={widerrufError}
+                  />
                 </div>
               </div>
             </div>
