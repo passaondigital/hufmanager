@@ -16,167 +16,190 @@ import { toast } from "sonner";
 import { CheckCircle, Download, FileSignature, Eraser, Loader2, Shield } from "lucide-react";
 import { getStorageUrl } from "@/lib/storage";
 
-const AVV_TEXT = `AUFTRAGSVERARBEITUNGSVERTRAG (AVV)
-nach Art. 28 DSGVO für die Nutzung von HufManager
+const getAvvText = (name: string, street: string, zipCity: string) => {
+  const auftraggeber = name || "[Firma oder Vor- und Zuname des Auftraggebers]";
+  const auftrStrasse = street || "[Straße, Nr.]";
+  const auftrOrt = zipCity || "[Postleitzahl] [Ort]";
 
-1. Vertragsparteien
+  return `Vertrag über Auftragsverarbeitung
+im Sinne von Art. 28 Abs. 3 DSGVO
 
-Dieser Vertrag wird geschlossen zwischen:
+zwischen
 
-Auftraggeber (Verantwortlicher im Sinne der DSGVO):
-Der jeweilige Nutzer von HufManager (z. B. Hufbearbeiter, Dienstleister, Partner).
+${auftraggeber}
+${auftrStrasse}
+${auftrOrt}
+
+nachfolgend „Auftraggeber"
 
 und
 
-Auftragsverarbeiter:
-HufManager – betrieben durch
-Pascal Schmid, Barhufserviceschmid, Einzelunternehmen, c/o Postflex #10643, Emsdettener Str. 10, 48268 Greven (D)
-support@hufmanager.de
-– nachfolgend „HufManager" genannt –
+Barhufserviceschmid
+Pascal Schmid
+Emsdettener Str. 10
+c/o Postflex #10643
+48268 Greven
 
-2. Gegenstand und Dauer der Verarbeitung
+nachfolgend „Auftragnehmer"
 
-Gegenstand dieses Vertrages ist die Verarbeitung personenbezogener Daten durch HufManager im Auftrag des Auftraggebers im Rahmen der Nutzung der Softwareplattform „HufManager".
 
-Die Verarbeitung erfolgt für die Dauer des jeweiligen Nutzungsvertrages.
+1. Allgemeine Bestimmungen und Vertragsgegenstand
 
-3. Art und Zweck der Verarbeitung
+1.1 Gegenstand des vorliegenden Vertrags ist die Verarbeitung personenbezogener Daten im Auftrag durch den Auftragnehmer (Art. 28 DSGVO). Verantwortlicher im Sinne des Art. 4 Nr. 7 DSGVO ist der Auftraggeber.
 
-Die Verarbeitung umfasst insbesondere:
-• Erheben
-• Erfassen
-• Organisieren
-• Ordnen
-• Speichern
-• Anpassen
-• Auslesen
-• Verwenden
-• Offenlegen durch Übermittlung (nach Freigabe)
-• Abgleichen
-• Einschränken
-• Löschen
+1.2 Inhalt des Auftrags, Kategorien betroffener Personen und Datenarten sowie Zweck der Vereinbarung sind Anlage 1 zu entnehmen.
 
-Zweck der Verarbeitung ist die Bereitstellung eines digitalen Systems zur:
-• Kunden- und Pferdeverwaltung
-• Termin- und Leistungsorganisation
-• Dokumentation
-• Kommunikation
-• Abrechnungsunterstützung
-• professionellen, tierschutzkonformen Betreuung von Equiden
-• systematischen Nachvollziehbarkeit von Betreuung, Historie und Vitaldaten
+1.3 Die Verarbeitung der Daten durch den Auftragnehmer findet ausschließlich auf dem Gebiet der Bundesrepublik Deutschland, einem Mitgliedsstaat der Europäischen Union oder einem Vertragsstaat des EWR-Abkommens statt. Die Verarbeitung außerhalb dieser Staaten erfolgt nur unter den Voraussetzungen von Kapitel 5 der DSGVO (Art. 44 ff.) und mit vorheriger Zustimmung oder nach vorheriger Weisung des Auftraggebers.
 
-4. Kategorien betroffener Personen
 
-• Pferdebesitzer / Tierhalter
-• Kunden des Auftraggebers
-• Mitarbeiter des Auftraggebers
-• Hufbearbeiter und Dienstleister
+2. Vertragslaufzeit und Kündigung
 
-5. Arten personenbezogener Daten
+Der vorliegende Vertrag wird auf unbestimmte Zeit geschlossen und kann von jeder Vertragspartei mit einer Frist von drei Monaten ordentlich gekündigt werden. Das Recht zur außerordentlichen Kündigung aus wichtigem Grund bleibt unberührt.
 
-• Stammdaten (Name, Adresse, Kontaktdaten)
-• Vertrags- und Nutzungsdaten
-• Termin- und Leistungsdaten
-• Kommunikationsdaten
-• Rechnungsrelevante Daten
-• Dokumentationsdaten
-• Dateien, Notizen, Bilder
-• Systemkennungen und IDs
 
-Eine Verarbeitung besonderer Kategorien personenbezogener Daten im Sinne von Art. 9 DSGVO ist nicht vorgesehen.
+3. Weisungen des Auftraggebers
 
-6. HufManager-ID-System (besondere Systemarchitektur)
+3.1 Dem Auftraggeber steht ein umfassendes Weisungsrecht in Bezug auf Art, Umfang und Modalitäten der Datenverarbeitung ggü. dem Auftragnehmer zu. Der Auftragnehmer informiert den Auftraggeber unverzüglich, falls eine Weisung gegen gesetzliche Vorschriften verstößt.
 
-HufManager nutzt ein mehrstufiges ID-System zur strukturellen Trennung, Sicherung und kontrollierten Verknüpfung von Daten:
-• #kid – KundenID / Pferdebesitzer
-• #equid – EquidenID
-• #pid – ProfiID
-• #prid – PartnerID
+3.2 Eine abweichende Verarbeitung ist nur zulässig, wenn der Auftragnehmer nach EU- oder nationalem Recht dazu verpflichtet ist.
 
-Grundprinzipien:
-• IDs dienen als zusätzliche Schutz- und Organisationsebene personenbezogener Daten.
-• Die Verknüpfung oder Weitergabe von IDs erfolgt ausschließlich auf Grundlage aktiver Freigaben durch den jeweiligen ID-Inhaber.
-• Die EquidenID kann bei Verkauf oder Übergabe eines Pferdes auf neue Besitzer oder Dienstleister übertragen werden.
-• HufManager übernimmt keine Haftung für die Richtigkeit extern weitergegebener IDs, empfiehlt jedoch die Aufnahme der EquidenID in Kauf- oder Übergabeverträge.
+3.3 Weisungen sind grundsätzlich schriftlich oder elektronisch zu erteilen.
 
-Ziel ist eine lückenlose, professionelle, tierschutzkonforme Dokumentation über den gesamten Lebenszyklus eines Equiden.
+3.4 Der Auftraggeber benennt auf Verlangen weisungsberechtigte Personen.
 
-7. Offenlegung gegenüber Behörden
 
-Personenbezogene Daten werden ausschließlich auf Grundlage rechtlich wirksamer, schriftlicher Anordnungen (z. B. Gerichtsbeschluss, behördliche Verfügung) an staatliche Stellen übermittelt.
+4. Kontrollbefugnisse des Auftraggebers
 
-Die betroffene Person wird unverzüglich informiert, sofern keine gesetzliche Verpflichtung oder Gefahr im Verzug dem entgegensteht.
+4.1 Der Auftraggeber ist berechtigt, die Einhaltung der Datenschutzvorschriften regelmäßig zu kontrollieren.
 
-8. Löschung, Sperrung und Wiedervergabe von IDs
+4.2 Die Ergebnisse der Kontrollen sind vom Auftraggeber zu protokollieren.
 
-Nach Vertragsende oder Löschung eines Accounts gelten folgende Fristen:
 
-EquidenID (#equid): Speicherung bis maximal 90 Tage nach Löschung oder nachgewiesenem Ableben, anschließend vollständige Löschung und mögliche Neuvergabe.
+5. Allgemeine Pflichten des Auftragnehmers
 
-Kunden-, Profi- und PartnerIDs (#kid, #pid, #prid): Speicherung bis maximal 180 Tage, anschließend vollständige Löschung und mögliche Neuvergabe.
+5.1 Die Verarbeitung erfolgt ausschließlich auf Grundlage der vertraglichen Vereinbarungen und der Weisungen des Auftraggebers.
 
-Während dieser Fristen erfolgt keine aktive Nutzung der Daten.
+5.2 Der Auftragnehmer gewährleistet, dass alle zur Verarbeitung befugten Personen zur Vertraulichkeit verpflichtet sind (Art. 28 Abs. 3 lit. b DSGVO).
 
-9. Markt-, Forschungs- und Bedarfsanalysen
 
-HufManager ist berechtigt, vollständig anonymisierte und nicht rückführbare Kennzahlen für Markt-, Branchen- und Bedarfsanalysen zu verarbeiten und zu veröffentlichen.
+6. Technische und organisatorische Maßnahmen
 
-Beispiele:
-• Rasse- und Artverteilungen
-• Berufsgattungen
-• Anzahl Pferde pro Halter
-• Regionale Auswertungen
-• Haltungsbedingungen
-• Angebotsarten
-• Durchschnittspreise
+Der Auftragnehmer hat geeignete technische und organisatorische Maßnahmen festgelegt (siehe Anlage 2). Diese wurden unter Beachtung von Art. 32 DSGVO ausgewählt und werden regelmäßig überprüft.
 
-Eine Identifizierung einzelner Personen, Unternehmen oder Tiere ist ausgeschlossen.
 
-Ziel ist die Förderung von Branchenstandards, Transparenz, Versorgungsqualität und Fachkräfteentwicklung.
+7. Unterstützungspflichten des Auftragnehmers
 
-10. Unterauftragsverarbeiter
+Der Auftragnehmer unterstützt den Auftraggeber bei der Wahrung der Betroffenenrechte (Art. 12–22 DSGVO) sowie bei den Pflichten nach Art. 32–36 DSGVO.
 
-Der Auftraggeber erteilt hiermit die allgemeine Genehmigung zur Beauftragung folgender Sub-Dienstleister:
-• Supabase – Backend- und Datenbank-Infrastruktur
-• Resend – E-Mail-Kommunikation
-• All-inkl.com – Domains und Subdomains
-• CopeCart – Zahlungsabwicklung, Zugangsverwaltung, Affiliate-Auszahlungen
 
-11. Technische und organisatorische Maßnahmen (TOM)
+8. Einsatz von Unterauftragsverarbeitern (Subunternehmer)
 
-HufManager verpflichtet sich zur Umsetzung geeigneter technischer und organisatorischer Maßnahmen, insbesondere:
-• Rollen- und Rechtesystem
-• Zugriffsbeschränkungen
-• Trennung von Datenbereichen
-• Verschlüsselung
-• Backup- und Wiederherstellungssysteme
-• Protokollierung
-• Lösch- und Sperrkonzepte
-• Schutz durch ID-Systemarchitektur
-• organisatorische Zugriffskontrollen
+8.1 Der Auftragnehmer ist zum Einsatz von Subunternehmern berechtigt. Bestehende Subunternehmer sind in Anlage 3 aufgeführt.
 
-Die jeweils aktuellen TOMs sind Bestandteil dieses Vertrages.
+8.2 Neue Subunternehmer werden dem Auftraggeber mindestens zwei Wochen vorher angezeigt. Bei ausbleibendem Widerspruch gilt die Zustimmung als erteilt.
 
-12. Pflichten des Auftragsverarbeiters
+8.3 Subunternehmer werden sorgfältig ausgewählt und vertraglich zur DSGVO-Konformität verpflichtet.
 
-HufManager verpflichtet sich insbesondere:
-• personenbezogene Daten ausschließlich auf dokumentierte Weisung zu verarbeiten
-• Vertraulichkeit zu wahren
-• Datenschutzverletzungen unverzüglich zu melden
+8.4 Die Beauftragung von Subunternehmern in Drittstaaten ist nur unter den Voraussetzungen der Art. 44 ff. DSGVO zulässig.
 
-13. Haftung
 
-Die Haftung richtet sich nach den gesetzlichen Vorschriften der DSGVO.
+9. Mitteilungspflichten des Auftragnehmers
 
-HufManager übernimmt keine Verantwortung für Inhalte, Eingaben, Zahlungsabwicklungen oder Geschäftsbeziehungen der Nutzer.
+9.1 Datenschutzverstöße sind dem Auftraggeber unverzüglich mitzuteilen.
 
-14. Vertragsende
+9.2 Anfragen von Betroffenen oder Behörden werden unverzüglich weitergeleitet.
 
-Nach Beendigung des Nutzungsverhältnisses werden alle personenbezogenen Daten entsprechend den in Punkt 8 genannten Fristen gelöscht, sofern keine gesetzliche Aufbewahrungspflicht besteht.
+9.3 Der Auftragnehmer informiert unverzüglich über bevorstehende Behördenmaßnahmen oder Datengefährdungen.
 
-15. Schlussbestimmungen
 
-Änderungen dieses Vertrages bedürfen der Textform. HufManager behält sich vor, diesen Vertrag anzupassen, sofern dies aus rechtlichen, technischen oder organisatorischen Gründen erforderlich ist. Nutzer werden hierüber informiert und zur Zustimmung aufgefordert.`;
+10. Vertragsbeendigung, Löschung und Rückgabe der Daten
+
+Nach Vertragsende werden alle personenbezogenen Daten nach Wahl des Auftraggebers gelöscht oder zurückgegeben.
+
+
+11. Datengeheimnis und Vertraulichkeit
+
+Der Auftragnehmer behandelt alle Daten unbefristet vertraulich und verpflichtet seine Mitarbeiter entsprechend.
+
+
+12. Schlussbestimmungen
+
+12.1 Änderungen bedürfen der Schriftform.
+
+12.2 Gerichtsstand ist der Sitz des Auftragnehmers.
+
+12.3 Verweise gelten auch für Nachfolgeregelungen der DSGVO.
+
+12.4 Unwirksame Klauseln berühren die übrigen nicht.
+
+12.5 Alle Anlagen sind Vertragsbestandteil.
+
+
+---
+
+ANLAGE 1 – Auftragsdetails
+
+Leistung: SaaS-Plattform HufManager
+
+Verarbeitete Datenarten:
+- Name und Kontaktdaten der Nutzer
+- E-Mail-Adressen
+- Pferdeakten und Behandlungsdaten
+- Termindaten
+- IP-Adressen
+- Zahlungsdaten
+
+Betroffene Personenkategorien:
+- Hufbearbeiter
+- Pferdebesitzer
+- Tierärzte
+- Physiotherapeuten
+- Mitarbeiter der Auftraggeber
+
+
+---
+
+ANLAGE 2 – Technische und organisatorische Maßnahmen (TOMs)
+
+1. Zutrittskontrolle: Homeoffice-Betrieb, kein öffentlicher Zugang zum Arbeitsbereich
+
+2. Zugangskontrolle IT-Systeme:
+- Passwortvergabe und Passwort-Richtlinien
+- Zugriffsregeln / Berechtigungskonzept
+- Software-Firewall
+
+3. Eingabekontrolle:
+- Protokollierung der Aktionen einzelner Nutzer
+- Nachvollziehbarkeit von Eingabe, Änderung und Löschung durch individuelle Benutzernamen
+
+4. Sichere Löschung: Löschkonzept
+
+5. Subunternehmer-Datenschutz:
+- Sorgfältige Auswahl
+- DSGVO-konforme AVVs
+- Subunternehmer: Supabase Inc. (USA), Vercel Inc. (USA), Anthropic PBC (USA), ALL-INKL.COM (Deutschland)
+
+6. Weitergabekontrolle: Alle Datenübertragungen ausschließlich über HTTPS/TLS
+
+7. Backup & Wiederherstellung:
+- Backup- & Wiederherstellungskonzept
+- Automatische Backups durch Supabase
+
+8. Überprüfung der TOMs: jährlich und anlassbezogen
+
+
+---
+
+ANLAGE 3 – Subunternehmer
+
+1. ALL-INKL.COM – Neue Medien Münnich, Hauptstraße 68, 02742 Friedersdorf, Deutschland | Domain und Webhosting | Deutschland
+
+2. Supabase Inc., 970 Trestle Glen Rd, Oakland, CA 94610, USA | Datenbankhosting und Backend | USA
+
+3. Vercel Inc., 340 S Lemon Ave #4133, Walnut, CA 91789, USA | Frontend-Hosting | USA
+
+4. Anthropic PBC, 548 Market St, PMB 90375, San Francisco, CA 94104, USA | KI-Assistent „Hufi" auf Basis der Claude API | USA`;
+};
 
 interface ExistingAgreement {
   id: string;
@@ -238,13 +261,39 @@ export function AVVSigningCard() {
           .eq("id", user.id)
           .single();
 
-        if (profile) {
-          setFormData((prev) => ({
-            ...prev,
-            name: profile.full_name || "",
-            signatureCity: profile.city || "",
-          }));
+        // Get business settings for address pre-fill
+        const { data: biz } = await supabase
+          .from("business_settings")
+          .select("address, business_name, owner_name")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        // Parse address if available (format: "Street, ZIP City" or similar)
+        let prefillStreet = "";
+        let prefillZip = "";
+        let prefillCity = profile?.city || "";
+
+        if (biz?.address) {
+          const addr = biz.address;
+          // Try to extract ZIP and city from address
+          const zipMatch = addr.match(/(\d{4,5})\s+(.+)/);
+          if (zipMatch) {
+            prefillZip = zipMatch[1];
+            prefillCity = prefillCity || zipMatch[2];
+            prefillStreet = addr.substring(0, addr.indexOf(zipMatch[0])).replace(/,\s*$/, "").trim();
+          } else {
+            prefillStreet = addr;
+          }
         }
+
+        setFormData((prev) => ({
+          ...prev,
+          name: biz?.business_name || biz?.owner_name || profile?.full_name || "",
+          street: prefillStreet || prev.street,
+          zipCode: prefillZip || prev.zipCode,
+          city: prefillCity || prev.city,
+          signatureCity: prefillCity || prev.signatureCity,
+        }));
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -272,8 +321,8 @@ export function AVVSigningCard() {
     // Title
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
-    doc.text("Auftragsverarbeitungsvertrag (AVV)", margin, 25);
-    doc.text("gemäß Art. 28 DSGVO", margin, 33);
+    doc.text("Vertrag über Auftragsverarbeitung", margin, 25);
+    doc.text("im Sinne von Art. 28 Abs. 3 DSGVO", margin, 33);
     
     // Separator
     doc.setDrawColor(200, 200, 200);
@@ -298,7 +347,8 @@ export function AVVSigningCard() {
     // Contract text (simplified for PDF)
     doc.setFontSize(9);
     let yPos = 120;
-    const lines = doc.splitTextToSize(AVV_TEXT, contentWidth);
+    const avvContent = getAvvText(formData.name, formData.street, `${formData.zipCode} ${formData.city}`);
+    const lines = doc.splitTextToSize(avvContent, contentWidth);
     
     for (const line of lines) {
       if (yPos > 250) {
@@ -387,7 +437,7 @@ export function AVVSigningCard() {
           .update({
             accepted_at: new Date().toISOString(),
             document_url: filePath,
-            version: "1.0",
+            version: "2.0",
           })
           .eq("id", existingEntry.id);
         
@@ -398,7 +448,7 @@ export function AVVSigningCard() {
           .insert({
             provider_id: user.id,
             agreement_type: "AVV",
-            version: "1.0",
+            version: "2.0",
             accepted_at: new Date().toISOString(),
             document_url: filePath,
           });
@@ -421,7 +471,7 @@ export function AVVSigningCard() {
         id: existingEntry?.id || "",
         accepted_at: new Date().toISOString(),
         document_url: filePath,
-        version: "1.0",
+        version: "2.0",
       });
       
       toast.success("AVV erfolgreich unterzeichnet!");
@@ -519,7 +569,7 @@ export function AVVSigningCard() {
             <Label className="text-sm font-medium">Vertragstext</Label>
             <ScrollArea className="h-[400px] rounded-lg border bg-muted/30 p-4">
               <div className="whitespace-pre-wrap text-sm text-muted-foreground">
-                {AVV_TEXT}
+                {getAvvText(formData.name, formData.street, `${formData.zipCode} ${formData.city}`)}
               </div>
             </ScrollArea>
           </div>
