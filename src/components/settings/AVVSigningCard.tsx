@@ -543,7 +543,7 @@ export function AVVSigningCard() {
             <Label className="text-sm font-medium">Vertragstext</Label>
             <ScrollArea className="h-[400px] rounded-lg border bg-muted/30 p-4">
               <div className="whitespace-pre-wrap text-sm text-muted-foreground">
-                {AVV_TEXT}
+                {getAvvText(formData.name, formData.street, `${formData.zipCode} ${formData.city}`)}
               </div>
             </ScrollArea>
           </div>
