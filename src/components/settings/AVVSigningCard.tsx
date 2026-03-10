@@ -445,7 +445,7 @@ export function AVVSigningCard() {
         id: existingEntry?.id || "",
         accepted_at: new Date().toISOString(),
         document_url: filePath,
-        version: "1.0",
+        version: "2.0",
       });
       
       toast.success("AVV erfolgreich unterzeichnet!");
