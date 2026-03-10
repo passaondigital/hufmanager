@@ -9,6 +9,7 @@ import { Loader2, Hammer, Heart, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ConfettiEffect } from "@/components/onboarding/ConfettiEffect";
 import { DACH_COUNTRIES, type DachCountry } from "@/lib/dach";
+import { WiderrufsausschlussCheckbox } from "@/components/consent/WiderrufsausschlussCheckbox";
 
 interface MultiStepSignupProps {
   onComplete: (data: {
