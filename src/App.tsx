@@ -509,6 +509,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner-autoflow" element={<AutoFlow />} />
               <Route path="/partner-management" element={<Management />} />
               <Route path="/partner-support" element={<Support />} />
+              <Route path="/partner-rechtliches" element={<PartnerRechtliches />} />
             </Route>
 
             {/* Fallback für alles andere */}
