@@ -74,7 +74,7 @@ export default defineConfig(({ mode }) => ({
           },
           {
             // Network first for Supabase API calls (NOT auth) - fallback to cache
-            urlPattern: ({ url }) => {
+            urlPattern: ({ url }: { url: URL }) => {
               return url.hostname.endsWith('.supabase.co') && 
                      !url.pathname.startsWith('/auth/');
             },
