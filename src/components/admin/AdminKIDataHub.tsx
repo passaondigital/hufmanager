@@ -35,12 +35,15 @@ export function AdminKIDataHub() {
   const fetchData = async () => {
     setLoading(true);
     const { data: rows, error } = await supabase
-      .from("agent_data_hub" as any)
-      .select("*")
-      .order("termin_datum", { ascending: false });
+      .rpc("get_agent_data_hub" as any);
 
     if (!error && rows) {
-      setData(rows as unknown as AgentDataRow[]);
+      const sorted = (rows as unknown as AgentDataRow[]).sort((a, b) => {
+        if (!a.termin_datum) return 1;
+        if (!b.termin_datum) return -1;
+        return b.termin_datum.localeCompare(a.termin_datum);
+      });
+      setData(sorted);
     }
     setLoading(false);
   };
