@@ -10915,22 +10915,6 @@ export type Database = {
       }
     }
     Views: {
-      agent_data_hub: {
-        Row: {
-          eqid: string | null
-          gps_daten: Json | null
-          kid: string | null
-          kunden_name: string | null
-          kunden_telefon: string | null
-          pferdename: string | null
-          pid: string | null
-          profi_name: string | null
-          stall_name: string | null
-          termin_datum: string | null
-          termin_zeit: string | null
-        }
-        Relationships: []
-      }
       appointments_partner_view: {
         Row: {
           date: string | null
@@ -11835,6 +11819,22 @@ export type Database = {
           email_confirmed_at: string
           last_sign_in_at: string
           user_id: string
+        }[]
+      }
+      get_agent_data_hub: {
+        Args: never
+        Returns: {
+          eqid: string
+          gps_daten: string
+          kid: string
+          kunden_name: string
+          kunden_telefon: string
+          pferdename: string
+          pid: string
+          profi_name: string
+          stall_name: string
+          termin_datum: string
+          termin_zeit: string
         }[]
       }
       get_demo_user_ids: { Args: never; Returns: string[] }
