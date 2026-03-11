@@ -38,7 +38,12 @@ export function AdminKIDataHub() {
       .rpc("get_agent_data_hub" as any);
 
     if (!error && rows) {
-      setData(rows as unknown as AgentDataRow[]);
+      const sorted = (rows as unknown as AgentDataRow[]).sort((a, b) => {
+        if (!a.termin_datum) return 1;
+        if (!b.termin_datum) return -1;
+        return b.termin_datum.localeCompare(a.termin_datum);
+      });
+      setData(sorted);
     }
     setLoading(false);
   };
