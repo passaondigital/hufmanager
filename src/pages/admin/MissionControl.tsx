@@ -2224,6 +2224,10 @@ export default function MissionControl() {
             <AdminContractTracking />
           </TabsContent>
 
+          <TabsContent value="browsers" className="space-y-6">
+            <AdminBrowserAnalytics />
+          </TabsContent>
+
           {/* ESCALATIONS TAB */}
           <TabsContent value="escalations" className="space-y-4">
             <Card>
