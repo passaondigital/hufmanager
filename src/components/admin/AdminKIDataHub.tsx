@@ -35,9 +35,7 @@ export function AdminKIDataHub() {
   const fetchData = async () => {
     setLoading(true);
     const { data: rows, error } = await supabase
-      .from("agent_data_hub" as any)
-      .select("*")
-      .order("termin_datum", { ascending: false });
+      .rpc("get_agent_data_hub" as any);
 
     if (!error && rows) {
       setData(rows as unknown as AgentDataRow[]);
