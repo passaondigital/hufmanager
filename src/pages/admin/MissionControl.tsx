@@ -81,6 +81,7 @@ import { RetentionDashboard } from "@/components/admin/RetentionDashboard";
 import { AdminHufrenteOverview } from "@/components/admin/AdminHufrenteOverview";
 import { AdminManualPayments } from "@/components/admin/AdminManualPayments";
 import { AdminContractTracking } from "@/components/admin/AdminContractTracking";
+import { AdminBrowserAnalytics } from "@/components/admin/AdminBrowserAnalytics";
 import { AdminInvoices } from "@/components/admin/AdminInvoices";
 import { AdminContractManager } from "@/components/admin/AdminContractManager";
 import { isDemoEmail } from "@/lib/demo-accounts";
