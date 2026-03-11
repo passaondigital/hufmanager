@@ -1172,6 +1172,10 @@ export default function MissionControl() {
                 <Shield className="w-4 h-4" />
                 <span className="hidden md:inline">Compliance</span>
               </TabsTrigger>
+              <TabsTrigger value="browsers" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <Globe className="w-4 h-4" />
+                <span className="hidden md:inline">Browser</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
