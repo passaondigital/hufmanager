@@ -81,6 +81,7 @@ import { RetentionDashboard } from "@/components/admin/RetentionDashboard";
 import { AdminHufrenteOverview } from "@/components/admin/AdminHufrenteOverview";
 import { AdminManualPayments } from "@/components/admin/AdminManualPayments";
 import { AdminContractTracking } from "@/components/admin/AdminContractTracking";
+import { AdminBrowserAnalytics } from "@/components/admin/AdminBrowserAnalytics";
 import { AdminInvoices } from "@/components/admin/AdminInvoices";
 import { AdminContractManager } from "@/components/admin/AdminContractManager";
 import { isDemoEmail } from "@/lib/demo-accounts";
@@ -1172,6 +1173,10 @@ export default function MissionControl() {
                 <Shield className="w-4 h-4" />
                 <span className="hidden md:inline">Compliance</span>
               </TabsTrigger>
+              <TabsTrigger value="browsers" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <Globe className="w-4 h-4" />
+                <span className="hidden md:inline">Browser</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -2218,6 +2223,10 @@ export default function MissionControl() {
 
           <TabsContent value="compliance" className="space-y-6">
             <AdminContractTracking />
+          </TabsContent>
+
+          <TabsContent value="browsers" className="space-y-6">
+            <AdminBrowserAnalytics />
           </TabsContent>
 
           {/* ESCALATIONS TAB */}
