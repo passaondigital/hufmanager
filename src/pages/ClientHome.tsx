@@ -253,6 +253,9 @@ export default function ClientHome() {
           {/* TODAY DASHBOARD - Live status + Hero card + Timeline */}
           {user && <ClientTodayDashboard />}
 
+          {/* Service Orders */}
+          <ServiceOrderList />
+
           {/* Upcoming Appointments (next 3, after today) */}
           {user && (
             <div data-tour="client-upcoming" className="relative">
