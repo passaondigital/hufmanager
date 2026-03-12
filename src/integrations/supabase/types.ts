@@ -2089,25 +2089,31 @@ export type Database = {
           accepted_at: string
           consent_type: string
           created_at: string
+          document_url: string | null
           id: string
           ip_address: string | null
           user_id: string
+          version: string | null
         }
         Insert: {
           accepted_at?: string
           consent_type: string
           created_at?: string
+          document_url?: string | null
           id?: string
           ip_address?: string | null
           user_id: string
+          version?: string | null
         }
         Update: {
           accepted_at?: string
           consent_type?: string
           created_at?: string
+          document_url?: string | null
           id?: string
           ip_address?: string | null
           user_id?: string
+          version?: string | null
         }
         Relationships: []
       }
@@ -5020,6 +5026,182 @@ export type Database = {
           },
         ]
       }
+      horse_audit_log: {
+        Row: {
+          action_detail: Json | null
+          action_type: string
+          actor_id: string | null
+          actor_kid: string | null
+          actor_name: string | null
+          actor_role: string | null
+          created_at: string | null
+          horse_id: string
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action_detail?: Json | null
+          action_type: string
+          actor_id?: string | null
+          actor_kid?: string | null
+          actor_name?: string | null
+          actor_role?: string | null
+          created_at?: string | null
+          horse_id: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action_detail?: Json | null
+          action_type?: string
+          actor_id?: string | null
+          actor_kid?: string | null
+          actor_name?: string | null
+          actor_role?: string | null
+          created_at?: string | null
+          horse_id?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horse_audit_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_audit_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_audit_log_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_audit_log_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_audit_log_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_audit_log_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      horse_deworming: {
+        Row: {
+          active_substance: string | null
+          administered_by: string | null
+          created_at: string | null
+          created_by: string | null
+          deworming_date: string
+          dosage_ml: number | null
+          fecal_egg_count: number | null
+          horse_id: string
+          id: string
+          next_due_date: string | null
+          notes: string | null
+          product_name: string
+          weight_at_time_kg: number | null
+        }
+        Insert: {
+          active_substance?: string | null
+          administered_by?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          deworming_date: string
+          dosage_ml?: number | null
+          fecal_egg_count?: number | null
+          horse_id: string
+          id?: string
+          next_due_date?: string | null
+          notes?: string | null
+          product_name: string
+          weight_at_time_kg?: number | null
+        }
+        Update: {
+          active_substance?: string | null
+          administered_by?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          deworming_date?: string
+          dosage_ml?: number | null
+          fecal_egg_count?: number | null
+          horse_id?: string
+          id?: string
+          next_due_date?: string | null
+          notes?: string | null
+          product_name?: string
+          weight_at_time_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horse_deworming_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_deworming_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_deworming_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_deworming_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_deworming_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_deworming_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       horse_diary_entries: {
         Row: {
           category: string
@@ -5244,10 +5426,21 @@ export type Database = {
           access_note: string | null
           can_add_treatment_notes: boolean
           can_create_appointments: boolean
+          can_upload_documents: boolean | null
           can_view_basic: boolean
+          can_view_breeding: boolean | null
+          can_view_deworming: boolean | null
+          can_view_diary: boolean | null
+          can_view_documents: boolean | null
           can_view_hoof_history: boolean
+          can_view_insurance: boolean | null
           can_view_medical: boolean
+          can_view_training: boolean | null
+          can_view_vaccinations: boolean | null
+          can_view_weight_bcs: boolean | null
           created_at: string | null
+          granted_at: string | null
+          granted_by: string | null
           horse_id: string
           id: string
           invite_token: string | null
@@ -5259,7 +5452,9 @@ export type Database = {
           partner_name: string | null
           partner_profile_id: string | null
           partner_type: Database["public"]["Enums"]["partner_type"] | null
+          revoke_reason: string | null
           revoked_at: string | null
+          revoked_by: string | null
           status: string
           updated_at: string | null
           valid_until: string | null
@@ -5269,10 +5464,21 @@ export type Database = {
           access_note?: string | null
           can_add_treatment_notes?: boolean
           can_create_appointments?: boolean
+          can_upload_documents?: boolean | null
           can_view_basic?: boolean
+          can_view_breeding?: boolean | null
+          can_view_deworming?: boolean | null
+          can_view_diary?: boolean | null
+          can_view_documents?: boolean | null
           can_view_hoof_history?: boolean
+          can_view_insurance?: boolean | null
           can_view_medical?: boolean
+          can_view_training?: boolean | null
+          can_view_vaccinations?: boolean | null
+          can_view_weight_bcs?: boolean | null
           created_at?: string | null
+          granted_at?: string | null
+          granted_by?: string | null
           horse_id: string
           id?: string
           invite_token?: string | null
@@ -5284,7 +5490,9 @@ export type Database = {
           partner_name?: string | null
           partner_profile_id?: string | null
           partner_type?: Database["public"]["Enums"]["partner_type"] | null
+          revoke_reason?: string | null
           revoked_at?: string | null
+          revoked_by?: string | null
           status?: string
           updated_at?: string | null
           valid_until?: string | null
@@ -5294,10 +5502,21 @@ export type Database = {
           access_note?: string | null
           can_add_treatment_notes?: boolean
           can_create_appointments?: boolean
+          can_upload_documents?: boolean | null
           can_view_basic?: boolean
+          can_view_breeding?: boolean | null
+          can_view_deworming?: boolean | null
+          can_view_diary?: boolean | null
+          can_view_documents?: boolean | null
           can_view_hoof_history?: boolean
+          can_view_insurance?: boolean | null
           can_view_medical?: boolean
+          can_view_training?: boolean | null
+          can_view_vaccinations?: boolean | null
+          can_view_weight_bcs?: boolean | null
           created_at?: string | null
+          granted_at?: string | null
+          granted_by?: string | null
           horse_id?: string
           id?: string
           invite_token?: string | null
@@ -5309,12 +5528,28 @@ export type Database = {
           partner_name?: string | null
           partner_profile_id?: string | null
           partner_type?: Database["public"]["Enums"]["partner_type"] | null
+          revoke_reason?: string | null
           revoked_at?: string | null
+          revoked_by?: string | null
           status?: string
           updated_at?: string | null
           valid_until?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "horse_partner_access_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_partner_access_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "horse_partner_access_horse_id_fkey"
             columns: ["horse_id"]
@@ -5385,26 +5620,440 @@ export type Database = {
             referencedRelation: "safe_provider_profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "horse_partner_access_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_partner_access_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      horse_status_reports: {
+        Row: {
+          authority_case_number: string | null
+          authority_name: string | null
+          authority_notified: boolean | null
+          authority_notified_at: string | null
+          closed_at: string | null
+          court_order_date: string | null
+          court_order_received: boolean | null
+          court_order_required: boolean | null
+          court_order_url: string | null
+          created_at: string | null
+          description: string | null
+          document_urls: string[] | null
+          horse_id: string
+          id: string
+          incident_date: string | null
+          incident_location: string | null
+          report_status: string | null
+          report_type: string
+          reported_by: string
+          updated_at: string | null
+        }
+        Insert: {
+          authority_case_number?: string | null
+          authority_name?: string | null
+          authority_notified?: boolean | null
+          authority_notified_at?: string | null
+          closed_at?: string | null
+          court_order_date?: string | null
+          court_order_received?: boolean | null
+          court_order_required?: boolean | null
+          court_order_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          document_urls?: string[] | null
+          horse_id: string
+          id?: string
+          incident_date?: string | null
+          incident_location?: string | null
+          report_status?: string | null
+          report_type: string
+          reported_by: string
+          updated_at?: string | null
+        }
+        Update: {
+          authority_case_number?: string | null
+          authority_name?: string | null
+          authority_notified?: boolean | null
+          authority_notified_at?: string | null
+          closed_at?: string | null
+          court_order_date?: string | null
+          court_order_received?: boolean | null
+          court_order_required?: boolean | null
+          court_order_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          document_urls?: string[] | null
+          horse_id?: string
+          id?: string
+          incident_date?: string | null
+          incident_location?: string | null
+          report_status?: string | null
+          report_type?: string
+          reported_by?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horse_status_reports_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_status_reports_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_status_reports_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_status_reports_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_status_reports_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_status_reports_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      horse_transfers: {
+        Row: {
+          buyer_confirmed: boolean | null
+          buyer_confirmed_at: string | null
+          buyer_contract_url: string | null
+          buyer_email: string
+          buyer_id: string | null
+          buyer_kid: string | null
+          buyer_liability_accepted: boolean | null
+          buyer_shared_password: string | null
+          completed_at: string | null
+          contract_verified: boolean | null
+          contract_verified_at: string | null
+          contract_verified_by: string | null
+          exclude_provider_notes: boolean | null
+          expires_at: string | null
+          horse_id: string
+          id: string
+          include_documents: boolean | null
+          include_full_history: boolean | null
+          include_hoof_history: boolean | null
+          include_photos: boolean | null
+          initiated_at: string | null
+          notes: string | null
+          seller_confirmed: boolean | null
+          seller_confirmed_at: string | null
+          seller_contract_url: string | null
+          seller_id: string
+          seller_liability_accepted: boolean | null
+          seller_shared_password: string | null
+          shared_password_hash: string | null
+          status: string
+        }
+        Insert: {
+          buyer_confirmed?: boolean | null
+          buyer_confirmed_at?: string | null
+          buyer_contract_url?: string | null
+          buyer_email: string
+          buyer_id?: string | null
+          buyer_kid?: string | null
+          buyer_liability_accepted?: boolean | null
+          buyer_shared_password?: string | null
+          completed_at?: string | null
+          contract_verified?: boolean | null
+          contract_verified_at?: string | null
+          contract_verified_by?: string | null
+          exclude_provider_notes?: boolean | null
+          expires_at?: string | null
+          horse_id: string
+          id?: string
+          include_documents?: boolean | null
+          include_full_history?: boolean | null
+          include_hoof_history?: boolean | null
+          include_photos?: boolean | null
+          initiated_at?: string | null
+          notes?: string | null
+          seller_confirmed?: boolean | null
+          seller_confirmed_at?: string | null
+          seller_contract_url?: string | null
+          seller_id: string
+          seller_liability_accepted?: boolean | null
+          seller_shared_password?: string | null
+          shared_password_hash?: string | null
+          status?: string
+        }
+        Update: {
+          buyer_confirmed?: boolean | null
+          buyer_confirmed_at?: string | null
+          buyer_contract_url?: string | null
+          buyer_email?: string
+          buyer_id?: string | null
+          buyer_kid?: string | null
+          buyer_liability_accepted?: boolean | null
+          buyer_shared_password?: string | null
+          completed_at?: string | null
+          contract_verified?: boolean | null
+          contract_verified_at?: string | null
+          contract_verified_by?: string | null
+          exclude_provider_notes?: boolean | null
+          expires_at?: string | null
+          horse_id?: string
+          id?: string
+          include_documents?: boolean | null
+          include_full_history?: boolean | null
+          include_hoof_history?: boolean | null
+          include_photos?: boolean | null
+          initiated_at?: string | null
+          notes?: string | null
+          seller_confirmed?: boolean | null
+          seller_confirmed_at?: string | null
+          seller_contract_url?: string | null
+          seller_id?: string
+          seller_liability_accepted?: boolean | null
+          seller_shared_password?: string | null
+          shared_password_hash?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horse_transfers_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_transfers_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_transfers_contract_verified_by_fkey"
+            columns: ["contract_verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_transfers_contract_verified_by_fkey"
+            columns: ["contract_verified_by"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_transfers_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_transfers_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_transfers_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_transfers_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_transfers_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_transfers_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      horse_vaccinations: {
+        Row: {
+          administered_by: string | null
+          batch_number: string | null
+          created_at: string | null
+          created_by: string | null
+          document_url: string | null
+          horse_id: string
+          id: string
+          next_due_date: string | null
+          notes: string | null
+          updated_at: string | null
+          vaccination_date: string
+          vaccine_name: string | null
+          vaccine_type: string
+          vet_profile_id: string | null
+        }
+        Insert: {
+          administered_by?: string | null
+          batch_number?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          document_url?: string | null
+          horse_id: string
+          id?: string
+          next_due_date?: string | null
+          notes?: string | null
+          updated_at?: string | null
+          vaccination_date: string
+          vaccine_name?: string | null
+          vaccine_type: string
+          vet_profile_id?: string | null
+        }
+        Update: {
+          administered_by?: string | null
+          batch_number?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          document_url?: string | null
+          horse_id?: string
+          id?: string
+          next_due_date?: string | null
+          notes?: string | null
+          updated_at?: string | null
+          vaccination_date?: string
+          vaccine_name?: string | null
+          vaccine_type?: string
+          vet_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horse_vaccinations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_vaccinations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_vaccinations_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_vaccinations_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_vaccinations_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_vaccinations_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_vaccinations_vet_profile_id_fkey"
+            columns: ["vet_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_vaccinations_vet_profile_id_fkey"
+            columns: ["vet_profile_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       horses: {
         Row: {
           anamnesis_interval_months: number | null
           app_source: string | null
+          bcs_updated_at: string | null
+          behavior_notes: string | null
           birth_date: string | null
           birth_year: number | null
+          body_condition_score: number | null
+          brand_marks: string | null
           breed: string | null
+          breeding_country: string | null
           chip_number: string | null
           color: string | null
           contacts: Json | null
           created_at: string
+          dam_name: string | null
           deleted_at: string | null
           discipline: string | null
+          disciplines: string[] | null
           documents_urls: string[] | null
           eqid: string | null
           equine_type: string | null
+          equipment_notes: string | null
           feeding_notes: string | null
+          fn_number: string | null
           gender: string | null
+          handling_warnings: string | null
           health_issues_general: string | null
           health_status: string | null
           height: string | null
@@ -5415,14 +6064,20 @@ export type Database = {
           hoof_measurements: Json | null
           hoof_protection: string | null
           hoof_type: string | null
+          horse_status: string
           housing: string | null
           id: string
+          insurance_company: string | null
+          insurance_policy_number: string | null
+          insurance_type: string[] | null
+          insurance_valid_until: string | null
           is_new_horse: boolean | null
           last_anamnesis_date: string | null
           last_appointment_date: string | null
           latitude: number | null
           location_name: string | null
           longitude: number | null
+          markings_diagram_url: string | null
           medical_history: string | null
           name: string
           next_appointment_due: string | null
@@ -5436,29 +6091,48 @@ export type Database = {
           recall_interval_weeks: number | null
           shoeing_interval: number | null
           shoeing_status: string | null
+          sire_name: string | null
           special_notes: string | null
           stable_address_gps: Json | null
+          status_changed_at: string | null
+          status_reason: string | null
+          status_reported_at: string | null
+          studbook: string | null
+          temperament: string | null
+          training_level: string | null
+          ueln: string | null
           updated_at: string
           usage: string | null
           usage_type: Database["public"]["Enums"]["usage_type"] | null
+          weight_kg: number | null
         }
         Insert: {
           anamnesis_interval_months?: number | null
           app_source?: string | null
+          bcs_updated_at?: string | null
+          behavior_notes?: string | null
           birth_date?: string | null
           birth_year?: number | null
+          body_condition_score?: number | null
+          brand_marks?: string | null
           breed?: string | null
+          breeding_country?: string | null
           chip_number?: string | null
           color?: string | null
           contacts?: Json | null
           created_at?: string
+          dam_name?: string | null
           deleted_at?: string | null
           discipline?: string | null
+          disciplines?: string[] | null
           documents_urls?: string[] | null
           eqid?: string | null
           equine_type?: string | null
+          equipment_notes?: string | null
           feeding_notes?: string | null
+          fn_number?: string | null
           gender?: string | null
+          handling_warnings?: string | null
           health_issues_general?: string | null
           health_status?: string | null
           height?: string | null
@@ -5469,14 +6143,20 @@ export type Database = {
           hoof_measurements?: Json | null
           hoof_protection?: string | null
           hoof_type?: string | null
+          horse_status?: string
           housing?: string | null
           id?: string
+          insurance_company?: string | null
+          insurance_policy_number?: string | null
+          insurance_type?: string[] | null
+          insurance_valid_until?: string | null
           is_new_horse?: boolean | null
           last_anamnesis_date?: string | null
           last_appointment_date?: string | null
           latitude?: number | null
           location_name?: string | null
           longitude?: number | null
+          markings_diagram_url?: string | null
           medical_history?: string | null
           name: string
           next_appointment_due?: string | null
@@ -5490,29 +6170,48 @@ export type Database = {
           recall_interval_weeks?: number | null
           shoeing_interval?: number | null
           shoeing_status?: string | null
+          sire_name?: string | null
           special_notes?: string | null
           stable_address_gps?: Json | null
+          status_changed_at?: string | null
+          status_reason?: string | null
+          status_reported_at?: string | null
+          studbook?: string | null
+          temperament?: string | null
+          training_level?: string | null
+          ueln?: string | null
           updated_at?: string
           usage?: string | null
           usage_type?: Database["public"]["Enums"]["usage_type"] | null
+          weight_kg?: number | null
         }
         Update: {
           anamnesis_interval_months?: number | null
           app_source?: string | null
+          bcs_updated_at?: string | null
+          behavior_notes?: string | null
           birth_date?: string | null
           birth_year?: number | null
+          body_condition_score?: number | null
+          brand_marks?: string | null
           breed?: string | null
+          breeding_country?: string | null
           chip_number?: string | null
           color?: string | null
           contacts?: Json | null
           created_at?: string
+          dam_name?: string | null
           deleted_at?: string | null
           discipline?: string | null
+          disciplines?: string[] | null
           documents_urls?: string[] | null
           eqid?: string | null
           equine_type?: string | null
+          equipment_notes?: string | null
           feeding_notes?: string | null
+          fn_number?: string | null
           gender?: string | null
+          handling_warnings?: string | null
           health_issues_general?: string | null
           health_status?: string | null
           height?: string | null
@@ -5523,14 +6222,20 @@ export type Database = {
           hoof_measurements?: Json | null
           hoof_protection?: string | null
           hoof_type?: string | null
+          horse_status?: string
           housing?: string | null
           id?: string
+          insurance_company?: string | null
+          insurance_policy_number?: string | null
+          insurance_type?: string[] | null
+          insurance_valid_until?: string | null
           is_new_horse?: boolean | null
           last_anamnesis_date?: string | null
           last_appointment_date?: string | null
           latitude?: number | null
           location_name?: string | null
           longitude?: number | null
+          markings_diagram_url?: string | null
           medical_history?: string | null
           name?: string
           next_appointment_due?: string | null
@@ -5544,11 +6249,20 @@ export type Database = {
           recall_interval_weeks?: number | null
           shoeing_interval?: number | null
           shoeing_status?: string | null
+          sire_name?: string | null
           special_notes?: string | null
           stable_address_gps?: Json | null
+          status_changed_at?: string | null
+          status_reason?: string | null
+          status_reported_at?: string | null
+          studbook?: string | null
+          temperament?: string | null
+          training_level?: string | null
+          ueln?: string | null
           updated_at?: string
           usage?: string | null
           usage_type?: Database["public"]["Enums"]["usage_type"] | null
+          weight_kg?: number | null
         }
         Relationships: [
           {
@@ -9499,6 +10213,164 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      service_orders: {
+        Row: {
+          client_id: string
+          client_signature_url: string | null
+          client_signed: boolean | null
+          client_signed_at: string | null
+          completed_at: string | null
+          created_at: string | null
+          currency: string | null
+          document_urls: string[] | null
+          estimated_price: number | null
+          horse_id: string | null
+          id: string
+          notes: string | null
+          order_number: string | null
+          order_status: string | null
+          partner_id: string | null
+          provider_id: string | null
+          provider_signature_url: string | null
+          provider_signed: boolean | null
+          provider_signed_at: string | null
+          provider_type: string | null
+          service_date: string | null
+          service_description: string
+          terms_accepted_client: boolean | null
+          terms_accepted_provider: boolean | null
+          terms_version: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          client_id: string
+          client_signature_url?: string | null
+          client_signed?: boolean | null
+          client_signed_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          document_urls?: string[] | null
+          estimated_price?: number | null
+          horse_id?: string | null
+          id?: string
+          notes?: string | null
+          order_number?: string | null
+          order_status?: string | null
+          partner_id?: string | null
+          provider_id?: string | null
+          provider_signature_url?: string | null
+          provider_signed?: boolean | null
+          provider_signed_at?: string | null
+          provider_type?: string | null
+          service_date?: string | null
+          service_description: string
+          terms_accepted_client?: boolean | null
+          terms_accepted_provider?: boolean | null
+          terms_version?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          client_signature_url?: string | null
+          client_signed?: boolean | null
+          client_signed_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          document_urls?: string[] | null
+          estimated_price?: number | null
+          horse_id?: string | null
+          id?: string
+          notes?: string | null
+          order_number?: string | null
+          order_status?: string | null
+          partner_id?: string | null
+          provider_id?: string | null
+          provider_signature_url?: string | null
+          provider_signed?: boolean | null
+          provider_signed_at?: string | null
+          provider_type?: string | null
+          service_date?: string | null
+          service_description?: string
+          terms_accepted_client?: boolean | null
+          terms_accepted_provider?: boolean | null
+          terms_version?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_orders_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_orders_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_orders_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_orders_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_orders_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_orders_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_orders_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_orders_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_price_history: {
         Row: {
