@@ -59,34 +59,29 @@ const DEMO_WELCOME_SHOWN_KEY = 'hufmanager_demo_welcome_shown';
 export function TourProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const location = useLocation();
-
-  // Skip tour on public standalone pages
-  const isPublicStandalone = location.pathname.startsWith('/pferdeakte');
-  if (isPublicStandalone) {
-    return <TourContext.Provider value={{ startTour: () => {}, isAnyTourActive: false, openDemoWelcome: () => {} }}>{children}</TourContext.Provider>;
-  }
-
   const [activeTour, setActiveTour] = useState<TourName | null>(null);
   const [demoSteps, setDemoSteps] = useState<TourStep[] | null>(null);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
+
+  const isPublicStandalone = location.pathname.startsWith('/pferdeakte');
 
   const demoRole = getDemoRole(user?.email);
   const isDemo = isDemoEmail(user?.email);
 
   // Auto-show welcome modal on first demo load
   useEffect(() => {
+    if (isPublicStandalone) return;
     if (!isDemo || !demoRole || !user?.id) return;
     const key = `${DEMO_WELCOME_SHOWN_KEY}_${user.id}`;
     const alreadyShown = sessionStorage.getItem(key);
     if (!alreadyShown) {
-      // Delay slightly so the page renders first
       const timer = setTimeout(() => {
         setWelcomeOpen(true);
         sessionStorage.setItem(key, '1');
       }, 1200);
       return () => clearTimeout(timer);
     }
-  }, [isDemo, demoRole, user?.id]);
+  }, [isDemo, demoRole, user?.id, isPublicStandalone]);
 
   const startTour = useCallback((name: TourName) => {
     setDemoSteps(null);
@@ -102,7 +97,6 @@ export function TourProvider({ children }: { children: ReactNode }) {
     const config = demoTourConfigs[demoRole];
     const topicSteps = config.steps[topicId]?.[mode];
     if (!topicSteps) return;
-    // Append CTA step at the end
     setDemoSteps([...topicSteps, ctaStep]);
     setActiveTour(null);
   }, [demoRole]);
@@ -111,6 +105,15 @@ export function TourProvider({ children }: { children: ReactNode }) {
     setActiveTour(null);
     setDemoSteps(null);
   }, []);
+
+  // On public standalone pages, render only children with no-op context
+  if (isPublicStandalone) {
+    return (
+      <TourContext.Provider value={{ startTour: () => {}, isAnyTourActive: false, openDemoWelcome: () => {} }}>
+        {children}
+      </TourContext.Provider>
+    );
+  }
 
   const isActive = !!activeTour || !!demoSteps;
   const currentSteps = demoSteps || (activeTour ? tourMap[activeTour] : []);
