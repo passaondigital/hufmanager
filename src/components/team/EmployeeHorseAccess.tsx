@@ -26,7 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, Loader2, Search, Horse } from "lucide-react";
+import { Plus, Trash2, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
 
 interface EmployeeHorseAccessProps {

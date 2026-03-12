@@ -395,6 +395,13 @@ export function EditEmployeeSheet({ employee, open, onOpenChange }: EditEmployee
               </div>
             </div>
           </TabsContent>
+
+          <TabsContent value="horses" className="mt-4">
+            <EmployeeHorseAccess
+              employeeId={employee.id}
+              employeeName={employee.full_name}
+            />
+          </TabsContent>
         </Tabs>
 
         <SheetFooter className="mt-6">
