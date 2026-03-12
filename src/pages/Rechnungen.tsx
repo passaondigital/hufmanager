@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { ListPageHeader } from "@/components/shared/ListPageHeader";
+import { ListSkeleton } from "@/components/shared/ListSkeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -339,36 +341,37 @@ export default function Rechnungen() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">Rechnungen <HelpTip id="rechnungen.bereich" /></h1>
-          <p className="text-muted-foreground">Übersicht aller Kundenrechnungen</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <FileSpreadsheet className="h-4 w-4" />
-                Export
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleDatevExport}>
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                DATEV-Export
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleSimpleExport}>
-                <Download className="h-4 w-4 mr-2" />
-                CSV-Export
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button onClick={() => setShowCreateModal(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Rechnung erstellen
-          </Button>
-        </div>
-      </div>
+      <ListPageHeader
+        title="Rechnungen"
+        count={invoices.length}
+        countLabel="Rechnungen"
+        action={
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleDatevExport}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  DATEV-Export
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSimpleExport}>
+                  <Download className="h-4 w-4 mr-2" />
+                  CSV-Export
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button onClick={() => setShowCreateModal(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Rechnung erstellen
+            </Button>
+          </div>
+        }
+      />
 
       <CreateInvoiceModal
         open={showCreateModal}
@@ -419,17 +422,7 @@ export default function Rechnungen() {
 
       {/* Invoice List */}
       {loading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-4 space-y-3">
-                <Skeleton className="h-5 w-32" />
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-20" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <ListSkeleton rows={3} />
       ) : filteredInvoices.length === 0 ? (
         <Card className="border-dashed border-2 border-border/50 bg-muted/20">
           <CardContent className="py-12 text-center">

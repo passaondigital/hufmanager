@@ -5,7 +5,7 @@ import { useOnboarding } from "@/hooks/useOnboarding";
 import { ProviderSetupWizard } from "@/components/onboarding/ProviderSetupWizard";
 import { PushNotificationBanner } from "@/components/notifications/PushNotificationBanner";
 import { MilestoneCelebration } from "@/components/growth/MilestoneCelebration";
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { DashboardHeroBanner } from "@/components/dashboard/DashboardHeroBanner";
 import { CompactOnboardingBanner } from "@/components/dashboard/CompactOnboardingBanner";
 import { WidgetGrid } from "@/components/dashboard/widgets/WidgetGrid";
 import { DashboardSidebar } from "@/components/dashboard/sidebar/DashboardSidebar";
@@ -62,7 +62,7 @@ const Dashboard = () => {
 
       <div className="space-y-4 pb-4">
         {/* Zone A: Sticky Header */}
-        <DashboardHeader fullName={displayName} />
+        <DashboardHeroBanner fullName={displayName} />
 
         {/* Banners (compact) */}
         <PushNotificationBanner />

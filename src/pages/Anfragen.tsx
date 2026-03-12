@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { ListPageHeader } from "@/components/shared/ListPageHeader";
+import { ListSkeleton } from "@/components/shared/ListSkeleton";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -118,30 +120,23 @@ const Anfragen = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            Anfragen
-            <HelpTip id="anfragen.bereich" />
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Neue Kundenanfragen über deine Webseite
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="outline" 
-            className="gap-2"
-            onClick={() => setShowBroadcast(true)}
-          >
-            <Send className="h-4 w-4" />
-            Rundmail
-          </Button>
-          <Badge variant="secondary" className="text-lg px-4 py-2">
-            {leads.filter((l) => l.status === "neu").length} Neue
-          </Badge>
-        </div>
-      </div>
+      <ListPageHeader
+        title="Anfragen"
+        count={leads.length}
+        countLabel="Anfragen"
+        action={
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              className="gap-2"
+              onClick={() => setShowBroadcast(true)}
+            >
+              <Send className="h-4 w-4" />
+              Rundmail
+            </Button>
+          </div>
+        }
+      />
 
       {/* Broadcast Modal */}
       <BroadcastModal open={showBroadcast} onOpenChange={setShowBroadcast} />
@@ -189,9 +184,7 @@ const Anfragen = () => {
 
       {/* Loading State */}
       {isLoading && (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        <ListSkeleton rows={3} />
       )}
 
       {/* Empty State - Freundlich & Hilfreich */}

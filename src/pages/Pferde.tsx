@@ -18,6 +18,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { ListPageHeader } from "@/components/shared/ListPageHeader";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { ListSkeleton } from "@/components/shared/ListSkeleton";
 
 const Pferde = () => {
   const { user } = useAuth();
@@ -26,7 +29,7 @@ const Pferde = () => {
   const [activeTab, setActiveTab] = useState("mine");
 
   // Fetch own horses (via clients)
-  const { data: ownHorses = [] } = useQuery({
+  const { data: ownHorses = [], isLoading: isLoadingOwn } = useQuery({
     queryKey: ["provider-own-horses", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -205,19 +208,17 @@ const Pferde = () => {
 
   return (
     <div className="space-y-4 md:space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-responsive-h2 text-foreground">Pferde</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            {ownHorses.length} eigene · {sharedHorses.length} freigegeben
-          </p>
-        </div>
-        <Button className="gap-2 min-h-[44px]" onClick={() => navigate("/aufnahme")}>
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Neues Pferd</span>
-        </Button>
-      </div>
+      <ListPageHeader
+        title="Pferde"
+        count={ownHorses.length + sharedHorses.length}
+        countLabel="Pferde"
+        action={
+          <Button className="gap-2 min-h-[44px]" onClick={() => navigate("/aufnahme")}>
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Neues Pferd</span>
+          </Button>
+        }
+      />
 
       {/* Search */}
       <div className="relative w-full">
@@ -259,18 +260,16 @@ const Pferde = () => {
         </TabsList>
 
         <TabsContent value="mine" className="space-y-3 mt-4">
-          {filterHorses(ownHorses).length === 0 ? (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <Footprints className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-muted-foreground">
-                  {searchTerm ? "Keine Pferde gefunden." : "Noch keine Pferde angelegt."}
-                </p>
-                {!searchTerm && (
-                  <Button className="mt-4" onClick={() => navigate("/aufnahme")}>Erstes Pferd anlegen</Button>
-                )}
-              </CardContent>
-            </Card>
+          {isLoadingOwn ? (
+            <ListSkeleton rows={3} variant="row" />
+          ) : filterHorses(ownHorses).length === 0 ? (
+            <EmptyState
+              icon={Footprints}
+              title={searchTerm ? "Keine Pferde gefunden" : "Noch keine Pferde"}
+              description={searchTerm ? "Versuche einen anderen Suchbegriff." : "Lege dein erstes Pferd an, um die digitale Pferdeakte zu starten."}
+              actionLabel={searchTerm ? undefined : "Erstes Pferd anlegen"}
+              onAction={searchTerm ? undefined : () => navigate("/aufnahme")}
+            />
           ) : (
             filterHorses(ownHorses).map((horse, i) => (
               <div key={horse.id} style={{ animationDelay: `${i * 30}ms` }}>
@@ -282,17 +281,11 @@ const Pferde = () => {
 
         <TabsContent value="shared" className="space-y-3 mt-4">
           {filterHorses(sharedHorses).length === 0 ? (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <Share2 className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-muted-foreground">
-                  {searchTerm ? "Keine freigegebenen Pferde gefunden." : "Noch keine Pferde für dich freigegeben."}
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Pferdebesitzer oder andere Hufbearbeiter können dir Pferde über HM Connect freigeben.
-                </p>
-              </CardContent>
-            </Card>
+            <EmptyState
+              icon={Share2}
+              title={searchTerm ? "Keine freigegebenen Pferde gefunden" : "Noch keine Pferde freigegeben"}
+              description={searchTerm ? "Versuche einen anderen Suchbegriff." : "Pferdebesitzer oder andere Hufbearbeiter können dir Pferde über HM Connect freigeben."}
+            />
           ) : (
             filterHorses(sharedHorses).map((horse, i) => (
               <div key={horse.id} style={{ animationDelay: `${i * 30}ms` }}>

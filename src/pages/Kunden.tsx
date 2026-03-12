@@ -19,6 +19,9 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 import { ClientBadges } from "@/components/customers/ClientStatusBadges";
+import { ListPageHeader } from "@/components/shared/ListPageHeader";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { ListSkeleton } from "@/components/shared/ListSkeleton";
 import { InviteClientButton, InviteStatusBadge } from "@/components/customers/InviteClientButton";
 import {
   Select,
@@ -227,19 +230,17 @@ const Kunden = () => {
 
   return (
     <div className="space-y-4 md:space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-responsive-h2 text-foreground">Kunden</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            {clients.length} Verbindungen · {totalHorses} Pferde
-          </p>
-        </div>
-        <Button className="gap-2 min-h-[44px]" onClick={() => navigate("/aufnahme")}>
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Neuer Kunde</span>
-        </Button>
-      </div>
+      <ListPageHeader
+        title="Kunden"
+        count={clients.length}
+        countLabel="Kunden"
+        action={
+          <Button className="gap-2 min-h-[44px]" onClick={() => navigate("/aufnahme")}>
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Neuer Kunde</span>
+          </Button>
+        }
+      />
 
       {/* Search - full width */}
       <div className="relative w-full">
@@ -404,15 +405,13 @@ const Kunden = () => {
       {/* Customer List */}
       <div className="space-y-4">
         {filteredClients.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">Keine Kunden gefunden.</p>
-              <Button className="mt-4" onClick={() => navigate("/aufnahme")}>
-                Ersten Kunden anlegen
-              </Button>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={Users}
+            title={searchTerm ? "Keine Kunden gefunden" : "Noch keine Kunden"}
+            description={searchTerm ? "Versuche einen anderen Suchbegriff oder Filter." : "Lege deinen ersten Kunden an und starte mit der Kundenverwaltung."}
+            actionLabel={searchTerm ? undefined : "Ersten Kunden aufnehmen"}
+            onAction={searchTerm ? undefined : () => navigate("/aufnahme")}
+          />
         ) : (
           filteredClients.map((client, index) => {
             const clientHorses = getHorsesForClient(client.id);
