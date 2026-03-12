@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, Plus, Mail, Shield, X, ChevronDown, ChevronUp, Clock } from "lucide-react";
+import { Users, Plus, Mail, Shield, X, ChevronDown, ChevronUp, Clock, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { getPartnerTypeConfig } from "@/lib/partnerTypes";
 import { InvitePartnerModal } from "@/components/horse-detail/InvitePartnerModal";
