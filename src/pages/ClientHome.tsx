@@ -41,6 +41,7 @@ import { HorseTipsWidget } from "@/components/client/HorseTipsWidget";
 import { PostAppointmentReviewPrompt } from "@/components/client/PostAppointmentReviewPrompt";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ClientTodayDashboard } from "@/components/client/ClientTodayDashboard";
+import { HorseTransferReceive } from "@/components/client/HorseTransferReceive";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { DemoTourButton } from "@/components/demo/DemoTourButton";
