@@ -413,6 +413,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/anfragen" element={<Anfragen />} />
               <Route path="/angebote" element={<Angebote />} />
               <Route path="/aufnahme" element={<Aufnahme />} />
+              <Route path="/pferde" element={<Pferde />} />
               <Route path="/auffassen" element={<AuffassenHub />} />
               <Route path="/auffassen/feedback" element={<Auffassen />} />
               <Route path="/analyse" element={<AnalyseHub />} />
