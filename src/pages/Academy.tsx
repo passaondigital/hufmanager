@@ -194,7 +194,7 @@ export default function Academy() {
                   className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden group relative"
                   onClick={() => setSelectedVideo(video)}
                 >
-                  {isProviderOrAdmin && (
+                  {isAdmin && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button
