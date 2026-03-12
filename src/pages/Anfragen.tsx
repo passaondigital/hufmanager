@@ -350,6 +350,12 @@ const Anfragen = () => {
           );
         })}
       </div>
+        </TabsContent>
+
+        <TabsContent value="orders">
+          <ServiceOrderInbox />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
