@@ -332,10 +332,9 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
           <p className="text-xs text-muted-foreground mb-3">Installiere die MitarbeiterApp auf deinem Gerät.</p>
           <PWAInstallButton />
         </CardContent>
-      </Card>
+      </Card>}
 
-      {/* DACH Settings */}
-      <Card>
+      {showEinstellungen && <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Globe className="h-4 w-4 text-primary" />
