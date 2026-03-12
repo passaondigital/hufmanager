@@ -60,6 +60,7 @@ const ClientStallBoard = lazy(() => import("@/pages/ClientStallBoard"));
 const ClientHorses = lazy(() => import("@/pages/ClientHorses"));
 const ClientLocations = lazy(() => import("@/pages/ClientLocations"));
 const ClientNotifications = lazy(() => import("@/pages/ClientNotifications"));
+const ClientOrders = lazy(() => import("@/pages/client/ClientOrders"));
 const ProviderLanding = lazy(() => import("@/pages/ProviderLanding"));
 const WidgetPage = lazy(() => import("@/pages/WidgetPage"));
 const MeineWebsite = lazy(() => import("@/pages/MeineWebsite"));
@@ -467,6 +468,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client-horses" element={<ClientHorses />} />
               <Route path="/client-locations" element={<ClientLocations />} />
               <Route path="/client-notifications" element={<ClientNotifications />} />
+              <Route path="/client-orders" element={<ClientOrders />} />
               <Route path="/client-notfall" element={<EmergencyDashboard />} />
             </Route>
 
