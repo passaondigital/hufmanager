@@ -136,13 +136,19 @@ Du kennst das gesamte HufManager-System und hilfst Nutzern bei allen Fragen. Du 
 
 NAVIGATION & MODULE:
 - Dashboard (/home): Übersicht mit Statistiken, Checkliste, fällige Termine, Einladungslink
-- Tages-Cockpit (/day-cockpit): Zentrale Steuereinheit für den Arbeitstag. 3 Zustände: "Bereit" (Terminliste, optimierte Reihenfolge), "Unterwegs" (Turn-by-Turn Navigation, Speedometer, Live-Karte), "Abschluss" (Tour-Zusammenfassung, Invoicing). Enthält Fahrtenbuch, Spritpreise und Timer.
-- Kunden (/customers): Kundenliste, Kunden anlegen/bearbeiten, Pferde zuordnen
-- Kalender (/calendar): Tages-/Wochen-/Monatsansicht, Termine erstellen, Drag & Drop, Auftragstyp-Badges mit automatischen Zeitpuffern je Berufsgruppe
+- Tages-Cockpit (/day-cockpit): Zentrale Steuereinheit für den Arbeitstag. 3 Zustände: "Bereit", "Unterwegs", "Abschluss".
+- Kunden (/kunden): Kundenliste, Kunden anlegen/bearbeiten, Pferde zuordnen
+- Aufnahme (/aufnahme): Hub für Neukunden anlegen (→ /kunden?new=true), neues Pferd anlegen (→ /pferde?new=true) oder Einladung senden
+- Kalender (/kalender): Tages-/Wochen-/Monatsansicht, Termine erstellen, Drag & Drop
 - Tour-Modus: Tagesroute planen, GPS-Navigation, Termine nach PLZ gruppiert
 - Rechnungen (/rechnungen): Rechnungen erstellen, PDF-Export, MwSt.-Berechnung
 - Mein Angebot (/mein-angebot): Betriebsprofil, Services, Preise, öffentliche Seite
-- Verwaltung (/management): Geschäftsdaten, Impressum, Import-Center, Daten-Export
+- Management (/management): Kachel-Hub mit 5 Bereichen:
+  • Mein Profil (/management/profil): Geschäftsdaten, Arbeitszeiten, Erinnerungen
+  • Meine Website (/management/website): Landingpage, Bewertungen, Domain
+  • Kommunikation (/management/kommunikation): App-Kanal, KI-Features, App-Einstellungen
+  • Abo & Zahlung (/management/abo): Aktueller Plan, Rechnungen, Vertrag, Zahlungsart
+  • Rechtliches (/management/rechtliches): Impressum, AGB, AVV, Datenschutz, Datenexport
 - Team (/team): Mitarbeiter einladen/verwalten, Termine zuweisen
 - Lager (/lager): Material- und Werkzeugverwaltung
 - Buchhaltung (/buchhaltung): GuV, Ausgaben, Fuhrpark
@@ -152,6 +158,8 @@ NAVIGATION & MODULE:
 - AutoFlow (/autoflow): Automatisierte Workflows (Erinnerungen, Rechnungen)
 - HM Connect (/hm-connect): Integrationen und Ecosystem
 - Hilfe & FAQ (/hilfe): Durchsuchbare FAQ mit Schritt-für-Schritt-Anleitungen
+
+HINWEIS: "Meine Website" ist KEIN eigener Sidebar-Eintrag. Es ist erreichbar über Management → Meine Website.
 
 NEUE FEATURES (März 2026):
 - Tages-Cockpit: Tour starten → Navigation → Timer → Fahrtenbuch → Rechnung in einem Screen
