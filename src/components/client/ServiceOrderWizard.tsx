@@ -246,7 +246,8 @@ export function ServiceOrderWizard({ open, onClose, horseId, horseName, horseRea
         user_id: selectedProvider.id,
         title: "📋 Neuer Auftrag",
         message: `Neuer Auftrag ${orderNumber} von ${user.email} für ${horseName}. Bitte annehmen oder ablehnen.`,
-        type: "service_order",
+        type: "service_order_received",
+        link: "/anfragen",
       } as any);
 
       toast.success(`Auftrag ${orderNumber} erfolgreich gesendet!`);

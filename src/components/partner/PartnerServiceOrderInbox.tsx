@@ -84,11 +84,18 @@ export function PartnerServiceOrderInbox() {
 
       const order = orders.find(o => o.id === orderId);
       if (order) {
+        const typeMap: Record<string, string> = {
+          accepted: "service_order_accepted",
+          declined: "service_order_declined",
+          completed: "service_order_completed",
+          in_progress: "service_order_accepted",
+        };
         await supabase.from("notifications").insert({
           user_id: order.client_id,
           title: `Auftrag ${order.order_number}`,
           message: `${STATUS_CONFIG[newStatus]?.emoji || ""} ${STATUS_CONFIG[newStatus]?.label || newStatus}`,
-          type: "service_order",
+          type: typeMap[newStatus] || "service_order",
+          link: "/client-orders",
         } as any);
       }
 

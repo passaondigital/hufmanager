@@ -201,10 +201,10 @@ export function HorseAccessManager({ horseId, horseName }: Props) {
       // Notification to partner
       await supabase.from("notifications").insert({
         user_id: revokeTarget.partner_profile_id,
-        title: "Zugriff widerrufen",
-        message: `🔒 Dein Zugriff auf ${horseName} wurde vom Besitzer widerrufen.`,
-        type: "access_revoked",
-        link: "/partner-dashboard",
+        title: "🔒 Zugriff entzogen",
+        message: `Dein Zugriff auf ${horseName} wurde vom Besitzer widerrufen.`,
+        type: "horse_access_revoked",
+        link: "/partner-home",
       });
 
       toast.success(`Zugriff für ${revokeTarget.partner_name} entzogen`);

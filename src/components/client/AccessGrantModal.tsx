@@ -193,10 +193,10 @@ export function AccessGrantModal({ open, onClose, horseId, horseName, onGranted 
       // Notification to partner
       await supabase.from("notifications").insert({
         user_id: selectedProfile.id,
-        title: "Neuer Zugriff erteilt",
-        message: `🐴 ${ownerProfile?.full_name || "Ein Pferdebesitzer"} hat dir Zugriff auf ${horseName} freigegeben. Freigegebene Bereiche: ${grantedPerms.join(", ")}`,
-        type: "access_granted",
-        link: "/partner-dashboard",
+        title: "🔓 Zugriff auf " + horseName + " erhalten",
+        message: `${ownerProfile?.full_name || "Ein Pferdebesitzer"} hat dir Zugriff auf ${horseName} freigegeben. Freigegebene Bereiche: ${grantedPerms.join(", ")}`,
+        type: "horse_access_granted",
+        link: "/partner-horses",
       });
 
       toast.success(`Zugriff für ${selectedProfile.full_name} erteilt`);

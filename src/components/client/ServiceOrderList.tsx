@@ -91,7 +91,8 @@ export function ServiceOrderList() {
             user_id: recipientId,
             title: `Auftrag storniert`,
             message: `❌ Auftrag ${order.order_number} wurde vom Besitzer storniert.`,
-            type: "service_order",
+            type: "service_order_cancelled",
+            link: "/anfragen",
           } as any);
         }
       }
