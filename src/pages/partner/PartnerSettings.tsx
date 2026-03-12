@@ -210,18 +210,33 @@ export default function PartnerSettings({ tabs: tabFilter, hideChrome }: Partner
     );
   }
 
+  const ALL_TAB_DEFS = [
+    { value: "business", icon: Building2, label: "Praxis" },
+    { value: "billing", icon: CreditCard, label: "Abrechnung" },
+    { value: "dach", icon: Globe, label: "Land" },
+    { value: "notifications", icon: Bell, label: "Benachrichtigung" },
+    { value: "account", icon: Settings, label: "Konto" },
+  ];
+  const visibleTabs = tabFilter
+    ? ALL_TAB_DEFS.filter((t) => tabFilter.includes(t.value))
+    : ALL_TAB_DEFS;
+  const defaultTab = visibleTabs[0]?.value || "business";
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">Einstellungen <HelpTip id="partner.einstellungen" /></h1>
+      {!hideChrome && (
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">Einstellungen <HelpTip id="partner.einstellungen" /></h1>
+      )}
 
-      <Tabs defaultValue="business" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="business" className="gap-1.5 text-xs"><Building2 className="h-4 w-4" /> <span className="hidden sm:inline">Praxis</span></TabsTrigger>
-          <TabsTrigger value="billing" className="gap-1.5 text-xs"><CreditCard className="h-4 w-4" /> <span className="hidden sm:inline">Abrechnung</span></TabsTrigger>
-          <TabsTrigger value="dach" className="gap-1.5 text-xs"><Globe className="h-4 w-4" /> <span className="hidden sm:inline">Land</span></TabsTrigger>
-          <TabsTrigger value="notifications" className="gap-1.5 text-xs"><Bell className="h-4 w-4" /> <span className="hidden sm:inline">Benachrichtigung</span></TabsTrigger>
-          <TabsTrigger value="account" className="gap-1.5 text-xs"><Settings className="h-4 w-4" /> <span className="hidden sm:inline">Konto</span></TabsTrigger>
+      <Tabs defaultValue={defaultTab} className="space-y-4">
+        <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, 1fr)` }}>
+          {visibleTabs.map((tab) => (
+            <TabsTrigger key={tab.value} value={tab.value} className="gap-1.5 text-xs">
+              <tab.icon className="h-4 w-4" /> <span className="hidden sm:inline">{tab.label}</span>
+            </TabsTrigger>
+          ))}
         </TabsList>
+
 
         <TabsContent value="business">
           <Card>
