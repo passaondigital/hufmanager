@@ -155,7 +155,9 @@ const PartnerKunden = () => {
     setSaving(true);
     try {
       const fullName = `${newClient.first_name.trim()} ${newClient.last_name.trim()}`;
+      const newId = crypto.randomUUID();
       const { error } = await supabase.from("profiles").insert({
+        id: newId,
         full_name: fullName,
         email: newClient.email.trim(),
         phone: newClient.phone.trim() || null,
