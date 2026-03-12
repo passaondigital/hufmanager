@@ -13,8 +13,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
+import { getNotificationIcon, getNotificationDefaultLink } from "@/lib/notificationTypes";
 
 interface Notification {
   id: string;
