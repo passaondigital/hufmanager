@@ -3,75 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  Building2,
-  CalendarDays,
-  Bell,
-  Globe,
-  Star,
-  Smartphone,
-  CreditCard,
-  FileText,
-  Scale,
-  LifeBuoy,
-  MessageSquare,
-  ChevronRight,
+  Building2, CalendarDays, Bell, Globe, Star, Smartphone,
+  CreditCard, FileText, Scale, LifeBuoy, MessageSquare,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-
-interface TileProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  status?: string;
-  buttonLabel: string;
-  onClick: () => void;
-  actionRequired?: boolean;
-}
-
-function Tile({ icon, title, description, status, buttonLabel, onClick, actionRequired }: TileProps) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "relative flex flex-col items-start text-left min-h-[160px] rounded-xl border bg-card p-5 transition-all hover:border-primary/50 hover:shadow-sm",
-        actionRequired && "border-amber-500/50"
-      )}
-    >
-      {actionRequired && (
-        <span className="absolute top-3 right-3 flex items-center gap-1 text-[10px] text-amber-500 font-medium">
-          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-          Aktion nötig
-        </span>
-      )}
-      <div className="mb-2">{icon}</div>
-      <span className="text-base font-semibold">{title}</span>
-      <span className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{description}</span>
-      <div className="flex-1" />
-      {status && (
-        <span className="text-xs text-muted-foreground mt-3 truncate w-full">{status}</span>
-      )}
-      <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary">
-        {buttonLabel} <ChevronRight className="h-3 w-3" />
-      </span>
-    </button>
-  );
-}
-
-interface CategoryProps {
-  title: string;
-  children: React.ReactNode;
-}
-
-function Category({ title, children }: CategoryProps) {
-  return (
-    <section className="space-y-3">
-      <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">{title}</h2>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {children}
-      </div>
-    </section>
-  );
-}
+import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
 
 export default function ManagementOverview() {
   const navigate = useNavigate();
@@ -104,61 +39,48 @@ export default function ManagementOverview() {
     },
   });
 
-  const iconClass = (color: string) => cn("h-8 w-8", color);
+  const ic = "h-10 w-10";
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <span>⚙️</span> Management
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">Verwalte dein Huf-Business</p>
-      </div>
+    <div className="space-y-8 animate-fade-in">
+      <TileHubHeader icon="⚙️" title="Management" subtitle="Verwalte dein Huf-Business" />
 
-      {/* Kategorie 1: Mein Business */}
-      <Category title="Mein Business">
+      <TileCategory title="Mein Business">
         <Tile
-          icon={<Building2 className={iconClass("text-amber-500")} />}
+          icon={<Building2 className={`${ic} text-primary`} />}
           title="Geschäft"
           description="Name, Logo, Kontakt, Adresse"
           status={settings?.business_name ? `${settings.business_name}  ✓` : undefined}
-          actionRequired={!settings?.business_name && !settings?.logo_url}
-          buttonLabel="Bearbeiten"
           onClick={() => navigate("/management/geschaeft")}
         />
         <Tile
-          icon={<CalendarDays className={iconClass("text-amber-500")} />}
+          icon={<CalendarDays className={`${ic} text-primary`} />}
           title="Zeiten & Verfügbarkeit"
           description="Öffnungszeiten, Pausentage"
-          buttonLabel="Bearbeiten"
           onClick={() => navigate("/management/zeiten")}
         />
         <Tile
-          icon={<Bell className={iconClass("text-amber-500")} />}
+          icon={<Bell className={`${ic} text-primary`} />}
           title="Erinnerungen"
           description="Automatische Nachrichten an Kunden"
-          buttonLabel="Bearbeiten"
           onClick={() => navigate("/management/erinnerungen")}
         />
-      </Category>
+      </TileCategory>
 
-      {/* Kategorie 2: Online-Auftritt */}
-      <Category title="Online-Auftritt">
+      <TileCategory title="Online-Auftritt">
         <Tile
-          icon={<Globe className={iconClass("text-blue-400")} />}
+          icon={<Globe className={`${ic} text-blue-400`} />}
           title="Landingpage"
           description="Dein öffentliches Profil"
           status={
-            settings?.subdomain_active && settings?.subdomain
-              ? `● Aktiv · ${settings.subdomain}`
-              : "Nicht aktiv"
+            settings?.subdomain_active && settings?.subdomain ? (
+              <span className="badge-live">{settings.subdomain}</span>
+            ) : "Nicht aktiv"
           }
-          buttonLabel="Öffnen"
           onClick={() => navigate("/management/landing")}
         />
         <Tile
-          icon={<Star className={iconClass("text-blue-400")} />}
+          icon={<Star className={`${ic} text-blue-400`} />}
           title="Bewertungen"
           description="Deine öffentlichen Reviews"
           status={
@@ -166,62 +88,52 @@ export default function ManagementOverview() {
               ? `⭐ ${reviewStats.avg} · ${reviewStats.count} Bewertungen`
               : "Noch keine Bewertungen"
           }
-          buttonLabel="Anzeigen"
           onClick={() => navigate("/management/bewertungen")}
         />
         <Tile
-          icon={<Smartphone className={iconClass("text-blue-400")} />}
+          icon={<Smartphone className={`${ic} text-blue-400`} />}
           title="App & Einstellungen"
           description="Notifications, Dark Mode, Sprache"
-          buttonLabel="Öffnen"
           onClick={() => navigate("/management/app")}
         />
-      </Category>
+      </TileCategory>
 
-      {/* Kategorie 3: Finanzen & Recht */}
-      <Category title="Finanzen & Recht">
+      <TileCategory title="Finanzen & Recht">
         <Tile
-          icon={<CreditCard className={iconClass("text-emerald-400")} />}
+          icon={<CreditCard className={`${ic} text-emerald-400`} />}
           title="Abo & Module"
           description="Dein aktueller Plan und Erweiterungen"
-          buttonLabel="Verwalten"
           onClick={() => navigate("/management/abo")}
         />
         <Tile
-          icon={<FileText className={iconClass("text-emerald-400")} />}
+          icon={<FileText className={`${ic} text-emerald-400`} />}
           title="Rechnungen & Belege"
           description="Eingangs- und Ausgangsrechnungen"
-          buttonLabel="Anzeigen"
           onClick={() => navigate("/management/rechnungen")}
         />
         <Tile
-          icon={<Scale className={iconClass("text-emerald-400")} />}
+          icon={<Scale className={`${ic} text-emerald-400`} />}
           title="Rechtliches"
           description="AGB, DSGVO, Impressum"
-          status={!settings?.impressum_text ? "Impressum fehlt" : `Aktualisiert`}
-          actionRequired={!settings?.impressum_text}
-          buttonLabel="Anzeigen"
+          status={!settings?.impressum_text ? "⚠️ Impressum fehlt" : "✅ Aktualisiert"}
           onClick={() => navigate("/management/rechtliches")}
         />
-      </Category>
+      </TileCategory>
 
-      {/* Kategorie 4: Support & Hilfe */}
-      <Category title="Support & Hilfe">
+      <TileCategory title="Support & Hilfe">
         <Tile
-          icon={<LifeBuoy className={iconClass("text-muted-foreground")} />}
+          icon={<LifeBuoy className={`${ic} text-muted-foreground`} />}
           title="1. Hilfe Kundencenter"
           description="FAQ & Hilfe"
-          buttonLabel="Öffnen"
           onClick={() => navigate("/management/hilfe")}
         />
         <Tile
-          icon={<MessageSquare className={iconClass("text-muted-foreground")} />}
+          icon={<MessageSquare className={`${ic} text-muted-foreground`} />}
           title="Feedback geben"
           description="Feature-Wünsche & Verbesserungen"
-          buttonLabel="Öffnen"
           onClick={() => navigate("/management/feedback")}
         />
-      </Category>
+      </TileCategory>
     </div>
   );
 }
