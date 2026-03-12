@@ -126,9 +126,9 @@ export default function EmployeeHorseDetail() {
       // Last 5 hoof history entries
       const { data: hoofData } = await supabase
         .from("hoof_history")
-        .select("id, treatment_date, treatment_type, notes, created_at")
+        .select("id, entry_date, entry_type, description, created_at")
         .eq("horse_id", id)
-        .order("treatment_date", { ascending: false })
+        .order("entry_date", { ascending: false })
         .limit(5);
       setHoofHistory((hoofData || []) as HoofHistoryEntry[]);
 
