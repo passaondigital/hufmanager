@@ -141,16 +141,31 @@ export function HorseTransferReceive() {
         .update({ owner_id: user.id } as any)
         .eq("id", selectedTransfer.horse_id);
 
-      // Revoke old access grants
+      // Revoke old horse_partner_access
       await supabase
         .from("horse_partner_access")
         .update({ revoked_at: new Date().toISOString(), is_active: false } as any)
         .eq("horse_id", selectedTransfer.horse_id);
 
+      // Revoke all active access_grants of the seller (old owner)
+      // access_grants has no horse_id — it links client↔provider,
+      // so we deactivate all grants where seller was the client
+      await supabase
+        .from("access_grants")
+        .update({
+          is_active: false,
+          status: "revoked",
+          revoked_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq("client_id", selectedTransfer.seller_id)
+        .eq("is_active", true);
+
       // Audit log
       await logHorseAction(selectedTransfer.horse_id, "transfer_completed", {
         from: selectedTransfer.seller_id,
         to: user.id,
+        grants_revoked: true,
       });
 
       // Notify seller
