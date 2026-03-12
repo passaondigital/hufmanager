@@ -1,11 +1,17 @@
+import { useNavigate } from "react-router-dom";
+import { UserPlus, Footprints, Send, ArrowRight, Clock } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { formatDistanceToNow } from "date-fns";
+import { de } from "date-fns/locale";
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserPlus, PlusCircle, Send, Mail, Building2, User, CreditCard, Star } from "lucide-react";
-import { HelpTip } from "@/components/ui/HelpTip";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -13,1044 +19,189 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
-import { LocationPicker } from "@/components/LocationPicker";
-import { AddressGeocoder } from "@/components/customers/AddressGeocoder";
-import { z } from "zod";
-import {
-  CLIENT_TYPE_OPTIONS,
-  LIFECYCLE_STATUS_OPTIONS,
-  PAYMENT_RATING_OPTIONS,
-  RELIABILITY_SCORE_OPTIONS,
-  HOLDING_TYPE_OPTIONS,
-  USAGE_TYPE_OPTIONS,
-  PERMISSION_OPTIONS,
-} from "@/components/horse-detail/types";
-
-import { DuplicateWarningDialog } from "@/components/customers/DuplicateWarningDialog";
-
-// Validation schemas
-const customerSchema = z.object({
-  firstName: z.string().trim().min(1, "Vorname ist erforderlich").max(100, "Vorname darf maximal 100 Zeichen haben"),
-  lastName: z.string().trim().min(1, "Nachname ist erforderlich").max(100, "Nachname darf maximal 100 Zeichen haben"),
-  email: z.string().trim().email("Ungültige E-Mail-Adresse").max(255, "E-Mail darf maximal 255 Zeichen haben").or(z.literal("")),
-  phone: z.string().trim().max(50, "Telefonnummer darf maximal 50 Zeichen haben").regex(/^[+\d\s()-]*$/, "Ungültiges Telefonnummernformat").or(z.literal("")),
-});
-
-const horseSchema = z.object({
-  ownerId: z.string().min(1, "Bitte wählen Sie einen Kunden aus").uuid("Ungültige Kunden-ID"),
-  name: z.string().trim().min(1, "Pferdename ist erforderlich").max(100, "Pferdename darf maximal 100 Zeichen haben"),
-  equineType: z.string().default("horse"),
-  breed: z.string().trim().max(100, "Rasse darf maximal 100 Zeichen haben").optional(),
-  birthYear: z.string()
-    .refine((val) => !val || /^\d{4}$/.test(val), "Geburtsjahr muss 4 Ziffern haben")
-    .refine((val) => {
-      if (!val) return true;
-      const year = parseInt(val);
-      const currentYear = new Date().getFullYear();
-      return year >= 1970 && year <= currentYear;
-    }, "Geburtsjahr muss zwischen 1970 und heute liegen")
-    .optional(),
-  notes: z.string().trim().max(2000, "Notizen dürfen maximal 2000 Zeichen haben").optional(),
-});
-
-const EQUINE_TYPES = [
-  { value: "horse", label: "Pferd" },
-  { value: "pony", label: "Pony" },
-  { value: "donkey", label: "Esel" },
-  { value: "mule", label: "Maultier" },
-  { value: "zebra", label: "Zebra" },
-];
-
-const intervalOptions = [2, 4, 6, 8, 10, 12];
 
 const Aufnahme = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteClientId, setInviteClientId] = useState("");
 
-  // Customer form state - ERWEITERT
-  const [customerForm, setCustomerForm] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    phoneMobile: "",
-    phoneLandline: "",
-    street: "",
-    houseNumber: "",
-    zipCode: "",
-    city: "",
-    state: "",
-    notes: "",
-    sendInvitation: true,
-    // Business-Logik
-    clientType: "private" as string,
-    lifecycleStatus: "new" as string,
-    paymentRating: "A" as string,
-    reliabilityScore: "" as string,
-    workingConditions: "",
-    orderAuthorization: false,
-    // Rechtliches
-    permissionsGranted: [] as string[],
-    // GPS
-    geoLat: null as number | null,
-    geoLng: null as number | null,
-  });
-
-  // Horse form state - ERWEITERT
-  const [horseForm, setHorseForm] = useState({
-    ownerId: "",
-    name: "",
-    officialName: "",
-    equineType: "horse",
-    breed: "",
-    birthYear: "",
-    gender: "",
-    color: "",
-    heightCm: "",
-    chipNumber: "",
-    // Haltung
-    holdingType: "",
-    usageType: "",
-    // Huf
-    shoeingStatus: false,
-    hoofType: "",
-    interval: "6",
-    healthIssuesGeneral: "",
-    notes: "",
-    // GPS
-    latitude: null as number | null,
-    longitude: null as number | null,
-    locationName: "",
-  });
-
-  // Duplicate check state
-  const [duplicateWarning, setDuplicateWarning] = useState<{
-    show: boolean;
-    duplicates: any[];
-  }>({ show: false, duplicates: [] });
-
-  // Invitation form state
-  const [inviteForm, setInviteForm] = useState({
-    customerId: "",
-  });
-
-  // Fetch profiles (clients) created by this provider
-  const { data: clients = [] } = useQuery({
-    queryKey: ["provider-clients", user?.id],
+  const { data: recentClients = [] } = useQuery({
+    queryKey: ["aufnahme-recent-clients", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
       const { data, error } = await supabase
         .from("profiles")
-        .select("*")
-        .eq("created_by_provider_id", user.id);
+        .select("id, full_name, created_at")
+        .eq("created_by_provider_id", user.id)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(3);
+      if (error) throw error;
+
+      const ids = (data || []).map((c) => c.id);
+      if (ids.length === 0) return [];
+
+      const { data: horses } = await supabase
+        .from("horses")
+        .select("owner_id")
+        .in("owner_id", ids)
+        .is("deleted_at", null);
+
+      const counts: Record<string, number> = {};
+      horses?.forEach((h) => {
+        counts[h.owner_id] = (counts[h.owner_id] || 0) + 1;
+      });
+
+      return (data || []).map((c) => ({
+        id: c.id,
+        name: c.full_name || "Unbekannt",
+        createdAt: c.created_at,
+        horses: counts[c.id] || 0,
+      }));
+    },
+    enabled: !!user?.id,
+  });
+
+  // Uninvited clients for the invitation modal
+  const { data: uninvitedClients = [] } = useQuery({
+    queryKey: ["aufnahme-uninvited", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .eq("created_by_provider_id", user.id)
+        .is("deleted_at", null)
+        .eq("has_logged_in", false)
+        .not("email", "is", null);
       if (error) throw error;
       return data || [];
     },
     enabled: !!user?.id,
   });
 
-  // Filter clients that haven't logged in yet (for invitation dropdown)
-  const uninvitedClients = clients.filter(
-    (c) => !c.has_logged_in && c.email
-  );
-
-  // Create customer mutation - ERWEITERT
-  const createCustomer = useMutation({
-    mutationFn: async (data: {
-      full_name: string;
-      email: string;
-      phone: string;
-      created_by_provider_id: string;
-      first_name?: string;
-      last_name?: string;
-      street?: string;
-      house_number?: string;
-      zip_code?: string;
-      city?: string;
-      state?: string;
-      phone_mobile?: string;
-      phone_landline?: string;
-      geo_lat?: number | null;
-      geo_lng?: number | null;
-      client_type?: string;
-      lifecycle_status?: string;
-      payment_rating?: string;
-      reliability_score?: number;
-      working_conditions?: string;
-      order_authorization?: boolean;
-      permissions_granted?: string[];
-    }) => {
-      const newId = crypto.randomUUID();
-      
-      const { error } = await supabase.from("profiles").insert([{
-        id: newId,
-        full_name: data.full_name,
-        email: data.email || null,
-        phone: data.phone || null,
-        created_by_provider_id: data.created_by_provider_id,
-        has_logged_in: false,
-        first_name: data.first_name || null,
-        last_name: data.last_name || null,
-        street: data.street || null,
-        house_number: data.house_number || null,
-        zip_code: data.zip_code || null,
-        city: data.city || null,
-        state: data.state || null,
-        phone_mobile: data.phone_mobile || null,
-        phone_landline: data.phone_landline || null,
-        latitude: data.geo_lat || null,
-        longitude: data.geo_lng || null,
-        client_type: (data.client_type as "private" | "commercial") || null,
-        lifecycle_status: (data.lifecycle_status as "new" | "active" | "archive") || null,
-        payment_rating: (data.payment_rating as "A" | "B" | "C" | "D") || null,
-        reliability_score: data.reliability_score || null,
-        working_conditions: data.working_conditions || null,
-        order_authorization: data.order_authorization || false,
-        permissions_granted: data.permissions_granted || null,
-      }]);
-      if (error) throw error;
-      return { id: newId, email: data.email, full_name: data.full_name };
-    },
-    onSuccess: async (result) => {
-      queryClient.invalidateQueries({ queryKey: ["provider-clients"] });
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
-      
-      const fullName = customerForm.firstName + " " + customerForm.lastName;
-      
-      // Send invitation email if checkbox is checked and email exists
-      if (customerForm.sendInvitation && result.email) {
-        try {
-          await sendInvitation.mutateAsync({
-            profileId: result.id,
-            email: result.email,
-            fullName: result.full_name,
-          });
-          toast({
-            title: "Kunde angelegt & eingeladen",
-            description: `${fullName} wurde erstellt und hat eine Einladungs-E-Mail erhalten.`,
-          });
-        } catch {
-          toast({
-            title: "Kunde angelegt",
-            description: `${fullName} wurde erstellt, aber die E-Mail konnte nicht gesendet werden.`,
-            variant: "destructive",
-          });
-        }
-      } else {
-        toast({
-          title: "Kunde angelegt",
-          description: `${fullName} wurde erfolgreich erstellt.`,
-        });
-      }
-      
-      resetCustomerForm();
-    },
-    onError: (error: any) => {
-      console.error("Error creating customer:", error);
-      toast({
-        title: "Fehler",
-        description: error.message || "Der Kunde konnte nicht erstellt werden.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Send invitation mutation
-  const sendInvitation = useMutation({
-    mutationFn: async (data: { profileId: string; email: string; fullName: string }) => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Nicht angemeldet");
-
-      const response = await supabase.functions.invoke("send-client-invitation", {
-        body: data,
-      });
-
-      if (response.error) throw response.error;
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["provider-clients"] });
-    },
-  });
-
-  // Create horse mutation - ERWEITERT
-  const createHorse = useMutation({
-    mutationFn: async (data: {
-      owner_id: string;
-      name: string;
-      official_name?: string;
-      equine_type?: string;
-      breed?: string;
-      birth_year?: number;
-      gender?: string;
-      color?: string;
-      height_cm?: number;
-      chip_number?: string;
-      holding_type?: "box" | "open_stable" | "mixed" | "pasture";
-      usage_type?: "leisure" | "sport" | "western" | "dressage" | "jumping" | "breeding" | "therapy" | "school" | "retirement";
-      shoeing_status?: string;
-      hoof_type?: string;
-      shoeing_interval?: number;
-      health_issues_general?: string;
-      special_notes?: string;
-      latitude?: number;
-      longitude?: number;
-      location_name?: string;
-      is_new_horse?: boolean;
-    }) => {
-      const { error } = await supabase.from("horses").insert([data]);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["horses"] });
-      toast({
-        title: "Pferd angelegt",
-        description: "Das Pferd wurde erfolgreich erstellt.",
-      });
-      resetHorseForm();
-    },
-    onError: () => {
-      toast({
-        title: "Fehler",
-        description: "Das Pferd konnte nicht erstellt werden.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const resetHorseForm = () => {
-    setHorseForm({
-      ownerId: "",
-      name: "",
-      officialName: "",
-      equineType: "horse",
-      breed: "",
-      birthYear: "",
-      gender: "",
-      color: "",
-      heightCm: "",
-      chipNumber: "",
-      holdingType: "",
-      usageType: "",
-      shoeingStatus: false,
-      hoofType: "",
-      interval: "6",
-      healthIssuesGeneral: "",
-      notes: "",
-      latitude: null,
-      longitude: null,
-      locationName: "",
-    });
-  };
-
-  const handleCreateCustomer = async () => {
-    // Validate with zod schema
-    const validationResult = customerSchema.safeParse({
-      firstName: customerForm.firstName,
-      lastName: customerForm.lastName,
-      email: customerForm.email || "",
-      phone: customerForm.phone || "",
-    });
-
-    if (!validationResult.success) {
-      const firstError = validationResult.error.errors[0];
-      toast({
-        title: "Validierungsfehler",
-        description: firstError.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!user?.id) {
-      toast({
-        title: "Fehler",
-        description: "Sie müssen angemeldet sein.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (customerForm.sendInvitation && !customerForm.email) {
-      toast({
-        title: "Fehler",
-        description: "Für die Einladung wird eine E-Mail-Adresse benötigt.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Duplicate check
-    const fullName = `${customerForm.firstName} ${customerForm.lastName}`.trim().toLowerCase();
-    const duplicates = clients.filter((c) => {
-      const nameMatch = c.full_name?.toLowerCase() === fullName;
-      const emailMatch = customerForm.email && c.email?.toLowerCase() === customerForm.email.toLowerCase();
-      const phoneMatch = customerForm.phone && c.phone === customerForm.phone;
-      return nameMatch && (emailMatch || phoneMatch);
-    });
-
-    if (duplicates.length > 0) {
-      setDuplicateWarning({ show: true, duplicates });
-      return;
-    }
-
-    const validated = validationResult.data;
-    createCustomer.mutate({
-      full_name: `${validated.firstName} ${validated.lastName}`.trim(),
-      email: validated.email || "",
-      phone: validated.phone || "",
-      created_by_provider_id: user.id,
-      first_name: customerForm.firstName || undefined,
-      last_name: customerForm.lastName || undefined,
-      street: customerForm.street || undefined,
-      house_number: customerForm.houseNumber || undefined,
-      zip_code: customerForm.zipCode || undefined,
-      city: customerForm.city || undefined,
-      state: customerForm.state || undefined,
-      phone_mobile: customerForm.phoneMobile || undefined,
-      phone_landline: customerForm.phoneLandline || undefined,
-      geo_lat: customerForm.geoLat,
-      geo_lng: customerForm.geoLng,
-      client_type: customerForm.clientType || undefined,
-      lifecycle_status: customerForm.lifecycleStatus || undefined,
-      payment_rating: customerForm.paymentRating || undefined,
-      reliability_score: customerForm.reliabilityScore ? Number(customerForm.reliabilityScore) : undefined,
-      working_conditions: customerForm.workingConditions || undefined,
-      order_authorization: customerForm.orderAuthorization,
-      permissions_granted: customerForm.permissionsGranted.length > 0 ? customerForm.permissionsGranted : undefined,
-    });
-  };
-
-  const handleCreateHorse = () => {
-    // Validate with zod schema
-    const validationResult = horseSchema.safeParse({
-      ownerId: horseForm.ownerId,
-      name: horseForm.name,
-      breed: horseForm.breed || undefined,
-      birthYear: horseForm.birthYear || undefined,
-      notes: horseForm.notes || undefined,
-    });
-
-    if (!validationResult.success) {
-      const firstError = validationResult.error.errors[0];
-      toast({
-        title: "Validierungsfehler",
-        description: firstError.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const validated = validationResult.data;
-    createHorse.mutate({
-      owner_id: validated.ownerId,
-      name: validated.name,
-      equine_type: horseForm.equineType,
-      breed: validated.breed || undefined,
-      birth_year: validated.birthYear ? Number(validated.birthYear) : undefined,
-      gender: horseForm.gender || undefined,
-      color: horseForm.color || undefined,
-      hoof_type: horseForm.hoofType || undefined,
-      shoeing_interval: Number(horseForm.interval),
-      special_notes: validated.notes || undefined,
-      latitude: horseForm.latitude || undefined,
-      longitude: horseForm.longitude || undefined,
-      location_name: horseForm.locationName || undefined,
-    });
-  };
-
   const handleSendInvitation = async () => {
-    if (!inviteForm.customerId) {
-      toast({
-        title: "Fehler",
-        description: "Bitte wählen Sie einen Kunden aus.",
-        variant: "destructive",
-      });
+    if (!inviteClientId) {
+      toast({ title: "Fehler", description: "Bitte wähle einen Kunden aus.", variant: "destructive" });
       return;
     }
-
-    const selectedClient = clients.find((c) => c.id === inviteForm.customerId);
-    if (!selectedClient?.email) {
-      toast({
-        title: "Fehler",
-        description: "Dieser Kunde hat keine E-Mail-Adresse.",
-        variant: "destructive",
-      });
-      return;
-    }
+    const client = uninvitedClients.find((c) => c.id === inviteClientId);
+    if (!client?.email) return;
 
     try {
-      await sendInvitation.mutateAsync({
-        profileId: selectedClient.id,
-        email: selectedClient.email,
-        fullName: selectedClient.full_name || "Kunde",
+      const response = await supabase.functions.invoke("send-client-invitation", {
+        body: { profileId: client.id, email: client.email, fullName: client.full_name || "Kunde" },
       });
-      
-      toast({
-        title: "Einladung gesendet",
-        description: `Die Einladung wurde an ${selectedClient.email} gesendet.`,
-      });
-      
-      setInviteForm({ customerId: "" });
-    } catch (error: any) {
-      toast({
-        title: "Fehler",
-        description: error.message || "Die Einladung konnte nicht gesendet werden.",
-        variant: "destructive",
-      });
+      if (response.error) throw response.error;
+      toast({ title: "Einladung gesendet", description: `Einladung wurde an ${client.email} gesendet.` });
+      setShowInviteModal(false);
+      setInviteClientId("");
+    } catch {
+      toast({ title: "Fehler", description: "Einladung konnte nicht gesendet werden.", variant: "destructive" });
     }
-  };
-
-  const resetCustomerForm = () => {
-    setCustomerForm({
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      phoneMobile: "",
-      phoneLandline: "",
-      street: "",
-      houseNumber: "",
-      zipCode: "",
-      city: "",
-      state: "",
-      notes: "",
-      sendInvitation: true,
-      clientType: "private",
-      lifecycleStatus: "new",
-      paymentRating: "A",
-      reliabilityScore: "",
-      workingConditions: "",
-      orderAuthorization: false,
-      permissionsGranted: [],
-      geoLat: null,
-      geoLng: null,
-    });
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          Aufnahme
-          <HelpTip id="aufnahme.bereich" />
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Neue Kunden und Pferde anlegen, KundenApp-Einladungen versenden
-        </p>
+    <div className="min-h-screen bg-background p-4 md:p-8 max-w-3xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-foreground">Aufnahme</h1>
+        <p className="text-sm text-muted-foreground mt-1">Was möchtest du anlegen?</p>
       </div>
 
-      <Tabs defaultValue="kunde" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-3">
-          <TabsTrigger value="kunde" className="gap-2">
-            <UserPlus className="h-4 w-4" />
-            Neuer Kunde
-          </TabsTrigger>
-          <TabsTrigger value="pferd" className="gap-2">
-            <PlusCircle className="h-4 w-4" />
-            Neues Pferd
-          </TabsTrigger>
-          <TabsTrigger value="einladung" className="gap-2">
-            <Send className="h-4 w-4" />
-            Einladung
-          </TabsTrigger>
-        </TabsList>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        <div
+          onClick={() => navigate("/kunden?new=true")}
+          className="group bg-card border border-border rounded-2xl p-6 hover:border-primary/40 hover:bg-accent/10 transition-all cursor-pointer"
+        >
+          <UserPlus className="w-12 h-12 text-primary mb-4" />
+          <h2 className="text-lg font-bold text-foreground mb-1">Neuen Kunden anlegen</h2>
+          <p className="text-sm text-muted-foreground mb-4">Kunden mit Pferden aufnehmen</p>
+          <span className="text-primary text-sm font-medium group-hover:text-primary/80 flex items-center gap-1">
+            Starten <ArrowRight className="w-4 h-4" />
+          </span>
+        </div>
 
-        {/* Neuer Kunde */}
-        <TabsContent value="kunde" className="mt-6">
-          <Card className="animate-slide-up">
-            <CardHeader>
-              <CardTitle>Neuen Kunden anlegen</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName" className="flex items-center gap-1">Vorname * <HelpTip id="aufnahme.kunde-vorname" /></Label>
-                  <Input
-                    id="firstName"
-                    placeholder="Max"
-                    value={customerForm.firstName}
-                    onChange={(e) => setCustomerForm({ ...customerForm, firstName: e.target.value })}
-                  />
+        <div
+          onClick={() => navigate("/pferde?new=true")}
+          className="group bg-card border border-border rounded-2xl p-6 hover:border-primary/40 hover:bg-accent/10 transition-all cursor-pointer"
+        >
+          <Footprints className="w-12 h-12 text-primary mb-4" />
+          <h2 className="text-lg font-bold text-foreground mb-1">Neues Pferd anlegen</h2>
+          <p className="text-sm text-muted-foreground mb-4">Pferd einem bestehenden oder neuen Kunden zuordnen</p>
+          <span className="text-primary text-sm font-medium group-hover:text-primary/80 flex items-center gap-1">
+            Starten <ArrowRight className="w-4 h-4" />
+          </span>
+        </div>
+
+        <div
+          onClick={() => setShowInviteModal(true)}
+          className="group sm:col-span-2 bg-card border border-border rounded-2xl p-6 hover:border-primary/40 hover:bg-accent/10 transition-all cursor-pointer"
+        >
+          <Send className="w-12 h-12 text-primary mb-4" />
+          <h2 className="text-lg font-bold text-foreground mb-1">Einladung senden</h2>
+          <p className="text-sm text-muted-foreground mb-4">Bestehenden Kunden zur HufManager-App einladen</p>
+          <span className="text-primary text-sm font-medium group-hover:text-primary/80 flex items-center gap-1">
+            Einladung senden <ArrowRight className="w-4 h-4" />
+          </span>
+        </div>
+      </div>
+
+      {recentClients.length > 0 && (
+        <div className="bg-card border border-border rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="w-4 h-4 text-muted-foreground" />
+            <h3 className="text-sm font-semibold text-foreground">Zuletzt angelegt</h3>
+          </div>
+          <div className="space-y-3">
+            {recentClients.map((client) => (
+              <div key={client.id} className="flex items-center justify-between text-sm">
+                <div>
+                  <span className="font-medium text-foreground">{client.name}</span>
+                  <span className="text-muted-foreground ml-2">
+                    · {formatDistanceToNow(new Date(client.createdAt), { addSuffix: true, locale: de })}
+                  </span>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName" className="flex items-center gap-1">Nachname * <HelpTip id="aufnahme.kunde-nachname" /></Label>
-                  <Input
-                    id="lastName"
-                    placeholder="Mustermann"
-                    value={customerForm.lastName}
-                    onChange={(e) => setCustomerForm({ ...customerForm, lastName: e.target.value })}
-                  />
-                </div>
+                <span className="text-xs text-muted-foreground">
+                  {client.horses} Pferd{client.horses !== 1 ? "e" : ""}
+                </span>
               </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="flex items-center gap-1">
-                    E-Mail {customerForm.sendInvitation && "*"} <HelpTip id="aufnahme.kunde-email" />
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="max@beispiel.de"
-                    value={customerForm.email}
-                    onChange={(e) => setCustomerForm({ ...customerForm, email: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className="flex items-center gap-1">Telefon <HelpTip id="aufnahme.kunde-telefon" /></Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="+49 171 1234567"
-                    value={customerForm.phone}
-                    onChange={(e) => setCustomerForm({ ...customerForm, phone: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              {/* Address with Auto-Geocoding */}
-              <AddressGeocoder
-                street={customerForm.street}
-                zipCode={customerForm.zipCode}
-                city={customerForm.city}
-                geoLat={customerForm.geoLat}
-                geoLng={customerForm.geoLng}
-                onStreetChange={(value) => setCustomerForm({ ...customerForm, street: value })}
-                onZipCodeChange={(value) => setCustomerForm({ ...customerForm, zipCode: value })}
-                onCityChange={(value) => setCustomerForm({ ...customerForm, city: value })}
-                onGeoChange={(lat, lng) => setCustomerForm({ ...customerForm, geoLat: lat, geoLng: lng })}
-                showMiniMap={true}
-              />
-
-              {/* Business-Logik Sektion */}
-              <div className="space-y-4 p-4 bg-muted/50 rounded-lg border">
-                <div className="flex items-center gap-2 mb-2">
-                  <CreditCard className="h-4 w-4 text-primary" />
-                  <Label className="font-semibold">Business-Infos</Label>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>Kundentyp</Label>
-                    <Select
-                      value={customerForm.clientType}
-                      onValueChange={(v) => setCustomerForm({ ...customerForm, clientType: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CLIENT_TYPE_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Kundenstatus</Label>
-                    <Select
-                      value={customerForm.lifecycleStatus}
-                      onValueChange={(v) => setCustomerForm({ ...customerForm, lifecycleStatus: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {LIFECYCLE_STATUS_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Zahlungsmoral</Label>
-                    <Select
-                      value={customerForm.paymentRating}
-                      onValueChange={(v) => setCustomerForm({ ...customerForm, paymentRating: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PAYMENT_RATING_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Zuverlässigkeit</Label>
-                    <Select
-                      value={customerForm.reliabilityScore}
-                      onValueChange={(v) => setCustomerForm({ ...customerForm, reliabilityScore: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Bewertung wählen..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {RELIABILITY_SCORE_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value.toString()}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Arbeitsbedingungen</Label>
-                    <Input
-                      placeholder="z.B. Gut beleuchtet, befestigt..."
-                      value={customerForm.workingConditions}
-                      onChange={(e) => setCustomerForm({ ...customerForm, workingConditions: e.target.value })}
-                    />
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3 pt-2">
-                  <Checkbox
-                    id="orderAuth"
-                    checked={customerForm.orderAuthorization}
-                    onCheckedChange={(checked) =>
-                      setCustomerForm({ ...customerForm, orderAuthorization: checked as boolean })
-                    }
-                  />
-                  <Label htmlFor="orderAuth" className="cursor-pointer">
-                    Auftragserteilung liegt vor
-                  </Label>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notizen</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Zusätzliche Informationen..."
-                  rows={3}
-                  value={customerForm.notes}
-                  onChange={(e) => setCustomerForm({ ...customerForm, notes: e.target.value })}
-                />
-              </div>
-
-              {/* Invitation Checkbox */}
-              <div className="flex items-center space-x-3 p-4 bg-muted/50 rounded-lg border">
-                <Checkbox
-                  id="sendInvitation"
-                  checked={customerForm.sendInvitation}
-                  onCheckedChange={(checked) =>
-                    setCustomerForm({ ...customerForm, sendInvitation: checked as boolean })
-                  }
-                />
-                <div className="flex-1">
-                  <Label htmlFor="sendInvitation" className="flex items-center gap-2 cursor-pointer">
-                    <Mail className="h-4 w-4 text-primary" />
-                    Sofort Einladungs-E-Mail senden
-                  </Label>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Der Kunde erhält eine E-Mail mit Link zur KundenApp-Registrierung.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={resetCustomerForm}>
-                  Abbrechen
-                </Button>
-                <Button 
-                  onClick={handleCreateCustomer} 
-                  disabled={createCustomer.isPending || sendInvitation.isPending}
-                >
-                  {createCustomer.isPending || sendInvitation.isPending ? "Wird angelegt..." : "Kunde anlegen"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Neues Pferd */}
-        <TabsContent value="pferd" className="mt-6">
-          <Card className="animate-slide-up">
-            <CardHeader>
-              <CardTitle>Neues Pferd anlegen</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="customer">Kunde auswählen *</Label>
-                <Select
-                  value={horseForm.ownerId}
-                  onValueChange={(value) => setHorseForm({ ...horseForm, ownerId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Kunde auswählen..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.length === 0 ? (
-                      <div className="p-2 text-sm text-muted-foreground text-center">
-                        Keine Kunden vorhanden. Bitte legen Sie zuerst einen Kunden an.
-                      </div>
-                    ) : (
-                      clients.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.full_name || client.email || "Unbekannt"}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="horseName">Name des Pferdes *</Label>
-                  <Input
-                    id="horseName"
-                    placeholder="Bella"
-                    value={horseForm.name}
-                    onChange={(e) => setHorseForm({ ...horseForm, name: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="equineType">Art *</Label>
-                  <Select
-                    value={horseForm.equineType}
-                    onValueChange={(value) => setHorseForm({ ...horseForm, equineType: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {EQUINE_TYPES.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="breed">Rasse</Label>
-                  <Input
-                    id="breed"
-                    placeholder="Warmblut"
-                    value={horseForm.breed}
-                    onChange={(e) => setHorseForm({ ...horseForm, breed: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="birthYear">Geburtsjahr</Label>
-                  <Input
-                    id="birthYear"
-                    type="number"
-                    placeholder="2015"
-                    value={horseForm.birthYear}
-                    onChange={(e) => setHorseForm({ ...horseForm, birthYear: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="gender">Geschlecht</Label>
-                  <Select
-                    value={horseForm.gender}
-                    onValueChange={(value) => setHorseForm({ ...horseForm, gender: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Auswählen..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="stute">Stute</SelectItem>
-                      <SelectItem value="wallach">Wallach</SelectItem>
-                      <SelectItem value="hengst">Hengst</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="color">Farbe</Label>
-                  <Input
-                    id="color"
-                    placeholder="Braun"
-                    value={horseForm.color}
-                    onChange={(e) => setHorseForm({ ...horseForm, color: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="hoofType">Huftyp</Label>
-                  <Select
-                    value={horseForm.hoofType}
-                    onValueChange={(value) => setHorseForm({ ...horseForm, hoofType: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Auswählen..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="barhuf">Barhuf</SelectItem>
-                      <SelectItem value="beschlag">Beschlag</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="interval">Beschlagsintervall (Wochen)</Label>
-                  <Select
-                    value={horseForm.interval}
-                    onValueChange={(value) => setHorseForm({ ...horseForm, interval: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {intervalOptions.map((weeks) => (
-                        <SelectItem key={weeks} value={weeks.toString()}>
-                          {weeks} Wochen
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="horseNotes">Besondere Hinweise</Label>
-                <Textarea
-                  id="horseNotes"
-                  placeholder="Allergien, Verhaltenshinweise, etc."
-                  rows={3}
-                  value={horseForm.notes}
-                  onChange={(e) => setHorseForm({ ...horseForm, notes: e.target.value })}
-                />
-              </div>
-
-              {/* GPS Location */}
-              <div className="space-y-2">
-                <Label>Standort der Koppel (GPS)</Label>
-                <LocationPicker
-                  latitude={horseForm.latitude}
-                  longitude={horseForm.longitude}
-                  locationName={horseForm.locationName}
-                  onChange={(lat, lng, name) => 
-                    setHorseForm({ 
-                      ...horseForm, 
-                      latitude: lat, 
-                      longitude: lng, 
-                      locationName: name || "" 
-                    })
-                  }
-                />
-              </div>
-
-              <div className="flex justify-end gap-3">
-                <Button
-                  variant="outline"
-                  onClick={resetHorseForm}
-                >
-                  Abbrechen
-                </Button>
-                <Button onClick={handleCreateHorse} disabled={createHorse.isPending}>
-                  {createHorse.isPending ? "Wird angelegt..." : "Pferd anlegen"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Einladung */}
-        <TabsContent value="einladung" className="mt-6">
-          <Card className="animate-slide-up">
-            <CardHeader>
-              <CardTitle>KundenApp-Einladung versenden</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="inviteCustomer">Kunde auswählen *</Label>
-                <Select
-                  value={inviteForm.customerId}
-                  onValueChange={(value) => setInviteForm({ ...inviteForm, customerId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Kunde auswählen..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {uninvitedClients.length === 0 ? (
-                      <div className="p-2 text-sm text-muted-foreground text-center">
-                        Keine Kunden ohne Einladung vorhanden.
-                      </div>
-                    ) : (
-                      uninvitedClients.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          <div className="flex flex-col">
-                            <span>{client.full_name || "Unbekannt"}</span>
-                            <span className="text-xs text-muted-foreground">{client.email}</span>
-                          </div>
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-                <p className="text-sm text-muted-foreground">
-                  Hier werden nur Kunden angezeigt, die noch keinen Login haben.
-                </p>
-              </div>
-
-              <div className="bg-muted/50 rounded-lg p-4 border">
-                <h4 className="font-medium mb-2">Die Einladung enthält:</h4>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• Link zur Registrierung in der KundenApp</li>
-                  <li>• Ihre Geschäftsinformationen</li>
-                  <li>• Übersicht der Vorteile der KundenApp</li>
-                </ul>
-              </div>
-
-              <div className="flex justify-end gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setInviteForm({ customerId: "" })}
-                >
-                  Abbrechen
-                </Button>
-                <Button
-                  onClick={handleSendInvitation}
-                  disabled={sendInvitation.isPending || !inviteForm.customerId}
-                >
-                  <Mail className="h-4 w-4 mr-2" />
-                  {sendInvitation.isPending ? "Wird gesendet..." : "Einladung senden"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Duplicate Warning Dialog */}
-      <DuplicateWarningDialog
-        open={duplicateWarning.show}
-        duplicates={duplicateWarning.duplicates}
-        onCancel={() => setDuplicateWarning({ show: false, duplicates: [] })}
-        onViewExisting={(id) => {
-          setDuplicateWarning({ show: false, duplicates: [] });
-          toast({ title: "Kunde existiert bereits", description: "Bitte prüfen Sie den bestehenden Eintrag." });
-        }}
-      />
+      {/* Invitation Dialog */}
+      <Dialog open={showInviteModal} onOpenChange={setShowInviteModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Einladung senden</DialogTitle>
+          </DialogHeader>
+          {uninvitedClients.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4">Keine Kunden ohne App-Zugang vorhanden.</p>
+          ) : (
+            <div className="space-y-4">
+              <Select value={inviteClientId} onValueChange={setInviteClientId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Kunde auswählen..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {uninvitedClients.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.full_name || "Unbekannt"} ({c.email})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button onClick={handleSendInvitation} className="w-full">
+                <Send className="w-4 h-4 mr-2" /> Einladung senden
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
