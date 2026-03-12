@@ -28,10 +28,10 @@ export default function ManagementHub() {
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("plan, plan_status, subscription_end")
+        .select("readable_id")
         .eq("id", user!.id)
         .maybeSingle();
-      return data;
+      return data as any;
     },
   });
 
