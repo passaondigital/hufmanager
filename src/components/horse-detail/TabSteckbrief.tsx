@@ -308,13 +308,15 @@ export function TabSteckbrief({ horse, onEdit }: TabSteckbriefProps) {
       {/* Empty State */}
       {!horse.nickname && !horse.usage && !horse.housing && !horse.feeding_notes && (
         <Card className="border-dashed">
-          <CardContent className="p-6 text-center">
-            <p className="text-muted-foreground text-sm">
-              Ergänze weitere Details zu deinem Pferd
+          <CardContent className="p-8 text-center">
+            <Pencil className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
+            <p className="font-medium text-foreground text-sm">Steckbrief noch unvollständig</p>
+            <p className="text-muted-foreground text-xs mt-1">
+              Ergänze weitere Details wie Haltung, Nutzung und Fütterung.
             </p>
-            <Button variant="outline" size="sm" className="mt-3" onClick={onEdit}>
+            <Button variant="outline" size="sm" className="mt-4" onClick={onEdit}>
               <Pencil className="h-4 w-4 mr-1" />
-              Jetzt bearbeiten
+              Jetzt ausfüllen
             </Button>
           </CardContent>
         </Card>
