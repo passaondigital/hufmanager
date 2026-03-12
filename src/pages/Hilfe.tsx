@@ -189,8 +189,8 @@ const FAQ_DATA: FAQCategory[] = [
       },
       {
         question: 'Brauche ich ein Impressum?',
-        answer: 'Ja — wenn du deine öffentliche Seite nutzt, ist ein Impressum Pflicht (DSGVO). Du kannst es unter Verwaltung hinterlegen.',
-        navigateTo: '/management',
+        answer: 'Ja — wenn du deine öffentliche Seite nutzt, ist ein Impressum Pflicht (DSGVO). Du kannst es unter Management → Rechtliches hinterlegen.',
+        navigateTo: '/management/rechtliches',
         navigateLabel: 'Impressum bearbeiten',
       },
       {
