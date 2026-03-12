@@ -225,7 +225,9 @@ export function AppLayout() {
 
         {/* Main content with bottom nav spacing on mobile */}
         <main className="flex-1 overflow-auto px-4 py-4 lg:p-6 pb-bottom-nav overflow-x-hidden">
-          <Outlet />
+          <ErrorBoundary name="ProviderMain" fallback={<ProviderErrorFallback />}>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
       
