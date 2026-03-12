@@ -341,36 +341,37 @@ export default function Rechnungen() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">Rechnungen <HelpTip id="rechnungen.bereich" /></h1>
-          <p className="text-muted-foreground">Übersicht aller Kundenrechnungen</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <FileSpreadsheet className="h-4 w-4" />
-                Export
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleDatevExport}>
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                DATEV-Export
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleSimpleExport}>
-                <Download className="h-4 w-4 mr-2" />
-                CSV-Export
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button onClick={() => setShowCreateModal(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Rechnung erstellen
-          </Button>
-        </div>
-      </div>
+      <ListPageHeader
+        title="Rechnungen"
+        count={invoices.length}
+        countLabel="Rechnungen"
+        action={
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleDatevExport}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  DATEV-Export
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSimpleExport}>
+                  <Download className="h-4 w-4 mr-2" />
+                  CSV-Export
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button onClick={() => setShowCreateModal(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Rechnung erstellen
+            </Button>
+          </div>
+        }
+      />
 
       <CreateInvoiceModal
         open={showCreateModal}
