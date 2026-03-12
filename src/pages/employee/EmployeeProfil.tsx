@@ -367,29 +367,30 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
             {(profile as any).country === "CH" && <p>Max. 14h/Tag (Ausnahme), 45h/Woche (ArG Schweiz)</p>}
           </div>
         </CardContent>
-      </Card>
+      </Card>}
 
-      <Button variant="outline" className="w-full gap-2" onClick={() => setShowPwDialog(true)}>
-        <Key className="h-4 w-4" />Passwort ändern
-      </Button>
+      {showEinstellungen && (
+        <>
+          <Button variant="outline" className="w-full gap-2" onClick={() => setShowPwDialog(true)}>
+            <Key className="h-4 w-4" />Passwort ändern
+          </Button>
 
-      <Button variant="destructive" className="w-full gap-2" onClick={() => signOut()}>
-        <LogOut className="h-4 w-4" />Abmelden
-      </Button>
+          <Button variant="destructive" className="w-full gap-2" onClick={() => signOut()}>
+            <LogOut className="h-4 w-4" />Abmelden
+          </Button>
 
-      {/* DSGVO */}
-      <Separator />
-      <Card className="border-destructive/30">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <Trash2 className="h-4 w-4 text-destructive" />
-            <span className="text-sm font-medium text-destructive">Konto & Daten löschen</span>
-          </div>
-          <p className="text-xs text-muted-foreground mb-3">
-            Lösche dein Mitarbeiterkonto und alle damit verbundenen Daten unwiderruflich.
-          </p>
-          <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setShowDeleteStep1(true)}>
-            Konto löschen
+          <Separator />
+          <Card className="border-destructive/30">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3 mb-2">
+                <Trash2 className="h-4 w-4 text-destructive" />
+                <span className="text-sm font-medium text-destructive">Konto & Daten löschen</span>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">
+                Lösche dein Mitarbeiterkonto und alle damit verbundenen Daten unwiderruflich.
+              </p>
+              <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setShowDeleteStep1(true)}>
+                Konto löschen
           </Button>
         </CardContent>
       </Card>
