@@ -321,10 +321,9 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
             </div>
           ))}
         </CardContent>
-      </Card>
+      </Card>}
 
-      {/* PWA Install */}
-      <Card>
+      {showProfil && <Card>
         <CardContent className="p-4">
           <div className="flex items-center gap-3 mb-2">
             <Download className="h-4 w-4 text-primary" />
