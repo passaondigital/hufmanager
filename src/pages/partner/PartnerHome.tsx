@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { DashboardWelcomeHeader } from "@/components/dashboard/DashboardWelcomeHeader";
 import { supabase } from "@/integrations/supabase/client";
+import { DashboardSidebar } from "@/components/dashboard/sidebar/DashboardSidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +44,7 @@ const CHECKLIST_STEPS: ChecklistStep[] = [
 export default function PartnerHome() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
   const { data: profile } = useQuery({
@@ -221,7 +224,7 @@ export default function PartnerHome() {
     );
   }
 
-  return (
+  const mainContent = (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
@@ -443,6 +446,24 @@ export default function PartnerHome() {
 
       {/* Service Order Inbox */}
       <PartnerServiceOrderInbox />
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <div className="space-y-4">
+        {mainContent}
+        <DashboardSidebar variant="partner" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-[1fr_320px] gap-4">
+      <div className="min-w-0">{mainContent}</div>
+      <div className="min-w-0">
+        <DashboardSidebar variant="partner" />
+      </div>
     </div>
   );
 }

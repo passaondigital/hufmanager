@@ -2495,6 +2495,48 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_widgets: {
+        Row: {
+          created_at: string
+          height: number
+          id: string
+          is_active: boolean
+          position_x: number
+          position_y: number
+          settings: Json
+          updated_at: string
+          user_id: string
+          widget_type: string
+          width: number
+        }
+        Insert: {
+          created_at?: string
+          height?: number
+          id?: string
+          is_active?: boolean
+          position_x?: number
+          position_y?: number
+          settings?: Json
+          updated_at?: string
+          user_id: string
+          widget_type: string
+          width?: number
+        }
+        Update: {
+          created_at?: string
+          height?: number
+          id?: string
+          is_active?: boolean
+          position_x?: number
+          position_y?: number
+          settings?: Json
+          updated_at?: string
+          user_id?: string
+          widget_type?: string
+          width?: number
+        }
+        Relationships: []
+      }
       data_retention_rules: {
         Row: {
           action: string
