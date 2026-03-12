@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import { SpotlightTour, TourStep } from './SpotlightTour';
 import { DemoWelcomeModal } from './DemoWelcomeModal';
 import { demoTourConfigs, ctaStep, DemoRole } from './demoTourDefinitions';
