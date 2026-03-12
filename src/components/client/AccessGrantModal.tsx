@@ -407,7 +407,7 @@ export function AccessGrantModal({ open, onClose, horseId, horseName, onGranted 
                       ))}
                     </ul>
                     {validUntil && (
-                      <p className="text-amber-700 dark:text-amber-400">
+                      <p className="text-destructive/80">
                         Befristet bis: {format(validUntil, "dd.MM.yyyy", { locale: de })}
                       </p>
                     )}
