@@ -110,7 +110,7 @@ export function EditEmployeeSheet({ employee, open, onOpenChange }: EditEmployee
         </SheetHeader>
 
         <Tabs defaultValue="profile" className="mt-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile" className="text-xs">
               <User className="h-3 w-3 mr-1" />
               Profil
@@ -122,6 +122,10 @@ export function EditEmployeeSheet({ employee, open, onOpenChange }: EditEmployee
             <TabsTrigger value="contract" className="text-xs">
               <FileText className="h-3 w-3 mr-1" />
               Vertrag
+            </TabsTrigger>
+            <TabsTrigger value="horses" className="text-xs">
+              <PawPrint className="h-3 w-3 mr-1" />
+              Pferde
             </TabsTrigger>
           </TabsList>
 
