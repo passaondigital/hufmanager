@@ -96,6 +96,7 @@ const EmployeeInvite = lazy(() => import("@/pages/EmployeeInvite"));
 const EmergencyDashboard = lazy(() => import("@/pages/EmergencyDashboard"));
 const PriceGroupManagement = lazy(() => import("@/pages/PriceGroupManagement"));
 const EmployeeTour = lazy(() => import("@/pages/EmployeeTour"));
+const EmployeeHorseDetail = lazy(() => import("@/pages/employee/EmployeeHorseDetail"));
 const MeinOffice = lazy(() => import("@/pages/MeinOffice"));
 const OfficeEditor = lazy(() => import("@/pages/OfficeEditor"));
 const Hilfe = lazy(() => import("@/pages/Hilfe"));
