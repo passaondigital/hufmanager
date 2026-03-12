@@ -199,6 +199,12 @@ const Kunden = () => {
     clients.some((c) => c.id === h.owner_id)
   ).length;
 
+  const notInvitedCount = clients.filter(c => !c.has_logged_in && !c.invited_at).length;
+
+  const animatedClients = useAnimatedCounter(clients.length, 600, clients.length > 0);
+  const animatedHorses = useAnimatedCounter(totalHorses, 600, totalHorses > 0);
+  const animatedNotInvited = useAnimatedCounter(notInvitedCount, 600, notInvitedCount > 0);
+
   const handleConnectionStatusChanged = () => {
     queryClient.invalidateQueries({ queryKey: ["provider-clients"] });
     queryClient.invalidateQueries({ queryKey: ["provider-horses"] });
@@ -221,53 +227,87 @@ const Kunden = () => {
 
   return (
     <div className="space-y-4 md:space-y-6 animate-fade-in">
-      {/* Header - Mobile optimized */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-responsive-h2 text-foreground">Kunden</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            {clients.length} verifizierte Verbindungen • {totalHorses} Pferde
+            {clients.length} Verbindungen · {totalHorses} Pferde
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {/* Export Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2 min-h-[44px] flex-1 md:flex-none">
-                <Download className="h-4 w-4" />
-                <span className="hidden sm:inline">Export</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleExport("clients")}>
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Kunden exportieren (CSV)
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("horses")}>
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Pferde exportieren (CSV)
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => handleExport("all")}>
-                <Download className="h-4 w-4 mr-2" />
-                Alle Daten exportieren
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <Button 
-            variant="outline" 
-            className="gap-2 min-h-[44px] flex-1 md:flex-none" 
-            onClick={() => setShowLinkUserModal(true)}
-          >
-            <Link2 className="h-4 w-4" />
-            <span className="hidden sm:inline">App-Nutzer verknüpfen</span>
-          </Button>
-          <Button className="gap-2 min-h-[44px] flex-1 md:flex-none" onClick={() => navigate("/aufnahme")}>
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Neuer Kunde</span>
-          </Button>
+        <Button className="gap-2 min-h-[44px]" onClick={() => navigate("/aufnahme")}>
+          <Plus className="h-4 w-4" />
+          <span className="hidden sm:inline">Neuer Kunde</span>
+        </Button>
+      </div>
+
+      {/* Search - full width */}
+      <div className="relative w-full">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Kunde suchen (Name, E-Mail, ID)..."
+          className="pl-10 h-11"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+
+      {/* Mini Stats Row */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="card-tile rounded-xl border border-border bg-card p-3 text-center">
+          <Users className="h-5 w-5 text-primary mx-auto mb-1" />
+          <p className="text-xl font-bold text-foreground">{animatedClients}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Kunden gesamt</p>
         </div>
+        <div className="card-tile rounded-xl border border-border bg-card p-3 text-center">
+          <span className="text-base block mb-1">🐴</span>
+          <p className="text-xl font-bold text-foreground">{animatedHorses}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Pferde gesamt</p>
+        </div>
+        {notInvitedCount > 0 && (
+          <div className="card-tile rounded-xl border border-border bg-card p-3 text-center">
+            <Mail className="h-5 w-5 text-primary mx-auto mb-1" />
+            <p className="text-xl font-bold text-foreground">{animatedNotInvited}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Nicht eingeladen</p>
+          </div>
+        )}
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex flex-wrap gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2">
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={() => handleExport("clients")}>
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Kunden exportieren (CSV)
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport("horses")}>
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Pferde exportieren (CSV)
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => handleExport("all")}>
+              <Download className="h-4 w-4 mr-2" />
+              Alle Daten exportieren
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        <Button 
+          variant="outline" 
+          size="sm"
+          className="gap-2" 
+          onClick={() => setShowLinkUserModal(true)}
+        >
+          <Link2 className="h-4 w-4" />
+          App-Nutzer verknüpfen
+        </Button>
       </div>
 
       {/* Pending Connection Requests */}
@@ -284,19 +324,48 @@ const Kunden = () => {
         />
       )}
 
-      {/* Filters - Mobile optimized */}
+      {/* Filters */}
       <div className="space-y-3">
-        <div className="flex flex-col gap-3">
-          {/* Search - Always full width on mobile */}
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Kunde suchen (Name, E-Mail, ID)..."
-              className="pl-10 min-h-[44px]"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+        <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="min-h-[44px]">
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="alle">Alle Status</SelectItem>
+              <SelectItem value="aktiv">Aktiv</SelectItem>
+              <SelectItem value="eingeladen">Eingeladen</SelectItem>
+              <SelectItem value="ausstehend">Ausstehend</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as PaymentRating | "alle")}>
+            <SelectTrigger className="min-h-[44px]">
+              <SelectValue placeholder="Zahlung" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="alle">Alle Ratings</SelectItem>
+              {PAYMENT_RATING_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  <span className={opt.textColor}>{opt.label}</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Select value={lifecycleFilter} onValueChange={(v) => setLifecycleFilter(v as LifecycleStatus | "alle")}>
+            <SelectTrigger className="min-h-[44px] col-span-2 md:col-span-1">
+              <SelectValue placeholder="Kundenstatus" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="alle">Alle Kunden</SelectItem>
+              {LIFECYCLE_STATUS_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
           
           {/* Filters - Grid on mobile, flex on desktop */}
           <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2">
