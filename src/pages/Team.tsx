@@ -127,7 +127,7 @@ const TeamPage = () => {
 
   // Tile overview
   return (
-    <div className="container mx-auto py-6 px-4 max-w-7xl space-y-8">
+    <div className="container mx-auto py-6 px-4 max-w-7xl space-y-8 animate-fade-in">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           👥 Team-Verwaltung <HelpTip id="team.bereich" />
@@ -138,23 +138,23 @@ const TeamPage = () => {
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Mein Team</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Mein Team</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {TILES.map((tile) => (
             <button
               key={tile.key}
               onClick={() => setActiveSection(tile.key)}
-              className="relative flex flex-col items-start text-left min-h-[160px] rounded-xl border bg-card p-5 transition-all hover:border-primary/50 hover:shadow-sm"
+              className="card-tile relative flex flex-col items-start text-left rounded-2xl border border-border bg-card p-6 transition-all cursor-pointer"
             >
-              <div className="mb-2">{tile.icon}</div>
-              <span className="text-base font-semibold">{tile.title}</span>
-              <span className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{tile.description}</span>
+              <div className="mb-4">{tile.icon}</div>
+              <span className="text-lg font-semibold text-foreground mb-1">{tile.title}</span>
+              <span className="text-sm text-muted-foreground mb-4 line-clamp-2">{tile.description}</span>
               <div className="flex-1" />
               {tile.status && (
-                <span className="text-xs text-muted-foreground mt-3 truncate w-full">{tile.status}</span>
+                <span className="text-xs text-muted-foreground mb-3 truncate w-full">{tile.status}</span>
               )}
-              <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary">
-                {tile.buttonLabel} <ChevronRight className="h-3 w-3" />
+              <span className="card-cta inline-flex items-center gap-1 text-sm font-medium text-primary">
+                {tile.buttonLabel} <ChevronRight className="h-4 w-4" />
               </span>
             </button>
           ))}
