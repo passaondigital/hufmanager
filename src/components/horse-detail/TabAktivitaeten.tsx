@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Info, Loader2, ChevronDown } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 
 interface TabAktivitaetenProps {
   horseId: string;
