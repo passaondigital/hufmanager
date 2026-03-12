@@ -1,17 +1,14 @@
 import { useState } from "react";
-import { Outlet, useLocation, useNavigate as useNav } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import { AlertTriangle, RefreshCw, Home, Menu, Sun, Moon, Search, Zap, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useNavigate } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import { AppHeader } from "./AppHeader";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { OfflineBanner } from "@/components/offline/OfflineBanner";
-import { Menu, Sun, Moon, Search, Zap, Settings } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
   DropdownMenu,
