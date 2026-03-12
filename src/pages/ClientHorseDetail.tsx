@@ -239,6 +239,10 @@ export default function ClientHorseDetail() {
           <TabsContent value="betreuer">
             <HorsePartnerPanel horseId={horse.id} horseName={horse.name} inviterRole="client" />
           </TabsContent>
+
+          <TabsContent value="zugriffsrechte">
+            <HorseAccessManager horseId={horse.id} horseName={horse.name} />
+          </TabsContent>
         </Tabs>
       </main>
 
