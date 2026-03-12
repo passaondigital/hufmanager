@@ -362,7 +362,7 @@ export const helpTexts: Record<string, Record<string, HelpTextEntry>> = {
   einstellungen: {
     "geschaeftsname": {
       title: "Geschäftsname",
-      description: "Der Name deines Betriebs, wie er auf Rechnungen und deiner Website erscheint.",
+      description: "Der Name deines Betriebs, wie er auf Rechnungen und deiner Website erscheint. Bearbeite ihn unter Management → Mein Profil.",
     },
     email: {
       title: "E-Mail",
