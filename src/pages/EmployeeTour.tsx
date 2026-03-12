@@ -221,17 +221,29 @@ const EmployeeTour = () => {
                         )}
 
                         {/* Navigation button */}
-                        {assignment.appointment?.location && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-2"
-                            onClick={() => openNavigation(assignment.appointment!.location!)}
-                          >
-                            <Navigation className="h-4 w-4 mr-1.5" />
-                            Navigieren
-                          </Button>
-                        )}
+                        <div className="flex gap-2 mt-2">
+                          {assignment.appointment?.location && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openNavigation(assignment.appointment!.location!)}
+                            >
+                              <Navigation className="h-4 w-4 mr-1.5" />
+                              Navigieren
+                            </Button>
+                          )}
+                          {assignment.appointment?.horse?.id && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              asChild
+                            >
+                              <Link to={`/employee/pferd/${assignment.appointment.horse.id}`}>
+                                Pferdeakte →
+                              </Link>
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </CardContent>
