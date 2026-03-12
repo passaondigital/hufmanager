@@ -39,11 +39,11 @@ const faqs = [
   },
   {
     question: "Wo finde ich meine Rechnungen?",
-    answer: "Unter 'Management' > 'Mein Abo' können Sie Ihre Rechnungen einsehen und Ihr Abonnement verwalten.",
+    answer: "Unter Management → Abo & Zahlung findest du deine Rechnungen und kannst dein Abonnement verwalten.",
   },
   {
     question: "Wie lade ich mein Logo hoch?",
-    answer: "Gehen Sie zu 'Management' > 'Geschäft' und klicken Sie auf 'Logo hochladen'. Unterstützt werden PNG, JPG und WebP (max. 2MB).",
+    answer: "Gehe zu Management → Mein Profil und klicke auf 'Logo hochladen'. Unterstützt werden PNG, JPG und WebP (max. 2MB).",
   },
 ];
 

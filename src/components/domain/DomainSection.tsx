@@ -109,7 +109,7 @@ export function DomainSection({ subdomain }: DomainSectionProps) {
             </>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Erstelle zuerst eine Subdomain unter "Meine Website".
+              Erstelle zuerst eine Subdomain unter Management → Meine Website.
             </p>
           )}
         </CardContent>

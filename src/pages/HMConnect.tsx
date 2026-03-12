@@ -279,7 +279,7 @@ export default function HMConnect() {
               Vernetze dich DSGVO-konform mit anderen Profis, Kunden und Pferden über ihre #ID.
               <br />Dieses Feature ist ab dem <strong>Pro-Plan</strong> verfügbar.
             </p>
-            <Button onClick={() => window.location.href = "/management?tab=subscription"}>
+            <Button onClick={() => window.location.href = "/management/abo"}>
               <Crown className="h-4 w-4 mr-2" />
               Auf Pro upgraden
             </Button>

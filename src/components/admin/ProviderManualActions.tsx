@@ -59,7 +59,7 @@ export function ProviderManualActions({
               user_id: providerId,
               title: "Vertrag zur Unterzeichnung 📄",
               body: "Bitte unterzeichne deinen HufManager-Nutzungsvertrag.",
-              url: "/management?tab=b2b-management",
+              url: "/management/abo",
             },
           });
           await logTimeline("notification_sent", "Vertrag erneut gesendet", "Manuell durch Admin", "📤");

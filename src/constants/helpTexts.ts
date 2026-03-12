@@ -135,9 +135,9 @@ export const helpTexts: Record<string, Record<string, HelpTextEntry>> = {
   // ─── 3. Aufnahme ──────────────────────────────────────────
   aufnahme: {
     bereich: {
-      title: "Aufnahme-Bereich",
+      title: "Aufnahme-Hub",
       description:
-        "Hier legst du neue Kunden und Pferde an. Der erste Schritt in deinem Workflow.",
+        "Zentraler Einstiegspunkt: Wähle ob du einen neuen Kunden anlegen, ein neues Pferd erfassen oder eine Einladung senden möchtest.",
     },
     "neuer-kunde": {
       title: "Neuen Kunden anlegen",
@@ -362,7 +362,7 @@ export const helpTexts: Record<string, Record<string, HelpTextEntry>> = {
   einstellungen: {
     "geschaeftsname": {
       title: "Geschäftsname",
-      description: "Der Name deines Betriebs, wie er auf Rechnungen und deiner Website erscheint.",
+      description: "Der Name deines Betriebs, wie er auf Rechnungen und deiner Website erscheint. Bearbeite ihn unter Management → Mein Profil.",
     },
     email: {
       title: "E-Mail",
