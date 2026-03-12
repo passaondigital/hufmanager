@@ -3717,8 +3717,10 @@ export type Database = {
           can_view: boolean
           created_at: string
           employee_id: string
+          granted_by: string | null
           horse_id: string
           id: string
+          provider_id: string | null
           updated_at: string
         }
         Insert: {
@@ -3728,8 +3730,10 @@ export type Database = {
           can_view?: boolean
           created_at?: string
           employee_id: string
+          granted_by?: string | null
           horse_id: string
           id?: string
+          provider_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -3739,8 +3743,10 @@ export type Database = {
           can_view?: boolean
           created_at?: string
           employee_id?: string
+          granted_by?: string | null
           horse_id?: string
           id?: string
+          provider_id?: string | null
           updated_at?: string
         }
         Relationships: [

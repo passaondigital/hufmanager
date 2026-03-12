@@ -23,7 +23,8 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, User, Shield, Settings, Calendar, Clock, FileText } from "lucide-react";
+import { Loader2, User, Shield, Settings, Calendar, Clock, FileText, PawPrint } from "lucide-react";
+import { EmployeeHorseAccess } from "./EmployeeHorseAccess";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 
@@ -109,7 +110,7 @@ export function EditEmployeeSheet({ employee, open, onOpenChange }: EditEmployee
         </SheetHeader>
 
         <Tabs defaultValue="profile" className="mt-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile" className="text-xs">
               <User className="h-3 w-3 mr-1" />
               Profil
@@ -121,6 +122,10 @@ export function EditEmployeeSheet({ employee, open, onOpenChange }: EditEmployee
             <TabsTrigger value="contract" className="text-xs">
               <FileText className="h-3 w-3 mr-1" />
               Vertrag
+            </TabsTrigger>
+            <TabsTrigger value="horses" className="text-xs">
+              <PawPrint className="h-3 w-3 mr-1" />
+              Pferde
             </TabsTrigger>
           </TabsList>
 
@@ -389,6 +394,13 @@ export function EditEmployeeSheet({ employee, open, onOpenChange }: EditEmployee
                 )}
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="horses" className="mt-4">
+            <EmployeeHorseAccess
+              employeeId={employee.id}
+              employeeName={employee.full_name}
+            />
           </TabsContent>
         </Tabs>
 
