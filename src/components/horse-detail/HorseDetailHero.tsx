@@ -36,14 +36,16 @@ export function HorseDetailHero({ horse, backPath }: HorseDetailHeroProps) {
     horse.gender === "mare" ? "Stute" : 
     horse.gender === "stallion" ? "Hengst" : horse.gender;
 
-  const statusLabel = horse.horse_status === "active" ? "Aktiv" : 
-    horse.horse_status === "sold" ? "Verkauft" : 
-    horse.horse_status === "deceased" ? "Verstorben" :
-    horse.horse_status === "archived" ? "Archiviert" : "Aktiv";
+  const horseAny = horse as any;
+  const horseStatus = horseAny.horse_status || "active";
+  const statusLabel = horseStatus === "active" ? "Aktiv" : 
+    horseStatus === "sold" ? "Verkauft" : 
+    horseStatus === "deceased" ? "Verstorben" :
+    horseStatus === "archived" ? "Archiviert" : "Aktiv";
 
-  const statusColor = horse.horse_status === "active" || !horse.horse_status
+  const statusColor = horseStatus === "active"
     ? "bg-green-500/20 text-green-400 border-green-500/30"
-    : horse.horse_status === "sold" 
+    : horseStatus === "sold" 
     ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
     : "bg-red-500/20 text-red-400 border-red-500/30";
 
