@@ -6979,6 +6979,83 @@ export type Database = {
           },
         ]
       }
+      manual_payments: {
+        Row: {
+          amount: number
+          billing_period_end: string | null
+          billing_period_start: string | null
+          created_at: string | null
+          currency: string | null
+          id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string | null
+          plan_name: string | null
+          provider_id: string
+          recorded_by: string | null
+          reference: string | null
+        }
+        Insert: {
+          amount: number
+          billing_period_end?: string | null
+          billing_period_start?: string | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          notes?: string | null
+          payment_date: string
+          payment_method?: string | null
+          plan_name?: string | null
+          provider_id: string
+          recorded_by?: string | null
+          reference?: string | null
+        }
+        Update: {
+          amount?: number
+          billing_period_end?: string | null
+          billing_period_start?: string | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          plan_name?: string | null
+          provider_id?: string
+          recorded_by?: string | null
+          reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manual_payments_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manual_payments_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manual_payments_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manual_payments_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       master_admins: {
         Row: {
           created_at: string
@@ -8553,6 +8630,51 @@ export type Database = {
         }
         Relationships: []
       }
+      pferdeakte_waitlist: {
+        Row: {
+          company: string | null
+          converted_at: string | null
+          created_at: string | null
+          email: string
+          id: string
+          is_partner_interest: boolean | null
+          name: string | null
+          notified_at: string | null
+          partner_type: string | null
+          referral_code: string | null
+          referred_by: string | null
+          role: string
+        }
+        Insert: {
+          company?: string | null
+          converted_at?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          is_partner_interest?: boolean | null
+          name?: string | null
+          notified_at?: string | null
+          partner_type?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
+          role: string
+        }
+        Update: {
+          company?: string | null
+          converted_at?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          is_partner_interest?: boolean | null
+          name?: string | null
+          notified_at?: string | null
+          partner_type?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
+          role?: string
+        }
+        Relationships: []
+      }
       preview_feedback: {
         Row: {
           comment: string | null
@@ -9651,6 +9773,72 @@ export type Database = {
             foreignKeyName: "provider_portal_credentials_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: true
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_subscriptions: {
+        Row: {
+          billing_cycle: string | null
+          cancelled_at: string | null
+          created_at: string | null
+          external_subscription_id: string | null
+          id: string
+          next_billing_date: string | null
+          notes: string | null
+          payment_method: string | null
+          plan_name: string
+          plan_price: number | null
+          provider_id: string
+          started_at: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          billing_cycle?: string | null
+          cancelled_at?: string | null
+          created_at?: string | null
+          external_subscription_id?: string | null
+          id?: string
+          next_billing_date?: string | null
+          notes?: string | null
+          payment_method?: string | null
+          plan_name: string
+          plan_price?: number | null
+          provider_id: string
+          started_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          billing_cycle?: string | null
+          cancelled_at?: string | null
+          created_at?: string | null
+          external_subscription_id?: string | null
+          id?: string
+          next_billing_date?: string | null
+          notes?: string | null
+          payment_method?: string | null
+          plan_name?: string
+          plan_price?: number | null
+          provider_id?: string
+          started_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_subscriptions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_subscriptions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "safe_provider_profiles"
             referencedColumns: ["id"]
           },
