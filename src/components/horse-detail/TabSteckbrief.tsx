@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Pencil, User, Home, Utensils, AlertTriangle, Shield, Dna, Scale, Swords, GraduationCap, HelpCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
+import { HelpTip } from "@/components/ui/HelpTip";
 
 interface TabSteckbriefProps {
   horse: Horse;
