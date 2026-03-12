@@ -7,7 +7,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ListPageHeader } from "@/components/shared/ListPageHeader";
 import { ListSkeleton } from "@/components/shared/ListSkeleton";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
