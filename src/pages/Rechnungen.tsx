@@ -422,17 +422,7 @@ export default function Rechnungen() {
 
       {/* Invoice List */}
       {loading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-4 space-y-3">
-                <Skeleton className="h-5 w-32" />
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-20" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <ListSkeleton rows={3} />
       ) : filteredInvoices.length === 0 ? (
         <Card className="border-dashed border-2 border-border/50 bg-muted/20">
           <CardContent className="py-12 text-center">
