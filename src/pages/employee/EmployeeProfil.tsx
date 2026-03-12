@@ -212,7 +212,7 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
         </div>
       )}
 
-      <Card>
+      {showProfil && <Card>
         <CardContent className="p-6">
           <div className="flex items-center gap-4 mb-4">
             <div className="relative group">
