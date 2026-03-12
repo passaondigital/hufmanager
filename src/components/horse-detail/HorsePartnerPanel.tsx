@@ -39,6 +39,7 @@ export function HorsePartnerPanel({ horseId, horseName, inviterRole }: Props) {
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [revokeId, setRevokeId] = useState<string | null>(null);
   const [notesExpanded, setNotesExpanded] = useState(true);
+  const [showOrderWizard, setShowOrderWizard] = useState(false);
 
   const { data: grants, isLoading } = useQuery({
     queryKey: ["horse-partner-grants", horseId],
