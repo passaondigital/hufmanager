@@ -193,7 +193,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         { title: "Tages-Cockpit", url: "/tour", icon: Calendar, description: "Tour · Zeit · km · Sprit" },
         { title: "HufCam Pro", url: "/work-mode?tab=hufcam", icon: Camera, description: "Foto-Dokumentation" },
         { title: "Hufanalyse", url: "/work-mode?tab=analyse", icon: FileCheck, description: "LTZ-Analyse-Bögen" },
-        { title: "Feedback", url: "/auffassen", icon: Star, description: "Bewertungen sammeln" },
+        { title: "Feedback", url: "/auffassen/feedback", icon: Star, description: "Bewertungen sammeln" },
       ]
     },
     { 
