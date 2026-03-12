@@ -11,7 +11,7 @@ export default function ReviewsContent(_props: WidgetContentProps) {
     queryFn: async () => {
       const { data } = await supabase
         .from("reviews")
-        .select("id, reviewer_name, rating, comment, created_at")
+        .select("id, reviewer_name, rating, text, created_at")
         .eq("provider_id", user!.id)
         .order("created_at", { ascending: false })
         .limit(3);
@@ -32,8 +32,8 @@ export default function ReviewsContent(_props: WidgetContentProps) {
             <span className="text-xs">{"⭐".repeat(Math.min(r.rating || 0, 5))}</span>
             <span className="text-[10px] text-muted-foreground ml-auto">{r.reviewer_name}</span>
           </div>
-          {r.comment && (
-            <p className="text-xs text-muted-foreground line-clamp-2">"{r.comment}"</p>
+          {r.text && (
+            <p className="text-xs text-muted-foreground line-clamp-2">"{r.text}"</p>
           )}
         </div>
       ))}

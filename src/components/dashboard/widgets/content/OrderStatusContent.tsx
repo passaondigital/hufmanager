@@ -1,22 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import type { WidgetContentProps } from "./types";
 
 export default function OrderStatusContent(_props: WidgetContentProps) {
   const { user } = useAuth();
-  const navigate = useNavigate();
 
   const { data: orders = [] } = useQuery({
     queryKey: ["widget-orders", user?.id],
     queryFn: async () => {
       const { data } = await supabase
         .from("service_orders")
-        .select("id, title, status, created_at")
+        .select("id, service_description, order_status, created_at")
         .eq("provider_id", user!.id)
-        .in("status", ["pending", "in_progress", "accepted"])
+        .in("order_status", ["pending", "in_progress", "accepted"])
         .order("created_at", { ascending: false })
         .limit(5);
       return data || [];
@@ -34,10 +32,10 @@ export default function OrderStatusContent(_props: WidgetContentProps) {
         <div key={o.id} className="flex items-center gap-2 py-1.5 px-1">
           <div className={cn(
             "h-1.5 w-1.5 rounded-full shrink-0",
-            o.status === "in_progress" ? "bg-amber-500" : "bg-blue-500"
+            o.order_status === "in_progress" ? "bg-accent-foreground" : "bg-primary"
           )} />
-          <span className="text-sm flex-1 truncate text-foreground">{o.title}</span>
-          <span className="text-[10px] text-muted-foreground capitalize">{o.status}</span>
+          <span className="text-sm flex-1 truncate text-foreground">{o.service_description}</span>
+          <span className="text-[10px] text-muted-foreground capitalize">{o.order_status}</span>
         </div>
       ))}
     </div>

@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
 import type { WidgetContentProps } from "./types";
 
 export default function OpenInvoicesContent(_props: WidgetContentProps) {
@@ -14,7 +13,7 @@ export default function OpenInvoicesContent(_props: WidgetContentProps) {
     queryFn: async () => {
       const { data } = await supabase
         .from("invoices")
-        .select("id, invoice_number, total_amount, client_name, status")
+        .select("id, invoice_number, total_amount, status, client_id")
         .eq("provider_id", user!.id)
         .in("status", ["draft", "sent", "overdue"])
         .order("created_at", { ascending: false })
@@ -37,8 +36,8 @@ export default function OpenInvoicesContent(_props: WidgetContentProps) {
           className="w-full flex items-center justify-between py-1.5 px-1 hover:bg-muted/50 rounded transition-colors"
         >
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-medium text-foreground truncate">{inv.invoice_number}</p>
-            <p className="text-[10px] text-muted-foreground truncate">{inv.client_name}</p>
+            <p className="text-xs font-medium text-foreground truncate">{inv.invoice_number || "–"}</p>
+            <p className="text-[10px] text-muted-foreground capitalize">{inv.status}</p>
           </div>
           <span className="text-xs font-bold text-foreground shrink-0 ml-2">
             {(inv.total_amount || 0).toFixed(2)} €

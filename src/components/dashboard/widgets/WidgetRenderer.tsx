@@ -1,7 +1,7 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, type ComponentType } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { WidgetContentProps } from "./content/types";
 
-// Lazy-load individual widgets
 const WeekCalendarWidgetContent = lazy(() => import("./content/WeekCalendarContent"));
 const DayCalendarContent = lazy(() => import("./content/DayCalendarContent"));
 const NextAppointmentsContent = lazy(() => import("./content/NextAppointmentsContent"));
@@ -28,7 +28,7 @@ interface WidgetRendererProps {
   onUpdateSettings: (settings: Record<string, unknown>) => void;
 }
 
-const WIDGET_MAP: Record<string, React.LazyExoticComponent<any>> = {
+const WIDGET_MAP: Record<string, React.LazyExoticComponent<ComponentType<WidgetContentProps>>> = {
   kalender_woche: WeekCalendarWidgetContent,
   kalender_tag: DayCalendarContent,
   naechste_termine: NextAppointmentsContent,
