@@ -32,6 +32,7 @@ const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const Anfragen = lazy(() => import("@/pages/Anfragen"));
 const Angebote = lazy(() => import("@/pages/Angebote"));
 const Aufnahme = lazy(() => import("@/pages/Aufnahme"));
+const Pferde = lazy(() => import("@/pages/Pferde"));
 const Auffassen = lazy(() => import("@/pages/Auffassen"));
 const AuffassenHub = lazy(() => import("@/pages/AuffassenHub"));
 const Analyse = lazy(() => import("@/pages/Analyse"));
