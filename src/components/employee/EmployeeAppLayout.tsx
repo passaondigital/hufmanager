@@ -98,6 +98,7 @@ const getEmployeeNav = (permissions: Record<string, boolean>): NavigationConfig 
         label: "Konto",
         items: [
           { id: "profile", label: "Profil", iconName: "User", path: "/employee/profil" },
+          { id: "management", label: "Management", iconName: "Settings", path: "/employee/profil" },
         ],
       },
     ],

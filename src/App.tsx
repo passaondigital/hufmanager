@@ -419,7 +419,12 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/services" element={<Navigate to="/mein-angebot" replace />} />
               <Route path="/preise" element={<Navigate to="/mein-angebot" replace />} />
               <Route path="/mein-angebot" element={<MeinAngebot />} />
-              <Route path="/management" element={<Management />} />
+              <Route path="/management" element={<ManagementHub />} />
+              <Route path="/management/profil" element={<ManagementProfil />} />
+              <Route path="/management/website" element={<ManagementWebsite />} />
+              <Route path="/management/kommunikation" element={<ManagementKommunikation />} />
+              <Route path="/management/abo" element={<ManagementAbo />} />
+              <Route path="/management/rechtliches" element={<ManagementRechtliches />} />
               <Route path="/management/import" element={<ImportCenter />} />
               <Route path="/academy" element={<Academy />} />
               <Route path="/chat" element={<Chat />} />

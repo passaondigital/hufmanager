@@ -72,9 +72,6 @@ export default function ManagementHub() {
       icon: <CreditCard className="w-10 h-10 text-primary" />,
       title: "Abo & Zahlung",
       description: "Aktueller Plan, Rechnungen, Zahlungsart, Vertrag",
-      status: profile?.plan
-        ? `${profile.plan.charAt(0).toUpperCase() + profile.plan.slice(1)}${profile?.subscription_end ? ` · bis ${new Date(profile.subscription_end).toLocaleDateString("de-DE")}` : ""}`
-        : undefined,
       path: "/management/abo",
     },
     {

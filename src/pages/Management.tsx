@@ -962,6 +962,8 @@ Steuernummer: 43/150/40518
           <ManagementTab />
         </TabsContent>
       </Tabs>
+        );
+      })()}
     </div>
   );
 };

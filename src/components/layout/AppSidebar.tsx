@@ -495,78 +495,20 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 
         {/* Admin Link removed - access only via Auth page rocket icon */}
 
-        {/* Management - Collapsible mit Untermenüs */}
-        <Collapsible 
-          open={openMenus[-1] ?? isManagementActive()} 
-          onOpenChange={() => toggleMenu(-1)}
-        >
-          <CollapsibleTrigger asChild>
-            <button
-              className={cn(
-                "w-full flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-200",
-                isManagementActive()
-                  ? "bg-primary/10 text-primary"
-                  : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-              )}
-            >
-              <Settings className={cn("h-4 w-4 flex-shrink-0", collapsed && "mx-auto")} />
-              {!collapsed && (
-                <>
-                  <span className="text-sm font-medium flex-1 text-left">Management</span>
-                  <ChevronDown className={cn(
-                    "h-3.5 w-3.5 transition-transform",
-                    openMenus[-1] && "rotate-180"
-                  )} />
-                </>
-              )}
-            </button>
-          </CollapsibleTrigger>
-          {!collapsed && (
-            <CollapsibleContent className="space-y-0.5 pt-1">
-              <NavLink
-                to="/management?tab=profile"
-                onClick={onNavigate}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200 ml-4",
-                  isActive("/management") && location.search.includes("profile")
-                    ? "bg-primary/10 text-primary"
-                    : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                )}
-              >
-                <User className="h-3.5 w-3.5 flex-shrink-0" />
-                <span className="text-xs">Profil</span>
-              </NavLink>
-
-              <NavLink
-                to="/management?tab=subscription"
-                onClick={onNavigate}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200 ml-4",
-                  isActive("/management") && location.search.includes("subscription")
-                    ? "bg-primary/10 text-primary"
-                    : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                )}
-              >
-                <CreditCard className="h-3.5 w-3.5 flex-shrink-0" />
-                <span className="text-xs">Abo & Module</span>
-              </NavLink>
-
-              <NavLink
-                to="/notfall"
-                onClick={onNavigate}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200 ml-4",
-                  isActive("/notfall")
-                    ? "bg-primary/10 text-primary"
-                    : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                )}
-              >
-                <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
-                <span className="text-xs">1. Hilfe Kunden Center</span>
-              </NavLink>
-            </CollapsibleContent>
+        {/* Management - Single Link */}
+        <NavLink
+          to="/management"
+          onClick={onNavigate}
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-200",
+            isActive("/management")
+              ? "bg-primary/10 text-primary"
+              : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
           )}
-        </Collapsible>
+        >
+          <Settings className={cn("h-4 w-4 flex-shrink-0", collapsed && "mx-auto")} />
+          {!collapsed && <span className="text-sm font-medium">Management</span>}
+        </NavLink>
 
         {/* Hilfe & Support + Logout - außerhalb von Management */}
         <div className="space-y-0.5 pt-1">

@@ -105,15 +105,7 @@ const PARTNER_NAV: NavigationConfig = {
     {
       label: "Management",
       items: [
-        {
-          id: "management", label: "Management", iconName: "Settings",
-          children: [
-            { label: "Profil", path: "/partner-management?tab=profile", iconName: "User" },
-            { label: "Abo & Module", path: "/partner-management?tab=subscription", iconName: "CreditCard" },
-            { label: "Rechtliches", path: "/partner-rechtliches", iconName: "Scale" },
-            { label: "1. Hilfe Kunden Center", path: "/partner-notfall", iconName: "AlertTriangle" },
-          ],
-        },
+        { id: "management", label: "Management", iconName: "Settings", path: "/partner-management" },
         { id: "support", label: "Hilfe & Support", iconName: "LifeBuoy", path: "/partner-support" },
       ],
     },
