@@ -127,9 +127,16 @@ export function HorsePartnerPanel({ horseId, horseName, inviterRole }: Props) {
             <Users className="h-5 w-5 text-primary" />
             Aktive Partner
           </CardTitle>
-          <Button size="sm" onClick={() => setInviteModalOpen(true)}>
-            <Plus className="h-4 w-4 mr-1" /> Partner einladen
-          </Button>
+          <div className="flex gap-2">
+            {inviterRole === "client" && (
+              <Button size="sm" variant="outline" onClick={() => setShowOrderWizard(true)}>
+                <ClipboardList className="h-4 w-4 mr-1" /> Auftrag erteilen
+              </Button>
+            )}
+            <Button size="sm" onClick={() => setInviteModalOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Partner einladen
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {activeGrants.length === 0 ? (
