@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Info, History, Image, Users, FileText, BookOpen, Heart, ArrowLeftRight } from "lucide-react";
+import { ArrowLeft, Info, History, Image, Users, FileText, BookOpen, Heart, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 import { TabSteckbrief } from "@/components/horse-detail/TabSteckbrief";
@@ -22,6 +22,7 @@ import { HorsePartnerPanel } from "@/components/horse-detail/HorsePartnerPanel";
 import { HorseDiary } from "@/components/client/HorseDiary";
 import { HorseHealthTracker } from "@/components/client/HorseHealthTracker";
 import { HoofDevelopmentComparison } from "@/components/client/HoofDevelopmentComparison";
+import { HorseAccessManager } from "@/components/client/HorseAccessManager";
 import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
 
 export default function ClientHorseDetail() {
@@ -156,7 +157,7 @@ export default function ClientHorseDetail() {
         />
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <div className="overflow-x-auto -mx-4 px-4">
-            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-7">
+            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-8">
               <TabsTrigger value="steckbrief" className="flex items-center gap-1.5 whitespace-nowrap">
                 <Info className="h-4 w-4" />
                 <span>Übersicht</span>
@@ -184,6 +185,10 @@ export default function ClientHorseDetail() {
               <TabsTrigger value="betreuer" className="flex items-center gap-1.5 whitespace-nowrap">
                 <Users className="h-4 w-4" />
                 <span>Betreuer</span>
+              </TabsTrigger>
+              <TabsTrigger value="zugriffsrechte" className="flex items-center gap-1.5 whitespace-nowrap">
+                <Shield className="h-4 w-4" />
+                <span>Zugriffsrechte</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -233,6 +238,10 @@ export default function ClientHorseDetail() {
 
           <TabsContent value="betreuer">
             <HorsePartnerPanel horseId={horse.id} horseName={horse.name} inviterRole="client" />
+          </TabsContent>
+
+          <TabsContent value="zugriffsrechte">
+            <HorseAccessManager horseId={horse.id} horseName={horse.name} />
           </TabsContent>
         </Tabs>
       </main>
