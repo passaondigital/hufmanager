@@ -1,6 +1,9 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
+import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { clear } from "idb-keyval";
 
 type UserRole = "provider" | "client" | "admin" | "employee" | "partner" | null;
 
@@ -19,6 +22,9 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<UserRole>(null);
@@ -349,8 +355,39 @@ const signIn = async (email: string, password: string) => {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn("Sign out error (proceeding anyway):", e);
+    }
+
     setRole(null);
+
+    // Clear React Query cache
+    queryClient.clear();
+
+    // Clear localStorage (preserve theme)
+    const keysToKeep = ["theme", "vite-ui-theme"];
+    const savedValues: Record<string, string | null> = {};
+    keysToKeep.forEach((key) => {
+      savedValues[key] = localStorage.getItem(key);
+    });
+    localStorage.clear();
+    keysToKeep.forEach((key) => {
+      if (savedValues[key] !== null) {
+        localStorage.setItem(key, savedValues[key]!);
+      }
+    });
+
+    // Clear IndexedDB offline queue
+    try {
+      await clear();
+    } catch (e) {
+      console.warn("IndexedDB clear error:", e);
+    }
+
+    // Redirect to auth
+    navigate("/auth", { replace: true });
   };
 
   const value = { 
