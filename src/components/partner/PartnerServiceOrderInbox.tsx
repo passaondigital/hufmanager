@@ -56,7 +56,7 @@ export function PartnerServiceOrderInbox() {
       if (!user) return [];
       const { data, error } = await supabase
         .from("service_orders")
-        .select("id, order_number, horse_id, client_id, service_description, service_date, estimated_price, order_status, created_at, provider_signed, completed_at")
+        .select("id, order_number, horse_id, client_id, service_description, service_date, estimated_price, order_status, created_at, provider_signed, completed_at, client_signed_at, provider_signed_at")
         .eq("partner_id", user.id)
         .order("created_at", { ascending: false });
 
