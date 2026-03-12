@@ -195,6 +195,7 @@ export function TabSteckbrief({ horse, onEdit }: TabSteckbriefProps) {
             <CardTitle className="text-base flex items-center gap-2">
               <Scale className="h-4 w-4 text-primary" />
               Gewicht & Kondition
+              <HelpTip id="pferdeakte.bcs" />
             </CardTitle>
           </CardHeader>
           <CardContent>
