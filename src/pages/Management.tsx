@@ -398,70 +398,62 @@ const Management = ({ tabs: tabFilter, hideChrome }: ManagementProps = {}) => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">Management <HelpTip id="einstellungen.geschaeftsname" /></h1>
-        <p className="text-muted-foreground mt-1">
-          Abonnement, Rechnungen & Verträge
-        </p>
-      </div>
+      {!hideChrome && (
+        <>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">Management <HelpTip id="einstellungen.geschaeftsname" /></h1>
+            <p className="text-muted-foreground mt-1">
+              Abonnement, Rechnungen & Verträge
+            </p>
+          </div>
 
-      {/* Gatekeeper Warning */}
-      {isProfileIncomplete && (
-        <Alert variant="destructive" className="border-orange-500 bg-orange-50 dark:bg-orange-950/20">
-          <AlertTriangle className="h-4 w-4 text-orange-600" />
-          <AlertTitle className="text-orange-800 dark:text-orange-400">Profil ist offline</AlertTitle>
-          <AlertDescription className="text-orange-700 dark:text-orange-300">
-            Ihre öffentliche Landingpage ist nicht sichtbar, da das Impressum fehlt. 
-            Bitte hinterlegen Sie Ihr Impressum im Tab "Rechtliches".
-          </AlertDescription>
-        </Alert>
+          {/* Gatekeeper Warning */}
+          {isProfileIncomplete && (
+            <Alert variant="destructive" className="border-orange-500 bg-orange-50 dark:bg-orange-950/20">
+              <AlertTriangle className="h-4 w-4 text-orange-600" />
+              <AlertTitle className="text-orange-800 dark:text-orange-400">Profil ist offline</AlertTitle>
+              <AlertDescription className="text-orange-700 dark:text-orange-300">
+                Ihre öffentliche Landingpage ist nicht sichtbar, da das Impressum fehlt. 
+                Bitte hinterlegen Sie Ihr Impressum im Tab "Rechtliches".
+              </AlertDescription>
+            </Alert>
+          )}
+        </>
       )}
 
-      <Tabs defaultValue="business" className="w-full">
-        <TabsList className="grid w-full max-w-5xl grid-cols-10">
-          <TabsTrigger value="business" className="gap-2">
-            <Building className="h-4 w-4" />
-            <span className="hidden sm:inline">Geschäft</span>
-          </TabsTrigger>
-          <TabsTrigger value="subscription" className="gap-2">
-            <Crown className="h-4 w-4" />
-            <span className="hidden sm:inline">Abo</span>
-          </TabsTrigger>
-          <TabsTrigger value="hours" className="gap-2">
-            <Clock className="h-4 w-4" />
-            <span className="hidden sm:inline">Zeiten</span>
-          </TabsTrigger>
-          <TabsTrigger value="reminders" className="gap-2">
-            <Bell className="h-4 w-4" />
-            <span className="hidden sm:inline">Erinnerungen</span>
-          </TabsTrigger>
-          <TabsTrigger value="landing" className="gap-2">
-            <Globe className="h-4 w-4" />
-            <span className="hidden sm:inline">Landing</span>
-          </TabsTrigger>
-          <TabsTrigger value="reviews" className="gap-2">
-            <Star className="h-4 w-4" />
-            <span className="hidden sm:inline">Bewertungen</span>
-          </TabsTrigger>
-          <TabsTrigger value="legal" className="gap-2 relative">
-            <FileText className="h-4 w-4" />
-            <span className="hidden sm:inline">Rechtliches</span>
-            {isProfileIncomplete && (
-              <span className="absolute -top-1 -right-1 h-2 w-2 bg-orange-500 rounded-full" />
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="payment" className="gap-2">
-            <CreditCard className="h-4 w-4" />
-            <span className="hidden sm:inline">Zahlung</span>
-          </TabsTrigger>
-          <TabsTrigger value="app" className="gap-2">
-            <Settings className="h-4 w-4" />
-            <span className="hidden sm:inline">App</span>
-          </TabsTrigger>
-          <TabsTrigger value="b2b-management" className="gap-2">
-            <Briefcase className="h-4 w-4" />
-            <span className="hidden sm:inline">Management</span>
-          </TabsTrigger>
+      {(() => {
+        const ALL_TAB_DEFS = [
+          { value: "business", icon: Building, label: "Geschäft" },
+          { value: "subscription", icon: Crown, label: "Abo" },
+          { value: "hours", icon: Clock, label: "Zeiten" },
+          { value: "reminders", icon: Bell, label: "Erinnerungen" },
+          { value: "landing", icon: Globe, label: "Landing" },
+          { value: "reviews", icon: Star, label: "Bewertungen" },
+          { value: "legal", icon: FileText, label: "Rechtliches" },
+          { value: "payment", icon: CreditCard, label: "Zahlung" },
+          { value: "app", icon: Settings, label: "App" },
+          { value: "b2b-management", icon: Briefcase, label: "Management" },
+        ];
+        const visibleTabs = tabFilter
+          ? ALL_TAB_DEFS.filter((t) => tabFilter.includes(t.value))
+          : ALL_TAB_DEFS;
+        const defaultTab = visibleTabs[0]?.value || "business";
+
+        return (
+      <Tabs defaultValue={defaultTab} className="w-full">
+        <TabsList
+          className="grid w-full max-w-5xl"
+          style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, 1fr)` }}
+        >
+          {visibleTabs.map((tab) => (
+            <TabsTrigger key={tab.value} value={tab.value} className="gap-2 relative">
+              <tab.icon className="h-4 w-4" />
+              <span className="hidden sm:inline">{tab.label}</span>
+              {tab.value === "legal" && isProfileIncomplete && (
+                <span className="absolute -top-1 -right-1 h-2 w-2 bg-orange-500 rounded-full" />
+              )}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         {/* Reviews Management Tab */}
