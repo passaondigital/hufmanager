@@ -44,6 +44,7 @@ const CHECKLIST_STEPS: ChecklistStep[] = [
 export default function PartnerHome() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
   const { data: profile } = useQuery({
