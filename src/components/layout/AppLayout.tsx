@@ -30,6 +30,36 @@ import { useDemoActivityTracker } from "@/hooks/useDemoActivityTracker";
 import { useAutoflowMode, AutoflowMode } from "@/hooks/useAutoflowMode";
 import { useCockpitFullscreen } from "@/components/day-cockpit/CockpitFullscreenContext";
 
+function ProviderErrorFallback() {
+  return (
+    <div className="min-h-[300px] flex items-center justify-center p-6">
+      <Card className="max-w-md w-full border-destructive/30">
+        <CardContent className="pt-6 text-center space-y-4">
+          <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
+            <AlertTriangle className="h-6 w-6 text-destructive" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-lg text-foreground">Etwas ist schiefgelaufen</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Ein unerwarteter Fehler ist aufgetreten.
+            </p>
+          </div>
+          <div className="flex gap-2 justify-center">
+            <Button variant="outline" size="sm" onClick={() => window.location.href = "/home"}>
+              <Home className="h-4 w-4 mr-1.5" />
+              Zum Dashboard
+            </Button>
+            <Button size="sm" onClick={() => window.location.reload()} className="gap-1.5">
+              <RefreshCw className="h-3.5 w-3.5" />
+              Seite neu laden
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
