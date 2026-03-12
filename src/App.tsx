@@ -528,6 +528,8 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/employee/profil" element={<EmployeeProfil />} />
               <Route path="/employee/kalender" element={<EmployeeCalendar />} />
               <Route path="/employee/management" element={<EmployeeManagementHub />} />
+              <Route path="/employee/management/profil" element={<EmployeeManagementProfil />} />
+              <Route path="/employee/management/einstellungen" element={<EmployeeManagementEinstellungen />} />
               <Route path="/employee/pferde" element={<EmployeePferde />} />
             </Route>
 
