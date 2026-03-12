@@ -281,8 +281,6 @@ const Pferde = () => {
 
         <TabsContent value="shared" className="space-y-3 mt-4">
           {filterHorses(sharedHorses).length === 0 ? (
-            <Card>
-              <CardContent className="p-8 text-center">
             <EmptyState
               icon={Share2}
               title={searchTerm ? "Keine freigegebenen Pferde gefunden" : "Noch keine Pferde freigegeben"}
