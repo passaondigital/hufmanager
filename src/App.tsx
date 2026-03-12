@@ -32,6 +32,7 @@ const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const Anfragen = lazy(() => import("@/pages/Anfragen"));
 const Angebote = lazy(() => import("@/pages/Angebote"));
 const Aufnahme = lazy(() => import("@/pages/Aufnahme"));
+const Pferde = lazy(() => import("@/pages/Pferde"));
 const Auffassen = lazy(() => import("@/pages/Auffassen"));
 const AuffassenHub = lazy(() => import("@/pages/AuffassenHub"));
 const Analyse = lazy(() => import("@/pages/Analyse"));
@@ -126,6 +127,7 @@ const EmployeeAnalyse = lazy(() => import("@/pages/employee/EmployeeAnalyse"));
 const EmployeeChat = lazy(() => import("@/pages/employee/EmployeeChat"));
 const EmployeeCalendar = lazy(() => import("@/pages/employee/EmployeeCalendar"));
 const EmployeeManagementHub = lazy(() => import("@/pages/employee/EmployeeManagementHub"));
+const EmployeePferde = lazy(() => import("@/pages/employee/EmployeePferde"));
 const PartnerHome = lazy(() => import("@/pages/partner/PartnerHome"));
 const PartnerRechtliches = lazy(() => import("@/pages/partner/PartnerRechtliches"));
 const PartnerHorseView = lazy(() => import("@/pages/partner/PartnerHorseView"));
@@ -140,6 +142,7 @@ const PartnerServices = lazy(() => import("@/pages/partner/PartnerServices"));
 const PartnerInvoices = lazy(() => import("@/pages/partner/PartnerInvoices"));
 const PartnerSettings = lazy(() => import("@/pages/partner/PartnerSettings"));
 const PartnerManagementHub = lazy(() => import("@/pages/partner/PartnerManagementHub"));
+const PartnerPferde = lazy(() => import("@/pages/partner/PartnerPferde"));
 const PartnerConnect = lazy(() => import("@/pages/partner/PartnerConnect"));
 const PartnerPublicProfile = lazy(() => import("@/pages/partner/PartnerPublicProfile"));
 const PreviewLanding = lazy(() => import("@/pages/PreviewLanding"));
@@ -410,6 +413,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/anfragen" element={<Anfragen />} />
               <Route path="/angebote" element={<Angebote />} />
               <Route path="/aufnahme" element={<Aufnahme />} />
+              <Route path="/pferde" element={<Pferde />} />
               <Route path="/auffassen" element={<AuffassenHub />} />
               <Route path="/auffassen/feedback" element={<Auffassen />} />
               <Route path="/analyse" element={<AnalyseHub />} />
@@ -516,6 +520,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/employee/profil" element={<EmployeeProfil />} />
               <Route path="/employee/kalender" element={<EmployeeCalendar />} />
               <Route path="/employee/management" element={<EmployeeManagementHub />} />
+              <Route path="/employee/pferde" element={<EmployeePferde />} />
             </Route>
 
             {/* --- 5. PARTNER (FACHPARTNER) ROUTES --- */}
@@ -528,7 +533,8 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             >
               <Route path="/partner-home" element={<PartnerHome />} />
               <Route path="/partner-horse/:id" element={<PartnerHorseView />} />
-              <Route path="/partner-horses" element={<PartnerHome />} />
+              <Route path="/partner-horses" element={<PartnerPferde />} />
+              <Route path="/partner-pferde" element={<PartnerPferde />} />
               <Route path="/partner-calendar" element={<PartnerCalendar />} />
               <Route path="/partner-notes" element={<PartnerNotes />} />
               <Route path="/partner-plans" element={<PartnerTreatmentPlans />} />

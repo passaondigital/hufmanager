@@ -64,7 +64,7 @@ const PARTNER_NAV: NavigationConfig = {
           id: "aufnahme", number: "3", label: "Aufnahme", iconName: "UserPlus",
           children: [
             { label: "Kunden", path: "/partner-kunden" },
-            { label: "Freigegebene Pferde", path: "/partner-horses" },
+            { label: "Pferde", path: "/partner-pferde" },
             { label: "Behandlungspläne", path: "/partner-plans" },
             { label: "Befunde & Notizen", path: "/partner-notes" },
             { label: "Dokumente & Befunde", path: "/partner-documents" },
@@ -115,7 +115,7 @@ const PARTNER_NAV: NavigationConfig = {
 const BOTTOM_NAV_ITEMS = [
   { Icon: Home, label: "Home", path: "/partner-home" },
   { Icon: Calendar, label: "Kalender", path: "/partner-calendar" },
-  { Icon: Heart, label: "Pferde", path: "/partner-horses" },
+  { Icon: Heart, label: "Pferde", path: "/partner-pferde" },
   { Icon: MessageSquare, label: "Chat", path: "/partner-chat" },
   { Icon: User, label: "Profil", path: "/partner-profile" },
 ];
@@ -123,7 +123,7 @@ const BOTTOM_NAV_ITEMS = [
 const quickActions = [
   { label: "Neuer Termin", path: "/partner-calendar", icon: Calendar },
   { label: "Neuer Kunde", path: "/partner-kunden", icon: User },
-  { label: "Neues Pferd", path: "/partner-horses", icon: Heart },
+  { label: "Neues Pferd", path: "/partner-pferde", icon: Heart },
 ];
 
 export function PartnerAppLayout() {

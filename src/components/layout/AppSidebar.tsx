@@ -181,7 +181,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       icon: UserPlus,
       subItems: [
         { title: "Kunden", url: "/kunden", icon: Users, description: "#kid verwalten" },
-        { title: "Pferde", url: "/aufnahme", icon: UserPlus, description: "#eqid verwalten" },
+        { title: "Pferde", url: "/pferde", icon: UserPlus, description: "#eqid verwalten" },
       ]
     },
     { 
