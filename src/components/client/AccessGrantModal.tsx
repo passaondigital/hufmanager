@@ -163,7 +163,7 @@ export function AccessGrantModal({ open, onClose, horseId, horseName, onGranted 
 
       const { error } = await supabase
         .from("horse_partner_access")
-        .insert(insertData);
+        .insert(insertData as any);
 
       if (error) throw error;
 
