@@ -405,15 +405,13 @@ const Kunden = () => {
       {/* Customer List */}
       <div className="space-y-4">
         {filteredClients.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">Keine Kunden gefunden.</p>
-              <Button className="mt-4" onClick={() => navigate("/aufnahme")}>
-                Ersten Kunden anlegen
-              </Button>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={Users}
+            title={searchTerm ? "Keine Kunden gefunden" : "Noch keine Kunden"}
+            description={searchTerm ? "Versuche einen anderen Suchbegriff oder Filter." : "Lege deinen ersten Kunden an und starte mit der Kundenverwaltung."}
+            actionLabel={searchTerm ? undefined : "Ersten Kunden aufnehmen"}
+            onAction={searchTerm ? undefined : () => navigate("/aufnahme")}
+          />
         ) : (
           filteredClients.map((client, index) => {
             const clientHorses = getHorsesForClient(client.id);
