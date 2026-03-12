@@ -7,18 +7,24 @@ import { PushNotificationBanner } from "@/components/notifications/PushNotificat
 import { MilestoneCelebration } from "@/components/growth/MilestoneCelebration";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { CompactOnboardingBanner } from "@/components/dashboard/CompactOnboardingBanner";
-import { WeekCalendarWidget } from "@/components/dashboard/WeekCalendarWidget";
-import { DueMapWidget } from "@/components/dashboard/DueMapWidget";
-import { TodayCockpitWidget } from "@/components/dashboard/TodayCockpitWidget";
-import { LeadsWidget } from "@/components/dashboard/LeadsWidget";
-import { CompactFuelWidget } from "@/components/dashboard/CompactFuelWidget";
-import { CompactDocumentsWidget } from "@/components/dashboard/CompactDocumentsWidget";
+import { WidgetGrid } from "@/components/dashboard/widgets/WidgetGrid";
+import { DashboardSidebar } from "@/components/dashboard/sidebar/DashboardSidebar";
+import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { showOnboarding, completeOnboarding } = useOnboarding();
   const isMobile = useIsMobile();
+
+  const {
+    widgets,
+    isLoading: widgetsLoading,
+    updateWidget,
+    addWidget,
+    removeWidget,
+    resetWidgets,
+  } = useDashboardWidgets("provider");
 
   const { data: profileData } = useQuery({
     queryKey: ["provider-profile-id", user?.id],
@@ -63,32 +69,40 @@ const Dashboard = () => {
         <MilestoneCelebration />
         <CompactOnboardingBanner />
 
-        {/* Main Content: Zone B + Zone C */}
+        {/* Main Content: Widget Grid + Sidebar */}
         {isMobile ? (
           /* Mobile: stacked layout */
           <div className="space-y-4">
-            <TodayCockpitWidget />
-            <WeekCalendarWidget />
-            <LeadsWidget />
-            <DueMapWidget />
-            <CompactFuelWidget />
-            <CompactDocumentsWidget />
+            <WidgetGrid
+              widgets={widgets}
+              isLoading={widgetsLoading}
+              role="provider"
+              onUpdateWidget={updateWidget}
+              onAddWidget={addWidget}
+              onRemoveWidget={removeWidget}
+              onResetWidgets={resetWidgets}
+            />
+            <DashboardSidebar variant="provider" />
           </div>
         ) : (
-          /* Desktop: 60/40 split */
-          <div className="grid grid-cols-5 gap-4">
-            {/* Zone B: Main (3/5 = 60%) */}
-            <div className="col-span-3 space-y-4">
-              <WeekCalendarWidget />
-              <DueMapWidget />
+          /* Desktop: 70/30 split with fixed 320px sidebar */
+          <div className="grid grid-cols-[1fr_320px] gap-4">
+            {/* Main area */}
+            <div className="min-w-0">
+              <WidgetGrid
+                widgets={widgets}
+                isLoading={widgetsLoading}
+                role="provider"
+                onUpdateWidget={updateWidget}
+                onAddWidget={addWidget}
+                onRemoveWidget={removeWidget}
+                onResetWidgets={resetWidgets}
+              />
             </div>
 
-            {/* Zone C: Sidebar (2/5 = 40%) */}
-            <div className="col-span-2 space-y-3">
-              <TodayCockpitWidget />
-              <LeadsWidget />
-              <CompactFuelWidget />
-              <CompactDocumentsWidget />
+            {/* Sidebar */}
+            <div className="min-w-0">
+              <DashboardSidebar variant="provider" />
             </div>
           </div>
         )}
