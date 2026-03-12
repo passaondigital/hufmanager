@@ -38,6 +38,7 @@ export default function ClientHorseDetail() {
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [activeTab, setActiveTab] = useState("steckbrief");
+  const [showStatusModal, setShowStatusModal] = useState(false);
 
   const fetchHorseData = async () => {
     if (!user || !id) return;
