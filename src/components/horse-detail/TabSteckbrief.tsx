@@ -120,6 +120,7 @@ export function TabSteckbrief({ horse, onEdit }: TabSteckbriefProps) {
           <CardTitle className="text-base flex items-center gap-2">
             <Home className="h-4 w-4 text-primary" />
             Haltung & Nutzung
+            <span className="flex-1 h-px bg-border ml-2" />
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
