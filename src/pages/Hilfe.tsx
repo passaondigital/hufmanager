@@ -201,6 +201,78 @@ const FAQ_DATA: FAQCategory[] = [
       },
     ],
   },
+  {
+    id: 'pferdeakte',
+    title: 'Digitale Pferdeakte',
+    emoji: '🐴',
+    items: [
+      {
+        question: 'Was ist die digitale Pferdeakte?',
+        answer: 'Die digitale Pferdeakte ist die vollständige Sammlung aller Daten zu deinem Pferd: Stammdaten, Hufhistorie, Gesundheit, Impfpass, Dokumente, Behandlungshistorie und mehr — alles an einem Ort, sicher gespeichert und von dir kontrolliert.',
+      },
+      {
+        question: 'Wer kann meine Pferdeakte sehen?',
+        answer: 'Nur Personen denen du explizit Zugriff gewährt hast. Du kannst für jede Person einzeln festlegen was sie sehen dürfen. Zugriffe können jederzeit widerrufen werden. Alle Zugriffe werden protokolliert.',
+      },
+      {
+        question: 'Was passiert wenn ich jemanden von der Pferdeakte entferne?',
+        answer: 'Der Zugriff wird sofort entzogen. Die Person kann keine Daten mehr sehen. Bereits eingetragene Behandlungsnotizen bleiben erhalten.',
+      },
+      {
+        question: 'Kann ich die komplette Pferdeakte exportieren?',
+        answer: 'Ja. Unter Pferdeakte → Dokumente findest du den Export-Button. Du erhältst alle Daten als PDF und ZIP-Archiv.',
+      },
+    ],
+  },
+  {
+    id: 'auftragserteilung',
+    title: 'Auftragserteilung',
+    emoji: '📋',
+    items: [
+      {
+        question: 'Was ist ein Behandlungsauftrag?',
+        answer: 'Ein digitaler Auftrag dokumentiert was du mit einem Dienstleister vereinbart hast. Beide Parteien bestätigen den Auftrag. HufManager ist nicht Vertragspartei.',
+      },
+      {
+        question: 'Kann ich einen Auftrag stornieren?',
+        answer: 'Ja, solange der Status "Offen" oder "Angenommen" ist. Nach Abschluss ist keine Stornierung mehr möglich.',
+      },
+    ],
+  },
+  {
+    id: 'pferdeverkauf',
+    title: 'Pferdeverkauf & Transfer',
+    emoji: '🔄',
+    items: [
+      {
+        question: 'Wie übertrage ich mein Pferd an einen neuen Besitzer?',
+        answer: 'Gehe zur Pferdeakte → Status ändern → Pferd verkaufen. Der neue Besitzer muss einen HufManager Account haben. Beide Parteien müssen den Transfer mit einem gemeinsamen Passwort und Kaufvertrag bestätigen.',
+      },
+      {
+        question: 'Was passiert mit der Pferdeakte nach einem Verkauf?',
+        answer: 'Der neue Besitzer erhält Zugriff auf die gesamte Akte. Dein Zugriff wird sofort entzogen. Private Notizen die du gemacht hast werden nicht übertragen.',
+      },
+      {
+        question: 'Was wenn der Käufer keinen HufManager Account hat?',
+        answer: 'Der Käufer kann sich kostenlos registrieren unter hufmanager.de/auth. Die Basis-Registrierung ist kostenlos.',
+      },
+    ],
+  },
+  {
+    id: 'datenschutz-erweitert',
+    title: 'Datenschutz (erweitert)',
+    emoji: '🛡️',
+    items: [
+      {
+        question: 'Wer bekommt Zugriff auf meine Daten bei Behördenanfragen?',
+        answer: 'HufManager gibt Daten nur mit richterlichem Beschluss heraus. Eine einfache Behördenanfrage reicht nicht aus.',
+      },
+      {
+        question: 'Wie lange werden Daten nach dem Tod eines Pferdes gespeichert?',
+        answer: 'Gemäß unseren AGB werden die Daten gespeichert bis du sie aktiv löschst oder der gesetzliche Aufbewahrungszeitraum abläuft (Rechnungen: 10 Jahre nach §147 AO).',
+      },
+    ],
+  },
 ];
 
 export default function HilfePage() {

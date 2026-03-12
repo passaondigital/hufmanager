@@ -680,6 +680,98 @@ export const helpTexts: Record<string, Record<string, HelpTextEntry>> = {
       description: "Jeder Auftragstyp hat einen automatischen Zeitpuffer. So vermeidest du Stress durch zu eng getaktete Termine.",
     },
   },
+
+  // ─── Zugriffsrechte (Prompt 2) ────────────────────────────
+  zugriffsrechte: {
+    bereich: {
+      title: "Zugriffsrechte",
+      description: "Du entscheidest wer welche Daten deines Pferdes sehen darf. Zugriffe können jederzeit widerrufen werden. Alle Änderungen werden protokolliert.",
+    },
+    "zeitlich-begrenzen": {
+      title: "Zeitlich begrenzen",
+      description: "Du kannst Zugriffsrechte automatisch ablaufen lassen z.B. nach einer einmaligen Behandlung.",
+    },
+    "partner-typ": {
+      title: "Partner-Typ",
+      description: "Der Partner-Typ bestimmt welche Standard-Berechtigungen vorgeschlagen werden.",
+    },
+  },
+
+  // ─── Pferdeakte (Prompt 3) ────────────────────────────────
+  pferdeakte: {
+    ueln: {
+      title: "UELN (Lebensnummer)",
+      description: "Universal Equine Life Number. 15-stellige internationale Identifikationsnummer aus dem Equidenpass. Format: DEUXXXXXXXX",
+    },
+    bcs: {
+      title: "Body Condition Score",
+      description: "Body Condition Score nach Henneke-Skala. Skala 1-9:\n1-3 = Untergewicht\n4-6 = Idealgewicht ✓\n7-9 = Übergewicht\nBitte alle 4-6 Wochen messen.",
+    },
+    sicherheitshinweis: {
+      title: "Sicherheitshinweis",
+      description: "Dieser Hinweis wird rot und prominent für ALLE angezeigt die Zugriff auf dieses Pferd haben. Nutze ihn für wichtige Sicherheitsinformationen.",
+    },
+    impfpass: {
+      title: "Impfpass",
+      description: "Impfungen können von Tierärzten direkt eingetragen werden wenn du ihnen den entsprechenden Zugriff gewährt hast.",
+    },
+    aktivitaeten: {
+      title: "Aktivitäten-Protokoll",
+      description: "Vollständiges Protokoll aller Zugriffe und Aktionen an diesem Pferd. Nur du als Besitzer siehst diesen kompletten Verlauf.",
+    },
+    "fn-nummer": {
+      title: "FN-Nummer",
+      description: "Die FN-Nummer wird von der Deutschen Reiterlichen Vereinigung (FN) vergeben und dient zur eindeutigen Identifikation im deutschen Pferdesport.",
+    },
+    brandzeichen: {
+      title: "Brandzeichen",
+      description: "Physisches Erkennungsmerkmal des Pferdes. Wird zunehmend durch Chip-Nummern ersetzt.",
+    },
+    gewicht: {
+      title: "Gewicht",
+      description: "Das aktuelle Gewicht deines Pferdes in Kilogramm. Regelmäßige Messungen helfen bei der Gesundheitsüberwachung.",
+    },
+    ausruestung: {
+      title: "Ausrüstungsnotizen",
+      description: "Hier kannst du besondere Anforderungen an Sattel, Zaum, Hufschuhe oder andere Ausrüstung vermerken.",
+    },
+    versicherung: {
+      title: "Versicherungsdaten",
+      description: "Diese Daten sind nur für berechtigte Personen sichtbar. Der Besitzer kontrolliert den Zugriff.",
+    },
+  },
+
+  // ─── Transfer (Prompt 4) ──────────────────────────────────
+  transfer: {
+    "gemeinsames-passwort": {
+      title: "Gemeinsames Passwort",
+      description: "Sicherheitsmerkmal: Beide Parteien müssen dasselbe Passwort eingeben. HufManager kennt das Passwort nicht — es wird nur verschlüsselt gespeichert.",
+    },
+    "dokument-hochladen": {
+      title: "Dokument hochladen",
+      description: "HufManager prüft keine Vertragsinhalte. Das Dokument dient nur als Nachweis dass ein Vertrag existiert.",
+    },
+    "transfer-abschliessen": {
+      title: "Transfer abschließen",
+      description: "Nach Abschluss wechselt der Besitz sofort digital. Alle Zugriffsrechte des alten Besitzers werden automatisch entzogen.",
+    },
+  },
+
+  // ─── Auftragserteilung (Prompt 5) ─────────────────────────
+  auftrag: {
+    bereich: {
+      title: "Auftragserteilung",
+      description: "Ein digitaler Behandlungsauftrag dokumentiert was vereinbart wurde. HufManager ist nicht Vertragspartei — wir stellen nur die Infrastruktur zur Verfügung.",
+    },
+    auftragsnummer: {
+      title: "Auftragsnummer",
+      description: "Format: SO-[Jahr]-[Nummer]. Eindeutige Referenz für Auftraggeber und Auftragnehmer.",
+    },
+    agb: {
+      title: "AGB",
+      description: "Die aktuellen AGB findest du unter hufmanager.de/agb",
+    },
+  },
 };
 
 /**

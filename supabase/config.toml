@@ -131,3 +131,6 @@ verify_jwt = false
 
 [functions.legal-change-reminders]
 verify_jwt = false
+
+[functions.notification-scheduler]
+verify_jwt = false
