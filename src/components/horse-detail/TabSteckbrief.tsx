@@ -327,10 +327,14 @@ export function TabSteckbrief({ horse, onEdit }: TabSteckbriefProps) {
 
 function InfoItem({ label, value }: { label: React.ReactNode; value: string | null | undefined }) {
   return (
-    <div>
+    <div className="group/info">
       <span className="text-muted-foreground text-xs">{label}</span>
       <p className="font-medium text-foreground">
-        {value || <span className="text-muted-foreground">—</span>}
+        {value || (
+          <span className="text-muted-foreground/60 italic group-hover/info:text-primary/60 transition-colors cursor-default">
+            —
+          </span>
+        )}
       </p>
     </div>
   );
