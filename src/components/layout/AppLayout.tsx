@@ -9,7 +9,6 @@ import { AppHeader } from "./AppHeader";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { OfflineBanner } from "@/components/offline/OfflineBanner";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
