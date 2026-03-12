@@ -355,8 +355,39 @@ const signIn = async (email: string, password: string) => {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn("Sign out error (proceeding anyway):", e);
+    }
+
     setRole(null);
+
+    // Clear React Query cache
+    queryClient.clear();
+
+    // Clear localStorage (preserve theme)
+    const keysToKeep = ["theme", "vite-ui-theme"];
+    const savedValues: Record<string, string | null> = {};
+    keysToKeep.forEach((key) => {
+      savedValues[key] = localStorage.getItem(key);
+    });
+    localStorage.clear();
+    keysToKeep.forEach((key) => {
+      if (savedValues[key] !== null) {
+        localStorage.setItem(key, savedValues[key]!);
+      }
+    });
+
+    // Clear IndexedDB offline queue
+    try {
+      await clear();
+    } catch (e) {
+      console.warn("IndexedDB clear error:", e);
+    }
+
+    // Redirect to auth
+    navigate("/auth", { replace: true });
   };
 
   const value = { 
