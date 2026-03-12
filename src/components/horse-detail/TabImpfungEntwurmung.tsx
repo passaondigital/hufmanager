@@ -177,6 +177,7 @@ export function TabImpfungEntwurmung({ horseId }: TabImpfungEntwurmungProps) {
           <TabsTrigger value="impfpass" className="flex items-center gap-1.5">
             <Syringe className="h-4 w-4" />
             Impfpass
+            <HelpTip id="pferdeakte.impfpass" />
           </TabsTrigger>
           <TabsTrigger value="entwurmung" className="flex items-center gap-1.5">
             <Bug className="h-4 w-4" />

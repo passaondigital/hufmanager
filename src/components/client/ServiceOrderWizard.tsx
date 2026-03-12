@@ -485,6 +485,7 @@ export function ServiceOrderWizard({ open, onClose, horseId, horseName, horseRea
                 <label htmlFor="terms2" className="text-sm cursor-pointer">
                   Ich habe die AGB von HufManager gelesen. HufManager ist nicht Vertragspartei und übernimmt keine Haftung.
                 </label>
+                <HelpTip id="auftrag.agb" />
               </div>
             </div>
 
