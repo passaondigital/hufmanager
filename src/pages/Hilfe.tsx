@@ -136,9 +136,9 @@ const FAQ_DATA: FAQCategory[] = [
       },
       {
         question: 'Kann ich die MwSt. ändern?',
-        answer: 'Ja — unter Verwaltung → Geschäftseinstellungen kannst du den Standard-MwSt.-Satz für dein Land anpassen.',
-        navigateTo: '/management',
-        navigateLabel: 'Zur Verwaltung',
+        answer: 'Ja — unter Management → Mein Profil kannst du den Standard-MwSt.-Satz für dein Land anpassen.',
+        navigateTo: '/management/profil',
+        navigateLabel: 'Zu Mein Profil',
       },
     ],
   },
