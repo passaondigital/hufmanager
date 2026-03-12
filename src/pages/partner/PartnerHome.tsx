@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { DashboardWelcomeHeader } from "@/components/dashboard/DashboardWelcomeHeader";
 import { supabase } from "@/integrations/supabase/client";
+import { DashboardSidebar } from "@/components/dashboard/sidebar/DashboardSidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
