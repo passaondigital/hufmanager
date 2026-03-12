@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Info, History, Image, Activity, FileText, ChevronDown, ChevronUp, Footprints, Camera, Clock, Users } from "lucide-react";
+import { ArrowLeft, Info, History, Image, Activity, FileText, ChevronDown, ChevronUp, Footprints, Camera, Clock, Users, Syringe } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -16,6 +16,8 @@ import { TabMediaVault } from "@/components/horse-detail/TabMediaVault";
 import { TabGesundheit } from "@/components/horse-detail/TabGesundheit";
 import { TabDokumente } from "@/components/horse-detail/TabDokumente";
 import { TabHufHistorie } from "@/components/horse-detail/TabHufHistorie";
+import { TabImpfungEntwurmung } from "@/components/horse-detail/TabImpfungEntwurmung";
+import { TabAktivitaeten } from "@/components/horse-detail/TabAktivitaeten";
 import { EditHorseModal } from "@/components/horse-detail/EditHorseModal";
 import { LTZAnalysisHistory } from "@/components/hoof-analysis/LTZAnalysisHistory";
 import { HufCamPro } from "@/components/hufcam/HufCamPro";
@@ -23,6 +25,7 @@ import { HoofStatusGrid } from "@/components/horse-detail/HoofStatusGrid";
 import { HorseStammdatenCard } from "@/components/horse-detail/HorseStammdatenCard";
 import { HoofPhotoTimeline } from "@/components/horse-detail/HoofPhotoTimeline";
 import { HorsePartnerPanel } from "@/components/horse-detail/HorsePartnerPanel";
+import { logHorseAction } from "@/utils/auditLog";
 import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
 
 interface OwnerProfile {
@@ -46,19 +49,32 @@ export default function ProviderHorseDetail() {
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   
-  // Get tab from URL params, default to "historie" for quick access
   const defaultTab = searchParams.get("tab") || "historie";
   const [activeTab, setActiveTab] = useState(defaultTab);
-  
-  // Auto-expand latest visit state
   const [latestVisitExpanded, setLatestVisitExpanded] = useState(true);
+
+  // Audit logging on tab change
+  useEffect(() => {
+    if (!id) return;
+    const auditMap: Record<string, string> = {
+      steckbrief: "view_basic",
+      gesundheit: "view_medical",
+      "huf-historie": "view_hoof_history",
+      medien: "view_documents",
+      dokumente: "view_documents",
+      "impfung-entwurmung": "view_vaccinations",
+    };
+    const actionType = auditMap[activeTab];
+    if (actionType) {
+      logHorseAction(id, actionType);
+    }
+  }, [activeTab, id]);
 
   const fetchHorseData = async () => {
     if (!user || !id) return;
     setLoading(true);
 
     try {
-      // Fetch horse (provider can access via access_grants or if horse owner was created by provider)
       const { data: horseData, error: horseError } = await supabase
         .from("horses")
         .select("*")
@@ -73,7 +89,6 @@ export default function ProviderHorseDetail() {
         return;
       }
 
-      // Verify provider has access to this horse
       const hasAccess = await verifyProviderAccess(horseData.owner_id);
       if (!hasAccess) {
         toast.error("Keine Berechtigung für dieses Pferd");
@@ -83,7 +98,6 @@ export default function ProviderHorseDetail() {
 
       setHorse(horseData as unknown as Horse);
 
-      // Fetch owner profile
       const { data: ownerData } = await supabase
         .from("profiles")
         .select("id, full_name, email, phone")
@@ -92,7 +106,6 @@ export default function ProviderHorseDetail() {
       
       setOwner(ownerData);
 
-      // Fetch appointments (sorted by date descending for proper timeline)
       const { data: appointmentsData } = await supabase
         .from("appointments")
         .select("*")
@@ -102,7 +115,6 @@ export default function ProviderHorseDetail() {
 
       setAppointments((appointmentsData || []) as Appointment[]);
 
-      // Fetch hoof photos
       const { data: hoofPhotosData } = await supabase
         .from("hoof_photos")
         .select("*")
@@ -111,7 +123,6 @@ export default function ProviderHorseDetail() {
 
       setHoofPhotos((hoofPhotosData || []) as HoofPhoto[]);
 
-      // Fetch documents
       const { data: documentsData } = await supabase
         .from("horse_documents")
         .select("*")
@@ -131,7 +142,6 @@ export default function ProviderHorseDetail() {
   const verifyProviderAccess = async (ownerId: string): Promise<boolean> => {
     if (!user) return false;
 
-    // Check if owner was created by this provider
     const { data: profile } = await supabase
       .from("profiles")
       .select("created_by_provider_id")
@@ -140,7 +150,6 @@ export default function ProviderHorseDetail() {
 
     if (profile?.created_by_provider_id === user.id) return true;
 
-    // Check if provider has active access grant
     const { data: grant } = await supabase
       .from("access_grants")
       .select("id")
@@ -159,7 +168,6 @@ export default function ProviderHorseDetail() {
     }
   }, [user, id]);
 
-  // Update tab when URL changes
   useEffect(() => {
     const tabParam = searchParams.get("tab");
     if (tabParam) {
@@ -205,7 +213,7 @@ export default function ProviderHorseDetail() {
         </div>
       </div>
 
-      {/* Hoof Status Grid - NEW PROMINENT SECTION */}
+      {/* Hoof Status Grid */}
       <HoofStatusGrid
         hoofDetails={horse.hoof_details as HoofDetails}
         lastAppointmentDate={horse.last_appointment_date || latestAppointment?.date}
@@ -234,7 +242,7 @@ export default function ProviderHorseDetail() {
         </CardContent>
       </Card>
 
-      {/* Latest Visit Quick View (only on Historie tab) */}
+      {/* Latest Visit Quick View */}
       {activeTab === "historie" && latestAppointment && (
         <Collapsible open={latestVisitExpanded} onOpenChange={setLatestVisitExpanded}>
           <Card className="border-primary/30 bg-primary/5">
@@ -242,37 +250,24 @@ export default function ProviderHorseDetail() {
               <CardContent className="p-4 cursor-pointer hover:bg-primary/10 transition-colors">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-primary font-medium uppercase tracking-wide">
-                      Letzter Besuch
-                    </p>
+                    <p className="text-xs text-primary font-medium uppercase tracking-wide">Letzter Besuch</p>
                     <p className="font-semibold text-foreground">
-                      {new Date(latestAppointment.date).toLocaleDateString("de-DE", {
-                        day: "2-digit",
-                        month: "long",
-                        year: "numeric"
-                      })}
+                      {new Date(latestAppointment.date).toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" })}
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                      {latestAppointment.service_type || "Allgemeiner Termin"}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{latestAppointment.service_type || "Allgemeiner Termin"}</p>
                   </div>
-                  {latestVisitExpanded ? (
-                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                  )}
+                  {latestVisitExpanded ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
                 </div>
               </CardContent>
             </CollapsibleTrigger>
             <CollapsibleContent>
               <CardContent className="pt-0 px-4 pb-4 border-t border-border/50">
-                {latestAppointment.notes && (
+                {latestAppointment.notes ? (
                   <div className="mt-3">
                     <p className="text-xs text-muted-foreground mb-1">Notizen:</p>
                     <p className="text-sm text-foreground">{latestAppointment.notes}</p>
                   </div>
-                )}
-                {!latestAppointment.notes && (
+                ) : (
                   <p className="text-sm text-muted-foreground mt-3">Keine Notizen vorhanden</p>
                 )}
               </CardContent>
@@ -283,7 +278,7 @@ export default function ProviderHorseDetail() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-9">
+        <TabsList className="w-full overflow-x-auto flex">
           <TabsTrigger value="historie" className="flex items-center gap-1.5">
             <History className="h-4 w-4" />
             <span className="hidden sm:inline">Historie</span>
@@ -302,7 +297,7 @@ export default function ProviderHorseDetail() {
           </TabsTrigger>
           <TabsTrigger value="huf-historie" className="flex items-center gap-1.5">
             <Footprints className="h-4 w-4" />
-            <span className="hidden sm:inline">Huf-Historie</span>
+            <span className="hidden sm:inline">Huf</span>
           </TabsTrigger>
           <TabsTrigger value="medien" className="flex items-center gap-1.5">
             <Image className="h-4 w-4" />
@@ -312,13 +307,21 @@ export default function ProviderHorseDetail() {
             <Activity className="h-4 w-4" />
             <span className="hidden sm:inline">Gesundheit</span>
           </TabsTrigger>
+          <TabsTrigger value="impfung-entwurmung" className="flex items-center gap-1.5">
+            <Syringe className="h-4 w-4" />
+            <span className="hidden sm:inline">Impfung</span>
+          </TabsTrigger>
           <TabsTrigger value="dokumente" className="flex items-center gap-1.5">
             <FileText className="h-4 w-4" />
-            <span className="hidden sm:inline">Dokumente</span>
+            <span className="hidden sm:inline">Doku</span>
           </TabsTrigger>
           <TabsTrigger value="partner" className="flex items-center gap-1.5">
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Partner</span>
+          </TabsTrigger>
+          <TabsTrigger value="aktivitaeten" className="flex items-center gap-1.5">
+            <Activity className="h-4 w-4" />
+            <span className="hidden sm:inline">Aktivitäten</span>
           </TabsTrigger>
         </TabsList>
 
@@ -338,16 +341,12 @@ export default function ProviderHorseDetail() {
           <div className="space-y-4">
             <div className="text-center">
               <h3 className="text-lg font-semibold text-foreground">HufCam Pro</h3>
-              <p className="text-sm text-muted-foreground">
-                Fotografiere alle 4 Hufe mit dem geführten Wizard
-              </p>
+              <p className="text-sm text-muted-foreground">Fotografiere alle 4 Hufe mit dem geführten Wizard</p>
             </div>
             <HufCamPro 
               horseName={horse.name}
               horseId={horse.id}
-              onCollageGenerated={() => {
-                toast.success("Collage erfolgreich erstellt");
-              }}
+              onCollageGenerated={() => toast.success("Collage erfolgreich erstellt")}
             />
           </div>
         </TabsContent>
@@ -361,11 +360,7 @@ export default function ProviderHorseDetail() {
         </TabsContent>
 
         <TabsContent value="gesundheit">
-          <TabGesundheit 
-            horse={horse} 
-            onEdit={() => setShowEditModal(true)}
-          />
-          {/* LTZ Analysis History */}
+          <TabGesundheit horse={horse} onEdit={() => setShowEditModal(true)} />
           <div className="mt-6">
             <LTZAnalysisHistory 
               horseId={horse.id} 
@@ -373,6 +368,10 @@ export default function ProviderHorseDetail() {
               ownerName={owner?.full_name || undefined}
             />
           </div>
+        </TabsContent>
+
+        <TabsContent value="impfung-entwurmung">
+          <TabImpfungEntwurmung horseId={horse.id} />
         </TabsContent>
 
         <TabsContent value="dokumente">
@@ -390,6 +389,10 @@ export default function ProviderHorseDetail() {
             horseName={horse.name}
             inviterRole="provider"
           />
+        </TabsContent>
+
+        <TabsContent value="aktivitaeten">
+          <TabAktivitaeten horseId={horse.id} />
         </TabsContent>
       </Tabs>
 
