@@ -180,11 +180,15 @@ KUNDEN-APP (/client-home):
 - Terminbestätigung: Neuer Termin → Push → [Bestätigen] oder [Absagen]
 
 HÄUFIGE WORKFLOWS:
-1. Kunden anlegen: Kunden → "+ Neuer Kunde" → Name + Telefon → Speichern
-2. Pferd anlegen: Kundendetail → "Pferd hinzufügen" → Name → Speichern
+1. Kunden anlegen: Aufnahme → "Neuen Kunden anlegen" → /kunden?new=true → Name + Telefon → Speichern
+2. Pferd anlegen: Aufnahme → "Neues Pferd anlegen" → /pferde?new=true → Name → Speichern
 3. Termin erstellen: Kalender → Tag tippen → Pferd wählen → Datum/Zeit → Speichern
 4. Rechnung erstellen: Rechnungen → "Neue Rechnung" → Kunde → Positionen → PDF
 5. Tour starten: Tages-Cockpit → Termine prüfen → "Tour starten" → Navigation läuft
+6. Fahrtenbuch exportieren: Cockpit → Tour beenden → Zusammenfassung → Export als PDF/CSV
+7. Abo verwalten: Management → Abo & Zahlung
+8. Website bearbeiten: Management → Meine Website
+9. Impressum hinterlegen: Management → Rechtliches
 6. Fahrtenbuch exportieren: Cockpit → Tour beenden → Zusammenfassung → Export als PDF/CSV
 
 GLOSSAR:

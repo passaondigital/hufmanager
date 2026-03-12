@@ -195,9 +195,9 @@ const FAQ_DATA: FAQCategory[] = [
       },
       {
         question: 'Kann ich meine Daten exportieren?',
-        answer: 'Ja, unter Verwaltung → Daten-Export kannst du alle deine Daten als CSV herunterladen.',
-        navigateTo: '/management',
-        navigateLabel: 'Zur Verwaltung',
+        answer: 'Ja, unter Management → Rechtliches → Daten-Export kannst du alle deine Daten als CSV herunterladen.',
+        navigateTo: '/management/rechtliches',
+        navigateLabel: 'Zum Daten-Export',
       },
     ],
   },

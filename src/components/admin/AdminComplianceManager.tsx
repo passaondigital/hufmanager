@@ -100,7 +100,7 @@ export function AdminComplianceManager() {
                 user_id: pid,
                 title: "Wichtige Änderung – Bitte bestätigen 📋",
                 body: `"${form.title}" tritt am ${format(new Date(form.effective_date), "dd.MM.yyyy")} in Kraft.`,
-                url: "/management?tab=b2b-management",
+                url: "/management/abo",
               },
             });
           } catch (e) {
