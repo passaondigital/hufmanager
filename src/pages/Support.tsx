@@ -5,26 +5,19 @@ import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
 import { Badge } from "@/components/ui/badge";
 
 interface SupportProps {
-  /** Base path for FAQ/video sub-routes */
+  /** Base path prefix for FAQ link — defaults to "/hilfe" */
   basePath?: string;
-  /** Whether to show the chatbot inline or just open the FAB */
-  onChatOpen?: () => void;
 }
 
-const Support = ({ basePath = "/hilfe", onChatOpen }: SupportProps) => {
+const Support = ({ basePath }: SupportProps) => {
   const navigate = useNavigate();
-  const [chatTriggered, setChatTriggered] = useState(false);
 
   const handleChatOpen = () => {
-    if (onChatOpen) {
-      onChatOpen();
-    } else {
-      // Click the AI chat FAB button
-      const fab = document.querySelector('[aria-label="Hilfe"]') as HTMLButtonElement
-        || document.querySelector('button.fixed.bottom-24, button.fixed.bottom-6') as HTMLButtonElement;
-      if (fab) fab.click();
-      setChatTriggered(true);
-    }
+    // Trigger the AI chat FAB
+    const fab = document.querySelector<HTMLButtonElement>(
+      'button.fixed.bottom-24.right-4, button.fixed.bottom-6.right-4, button.fixed.bottom-6.right-6'
+    );
+    if (fab) fab.click();
   };
 
   return (
@@ -47,7 +40,7 @@ const Support = ({ basePath = "/hilfe", onChatOpen }: SupportProps) => {
           icon={<HelpCircle className="w-10 h-10 text-primary" />}
           title="FAQ"
           description="Häufige Fragen"
-          onClick={() => navigate(basePath)}
+          onClick={() => navigate("/hilfe")}
         />
         <Tile
           icon={<Mail className="w-10 h-10 text-primary" />}
@@ -59,7 +52,7 @@ const Support = ({ basePath = "/hilfe", onChatOpen }: SupportProps) => {
           icon={<PlayCircle className="w-10 h-10 text-primary" />}
           title="Video-Tutorials"
           description="Schritt-für-Schritt"
-          onClick={() => navigate(`${basePath}?section=videos`)}
+          onClick={() => navigate("/hilfe?section=videos")}
         />
       </TileCategory>
     </div>
