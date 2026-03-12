@@ -296,10 +296,9 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
             </>
           )}
         </CardContent>
-      </Card>
+      </Card>}
 
-      {/* Permissions */}
-      <Card>
+      {showProfil && <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Shield className="h-4 w-4 text-primary" />
