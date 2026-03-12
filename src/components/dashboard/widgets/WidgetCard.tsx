@@ -26,7 +26,7 @@ export function WidgetCard({
   return (
     <div
       className={cn(
-        "rounded-2xl border bg-card overflow-hidden transition-shadow",
+        "rounded-2xl border bg-card overflow-hidden widget-hover widget-card-stagger",
         isEditing && "border-dashed border-muted-foreground/40 cursor-grab",
         colSpan === 2 && "col-span-2",
         className

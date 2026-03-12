@@ -163,13 +163,13 @@
     box-shadow: none;
   }
 
-  /* Minimal fade-in kept, other animations removed */
+  /* Page-level fade-in */
   .animate-fade-in {
-    /* no-op: animation removed for cleaner UI */
+    animation: pageFade 200ms ease both;
   }
 
   .animate-slide-up {
-    /* no-op */
+    animation: fadeUp 300ms ease both;
   }
 
   .animate-slide-in-left {
@@ -179,6 +179,129 @@
   .logo-glow {
     /* removed glow */
   }
+}
+
+/* ============================================
+   DESIGN SYSTEM — Card Tile Animations
+   ============================================ */
+
+@keyframes pageFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Card Tile hover */
+.card-tile {
+  transition: transform 200ms ease, border-color 200ms ease, background-color 200ms ease, box-shadow 200ms ease;
+}
+
+.card-tile:hover {
+  transform: translateY(-2px);
+  border-color: hsl(var(--primary) / 0.4);
+  background-color: hsl(var(--card) / 0.9);
+  box-shadow: 0 8px 25px -5px hsl(var(--primary) / 0.1);
+}
+
+/* No transform hover on touch devices */
+@media (hover: none) {
+  .card-tile:hover {
+    transform: none;
+  }
+}
+
+/* CTA arrow animation */
+.card-cta svg {
+  transition: transform 150ms ease;
+}
+.card-tile:hover .card-cta svg {
+  transform: translateX(4px);
+}
+
+/* Staggered fade-up for tile children */
+.card-tile:nth-child(1) { animation: fadeUp 300ms ease 0ms both; }
+.card-tile:nth-child(2) { animation: fadeUp 300ms ease 75ms both; }
+.card-tile:nth-child(3) { animation: fadeUp 300ms ease 150ms both; }
+.card-tile:nth-child(4) { animation: fadeUp 300ms ease 225ms both; }
+.card-tile:nth-child(5) { animation: fadeUp 300ms ease 300ms both; }
+.card-tile:nth-child(6) { animation: fadeUp 300ms ease 375ms both; }
+
+/* Reduced stagger on mobile */
+@media (max-width: 640px) {
+  .card-tile:nth-child(1) { animation-delay: 0ms; }
+  .card-tile:nth-child(2) { animation-delay: 25ms; }
+  .card-tile:nth-child(3) { animation-delay: 50ms; }
+  .card-tile:nth-child(4) { animation-delay: 75ms; }
+  .card-tile:nth-child(5) { animation-delay: 100ms; }
+  .card-tile:nth-child(6) { animation-delay: 125ms; }
+}
+
+/* Live badge pulse */
+.badge-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.badge-live::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: hsl(142 71% 45%);
+  border-radius: 50%;
+  animation: livePulse 2s infinite;
+}
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Widget card stagger (dashboard) */
+.widget-card-stagger:nth-child(1) { animation: fadeUp 300ms ease 0ms both; }
+.widget-card-stagger:nth-child(2) { animation: fadeUp 300ms ease 60ms both; }
+.widget-card-stagger:nth-child(3) { animation: fadeUp 300ms ease 120ms both; }
+.widget-card-stagger:nth-child(4) { animation: fadeUp 300ms ease 180ms both; }
+.widget-card-stagger:nth-child(5) { animation: fadeUp 300ms ease 240ms both; }
+.widget-card-stagger:nth-child(6) { animation: fadeUp 300ms ease 300ms both; }
+
+/* Widget card hover */
+.widget-hover {
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.widget-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px -3px hsl(var(--primary) / 0.08);
+}
+@media (hover: none) {
+  .widget-hover:hover {
+    transform: none;
+  }
+}
+
+/* List item hover (subtle, no transform for perf) */
+.list-item-hover {
+  transition: background-color 150ms ease;
+}
+.list-item-hover:hover {
+  background-color: hsl(var(--muted) / 0.5);
+}
+
+/* Sidebar active link scale */
+.sidebar-link-active {
+  animation: sidebarScale 100ms ease;
+}
+@keyframes sidebarScale {
+  0% { transform: scale(0.98); }
+  100% { transform: scale(1); }
 }
 
 .animate-pulse-slow {
