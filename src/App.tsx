@@ -127,6 +127,8 @@ const EmployeeAnalyse = lazy(() => import("@/pages/employee/EmployeeAnalyse"));
 const EmployeeChat = lazy(() => import("@/pages/employee/EmployeeChat"));
 const EmployeeCalendar = lazy(() => import("@/pages/employee/EmployeeCalendar"));
 const EmployeeManagementHub = lazy(() => import("@/pages/employee/EmployeeManagementHub"));
+const EmployeeManagementProfil = lazy(() => import("@/pages/employee/EmployeeManagementProfil"));
+const EmployeeManagementEinstellungen = lazy(() => import("@/pages/employee/EmployeeManagementEinstellungen"));
 const EmployeePferde = lazy(() => import("@/pages/employee/EmployeePferde"));
 const PartnerHome = lazy(() => import("@/pages/partner/PartnerHome"));
 const PartnerRechtliches = lazy(() => import("@/pages/partner/PartnerRechtliches"));
@@ -142,6 +144,11 @@ const PartnerServices = lazy(() => import("@/pages/partner/PartnerServices"));
 const PartnerInvoices = lazy(() => import("@/pages/partner/PartnerInvoices"));
 const PartnerSettings = lazy(() => import("@/pages/partner/PartnerSettings"));
 const PartnerManagementHub = lazy(() => import("@/pages/partner/PartnerManagementHub"));
+const PartnerManagementProfil = lazy(() => import("@/pages/partner/PartnerManagementProfil"));
+const PartnerManagementOeffentlich = lazy(() => import("@/pages/partner/PartnerManagementOeffentlich"));
+const PartnerManagementKommunikation = lazy(() => import("@/pages/partner/PartnerManagementKommunikation"));
+const PartnerManagementAbo = lazy(() => import("@/pages/partner/PartnerManagementAbo"));
+const PartnerManagementRechtliches = lazy(() => import("@/pages/partner/PartnerManagementRechtliches"));
 const PartnerPferde = lazy(() => import("@/pages/partner/PartnerPferde"));
 const PartnerKunden = lazy(() => import("@/pages/partner/PartnerKunden"));
 const PartnerConnect = lazy(() => import("@/pages/partner/PartnerConnect"));
@@ -521,6 +528,8 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/employee/profil" element={<EmployeeProfil />} />
               <Route path="/employee/kalender" element={<EmployeeCalendar />} />
               <Route path="/employee/management" element={<EmployeeManagementHub />} />
+              <Route path="/employee/management/profil" element={<EmployeeManagementProfil />} />
+              <Route path="/employee/management/einstellungen" element={<EmployeeManagementEinstellungen />} />
               <Route path="/employee/pferde" element={<EmployeePferde />} />
             </Route>
 
@@ -564,6 +573,11 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner-lager" element={<Lager />} />
               <Route path="/partner-autoflow" element={<AutoFlow />} />
               <Route path="/partner-management" element={<PartnerManagementHub />} />
+              <Route path="/partner-management/profil" element={<PartnerManagementProfil />} />
+              <Route path="/partner-management/oeffentlich" element={<PartnerManagementOeffentlich />} />
+              <Route path="/partner-management/kommunikation" element={<PartnerManagementKommunikation />} />
+              <Route path="/partner-management/abo" element={<PartnerManagementAbo />} />
+              <Route path="/partner-management/rechtliches" element={<PartnerManagementRechtliches />} />
               <Route path="/partner-support" element={<Support />} />
               <Route path="/partner-rechtliches" element={<PartnerRechtliches />} />
             </Route>

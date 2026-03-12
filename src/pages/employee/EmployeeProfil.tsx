@@ -26,7 +26,12 @@ import {
 } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 
-const EmployeeProfil = () => {
+interface EmployeeProfilProps {
+  section?: "profil" | "einstellungen";
+  hideChrome?: boolean;
+}
+
+const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -184,18 +189,30 @@ const EmployeeProfil = () => {
     }
   };
 
+  const showProfil = !section || section === "profil";
+  const showEinstellungen = !section || section === "einstellungen";
+
   return (
     <div className="space-y-4 animate-fade-in max-w-lg mx-auto">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold flex items-center gap-2">Mein Profil <HelpTip id="mitarbeiter.profil" /></h1>
-        {!editing && (
+      {!hideChrome && (
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold flex items-center gap-2">Mein Profil <HelpTip id="mitarbeiter.profil" /></h1>
+          {!editing && (
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={startEditing}>
+              <Edit2 className="h-3.5 w-3.5" /> Bearbeiten
+            </Button>
+          )}
+        </div>
+      )}
+      {hideChrome && showProfil && !editing && (
+        <div className="flex justify-end">
           <Button variant="outline" size="sm" className="gap-1.5" onClick={startEditing}>
             <Edit2 className="h-3.5 w-3.5" /> Bearbeiten
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
-      <Card>
+      {showProfil && <Card>
         <CardContent className="p-6">
           <div className="flex items-center gap-4 mb-4">
             <div className="relative group">
@@ -279,10 +296,9 @@ const EmployeeProfil = () => {
             </>
           )}
         </CardContent>
-      </Card>
+      </Card>}
 
-      {/* Permissions */}
-      <Card>
+      {showProfil && <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Shield className="h-4 w-4 text-primary" />
@@ -305,10 +321,9 @@ const EmployeeProfil = () => {
             </div>
           ))}
         </CardContent>
-      </Card>
+      </Card>}
 
-      {/* PWA Install */}
-      <Card>
+      {showProfil && <Card>
         <CardContent className="p-4">
           <div className="flex items-center gap-3 mb-2">
             <Download className="h-4 w-4 text-primary" />
@@ -317,10 +332,9 @@ const EmployeeProfil = () => {
           <p className="text-xs text-muted-foreground mb-3">Installiere die MitarbeiterApp auf deinem Gerät.</p>
           <PWAInstallButton />
         </CardContent>
-      </Card>
+      </Card>}
 
-      {/* DACH Settings */}
-      <Card>
+      {showEinstellungen && <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Globe className="h-4 w-4 text-primary" />
@@ -353,32 +367,35 @@ const EmployeeProfil = () => {
             {(profile as any).country === "CH" && <p>Max. 14h/Tag (Ausnahme), 45h/Woche (ArG Schweiz)</p>}
           </div>
         </CardContent>
-      </Card>
+      </Card>}
 
-      <Button variant="outline" className="w-full gap-2" onClick={() => setShowPwDialog(true)}>
-        <Key className="h-4 w-4" />Passwort ändern
-      </Button>
+      {showEinstellungen && (
+        <>
+          <Button variant="outline" className="w-full gap-2" onClick={() => setShowPwDialog(true)}>
+            <Key className="h-4 w-4" />Passwort ändern
+          </Button>
 
-      <Button variant="destructive" className="w-full gap-2" onClick={() => signOut()}>
-        <LogOut className="h-4 w-4" />Abmelden
-      </Button>
+          <Button variant="destructive" className="w-full gap-2" onClick={() => signOut()}>
+            <LogOut className="h-4 w-4" />Abmelden
+          </Button>
 
-      {/* DSGVO */}
-      <Separator />
-      <Card className="border-destructive/30">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <Trash2 className="h-4 w-4 text-destructive" />
-            <span className="text-sm font-medium text-destructive">Konto & Daten löschen</span>
-          </div>
-          <p className="text-xs text-muted-foreground mb-3">
-            Lösche dein Mitarbeiterkonto und alle damit verbundenen Daten unwiderruflich.
-          </p>
-          <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setShowDeleteStep1(true)}>
-            Konto löschen
+          <Separator />
+          <Card className="border-destructive/30">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3 mb-2">
+                <Trash2 className="h-4 w-4 text-destructive" />
+                <span className="text-sm font-medium text-destructive">Konto & Daten löschen</span>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">
+                Lösche dein Mitarbeiterkonto und alle damit verbundenen Daten unwiderruflich.
+              </p>
+              <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setShowDeleteStep1(true)}>
+                Konto löschen
           </Button>
         </CardContent>
-      </Card>
+          </Card>
+        </>
+      )}
 
       {/* Password Dialog */}
       <Dialog open={showPwDialog} onOpenChange={setShowPwDialog}>

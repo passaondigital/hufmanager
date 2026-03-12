@@ -1,35 +1,47 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEmployeeProfile } from "@/hooks/useEmployees";
 import { User, Settings } from "lucide-react";
-import { Tile, TileHubHeader } from "@/components/ui/TileHub";
+import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
+
+const TAB_REDIRECTS: Record<string, string> = {
+  profil: "/employee/management/profil",
+  einstellungen: "/employee/management/einstellungen",
+};
 
 export default function EmployeeManagementHub() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { data: profile } = useEmployeeProfile();
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab && TAB_REDIRECTS[tab]) {
+      navigate(TAB_REDIRECTS[tab], { replace: true });
+    }
+  }, [searchParams, navigate]);
 
   const profileComplete = profile?.full_name && profile?.phone;
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <TileHubHeader title="Management" subtitle="Profil & Einstellungen" />
+      <TileHubHeader icon="⚙️" title="Management" subtitle="Profil & Einstellungen" />
 
-      <div className="grid grid-cols-1 gap-4">
+      <TileCategory title="Einstellungen">
         <Tile
           icon={<User className="w-10 h-10 text-primary" />}
           title="Mein Profil"
-          description="Name, Foto, Kontakt"
+          description="Persönliche Daten, Vertrag"
           status={profileComplete ? "✅ Vollständig" : "⚠️ Profil vervollständigen"}
-          colSpan
-          onClick={() => navigate("/employee/profil")}
+          onClick={() => navigate("/employee/management/profil")}
         />
         <Tile
           icon={<Settings className="w-10 h-10 text-primary" />}
           title="Einstellungen"
-          description="App-Kanal, Benachrichtigungen"
-          colSpan
-          onClick={() => navigate("/employee/profil")}
+          description="Benachrichtigungen, Passwort"
+          onClick={() => navigate("/employee/management/einstellungen")}
         />
-      </div>
+      </TileCategory>
     </div>
   );
 }
