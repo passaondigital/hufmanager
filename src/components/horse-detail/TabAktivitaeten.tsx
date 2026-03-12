@@ -137,9 +137,10 @@ export function TabAktivitaeten({ horseId }: TabAktivitaetenProps) {
       <Card className="bg-primary/5 border-primary/20">
         <CardContent className="p-3 flex items-start gap-2">
           <Info className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground flex-1">
             Dieser Verlauf ist nur für den Pferdebesitzer und dich sichtbar. Er dient der Transparenz und Nachvollziehbarkeit.
           </p>
+          <HelpTip id="pferdeakte.aktivitaeten" />
         </CardContent>
       </Card>
 
