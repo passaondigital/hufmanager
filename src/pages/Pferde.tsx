@@ -29,7 +29,7 @@ const Pferde = () => {
   const [activeTab, setActiveTab] = useState("mine");
 
   // Fetch own horses (via clients)
-  const { data: ownHorses = [] } = useQuery({
+  const { data: ownHorses = [], isLoading: isLoadingOwn } = useQuery({
     queryKey: ["provider-own-horses", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
