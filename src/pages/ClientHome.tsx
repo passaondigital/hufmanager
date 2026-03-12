@@ -246,6 +246,9 @@ export default function ClientHome() {
           {/* Interval Reminders */}
           <HorseIntervalReminderWidget />
 
+          {/* Pending Horse Transfers */}
+          <HorseTransferReceive />
+
           {/* TODAY DASHBOARD - Live status + Hero card + Timeline */}
           {user && <ClientTodayDashboard />}
 
