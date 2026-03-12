@@ -40,9 +40,9 @@ interface OwnerBasic {
 
 interface HoofHistoryEntry {
   id: string;
-  treatment_date: string | null;
-  treatment_type: string | null;
-  notes: string | null;
+  entry_date: string;
+  entry_type: string;
+  description: string | null;
   created_at: string;
 }
 
