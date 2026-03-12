@@ -89,9 +89,18 @@ export function NotificationBell({ collapsed = false }: NotificationBellProps) {
     if (!notification.is_read) {
       markAsRead.mutate(notification.id);
     }
-    if (notification.link) {
-      navigate(notification.link);
+    const link = notification.link || getNotificationDefaultLink(notification.type);
+    if (link) {
+      navigate(link);
       setOpen(false);
+    }
+  };
+
+  const formatRelativeTime = (dateStr: string) => {
+    try {
+      return formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale: de });
+    } catch {
+      return format(new Date(dateStr), "dd.MM. HH:mm", { locale: de });
     }
   };
 
