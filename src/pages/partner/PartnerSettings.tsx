@@ -33,7 +33,12 @@ const VAT_RATES: Record<string, { standard: number; reduced: number; label: stri
   CH: { standard: 8.1, reduced: 2.6, label: "MWST", smallBizLabel: "MWST-befreit", smallBizLimit: "unter 100.000 CHF Umsatz" },
 };
 
-export default function PartnerSettings() {
+interface PartnerSettingsProps {
+  tabs?: string[];
+  hideChrome?: boolean;
+}
+
+export default function PartnerSettings({ tabs: tabFilter, hideChrome }: PartnerSettingsProps = {}) {
   const { user, signOut } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
