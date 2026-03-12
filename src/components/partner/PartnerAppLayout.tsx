@@ -115,7 +115,7 @@ const PARTNER_NAV: NavigationConfig = {
 const BOTTOM_NAV_ITEMS = [
   { Icon: Home, label: "Home", path: "/partner-home" },
   { Icon: Calendar, label: "Kalender", path: "/partner-calendar" },
-  { Icon: Heart, label: "Pferde", path: "/partner-horses" },
+  { Icon: Heart, label: "Pferde", path: "/partner-pferde" },
   { Icon: MessageSquare, label: "Chat", path: "/partner-chat" },
   { Icon: User, label: "Profil", path: "/partner-profile" },
 ];
