@@ -208,19 +208,17 @@ const Pferde = () => {
 
   return (
     <div className="space-y-4 md:space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-responsive-h2 text-foreground">Pferde</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            {ownHorses.length} eigene · {sharedHorses.length} freigegeben
-          </p>
-        </div>
-        <Button className="gap-2 min-h-[44px]" onClick={() => navigate("/aufnahme")}>
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Neues Pferd</span>
-        </Button>
-      </div>
+      <ListPageHeader
+        title="Pferde"
+        count={ownHorses.length + sharedHorses.length}
+        countLabel="Pferde"
+        action={
+          <Button className="gap-2 min-h-[44px]" onClick={() => navigate("/aufnahme")}>
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Neues Pferd</span>
+          </Button>
+        }
+      />
 
       {/* Search */}
       <div className="relative w-full">
