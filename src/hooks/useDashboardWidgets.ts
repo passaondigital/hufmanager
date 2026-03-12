@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import type { Json } from "@/integrations/supabase/types";
 import {
   DashboardWidgetData,
   DEFAULT_PROVIDER_WIDGETS,
@@ -35,12 +36,12 @@ export function useDashboardWidgets(role: Role = "provider") {
 
       if (error) throw error;
 
-      // If no widgets exist, seed defaults
       if (!data || data.length === 0) {
         const defaults = getDefaults(role);
         const inserts = defaults.map((w) => ({
           ...w,
           user_id: user!.id,
+          settings: (w.settings || {}) as Json,
         }));
         const { data: seeded, error: seedErr } = await supabase
           .from("dashboard_widgets")
@@ -58,10 +59,17 @@ export function useDashboardWidgets(role: Role = "provider") {
 
   const updateWidget = useMutation({
     mutationFn: async (update: Partial<DashboardWidgetData> & { id: string }) => {
-      const { id, ...rest } = update;
+      const { id, settings, ...rest } = update;
+      const payload: Record<string, unknown> = {
+        ...rest,
+        updated_at: new Date().toISOString(),
+      };
+      if (settings !== undefined) {
+        payload.settings = settings as Json;
+      }
       const { error } = await supabase
         .from("dashboard_widgets")
-        .update({ ...rest, updated_at: new Date().toISOString() })
+        .update(payload as any)
         .eq("id", id);
       if (error) throw error;
     },
@@ -72,7 +80,11 @@ export function useDashboardWidgets(role: Role = "provider") {
     mutationFn: async (widget: Omit<DashboardWidgetData, "id" | "user_id">) => {
       const { error } = await supabase
         .from("dashboard_widgets")
-        .insert({ ...widget, user_id: user!.id });
+        .insert({
+          ...widget,
+          user_id: user!.id,
+          settings: (widget.settings || {}) as Json,
+        });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey }),
@@ -91,11 +103,13 @@ export function useDashboardWidgets(role: Role = "provider") {
 
   const resetWidgets = useMutation({
     mutationFn: async () => {
-      // Delete all existing
       await supabase.from("dashboard_widgets").delete().eq("user_id", user!.id);
-      // Re-seed defaults
       const defaults = getDefaults(role);
-      const inserts = defaults.map((w) => ({ ...w, user_id: user!.id }));
+      const inserts = defaults.map((w) => ({
+        ...w,
+        user_id: user!.id,
+        settings: (w.settings || {}) as Json,
+      }));
       const { error } = await supabase.from("dashboard_widgets").insert(inserts);
       if (error) throw error;
     },
