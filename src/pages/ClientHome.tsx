@@ -42,6 +42,7 @@ import { PostAppointmentReviewPrompt } from "@/components/client/PostAppointment
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ClientTodayDashboard } from "@/components/client/ClientTodayDashboard";
 import { HorseTransferReceive } from "@/components/client/HorseTransferReceive";
+import { ServiceOrderList } from "@/components/client/ServiceOrderList";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { DemoTourButton } from "@/components/demo/DemoTourButton";
@@ -251,6 +252,9 @@ export default function ClientHome() {
 
           {/* TODAY DASHBOARD - Live status + Hero card + Timeline */}
           {user && <ClientTodayDashboard />}
+
+          {/* Service Orders */}
+          <ServiceOrderList />
 
           {/* Upcoming Appointments (next 3, after today) */}
           {user && (

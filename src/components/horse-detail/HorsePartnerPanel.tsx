@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ServiceOrderWizard } from "@/components/client/ServiceOrderWizard";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -6,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, Plus, Mail, Shield, X, ChevronDown, ChevronUp, Clock } from "lucide-react";
+import { Users, Plus, Mail, Shield, X, ChevronDown, ChevronUp, Clock, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { getPartnerTypeConfig } from "@/lib/partnerTypes";
 import { InvitePartnerModal } from "@/components/horse-detail/InvitePartnerModal";
@@ -38,6 +39,7 @@ export function HorsePartnerPanel({ horseId, horseName, inviterRole }: Props) {
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [revokeId, setRevokeId] = useState<string | null>(null);
   const [notesExpanded, setNotesExpanded] = useState(true);
+  const [showOrderWizard, setShowOrderWizard] = useState(false);
 
   const { data: grants, isLoading } = useQuery({
     queryKey: ["horse-partner-grants", horseId],
@@ -125,9 +127,16 @@ export function HorsePartnerPanel({ horseId, horseName, inviterRole }: Props) {
             <Users className="h-5 w-5 text-primary" />
             Aktive Partner
           </CardTitle>
-          <Button size="sm" onClick={() => setInviteModalOpen(true)}>
-            <Plus className="h-4 w-4 mr-1" /> Partner einladen
-          </Button>
+          <div className="flex gap-2">
+            {inviterRole === "client" && (
+              <Button size="sm" variant="outline" onClick={() => setShowOrderWizard(true)}>
+                <ClipboardList className="h-4 w-4 mr-1" /> Auftrag erteilen
+              </Button>
+            )}
+            <Button size="sm" onClick={() => setInviteModalOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Partner einladen
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {activeGrants.length === 0 ? (
@@ -287,6 +296,16 @@ export function HorsePartnerPanel({ horseId, horseName, inviterRole }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Service Order Wizard */}
+      {inviterRole === "client" && (
+        <ServiceOrderWizard
+          open={showOrderWizard}
+          onClose={() => setShowOrderWizard(false)}
+          horseId={horseId}
+          horseName={horseName}
+        />
+      )}
     </div>
   );
 }

@@ -12,8 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MessageSquare, MessageCircle, Phone, MapPin, Search, Filter, Calendar, AlertTriangle, HelpCircle, Loader2, Send } from "lucide-react";
+import { MessageSquare, MessageCircle, Phone, MapPin, Search, Filter, Calendar, AlertTriangle, HelpCircle, Loader2, Send, ClipboardList } from "lucide-react";
 import { HelpTip } from "@/components/ui/HelpTip";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ServiceOrderInbox } from "@/components/provider/ServiceOrderInbox";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -143,6 +145,20 @@ const Anfragen = () => {
 
       {/* Broadcast Modal */}
       <BroadcastModal open={showBroadcast} onOpenChange={setShowBroadcast} />
+
+      <Tabs defaultValue="leads" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="leads" className="gap-1.5">
+            <MessageSquare className="h-4 w-4" />
+            Anfragen
+          </TabsTrigger>
+          <TabsTrigger value="orders" className="gap-1.5">
+            <ClipboardList className="h-4 w-4" />
+            Auftragseingang
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="leads">
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
@@ -317,6 +333,12 @@ const Anfragen = () => {
           );
         })}
       </div>
+        </TabsContent>
+
+        <TabsContent value="orders">
+          <ServiceOrderInbox />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
