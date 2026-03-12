@@ -186,6 +186,10 @@ export default function ClientHorseDetail() {
                 <Users className="h-4 w-4" />
                 <span>Betreuer</span>
               </TabsTrigger>
+              <TabsTrigger value="zugriffsrechte" className="flex items-center gap-1.5 whitespace-nowrap">
+                <Shield className="h-4 w-4" />
+                <span>Zugriffsrechte</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
