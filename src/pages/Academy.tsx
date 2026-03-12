@@ -62,7 +62,7 @@ export default function Academy() {
   const [selectedVideo, setSelectedVideo] = useState<AcademyVideo | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  const isProviderOrAdmin = role === 'provider' || role === 'admin';
+  const isAdmin = role === 'admin';
 
   const { data: videos, isLoading } = useQuery({
     queryKey: ["academy-videos"],
@@ -109,7 +109,7 @@ export default function Academy() {
           </div>
         </div>
         
-        {isProviderOrAdmin && (
+        {isAdmin && (
           <Button onClick={() => setShowAddModal(true)} className="gap-2">
             <Plus className="h-4 w-4" />
             Neuer Kurs
@@ -194,7 +194,7 @@ export default function Academy() {
                   className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden group relative"
                   onClick={() => setSelectedVideo(video)}
                 >
-                  {isProviderOrAdmin && (
+                  {isAdmin && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button
