@@ -130,6 +130,14 @@
 }
 
 @layer utilities {
+  /* Hide scrollbar but keep scrolling */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
   /* Dynamic viewport height for iOS Safari */
   .min-h-dvh {
     min-height: 100dvh;

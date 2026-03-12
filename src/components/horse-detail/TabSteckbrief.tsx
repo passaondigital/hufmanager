@@ -86,12 +86,13 @@ export function TabSteckbrief({ horse, onEdit }: TabSteckbriefProps) {
 
       {/* Basic Info */}
       <Card>
-        <CardHeader className="pb-2 flex flex-row items-center justify-between">
+        <CardHeader className="pb-2 flex flex-row items-center justify-between group">
           <CardTitle className="text-base flex items-center gap-2">
             <User className="h-4 w-4 text-primary" />
             Basisdaten
+            <span className="flex-1 h-px bg-border ml-2" />
           </CardTitle>
-          <Button variant="ghost" size="sm" onClick={onEdit}>
+          <Button variant="ghost" size="sm" onClick={onEdit} className="opacity-0 group-hover:opacity-100 transition-opacity">
             <Pencil className="h-4 w-4 mr-1" />
             Bearbeiten
           </Button>
@@ -119,6 +120,7 @@ export function TabSteckbrief({ horse, onEdit }: TabSteckbriefProps) {
           <CardTitle className="text-base flex items-center gap-2">
             <Home className="h-4 w-4 text-primary" />
             Haltung & Nutzung
+            <span className="flex-1 h-px bg-border ml-2" />
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -306,13 +308,15 @@ export function TabSteckbrief({ horse, onEdit }: TabSteckbriefProps) {
       {/* Empty State */}
       {!horse.nickname && !horse.usage && !horse.housing && !horse.feeding_notes && (
         <Card className="border-dashed">
-          <CardContent className="p-6 text-center">
-            <p className="text-muted-foreground text-sm">
-              Ergänze weitere Details zu deinem Pferd
+          <CardContent className="p-8 text-center">
+            <Pencil className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
+            <p className="font-medium text-foreground text-sm">Steckbrief noch unvollständig</p>
+            <p className="text-muted-foreground text-xs mt-1">
+              Ergänze weitere Details wie Haltung, Nutzung und Fütterung.
             </p>
-            <Button variant="outline" size="sm" className="mt-3" onClick={onEdit}>
+            <Button variant="outline" size="sm" className="mt-4" onClick={onEdit}>
               <Pencil className="h-4 w-4 mr-1" />
-              Jetzt bearbeiten
+              Jetzt ausfüllen
             </Button>
           </CardContent>
         </Card>
@@ -323,10 +327,14 @@ export function TabSteckbrief({ horse, onEdit }: TabSteckbriefProps) {
 
 function InfoItem({ label, value }: { label: React.ReactNode; value: string | null | undefined }) {
   return (
-    <div>
+    <div className="group/info">
       <span className="text-muted-foreground text-xs">{label}</span>
       <p className="font-medium text-foreground">
-        {value || <span className="text-muted-foreground">—</span>}
+        {value || (
+          <span className="text-muted-foreground/60 italic group-hover/info:text-primary/60 transition-colors cursor-default">
+            —
+          </span>
+        )}
       </p>
     </div>
   );

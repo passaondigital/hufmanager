@@ -4,9 +4,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Info, History, Image, Users, FileText, BookOpen, Heart, Shield, Settings } from "lucide-react";
+import { 
+  Info, History, Image, Users, FileText, BookOpen, Heart, Shield, Settings,
+  Clock, Camera, Footprints
+} from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { HorseStatusModal } from "@/components/client/HorseStatusModal";
 
 import { TabSteckbrief } from "@/components/horse-detail/TabSteckbrief";
@@ -17,14 +20,26 @@ import { TabHufHistorie } from "@/components/horse-detail/TabHufHistorie";
 import { TabDokumente } from "@/components/horse-detail/TabDokumente";
 import { EditHorseModal } from "@/components/horse-detail/EditHorseModal";
 import { HoofStatusGrid } from "@/components/horse-detail/HoofStatusGrid";
-import { HorseStammdatenCard } from "@/components/horse-detail/HorseStammdatenCard";
 import { HoofPhotoTimeline } from "@/components/horse-detail/HoofPhotoTimeline";
 import { HorsePartnerPanel } from "@/components/horse-detail/HorsePartnerPanel";
+import { HorseDetailHero } from "@/components/horse-detail/HorseDetailHero";
+import { HorseDetailStats } from "@/components/horse-detail/HorseDetailStats";
 import { HorseDiary } from "@/components/client/HorseDiary";
 import { HorseHealthTracker } from "@/components/client/HorseHealthTracker";
 import { HoofDevelopmentComparison } from "@/components/client/HoofDevelopmentComparison";
 import { HorseAccessManager } from "@/components/client/HorseAccessManager";
 import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
+
+const TABS = [
+  { value: "steckbrief", label: "Übersicht", icon: Info },
+  { value: "verlauf", label: "Verlauf", icon: History },
+  { value: "fotos", label: "Fotos & Medien", icon: Image },
+  { value: "gesundheit", label: "Gesundheit", icon: Heart },
+  { value: "dokumente", label: "Dokumente", icon: FileText },
+  { value: "tagebuch", label: "Tagebuch", icon: BookOpen },
+  { value: "betreuer", label: "Betreuer", icon: Users },
+  { value: "zugriffsrechte", label: "Zugriffsrechte", icon: Shield },
+] as const;
 
 export default function ClientHorseDetail() {
   const { id } = useParams<{ id: string }>();
@@ -45,7 +60,6 @@ export default function ClientHorseDetail() {
     setLoading(true);
 
     try {
-      // Fetch horse
       const { data: horseData, error: horseError } = await supabase
         .from("horses")
         .select("*")
@@ -63,7 +77,6 @@ export default function ClientHorseDetail() {
 
       setHorse(horseData as unknown as Horse);
 
-      // Fetch appointments (sorted by date descending for proper timeline)
       const { data: appointmentsData } = await supabase
         .from("appointments")
         .select("*")
@@ -72,7 +85,6 @@ export default function ClientHorseDetail() {
 
       setAppointments((appointmentsData || []) as Appointment[]);
 
-      // Fetch hoof photos from provider
       const { data: hoofPhotosData } = await supabase
         .from("hoof_photos")
         .select("*")
@@ -81,7 +93,6 @@ export default function ClientHorseDetail() {
 
       setHoofPhotos((hoofPhotosData || []) as HoofPhoto[]);
 
-      // Fetch documents
       const { data: documentsData } = await supabase
         .from("horse_documents")
         .select("*")
@@ -107,16 +118,24 @@ export default function ClientHorseDetail() {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
-          <div className="px-4 py-3 flex items-center gap-3">
-            <Skeleton className="h-10 w-10 rounded-full" />
-            <Skeleton className="h-6 w-32" />
+        <div className="px-4 py-6 max-w-2xl mx-auto space-y-4">
+          <div className="rounded-2xl bg-card p-5 space-y-4">
+            <Skeleton className="h-5 w-20" />
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-[72px] w-[72px] rounded-full" />
+              <div className="space-y-2 flex-1">
+                <Skeleton className="h-7 w-40" />
+                <Skeleton className="h-4 w-56" />
+              </div>
+            </div>
           </div>
-        </header>
-        <main className="px-4 py-6 max-w-2xl mx-auto space-y-4">
+          <div className="grid grid-cols-3 gap-2">
+            <Skeleton className="h-20 rounded-xl" />
+            <Skeleton className="h-20 rounded-xl" />
+            <Skeleton className="h-20 rounded-xl" />
+          </div>
           <Skeleton className="h-48 w-full rounded-xl" />
-          <Skeleton className="h-32 w-full rounded-xl" />
-        </main>
+        </div>
       </div>
     );
   }
@@ -136,24 +155,30 @@ export default function ClientHorseDetail() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 pb-20">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/client-home")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex-1">
-            <HorseStammdatenCard horse={horse} compact />
-          </div>
-          <Button variant="outline" size="sm" onClick={() => setShowStatusModal(true)} className="gap-1.5">
+      <main className="px-4 py-6 max-w-2xl mx-auto space-y-4">
+        {/* Hero Banner */}
+        <div className="relative">
+          <HorseDetailHero horse={horse} backPath="/client-home" />
+          {/* Status Button - overlaid */}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setShowStatusModal(true)} 
+            className="absolute top-3 right-3 gap-1.5 bg-card/60 backdrop-blur-sm border-border"
+          >
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">Status</span>
           </Button>
         </div>
-      </header>
 
-      <main className="px-4 py-6 max-w-2xl mx-auto space-y-6">
-        {/* Hoof Status Grid - Prominent Section */}
+        {/* Stats Row */}
+        <HorseDetailStats
+          appointmentsCount={appointments.length}
+          hoofPhotosCount={hoofPhotos.length}
+          documentsCount={documents.length}
+        />
+
+        {/* Hoof Status Grid */}
         <HoofStatusGrid
           hoofDetails={horse.hoof_details as HoofDetails}
           lastAppointmentDate={horse.last_appointment_date || latestAppointment?.date}
@@ -161,95 +186,74 @@ export default function ClientHorseDetail() {
           horseName={horse.name}
           horseId={horse.id}
         />
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <div className="overflow-x-auto -mx-4 px-4">
-            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-8">
-              <TabsTrigger value="steckbrief" className="flex items-center gap-1.5 whitespace-nowrap">
-                <Info className="h-4 w-4" />
-                <span>Übersicht</span>
-              </TabsTrigger>
-              <TabsTrigger value="verlauf" className="flex items-center gap-1.5 whitespace-nowrap">
-                <History className="h-4 w-4" />
-                <span>Verlauf</span>
-              </TabsTrigger>
-              <TabsTrigger value="fotos" className="flex items-center gap-1.5 whitespace-nowrap">
-                <Image className="h-4 w-4" />
-                <span>Fotos & Medien</span>
-              </TabsTrigger>
-              <TabsTrigger value="gesundheit" className="flex items-center gap-1.5 whitespace-nowrap">
-                <Heart className="h-4 w-4" />
-                <span>Gesundheit</span>
-              </TabsTrigger>
-              <TabsTrigger value="dokumente" className="flex items-center gap-1.5 whitespace-nowrap">
-                <FileText className="h-4 w-4" />
-                <span>Dokumente</span>
-              </TabsTrigger>
-              <TabsTrigger value="tagebuch" className="flex items-center gap-1.5 whitespace-nowrap">
-                <BookOpen className="h-4 w-4" />
-                <span>Tagebuch</span>
-              </TabsTrigger>
-              <TabsTrigger value="betreuer" className="flex items-center gap-1.5 whitespace-nowrap">
-                <Users className="h-4 w-4" />
-                <span>Betreuer</span>
-              </TabsTrigger>
-              <TabsTrigger value="zugriffsrechte" className="flex items-center gap-1.5 whitespace-nowrap">
-                <Shield className="h-4 w-4" />
-                <span>Zugriffsrechte</span>
-              </TabsTrigger>
-            </TabsList>
-          </div>
 
-          {/* Übersicht = Steckbrief + Gesundheit */}
-          <TabsContent value="steckbrief">
+        {/* Scrollable Tab Navigation */}
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border -mx-4 px-4">
+          <div className="flex overflow-x-auto gap-1 py-3 scrollbar-hide">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.value;
+              return (
+                <button
+                  key={tab.value}
+                  onClick={() => setActiveTab(tab.value)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors flex-shrink-0",
+                    isActive
+                      ? "bg-primary/15 text-primary border border-primary/30 font-medium"
+                      : "text-muted-foreground hover:bg-secondary"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Tab Contents */}
+        <div className="min-h-[200px]">
+          {activeTab === "steckbrief" && (
             <div className="space-y-6">
               <TabSteckbrief horse={horse} onEdit={() => setShowEditModal(true)} />
               <TabGesundheit horse={horse} onEdit={() => setShowEditModal(true)} />
             </div>
-          </TabsContent>
-
-          {/* Verlauf = Historie + Huf */}
-          <TabsContent value="verlauf">
+          )}
+          {activeTab === "verlauf" && (
             <div className="space-y-6">
               <TabHistorie appointments={appointments} horseId={horse.id} />
               <TabHufHistorie horseId={horse.id} horseName={horse.name} />
             </div>
-          </TabsContent>
-
-          {/* Fotos & Medien = Foto-Timeline + Medien + Huf-Vergleich */}
-          <TabsContent value="fotos">
+          )}
+          {activeTab === "fotos" && (
             <div className="space-y-6">
               <HoofDevelopmentComparison horseId={horse.id} horseName={horse.name} />
               <HoofPhotoTimeline horseId={horse.id} horseName={horse.name} />
               <TabMediaVault horseId={horse.id} />
             </div>
-          </TabsContent>
-
-          {/* Gesundheit & Wohlbefinden */}
-          <TabsContent value="gesundheit">
+          )}
+          {activeTab === "gesundheit" && (
             <HorseHealthTracker horseId={horse.id} />
-          </TabsContent>
-
-          <TabsContent value="dokumente">
+          )}
+          {activeTab === "dokumente" && (
             <TabDokumente 
               horseId={horse.id} 
               hoofPhotos={hoofPhotos} 
               documents={documents} 
               onRefresh={fetchHorseData} 
             />
-          </TabsContent>
-
-          <TabsContent value="tagebuch">
+          )}
+          {activeTab === "tagebuch" && (
             <HorseDiary horseId={horse.id} />
-          </TabsContent>
-
-          <TabsContent value="betreuer">
+          )}
+          {activeTab === "betreuer" && (
             <HorsePartnerPanel horseId={horse.id} horseName={horse.name} inviterRole="client" />
-          </TabsContent>
-
-          <TabsContent value="zugriffsrechte">
+          )}
+          {activeTab === "zugriffsrechte" && (
             <HorseAccessManager horseId={horse.id} horseName={horse.name} />
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
       </main>
 
       {/* Edit Modal */}
