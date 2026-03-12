@@ -484,6 +484,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             >
               <Route path="/employee" element={<EmployeeDashboard />} />
               <Route path="/employee/tour" element={<EmployeeTour />} />
+              <Route path="/employee/pferd/:id" element={<EmployeeHorseDetail />} />
               <Route path="/employee/timer" element={<EmployeeTimer />} />
               <Route path="/employee/hufcam" element={<EmployeeHufCam />} />
               <Route path="/employee/analyse" element={<EmployeeAnalyse />} />
