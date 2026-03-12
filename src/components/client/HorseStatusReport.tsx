@@ -103,9 +103,10 @@ export function HorseStatusReport({ horseId, horseName, reportType, onComplete, 
         for (const admin of admins) {
           await supabase.from("notifications").insert({
             user_id: admin.user_id,
-            title: isStolen ? "🚨 Diebstahl gemeldet" : "💀 Tod gemeldet",
+            title: isStolen ? "🚨 Diebstahl gemeldet" : "🕊️ Pferd verstorben",
             message: `${horseName}: ${isStolen ? "Als gestohlen gemeldet" : "Als verstorben gemeldet"}`,
-            type: "horse_status_report",
+            type: isStolen ? "horse_status_stolen" : "horse_status_deceased",
+            link: isStolen ? "/mission-control" : null,
           } as any);
         }
       }

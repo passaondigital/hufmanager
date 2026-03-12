@@ -143,9 +143,10 @@ export function HorseTransferWizard({ horseId, horseName, onComplete, onCancel }
       // Notify buyer
       await supabase.from("notifications").insert({
         user_id: buyer.id,
-        title: "Pferdeübernahme",
-        message: `🐴 Dir wurde ${horseName} zur Übernahme angeboten. Öffne HufManager um den Transfer zu bestätigen.`,
-        type: "horse_transfer",
+        title: "🐴 Pferdeübernahme angefragt",
+        message: `Dir wurde ${horseName} zur Übernahme angeboten. Öffne HufManager um den Transfer zu bestätigen.`,
+        type: "horse_transfer_received",
+        link: "/client-home",
       } as any);
 
       toast.success("Transfer eingeleitet!");

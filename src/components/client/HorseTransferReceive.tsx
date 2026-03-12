@@ -180,9 +180,9 @@ export function HorseTransferReceive() {
 
     await supabase.from("notifications").insert({
       user_id: selectedTransfer.seller_id,
-      title: "Transfer abgelehnt",
-      message: `❌ Der Transfer von ${selectedTransfer.horse_name || "Pferd"} wurde abgelehnt.`,
-      type: "horse_transfer",
+      title: "❌ Transfer abgelehnt",
+      message: `Der Transfer von ${selectedTransfer.horse_name || "Pferd"} wurde abgelehnt.`,
+      type: "horse_transfer_declined",
     } as any);
 
     toast.info("Transfer abgelehnt");
