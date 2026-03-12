@@ -27,6 +27,8 @@ interface ServiceOrder {
   created_at: string;
   provider_signed: boolean;
   completed_at: string | null;
+  client_signed_at: string | null;
+  provider_signed_at: string | null;
   horse_name?: string;
   client_name?: string;
 }
