@@ -211,7 +211,6 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
           </Button>
         </div>
       )}
-      </div>
 
       <Card>
         <CardContent className="p-6">
