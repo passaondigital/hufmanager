@@ -22,6 +22,7 @@ import { HorsePartnerPanel } from "@/components/horse-detail/HorsePartnerPanel";
 import { HorseDiary } from "@/components/client/HorseDiary";
 import { HorseHealthTracker } from "@/components/client/HorseHealthTracker";
 import { HoofDevelopmentComparison } from "@/components/client/HoofDevelopmentComparison";
+import { HorseAccessManager } from "@/components/client/HorseAccessManager";
 import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
 
 export default function ClientHorseDetail() {
