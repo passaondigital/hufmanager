@@ -391,9 +391,9 @@ export function AccessGrantModal({ open, onClose, horseId, horseName, onGranted 
           {/* STEP 3: Confirmation */}
           {step === 3 && (
             <div className="space-y-4">
-              <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-3">
+              <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4 space-y-3">
                 <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                  <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
                   <div className="space-y-2 text-sm">
                     <p>
                       Du gibst <strong>{selectedProfile?.full_name}</strong> (
