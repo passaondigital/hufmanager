@@ -62,7 +62,7 @@ serve(async (req: Request) => {
               user_id: conf.provider_id,
               title: "Erinnerung: Bestätigung ausstehend 📋",
               body: `"${notif.title}" – bitte bestätige die Änderung.`,
-              url: "/management?tab=b2b-management",
+              url: "/management/abo",
             },
           });
         } catch (e) {
