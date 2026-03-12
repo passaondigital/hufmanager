@@ -152,9 +152,9 @@ export function HorseTransferReceive() {
       // Notify seller
       await supabase.from("notifications").insert({
         user_id: selectedTransfer.seller_id,
-        title: "Transfer abgeschlossen",
-        message: `✅ ${selectedTransfer.horse_name || "Pferd"} wurde erfolgreich übertragen.`,
-        type: "horse_transfer",
+        title: "✅ Transfer abgeschlossen",
+        message: `${selectedTransfer.horse_name || "Pferd"} wurde erfolgreich übertragen.`,
+        type: "horse_transfer_completed",
       } as any);
 
       toast.success(`🎉 ${selectedTransfer.horse_name} ist jetzt in deinem HufManager!`);
