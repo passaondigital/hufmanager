@@ -159,23 +159,6 @@ const Anfragen = () => {
         </TabsList>
 
         <TabsContent value="leads">
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="outline" 
-            className="gap-2"
-            onClick={() => setShowBroadcast(true)}
-          >
-            <Send className="h-4 w-4" />
-            Rundmail
-          </Button>
-          <Badge variant="secondary" className="text-lg px-4 py-2">
-            {leads.filter((l) => l.status === "neu").length} Neue
-          </Badge>
-        </div>
-      </div>
-
-      {/* Broadcast Modal */}
-      <BroadcastModal open={showBroadcast} onOpenChange={setShowBroadcast} />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
