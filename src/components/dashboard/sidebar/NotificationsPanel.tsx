@@ -1,23 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
-import { Bell, ChevronRight } from "lucide-react";
+import { Bell } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
 
 export function NotificationsPanel() {
   const { user } = useAuth();
-  const navigate = useNavigate();
 
   const { data: notifications = [] } = useQuery({
     queryKey: ["sidebar-notifications", user?.id],
     queryFn: async () => {
       const { data } = await supabase
         .from("notifications")
-        .select("id, title, body, created_at, read, data")
+        .select("id, title, message, created_at, is_read, link")
         .eq("user_id", user!.id)
-        .eq("read", false)
+        .eq("is_read", false)
         .order("created_at", { ascending: false })
         .limit(5);
       return data || [];
@@ -41,12 +39,9 @@ export function NotificationsPanel() {
       ) : (
         <div className="space-y-0">
           {notifications.map((n) => (
-            <div
-              key={n.id}
-              className="py-2 border-b border-border/50 last:border-0"
-            >
+            <div key={n.id} className="py-2 border-b border-border/50 last:border-0">
               <p className="text-xs text-foreground font-medium">{n.title}</p>
-              {n.body && <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{n.body}</p>}
+              {n.message && <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{n.message}</p>}
               <p className="text-[9px] text-muted-foreground/60 mt-0.5">
                 {formatDistanceToNow(new Date(n.created_at), { locale: de, addSuffix: true })}
               </p>
