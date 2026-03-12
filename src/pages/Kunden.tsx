@@ -366,51 +366,6 @@ const Kunden = () => {
             </SelectContent>
           </Select>
         </div>
-          
-          {/* Filters - Grid on mobile, flex on desktop */}
-          <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="min-h-[44px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="alle">Alle Status</SelectItem>
-                <SelectItem value="aktiv">Aktiv</SelectItem>
-                <SelectItem value="eingeladen">Eingeladen</SelectItem>
-                <SelectItem value="ausstehend">Ausstehend</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            {/* Payment Rating Filter */}
-            <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as PaymentRating | "alle")}>
-              <SelectTrigger className="min-h-[44px]">
-                <SelectValue placeholder="Zahlung" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="alle">Alle Ratings</SelectItem>
-                {PAYMENT_RATING_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    <span className={opt.textColor}>{opt.label}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            {/* Lifecycle Status Filter */}
-            <Select value={lifecycleFilter} onValueChange={(v) => setLifecycleFilter(v as LifecycleStatus | "alle")}>
-              <SelectTrigger className="min-h-[44px] col-span-2 md:col-span-1">
-                <SelectValue placeholder="Kundenstatus" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="alle">Alle Kunden</SelectItem>
-                {LIFECYCLE_STATUS_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
         
         {/* Active Filters Display */}
         {(paymentFilter !== "alle" || lifecycleFilter !== "alle") && (
