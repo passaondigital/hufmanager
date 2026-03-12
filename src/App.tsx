@@ -95,6 +95,7 @@ const WebsiteAGB = lazy(() => import("@/pages/website/AGB"));
 const WebsiteVertrauen = lazy(() => import("@/pages/website/Vertrauen"));
 const WebsiteWiderruf = lazy(() => import("@/pages/website/Widerruf"));
 const Glossar = lazy(() => import("@/pages/Glossar"));
+const PferdeakteLanding = lazy(() => import("@/pages/PferdeakteLanding"));
 const Lager = lazy(() => import("@/pages/Lager"));
 const Ausgaben = lazy(() => import("@/pages/Ausgaben"));
 const GuV = lazy(() => import("@/pages/GuV"));
@@ -361,6 +362,9 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             
             {/* Öffentliches Glossar */}
             <Route path="/glossar" element={<Glossar />} />
+            
+            {/* Pferdeakte Landing (öffentlich) */}
+            <Route path="/pferdeakte" element={<PferdeakteLanding />} />
             
             {/* Öffentliche Dokumentation */}
             <Route path="/docs" element={<Docs />} />
