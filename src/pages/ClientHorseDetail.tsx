@@ -5,8 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Info, History, Image, Users, FileText, BookOpen, Heart, Shield } from "lucide-react";
+import { ArrowLeft, Info, History, Image, Users, FileText, BookOpen, Heart, Shield, Settings } from "lucide-react";
 import { toast } from "sonner";
+import { HorseStatusModal } from "@/components/client/HorseStatusModal";
 
 import { TabSteckbrief } from "@/components/horse-detail/TabSteckbrief";
 import { TabHistorie } from "@/components/horse-detail/TabHistorie";
@@ -37,6 +38,7 @@ export default function ClientHorseDetail() {
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [activeTab, setActiveTab] = useState("steckbrief");
+  const [showStatusModal, setShowStatusModal] = useState(false);
 
   const fetchHorseData = async () => {
     if (!user || !id) return;
@@ -143,6 +145,10 @@ export default function ClientHorseDetail() {
           <div className="flex-1">
             <HorseStammdatenCard horse={horse} compact />
           </div>
+          <Button variant="outline" size="sm" onClick={() => setShowStatusModal(true)} className="gap-1.5">
+            <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline">Status</span>
+          </Button>
         </div>
       </header>
 
@@ -258,6 +264,15 @@ export default function ClientHorseDetail() {
           }}
         />
       )}
+
+      {/* Status Modal */}
+      <HorseStatusModal
+        open={showStatusModal}
+        onClose={() => setShowStatusModal(false)}
+        horseId={horse.id}
+        horseName={horse.name}
+        onStatusChanged={fetchHorseData}
+      />
     </div>
   );
 }
