@@ -79,7 +79,12 @@ interface BusinessSettings {
   terms_text: string | null;
 }
 
-const Management = () => {
+interface ManagementProps {
+  tabs?: string[];
+  hideChrome?: boolean;
+}
+
+const Management = ({ tabs: tabFilter, hideChrome }: ManagementProps = {}) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
