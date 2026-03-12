@@ -1,13 +1,44 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { User, Globe, Bell, CreditCard, Scale } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
+import { User, Globe, MessageSquare, CreditCard, FileText } from "lucide-react";
 import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
+import { Badge } from "@/components/ui/badge";
+
+// Map old ?tab= params to new routes
+const TAB_REDIRECTS: Record<string, string> = {
+  profil: "/management/profil",
+  website: "/management/website",
+  kommunikation: "/management/kommunikation",
+  abo: "/management/abo",
+  rechtliches: "/management/rechtliches",
+};
+
+// Plan display names
+const PLAN_LABELS: Record<string, string> = {
+  starter: "Starter",
+  advanced: "Advanced",
+  pro: "Pro",
+  duo: "Duo",
+  team: "Team",
+};
 
 export default function ManagementHub() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const { plan } = useSubscription();
+
+  // Redirect old ?tab=... deep links
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab && TAB_REDIRECTS[tab]) {
+      navigate(TAB_REDIRECTS[tab], { replace: true });
+    }
+  }, [searchParams, navigate]);
 
   const { data: settings } = useQuery({
     queryKey: ["business-settings-hub", user?.id],
@@ -15,74 +46,63 @@ export default function ManagementHub() {
     queryFn: async () => {
       const { data } = await supabase
         .from("business_settings")
-        .select("business_name, logo_url, subdomain, subdomain_active, impressum_text, owner_name, email, phone, address")
+        .select("subdomain, subdomain_active")
         .eq("user_id", user!.id)
         .maybeSingle();
       return data;
     },
   });
 
-  const profileComplete = settings?.business_name && settings?.owner_name && settings?.email && settings?.phone && settings?.address;
-  const missingFields = [
-    !settings?.business_name && "Name",
-    !settings?.owner_name && "Inhaber",
-    !settings?.email && "E-Mail",
-    !settings?.phone && "Telefon",
-    !settings?.address && "Adresse",
-  ].filter(Boolean);
-
-  const websiteActive = settings?.subdomain_active && settings?.subdomain;
-  const legalComplete = !!settings?.impressum_text?.trim();
+  const hasWebsite = settings?.subdomain_active && settings?.subdomain;
+  const planLabel = plan ? PLAN_LABELS[plan] || plan : null;
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <TileHubHeader title="Management" subtitle="Einstellungen & Verwaltung" />
+      <TileHubHeader icon="⚙️" title="Management" subtitle="Einstellungen & Verwaltung" />
 
-      <TileCategory title="Mein Business">
+      <TileCategory title="Einstellungen">
         <Tile
           icon={<User className="w-10 h-10 text-primary" />}
           title="Mein Profil"
-          description="Geschäftsdaten, Arbeitszeiten, Erinnerungen"
-          status={profileComplete ? "✅ Vollständig" : `⚠️ ${missingFields.length} Felder fehlen`}
+          description="Profil, Zertifikate, Fotos"
           onClick={() => navigate("/management/profil")}
         />
         <Tile
           icon={<Globe className="w-10 h-10 text-primary" />}
           title="Meine Website"
-          description="Landingpage, Bewertungen, Domain"
+          description="Website, Domain, Vorschau"
           status={
-            websiteActive ? (
-              <span className="badge-live">{settings?.subdomain}.hufmanager.de</span>
-            ) : (
-              "⚫ Nicht aktiv"
-            )
+            !hasWebsite ? (
+              <Badge variant="secondary" className="bg-amber-500/15 text-amber-500 border-amber-500/30 text-xs">
+                Einrichten
+              </Badge>
+            ) : undefined
           }
           onClick={() => navigate("/management/website")}
         />
-      </TileCategory>
-
-      <TileCategory title="Kommunikation & Abo">
         <Tile
-          icon={<Bell className="w-10 h-10 text-primary" />}
+          icon={<MessageSquare className="w-10 h-10 text-primary" />}
           title="Kommunikation"
-          description="App-Kanal, Einstellungen, KI-Features"
+          description="Vorlagen, Push, E-Mail"
           onClick={() => navigate("/management/kommunikation")}
         />
         <Tile
           icon={<CreditCard className="w-10 h-10 text-primary" />}
           title="Abo & Zahlung"
-          description="Aktueller Plan, Rechnungen, Zahlungsart, Vertrag"
+          description="Plan, Rechnungen, Vertrag"
+          status={
+            planLabel ? (
+              <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-xs">
+                {planLabel}
+              </Badge>
+            ) : undefined
+          }
           onClick={() => navigate("/management/abo")}
         />
-      </TileCategory>
-
-      <TileCategory title="Recht & Compliance">
         <Tile
-          icon={<Scale className="w-10 h-10 text-primary" />}
+          icon={<FileText className="w-10 h-10 text-primary" />}
           title="Rechtliches"
-          description="Impressum · AGB · Datenschutz · AVV"
-          status={legalComplete ? "✅ Vollständig" : "⚠️ Impressum prüfen"}
-          colSpan
+          description="AGB, Datenschutz, Impressum"
           onClick={() => navigate("/management/rechtliches")}
         />
       </TileCategory>
