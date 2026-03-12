@@ -12,8 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MessageSquare, MessageCircle, Phone, MapPin, Search, Filter, Calendar, AlertTriangle, HelpCircle, Loader2, Send } from "lucide-react";
+import { MessageSquare, MessageCircle, Phone, MapPin, Search, Filter, Calendar, AlertTriangle, HelpCircle, Loader2, Send, ClipboardList } from "lucide-react";
 import { HelpTip } from "@/components/ui/HelpTip";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ServiceOrderInbox } from "@/components/provider/ServiceOrderInbox";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
