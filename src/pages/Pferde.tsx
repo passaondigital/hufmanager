@@ -260,18 +260,16 @@ const Pferde = () => {
         </TabsList>
 
         <TabsContent value="mine" className="space-y-3 mt-4">
-          {filterHorses(ownHorses).length === 0 ? (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <Footprints className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-muted-foreground">
-                  {searchTerm ? "Keine Pferde gefunden." : "Noch keine Pferde angelegt."}
-                </p>
-                {!searchTerm && (
-                  <Button className="mt-4" onClick={() => navigate("/aufnahme")}>Erstes Pferd anlegen</Button>
-                )}
-              </CardContent>
-            </Card>
+          {isLoadingOwn ? (
+            <ListSkeleton rows={3} variant="row" />
+          ) : filterHorses(ownHorses).length === 0 ? (
+            <EmptyState
+              icon={Footprints}
+              title={searchTerm ? "Keine Pferde gefunden" : "Noch keine Pferde"}
+              description={searchTerm ? "Versuche einen anderen Suchbegriff." : "Lege dein erstes Pferd an, um die digitale Pferdeakte zu starten."}
+              actionLabel={searchTerm ? undefined : "Erstes Pferd anlegen"}
+              onAction={searchTerm ? undefined : () => navigate("/aufnahme")}
+            />
           ) : (
             filterHorses(ownHorses).map((horse, i) => (
               <div key={horse.id} style={{ animationDelay: `${i * 30}ms` }}>
