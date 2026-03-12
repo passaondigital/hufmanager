@@ -57,6 +57,7 @@ const DEMO_WELCOME_SHOWN_KEY = 'hufmanager_demo_welcome_shown';
 
 export function TourProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const location = useLocation();
   const [activeTour, setActiveTour] = useState<TourName | null>(null);
   const [demoSteps, setDemoSteps] = useState<TourStep[] | null>(null);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
