@@ -84,6 +84,7 @@ import { AdminContractTracking } from "@/components/admin/AdminContractTracking"
 import { AdminBrowserAnalytics } from "@/components/admin/AdminBrowserAnalytics";
 import { AdminInvoices } from "@/components/admin/AdminInvoices";
 import { AdminContractManager } from "@/components/admin/AdminContractManager";
+import { AdminTransfersOverview } from "@/components/admin/AdminTransfersOverview";
 import { isDemoEmail } from "@/lib/demo-accounts";
 
 // Horse icon fallback since lucide doesn't have it
