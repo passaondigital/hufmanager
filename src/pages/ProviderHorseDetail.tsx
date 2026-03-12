@@ -4,11 +4,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Info, History, Image, Activity, FileText, ChevronDown, ChevronUp, Footprints, Camera, Clock, Users, Syringe } from "lucide-react";
+import { 
+  History, Image, Activity, FileText, Camera, Clock, Users, Syringe, Footprints, 
+  ChevronDown, ChevronUp, Info, FolderOpen
+} from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 
 import { TabSteckbrief } from "@/components/horse-detail/TabSteckbrief";
 import { TabHistorie } from "@/components/horse-detail/TabHistorie";
@@ -22,9 +25,10 @@ import { EditHorseModal } from "@/components/horse-detail/EditHorseModal";
 import { LTZAnalysisHistory } from "@/components/hoof-analysis/LTZAnalysisHistory";
 import { HufCamPro } from "@/components/hufcam/HufCamPro";
 import { HoofStatusGrid } from "@/components/horse-detail/HoofStatusGrid";
-import { HorseStammdatenCard } from "@/components/horse-detail/HorseStammdatenCard";
 import { HoofPhotoTimeline } from "@/components/horse-detail/HoofPhotoTimeline";
 import { HorsePartnerPanel } from "@/components/horse-detail/HorsePartnerPanel";
+import { HorseDetailHero } from "@/components/horse-detail/HorseDetailHero";
+import { HorseDetailStats } from "@/components/horse-detail/HorseDetailStats";
 import { logHorseAction } from "@/utils/auditLog";
 import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
 
@@ -34,6 +38,20 @@ interface OwnerProfile {
   email: string | null;
   phone: string | null;
 }
+
+const TABS = [
+  { value: "historie", label: "Historie", icon: Clock },
+  { value: "steckbrief", label: "Steckbrief", icon: FileText },
+  { value: "foto-timeline", label: "Fotos", icon: Camera },
+  { value: "huf-doku", label: "HufCam", icon: Camera },
+  { value: "huf-historie", label: "Huf", icon: Footprints },
+  { value: "medien", label: "Medien", icon: Image },
+  { value: "gesundheit", label: "Gesundheit", icon: Activity },
+  { value: "impfung-entwurmung", label: "Impfung", icon: Syringe },
+  { value: "dokumente", label: "Doku", icon: FolderOpen },
+  { value: "partner", label: "Partner", icon: Users },
+  { value: "aktivitaeten", label: "Aktivitäten", icon: Activity },
+] as const;
 
 export default function ProviderHorseDetail() {
   const { id } = useParams<{ id: string }>();
@@ -177,12 +195,27 @@ export default function ProviderHorseDetail() {
 
   if (authLoading || loading) {
     return (
-      <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-10 w-10 rounded-full" />
-          <Skeleton className="h-6 w-48" />
+      <div className="space-y-4 animate-fade-in">
+        <div className="rounded-2xl bg-card p-5 space-y-4">
+          <Skeleton className="h-5 w-20" />
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-[72px] w-[72px] rounded-full" />
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-7 w-40" />
+              <Skeleton className="h-4 w-56" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-6 w-16 rounded-full" />
+            <Skeleton className="h-6 w-20 rounded-full" />
+          </div>
         </div>
-        <Skeleton className="h-12 w-full rounded-lg" />
+        <div className="grid grid-cols-3 gap-2">
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+        </div>
+        <Skeleton className="h-10 w-full rounded-lg" />
         <Skeleton className="h-64 w-full rounded-xl" />
       </div>
     );
@@ -202,22 +235,16 @@ export default function ProviderHorseDetail() {
   const latestAppointment = appointments[0];
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header with back button */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => {
-          if (window.history.length > 1) {
-            navigate(-1);
-          } else {
-            navigate("/");
-          }
-        }}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="flex-1">
-          <HorseStammdatenCard horse={horse} compact />
-        </div>
-      </div>
+    <div className="space-y-4 animate-fade-in">
+      {/* Hero Banner */}
+      <HorseDetailHero horse={horse} />
+
+      {/* Stats Row - overlaps hero */}
+      <HorseDetailStats
+        appointmentsCount={appointments.length}
+        hoofPhotosCount={hoofPhotos.length}
+        documentsCount={documents.length}
+      />
 
       {/* Hoof Status Grid */}
       <HoofStatusGrid
@@ -227,26 +254,6 @@ export default function ProviderHorseDetail() {
         horseName={horse.name}
         horseId={horse.id}
       />
-
-      {/* Quick Stats Card */}
-      <Card className="border-border">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <p className="text-2xl font-bold text-primary">{appointments.length}</p>
-              <p className="text-xs text-muted-foreground">Termine</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-primary">{hoofPhotos.length}</p>
-              <p className="text-xs text-muted-foreground">Huffotos</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-primary">{documents.length}</p>
-              <p className="text-xs text-muted-foreground">Dokumente</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Latest Visit Quick View */}
       {activeTab === "historie" && latestAppointment && (
@@ -274,7 +281,7 @@ export default function ProviderHorseDetail() {
                     <p className="text-sm text-foreground">{latestAppointment.notes}</p>
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground mt-3">Keine Notizen vorhanden</p>
+                  <p className="text-sm text-muted-foreground mt-3 italic">Keine Notizen vorhanden</p>
                 )}
               </CardContent>
             </CollapsibleContent>
@@ -282,68 +289,43 @@ export default function ProviderHorseDetail() {
         </Collapsible>
       )}
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="w-full overflow-x-auto flex">
-          <TabsTrigger value="historie" className="flex items-center gap-1.5">
-            <History className="h-4 w-4" />
-            <span className="hidden sm:inline">Historie</span>
-          </TabsTrigger>
-          <TabsTrigger value="steckbrief" className="flex items-center gap-1.5">
-            <Info className="h-4 w-4" />
-            <span className="hidden sm:inline">Steckbrief</span>
-          </TabsTrigger>
-          <TabsTrigger value="foto-timeline" className="flex items-center gap-1.5">
-            <Clock className="h-4 w-4" />
-            <span className="hidden sm:inline">Fotos</span>
-          </TabsTrigger>
-          <TabsTrigger value="huf-doku" className="flex items-center gap-1.5">
-            <Camera className="h-4 w-4" />
-            <span className="hidden sm:inline">HufCam</span>
-          </TabsTrigger>
-          <TabsTrigger value="huf-historie" className="flex items-center gap-1.5">
-            <Footprints className="h-4 w-4" />
-            <span className="hidden sm:inline">Huf</span>
-          </TabsTrigger>
-          <TabsTrigger value="medien" className="flex items-center gap-1.5">
-            <Image className="h-4 w-4" />
-            <span className="hidden sm:inline">Medien</span>
-          </TabsTrigger>
-          <TabsTrigger value="gesundheit" className="flex items-center gap-1.5">
-            <Activity className="h-4 w-4" />
-            <span className="hidden sm:inline">Gesundheit</span>
-          </TabsTrigger>
-          <TabsTrigger value="impfung-entwurmung" className="flex items-center gap-1.5">
-            <Syringe className="h-4 w-4" />
-            <span className="hidden sm:inline">Impfung</span>
-          </TabsTrigger>
-          <TabsTrigger value="dokumente" className="flex items-center gap-1.5">
-            <FileText className="h-4 w-4" />
-            <span className="hidden sm:inline">Doku</span>
-          </TabsTrigger>
-          <TabsTrigger value="partner" className="flex items-center gap-1.5">
-            <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Partner</span>
-          </TabsTrigger>
-          <TabsTrigger value="aktivitaeten" className="flex items-center gap-1.5">
-            <Activity className="h-4 w-4" />
-            <span className="hidden sm:inline">Aktivitäten</span>
-          </TabsTrigger>
-        </TabsList>
+      {/* Scrollable Tab Navigation */}
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border -mx-4 px-4 sm:-mx-6 sm:px-6">
+        <div className="flex overflow-x-auto gap-1 py-3 scrollbar-hide">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.value;
+            return (
+              <button
+                key={tab.value}
+                onClick={() => setActiveTab(tab.value)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors flex-shrink-0",
+                  isActive
+                    ? "bg-primary/15 text-primary border border-primary/30 font-medium"
+                    : "text-muted-foreground hover:bg-secondary"
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-        <TabsContent value="historie">
+      {/* Tab Contents */}
+      <div className="min-h-[200px]">
+        {activeTab === "historie" && (
           <TabHistorie appointments={appointments} horseId={horse.id} />
-        </TabsContent>
-
-        <TabsContent value="steckbrief">
+        )}
+        {activeTab === "steckbrief" && (
           <TabSteckbrief horse={horse} onEdit={() => setShowEditModal(true)} />
-        </TabsContent>
-
-        <TabsContent value="foto-timeline">
+        )}
+        {activeTab === "foto-timeline" && (
           <HoofPhotoTimeline horseId={horse.id} horseName={horse.name} />
-        </TabsContent>
-
-        <TabsContent value="huf-doku">
+        )}
+        {activeTab === "huf-doku" && (
           <div className="space-y-4">
             <div className="text-center">
               <h3 className="text-lg font-semibold text-foreground">HufCam Pro</h3>
@@ -355,52 +337,47 @@ export default function ProviderHorseDetail() {
               onCollageGenerated={() => toast.success("Collage erfolgreich erstellt")}
             />
           </div>
-        </TabsContent>
-
-        <TabsContent value="huf-historie">
+        )}
+        {activeTab === "huf-historie" && (
           <TabHufHistorie horseId={horse.id} horseName={horse.name} />
-        </TabsContent>
-
-        <TabsContent value="medien">
+        )}
+        {activeTab === "medien" && (
           <TabMediaVault horseId={horse.id} />
-        </TabsContent>
-
-        <TabsContent value="gesundheit">
-          <TabGesundheit horse={horse} onEdit={() => setShowEditModal(true)} />
-          <div className="mt-6">
-            <LTZAnalysisHistory 
-              horseId={horse.id} 
-              horseName={horse.name}
-              ownerName={owner?.full_name || undefined}
-            />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="impfung-entwurmung">
+        )}
+        {activeTab === "gesundheit" && (
+          <>
+            <TabGesundheit horse={horse} onEdit={() => setShowEditModal(true)} />
+            <div className="mt-6">
+              <LTZAnalysisHistory 
+                horseId={horse.id} 
+                horseName={horse.name}
+                ownerName={owner?.full_name || undefined}
+              />
+            </div>
+          </>
+        )}
+        {activeTab === "impfung-entwurmung" && (
           <TabImpfungEntwurmung horseId={horse.id} />
-        </TabsContent>
-
-        <TabsContent value="dokumente">
+        )}
+        {activeTab === "dokumente" && (
           <TabDokumente 
             horseId={horse.id} 
             documents={documents} 
             hoofPhotos={hoofPhotos}
             onRefresh={fetchHorseData}
           />
-        </TabsContent>
-
-        <TabsContent value="partner">
+        )}
+        {activeTab === "partner" && (
           <HorsePartnerPanel
             horseId={horse.id}
             horseName={horse.name}
             inviterRole="provider"
           />
-        </TabsContent>
-
-        <TabsContent value="aktivitaeten">
+        )}
+        {activeTab === "aktivitaeten" && (
           <TabAktivitaeten horseId={horse.id} />
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
 
       {/* Edit Modal */}
       {showEditModal && (
