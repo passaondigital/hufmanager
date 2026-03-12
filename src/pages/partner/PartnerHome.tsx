@@ -448,4 +448,22 @@ export default function PartnerHome() {
       <PartnerServiceOrderInbox />
     </div>
   );
+
+  if (isMobile) {
+    return (
+      <div className="space-y-4">
+        {mainContent}
+        <DashboardSidebar variant="partner" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-[1fr_320px] gap-4">
+      <div className="min-w-0">{mainContent}</div>
+      <div className="min-w-0">
+        <DashboardSidebar variant="partner" />
+      </div>
+    </div>
+  );
 }
