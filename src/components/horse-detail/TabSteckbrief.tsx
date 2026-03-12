@@ -155,6 +155,7 @@ export function TabSteckbrief({ horse, onEdit }: TabSteckbriefProps) {
             <CardTitle className="text-base flex items-center gap-2">
               <Shield className="h-4 w-4 text-primary" />
               Offizielle Identifikation
+              <HelpTip id="pferdeakte.ueln" />
             </CardTitle>
           </CardHeader>
           <CardContent>
