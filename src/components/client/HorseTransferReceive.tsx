@@ -100,8 +100,12 @@ export function HorseTransferReceive() {
     setProcessing(true);
 
     try {
-      // Verify password (simple comparison — in production use bcrypt edge function)
-      if (password !== selectedTransfer.shared_password_hash) {
+      // Verify password via edge function (bcrypt)
+      const { data: verifyResult, error: verifyError } = await supabase.functions.invoke(
+        'hash-password',
+        { body: { action: 'verify', password, hash: selectedTransfer.shared_password_hash } }
+      );
+      if (verifyError || !verifyResult?.match) {
         toast.error("Passwort stimmt nicht überein. Bitte mit dem Verkäufer abstimmen.");
         setProcessing(false);
         return;

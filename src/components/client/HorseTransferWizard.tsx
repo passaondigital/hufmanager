@@ -88,6 +88,17 @@ export function HorseTransferWizard({ horseId, horseName, onComplete, onCancel }
       if (!user) throw new Error("Nicht angemeldet");
 
       // Create transfer record
+      // Hash password via edge function (bcrypt)
+      const { data: hashResult, error: hashError } = await supabase.functions.invoke(
+        'hash-password',
+        { body: { action: 'hash', password } }
+      );
+      if (hashError || !hashResult?.hash) {
+        toast.error("Fehler beim Verschlüsseln des Passworts");
+        setSubmitting(false);
+        return;
+      }
+
       const { data: transfer, error: transferError } = await supabase
         .from("horse_transfers")
         .insert({
@@ -96,7 +107,7 @@ export function HorseTransferWizard({ horseId, horseName, onComplete, onCancel }
           buyer_email: buyer.email || "",
           buyer_kid: buyer.readable_id,
           buyer_id: buyer.id,
-          shared_password_hash: password, // In production: hash with bcrypt edge function
+          shared_password_hash: hashResult.hash,
           status: "initiated",
           seller_confirmed: true,
           seller_confirmed_at: new Date().toISOString(),
