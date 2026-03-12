@@ -515,6 +515,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/employee/notizbuch" element={<EmployeeNotizbuch />} />
               <Route path="/employee/profil" element={<EmployeeProfil />} />
               <Route path="/employee/kalender" element={<EmployeeCalendar />} />
+              <Route path="/employee/management" element={<EmployeeManagementHub />} />
             </Route>
 
             {/* --- 5. PARTNER (FACHPARTNER) ROUTES --- */}
