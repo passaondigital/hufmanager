@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Syringe, Bug, Plus, FileText, Loader2 } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { toast } from "sonner";
 import { logHorseAction } from "@/utils/auditLog";
 import { differenceInDays } from "date-fns";
@@ -176,6 +177,7 @@ export function TabImpfungEntwurmung({ horseId }: TabImpfungEntwurmungProps) {
           <TabsTrigger value="impfpass" className="flex items-center gap-1.5">
             <Syringe className="h-4 w-4" />
             Impfpass
+            <HelpTip id="pferdeakte.impfpass" />
           </TabsTrigger>
           <TabsTrigger value="entwurmung" className="flex items-center gap-1.5">
             <Bug className="h-4 w-4" />

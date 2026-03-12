@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ArrowLeft, Search, Upload, CheckCircle, HelpCircle, Loader2, ClipboardList } from "lucide-react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { logHorseAction } from "@/utils/auditLog";
@@ -275,6 +276,7 @@ export function ServiceOrderWizard({ open, onClose, horseId, horseName, horseRea
               <DialogTitle className="flex items-center gap-2">
                 <ClipboardList className="h-5 w-5" />
                 Auftrag erteilen
+                <HelpTip id="auftrag.bereich" />
               </DialogTitle>
             </DialogHeader>
             <Badge variant="outline">Schritt 1 von 3</Badge>
@@ -483,6 +485,7 @@ export function ServiceOrderWizard({ open, onClose, horseId, horseName, horseRea
                 <label htmlFor="terms2" className="text-sm cursor-pointer">
                   Ich habe die AGB von HufManager gelesen. HufManager ist nicht Vertragspartei und übernimmt keine Haftung.
                 </label>
+                <HelpTip id="auftrag.agb" />
               </div>
             </div>
 

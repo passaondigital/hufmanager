@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Pencil, User, Home, Utensils, AlertTriangle, Shield, Dna, Scale, Swords, GraduationCap, HelpCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
+import { HelpTip } from "@/components/ui/HelpTip";
 
 interface TabSteckbriefProps {
   horse: Horse;
@@ -154,6 +155,7 @@ export function TabSteckbrief({ horse, onEdit }: TabSteckbriefProps) {
             <CardTitle className="text-base flex items-center gap-2">
               <Shield className="h-4 w-4 text-primary" />
               Offizielle Identifikation
+              <HelpTip id="pferdeakte.ueln" />
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -193,6 +195,7 @@ export function TabSteckbrief({ horse, onEdit }: TabSteckbriefProps) {
             <CardTitle className="text-base flex items-center gap-2">
               <Scale className="h-4 w-4 text-primary" />
               Gewicht & Kondition
+              <HelpTip id="pferdeakte.bcs" />
             </CardTitle>
           </CardHeader>
           <CardContent>
