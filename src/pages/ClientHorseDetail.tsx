@@ -145,6 +145,10 @@ export default function ClientHorseDetail() {
           <div className="flex-1">
             <HorseStammdatenCard horse={horse} compact />
           </div>
+          <Button variant="outline" size="sm" onClick={() => setShowStatusModal(true)} className="gap-1.5">
+            <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline">Status</span>
+          </Button>
         </div>
       </header>
 
