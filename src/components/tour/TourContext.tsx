@@ -59,6 +59,13 @@ const DEMO_WELCOME_SHOWN_KEY = 'hufmanager_demo_welcome_shown';
 export function TourProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const location = useLocation();
+
+  // Skip tour on public standalone pages
+  const isPublicStandalone = location.pathname.startsWith('/pferdeakte');
+  if (isPublicStandalone) {
+    return <TourContext.Provider value={{ startTour: () => {}, isAnyTourActive: false, openDemoWelcome: () => {} }}>{children}</TourContext.Provider>;
+  }
+
   const [activeTour, setActiveTour] = useState<TourName | null>(null);
   const [demoSteps, setDemoSteps] = useState<TourStep[] | null>(null);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
