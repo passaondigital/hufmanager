@@ -18,6 +18,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { ListPageHeader } from "@/components/shared/ListPageHeader";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { ListSkeleton } from "@/components/shared/ListSkeleton";
 
 const Pferde = () => {
   const { user } = useAuth();
