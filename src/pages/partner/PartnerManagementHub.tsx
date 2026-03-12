@@ -1,77 +1,85 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { User, Globe, Bell, CreditCard, Scale } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
+import { User, Globe, MessageSquare, CreditCard, FileText } from "lucide-react";
 import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
+import { Badge } from "@/components/ui/badge";
+
+const TAB_REDIRECTS: Record<string, string> = {
+  profil: "/partner-management/profil",
+  oeffentlich: "/partner-management/oeffentlich",
+  kommunikation: "/partner-management/kommunikation",
+  abo: "/partner-management/abo",
+  rechtliches: "/partner-management/rechtliches",
+};
+
+const PLAN_LABELS: Record<string, string> = {
+  starter: "Starter",
+  advanced: "Advanced",
+  pro: "Pro",
+  duo: "Duo",
+  team: "Team",
+};
 
 export default function PartnerManagementHub() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const { plan } = useSubscription();
 
-  const { data: settings } = useQuery({
-    queryKey: ["partner-biz-settings-hub", user?.id],
-    enabled: !!user?.id,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("partner_business_settings")
-        .select("business_name, owner_name, email, phone, address, specialty, public_profile_visible")
-        .eq("partner_id", user!.id)
-        .maybeSingle();
-      return data as any;
-    },
-  });
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab && TAB_REDIRECTS[tab]) {
+      navigate(TAB_REDIRECTS[tab], { replace: true });
+    }
+  }, [searchParams, navigate]);
 
-  const profileComplete = settings?.business_name && settings?.owner_name && settings?.email;
-  const missingFields = [
-    !settings?.business_name && "Name",
-    !settings?.owner_name && "Inhaber",
-    !settings?.email && "E-Mail",
-  ].filter(Boolean);
+  const planLabel = plan ? PLAN_LABELS[plan] || plan : null;
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <TileHubHeader title="Management" subtitle="Einstellungen & Verwaltung" />
+      <TileHubHeader icon="⚙️" title="Management" subtitle="Einstellungen & Verwaltung" />
 
-      <TileCategory title="Profil & Sichtbarkeit">
+      <TileCategory title="Einstellungen">
         <Tile
           icon={<User className="w-10 h-10 text-primary" />}
           title="Mein Profil"
-          description="Name, Foto, Kontakt, Fachgebiet"
-          status={profileComplete ? "✅ Vollständig" : `⚠️ ${missingFields.length} Felder fehlen`}
-          onClick={() => navigate("/partner-settings")}
+          description="Persönliche Daten, Foto"
+          onClick={() => navigate("/partner-management/profil")}
         />
         <Tile
           icon={<Globe className="w-10 h-10 text-primary" />}
-          title="Mein Profil (öffentlich)"
-          description="Öffentliche Partner-Seite"
-          status={settings?.public_profile_visible ? <span className="badge-live">Sichtbar</span> : "Nicht sichtbar"}
-          onClick={() => navigate("/partner-profile")}
+          title="Öffentliches Profil"
+          description="Sichtbar für Pferdebesitzer"
+          onClick={() => navigate("/partner-management/oeffentlich")}
         />
-      </TileCategory>
-
-      <TileCategory title="Kommunikation & Abo">
         <Tile
-          icon={<Bell className="w-10 h-10 text-primary" />}
+          icon={<MessageSquare className="w-10 h-10 text-primary" />}
           title="Kommunikation"
-          description="App-Kanal, Einstellungen"
-          onClick={() => navigate("/partner-settings")}
+          description="Vorlagen, Benachrichtigungen"
+          onClick={() => navigate("/partner-management/kommunikation")}
         />
         <Tile
           icon={<CreditCard className="w-10 h-10 text-primary" />}
           title="Abo & Zahlung"
-          description="Aktueller Plan, Rechnungen"
-          onClick={() => navigate("/partner-settings")}
+          description="Plan, Rechnungen"
+          status={
+            planLabel ? (
+              <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-xs">
+                {planLabel}
+              </Badge>
+            ) : undefined
+          }
+          onClick={() => navigate("/partner-management/abo")}
         />
-      </TileCategory>
-
-      <TileCategory title="Recht & Compliance">
         <Tile
-          icon={<Scale className="w-10 h-10 text-primary" />}
+          icon={<FileText className="w-10 h-10 text-primary" />}
           title="Rechtliches"
-          description="Impressum · AGB · Datenschutz"
-          colSpan
-          onClick={() => navigate("/partner-rechtliches")}
+          description="AGB, Datenschutz, Impressum"
+          onClick={() => navigate("/partner-management/rechtliches")}
         />
       </TileCategory>
     </div>

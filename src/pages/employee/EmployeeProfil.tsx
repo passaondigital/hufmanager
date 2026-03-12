@@ -26,7 +26,12 @@ import {
 } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 
-const EmployeeProfil = () => {
+interface EmployeeProfilProps {
+  section?: "profil" | "einstellungen";
+  hideChrome?: boolean;
+}
+
+const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
