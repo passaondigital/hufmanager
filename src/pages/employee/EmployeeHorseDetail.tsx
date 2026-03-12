@@ -284,15 +284,13 @@ export default function EmployeeHorseDetail() {
                 <CardContent className="p-3">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-medium text-foreground">
-                      {entry.treatment_type || "Behandlung"}
+                      {entry.entry_type || "Behandlung"}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {entry.treatment_date
-                        ? new Date(entry.treatment_date).toLocaleDateString("de-DE")
-                        : new Date(entry.created_at).toLocaleDateString("de-DE")}
+                      {new Date(entry.entry_date).toLocaleDateString("de-DE")}
                     </span>
                   </div>
-                  {entry.notes && (
+                  {entry.description && (
                     <p className="text-sm text-muted-foreground line-clamp-2">{entry.notes}</p>
                   )}
                 </CardContent>
