@@ -62,7 +62,7 @@ export default function Academy() {
   const [selectedVideo, setSelectedVideo] = useState<AcademyVideo | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  const isProviderOrAdmin = role === 'provider' || role === 'admin';
+  const isAdmin = role === 'admin';
 
   const { data: videos, isLoading } = useQuery({
     queryKey: ["academy-videos"],
