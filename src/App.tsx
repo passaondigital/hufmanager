@@ -142,12 +142,39 @@ import { PWAInstallPrompt } from "@/components/pwa/PWAInstallPrompt";
 import { VersionChecker } from "@/components/version/VersionChecker";
 import { SystemStatusBanner } from "@/components/notifications/SystemStatusBanner";
 
-// Suspense fallback
-const LazyFallback = () => (
-  <div className="min-h-screen flex items-center justify-center bg-background">
-    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-  </div>
-);
+// Suspense fallback with timeout
+const LazyFallback = () => {
+  const [timedOut, setTimedOut] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setTimedOut(true), 15000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (timedOut) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-6">
+        <div className="text-center space-y-4 max-w-sm">
+          <p className="text-sm text-muted-foreground">
+            Laden fehlgeschlagen. Bitte Seite neu laden.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
+          >
+            Neu laden
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+};
 
 // Create persister for IndexedDB storage
 const persister = createIDBPersister();
