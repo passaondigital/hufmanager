@@ -100,6 +100,7 @@ const getEmployeeNav = (permissions: Record<string, boolean>): NavigationConfig 
         items: [
           { id: "profile", label: "Profil", iconName: "User", path: "/employee/profil" },
           { id: "management", label: "Management", iconName: "Settings", path: "/employee/management" },
+          { id: "support", label: "Hilfe & Support", iconName: "LifeBuoy", path: "/employee/support" },
         ],
       },
     ],
