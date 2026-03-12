@@ -283,15 +283,11 @@ const Pferde = () => {
           {filterHorses(sharedHorses).length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
-                <Share2 className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-muted-foreground">
-                  {searchTerm ? "Keine freigegebenen Pferde gefunden." : "Noch keine Pferde für dich freigegeben."}
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Pferdebesitzer oder andere Hufbearbeiter können dir Pferde über HM Connect freigeben.
-                </p>
-              </CardContent>
-            </Card>
+            <EmptyState
+              icon={Share2}
+              title={searchTerm ? "Keine freigegebenen Pferde gefunden" : "Noch keine Pferde freigegeben"}
+              description={searchTerm ? "Versuche einen anderen Suchbegriff." : "Pferdebesitzer oder andere Hufbearbeiter können dir Pferde über HM Connect freigeben."}
+            />
           ) : (
             filterHorses(sharedHorses).map((horse, i) => (
               <div key={horse.id} style={{ animationDelay: `${i * 30}ms` }}>
