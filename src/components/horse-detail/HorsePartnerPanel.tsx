@@ -296,6 +296,16 @@ export function HorsePartnerPanel({ horseId, horseName, inviterRole }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Service Order Wizard */}
+      {inviterRole === "client" && (
+        <ServiceOrderWizard
+          open={showOrderWizard}
+          onClose={() => setShowOrderWizard(false)}
+          horseId={horseId}
+          horseName={horseName}
+        />
+      )}
     </div>
   );
 }
