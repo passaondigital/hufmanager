@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { AlertTriangle, RefreshCw, Home, Menu, Sun, Moon, Search, Zap, Settings } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { AppSidebar } from "./AppSidebar";
 import { AppHeader } from "./AppHeader";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { OfflineBanner } from "@/components/offline/OfflineBanner";
-import { Menu, Sun, Moon, Search, Zap, Settings } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
   DropdownMenu,
@@ -28,6 +29,36 @@ import { TrialCountdownBanner } from "@/components/subscription/TrialCountdownBa
 import { useDemoActivityTracker } from "@/hooks/useDemoActivityTracker";
 import { useAutoflowMode, AutoflowMode } from "@/hooks/useAutoflowMode";
 import { useCockpitFullscreen } from "@/components/day-cockpit/CockpitFullscreenContext";
+
+function ProviderErrorFallback() {
+  return (
+    <div className="min-h-[300px] flex items-center justify-center p-6">
+      <Card className="max-w-md w-full border-destructive/30">
+        <CardContent className="pt-6 text-center space-y-4">
+          <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
+            <AlertTriangle className="h-6 w-6 text-destructive" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-lg text-foreground">Etwas ist schiefgelaufen</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Ein unerwarteter Fehler ist aufgetreten.
+            </p>
+          </div>
+          <div className="flex gap-2 justify-center">
+            <Button variant="outline" size="sm" onClick={() => window.location.href = "/home"}>
+              <Home className="h-4 w-4 mr-1.5" />
+              Zum Dashboard
+            </Button>
+            <Button size="sm" onClick={() => window.location.reload()} className="gap-1.5">
+              <RefreshCw className="h-3.5 w-3.5" />
+              Seite neu laden
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 export function AppLayout() {
   const location = useLocation();
@@ -66,7 +97,9 @@ export function AppLayout() {
             <AppSidebar onNavigate={() => setMobileMenuOpen(false)} />
           </SheetContent>
         </Sheet>
-        <Outlet />
+        <ErrorBoundary name="ProviderFullscreen" fallback={<ProviderErrorFallback />}>
+          <Outlet />
+        </ErrorBoundary>
       </div>
     );
   }
@@ -192,7 +225,9 @@ export function AppLayout() {
 
         {/* Main content with bottom nav spacing on mobile */}
         <main className="flex-1 overflow-auto px-4 py-4 lg:p-6 pb-bottom-nav overflow-x-hidden">
-          <Outlet />
+          <ErrorBoundary name="ProviderMain" fallback={<ProviderErrorFallback />}>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
       
