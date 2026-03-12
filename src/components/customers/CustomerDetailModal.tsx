@@ -346,41 +346,67 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
   return (
     <>
       <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          {/* Enhanced Header with Payment Rating Badge */}
-          <DialogHeader className="pb-0">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <DialogTitle className="text-2xl font-bold">
-                  {customer.full_name || "Kunde"}
-                </DialogTitle>
-                {customer.readable_id && (
-                  <Badge variant="outline" className="font-mono text-xs">
-                    #{customer.readable_id}
-                  </Badge>
-                )}
+        <DialogContent className="max-w-[520px] max-h-[90vh] overflow-y-auto p-0 border-border bg-background">
+          {/* Premium Header with gradient */}
+          <div className="bg-gradient-to-br from-card to-background p-6 border-b border-border">
+            <DialogHeader className="pb-0">
+              <div className="flex items-center gap-4">
+                {/* Avatar */}
+                <div className="h-14 w-14 rounded-full bg-primary/15 ring-2 ring-primary flex items-center justify-center flex-shrink-0">
+                  <span className="text-xl font-bold text-primary">
+                    {(customer.full_name || "K").substring(0, 2).toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <DialogTitle className="text-xl font-bold text-foreground truncate">
+                    {customer.full_name || "Kunde"}
+                  </DialogTitle>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {customer.readable_id && (
+                      <span className="inline-flex items-center bg-secondary rounded-full px-2 py-0.5 text-xs text-muted-foreground font-mono">
+                        #{customer.readable_id}
+                      </span>
+                    )}
+                    {customer.city && (
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <MapPin className="h-3 w-3" />
+                        {customer.city}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
-              {/* Payment Rating Badge - Prominent */}
-              {customer.payment_rating && paymentRatingInfo && (
-                <Badge 
-                  className={`text-sm px-3 py-1 font-bold ${
-                    customer.payment_rating === 'A' ? 'bg-green-500 text-white' :
-                    customer.payment_rating === 'B' ? 'bg-lime-500 text-white' :
-                    customer.payment_rating === 'C' ? 'bg-amber-500 text-white' :
-                    'bg-red-500 text-white'
-                  }`}
-                >
-                  <CreditCard className="h-4 w-4 mr-1" />
-                  Zahlungsmoral: {customer.payment_rating}
-                </Badge>
-              )}
-            </div>
-            <DialogDescription>
+            </DialogHeader>
+
+            {/* Payment Rating Dots */}
+            {customer.payment_rating && paymentRatingInfo && (
+              <div className="flex items-center gap-2 mt-4">
+                <span className="text-xs text-muted-foreground">Zahlungsmoral: {customer.payment_rating}</span>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((dot) => {
+                    const rating = customer.payment_rating === 'A' ? 5 : customer.payment_rating === 'B' ? 4 : customer.payment_rating === 'C' ? 3 : customer.payment_rating === 'D' ? 2 : 1;
+                    const filled = dot <= rating;
+                    const color = rating >= 4 ? "bg-green-400" : rating === 3 ? "bg-amber-400" : "bg-red-400";
+                    return (
+                      <div 
+                        key={dot} 
+                        className={cn(
+                          "w-2.5 h-2.5 rounded-full",
+                          filled ? color : "bg-muted"
+                        )}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <DialogDescription className="sr-only">
               Kunden-Dashboard mit allen Kontaktdaten und Pferden
             </DialogDescription>
-          </DialogHeader>
+          </div>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 p-6 pt-4">
             {/* Location Map */}
             {customer.geo_lat && customer.geo_lng ? (
               <CustomerLocationMap 
