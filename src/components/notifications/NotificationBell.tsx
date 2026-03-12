@@ -155,18 +155,19 @@ export function NotificationBell({ collapsed = false }: NotificationBellProps) {
                   )}
                 >
                   <div className="flex items-start gap-2">
+                    <span className="text-base mt-0.5 flex-shrink-0">{getNotificationIcon(notification.type)}</span>
                     {!notification.is_read && (
                       <span className="w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
                     )}
-                    <div className={cn("flex-1", notification.is_read && "ml-4")}>
-                      <p className="font-medium text-sm">{notification.title}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className={cn("text-sm", !notification.is_read && "font-semibold")}>{notification.title}</p>
                       {notification.message && (
                         <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
                           {notification.message}
                         </p>
                       )}
                       <p className="text-xs text-muted-foreground mt-1">
-                        {format(new Date(notification.created_at), "dd.MM. HH:mm", { locale: de })}
+                        {formatRelativeTime(notification.created_at)}
                       </p>
                     </div>
                   </div>
