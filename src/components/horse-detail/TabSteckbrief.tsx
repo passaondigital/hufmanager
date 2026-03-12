@@ -86,12 +86,13 @@ export function TabSteckbrief({ horse, onEdit }: TabSteckbriefProps) {
 
       {/* Basic Info */}
       <Card>
-        <CardHeader className="pb-2 flex flex-row items-center justify-between">
+        <CardHeader className="pb-2 flex flex-row items-center justify-between group">
           <CardTitle className="text-base flex items-center gap-2">
             <User className="h-4 w-4 text-primary" />
             Basisdaten
+            <span className="flex-1 h-px bg-border ml-2" />
           </CardTitle>
-          <Button variant="ghost" size="sm" onClick={onEdit}>
+          <Button variant="ghost" size="sm" onClick={onEdit} className="opacity-0 group-hover:opacity-100 transition-opacity">
             <Pencil className="h-4 w-4 mr-1" />
             Bearbeiten
           </Button>
