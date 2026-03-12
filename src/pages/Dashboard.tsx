@@ -62,7 +62,7 @@ const Dashboard = () => {
 
       <div className="space-y-4 pb-4">
         {/* Zone A: Sticky Header */}
-        <DashboardHeader fullName={displayName} />
+        <DashboardHeroBanner fullName={displayName} />
 
         {/* Banners (compact) */}
         <PushNotificationBanner />
