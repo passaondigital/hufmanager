@@ -141,16 +141,31 @@ export function HorseTransferReceive() {
         .update({ owner_id: user.id } as any)
         .eq("id", selectedTransfer.horse_id);
 
-      // Revoke old access grants
+      // Revoke old horse_partner_access
       await supabase
         .from("horse_partner_access")
         .update({ revoked_at: new Date().toISOString(), is_active: false } as any)
         .eq("horse_id", selectedTransfer.horse_id);
 
+      // Revoke all active access_grants of the seller (old owner)
+      // access_grants has no horse_id — it links client↔provider,
+      // so we deactivate all grants where seller was the client
+      await supabase
+        .from("access_grants")
+        .update({
+          is_active: false,
+          status: "revoked",
+          revoked_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq("client_id", selectedTransfer.seller_id)
+        .eq("is_active", true);
+
       // Audit log
       await logHorseAction(selectedTransfer.horse_id, "transfer_completed", {
         from: selectedTransfer.seller_id,
         to: user.id,
+        grants_revoked: true,
       });
 
       // Notify seller
@@ -159,6 +174,15 @@ export function HorseTransferReceive() {
         title: "✅ Transfer abgeschlossen",
         message: `${selectedTransfer.horse_name || "Pferd"} wurde erfolgreich übertragen.`,
         type: "horse_transfer_completed",
+      } as any);
+
+      // Notify buyer (self)
+      await supabase.from("notifications").insert({
+        user_id: user.id,
+        title: `🐴 ${selectedTransfer.horse_name || "Pferd"} ist jetzt deins!`,
+        message: `${selectedTransfer.horse_name || "Pferd"} wurde erfolgreich in deinen HufManager übertragen.`,
+        type: "horse_transfer_completed",
+        link: `/client-horse/${selectedTransfer.horse_id}`,
       } as any);
 
       toast.success(`🎉 ${selectedTransfer.horse_name} ist jetzt in deinem HufManager!`);
