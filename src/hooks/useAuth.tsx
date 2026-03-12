@@ -177,6 +177,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isMounted = true;
     let initialSessionHandled = false;
+    const isRoleFetching = { current: false };
+
+    const fetchRoleGuarded = async (userId: string): Promise<UserRole> => {
+      if (isRoleFetching.current) return null;
+      isRoleFetching.current = true;
+      try {
+        return await fetchUserRole(userId);
+      } finally {
+        isRoleFetching.current = false;
+      }
+    };
 
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -193,10 +204,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           setTimeout(async () => {
             if (!isMounted) return;
-            const fetchedRole = await fetchUserRole(session.user.id);
-            if (isMounted) {
+            const fetchedRole = await fetchRoleGuarded(session.user.id);
+            if (isMounted && fetchedRole !== null) {
               setRole(fetchedRole);
-              // Also set loading to false here to prevent stuck loading
               setLoading(false);
             }
             // Process invite code on sign in
@@ -252,8 +262,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchUserRole(session.user.id).then((r) => {
-          if (isMounted) {
+        fetchRoleGuarded(session.user.id).then((r) => {
+          if (isMounted && r !== null) {
             setRole(r);
             setLoading(false);
           }
