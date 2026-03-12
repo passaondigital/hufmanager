@@ -393,7 +393,9 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
                 Konto löschen
           </Button>
         </CardContent>
-      </Card>
+          </Card>
+        </>
+      )}
 
       {/* Password Dialog */}
       <Dialog open={showPwDialog} onOpenChange={setShowPwDialog}>
