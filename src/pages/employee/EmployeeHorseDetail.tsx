@@ -291,7 +291,7 @@ export default function EmployeeHorseDetail() {
                     </span>
                   </div>
                   {entry.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">{entry.notes}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{entry.description}</p>
                   )}
                 </CardContent>
               </Card>
