@@ -264,6 +264,15 @@ export default function ClientHorseDetail() {
           }}
         />
       )}
+
+      {/* Status Modal */}
+      <HorseStatusModal
+        open={showStatusModal}
+        onClose={() => setShowStatusModal(false)}
+        horseId={horse.id}
+        horseName={horse.name}
+        onStatusChanged={fetchHorseData}
+      />
     </div>
   );
 }

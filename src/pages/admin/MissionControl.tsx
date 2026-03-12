@@ -2224,6 +2224,7 @@ export default function MissionControl() {
 
           <TabsContent value="compliance" className="space-y-6">
             <AdminContractTracking />
+            <AdminTransfersOverview />
           </TabsContent>
 
           <TabsContent value="browsers" className="space-y-6">
