@@ -3709,6 +3709,71 @@ export type Database = {
           },
         ]
       }
+      employee_horse_access: {
+        Row: {
+          assigned_by: string | null
+          can_add_notes: boolean
+          can_edit: boolean
+          can_view: boolean
+          created_at: string
+          employee_id: string
+          horse_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          can_add_notes?: boolean
+          can_edit?: boolean
+          can_view?: boolean
+          created_at?: string
+          employee_id: string
+          horse_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string | null
+          can_add_notes?: boolean
+          can_edit?: boolean
+          can_view?: boolean
+          created_at?: string
+          employee_id?: string
+          horse_id?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_horse_access_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_horse_access_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_horse_access_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_horse_access_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_material_assignments: {
         Row: {
           assigned_at: string
