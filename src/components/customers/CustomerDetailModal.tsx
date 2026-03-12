@@ -827,15 +827,15 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
 
             {/* Tabs for Horses, Invoices, and Documents */}
             <Tabs defaultValue="horses" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="horses">
+              <TabsList className="w-full border-b border-border bg-transparent p-0 h-auto rounded-none">
+                <TabsTrigger value="horses" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none bg-transparent px-4 py-2">
                   🐴 Pferde ({horses.length})
                 </TabsTrigger>
-                <TabsTrigger value="invoices">
+                <TabsTrigger value="invoices" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none bg-transparent px-4 py-2">
                   <FileText className="h-4 w-4 mr-1" />
                   Rechnungen
                 </TabsTrigger>
-                <TabsTrigger value="documents">
+                <TabsTrigger value="documents" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none bg-transparent px-4 py-2">
                   <FileText className="h-4 w-4 mr-1" />
                   Dokumente
                 </TabsTrigger>
