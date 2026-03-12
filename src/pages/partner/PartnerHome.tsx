@@ -12,6 +12,7 @@ import {
   Heart, Calendar, FileText, TrendingUp, Clock, Activity, ChevronRight, Euro,
   CheckCircle2, Circle, X, User, Building2, Eye, Stethoscope, CalendarPlus, Receipt, MessageSquare,
 } from "lucide-react";
+import { PartnerServiceOrderInbox } from "@/components/partner/PartnerServiceOrderInbox";
 import { useNavigate } from "react-router-dom";
 import { getPartnerTypeConfig } from "@/lib/partnerTypes";
 import { format, startOfMonth, endOfMonth } from "date-fns";
