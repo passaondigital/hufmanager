@@ -97,7 +97,9 @@ export function AppLayout() {
             <AppSidebar onNavigate={() => setMobileMenuOpen(false)} />
           </SheetContent>
         </Sheet>
-        <Outlet />
+        <ErrorBoundary name="ProviderFullscreen" fallback={<ProviderErrorFallback />}>
+          <Outlet />
+        </ErrorBoundary>
       </div>
     );
   }
