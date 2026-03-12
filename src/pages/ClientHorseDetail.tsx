@@ -157,7 +157,7 @@ export default function ClientHorseDetail() {
         />
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <div className="overflow-x-auto -mx-4 px-4">
-            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-7">
+            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-8">
               <TabsTrigger value="steckbrief" className="flex items-center gap-1.5 whitespace-nowrap">
                 <Info className="h-4 w-4" />
                 <span>Übersicht</span>
