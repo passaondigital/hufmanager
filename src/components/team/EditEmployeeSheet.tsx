@@ -23,7 +23,8 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, User, Shield, Settings, Calendar, Clock, FileText } from "lucide-react";
+import { Loader2, User, Shield, Settings, Calendar, Clock, FileText, Horse } from "lucide-react";
+import { EmployeeHorseAccess } from "./EmployeeHorseAccess";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 
