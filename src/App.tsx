@@ -39,6 +39,12 @@ const Kunden = lazy(() => import("@/pages/Kunden"));
 const Services = lazy(() => import("@/pages/Services"));
 const MeinAngebot = lazy(() => import("@/pages/MeinAngebot"));
 const Management = lazy(() => import("@/pages/Management"));
+const ManagementHub = lazy(() => import("@/pages/ManagementHub"));
+const ManagementProfil = lazy(() => import("@/pages/management/ManagementProfil"));
+const ManagementWebsite = lazy(() => import("@/pages/management/ManagementWebsite"));
+const ManagementKommunikation = lazy(() => import("@/pages/management/ManagementKommunikation"));
+const ManagementAbo = lazy(() => import("@/pages/management/ManagementAbo"));
+const ManagementRechtliches = lazy(() => import("@/pages/management/ManagementRechtliches"));
 const Academy = lazy(() => import("@/pages/Academy"));
 const Chat = lazy(() => import("@/pages/Chat"));
 const GeldVerdienen = lazy(() => import("@/pages/GeldVerdienen"));
@@ -413,7 +419,12 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/services" element={<Navigate to="/mein-angebot" replace />} />
               <Route path="/preise" element={<Navigate to="/mein-angebot" replace />} />
               <Route path="/mein-angebot" element={<MeinAngebot />} />
-              <Route path="/management" element={<Management />} />
+              <Route path="/management" element={<ManagementHub />} />
+              <Route path="/management/profil" element={<ManagementProfil />} />
+              <Route path="/management/website" element={<ManagementWebsite />} />
+              <Route path="/management/kommunikation" element={<ManagementKommunikation />} />
+              <Route path="/management/abo" element={<ManagementAbo />} />
+              <Route path="/management/rechtliches" element={<ManagementRechtliches />} />
               <Route path="/management/import" element={<ImportCenter />} />
               <Route path="/academy" element={<Academy />} />
               <Route path="/chat" element={<Chat />} />
