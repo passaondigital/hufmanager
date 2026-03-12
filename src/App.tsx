@@ -555,7 +555,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner-office/:id" element={<OfficeEditor />} />
               <Route path="/partner-lager" element={<Lager />} />
               <Route path="/partner-autoflow" element={<AutoFlow />} />
-              <Route path="/partner-management" element={<Management />} />
+              <Route path="/partner-management" element={<PartnerManagementHub />} />
               <Route path="/partner-support" element={<Support />} />
               <Route path="/partner-rechtliches" element={<PartnerRechtliches />} />
             </Route>
