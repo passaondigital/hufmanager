@@ -19,6 +19,9 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 import { ClientBadges } from "@/components/customers/ClientStatusBadges";
+import { ListPageHeader } from "@/components/shared/ListPageHeader";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { ListSkeleton } from "@/components/shared/ListSkeleton";
 import { InviteClientButton, InviteStatusBadge } from "@/components/customers/InviteClientButton";
 import {
   Select,
