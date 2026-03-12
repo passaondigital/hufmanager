@@ -410,8 +410,10 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/anfragen" element={<Anfragen />} />
               <Route path="/angebote" element={<Angebote />} />
               <Route path="/aufnahme" element={<Aufnahme />} />
-              <Route path="/auffassen" element={<Auffassen />} />
-              <Route path="/analyse" element={<Analyse />} />
+              <Route path="/auffassen" element={<AuffassenHub />} />
+              <Route path="/auffassen/feedback" element={<Auffassen />} />
+              <Route path="/analyse" element={<AnalyseHub />} />
+              <Route path="/analyse/betriebszahlen" element={<Analyse />} />
               {/* Beide Schreibweisen für Kalender abfangen */}
               <Route path="/calendar" element={<Kalender />} />
               <Route path="/kalender" element={<Kalender />} />
