@@ -64,7 +64,7 @@ const PARTNER_NAV: NavigationConfig = {
           id: "aufnahme", number: "3", label: "Aufnahme", iconName: "UserPlus",
           children: [
             { label: "Kunden", path: "/partner-kunden" },
-            { label: "Freigegebene Pferde", path: "/partner-horses" },
+            { label: "Pferde", path: "/partner-pferde" },
             { label: "Behandlungspläne", path: "/partner-plans" },
             { label: "Befunde & Notizen", path: "/partner-notes" },
             { label: "Dokumente & Befunde", path: "/partner-documents" },

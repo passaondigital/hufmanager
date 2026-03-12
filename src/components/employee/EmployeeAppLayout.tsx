@@ -87,6 +87,7 @@ const getEmployeeNav = (permissions: Record<string, boolean>): NavigationConfig 
       {
         label: "Verwaltung",
         items: [
+          { id: "horses", label: "Pferde", iconName: "Heart", path: "/employee/pferde" },
           { id: "material", label: "Material", iconName: "Package", path: "/employee/material" },
           { id: "absence", label: "Abwesenheiten", iconName: "CalendarOff", path: "/employee/abwesenheiten" },
           { id: "contract", label: "Vertrag", iconName: "FileText", path: "/employee/vertrag" },
