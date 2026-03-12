@@ -363,6 +363,9 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             {/* Öffentliches Glossar */}
             <Route path="/glossar" element={<Glossar />} />
             
+            {/* Pferdeakte Landing (öffentlich) */}
+            <Route path="/pferdeakte" element={<PferdeakteLanding />} />
+            
             {/* Öffentliche Dokumentation */}
             <Route path="/docs" element={<Docs />} />
             <Route path="/docs/changelog" element={<Docs />} />
