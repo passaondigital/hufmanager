@@ -123,7 +123,7 @@ const BOTTOM_NAV_ITEMS = [
 const quickActions = [
   { label: "Neuer Termin", path: "/partner-calendar", icon: Calendar },
   { label: "Neuer Kunde", path: "/partner-kunden", icon: User },
-  { label: "Neues Pferd", path: "/partner-horses", icon: Heart },
+  { label: "Neues Pferd", path: "/partner-pferde", icon: Heart },
 ];
 
 export function PartnerAppLayout() {
