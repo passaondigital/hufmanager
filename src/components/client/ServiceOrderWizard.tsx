@@ -276,6 +276,7 @@ export function ServiceOrderWizard({ open, onClose, horseId, horseName, horseRea
               <DialogTitle className="flex items-center gap-2">
                 <ClipboardList className="h-5 w-5" />
                 Auftrag erteilen
+                <HelpTip id="auftrag.bereich" />
               </DialogTitle>
             </DialogHeader>
             <Badge variant="outline">Schritt 1 von 3</Badge>
