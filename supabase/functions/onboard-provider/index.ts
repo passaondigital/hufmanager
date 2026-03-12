@@ -195,7 +195,7 @@ serve(async (req: Request) => {
           user_id: provider_id,
           title: "Dein Vertrag ist bereit 📄",
           body: "Bitte unterzeichne deinen HufManager-Nutzungsvertrag.",
-          url: "/management?tab=b2b-management",
+          url: "/management/abo",
         },
       });
     } catch (e) {
