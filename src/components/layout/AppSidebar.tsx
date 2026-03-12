@@ -206,7 +206,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         { title: "Fuhrpark", url: "/fuhrpark", icon: Car, description: "Fahrzeuge & Tankbuch" },
         { title: "Buchhaltung", url: "/buchhaltung", icon: FileText, description: "EÜR, USt-VA, DATEV & StB" },
         { title: "GuV-Übersicht", url: "/guv", icon: Scale, description: "Gewinn- & Verlustrechnung" },
-        { title: "Betriebszahlen", url: "/analyse", icon: TrendingUp, description: "Charts & Stats" },
+        { title: "Betriebszahlen", url: "/analyse/betriebszahlen", icon: TrendingUp, description: "Charts & Stats" },
       ]
     },
   ];
