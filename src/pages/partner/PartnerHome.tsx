@@ -224,7 +224,7 @@ export default function PartnerHome() {
     );
   }
 
-  return (
+  const mainContent = (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
