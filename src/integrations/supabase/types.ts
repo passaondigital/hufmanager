@@ -9022,6 +9022,7 @@ export type Database = {
           copecart_subscription_id: string | null
           country: string | null
           created_at: string
+          created_by_partner_id: string | null
           created_by_provider_id: string | null
           currency: string | null
           deleted_at: string | null
@@ -9057,6 +9058,7 @@ export type Database = {
           location_name: string | null
           logo_url: string | null
           longitude: number | null
+          managing_partner_id: string | null
           mobile: string | null
           notification_language: string | null
           notification_preference: string | null
@@ -9129,6 +9131,7 @@ export type Database = {
           copecart_subscription_id?: string | null
           country?: string | null
           created_at?: string
+          created_by_partner_id?: string | null
           created_by_provider_id?: string | null
           currency?: string | null
           deleted_at?: string | null
@@ -9164,6 +9167,7 @@ export type Database = {
           location_name?: string | null
           logo_url?: string | null
           longitude?: number | null
+          managing_partner_id?: string | null
           mobile?: string | null
           notification_language?: string | null
           notification_preference?: string | null
@@ -9236,6 +9240,7 @@ export type Database = {
           copecart_subscription_id?: string | null
           country?: string | null
           created_at?: string
+          created_by_partner_id?: string | null
           created_by_provider_id?: string | null
           currency?: string | null
           deleted_at?: string | null
@@ -9271,6 +9276,7 @@ export type Database = {
           location_name?: string | null
           logo_url?: string | null
           longitude?: number | null
+          managing_partner_id?: string | null
           mobile?: string | null
           notification_language?: string | null
           notification_preference?: string | null
