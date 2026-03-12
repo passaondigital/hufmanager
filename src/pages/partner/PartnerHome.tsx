@@ -440,6 +440,9 @@ export default function PartnerHome() {
           </div>
         )}
       </div>
+
+      {/* Service Order Inbox */}
+      <PartnerServiceOrderInbox />
     </div>
   );
 }
