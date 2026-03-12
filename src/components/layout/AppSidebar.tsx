@@ -193,7 +193,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         { title: "Tages-Cockpit", url: "/tour", icon: Calendar, description: "Tour · Zeit · km · Sprit" },
         { title: "HufCam Pro", url: "/work-mode?tab=hufcam", icon: Camera, description: "Foto-Dokumentation" },
         { title: "Hufanalyse", url: "/work-mode?tab=analyse", icon: FileCheck, description: "LTZ-Analyse-Bögen" },
-        { title: "Feedback", url: "/auffassen", icon: Star, description: "Bewertungen sammeln" },
+        { title: "Feedback", url: "/auffassen/feedback", icon: Star, description: "Bewertungen sammeln" },
       ]
     },
     { 
@@ -206,7 +206,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         { title: "Fuhrpark", url: "/fuhrpark", icon: Car, description: "Fahrzeuge & Tankbuch" },
         { title: "Buchhaltung", url: "/buchhaltung", icon: FileText, description: "EÜR, USt-VA, DATEV & StB" },
         { title: "GuV-Übersicht", url: "/guv", icon: Scale, description: "Gewinn- & Verlustrechnung" },
-        { title: "Betriebszahlen", url: "/analyse", icon: TrendingUp, description: "Charts & Stats" },
+        { title: "Betriebszahlen", url: "/analyse/betriebszahlen", icon: TrendingUp, description: "Charts & Stats" },
       ]
     },
   ];
