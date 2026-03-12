@@ -51,7 +51,6 @@ const PARTNER_NAV: NavigationConfig = {
           children: [
             { label: "Inbox", path: "/partner-chat" },
             { label: "Warteliste", path: "/partner-anfragen" },
-            { label: "Meine Website", path: "/partner-website" },
           ],
         },
         {
