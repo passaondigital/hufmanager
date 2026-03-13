@@ -820,7 +820,7 @@ const botschafterTypes = [
       "Logo-Placement (nach Absprache)",
       "Gemeinsame PR-Möglichkeit zum Launch (1. April)",
       "Kooperationsvereinbarung nach Maß",
-      "Standard-Botschaft: „Wir empfehlen die digitale Pferdeakte"",
+      'Standard-Botschaft: "Wir empfehlen die digitale Pferdeakte"',
     ],
   },
 ];
