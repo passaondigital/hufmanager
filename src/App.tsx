@@ -101,6 +101,8 @@ const ManagementBotschafter = lazy(() => import("@/pages/provider/ManagementBots
 const PartnerManagementBotschafter = lazy(() => import("@/pages/partner/PartnerManagementBotschafter"));
 const EmployeeManagementBotschafter = lazy(() => import("@/pages/employee/EmployeeManagementBotschafter"));
 const ClientBotschafter = lazy(() => import("@/pages/client/ClientBotschafter"));
+const BotschafterWerbemittelPage = lazy(() => import("@/pages/botschafter/BotschafterWerbemittelPage"));
+const WerbemittelEditor = lazy(() => import("@/pages/botschafter/WerbemittelEditor"));
 const Lager = lazy(() => import("@/pages/Lager"));
 const Ausgaben = lazy(() => import("@/pages/Ausgaben"));
 const GuV = lazy(() => import("@/pages/GuV"));
