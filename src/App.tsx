@@ -394,6 +394,18 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             {/* Öffentliche Dokumentation */}
             <Route path="/docs" element={<Docs />} />
             <Route path="/docs/changelog" element={<Docs />} />
+
+            {/* Botschafter-App - für alle eingeloggten Nutzer */}
+            <Route path="/botschafter/werbemittel" element={
+              <ProtectedRoute allowedRoles={["provider", "partner", "employee", "client", "admin"]}>
+                <BotschafterWerbemittelPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/botschafter/werbemittel/erstellen" element={
+              <ProtectedRoute allowedRoles={["provider", "partner", "employee", "client", "admin"]}>
+                <WerbemittelEditor />
+              </ProtectedRoute>
+            } />
             
             {/* Admin Mission Control - nur für Admins */}
             <Route path="/admin/mission-control" element={
