@@ -398,6 +398,11 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/docs/changelog" element={<Docs />} />
 
             {/* Botschafter-App - für alle eingeloggten Nutzer */}
+            <Route path="/botschafter/uebersicht" element={
+              <ProtectedRoute allowedRoles={["provider", "partner", "employee", "client", "admin"]}>
+                <BotschafterUebersicht />
+              </ProtectedRoute>
+            } />
             <Route path="/botschafter/werbemittel" element={
               <ProtectedRoute allowedRoles={["provider", "partner", "employee", "client", "admin"]}>
                 <BotschafterWerbemittelPage />
