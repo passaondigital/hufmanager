@@ -33,6 +33,7 @@ import { AdminBotschafterConversions } from "@/components/admin/AdminBotschafter
 import { AdminBotschafterAbrechnungen } from "@/components/admin/AdminBotschafterAbrechnungen";
 import { AdminBotschafterWerbemittel } from "@/components/admin/AdminBotschafterWerbemittel";
 import { AdminBotschafterRangliste } from "@/components/admin/AdminBotschafterRangliste";
+import { AdminBotschafterKommunikation } from "@/components/admin/AdminBotschafterKommunikation";
 import { HeartPulse, FileText, Handshake, Building2, UsersRound, GraduationCap } from "lucide-react";
 
 type AdminView = "users" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "invoices" | "contracts" | "connections" | "domains" | "self-healing" | "affiliates" | "cooperations" | "hm_team" | "education" | "botschafter" | "botschafter-conversions" | "botschafter-abrechnungen" | "botschafter-werbemittel" | "botschafter-rangliste";
