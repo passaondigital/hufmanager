@@ -48,6 +48,7 @@ export default function BotschafterWerbemittelPage() {
 
   useEffect(() => {
     if (user?.id) loadAll();
+    localStorage.setItem("hm_werbemittel_visited", "true");
   }, [user?.id]);
 
   const loadAll = async () => {
