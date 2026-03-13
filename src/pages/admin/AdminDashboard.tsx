@@ -33,9 +33,10 @@ import { AdminBotschafterConversions } from "@/components/admin/AdminBotschafter
 import { AdminBotschafterAbrechnungen } from "@/components/admin/AdminBotschafterAbrechnungen";
 import { AdminBotschafterWerbemittel } from "@/components/admin/AdminBotschafterWerbemittel";
 import { AdminBotschafterRangliste } from "@/components/admin/AdminBotschafterRangliste";
+import { AdminBotschafterKommunikation } from "@/components/admin/AdminBotschafterKommunikation";
 import { HeartPulse, FileText, Handshake, Building2, UsersRound, GraduationCap } from "lucide-react";
 
-type AdminView = "users" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "invoices" | "contracts" | "connections" | "domains" | "self-healing" | "affiliates" | "cooperations" | "hm_team" | "education" | "botschafter" | "botschafter-conversions" | "botschafter-abrechnungen" | "botschafter-werbemittel" | "botschafter-rangliste";
+type AdminView = "users" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "invoices" | "contracts" | "connections" | "domains" | "self-healing" | "affiliates" | "cooperations" | "hm_team" | "education" | "botschafter" | "botschafter-conversions" | "botschafter-abrechnungen" | "botschafter-werbemittel" | "botschafter-rangliste" | "botschafter-kommunikation";
 
 const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "users", label: "User-DB", icon: Users },
@@ -53,6 +54,7 @@ const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ cla
   { id: "botschafter-abrechnungen", label: "↳ Abrechnungen", icon: Mic },
   { id: "botschafter-werbemittel", label: "↳ Werbemittel", icon: Mic },
   { id: "botschafter-rangliste", label: "↳ Rangliste", icon: Mic },
+  { id: "botschafter-kommunikation", label: "↳ Kommunikation", icon: Mic },
   { id: "docs", label: "System & Doku", icon: BookOpen },
   { id: "ki-hub", label: "KI-Daten-Hub", icon: Brain },
   { id: "connections", label: "HM Connect", icon: Link2 },
@@ -246,6 +248,7 @@ export default function AdminDashboard() {
         {activeView === "botschafter-abrechnungen" && <AdminBotschafterAbrechnungen />}
         {activeView === "botschafter-werbemittel" && <AdminBotschafterWerbemittel />}
         {activeView === "botschafter-rangliste" && <AdminBotschafterRangliste />}
+        {activeView === "botschafter-kommunikation" && <AdminBotschafterKommunikation />}
       </main>
 
       {/* Quick Note FAB */}

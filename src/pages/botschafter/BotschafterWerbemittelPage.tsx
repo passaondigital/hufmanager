@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Loader2, Sparkles, Copy, Star, Download, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, Sparkles, Copy, Star, Download, Pencil, Trash2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
 
@@ -98,9 +98,14 @@ export default function BotschafterWerbemittelPage() {
           </Button>
           <h1 className="text-2xl font-bold">Werbemittel</h1>
         </div>
-        <Button className="bg-orange-500 hover:bg-orange-600 text-white" onClick={() => navigate("/botschafter/werbemittel/erstellen")}>
-          <Sparkles className="w-4 h-4 mr-2" /> Eigenes Werbemittel erstellen
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate("/botschafter/nachrichten")}>
+            <MessageCircle className="w-4 h-4 mr-2" /> Nachrichten
+          </Button>
+          <Button className="bg-orange-500 hover:bg-orange-600 text-white" onClick={() => navigate("/botschafter/werbemittel/erstellen")}>
+            <Sparkles className="w-4 h-4 mr-2" /> Eigenes Werbemittel erstellen
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="vorlagen">

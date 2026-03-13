@@ -103,6 +103,7 @@ const EmployeeManagementBotschafter = lazy(() => import("@/pages/employee/Employ
 const ClientBotschafter = lazy(() => import("@/pages/client/ClientBotschafter"));
 const BotschafterWerbemittelPage = lazy(() => import("@/pages/botschafter/BotschafterWerbemittelPage"));
 const WerbemittelEditor = lazy(() => import("@/pages/botschafter/WerbemittelEditor"));
+const BotschafterNachrichten = lazy(() => import("@/pages/botschafter/BotschafterNachrichten"));
 const Lager = lazy(() => import("@/pages/Lager"));
 const Ausgaben = lazy(() => import("@/pages/Ausgaben"));
 const GuV = lazy(() => import("@/pages/GuV"));
@@ -404,6 +405,11 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/botschafter/werbemittel/erstellen" element={
               <ProtectedRoute allowedRoles={["provider", "partner", "employee", "client", "admin"]}>
                 <WerbemittelEditor />
+              </ProtectedRoute>
+            } />
+            <Route path="/botschafter/nachrichten" element={
+              <ProtectedRoute allowedRoles={["provider", "partner", "employee", "client", "admin"]}>
+                <BotschafterNachrichten />
               </ProtectedRoute>
             } />
             
