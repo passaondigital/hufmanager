@@ -1627,6 +1627,50 @@ export type Database = {
           },
         ]
       }
+      botschafter_assets: {
+        Row: {
+          asset_type: string
+          botschafter_id: string | null
+          canvas_data: Json | null
+          created_at: string | null
+          id: string
+          image_url: string | null
+          is_favorite: boolean | null
+          prompt_used: string | null
+          title: string | null
+        }
+        Insert: {
+          asset_type: string
+          botschafter_id?: string | null
+          canvas_data?: Json | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_favorite?: boolean | null
+          prompt_used?: string | null
+          title?: string | null
+        }
+        Update: {
+          asset_type?: string
+          botschafter_id?: string | null
+          canvas_data?: Json | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_favorite?: boolean | null
+          prompt_used?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "botschafter_assets_botschafter_id_fkey"
+            columns: ["botschafter_id"]
+            isOneToOne: false
+            referencedRelation: "pferdeakte_botschafter"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       botschafter_clicks: {
         Row: {
           botschafter_id: string | null
@@ -1711,6 +1755,110 @@ export type Database = {
             columns: ["botschafter_id"]
             isOneToOne: false
             referencedRelation: "pferdeakte_botschafter"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      botschafter_nachrichten: {
+        Row: {
+          botschafter_id: string | null
+          content: string
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          read_at: string | null
+          sender: string
+        }
+        Insert: {
+          botschafter_id?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          read_at?: string | null
+          sender: string
+        }
+        Update: {
+          botschafter_id?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          read_at?: string | null
+          sender?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "botschafter_nachrichten_botschafter_id_fkey"
+            columns: ["botschafter_id"]
+            isOneToOne: false
+            referencedRelation: "pferdeakte_botschafter"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      botschafter_updates: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string | null
+          id: string
+          is_pinned: boolean | null
+          published_at: string | null
+          target_type: string | null
+          title: string
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          published_at?: string | null
+          target_type?: string | null
+          title: string
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          published_at?: string | null
+          target_type?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      botschafter_updates_read: {
+        Row: {
+          botschafter_id: string
+          read_at: string | null
+          update_id: string
+        }
+        Insert: {
+          botschafter_id: string
+          read_at?: string | null
+          update_id: string
+        }
+        Update: {
+          botschafter_id?: string
+          read_at?: string | null
+          update_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "botschafter_updates_read_botschafter_id_fkey"
+            columns: ["botschafter_id"]
+            isOneToOne: false
+            referencedRelation: "pferdeakte_botschafter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "botschafter_updates_read_update_id_fkey"
+            columns: ["update_id"]
+            isOneToOne: false
+            referencedRelation: "botschafter_updates"
             referencedColumns: ["id"]
           },
         ]
@@ -8871,9 +9019,12 @@ export type Database = {
       }
       pferdeakte_botschafter: {
         Row: {
+          bid: string | null
           commission_rate: number | null
           company_name: string | null
           company_role: string | null
+          converted_at: string | null
+          converted_to_role: string | null
           cooperation_types: string[] | null
           copecart_username: string | null
           copecart_verified: boolean | null
@@ -8881,6 +9032,7 @@ export type Database = {
           customer_count: string | null
           email: string
           first_name: string
+          gid_type: string | null
           heard_from: string | null
           id: string
           industry: string | null
@@ -8894,6 +9046,8 @@ export type Database = {
           public_display_name: string | null
           referral_code: string
           social_handle: string | null
+          source_role: string | null
+          source_user_id: string | null
           status: string | null
           total_clicks: number | null
           total_conversions: number | null
@@ -8904,9 +9058,12 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          bid?: string | null
           commission_rate?: number | null
           company_name?: string | null
           company_role?: string | null
+          converted_at?: string | null
+          converted_to_role?: string | null
           cooperation_types?: string[] | null
           copecart_username?: string | null
           copecart_verified?: boolean | null
@@ -8914,6 +9071,7 @@ export type Database = {
           customer_count?: string | null
           email: string
           first_name: string
+          gid_type?: string | null
           heard_from?: string | null
           id?: string
           industry?: string | null
@@ -8927,6 +9085,8 @@ export type Database = {
           public_display_name?: string | null
           referral_code: string
           social_handle?: string | null
+          source_role?: string | null
+          source_user_id?: string | null
           status?: string | null
           total_clicks?: number | null
           total_conversions?: number | null
@@ -8937,9 +9097,12 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          bid?: string | null
           commission_rate?: number | null
           company_name?: string | null
           company_role?: string | null
+          converted_at?: string | null
+          converted_to_role?: string | null
           cooperation_types?: string[] | null
           copecart_username?: string | null
           copecart_verified?: boolean | null
@@ -8947,6 +9110,7 @@ export type Database = {
           customer_count?: string | null
           email?: string
           first_name?: string
+          gid_type?: string | null
           heard_from?: string | null
           id?: string
           industry?: string | null
@@ -8960,6 +9124,8 @@ export type Database = {
           public_display_name?: string | null
           referral_code?: string
           social_handle?: string | null
+          source_role?: string | null
+          source_user_id?: string | null
           status?: string | null
           total_clicks?: number | null
           total_conversions?: number | null
