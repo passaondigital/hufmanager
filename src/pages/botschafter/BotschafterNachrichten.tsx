@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, Loader2, Send, Pin } from "lucide-react";
 import { toast } from "sonner";
+import { BotschafterFloatingHelp } from "@/components/botschafter/BotschafterFloatingHelp";
 import { formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
 
