@@ -203,6 +203,23 @@ const LazyFallback = () => {
 // Create persister for IndexedDB storage
 const persister = createIDBPersister();
 
+/** Intercepts /pferdeakte routes BEFORE AuthProvider so they render instantly without auth/tour/onboarding */
+function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  if (location.pathname.startsWith('/pferdeakte')) {
+    return (
+      <Suspense fallback={<LazyFallback />}>
+        <Routes>
+          <Route path="/pferdeakte" element={<PferdeakteLanding />} />
+          {/* Add /pferdeakte/partner here when created */}
+          <Route path="/pferdeakte/*" element={<PferdeakteLanding />} />
+        </Routes>
+      </Suspense>
+    );
+  }
+  return <>{children}</>;
+}
+
 function App() {
   const [queryClient] = useState(
     () =>
@@ -271,9 +288,11 @@ function App() {
       <ErrorBoundary name="App">
         <ThemeProvider defaultTheme="dark">
           <BrowserRouter>
-            <AuthProvider>
-              <AppContent queryClient={queryClient} />
-            </AuthProvider>
+            <PferdeakteRouteGuard>
+              <AuthProvider>
+                <AppContent queryClient={queryClient} />
+              </AuthProvider>
+            </PferdeakteRouteGuard>
           </BrowserRouter>
         </ThemeProvider>
       </ErrorBoundary>
@@ -363,8 +382,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             {/* Öffentliches Glossar */}
             <Route path="/glossar" element={<Glossar />} />
             
-            {/* Pferdeakte Landing (öffentlich) */}
-            <Route path="/pferdeakte" element={<PferdeakteLanding />} />
+            {/* Pferdeakte is handled by PferdeakteRouteGuard above AppContent */}
             
             {/* Öffentliche Dokumentation */}
             <Route path="/docs" element={<Docs />} />
