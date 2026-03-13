@@ -316,6 +316,7 @@ export default function BotschafterNachrichten() {
           )}
         </DialogContent>
       </Dialog>
+      <BotschafterFloatingHelp />
     </div>
   );
 }
