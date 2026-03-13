@@ -130,6 +130,7 @@ export default function BotschafterAuth() {
         navigate("/botschafter/warten", { replace: true });
       } else {
         setNoBotschafter(true);
+        setLoggedInUser({ id: data.user.id, email: data.user.email || loginEmail });
         setLoginLoading(false);
         sessionStorage.removeItem("botschafter_login_source");
       }
