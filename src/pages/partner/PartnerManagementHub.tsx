@@ -81,6 +81,12 @@ export default function PartnerManagementHub() {
           description="AGB, Datenschutz, Impressum"
           onClick={() => navigate("/partner-management/rechtliches")}
         />
+        <Tile
+          icon={<Mic className="w-10 h-10 text-primary" />}
+          title="Botschafter werden"
+          description="Provision verdienen & HufManager empfehlen"
+          onClick={() => navigate("/partner-management/botschafter")}
+        />
       </TileCategory>
     </div>
   );

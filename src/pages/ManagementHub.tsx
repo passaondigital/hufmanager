@@ -105,6 +105,12 @@ export default function ManagementHub() {
           description="AGB, Datenschutz, Impressum"
           onClick={() => navigate("/management/rechtliches")}
         />
+        <Tile
+          icon={<Mic className="w-10 h-10 text-primary" />}
+          title="Botschafter werden"
+          description="Provision verdienen & HufManager empfehlen"
+          onClick={() => navigate("/management/botschafter")}
+        />
       </TileCategory>
     </div>
   );

@@ -41,6 +41,12 @@ export default function EmployeeManagementHub() {
           description="Benachrichtigungen, Passwort"
           onClick={() => navigate("/employee/management/einstellungen")}
         />
+        <Tile
+          icon={<Mic className="w-10 h-10 text-primary" />}
+          title="Botschafter werden"
+          description="Provision verdienen & HufManager empfehlen"
+          onClick={() => navigate("/employee/management/botschafter")}
+        />
       </TileCategory>
     </div>
   );
