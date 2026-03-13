@@ -14,6 +14,9 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   const { status, loading: subLoading } = useSubscription();
   const location = useLocation();
 
+  // Check if this is a botschafter route — only needs auth, not a specific role
+  const isBotschafterRoute = location.pathname.startsWith("/botschafter");
+
   if (loading || subLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -24,10 +27,20 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
 
   // Not authenticated
   if (!user) {
+    // Botschafter routes redirect to botschafter login, not app login
+    if (isBotschafterRoute) {
+      return <Navigate to="/botschafter/login" state={{ from: location }} replace />;
+    }
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
-  // Role not yet loaded
+  // For botschafter routes: auth is enough, no role check needed
+  // (The individual pages check pferdeakte_botschafter status themselves)
+  if (isBotschafterRoute) {
+    return <>{children}</>;
+  }
+
+  // Role not yet loaded (non-botschafter routes)
   if (!role) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">

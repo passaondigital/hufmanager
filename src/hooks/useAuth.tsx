@@ -211,6 +211,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
             // Process invite code on sign in
             if (event === "SIGNED_IN") {
+              // Botschafter login redirect
+              if (sessionStorage.getItem("botschafter_login_source") === "true") {
+                sessionStorage.removeItem("botschafter_login_source");
+                try {
+                  const { data: bot } = await supabase
+                    .from("pferdeakte_botschafter")
+                    .select("id, status")
+                    .eq("user_id", session.user.id)
+                    .maybeSingle();
+                  if (bot?.status === "active") {
+                    navigate("/botschafter/uebersicht", { replace: true });
+                    return;
+                  }
+                  if (bot?.status === "pending") {
+                    navigate("/botschafter/warten", { replace: true });
+                    return;
+                  }
+                } catch (err) {
+                  console.warn("Botschafter redirect check failed:", err);
+                }
+              }
               processInviteCode(session.user.id);
               processHmConnectInvite(session.user.id);
               const partnerToken = sessionStorage.getItem("partner_invite_token");

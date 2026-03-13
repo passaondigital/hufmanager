@@ -97,6 +97,8 @@ const WebsiteWiderruf = lazy(() => import("@/pages/website/Widerruf"));
 const Glossar = lazy(() => import("@/pages/Glossar"));
 const PferdeakteLanding = lazy(() => import("@/pages/PferdeakteLanding"));
 const PferdeakteBotschafter = lazy(() => import("@/pages/PferdeakteBotschafter"));
+const BotschafterAuth = lazy(() => import("@/pages/botschafter/BotschafterAuth"));
+const BotschafterWarten = lazy(() => import("@/pages/botschafter/BotschafterWarten"));
 const ManagementBotschafter = lazy(() => import("@/pages/provider/ManagementBotschafter"));
 const PartnerManagementBotschafter = lazy(() => import("@/pages/partner/PartnerManagementBotschafter"));
 const EmployeeManagementBotschafter = lazy(() => import("@/pages/employee/EmployeeManagementBotschafter"));
@@ -215,13 +217,17 @@ const persister = createIDBPersister();
 /** Intercepts /pferdeakte routes BEFORE AuthProvider so they render instantly without auth/tour/onboarding */
 function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
   const location = useLocation();
-  if (location.pathname.startsWith('/pferdeakte')) {
+  const path = location.pathname;
+  // Intercept public routes that don't need AuthProvider
+  if (path.startsWith('/pferdeakte') || path === '/botschafter/login' || path === '/botschafter/warten') {
     return (
       <Suspense fallback={<LazyFallback />}>
         <Routes>
           <Route path="/pferdeakte" element={<PferdeakteLanding />} />
           <Route path="/pferdeakte/botschafter" element={<PferdeakteBotschafter />} />
           <Route path="/pferdeakte/*" element={<PferdeakteLanding />} />
+          <Route path="/botschafter/login" element={<BotschafterAuth />} />
+          <Route path="/botschafter/warten" element={<BotschafterWarten />} />
         </Routes>
       </Suspense>
     );
@@ -397,24 +403,24 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/docs" element={<Docs />} />
             <Route path="/docs/changelog" element={<Docs />} />
 
-            {/* Botschafter-App - für alle eingeloggten Nutzer */}
+            {/* Botschafter-App - für alle eingeloggten Nutzer (inkl. reine Botschafter ohne App-Rolle) */}
             <Route path="/botschafter/uebersicht" element={
-              <ProtectedRoute allowedRoles={["provider", "partner", "employee", "client", "admin"]}>
+              <ProtectedRoute>
                 <BotschafterUebersicht />
               </ProtectedRoute>
             } />
             <Route path="/botschafter/werbemittel" element={
-              <ProtectedRoute allowedRoles={["provider", "partner", "employee", "client", "admin"]}>
+              <ProtectedRoute>
                 <BotschafterWerbemittelPage />
               </ProtectedRoute>
             } />
             <Route path="/botschafter/werbemittel/erstellen" element={
-              <ProtectedRoute allowedRoles={["provider", "partner", "employee", "client", "admin"]}>
+              <ProtectedRoute>
                 <WerbemittelEditor />
               </ProtectedRoute>
             } />
             <Route path="/botschafter/nachrichten" element={
-              <ProtectedRoute allowedRoles={["provider", "partner", "employee", "client", "admin"]}>
+              <ProtectedRoute>
                 <BotschafterNachrichten />
               </ProtectedRoute>
             } />
