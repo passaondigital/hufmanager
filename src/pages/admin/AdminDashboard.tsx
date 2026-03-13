@@ -6,7 +6,7 @@ import { useLogout } from "@/hooks/useLogout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Shield, Users, Database, Bug, Activity, Crown, Plus, Zap, Package, BookOpen, Brain, AlertTriangle, PiggyBank, Link2, Globe, ScrollText } from "lucide-react";
+import { Loader2, Shield, Users, Database, Bug, Activity, Crown, Plus, Zap, Package, BookOpen, Brain, AlertTriangle, PiggyBank, Link2, Globe, ScrollText, Mic } from "lucide-react";
 import { toast } from "sonner";
 
 // Admin Views
@@ -28,9 +28,14 @@ import { AffiliateCenter } from "@/components/admin/AffiliateCenter";
 import { CooperationCenter } from "@/components/admin/CooperationCenter";
 import { HMTeamCenter } from "@/components/admin/HMTeamCenter";
 import { EducationCenter } from "@/components/admin/EducationCenter";
+import { AdminBotschafterOverview } from "@/components/admin/AdminBotschafterOverview";
+import { AdminBotschafterConversions } from "@/components/admin/AdminBotschafterConversions";
+import { AdminBotschafterAbrechnungen } from "@/components/admin/AdminBotschafterAbrechnungen";
+import { AdminBotschafterWerbemittel } from "@/components/admin/AdminBotschafterWerbemittel";
+import { AdminBotschafterRangliste } from "@/components/admin/AdminBotschafterRangliste";
 import { HeartPulse, FileText, Handshake, Building2, UsersRound, GraduationCap } from "lucide-react";
 
-type AdminView = "users" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "invoices" | "contracts" | "connections" | "domains" | "self-healing" | "affiliates" | "cooperations" | "hm_team" | "education";
+type AdminView = "users" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "invoices" | "contracts" | "connections" | "domains" | "self-healing" | "affiliates" | "cooperations" | "hm_team" | "education" | "botschafter" | "botschafter-conversions" | "botschafter-abrechnungen" | "botschafter-werbemittel" | "botschafter-rangliste";
 
 const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "users", label: "User-DB", icon: Users },
