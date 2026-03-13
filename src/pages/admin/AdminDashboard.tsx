@@ -241,6 +241,11 @@ export default function AdminDashboard() {
         {activeView === "cooperations" && <CooperationCenter />}
         {activeView === "hm_team" && <HMTeamCenter />}
         {activeView === "education" && <EducationCenter />}
+        {activeView === "botschafter" && <AdminBotschafterOverview />}
+        {activeView === "botschafter-conversions" && <AdminBotschafterConversions />}
+        {activeView === "botschafter-abrechnungen" && <AdminBotschafterAbrechnungen />}
+        {activeView === "botschafter-werbemittel" && <AdminBotschafterWerbemittel />}
+        {activeView === "botschafter-rangliste" && <AdminBotschafterRangliste />}
       </main>
 
       {/* Quick Note FAB */}
