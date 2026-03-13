@@ -29,6 +29,7 @@ import { TrialCountdownBanner } from "@/components/subscription/TrialCountdownBa
 import { useDemoActivityTracker } from "@/hooks/useDemoActivityTracker";
 import { useAutoflowMode, AutoflowMode } from "@/hooks/useAutoflowMode";
 import { useCockpitFullscreen } from "@/components/day-cockpit/CockpitFullscreenContext";
+import { BotschafterReminder, useBotschafterReminderVisible } from "@/components/shared/BotschafterReminder";
 
 function ProviderErrorFallback() {
   return (
@@ -68,6 +69,7 @@ export function AppLayout() {
   const { theme, toggleTheme } = useTheme();
   const { mode, updateMode, loading: autoflowLoading, MODE_LABELS } = useAutoflowMode();
   const { isFullscreen } = useCockpitFullscreen();
+  const reminderVisible = useBotschafterReminderVisible();
   
   const modeColors: Record<AutoflowMode, string> = {
     basis: "text-blue-500",
@@ -224,7 +226,7 @@ export function AppLayout() {
         <OfflineBanner />
 
         {/* Main content with bottom nav spacing on mobile */}
-        <main className="flex-1 overflow-auto px-4 py-4 lg:p-6 pb-bottom-nav overflow-x-hidden">
+        <main className={`flex-1 overflow-auto px-4 py-4 lg:p-6 pb-bottom-nav overflow-x-hidden ${reminderVisible ? "pb-[120px] lg:pb-[100px]" : ""}`}>
           <ErrorBoundary name="ProviderMain" fallback={<ProviderErrorFallback />}>
             <Outlet />
           </ErrorBoundary>
@@ -241,6 +243,9 @@ export function AppLayout() {
       
       {/* Demo Account Sticky Banner */}
       <DemoStickyBanner />
+      
+      {/* Botschafter Reminder Banner */}
+      <BotschafterReminder />
     </div>
   );
 }
