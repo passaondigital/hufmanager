@@ -75,6 +75,9 @@ export default function BotschafterAuth() {
   const [loginError, setLoginError] = useState("");
   const [loginShowPw, setLoginShowPw] = useState(false);
   const [noBotschafter, setNoBotschafter] = useState(false);
+  const [loggedInUser, setLoggedInUser] = useState<{ id: string; email: string } | null>(null);
+  const [inlineType, setInlineType] = useState<BotschafterType | "">("");
+  const [inlineLoading, setInlineLoading] = useState(false);
 
   // Register state
   const [type, setType] = useState<BotschafterType | "">("");
