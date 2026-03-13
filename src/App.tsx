@@ -217,13 +217,17 @@ const persister = createIDBPersister();
 /** Intercepts /pferdeakte routes BEFORE AuthProvider so they render instantly without auth/tour/onboarding */
 function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
   const location = useLocation();
-  if (location.pathname.startsWith('/pferdeakte')) {
+  const path = location.pathname;
+  // Intercept public routes that don't need AuthProvider
+  if (path.startsWith('/pferdeakte') || path === '/botschafter/login' || path === '/botschafter/warten') {
     return (
       <Suspense fallback={<LazyFallback />}>
         <Routes>
           <Route path="/pferdeakte" element={<PferdeakteLanding />} />
           <Route path="/pferdeakte/botschafter" element={<PferdeakteBotschafter />} />
           <Route path="/pferdeakte/*" element={<PferdeakteLanding />} />
+          <Route path="/botschafter/login" element={<BotschafterAuth />} />
+          <Route path="/botschafter/warten" element={<BotschafterWarten />} />
         </Routes>
       </Suspense>
     );
