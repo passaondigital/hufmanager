@@ -1580,6 +1580,174 @@ export type Database = {
         }
         Relationships: []
       }
+      botschafter_abrechnungen: {
+        Row: {
+          botschafter_id: string | null
+          copecart_payout_id: string | null
+          created_at: string | null
+          id: string
+          paid_at: string | null
+          period_end: string | null
+          period_start: string | null
+          status: string | null
+          total_amount_cents: number | null
+          total_conversions: number | null
+        }
+        Insert: {
+          botschafter_id?: string | null
+          copecart_payout_id?: string | null
+          created_at?: string | null
+          id?: string
+          paid_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string | null
+          total_amount_cents?: number | null
+          total_conversions?: number | null
+        }
+        Update: {
+          botschafter_id?: string | null
+          copecart_payout_id?: string | null
+          created_at?: string | null
+          id?: string
+          paid_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string | null
+          total_amount_cents?: number | null
+          total_conversions?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "botschafter_abrechnungen_botschafter_id_fkey"
+            columns: ["botschafter_id"]
+            isOneToOne: false
+            referencedRelation: "pferdeakte_botschafter"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      botschafter_clicks: {
+        Row: {
+          botschafter_id: string | null
+          created_at: string | null
+          id: string
+          ip_hash: string | null
+          referral_code: string
+          source: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          botschafter_id?: string | null
+          created_at?: string | null
+          id?: string
+          ip_hash?: string | null
+          referral_code: string
+          source?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          botschafter_id?: string | null
+          created_at?: string | null
+          id?: string
+          ip_hash?: string | null
+          referral_code?: string
+          source?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "botschafter_clicks_botschafter_id_fkey"
+            columns: ["botschafter_id"]
+            isOneToOne: false
+            referencedRelation: "pferdeakte_botschafter"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      botschafter_conversions: {
+        Row: {
+          amount_cents: number | null
+          botschafter_id: string | null
+          commission_cents: number | null
+          commission_rate: number | null
+          copecart_order_id: string | null
+          created_at: string | null
+          id: string
+          paid_at: string | null
+          product_name: string | null
+          referral_code: string
+          status: string | null
+        }
+        Insert: {
+          amount_cents?: number | null
+          botschafter_id?: string | null
+          commission_cents?: number | null
+          commission_rate?: number | null
+          copecart_order_id?: string | null
+          created_at?: string | null
+          id?: string
+          paid_at?: string | null
+          product_name?: string | null
+          referral_code: string
+          status?: string | null
+        }
+        Update: {
+          amount_cents?: number | null
+          botschafter_id?: string | null
+          commission_cents?: number | null
+          commission_rate?: number | null
+          copecart_order_id?: string | null
+          created_at?: string | null
+          id?: string
+          paid_at?: string | null
+          product_name?: string | null
+          referral_code?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "botschafter_conversions_botschafter_id_fkey"
+            columns: ["botschafter_id"]
+            isOneToOne: false
+            referencedRelation: "pferdeakte_botschafter"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      botschafter_werbemittel: {
+        Row: {
+          category: string
+          content: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          sort_order: number | null
+          target_audience: string | null
+          title: string
+        }
+        Insert: {
+          category: string
+          content: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          target_audience?: string | null
+          title: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          target_audience?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       broadcast_logs: {
         Row: {
           channel: string
@@ -8698,6 +8866,108 @@ export type Database = {
           route?: string | null
           user_role?: string | null
           value_ms?: number
+        }
+        Relationships: []
+      }
+      pferdeakte_botschafter: {
+        Row: {
+          commission_rate: number | null
+          company_name: string | null
+          company_role: string | null
+          cooperation_types: string[] | null
+          copecart_username: string | null
+          copecart_verified: boolean | null
+          created_at: string | null
+          customer_count: string | null
+          email: string
+          first_name: string
+          heard_from: string | null
+          id: string
+          industry: string | null
+          last_name: string
+          listed_publicly: boolean | null
+          motivation: string | null
+          phone: string | null
+          plz: string | null
+          profession: string | null
+          public_description: string | null
+          public_display_name: string | null
+          referral_code: string
+          social_handle: string | null
+          status: string | null
+          total_clicks: number | null
+          total_conversions: number | null
+          total_earnings_cents: number | null
+          total_leads: number | null
+          type: string
+          user_id: string | null
+          website: string | null
+        }
+        Insert: {
+          commission_rate?: number | null
+          company_name?: string | null
+          company_role?: string | null
+          cooperation_types?: string[] | null
+          copecart_username?: string | null
+          copecart_verified?: boolean | null
+          created_at?: string | null
+          customer_count?: string | null
+          email: string
+          first_name: string
+          heard_from?: string | null
+          id?: string
+          industry?: string | null
+          last_name: string
+          listed_publicly?: boolean | null
+          motivation?: string | null
+          phone?: string | null
+          plz?: string | null
+          profession?: string | null
+          public_description?: string | null
+          public_display_name?: string | null
+          referral_code: string
+          social_handle?: string | null
+          status?: string | null
+          total_clicks?: number | null
+          total_conversions?: number | null
+          total_earnings_cents?: number | null
+          total_leads?: number | null
+          type: string
+          user_id?: string | null
+          website?: string | null
+        }
+        Update: {
+          commission_rate?: number | null
+          company_name?: string | null
+          company_role?: string | null
+          cooperation_types?: string[] | null
+          copecart_username?: string | null
+          copecart_verified?: boolean | null
+          created_at?: string | null
+          customer_count?: string | null
+          email?: string
+          first_name?: string
+          heard_from?: string | null
+          id?: string
+          industry?: string | null
+          last_name?: string
+          listed_publicly?: boolean | null
+          motivation?: string | null
+          phone?: string | null
+          plz?: string | null
+          profession?: string | null
+          public_description?: string | null
+          public_display_name?: string | null
+          referral_code?: string
+          social_handle?: string | null
+          status?: string | null
+          total_clicks?: number | null
+          total_conversions?: number | null
+          total_earnings_cents?: number | null
+          total_leads?: number | null
+          type?: string
+          user_id?: string | null
+          website?: string | null
         }
         Relationships: []
       }
