@@ -212,7 +212,7 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
       <Suspense fallback={<LazyFallback />}>
         <Routes>
           <Route path="/pferdeakte" element={<PferdeakteLanding />} />
-          {/* Add /pferdeakte/partner here when created */}
+          <Route path="/pferdeakte/botschafter" element={<PferdeakteBotschafter />} />
           <Route path="/pferdeakte/*" element={<PferdeakteLanding />} />
         </Routes>
       </Suspense>
