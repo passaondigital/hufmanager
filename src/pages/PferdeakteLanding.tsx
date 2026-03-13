@@ -158,16 +158,16 @@ function StickyNav({ scrolled }: { scrolled: boolean }) {
           <button onClick={scrollTo("partner")} className="hover:text-[#0a0a0a] transition-colors">Für Partner</button>
         </div>
         <div className="flex items-center gap-3">
-          <a href="/auth" className="text-sm font-medium px-4 py-2 rounded-lg transition-colors hover:bg-zinc-100" style={{ color: "#6b7280" }}>
+          <a href="/botschafter/login" className="text-sm font-medium px-4 py-2 rounded-lg transition-colors hover:bg-zinc-100" style={{ color: "#6b7280" }}>
             Anmelden
           </a>
-          <button
-            onClick={scrollTo("waitlist")}
-            className="text-sm font-bold px-5 py-2.5 rounded-full text-white transition-all hover:brightness-110 hover:scale-[1.03] hover:shadow-md"
+          <a
+            href="/pferdeakte/botschafter"
+            className="text-sm font-bold px-5 py-2.5 rounded-full text-white transition-all hover:brightness-110 hover:scale-[1.03] hover:shadow-md inline-block"
             style={{ backgroundColor: "#f97316" }}
           >
-            Jetzt vormerken
-          </button>
+            Botschafter werden
+          </a>
         </div>
       </div>
     </nav>

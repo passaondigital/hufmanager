@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronDown, Mail } from "lucide-react";
+import { ChevronDown, Mail, Loader2, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
 
 function generateRef(): string {
@@ -33,16 +33,45 @@ const baseSchema = z.object({
   first_name: z.string().trim().min(1, "Vorname fehlt").max(80),
   last_name: z.string().trim().min(1, "Nachname fehlt").max(80),
   email: z.string().trim().email("Bitte gib eine gültige E-Mail ein").max(255),
+  password: z.string().min(8, "Passwort muss mindestens 8 Zeichen haben"),
+  password_confirm: z.string(),
   privacy: z.literal(true, { errorMap: () => ({ message: "Bitte Datenschutz bestätigen" }) }),
+}).refine(d => d.password === d.password_confirm, {
+  message: "Passwörter stimmen nicht überein",
+  path: ["password_confirm"],
 });
 
 type BotschafterType = "creator" | "profi" | "unternehmen";
 
+function PasswordStrength({ password }: { password: string }) {
+  const score = [
+    password.length >= 8,
+    /[A-Z]/.test(password),
+    /[0-9]/.test(password),
+    /[^a-zA-Z0-9]/.test(password),
+  ].filter(Boolean).length;
+  const labels = ["", "Schwach", "Mittel", "Gut", "Stark"];
+  const colors = ["", "#ef4444", "#f97316", "#eab308", "#22c55e"];
+  if (!password) return null;
+  return (
+    <div className="flex items-center gap-2 mt-1">
+      <div className="flex gap-1 flex-1">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="h-1 flex-1 rounded-full" style={{ backgroundColor: i <= score ? colors[score] : "#e5e7eb" }} />
+        ))}
+      </div>
+      <span className="text-xs" style={{ color: colors[score] }}>{labels[score]}</span>
+    </div>
+  );
+}
+
 export default function PferdeakteBotschafter() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [type, setType] = useState<BotschafterType | "">("");
   const [form, setForm] = useState({
     first_name: "", last_name: "", email: "", phone: "", heard_from: "",
-    social_handle: "", motivation: "",
+    social_handle: "", motivation: "", password: "", password_confirm: "",
     profession: "", plz: "", website: "", customer_count: "",
     company_name: "", company_role: "", industry: "",
   });
@@ -51,6 +80,7 @@ export default function PferdeakteBotschafter() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [showPw, setShowPw] = useState(false);
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -66,8 +96,40 @@ export default function PferdeakteBotschafter() {
     if (!res.success) { setError(res.error.errors[0].message); return; }
 
     setSubmitting(true);
+
+    // 1. Create Supabase auth account
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/botschafter/login`,
+        data: {
+          full_name: `${form.first_name} ${form.last_name}`,
+          role: "client",
+        },
+      },
+    });
+
+    if (authError) {
+      setSubmitting(false);
+      if (authError.message?.includes("already registered")) {
+        setError("Diese E-Mail ist bereits registriert. Bitte melde dich an unter /botschafter/login");
+      } else {
+        setError(authError.message);
+      }
+      return;
+    }
+
+    if (!authData.user) {
+      setSubmitting(false);
+      setError("Registrierung fehlgeschlagen.");
+      return;
+    }
+
+    // 2. INSERT pferdeakte_botschafter WITH user_id
     const refCode = generateRef();
-    const { error: dbErr } = await supabase.from("pferdeakte_botschafter" as any).insert({
+    const { data: botData, error: dbErr } = await supabase.from("pferdeakte_botschafter" as any).insert({
+      user_id: authData.user.id,
       type,
       first_name: form.first_name.substring(0, 80),
       last_name: form.last_name.substring(0, 80),
@@ -85,18 +147,51 @@ export default function PferdeakteBotschafter() {
       industry: type === "unternehmen" ? (form.industry || null) : null,
       cooperation_types: type === "unternehmen" ? cooperationTypes : null,
       referral_code: refCode,
-    } as any);
-    setSubmitting(false);
+      status: "pending",
+      source_role: "extern",
+    } as any).select("id, bid, referral_code").single();
 
     if (dbErr) {
+      setSubmitting(false);
       setError(
         (dbErr as any).code === "23505"
-          ? "Diese E-Mail ist bereits registriert."
+          ? "Diese E-Mail ist bereits als Botschafter registriert."
           : "Ein Fehler ist aufgetreten. Bitte versuche es erneut."
       );
       return;
     }
-    setSuccess(true);
+
+    // 3. Check if existing profile with this email → link
+    const { data: existingProfile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", form.email)
+      .neq("id", authData.user.id)
+      .maybeSingle();
+
+    if (existingProfile && botData) {
+      await supabase.from("pferdeakte_botschafter")
+        .update({ source_user_id: existingProfile.id } as any)
+        .eq("id", (botData as any).id);
+    }
+
+    // 4. Send welcome email
+    try {
+      await supabase.functions.invoke("botschafter-welcome", {
+        body: {
+          email: form.email,
+          first_name: form.first_name,
+          bid: (botData as any)?.bid || (botData as any)?.id || "",
+          referral_code: refCode,
+          type,
+        },
+      });
+    } catch (err) {
+      console.warn("Welcome email failed:", err);
+    }
+
+    setSubmitting(false);
+    navigate("/botschafter/warten", { replace: true });
   };
 
   const inputCls = "border-2 border-zinc-200 bg-white focus-visible:ring-[#f97316] focus-visible:border-[#f97316]";
@@ -111,7 +206,11 @@ export default function PferdeakteBotschafter() {
             ← Zur Pferdeakte
           </Link>
           <span className="text-xl font-bold tracking-tight">HufManager</span>
-          <div className="w-24" />
+          <div className="flex items-center gap-3">
+            <Link to="/botschafter/login" className="text-sm font-medium hover:text-[#f97316] transition-colors" style={{ color: "#6b7280" }}>
+              Bereits Botschafter? Anmelden
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -162,6 +261,34 @@ export default function PferdeakteBotschafter() {
                   <Input placeholder="Nachname *" value={form.last_name} onChange={set("last_name")} className={inputCls} maxLength={80} />
                 </div>
                 <Input type="email" placeholder="E-Mail *" value={form.email} onChange={set("email")} className={inputCls} maxLength={255} />
+                
+                {/* Password fields */}
+                <div className="space-y-3">
+                  <p className="text-xs" style={{ color: "#9ca3af" }}>
+                    Erstelle dein Botschafter-Konto — damit kannst du dich später im Dashboard anmelden.
+                  </p>
+                  <div className="relative">
+                    <Input
+                      type={showPw ? "text" : "password"}
+                      placeholder="Passwort (min. 8 Zeichen) *"
+                      value={form.password}
+                      onChange={set("password")}
+                      className={inputCls}
+                    />
+                    <button type="button" onClick={() => setShowPw(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: "#9ca3af" }}>
+                      {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <PasswordStrength password={form.password} />
+                  <Input
+                    type="password"
+                    placeholder="Passwort bestätigen *"
+                    value={form.password_confirm}
+                    onChange={set("password_confirm")}
+                    className={inputCls}
+                  />
+                </div>
+
                 <Input placeholder="Telefon (optional)" value={form.phone} onChange={set("phone")} className={inputCls} />
                 <div className="relative">
                   <select value={form.heard_from} onChange={set("heard_from")} className={selectCls}>
@@ -237,15 +364,25 @@ export default function PferdeakteBotschafter() {
                   </span>
                 </label>
 
-                {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                {error && (
+                  <div className="text-sm text-center">
+                    <p className="text-red-500">{error}</p>
+                    {error.includes("/botschafter/login") && (
+                      <Link to="/botschafter/login" className="text-sm font-semibold underline mt-1 inline-block" style={{ color: "#f97316" }}>
+                        Zum Botschafter-Login →
+                      </Link>
+                    )}
+                  </div>
+                )}
 
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full h-14 rounded-full text-lg font-bold text-white transition-all duration-200 hover:brightness-110 hover:scale-[1.02] hover:shadow-lg disabled:opacity-50"
+                  className="w-full h-14 rounded-full text-lg font-bold text-white transition-all duration-200 hover:brightness-110 hover:scale-[1.02] hover:shadow-lg disabled:opacity-50 flex items-center justify-center"
                   style={{ backgroundColor: "#f97316" }}
                 >
-                  {submitting ? "Wird gesendet..." : "Jetzt als Botschafter registrieren"}
+                  {submitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                  Jetzt als Botschafter registrieren
                 </button>
               </form>
             </div>
@@ -256,11 +393,9 @@ export default function PferdeakteBotschafter() {
               <p className="mb-4" style={{ color: "#6b7280" }}>
                 Deine Registrierung ist eingegangen. Pascal meldet sich persönlich bei dir — in der Regel innerhalb von 24 Stunden.
               </p>
-              {(type === "creator" || type === "profi") && (
-                <p className="font-bold" style={{ color: "#f97316" }}>
-                  Dein Affiliate-Link wird dir per E-Mail zugeschickt.
-                </p>
-              )}
+              <p className="font-bold" style={{ color: "#f97316" }}>
+                Dein Affiliate-Link wird dir per E-Mail zugeschickt.
+              </p>
             </div>
           )}
         </div>

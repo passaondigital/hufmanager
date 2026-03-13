@@ -79,6 +79,48 @@ export async function ensureUserProfile(user: User): Promise<{ success: boolean;
       }
     }
 
+    // ── BID Linking ───────────────────────────────────────
+    // Link orphan BIDs (registered without auth) by email match
+    const userEmail = user.email;
+    if (userEmail) {
+      try {
+        const { data: orphanBid } = await supabase
+          .from("pferdeakte_botschafter")
+          .select("id")
+          .eq("email", userEmail)
+          .is("user_id", null)
+          .maybeSingle();
+
+        if (orphanBid) {
+          console.log("Auto-linking orphan BID to user:", user.id);
+          await supabase
+            .from("pferdeakte_botschafter")
+            .update({ user_id: user.id, source_user_id: user.id } as any)
+            .eq("id", orphanBid.id);
+        }
+      } catch (bidErr) {
+        console.warn("BID linking check failed (non-critical):", bidErr);
+      }
+
+      // Ensure source_user_id is set for existing BIDs
+      try {
+        const { data: existingBid } = await supabase
+          .from("pferdeakte_botschafter")
+          .select("id, source_user_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (existingBid && !existingBid.source_user_id) {
+          await supabase
+            .from("pferdeakte_botschafter")
+            .update({ source_user_id: user.id } as any)
+            .eq("id", existingBid.id);
+        }
+      } catch (bidErr) {
+        console.warn("BID source_user_id update failed (non-critical):", bidErr);
+      }
+    }
+
     return { success: true };
   } catch (err: any) {
     console.error("Unexpected error in ensureUserProfile:", err);
