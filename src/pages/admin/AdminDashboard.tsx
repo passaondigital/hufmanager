@@ -54,6 +54,7 @@ const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ cla
   { id: "botschafter-abrechnungen", label: "↳ Abrechnungen", icon: Mic },
   { id: "botschafter-werbemittel", label: "↳ Werbemittel", icon: Mic },
   { id: "botschafter-rangliste", label: "↳ Rangliste", icon: Mic },
+  { id: "botschafter-kommunikation", label: "↳ Kommunikation", icon: Mic },
   { id: "docs", label: "System & Doku", icon: BookOpen },
   { id: "ki-hub", label: "KI-Daten-Hub", icon: Brain },
   { id: "connections", label: "HM Connect", icon: Link2 },
