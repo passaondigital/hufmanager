@@ -132,6 +132,7 @@ export default function PferdeakteLanding() {
       <SupportersSection />
       <WaitlistSection defaultRef={searchParams.get("ref") ?? ""} />
       <SocialProofSection />
+      <BotschafterSection />
       <ShareSection />
       <FooterSection />
     </div>
@@ -779,6 +780,101 @@ function SocialProofSection() {
               <p className="text-xs" style={{ color: "#9ca3af" }}>{q.role}</p>
             </div>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═════════════════════════════════════════════════════════════
+   SECTION — BOTSCHAFTER-PROGRAMM
+   ═════════════════════════════════════════════════════════════ */
+const botschafterTypes = [
+  {
+    icon: "🎙️",
+    title: "Pferdemenschen & Creator",
+    points: [
+      "Bis 50% Provision auf alle Pakete pro Empfehlung",
+      "Top 10 Empfehler: HufManager Pro — 1 Jahr kostenlos",
+      "Namentliche Erwähnung als Botschafter",
+      "Exklusiver Frühzugang vor dem Launch",
+    ],
+    note: "Die Kunden-App für Pferdebesitzer ist immer kostenlos — du empfiehlst etwas das null kostet und bekommst trotzdem Provision wenn deine Community Profi-Features nutzt.",
+  },
+  {
+    icon: "🔨",
+    title: "Hufbearbeiter, Tierärzte & Therapeuten",
+    points: [
+      "Bis 50% Affiliate-Provision auf alle Pakete",
+      "Eigenes Botschafter-Dashboard mit Tracking",
+      "Namentlich auf der Launchpage gelistet",
+      "HufManager Pro 1 Jahr kostenlos (Top 10 Empfehler)",
+      "Vorzugspreis auf eigenes HufManager-Abo",
+    ],
+  },
+  {
+    icon: "🏢",
+    title: "Unternehmen & Organisationen",
+    points: [
+      "Namentliche Nennung auf der Launchpage als Unterstützer",
+      "Logo-Placement (nach Absprache)",
+      "Gemeinsame PR-Möglichkeit zum Launch (1. April)",
+      "Kooperationsvereinbarung nach Maß",
+      'Standard-Botschaft: "Wir empfehlen die digitale Pferdeakte"',
+    ],
+  },
+];
+
+function BotschafterSection() {
+  const r = useReveal();
+  return (
+    <section id="botschafter" className="py-20 md:py-28" style={{ backgroundColor: "#0a0a0a" }}>
+      <div ref={r.ref} className={`max-w-5xl mx-auto px-6 ${rc(r.visible)}`}>
+        <span className="inline-flex items-center rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider mx-auto block text-center mb-4" style={{ backgroundColor: "rgba(249,115,22,.15)", color: "#f97316" }}>
+          Botschafter-Programm
+        </span>
+        <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-center text-white mb-4 leading-tight">
+          Werde Teil der Bewegung.<br />Nicht nur Nutzer — Mitgestalter.
+        </h2>
+        <p className="text-center max-w-[650px] mx-auto mb-14" style={{ color: "rgba(255,255,255,.5)" }}>
+          HufManager sucht Menschen und Organisationen, die den neuen Standard im Pferdesport aktiv mitprägen wollen. Als Botschafter wirst du nicht nur sichtbar — du verdienst an jedem, den du überzeugst.
+        </p>
+
+        <div className="grid md:grid-cols-3 gap-6 mb-10">
+          {botschafterTypes.map((bt) => (
+            <div
+              key={bt.title}
+              className="rounded-2xl p-6 border-t-4 transition-all duration-200 hover:brightness-110"
+              style={{ backgroundColor: "#1a1a1a", borderTopColor: "#f97316" }}
+            >
+              <span className="text-2xl block mb-3">{bt.icon}</span>
+              <h3 className="text-lg font-bold text-white mb-4">{bt.title}</h3>
+              <ul className="space-y-2 mb-4">
+                {bt.points.map((p) => (
+                  <li key={p} className="flex items-start gap-2 text-sm" style={{ color: "rgba(255,255,255,.55)" }}>
+                    <span className="mt-0.5 font-bold" style={{ color: "#f97316" }}>•</span>
+                    <span>{p}</span>
+                  </li>
+                ))}
+              </ul>
+              {bt.note && (
+                <p className="text-xs leading-relaxed mt-3" style={{ color: "#f97316" }}>{bt.note}</p>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="text-center">
+          <a
+            href="/pferdeakte/botschafter"
+            className="inline-flex items-center justify-center h-14 px-10 rounded-full text-lg font-bold text-white transition-all duration-200 hover:brightness-110 hover:scale-[1.03] hover:shadow-lg"
+            style={{ backgroundColor: "#f97316" }}
+          >
+            Jetzt als Botschafter registrieren →
+          </a>
+          <p className="mt-4 text-sm" style={{ color: "rgba(255,255,255,.4)" }}>
+            Kostenlos registrieren · Keine Verpflichtung · Jederzeit kündbar
+          </p>
         </div>
       </div>
     </section>
