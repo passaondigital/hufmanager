@@ -29,6 +29,7 @@ import { TrialCountdownBanner } from "@/components/subscription/TrialCountdownBa
 import { useDemoActivityTracker } from "@/hooks/useDemoActivityTracker";
 import { useAutoflowMode, AutoflowMode } from "@/hooks/useAutoflowMode";
 import { useCockpitFullscreen } from "@/components/day-cockpit/CockpitFullscreenContext";
+import { BotschafterReminder, useBotschafterReminderVisible } from "@/components/shared/BotschafterReminder";
 
 function ProviderErrorFallback() {
   return (
