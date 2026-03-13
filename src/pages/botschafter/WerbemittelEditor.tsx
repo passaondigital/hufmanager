@@ -233,6 +233,7 @@ export default function WerbemittelEditor() {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b p-4 flex items-center gap-4">
