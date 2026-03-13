@@ -104,6 +104,7 @@ const ClientBotschafter = lazy(() => import("@/pages/client/ClientBotschafter"))
 const BotschafterWerbemittelPage = lazy(() => import("@/pages/botschafter/BotschafterWerbemittelPage"));
 const WerbemittelEditor = lazy(() => import("@/pages/botschafter/WerbemittelEditor"));
 const BotschafterNachrichten = lazy(() => import("@/pages/botschafter/BotschafterNachrichten"));
+const BotschafterUebersicht = lazy(() => import("@/pages/botschafter/BotschafterUebersicht"));
 const Lager = lazy(() => import("@/pages/Lager"));
 const Ausgaben = lazy(() => import("@/pages/Ausgaben"));
 const GuV = lazy(() => import("@/pages/GuV"));
@@ -397,6 +398,11 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/docs/changelog" element={<Docs />} />
 
             {/* Botschafter-App - für alle eingeloggten Nutzer */}
+            <Route path="/botschafter/uebersicht" element={
+              <ProtectedRoute allowedRoles={["provider", "partner", "employee", "client", "admin"]}>
+                <BotschafterUebersicht />
+              </ProtectedRoute>
+            } />
             <Route path="/botschafter/werbemittel" element={
               <ProtectedRoute allowedRoles={["provider", "partner", "employee", "client", "admin"]}>
                 <BotschafterWerbemittelPage />

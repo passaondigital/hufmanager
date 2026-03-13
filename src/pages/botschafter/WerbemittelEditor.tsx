@@ -13,6 +13,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { ArrowLeft, Loader2, Check, Sparkles, Download, Star, Save } from "lucide-react";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
+import { BotschafterHelpTooltip } from "@/components/botschafter/BotschafterHelpTooltip";
+import { BotschafterFloatingHelp } from "@/components/botschafter/BotschafterFloatingHelp";
 
 type Format = { id: string; icon: string; label: string; w: number; h: number };
 const FORMATS: Format[] = [
@@ -231,6 +233,7 @@ export default function WerbemittelEditor() {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b p-4 flex items-center gap-4">
@@ -291,6 +294,10 @@ export default function WerbemittelEditor() {
               <AccordionTrigger className="text-sm font-medium">
                 {completedSteps.includes("ai") && <Check className="w-4 h-4 text-green-500 mr-2" />}
                 3. KI-Texte generieren
+                <BotschafterHelpTooltip
+                  title="Wie funktioniert der KI-Generator?"
+                  content="Beschreibe was du kommunizieren willst — die KI erstellt automatisch 3 verschiedene Textvarianten die du direkt übernehmen kannst."
+                />
               </AccordionTrigger>
               <AccordionContent className="space-y-3">
                 <Textarea placeholder="z.B. Ich möchte Pferdebesitzerinnen auf die kostenlose App hinweisen..." value={prompt} onChange={e => setPrompt(e.target.value)} rows={3} />
@@ -432,5 +439,7 @@ export default function WerbemittelEditor() {
         </div>
       </div>
     </div>
+    <BotschafterFloatingHelp />
+    </>
   );
 }

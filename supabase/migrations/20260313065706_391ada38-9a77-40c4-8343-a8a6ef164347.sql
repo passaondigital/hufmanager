@@ -1,0 +1,1 @@
+ALTER TABLE public.pferdeakte_botschafter ADD COLUMN IF NOT EXISTS onboarding_completed boolean DEFAULT false;
