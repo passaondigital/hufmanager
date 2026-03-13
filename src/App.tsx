@@ -271,9 +271,11 @@ function App() {
       <ErrorBoundary name="App">
         <ThemeProvider defaultTheme="dark">
           <BrowserRouter>
-            <AuthProvider>
-              <AppContent queryClient={queryClient} />
-            </AuthProvider>
+            <PferdeakteRouteGuard>
+              <AuthProvider>
+                <AppContent queryClient={queryClient} />
+              </AuthProvider>
+            </PferdeakteRouteGuard>
           </BrowserRouter>
         </ThemeProvider>
       </ErrorBoundary>
