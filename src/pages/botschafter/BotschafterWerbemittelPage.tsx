@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Loader2, Sparkles, Copy, Star, Download, Pencil, Trash2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
+import { BotschafterFloatingHelp } from "@/components/botschafter/BotschafterFloatingHelp";
 
 type Werbemittel = {
   id: string;
