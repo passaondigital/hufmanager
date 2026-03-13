@@ -403,24 +403,24 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/docs" element={<Docs />} />
             <Route path="/docs/changelog" element={<Docs />} />
 
-            {/* Botschafter-App - für alle eingeloggten Nutzer */}
+            {/* Botschafter-App - für alle eingeloggten Nutzer (inkl. reine Botschafter ohne App-Rolle) */}
             <Route path="/botschafter/uebersicht" element={
-              <ProtectedRoute allowedRoles={["provider", "partner", "employee", "client", "admin"]}>
+              <ProtectedRoute>
                 <BotschafterUebersicht />
               </ProtectedRoute>
             } />
             <Route path="/botschafter/werbemittel" element={
-              <ProtectedRoute allowedRoles={["provider", "partner", "employee", "client", "admin"]}>
+              <ProtectedRoute>
                 <BotschafterWerbemittelPage />
               </ProtectedRoute>
             } />
             <Route path="/botschafter/werbemittel/erstellen" element={
-              <ProtectedRoute allowedRoles={["provider", "partner", "employee", "client", "admin"]}>
+              <ProtectedRoute>
                 <WerbemittelEditor />
               </ProtectedRoute>
             } />
             <Route path="/botschafter/nachrichten" element={
-              <ProtectedRoute allowedRoles={["provider", "partner", "employee", "client", "admin"]}>
+              <ProtectedRoute>
                 <BotschafterNachrichten />
               </ProtectedRoute>
             } />
