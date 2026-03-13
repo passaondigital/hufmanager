@@ -182,6 +182,7 @@ export default function BotschafterWerbemittelPage() {
           )}
         </TabsContent>
       </Tabs>
+      <BotschafterFloatingHelp />
     </div>
   );
 }

@@ -437,6 +437,8 @@ export default function WerbemittelEditor() {
           </div>
         </div>
       </div>
+      </div>
+      <BotschafterFloatingHelp />
     </div>
   );
 }
