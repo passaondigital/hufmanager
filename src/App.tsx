@@ -407,6 +407,11 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
                 <WerbemittelEditor />
               </ProtectedRoute>
             } />
+            <Route path="/botschafter/nachrichten" element={
+              <ProtectedRoute allowedRoles={["provider", "partner", "employee", "client", "admin"]}>
+                <BotschafterNachrichten />
+              </ProtectedRoute>
+            } />
             
             {/* Admin Mission Control - nur für Admins */}
             <Route path="/admin/mission-control" element={
