@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEmployeeProfile } from "@/hooks/useEmployees";
-import { User, Settings } from "lucide-react";
+import { User, Settings, Mic } from "lucide-react";
 import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
 
 const TAB_REDIRECTS: Record<string, string> = {
