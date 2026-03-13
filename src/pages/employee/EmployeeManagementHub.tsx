@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEmployeeProfile } from "@/hooks/useEmployees";
-import { User, Settings } from "lucide-react";
+import { User, Settings, Mic } from "lucide-react";
 import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
 
 const TAB_REDIRECTS: Record<string, string> = {
@@ -40,6 +40,12 @@ export default function EmployeeManagementHub() {
           title="Einstellungen"
           description="Benachrichtigungen, Passwort"
           onClick={() => navigate("/employee/management/einstellungen")}
+        />
+        <Tile
+          icon={<Mic className="w-10 h-10 text-primary" />}
+          title="Botschafter werden"
+          description="Provision verdienen & HufManager empfehlen"
+          onClick={() => navigate("/employee/management/botschafter")}
         />
       </TileCategory>
     </div>

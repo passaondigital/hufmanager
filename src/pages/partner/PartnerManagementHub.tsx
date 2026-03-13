@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
-import { User, Globe, MessageSquare, CreditCard, FileText } from "lucide-react";
+import { User, Globe, MessageSquare, CreditCard, FileText, Mic } from "lucide-react";
 import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
 import { Badge } from "@/components/ui/badge";
 
@@ -80,6 +80,12 @@ export default function PartnerManagementHub() {
           title="Rechtliches"
           description="AGB, Datenschutz, Impressum"
           onClick={() => navigate("/partner-management/rechtliches")}
+        />
+        <Tile
+          icon={<Mic className="w-10 h-10 text-primary" />}
+          title="Botschafter werden"
+          description="Provision verdienen & HufManager empfehlen"
+          onClick={() => navigate("/partner-management/botschafter")}
         />
       </TileCategory>
     </div>

@@ -97,6 +97,10 @@ const WebsiteWiderruf = lazy(() => import("@/pages/website/Widerruf"));
 const Glossar = lazy(() => import("@/pages/Glossar"));
 const PferdeakteLanding = lazy(() => import("@/pages/PferdeakteLanding"));
 const PferdeakteBotschafter = lazy(() => import("@/pages/PferdeakteBotschafter"));
+const ManagementBotschafter = lazy(() => import("@/pages/provider/ManagementBotschafter"));
+const PartnerManagementBotschafter = lazy(() => import("@/pages/partner/PartnerManagementBotschafter"));
+const EmployeeManagementBotschafter = lazy(() => import("@/pages/employee/EmployeeManagementBotschafter"));
+const ClientBotschafter = lazy(() => import("@/pages/client/ClientBotschafter"));
 const Lager = lazy(() => import("@/pages/Lager"));
 const Ausgaben = lazy(() => import("@/pages/Ausgaben"));
 const GuV = lazy(() => import("@/pages/GuV"));
@@ -467,6 +471,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/management/abo" element={<ManagementAbo />} />
               <Route path="/management/rechtliches" element={<ManagementRechtliches />} />
               <Route path="/management/import" element={<ImportCenter />} />
+              <Route path="/management/botschafter" element={<ManagementBotschafter />} />
               <Route path="/academy" element={<Academy />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/partner" element={<GeldVerdienen />} />
@@ -522,6 +527,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client-notifications" element={<ClientNotifications />} />
               <Route path="/client-orders" element={<ClientOrders />} />
               <Route path="/client-notfall" element={<EmergencyDashboard />} />
+              <Route path="/client/botschafter" element={<ClientBotschafter />} />
             </Route>
 
             {/* --- 4. EMPLOYEE (MITARBEITER) ROUTES --- */}
@@ -553,6 +559,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/employee/management" element={<EmployeeManagementHub />} />
               <Route path="/employee/management/profil" element={<EmployeeManagementProfil />} />
               <Route path="/employee/management/einstellungen" element={<EmployeeManagementEinstellungen />} />
+              <Route path="/employee/management/botschafter" element={<EmployeeManagementBotschafter />} />
               <Route path="/employee/support" element={<Support />} />
               <Route path="/employee/pferde" element={<EmployeePferde />} />
             </Route>
@@ -602,6 +609,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner-management/kommunikation" element={<PartnerManagementKommunikation />} />
               <Route path="/partner-management/abo" element={<PartnerManagementAbo />} />
               <Route path="/partner-management/rechtliches" element={<PartnerManagementRechtliches />} />
+              <Route path="/partner-management/botschafter" element={<PartnerManagementBotschafter />} />
               <Route path="/partner-support" element={<Support />} />
               <Route path="/partner-rechtliches" element={<PartnerRechtliches />} />
             </Route>
