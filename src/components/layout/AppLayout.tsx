@@ -69,6 +69,7 @@ export function AppLayout() {
   const { theme, toggleTheme } = useTheme();
   const { mode, updateMode, loading: autoflowLoading, MODE_LABELS } = useAutoflowMode();
   const { isFullscreen } = useCockpitFullscreen();
+  const reminderVisible = useBotschafterReminderVisible();
   
   const modeColors: Record<AutoflowMode, string> = {
     basis: "text-blue-500",
