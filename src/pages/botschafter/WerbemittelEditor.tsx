@@ -13,6 +13,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { ArrowLeft, Loader2, Check, Sparkles, Download, Star, Save } from "lucide-react";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
+import { BotschafterHelpTooltip } from "@/components/botschafter/BotschafterHelpTooltip";
+import { BotschafterFloatingHelp } from "@/components/botschafter/BotschafterFloatingHelp";
+import html2canvas from "html2canvas";
 
 type Format = { id: string; icon: string; label: string; w: number; h: number };
 const FORMATS: Format[] = [
