@@ -75,6 +75,9 @@ export default function BotschafterAuth() {
   const [loginError, setLoginError] = useState("");
   const [loginShowPw, setLoginShowPw] = useState(false);
   const [noBotschafter, setNoBotschafter] = useState(false);
+  const [loggedInUser, setLoggedInUser] = useState<{ id: string; email: string } | null>(null);
+  const [inlineType, setInlineType] = useState<BotschafterType | "">("");
+  const [inlineLoading, setInlineLoading] = useState(false);
 
   // Register state
   const [type, setType] = useState<BotschafterType | "">("");
@@ -127,6 +130,7 @@ export default function BotschafterAuth() {
         navigate("/botschafter/warten", { replace: true });
       } else {
         setNoBotschafter(true);
+        setLoggedInUser({ id: data.user.id, email: data.user.email || loginEmail });
         setLoginLoading(false);
         sessionStorage.removeItem("botschafter_login_source");
       }
@@ -333,12 +337,108 @@ export default function BotschafterAuth() {
 
                   {loginError && <p className="text-red-500 text-sm text-center">{loginError}</p>}
 
-                  {noBotschafter && (
-                    <div className="p-3 rounded-lg text-sm text-center" style={{ backgroundColor: "#fff7ed", color: "#ea580c" }}>
-                      <p className="font-medium">Du hast noch keine Botschafter-Registrierung.</p>
-                      <button type="button" onClick={() => setTab("register")} className="underline font-semibold mt-1">
-                        Wechsle zum Tab Registrieren
-                      </button>
+                  {noBotschafter && loggedInUser && (
+                    <div className="p-4 rounded-xl space-y-4" style={{ backgroundColor: "#fff7ed", border: "1px solid rgba(249,115,22,.2)" }}>
+                      <p className="text-sm font-semibold text-center" style={{ color: "#ea580c" }}>
+                        Du hast noch keine Botschafter-Registrierung.
+                      </p>
+                      <p className="text-xs text-center" style={{ color: "#6b7280" }}>
+                        Wähle deinen Typ und werde jetzt Botschafter:
+                      </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {TYPES.map(t => (
+                          <button
+                            key={t.value}
+                            type="button"
+                            onClick={() => setInlineType(t.value)}
+                            className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all text-xs font-medium ${
+                              inlineType === t.value ? "border-[#f97316] bg-white" : "border-zinc-200 bg-white hover:border-zinc-300"
+                            }`}
+                          >
+                            <span className="text-xl">{t.icon}</span>
+                            <span className="text-center leading-tight">{t.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                      {inlineType && (
+                        <button
+                          type="button"
+                          disabled={inlineLoading}
+                          onClick={async () => {
+                            setInlineLoading(true);
+                            try {
+                              // Fetch profile for name
+                              const { data: profile } = await supabase
+                                .from("profiles")
+                                .select("full_name, email")
+                                .eq("id", loggedInUser.id)
+                                .maybeSingle();
+
+                              const fullName = profile?.full_name || "";
+                              const nameParts = fullName.split(" ");
+                              const firstName = nameParts[0] || "Botschafter";
+                              const lastName = nameParts.slice(1).join(" ") || "";
+
+                              const refCode = generateRef();
+                              const refParam = searchParams.get("ref") || undefined;
+
+                              // Get user role from profiles if available
+                              const { data: roleData } = await supabase
+                                .rpc("get_user_role", { _user_id: loggedInUser.id });
+                              const sourceRole = roleData || "extern";
+
+                              const { data: botData, error: dbErr } = await supabase
+                                .from("pferdeakte_botschafter")
+                                .insert({
+                                  user_id: loggedInUser.id,
+                                  type: inlineType,
+                                  first_name: firstName.substring(0, 80),
+                                  last_name: lastName.substring(0, 80),
+                                  email: loggedInUser.email,
+                                  referral_code: refCode,
+                                  status: "pending",
+                                  source_role: sourceRole,
+                                  ...(refParam ? { referred_by: refParam } : {}),
+                                } as any)
+                                .select("id, bid, referral_code")
+                                .single();
+
+                              if (dbErr) {
+                                toast.error((dbErr as any).code === "23505"
+                                  ? "Du bist bereits als Botschafter registriert."
+                                  : dbErr.message);
+                                setInlineLoading(false);
+                                return;
+                              }
+
+                              // Send welcome email
+                              try {
+                                await supabase.functions.invoke("botschafter-welcome", {
+                                  body: {
+                                    email: loggedInUser.email,
+                                    first_name: firstName,
+                                    bid: botData?.bid || botData?.id || "",
+                                    referral_code: refCode,
+                                    type: inlineType,
+                                  },
+                                });
+                              } catch (e) {
+                                console.warn("Welcome email failed:", e);
+                              }
+
+                              navigate("/botschafter/warten", { replace: true });
+                            } catch (err: any) {
+                              toast.error(err.message || "Fehler bei der Registrierung");
+                              setInlineLoading(false);
+                            }
+                          }}
+                          className="w-full h-11 rounded-full text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-50 flex items-center justify-center"
+                          style={{ backgroundColor: "#f97316" }}
+                        >
+                          {inlineLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                          Als Botschafter registrieren
+                        </button>
+                      )}
                     </div>
                   )}
 
