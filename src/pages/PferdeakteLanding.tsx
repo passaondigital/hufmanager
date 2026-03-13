@@ -533,10 +533,10 @@ function MissionSection() {
           Pferdeschutz und Datenschutz sind keine Gegensätze.<br />Sie sind dasselbe.
         </p>
         <p className="leading-relaxed mb-6" style={{ color: "rgba(255,255,255,.5)" }}>
-          HufManager wurde gegründet von einem Hufbearbeiter mit 15 Jahren Erfahrung. Nicht aus einem Büro heraus. Aus dem Stall. Für die Menschen, die täglich mit Pferden arbeiten.
+          HufManager wurde gegründet von einem Pferdeprofi mit über 15 Jahren Erfahrung in der Pferdebranche. Nicht aus einem Büro heraus. Aus dem Stall. Von der Praxis – für die Praxis. Für die Menschen, die täglich mit Pferden leben und arbeiten.
         </p>
         <p className="text-white font-bold">Pascal Schmid</p>
-        <p className="text-sm" style={{ color: "rgba(255,255,255,.4)" }}>Gründer HufManager · Hufbearbeiter seit 2010</p>
+        <p className="text-sm" style={{ color: "rgba(255,255,255,.4)" }}>Gründer HufManager · Barhufpfleger & Equine Tech Founder</p>
       </div>
     </section>
   );
