@@ -9039,6 +9039,7 @@ export type Database = {
           last_name: string
           listed_publicly: boolean | null
           motivation: string | null
+          onboarding_completed: boolean | null
           phone: string | null
           plz: string | null
           profession: string | null
@@ -9078,6 +9079,7 @@ export type Database = {
           last_name: string
           listed_publicly?: boolean | null
           motivation?: string | null
+          onboarding_completed?: boolean | null
           phone?: string | null
           plz?: string | null
           profession?: string | null
@@ -9117,6 +9119,7 @@ export type Database = {
           last_name?: string
           listed_publicly?: boolean | null
           motivation?: string | null
+          onboarding_completed?: boolean | null
           phone?: string | null
           plz?: string | null
           profession?: string | null
