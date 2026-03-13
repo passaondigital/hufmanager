@@ -243,6 +243,9 @@ export function AppLayout() {
       
       {/* Demo Account Sticky Banner */}
       <DemoStickyBanner />
+      
+      {/* Botschafter Reminder Banner */}
+      <BotschafterReminder />
     </div>
   );
 }
