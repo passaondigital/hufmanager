@@ -226,7 +226,7 @@ export function AppLayout() {
         <OfflineBanner />
 
         {/* Main content with bottom nav spacing on mobile */}
-        <main className="flex-1 overflow-auto px-4 py-4 lg:p-6 pb-bottom-nav overflow-x-hidden">
+        <main className={`flex-1 overflow-auto px-4 py-4 lg:p-6 pb-bottom-nav overflow-x-hidden ${reminderVisible ? "pb-[120px] lg:pb-[100px]" : ""}`}>
           <ErrorBoundary name="ProviderMain" fallback={<ProviderErrorFallback />}>
             <Outlet />
           </ErrorBoundary>
