@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Info, History, Image, Users, FileText, BookOpen, Heart, Shield, Settings,
-  Clock, Camera, Footprints, Syringe
+  Clock, Camera, Footprints, Syringe, Lock
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
