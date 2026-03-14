@@ -36,6 +36,7 @@ const TABS = [
   { value: "verlauf", label: "Verlauf", icon: History },
   { value: "fotos", label: "Fotos & Medien", icon: Image },
   { value: "gesundheit", label: "Gesundheit", icon: Heart },
+  { value: "impfung", label: "Impfpass", icon: Syringe },
   { value: "dokumente", label: "Dokumente", icon: FileText },
   { value: "tagebuch", label: "Tagebuch", icon: BookOpen },
   { value: "betreuer", label: "Betreuer", icon: Users },
