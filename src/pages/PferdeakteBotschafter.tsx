@@ -126,16 +126,17 @@ export default function PferdeakteBotschafter() {
       return;
     }
 
-    // 2. INSERT pferdeakte_botschafter via edge function (service_role)
-    // After signUp with email confirmation, the client JWT is invalid/unconfirmed,
-    // causing 401 on direct table inserts. The edge function uses service_role instead.
-    const { data: fnResponse, error: fnErr } = await supabase.functions.invoke("register-botschafter", {
-      body: {
+    // 2. INSERT pferdeakte_botschafter direkt im Frontend
+    const refCode = generateRef();
+
+    const { data: botData, error: dbErr } = await supabase
+      .from("pferdeakte_botschafter")
+      .insert({
         user_id: authData.user.id,
         type,
-        first_name: form.first_name,
-        last_name: form.last_name,
-        email: form.email,
+        first_name: form.first_name.substring(0, 80),
+        last_name: form.last_name.substring(0, 80),
+        email: form.email.substring(0, 255),
         phone: form.phone || null,
         heard_from: form.heard_from || null,
         social_handle: type === "creator" ? (form.social_handle || null) : null,
@@ -148,29 +149,37 @@ export default function PferdeakteBotschafter() {
         company_role: type === "unternehmen" ? (form.company_role || null) : null,
         industry: type === "unternehmen" ? (form.industry || null) : null,
         cooperation_types: type === "unternehmen" ? cooperationTypes : null,
+        referral_code: refCode,
+        status: "pending",
         source_role: "extern",
-      },
-    });
+      } as any)
+      .select("id, bid, referral_code")
+      .single();
 
-    if (fnErr) {
+    if (dbErr) {
       setSubmitting(false);
-      setError("Ein Fehler ist aufgetreten. Bitte versuche es erneut.");
+      if ((dbErr as any).code === "23505") {
+        setError("Diese E-Mail ist bereits als Botschafter registriert.");
+      } else {
+        setError("Fehler: " + dbErr.message);
+      }
       return;
     }
 
-    const responseData = fnResponse as any;
-    if (responseData?.error) {
-      setSubmitting(false);
-      setError(
-        responseData.error === "already_registered"
-          ? "Diese E-Mail ist bereits als Botschafter registriert."
-          : "Ein Fehler ist aufgetreten. Bitte versuche es erneut."
-      );
-      return;
-    }
+    // 3. Vorhandenes Profil mit gleicher E-Mail verknüpfen
+    const { data: existingProfile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", form.email)
+      .neq("id", authData.user.id)
+      .maybeSingle();
 
-    const botData = responseData?.data;
-    const refCode = responseData?.referral_code || "";
+    if (existingProfile && botData) {
+      await supabase
+        .from("pferdeakte_botschafter")
+        .update({ source_user_id: existingProfile.id } as any)
+        .eq("id", botData.id);
+    }
 
     // 4. Send welcome email
     try {
