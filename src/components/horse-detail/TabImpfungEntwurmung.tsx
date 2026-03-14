@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,15 +7,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Syringe, Bug, Plus, FileText, Loader2 } from "lucide-react";
+import { Syringe, Bug, Plus, FileText, Loader2, Upload } from "lucide-react";
 import { HelpTip } from "@/components/ui/HelpTip";
 import { toast } from "sonner";
 import { logHorseAction } from "@/utils/auditLog";
 import { differenceInDays } from "date-fns";
+import { uploadFile, getStorageUrl } from "@/lib/storage";
 
 interface TabImpfungEntwurmungProps {
   horseId: string;
+  readOnly?: boolean;
 }
 
 interface Vaccination {
@@ -26,6 +29,10 @@ interface Vaccination {
   next_due_date: string | null;
   batch_number: string | null;
   administered_by: string | null;
+  vet_clinic: string | null;
+  vet_address: string | null;
+  vaccine_manufacturer: string | null;
+  application_site: string | null;
   document_url: string | null;
   notes: string | null;
   created_at: string;
@@ -61,21 +68,29 @@ function getStatusDot(nextDueDate: string | null): string {
   return "🟢";
 }
 
-export function TabImpfungEntwurmung({ horseId }: TabImpfungEntwurmungProps) {
+const APPLICATION_SITES = [
+  "Linke Halsseite i.m.",
+  "Rechte Halsseite i.m.",
+  "Sonstiges",
+];
+
+export function TabImpfungEntwurmung({ horseId, readOnly = false }: TabImpfungEntwurmungProps) {
   const [vaccinations, setVaccinations] = useState<Vaccination[]>([]);
   const [dewormings, setDewormings] = useState<Deworming[]>([]);
   const [loading, setLoading] = useState(true);
   const [showVaccModal, setShowVaccModal] = useState(false);
   const [showDewormModal, setShowDewormModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [docFile, setDocFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Vaccination form
   const [vaccForm, setVaccForm] = useState({
     vaccine_type: "", vaccine_name: "", vaccination_date: "",
     next_due_date: "", batch_number: "", administered_by: "", notes: "",
+    vet_clinic: "", vet_address: "", vaccine_manufacturer: "", application_site: "",
   });
 
-  // Deworming form
   const [dewormForm, setDewormForm] = useState({
     product_name: "", active_substance: "", deworming_date: "",
     next_due_date: "", dosage_ml: "", weight_at_time_kg: "",
@@ -91,7 +106,7 @@ export function TabImpfungEntwurmung({ horseId }: TabImpfungEntwurmungProps) {
     setLoading(true);
     const [vaccRes, dewormRes] = await Promise.all([
       supabase.from("horse_vaccinations")
-        .select("id, vaccine_type, vaccine_name, vaccination_date, next_due_date, batch_number, administered_by, document_url, notes, created_at")
+        .select("id, vaccine_type, vaccine_name, vaccination_date, next_due_date, batch_number, administered_by, vet_clinic, vet_address, vaccine_manufacturer, application_site, document_url, notes, created_at")
         .eq("horse_id", horseId)
         .order("vaccination_date", { ascending: false }),
       supabase.from("horse_deworming")
@@ -109,8 +124,26 @@ export function TabImpfungEntwurmung({ horseId }: TabImpfungEntwurmungProps) {
       toast.error("Impftyp und Datum sind erforderlich");
       return;
     }
+    if (!vaccForm.administered_by) {
+      toast.error("Tierarzt-Name ist erforderlich");
+      return;
+    }
     setSaving(true);
     try {
+      let documentUrl: string | null = null;
+
+      // Upload document if provided
+      if (docFile) {
+        setUploadingDoc(true);
+        const fileExt = docFile.name.split('.').pop();
+        const fileName = `${crypto.randomUUID()}.${fileExt}`;
+        const filePath = `${horseId}/vaccinations/${fileName}`;
+        const { path, error: uploadError } = await uploadFile('horse-documents', filePath, docFile);
+        if (uploadError || !path) throw uploadError || new Error("Upload fehlgeschlagen");
+        documentUrl = filePath;
+        setUploadingDoc(false);
+      }
+
       const { error } = await supabase.from("horse_vaccinations").insert({
         horse_id: horseId,
         vaccine_type: vaccForm.vaccine_type,
@@ -119,19 +152,31 @@ export function TabImpfungEntwurmung({ horseId }: TabImpfungEntwurmungProps) {
         next_due_date: vaccForm.next_due_date || null,
         batch_number: vaccForm.batch_number || null,
         administered_by: vaccForm.administered_by || null,
+        vet_clinic: vaccForm.vet_clinic || null,
+        vet_address: vaccForm.vet_address || null,
+        vaccine_manufacturer: vaccForm.vaccine_manufacturer || null,
+        application_site: vaccForm.application_site || null,
+        document_url: documentUrl,
         notes: vaccForm.notes || null,
       } as any);
       if (error) throw error;
       await logHorseAction(horseId, "add_vaccination", { vaccine_type: vaccForm.vaccine_type });
       toast.success("Impfung eingetragen");
       setShowVaccModal(false);
-      setVaccForm({ vaccine_type: "", vaccine_name: "", vaccination_date: "", next_due_date: "", batch_number: "", administered_by: "", notes: "" });
+      resetVaccForm();
       fetchData();
     } catch (err: any) {
       toast.error(err.message || "Fehler beim Speichern");
     } finally {
       setSaving(false);
+      setUploadingDoc(false);
     }
+  };
+
+  const resetVaccForm = () => {
+    setVaccForm({ vaccine_type: "", vaccine_name: "", vaccination_date: "", next_due_date: "", batch_number: "", administered_by: "", notes: "", vet_clinic: "", vet_address: "", vaccine_manufacturer: "", application_site: "" });
+    setDocFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const saveDeworming = async () => {
@@ -186,9 +231,11 @@ export function TabImpfungEntwurmung({ horseId }: TabImpfungEntwurmungProps) {
         </TabsList>
 
         <TabsContent value="impfpass" className="space-y-3 mt-3">
-          <Button size="sm" onClick={() => setShowVaccModal(true)} className="w-full">
-            <Plus className="h-4 w-4 mr-1" /> Impfung eintragen
-          </Button>
+          {!readOnly && (
+            <Button size="sm" onClick={() => setShowVaccModal(true)} className="w-full">
+              <Plus className="h-4 w-4 mr-1" /> Impfung eintragen
+            </Button>
+          )}
           {vaccinations.length === 0 ? (
             <Card className="border-dashed"><CardContent className="p-6 text-center text-sm text-muted-foreground">Noch keine Impfungen eingetragen</CardContent></Card>
           ) : (
@@ -213,7 +260,16 @@ export function TabImpfungEntwurmung({ horseId }: TabImpfungEntwurmungProps) {
                           </p>
                         )}
                         {v.administered_by && (
-                          <p className="text-sm text-muted-foreground">{v.administered_by}</p>
+                          <p className="text-sm text-muted-foreground">TA: {v.administered_by}</p>
+                        )}
+                        {v.vet_clinic && (
+                          <p className="text-sm text-muted-foreground">Praxis: {v.vet_clinic}</p>
+                        )}
+                        {v.vaccine_manufacturer && (
+                          <p className="text-sm text-muted-foreground">Hersteller: {v.vaccine_manufacturer}</p>
+                        )}
+                        {v.application_site && (
+                          <p className="text-sm text-muted-foreground">Ort: {v.application_site}</p>
                         )}
                         {v.next_due_date && (
                           <p className="text-xs text-muted-foreground mt-1">
@@ -224,11 +280,7 @@ export function TabImpfungEntwurmung({ horseId }: TabImpfungEntwurmungProps) {
                       <Badge className={status.color}>{status.label}</Badge>
                     </div>
                     {v.document_url && (
-                      <Button variant="ghost" size="sm" className="mt-2 text-xs" asChild>
-                        <a href={v.document_url} target="_blank" rel="noopener noreferrer">
-                          <FileText className="h-3 w-3 mr-1" /> Dokument ansehen
-                        </a>
-                      </Button>
+                      <VaccinationDocLink documentUrl={v.document_url} />
                     )}
                   </CardContent>
                 </Card>
@@ -238,9 +290,11 @@ export function TabImpfungEntwurmung({ horseId }: TabImpfungEntwurmungProps) {
         </TabsContent>
 
         <TabsContent value="entwurmung" className="space-y-3 mt-3">
-          <Button size="sm" onClick={() => setShowDewormModal(true)} className="w-full">
-            <Plus className="h-4 w-4 mr-1" /> Entwurmung eintragen
-          </Button>
+          {!readOnly && (
+            <Button size="sm" onClick={() => setShowDewormModal(true)} className="w-full">
+              <Plus className="h-4 w-4 mr-1" /> Entwurmung eintragen
+            </Button>
+          )}
           {dewormings.length === 0 ? (
             <Card className="border-dashed"><CardContent className="p-6 text-center text-sm text-muted-foreground">Noch keine Entwurmungen eingetragen</CardContent></Card>
           ) : (
@@ -284,62 +338,119 @@ export function TabImpfungEntwurmung({ horseId }: TabImpfungEntwurmungProps) {
       </Tabs>
 
       {/* Vaccination Modal */}
-      <Dialog open={showVaccModal} onOpenChange={setShowVaccModal}>
-        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Impfung eintragen</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label>Impftyp *</Label>
-              <Input value={vaccForm.vaccine_type} onChange={e => setVaccForm(f => ({ ...f, vaccine_type: e.target.value }))} placeholder="z.B. Influenza, Herpes, Tetanus" />
+      {!readOnly && (
+        <Dialog open={showVaccModal} onOpenChange={setShowVaccModal}>
+          <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+            <DialogHeader><DialogTitle>Impfung eintragen</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label>Impftyp *</Label>
+                <Input value={vaccForm.vaccine_type} onChange={e => setVaccForm(f => ({ ...f, vaccine_type: e.target.value }))} placeholder="z.B. Influenza, Herpes, Tetanus" />
+              </div>
+              <div>
+                <Label>Impfstoff</Label>
+                <Input value={vaccForm.vaccine_name} onChange={e => setVaccForm(f => ({ ...f, vaccine_name: e.target.value }))} placeholder="Handelsname" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Datum *</Label><Input type="date" value={vaccForm.vaccination_date} onChange={e => setVaccForm(f => ({ ...f, vaccination_date: e.target.value }))} /></div>
+                <div><Label>Nächste fällig</Label><Input type="date" value={vaccForm.next_due_date} onChange={e => setVaccForm(f => ({ ...f, next_due_date: e.target.value }))} /></div>
+              </div>
+              <div><Label>Chargennummer</Label><Input value={vaccForm.batch_number} onChange={e => setVaccForm(f => ({ ...f, batch_number: e.target.value }))} /></div>
+              
+              {/* New Tierärztekammer fields */}
+              <div className="border-t border-border pt-3 mt-3">
+                <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Tierarzt-Informationen</p>
+              </div>
+              <div><Label>Tierarzt-Name *</Label><Input value={vaccForm.administered_by} onChange={e => setVaccForm(f => ({ ...f, administered_by: e.target.value }))} placeholder="Name des Tierarztes" /></div>
+              <div><Label>Praxis / Klinik</Label><Input value={vaccForm.vet_clinic} onChange={e => setVaccForm(f => ({ ...f, vet_clinic: e.target.value }))} placeholder="Name der Praxis" /></div>
+              <div><Label>Praxis-Adresse</Label><Input value={vaccForm.vet_address} onChange={e => setVaccForm(f => ({ ...f, vet_address: e.target.value }))} placeholder="Straße, PLZ Ort" /></div>
+              <div><Label>Impfstoff-Hersteller</Label><Input value={vaccForm.vaccine_manufacturer} onChange={e => setVaccForm(f => ({ ...f, vaccine_manufacturer: e.target.value }))} placeholder="z.B. Boehringer Ingelheim" /></div>
+              <div>
+                <Label>Applikationsort</Label>
+                <Select value={vaccForm.application_site} onValueChange={v => setVaccForm(f => ({ ...f, application_site: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Bitte wählen" /></SelectTrigger>
+                  <SelectContent>
+                    {APPLICATION_SITES.map(s => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Document Upload */}
+              <div className="border-t border-border pt-3 mt-3">
+                <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Dokument / Nachweis</p>
+              </div>
+              <div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={e => setDocFile(e.target.files?.[0] || null)}
+                  accept="image/*,.pdf"
+                  className="hidden"
+                />
+                <Button variant="outline" size="sm" className="w-full" onClick={() => fileInputRef.current?.click()}>
+                  <Upload className="h-4 w-4 mr-1" />
+                  {docFile ? docFile.name : "PDF / Foto hochladen (max. 10MB)"}
+                </Button>
+              </div>
+
+              <div><Label>Notizen</Label><Textarea value={vaccForm.notes} onChange={e => setVaccForm(f => ({ ...f, notes: e.target.value }))} /></div>
             </div>
-            <div>
-              <Label>Impfstoff</Label>
-              <Input value={vaccForm.vaccine_name} onChange={e => setVaccForm(f => ({ ...f, vaccine_name: e.target.value }))} placeholder="Handelsname" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Datum *</Label><Input type="date" value={vaccForm.vaccination_date} onChange={e => setVaccForm(f => ({ ...f, vaccination_date: e.target.value }))} /></div>
-              <div><Label>Nächste fällig</Label><Input type="date" value={vaccForm.next_due_date} onChange={e => setVaccForm(f => ({ ...f, next_due_date: e.target.value }))} /></div>
-            </div>
-            <div><Label>Chargennummer</Label><Input value={vaccForm.batch_number} onChange={e => setVaccForm(f => ({ ...f, batch_number: e.target.value }))} /></div>
-            <div><Label>Verabreicht durch</Label><Input value={vaccForm.administered_by} onChange={e => setVaccForm(f => ({ ...f, administered_by: e.target.value }))} placeholder="Name des Tierarztes" /></div>
-            <div><Label>Notizen</Label><Textarea value={vaccForm.notes} onChange={e => setVaccForm(f => ({ ...f, notes: e.target.value }))} /></div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowVaccModal(false)}>Abbrechen</Button>
-            <Button onClick={saveVaccination} disabled={saving}>
-              {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />} Speichern
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setShowVaccModal(false); resetVaccForm(); }}>Abbrechen</Button>
+              <Button onClick={saveVaccination} disabled={saving || uploadingDoc}>
+                {(saving || uploadingDoc) && <Loader2 className="h-4 w-4 mr-1 animate-spin" />} Speichern
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Deworming Modal */}
-      <Dialog open={showDewormModal} onOpenChange={setShowDewormModal}>
-        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Entwurmung eintragen</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div><Label>Produkt *</Label><Input value={dewormForm.product_name} onChange={e => setDewormForm(f => ({ ...f, product_name: e.target.value }))} placeholder="z.B. Equest Pramox" /></div>
-            <div><Label>Wirkstoff</Label><Input value={dewormForm.active_substance} onChange={e => setDewormForm(f => ({ ...f, active_substance: e.target.value }))} placeholder="z.B. Ivermectin" /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Datum *</Label><Input type="date" value={dewormForm.deworming_date} onChange={e => setDewormForm(f => ({ ...f, deworming_date: e.target.value }))} /></div>
-              <div><Label>Nächste fällig</Label><Input type="date" value={dewormForm.next_due_date} onChange={e => setDewormForm(f => ({ ...f, next_due_date: e.target.value }))} /></div>
+      {!readOnly && (
+        <Dialog open={showDewormModal} onOpenChange={setShowDewormModal}>
+          <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+            <DialogHeader><DialogTitle>Entwurmung eintragen</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <div><Label>Produkt *</Label><Input value={dewormForm.product_name} onChange={e => setDewormForm(f => ({ ...f, product_name: e.target.value }))} placeholder="z.B. Equest Pramox" /></div>
+              <div><Label>Wirkstoff</Label><Input value={dewormForm.active_substance} onChange={e => setDewormForm(f => ({ ...f, active_substance: e.target.value }))} placeholder="z.B. Ivermectin" /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Datum *</Label><Input type="date" value={dewormForm.deworming_date} onChange={e => setDewormForm(f => ({ ...f, deworming_date: e.target.value }))} /></div>
+                <div><Label>Nächste fällig</Label><Input type="date" value={dewormForm.next_due_date} onChange={e => setDewormForm(f => ({ ...f, next_due_date: e.target.value }))} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Dosierung (ml)</Label><Input type="number" step="0.1" value={dewormForm.dosage_ml} onChange={e => setDewormForm(f => ({ ...f, dosage_ml: e.target.value }))} /></div>
+                <div><Label>Gewicht (kg)</Label><Input type="number" step="0.1" value={dewormForm.weight_at_time_kg} onChange={e => setDewormForm(f => ({ ...f, weight_at_time_kg: e.target.value }))} /></div>
+              </div>
+              <div><Label>Kotprobe (EPG)</Label><Input type="number" value={dewormForm.fecal_egg_count} onChange={e => setDewormForm(f => ({ ...f, fecal_egg_count: e.target.value }))} placeholder="Eier pro Gramm" /></div>
+              <div><Label>Verabreicht durch</Label><Input value={dewormForm.administered_by} onChange={e => setDewormForm(f => ({ ...f, administered_by: e.target.value }))} /></div>
+              <div><Label>Notizen</Label><Textarea value={dewormForm.notes} onChange={e => setDewormForm(f => ({ ...f, notes: e.target.value }))} /></div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Dosierung (ml)</Label><Input type="number" step="0.1" value={dewormForm.dosage_ml} onChange={e => setDewormForm(f => ({ ...f, dosage_ml: e.target.value }))} /></div>
-              <div><Label>Gewicht (kg)</Label><Input type="number" step="0.1" value={dewormForm.weight_at_time_kg} onChange={e => setDewormForm(f => ({ ...f, weight_at_time_kg: e.target.value }))} /></div>
-            </div>
-            <div><Label>Kotprobe (EPG)</Label><Input type="number" value={dewormForm.fecal_egg_count} onChange={e => setDewormForm(f => ({ ...f, fecal_egg_count: e.target.value }))} placeholder="Eier pro Gramm" /></div>
-            <div><Label>Verabreicht durch</Label><Input value={dewormForm.administered_by} onChange={e => setDewormForm(f => ({ ...f, administered_by: e.target.value }))} /></div>
-            <div><Label>Notizen</Label><Textarea value={dewormForm.notes} onChange={e => setDewormForm(f => ({ ...f, notes: e.target.value }))} /></div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDewormModal(false)}>Abbrechen</Button>
-            <Button onClick={saveDeworming} disabled={saving}>
-              {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />} Speichern
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowDewormModal(false)}>Abbrechen</Button>
+              <Button onClick={saveDeworming} disabled={saving}>
+                {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />} Speichern
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
+  );
+}
+
+function VaccinationDocLink({ documentUrl }: { documentUrl: string }) {
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  useEffect(() => {
+    getStorageUrl('horse-documents', documentUrl).then(url => setSignedUrl(url));
+  }, [documentUrl]);
+
+  return (
+    <Button variant="ghost" size="sm" className="mt-2 text-xs" asChild>
+      <a href={signedUrl || documentUrl} target="_blank" rel="noopener noreferrer">
+        <FileText className="h-3 w-3 mr-1" /> Dokument ansehen
+      </a>
+    </Button>
   );
 }
