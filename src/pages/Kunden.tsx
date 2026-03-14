@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -48,7 +57,7 @@ import { LinkAppUserModal } from "@/components/customers/LinkAppUserModal";
 import { PendingConnectionRequests } from "@/components/network/PendingConnectionRequests";
 import { ConnectionSearch } from "@/components/network/ConnectionSearch";
 import { VerifiedConnectionBadge } from "@/components/network/VerifiedConnectionBadge";
-import { Link2 } from "lucide-react";
+import { Link2, Loader2 } from "lucide-react";
 import { 
   PAYMENT_RATING_OPTIONS, 
   LIFECYCLE_STATUS_OPTIONS,
@@ -61,6 +70,7 @@ const Kunden = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("alle");
   const [paymentFilter, setPaymentFilter] = useState<PaymentRating | "alle">("alle");
@@ -71,6 +81,96 @@ const Kunden = () => {
   const [addHorseForCustomerId, setAddHorseForCustomerId] = useState<string | null>(null);
   const [showConnectionSearch, setShowConnectionSearch] = useState(false);
   const [showLinkUserModal, setShowLinkUserModal] = useState(false);
+
+  // New client modal
+  const [showNewClientModal, setShowNewClientModal] = useState(false);
+  const [savingNewClient, setSavingNewClient] = useState(false);
+  const [newClient, setNewClient] = useState({
+    first_name: "",
+    last_name: "",
+    email: "",
+    phone: "",
+    street: "",
+    zip_code: "",
+    city: "",
+  });
+
+  // Open modal when ?new=true
+  useEffect(() => {
+    if (searchParams.get("new") === "true") {
+      setShowNewClientModal(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  const resetNewClientForm = () => {
+    setNewClient({ first_name: "", last_name: "", email: "", phone: "", street: "", zip_code: "", city: "" });
+  };
+
+  const handleCreateNewClient = async () => {
+    if (!user?.id) return;
+    if (!newClient.first_name.trim() || !newClient.last_name.trim()) {
+      toast({ title: "Vor- und Nachname sind Pflichtfelder", variant: "destructive" });
+      return;
+    }
+
+    setSavingNewClient(true);
+    try {
+      const fullName = `${newClient.first_name.trim()} ${newClient.last_name.trim()}`;
+
+      // Create ghost profile
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .insert({
+          full_name: fullName,
+          email: newClient.email.trim() || null,
+          phone: newClient.phone.trim() || null,
+          street: newClient.street.trim() || null,
+          zip_code: newClient.zip_code.trim() || null,
+          city: newClient.city.trim() || null,
+          created_by_provider_id: user.id,
+          onboarding_completed: false,
+          has_logged_in: false,
+        } as any)
+        .select("id")
+        .single();
+
+      if (profileError) throw profileError;
+
+      if (profile) {
+        // Create access grant
+        await supabase.from("access_grants").insert({
+          provider_id: user.id,
+          client_id: profile.id,
+          is_active: true,
+          can_view_basic: true,
+          can_view_medical: true,
+          can_create_appointments: true,
+        });
+
+        // Create contact entry
+        await supabase.from("contacts").insert({
+          provider_id: user.id,
+          full_name: fullName,
+          email: newClient.email.trim() || null,
+          phone: newClient.phone.trim() || null,
+          category: "client",
+          profile_id: profile.id,
+        });
+      }
+
+      toast({ title: "Kunde angelegt", description: fullName });
+      queryClient.invalidateQueries({ queryKey: ["provider-clients"] });
+      queryClient.invalidateQueries({ queryKey: ["provider-horses"] });
+      setShowNewClientModal(false);
+      resetNewClientForm();
+    } catch (err: any) {
+      console.error("Error creating client:", err);
+      toast({ title: "Fehler beim Anlegen", description: err.message, variant: "destructive" });
+    } finally {
+      setSavingNewClient(false);
+    }
+  };
 
   // Fetch profiles (clients) - both created by provider AND connected via access_grants (ACTIVE only)
   const { data: clients = [] } = useQuery({
@@ -235,7 +335,7 @@ const Kunden = () => {
         count={clients.length}
         countLabel="Kunden"
         action={
-          <Button className="gap-2 min-h-[44px]" onClick={() => navigate("/aufnahme")}>
+          <Button className="gap-2 min-h-[44px]" onClick={() => setShowNewClientModal(true)}>
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Neuer Kunde</span>
           </Button>
@@ -576,6 +676,95 @@ const Kunden = () => {
         onClose={() => setShowLinkUserModal(false)}
         onSuccess={handleConnectionStatusChanged}
       />
+
+      {/* New Client Modal */}
+      <Dialog open={showNewClientModal} onOpenChange={(open) => { setShowNewClientModal(open); if (!open) resetNewClientForm(); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Neuen Kunden anlegen</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="nc-first">Vorname *</Label>
+                <Input
+                  id="nc-first"
+                  value={newClient.first_name}
+                  onChange={(e) => setNewClient({ ...newClient, first_name: e.target.value })}
+                  placeholder="Vorname"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="nc-last">Nachname *</Label>
+                <Input
+                  id="nc-last"
+                  value={newClient.last_name}
+                  onChange={(e) => setNewClient({ ...newClient, last_name: e.target.value })}
+                  placeholder="Nachname"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nc-email">E-Mail</Label>
+              <Input
+                id="nc-email"
+                type="email"
+                value={newClient.email}
+                onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+                placeholder="kunde@beispiel.de"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nc-phone">Telefon</Label>
+              <Input
+                id="nc-phone"
+                type="tel"
+                value={newClient.phone}
+                onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+                placeholder="+49 123 456789"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nc-street">Straße</Label>
+              <Input
+                id="nc-street"
+                value={newClient.street}
+                onChange={(e) => setNewClient({ ...newClient, street: e.target.value })}
+                placeholder="Musterstraße 1"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="nc-zip">PLZ</Label>
+                <Input
+                  id="nc-zip"
+                  value={newClient.zip_code}
+                  onChange={(e) => setNewClient({ ...newClient, zip_code: e.target.value })}
+                  placeholder="12345"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="nc-city">Ort</Label>
+                <Input
+                  id="nc-city"
+                  value={newClient.city}
+                  onChange={(e) => setNewClient({ ...newClient, city: e.target.value })}
+                  placeholder="Musterstadt"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowNewClientModal(false); resetNewClientForm(); }}>
+              Abbrechen
+            </Button>
+            <Button onClick={handleCreateNewClient} disabled={savingNewClient}>
+              {savingNewClient && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Kunde anlegen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
