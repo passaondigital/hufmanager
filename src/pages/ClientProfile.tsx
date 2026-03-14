@@ -224,7 +224,10 @@ export default function ClientProfile() {
         {/* Multiple Locations Manager */}
         <ClientLocationsManager />
 
-        {/* Emergency Contacts */}
+        {/* Primary Emergency Contact */}
+        <PrimaryEmergencyContact />
+
+        {/* Emergency Contacts (Kompetenzteam) */}
         <EmergencyContactsCard
           userId={profile.id}
           contacts={profile.emergency_contacts}
