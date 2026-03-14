@@ -9230,6 +9230,51 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_succession: {
+        Row: {
+          authorized_person_email: string | null
+          authorized_person_name: string | null
+          authorized_person_phone: string | null
+          created_at: string
+          document_url: string | null
+          id: string
+          last_will_instructions: string | null
+          lawyer_email: string | null
+          lawyer_firm: string | null
+          lawyer_name: string | null
+          lawyer_phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          authorized_person_email?: string | null
+          authorized_person_name?: string | null
+          authorized_person_phone?: string | null
+          created_at?: string
+          document_url?: string | null
+          id?: string
+          last_will_instructions?: string | null
+          lawyer_email?: string | null
+          lawyer_firm?: string | null
+          lawyer_name?: string | null
+          lawyer_phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          authorized_person_email?: string | null
+          authorized_person_name?: string | null
+          authorized_person_phone?: string | null
+          created_at?: string
+          document_url?: string | null
+          id?: string
+          last_will_instructions?: string | null
+          lawyer_email?: string | null
+          lawyer_firm?: string | null
+          lawyer_name?: string | null
+          lawyer_phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       preview_feedback: {
         Row: {
           comment: string | null
@@ -9569,6 +9614,13 @@ export type Database = {
           preferred_currency: string | null
           price_group: string
           price_group_label: string | null
+          primary_emergency_email: string | null
+          primary_emergency_first_name: string | null
+          primary_emergency_last_name: string | null
+          primary_emergency_phone: string | null
+          primary_emergency_relationship: string | null
+          primary_emergency_verified: boolean | null
+          primary_emergency_verify_token: string | null
           profession_type: string | null
           readable_id: string | null
           referred_at: string | null
@@ -9596,6 +9648,9 @@ export type Database = {
           tax_number: string | null
           updated_at: string
           vat_number: string | null
+          vault_failed_attempts: number | null
+          vault_locked_until: string | null
+          vault_pin: string | null
           vehicle_consumption_per_100km: number | null
           vehicle_name: string | null
           vehicle_plate: string | null
@@ -9678,6 +9733,13 @@ export type Database = {
           preferred_currency?: string | null
           price_group?: string
           price_group_label?: string | null
+          primary_emergency_email?: string | null
+          primary_emergency_first_name?: string | null
+          primary_emergency_last_name?: string | null
+          primary_emergency_phone?: string | null
+          primary_emergency_relationship?: string | null
+          primary_emergency_verified?: boolean | null
+          primary_emergency_verify_token?: string | null
           profession_type?: string | null
           readable_id?: string | null
           referred_at?: string | null
@@ -9705,6 +9767,9 @@ export type Database = {
           tax_number?: string | null
           updated_at?: string
           vat_number?: string | null
+          vault_failed_attempts?: number | null
+          vault_locked_until?: string | null
+          vault_pin?: string | null
           vehicle_consumption_per_100km?: number | null
           vehicle_name?: string | null
           vehicle_plate?: string | null
@@ -9787,6 +9852,13 @@ export type Database = {
           preferred_currency?: string | null
           price_group?: string
           price_group_label?: string | null
+          primary_emergency_email?: string | null
+          primary_emergency_first_name?: string | null
+          primary_emergency_last_name?: string | null
+          primary_emergency_phone?: string | null
+          primary_emergency_relationship?: string | null
+          primary_emergency_verified?: boolean | null
+          primary_emergency_verify_token?: string | null
           profession_type?: string | null
           readable_id?: string | null
           referred_at?: string | null
@@ -9814,6 +9886,9 @@ export type Database = {
           tax_number?: string | null
           updated_at?: string
           vat_number?: string | null
+          vault_failed_attempts?: number | null
+          vault_locked_until?: string | null
+          vault_pin?: string | null
           vehicle_consumption_per_100km?: number | null
           vehicle_name?: string | null
           vehicle_plate?: string | null
@@ -12122,6 +12197,130 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      vault_access_log: {
+        Row: {
+          accessed_at: string
+          admin_user_id: string
+          documents_viewed: string[]
+          horse_id: string
+          id: string
+          owner_id: string
+          reason: string
+        }
+        Insert: {
+          accessed_at?: string
+          admin_user_id: string
+          documents_viewed?: string[]
+          horse_id: string
+          id?: string
+          owner_id: string
+          reason: string
+        }
+        Update: {
+          accessed_at?: string
+          admin_user_id?: string
+          documents_viewed?: string[]
+          horse_id?: string
+          id?: string
+          owner_id?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vault_access_log_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vault_access_log_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vault_access_log_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vault_access_log_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vault_documents: {
+        Row: {
+          category: string
+          created_at: string
+          file_name: string
+          file_type: string | null
+          file_url: string
+          horse_id: string
+          id: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          file_name: string
+          file_type?: string | null
+          file_url: string
+          horse_id: string
+          id?: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          file_name?: string
+          file_type?: string | null
+          file_url?: string
+          horse_id?: string
+          id?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vault_documents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vault_documents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vault_documents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vault_documents_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vehicle_costs: {
         Row: {
