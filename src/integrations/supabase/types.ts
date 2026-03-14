@@ -13626,6 +13626,16 @@ export type Database = {
         Args: { p_provider_id: string; p_token?: string }
         Returns: boolean
       }
+      check_provider_profile_update_allowed: {
+        Args: {
+          _new_force_password_reset: boolean
+          _new_is_suspended: boolean
+          _new_subscription_plan: string
+          _new_subscription_status: string
+          _profile_id: string
+        }
+        Returns: boolean
+      }
       check_storage_quota: {
         Args: {
           p_entity_id: string
