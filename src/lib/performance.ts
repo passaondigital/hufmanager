@@ -56,6 +56,9 @@ async function flushMetrics() {
   metricsBuffer = [];
 
   try {
+    // Only send metrics if user is authenticated (RLS requires auth)
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
     await supabase.from("performance_metrics").insert(batch);
   } catch {
     // Silent fail — don't break UX for monitoring
