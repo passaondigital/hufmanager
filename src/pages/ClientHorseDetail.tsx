@@ -18,6 +18,7 @@ import { TabMediaVault } from "@/components/horse-detail/TabMediaVault";
 import { TabGesundheit } from "@/components/horse-detail/TabGesundheit";
 import { TabHufHistorie } from "@/components/horse-detail/TabHufHistorie";
 import { TabDokumente } from "@/components/horse-detail/TabDokumente";
+import { TabImpfungEntwurmung } from "@/components/horse-detail/TabImpfungEntwurmung";
 import { EditHorseModal } from "@/components/horse-detail/EditHorseModal";
 import { HoofStatusGrid } from "@/components/horse-detail/HoofStatusGrid";
 import { HoofPhotoTimeline } from "@/components/horse-detail/HoofPhotoTimeline";
