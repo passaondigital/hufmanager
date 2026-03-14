@@ -306,6 +306,13 @@ export function TabSteckbrief({ horse, onEdit }: TabSteckbriefProps) {
         </Card>
       )}
 
+      {/* Contacts & Emergency */}
+      <HorseContactsSection 
+        contacts={h.contacts as HorseContacts | null} 
+        onEdit={onEdit} 
+        editable 
+      />
+
       {/* Empty State */}
       {!horse.nickname && !horse.usage && !horse.housing && !horse.feeding_notes && (
         <Card className="border-dashed">
