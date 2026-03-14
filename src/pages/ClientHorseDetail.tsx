@@ -260,6 +260,9 @@ export default function ClientHorseDetail() {
           {activeTab === "zugriffsrechte" && (
             <HorseAccessManager horseId={horse.id} horseName={horse.name} />
           )}
+          {activeTab === "tresor" && (
+            <VaultTab horseId={horse.id} />
+          )}
         </div>
       </main>
 
