@@ -1,22 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
-  Shield, Handshake, Coins, Copy, Share2, QrCode, Download,
+  Shield, Handshake, Coins, Copy, Share2,
   Users, TrendingUp, CheckCircle2, Calculator, ExternalLink,
 } from "lucide-react";
 import { useHufrenteStats } from "@/hooks/useHufrenteStats";
 import { useDachConfig } from "@/hooks/useDachConfig";
 import { toast } from "@/hooks/use-toast";
 import { StatGridSkeleton } from "@/components/ui/skeletons";
+import { HufrenteOnboarding } from "@/components/hufrente/HufrenteOnboarding";
+import { HufrenteQRCode } from "@/components/hufrente/HufrenteQRCode";
+import { HufrenteShareSheet } from "@/components/hufrente/HufrenteShareSheet";
+
+const ONBOARDING_KEY = "hufrente_onboarding_done";
 
 const Hufrente = () => {
   const { data: stats, isLoading } = useHufrenteStats();
   const { formatCurrency } = useDachConfig();
   const [calcReferrals, setCalcReferrals] = useState([5]);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const commissionPerReferral = 9.80;
   const monthlyCalc = calcReferrals[0] * commissionPerReferral;
@@ -25,42 +32,32 @@ const Hufrente = () => {
 
   const referralLink = `https://hufmanager.de/ref/${stats?.affiliateSlug || "..."}`;
 
+  // Show onboarding on first visit
+  useEffect(() => {
+    const done = localStorage.getItem(ONBOARDING_KEY);
+    if (!done) {
+      setShowOnboarding(true);
+    }
+  }, []);
+
+  const completeOnboarding = () => {
+    localStorage.setItem(ONBOARDING_KEY, "true");
+    setShowOnboarding(false);
+  };
+
   const copyLink = () => {
     navigator.clipboard.writeText(referralLink);
     toast({ title: "Link kopiert!", description: "Dein persönlicher Empfehlungslink wurde in die Zwischenablage kopiert." });
   };
 
-  const shareLink = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "HufManager — Empfehlung",
-          text: "Hey, ich nutze HufManager für meine Hufpflege — Termine, Rechnungen, Pferdeakten alles digital. Schau mal rein:",
-          url: referralLink,
-        });
-      } catch {}
-    } else {
-      copyLink();
-    }
-  };
-
-  const shareWhatsApp = () => {
-    const text = encodeURIComponent(
-      `Hey, ich nutze seit einer Weile HufManager für meine Hufpflege — Termine, Rechnungen, Pferdeakten alles digital, auch offline im Stall. Falls du das auch suchst: ${referralLink} (14 Tage kostenlos, keine Kreditkarte)`
-    );
-    window.open(`https://wa.me/?text=${text}`, "_blank");
-  };
-
-  const shareEmail = () => {
-    const subject = encodeURIComponent("HufManager — vielleicht interessant für dich");
-    const body = encodeURIComponent(
-      `Hallo,\n\nich nutze seit einer Weile HufManager für meine tägliche Arbeit — Termine, Rechnungen, Pferdeakten, alles digital und DSGVO-konform.\n\nFalls du etwas Ähnliches suchst, schau dir das mal an:\n${referralLink}\n\n14 Tage kostenlos testen, keine Kreditkarte nötig.\n\nViele Grüße`
-    );
-    window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
-  };
-
   return (
     <div className="space-y-8 pb-8">
+      {/* Onboarding overlay */}
+      {showOnboarding && <HufrenteOnboarding onComplete={completeOnboarding} />}
+
+      {/* Share sheet */}
+      <HufrenteShareSheet open={shareOpen} onOpenChange={setShareOpen} referralLink={referralLink} />
+
       {/* Hero */}
       <div className="rounded-2xl bg-gradient-to-br from-primary/10 via-background to-accent/10 border border-border p-6 md:p-10">
         <Badge className="mb-4 bg-primary/15 text-primary border-0">
@@ -100,7 +97,7 @@ const Hufrente = () => {
           <CardTitle className="text-base">Dein persönlicher Empfehlungslink</CardTitle>
           <CardDescription>Jeder der über diesen Link kommt wird dir dauerhaft zugeordnet — egal wann er sich anmeldet.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <div className="flex items-center gap-2">
             <div className="flex-1 px-4 py-3 rounded-lg bg-muted/50 border border-border text-sm font-mono text-foreground truncate">
               {referralLink}
@@ -108,37 +105,20 @@ const Hufrente = () => {
             <Button size="icon" variant="outline" onClick={copyLink} title="Link kopieren">
               <Copy className="h-4 w-4" />
             </Button>
-            <Button size="icon" variant="outline" onClick={shareLink} title="Teilen">
+            <Button size="icon" variant="outline" onClick={() => setShareOpen(true)} title="Teilen">
               <Share2 className="h-4 w-4" />
             </Button>
           </div>
 
           {/* Share buttons */}
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={shareWhatsApp} className="gap-2">
-              💬 WhatsApp
-            </Button>
-            <Button variant="outline" size="sm" onClick={shareEmail} className="gap-2">
-              ✉️ E-Mail
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => {
-              const text = `Als Hufpfleger/Therapeut/Trainer kennst du das: nach dem letzten Pferd fängt die eigentliche Arbeit erst an. HufManager hat das bei mir geändert — alles digital, offline-fähig, DSGVO-konform. Schau mal rein: ${referralLink} #HufManager #ZukunftPferd2030`;
-              navigator.clipboard.writeText(text);
-              toast({ title: "Text kopiert!", description: "Social-Media-Text in der Zwischenablage." });
-            }} className="gap-2">
-              📱 Social Media Text kopieren
+            <Button variant="outline" size="sm" onClick={() => setShareOpen(true)} className="gap-2">
+              ↗️ Empfehlen
             </Button>
           </div>
 
-          {/* QR Code placeholder */}
-          <div className="border border-dashed border-border rounded-xl p-6 text-center">
-            <QrCode className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-            <p className="text-sm text-muted-foreground">Dein QR-Code für Visitenkarten und Ausdrucke</p>
-            <Button variant="outline" size="sm" className="mt-3 gap-2">
-              <Download className="h-4 w-4" />
-              QR-Code herunterladen
-            </Button>
-          </div>
+          {/* QR Code */}
+          <HufrenteQRCode url={referralLink} />
         </CardContent>
       </Card>
 
