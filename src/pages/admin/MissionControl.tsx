@@ -86,6 +86,7 @@ import { AdminInvoices } from "@/components/admin/AdminInvoices";
 import { AdminContractManager } from "@/components/admin/AdminContractManager";
 import { AdminTransfersOverview } from "@/components/admin/AdminTransfersOverview";
 import { isDemoEmail } from "@/lib/demo-accounts";
+import { PlatformSuccession } from "@/components/admin/PlatformSuccession";
 
 // Horse icon fallback since lucide doesn't have it
 const Horse = () => (
@@ -1178,6 +1179,10 @@ export default function MissionControl() {
                 <Globe className="w-4 h-4" />
                 <span className="hidden md:inline">Browser</span>
               </TabsTrigger>
+              <TabsTrigger value="succession" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <Shield className="w-4 h-4" />
+                <span className="hidden md:inline">Nachfolge</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -2229,6 +2234,10 @@ export default function MissionControl() {
 
           <TabsContent value="browsers" className="space-y-6">
             <AdminBrowserAnalytics />
+          </TabsContent>
+
+          <TabsContent value="succession" className="space-y-6">
+            <PlatformSuccession />
           </TabsContent>
 
           {/* ESCALATIONS TAB */}

@@ -20,6 +20,7 @@ import { ClientAvatarUpload } from "@/components/client/ClientAvatarUpload";
 import { ProviderReferral } from "@/components/client/ProviderReferral";
 import { ClientLocationsManager } from "@/components/client/ClientLocationsManager";
 import { NotificationPreferences } from "@/components/client/NotificationPreferences";
+import { PrimaryEmergencyContact } from "@/components/client/PrimaryEmergencyContact";
 
 interface Profile {
   id: string;
@@ -223,7 +224,10 @@ export default function ClientProfile() {
         {/* Multiple Locations Manager */}
         <ClientLocationsManager />
 
-        {/* Emergency Contacts */}
+        {/* Primary Emergency Contact */}
+        <PrimaryEmergencyContact />
+
+        {/* Emergency Contacts (Kompetenzteam) */}
         <EmergencyContactsCard
           userId={profile.id}
           contacts={profile.emergency_contacts}

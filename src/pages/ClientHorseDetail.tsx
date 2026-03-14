@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Info, History, Image, Users, FileText, BookOpen, Heart, Shield, Settings,
-  Clock, Camera, Footprints, Syringe
+  Clock, Camera, Footprints, Syringe, Lock
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -29,6 +29,7 @@ import { HorseDiary } from "@/components/client/HorseDiary";
 import { HorseHealthTracker } from "@/components/client/HorseHealthTracker";
 import { HoofDevelopmentComparison } from "@/components/client/HoofDevelopmentComparison";
 import { HorseAccessManager } from "@/components/client/HorseAccessManager";
+import { VaultTab } from "@/components/client/VaultTab";
 import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
 
 const TABS = [
@@ -41,6 +42,7 @@ const TABS = [
   { value: "tagebuch", label: "Tagebuch", icon: BookOpen },
   { value: "betreuer", label: "Betreuer", icon: Users },
   { value: "zugriffsrechte", label: "Zugriffsrechte", icon: Shield },
+  { value: "tresor", label: "Tresor", icon: Lock },
 ] as const;
 
 export default function ClientHorseDetail() {
@@ -257,6 +259,9 @@ export default function ClientHorseDetail() {
           )}
           {activeTab === "zugriffsrechte" && (
             <HorseAccessManager horseId={horse.id} horseName={horse.name} />
+          )}
+          {activeTab === "tresor" && (
+            <VaultTab horseId={horse.id} />
           )}
         </div>
       </main>
