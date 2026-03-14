@@ -1,4 +1,5 @@
-import { Horse, USAGE_OPTIONS, HOUSING_OPTIONS } from "./types";
+import { Horse, USAGE_OPTIONS, HOUSING_OPTIONS, HorseContacts } from "./types";
+import { HorseContactsSection } from "./HorseContactsSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Pencil, User, Home, Utensils, AlertTriangle, Shield, Dna, Scale, Swords, GraduationCap, HelpCircle } from "lucide-react";
@@ -304,6 +305,13 @@ export function TabSteckbrief({ horse, onEdit }: TabSteckbriefProps) {
           </CardContent>
         </Card>
       )}
+
+      {/* Contacts & Emergency */}
+      <HorseContactsSection 
+        contacts={h.contacts as HorseContacts | null} 
+        onEdit={onEdit} 
+        editable 
+      />
 
       {/* Empty State */}
       {!horse.nickname && !horse.usage && !horse.housing && !horse.feeding_notes && (

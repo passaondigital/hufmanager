@@ -2,7 +2,10 @@ import { useState, useRef, useEffect } from "react";
 import { HoofPhoto, HorseDocument } from "./types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Upload, Image, FileText, Trash2, Loader2, X } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -20,6 +23,46 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+
+const DOCUMENT_CATEGORIES = [
+  { value: "equidenpass", label: "Equidenpass" },
+  { value: "kaufvertrag", label: "Kaufvertrag" },
+  { value: "versicherung", label: "Versicherung" },
+  { value: "tierarztbericht", label: "Tierarztbericht" },
+  { value: "klinikbericht", label: "Klinikbericht" },
+  { value: "roentgenbefund", label: "Röntgenbefund" },
+  { value: "blutbild_labor", label: "Blutbild / Labor" },
+  { value: "sonstiges", label: "Sonstiges" },
+] as const;
+
+const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
+  DOCUMENT_CATEGORIES.map(c => [c.value, c.label])
+);
+
+function getCategoryLabel(category: string | null): string {
+  if (!category) return "Sonstiges";
+  return CATEGORY_LABELS[category] || category;
+}
+
+function getCategoryColor(category: string | null): string {
+  switch (category) {
+    case "equidenpass": return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300";
+    case "kaufvertrag": return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300";
+    case "versicherung": return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300";
+    case "tierarztbericht": return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300";
+    case "klinikbericht": return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300";
+    case "roentgenbefund": return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300";
+    case "blutbild_labor": return "bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300";
+    default: return "bg-muted text-muted-foreground";
+  }
+}
 
 interface TabDokumenteProps {
   horseId: string;
@@ -32,52 +75,49 @@ export function TabDokumente({ horseId, hoofPhotos, documents, onRefresh }: TabD
   const [uploading, setUploading] = useState(false);
   const [deleteDoc, setDeleteDoc] = useState<HorseDocument | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Storage quota for this horse
   const { checkQuota, trackUpload, removeUpload, usage, quota } = useStorageQuota("horse", horseId);
-  
-  // Cache for signed URLs
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   
-  // Load signed URLs for documents and photos
   useEffect(() => {
     const loadSignedUrls = async () => {
       const urls: Record<string, string> = {};
-      
-      // Load document URLs
       for (const doc of documents) {
         const signedUrl = await getStorageUrl('horse-documents', doc.file_url);
-        if (signedUrl) {
-          urls[doc.id] = signedUrl;
-        }
+        if (signedUrl) urls[doc.id] = signedUrl;
       }
-      
-      // Load hoof photo URLs
       for (const photo of hoofPhotos) {
         const signedUrl = await getStorageUrl('horse-documents', photo.photo_url);
-        if (signedUrl) {
-          urls[photo.id] = signedUrl;
-        }
+        if (signedUrl) urls[photo.id] = signedUrl;
       }
-      
       setSignedUrls(urls);
     };
-    
     loadSignedUrls();
   }, [documents, hoofPhotos]);
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile || !selectedCategory) {
+      toast({ title: "Bitte Kategorie und Datei wählen", variant: "destructive" });
+      return;
+    }
 
     setUploading(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Not authenticated");
 
-      // Check quota before upload
-      const quotaCheck = await checkQuota(file.size);
+      const quotaCheck = await checkQuota(selectedFile.size);
       if (quotaCheck && !quotaCheck.allowed) {
         if (quotaCheck.exceeds_max_file_size) {
           throw new Error(`Datei zu groß. Maximum: ${formatBytes(quotaCheck.max_file_size)}`);
@@ -87,74 +127,53 @@ export function TabDokumente({ horseId, hoofPhotos, documents, onRefresh }: TabD
         }
       }
 
-      const fileExt = file.name.split('.').pop();
-      // Use UUID for unpredictable file names
+      const fileExt = selectedFile.name.split('.').pop();
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `${horseId}/${fileName}`;
 
-      // Upload to storage
-      const { path, error: uploadError } = await uploadFile('horse-documents', filePath, file);
+      const { path, error: uploadError } = await uploadFile('horse-documents', filePath, selectedFile);
       if (uploadError || !path) throw uploadError || new Error("Upload failed");
 
-      // Track storage usage
-      await trackUpload('horse-documents', filePath, file.size);
+      await trackUpload('horse-documents', filePath, selectedFile.size);
 
-      // Save file path to database (not full URL)
       const { error: dbError } = await supabase
         .from('horse_documents')
         .insert({
           horse_id: horseId,
-          file_name: file.name,
-          file_url: filePath, // Store path, not full URL
-          file_type: file.type,
-          category: file.type.startsWith('image/') ? 'image' : 'document',
+          file_name: selectedFile.name,
+          file_url: filePath,
+          file_type: selectedFile.type,
+          category: selectedCategory,
           uploaded_by: userData.user.id,
         });
 
       if (dbError) throw dbError;
 
-      toast({
-        title: "Datei hochgeladen",
-        description: file.name,
-      });
+      toast({ title: "Datei hochgeladen", description: `${selectedFile.name} (${getCategoryLabel(selectedCategory)})` });
+      setShowUploadDialog(false);
+      setSelectedCategory("");
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
       onRefresh();
     } catch (error: any) {
-      toast({
-        title: "Fehler beim Hochladen",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Fehler beim Hochladen", description: error.message, variant: "destructive" });
     } finally {
       setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
   const handleDelete = async () => {
     if (!deleteDoc) return;
-    
     try {
-      // Extract file path from URL
       const urlParts = deleteDoc.file_url.split('/');
       const filePath = `${horseId}/${urlParts[urlParts.length - 1]}`;
-
-      // Delete from storage
       await supabase.storage.from('horse-documents').remove([filePath]);
-
-      // Remove from storage tracking
       await removeUpload('horse-documents', deleteDoc.file_url);
-
-      // Delete from database
       await supabase.from('horse_documents').delete().eq('id', deleteDoc.id);
-
       toast({ title: "Datei gelöscht" });
       onRefresh();
     } catch (error: any) {
-      toast({
-        title: "Fehler beim Löschen",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Fehler beim Löschen", description: error.message, variant: "destructive" });
     } finally {
       setDeleteDoc(null);
     }
@@ -162,28 +181,17 @@ export function TabDokumente({ horseId, hoofPhotos, documents, onRefresh }: TabD
 
   return (
     <div className="space-y-4">
-      {/* Storage Quota Display */}
       <StorageQuotaCard entityType="horse" entityId={horseId} compact />
+      
       {/* Upload Button */}
       <Card>
         <CardContent className="p-4">
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleUpload}
-            accept="image/*,.pdf,.doc,.docx"
-            className="hidden"
-          />
           <Button 
             className="w-full" 
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => setShowUploadDialog(true)}
             disabled={uploading || (usage && usage.remaining <= 0)}
           >
-            {uploading ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Upload className="h-4 w-4 mr-2" />
-            )}
+            <Upload className="h-4 w-4 mr-2" />
             Datei hochladen
           </Button>
           <p className="text-xs text-muted-foreground text-center mt-2">
@@ -257,9 +265,14 @@ export function TabDokumente({ horseId, hoofPhotos, documents, onRefresh }: TabD
                     <p className="font-medium text-sm text-foreground truncate">
                       {doc.file_name}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {format(new Date(doc.created_at), "dd.MM.yyyy", { locale: de })}
-                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${getCategoryColor(doc.category)}`}>
+                        {getCategoryLabel(doc.category)}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(doc.created_at), "dd.MM.yyyy", { locale: de })}
+                      </span>
+                    </div>
                   </div>
                   <Button 
                     variant="ghost" 
@@ -278,6 +291,55 @@ export function TabDokumente({ horseId, hoofPhotos, documents, onRefresh }: TabD
           )}
         </CardContent>
       </Card>
+
+      {/* Upload Dialog with Category Selection */}
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Dokument hochladen</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Kategorie *</Label>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger><SelectValue placeholder="Kategorie wählen" /></SelectTrigger>
+                <SelectContent>
+                  {DOCUMENT_CATEGORIES.map(c => (
+                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Datei</Label>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                accept="image/*,.pdf,.doc,.docx"
+                className="hidden"
+              />
+              <Button 
+                variant="outline" 
+                className="w-full mt-1" 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={!selectedCategory}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                {selectedFile ? selectedFile.name : "Datei wählen"}
+              </Button>
+              {!selectedCategory && (
+                <p className="text-xs text-muted-foreground mt-1">Bitte zuerst eine Kategorie wählen</p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowUploadDialog(false); setSelectedCategory(""); setSelectedFile(null); }}>Abbrechen</Button>
+            <Button onClick={handleUpload} disabled={uploading || !selectedFile || !selectedCategory}>
+              {uploading && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+              Hochladen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Photo Lightbox */}
       {selectedPhoto && (

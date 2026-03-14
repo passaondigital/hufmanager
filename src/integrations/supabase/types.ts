@@ -6383,6 +6383,7 @@ export type Database = {
       horse_vaccinations: {
         Row: {
           administered_by: string | null
+          application_site: string | null
           batch_number: string | null
           created_at: string | null
           created_by: string | null
@@ -6393,12 +6394,16 @@ export type Database = {
           notes: string | null
           updated_at: string | null
           vaccination_date: string
+          vaccine_manufacturer: string | null
           vaccine_name: string | null
           vaccine_type: string
+          vet_address: string | null
+          vet_clinic: string | null
           vet_profile_id: string | null
         }
         Insert: {
           administered_by?: string | null
+          application_site?: string | null
           batch_number?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -6409,12 +6414,16 @@ export type Database = {
           notes?: string | null
           updated_at?: string | null
           vaccination_date: string
+          vaccine_manufacturer?: string | null
           vaccine_name?: string | null
           vaccine_type: string
+          vet_address?: string | null
+          vet_clinic?: string | null
           vet_profile_id?: string | null
         }
         Update: {
           administered_by?: string | null
+          application_site?: string | null
           batch_number?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -6425,8 +6434,11 @@ export type Database = {
           notes?: string | null
           updated_at?: string | null
           vaccination_date?: string
+          vaccine_manufacturer?: string | null
           vaccine_name?: string | null
           vaccine_type?: string
+          vet_address?: string | null
+          vet_clinic?: string | null
           vet_profile_id?: string | null
         }
         Relationships: [

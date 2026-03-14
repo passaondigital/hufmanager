@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Info, History, Image, Users, FileText, BookOpen, Heart, Shield, Settings,
-  Clock, Camera, Footprints
+  Clock, Camera, Footprints, Syringe
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -18,6 +18,7 @@ import { TabMediaVault } from "@/components/horse-detail/TabMediaVault";
 import { TabGesundheit } from "@/components/horse-detail/TabGesundheit";
 import { TabHufHistorie } from "@/components/horse-detail/TabHufHistorie";
 import { TabDokumente } from "@/components/horse-detail/TabDokumente";
+import { TabImpfungEntwurmung } from "@/components/horse-detail/TabImpfungEntwurmung";
 import { EditHorseModal } from "@/components/horse-detail/EditHorseModal";
 import { HoofStatusGrid } from "@/components/horse-detail/HoofStatusGrid";
 import { HoofPhotoTimeline } from "@/components/horse-detail/HoofPhotoTimeline";
@@ -35,6 +36,7 @@ const TABS = [
   { value: "verlauf", label: "Verlauf", icon: History },
   { value: "fotos", label: "Fotos & Medien", icon: Image },
   { value: "gesundheit", label: "Gesundheit", icon: Heart },
+  { value: "impfung", label: "Impfpass", icon: Syringe },
   { value: "dokumente", label: "Dokumente", icon: FileText },
   { value: "tagebuch", label: "Tagebuch", icon: BookOpen },
   { value: "betreuer", label: "Betreuer", icon: Users },
@@ -235,6 +237,9 @@ export default function ClientHorseDetail() {
           )}
           {activeTab === "gesundheit" && (
             <HorseHealthTracker horseId={horse.id} />
+          )}
+          {activeTab === "impfung" && (
+            <TabImpfungEntwurmung horseId={horse.id} readOnly />
           )}
           {activeTab === "dokumente" && (
             <TabDokumente 
