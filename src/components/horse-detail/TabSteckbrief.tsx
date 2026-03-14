@@ -1,4 +1,5 @@
-import { Horse, USAGE_OPTIONS, HOUSING_OPTIONS } from "./types";
+import { Horse, USAGE_OPTIONS, HOUSING_OPTIONS, HorseContacts } from "./types";
+import { HorseContactsSection } from "./HorseContactsSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Pencil, User, Home, Utensils, AlertTriangle, Shield, Dna, Scale, Swords, GraduationCap, HelpCircle } from "lucide-react";
