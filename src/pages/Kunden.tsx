@@ -32,6 +32,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -49,7 +57,7 @@ import { LinkAppUserModal } from "@/components/customers/LinkAppUserModal";
 import { PendingConnectionRequests } from "@/components/network/PendingConnectionRequests";
 import { ConnectionSearch } from "@/components/network/ConnectionSearch";
 import { VerifiedConnectionBadge } from "@/components/network/VerifiedConnectionBadge";
-import { Link2 } from "lucide-react";
+import { Link2, Loader2 } from "lucide-react";
 import { 
   PAYMENT_RATING_OPTIONS, 
   LIFECYCLE_STATUS_OPTIONS,
