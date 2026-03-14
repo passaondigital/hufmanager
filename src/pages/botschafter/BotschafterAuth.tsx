@@ -192,50 +192,48 @@ export default function BotschafterAuth() {
       return;
     }
 
-    const refCode = generateRef();
+    // 2. Registrierung über Edge Function (service_role), damit keine RLS-Blockade bei fehlender Session entsteht
+    const { data: registerData, error: registerErr } = await supabase.functions.invoke("register-botschafter", {
+      body: {
+        user_id: authData.user.id,
+        type,
+        first_name: regForm.first_name.substring(0, 80),
+        last_name: regForm.last_name.substring(0, 80),
+        email: regForm.email.substring(0, 255),
+        source_role: "extern",
+        social_handle: type === "creator" ? (regForm.social_handle || null) : null,
+        profession: type === "profi" ? (regForm.profession || null) : null,
+        plz: type === "profi" ? (regForm.plz || null) : null,
+        company_name: type === "unternehmen" ? (regForm.company_name || null) : null,
+        industry: type === "unternehmen" ? (regForm.industry || null) : null,
+      },
+    });
 
-    // 2. INSERT into pferdeakte_botschafter with user_id
-    const { data: botData, error: dbErr } = await supabase.from("pferdeakte_botschafter").insert({
-      user_id: authData.user.id,
-      type: type as string,
-      first_name: regForm.first_name.substring(0, 80),
-      last_name: regForm.last_name.substring(0, 80),
-      email: regForm.email.substring(0, 255),
-      referral_code: refCode,
-      status: "pending",
-      source_role: "extern",
-      social_handle: type === "creator" ? (regForm.social_handle || null) : null,
-      profession: type === "profi" ? (regForm.profession || null) : null,
-      plz: type === "profi" ? (regForm.plz || null) : null,
-      company_name: type === "unternehmen" ? (regForm.company_name || null) : null,
-      industry: type === "unternehmen" ? (regForm.industry || null) : null,
-    } as any).select("id, bid, referral_code").single();
-
-    if (dbErr) {
+    if (registerErr) {
       setRegLoading(false);
-      if ((dbErr as any).code === "23505") {
-        setRegError("Du bist bereits als Botschafter registriert.");
-      } else {
-        setRegError("Fehler: " + dbErr.message);
+
+      let message = "Registrierung konnte nicht gespeichert werden.";
+      try {
+        const payload = await (registerErr as any)?.context?.json?.();
+        if (payload?.error === "already_registered") {
+          message = "Du bist bereits als Botschafter registriert.";
+        } else if (payload?.error) {
+          message = `Fehler: ${payload.error}`;
+        }
+      } catch {
+        if ((registerErr as any)?.message?.includes("409")) {
+          message = "Du bist bereits als Botschafter registriert.";
+        }
       }
+
+      setRegError(message);
       return;
     }
 
-    // 3. Check if existing profile with this email exists → link
-    const { data: existingProfile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("email", regForm.email)
-      .neq("id", authData.user.id)
-      .maybeSingle();
+    const botData = (registerData as any)?.data || registerData;
+    const refCode = (registerData as any)?.referral_code || botData?.referral_code || "";
 
-    if (existingProfile && botData) {
-      await supabase.from("pferdeakte_botschafter")
-        .update({ source_user_id: existingProfile.id } as any)
-        .eq("id", botData.id);
-    }
-
-    // 4. Send welcome email via edge function
+    // 3. Send welcome email via edge function
     try {
       await supabase.functions.invoke("botschafter-welcome", {
         body: {
