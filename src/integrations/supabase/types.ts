@@ -873,6 +873,39 @@ export type Database = {
           },
         ]
       }
+      affiliate_stats: {
+        Row: {
+          active_referrals: number
+          created_at: string | null
+          id: string
+          last_updated: string | null
+          monthly_commission: number
+          provider_id: string
+          referral_count: number
+          total_commission: number
+        }
+        Insert: {
+          active_referrals?: number
+          created_at?: string | null
+          id?: string
+          last_updated?: string | null
+          monthly_commission?: number
+          provider_id: string
+          referral_count?: number
+          total_commission?: number
+        }
+        Update: {
+          active_referrals?: number
+          created_at?: string | null
+          id?: string
+          last_updated?: string | null
+          monthly_commission?: number
+          provider_id?: string
+          referral_count?: number
+          total_commission?: number
+        }
+        Relationships: []
+      }
       affiliates: {
         Row: {
           affiliate_type: string | null
@@ -13662,6 +13695,10 @@ export type Database = {
       search_profile_by_readable_id: {
         Args: { search_id: string }
         Returns: Json
+      }
+      sync_affiliate_stats: {
+        Args: { p_provider_id: string }
+        Returns: undefined
       }
       validate_magic_link: { Args: { slug_input: string }; Returns: Json }
     }
