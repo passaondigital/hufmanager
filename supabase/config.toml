@@ -146,3 +146,6 @@ verify_jwt = false
 
 [functions.sync-copecart-affiliate]
 verify_jwt = false
+
+[functions.register-botschafter]
+verify_jwt = false
