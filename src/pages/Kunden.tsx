@@ -676,6 +676,95 @@ const Kunden = () => {
         onClose={() => setShowLinkUserModal(false)}
         onSuccess={handleConnectionStatusChanged}
       />
+
+      {/* New Client Modal */}
+      <Dialog open={showNewClientModal} onOpenChange={(open) => { setShowNewClientModal(open); if (!open) resetNewClientForm(); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Neuen Kunden anlegen</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="nc-first">Vorname *</Label>
+                <Input
+                  id="nc-first"
+                  value={newClient.first_name}
+                  onChange={(e) => setNewClient({ ...newClient, first_name: e.target.value })}
+                  placeholder="Vorname"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="nc-last">Nachname *</Label>
+                <Input
+                  id="nc-last"
+                  value={newClient.last_name}
+                  onChange={(e) => setNewClient({ ...newClient, last_name: e.target.value })}
+                  placeholder="Nachname"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nc-email">E-Mail</Label>
+              <Input
+                id="nc-email"
+                type="email"
+                value={newClient.email}
+                onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+                placeholder="kunde@beispiel.de"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nc-phone">Telefon</Label>
+              <Input
+                id="nc-phone"
+                type="tel"
+                value={newClient.phone}
+                onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+                placeholder="+49 123 456789"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nc-street">Straße</Label>
+              <Input
+                id="nc-street"
+                value={newClient.street}
+                onChange={(e) => setNewClient({ ...newClient, street: e.target.value })}
+                placeholder="Musterstraße 1"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="nc-zip">PLZ</Label>
+                <Input
+                  id="nc-zip"
+                  value={newClient.zip_code}
+                  onChange={(e) => setNewClient({ ...newClient, zip_code: e.target.value })}
+                  placeholder="12345"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="nc-city">Ort</Label>
+                <Input
+                  id="nc-city"
+                  value={newClient.city}
+                  onChange={(e) => setNewClient({ ...newClient, city: e.target.value })}
+                  placeholder="Musterstadt"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowNewClientModal(false); resetNewClientForm(); }}>
+              Abbrechen
+            </Button>
+            <Button onClick={handleCreateNewClient} disabled={savingNewClient}>
+              {savingNewClient && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Kunde anlegen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
