@@ -1179,6 +1179,10 @@ export default function MissionControl() {
                 <Globe className="w-4 h-4" />
                 <span className="hidden md:inline">Browser</span>
               </TabsTrigger>
+              <TabsTrigger value="succession" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <Shield className="w-4 h-4" />
+                <span className="hidden md:inline">Nachfolge</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
