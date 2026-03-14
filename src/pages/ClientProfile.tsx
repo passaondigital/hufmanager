@@ -20,6 +20,7 @@ import { ClientAvatarUpload } from "@/components/client/ClientAvatarUpload";
 import { ProviderReferral } from "@/components/client/ProviderReferral";
 import { ClientLocationsManager } from "@/components/client/ClientLocationsManager";
 import { NotificationPreferences } from "@/components/client/NotificationPreferences";
+import { PrimaryEmergencyContact } from "@/components/client/PrimaryEmergencyContact";
 
 interface Profile {
   id: string;
