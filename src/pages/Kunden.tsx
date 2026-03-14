@@ -70,6 +70,7 @@ const Kunden = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("alle");
   const [paymentFilter, setPaymentFilter] = useState<PaymentRating | "alle">("alle");
@@ -80,6 +81,96 @@ const Kunden = () => {
   const [addHorseForCustomerId, setAddHorseForCustomerId] = useState<string | null>(null);
   const [showConnectionSearch, setShowConnectionSearch] = useState(false);
   const [showLinkUserModal, setShowLinkUserModal] = useState(false);
+
+  // New client modal
+  const [showNewClientModal, setShowNewClientModal] = useState(false);
+  const [savingNewClient, setSavingNewClient] = useState(false);
+  const [newClient, setNewClient] = useState({
+    first_name: "",
+    last_name: "",
+    email: "",
+    phone: "",
+    street: "",
+    zip_code: "",
+    city: "",
+  });
+
+  // Open modal when ?new=true
+  useEffect(() => {
+    if (searchParams.get("new") === "true") {
+      setShowNewClientModal(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  const resetNewClientForm = () => {
+    setNewClient({ first_name: "", last_name: "", email: "", phone: "", street: "", zip_code: "", city: "" });
+  };
+
+  const handleCreateNewClient = async () => {
+    if (!user?.id) return;
+    if (!newClient.first_name.trim() || !newClient.last_name.trim()) {
+      toast({ title: "Vor- und Nachname sind Pflichtfelder", variant: "destructive" });
+      return;
+    }
+
+    setSavingNewClient(true);
+    try {
+      const fullName = `${newClient.first_name.trim()} ${newClient.last_name.trim()}`;
+
+      // Create ghost profile
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .insert({
+          full_name: fullName,
+          email: newClient.email.trim() || null,
+          phone: newClient.phone.trim() || null,
+          street: newClient.street.trim() || null,
+          zip_code: newClient.zip_code.trim() || null,
+          city: newClient.city.trim() || null,
+          created_by_provider_id: user.id,
+          onboarding_completed: false,
+          has_logged_in: false,
+        } as any)
+        .select("id")
+        .single();
+
+      if (profileError) throw profileError;
+
+      if (profile) {
+        // Create access grant
+        await supabase.from("access_grants").insert({
+          provider_id: user.id,
+          client_id: profile.id,
+          is_active: true,
+          can_view_basic: true,
+          can_view_medical: true,
+          can_create_appointments: true,
+        });
+
+        // Create contact entry
+        await supabase.from("contacts").insert({
+          provider_id: user.id,
+          full_name: fullName,
+          email: newClient.email.trim() || null,
+          phone: newClient.phone.trim() || null,
+          category: "client",
+          profile_id: profile.id,
+        });
+      }
+
+      toast({ title: "Kunde angelegt", description: fullName });
+      queryClient.invalidateQueries({ queryKey: ["provider-clients"] });
+      queryClient.invalidateQueries({ queryKey: ["provider-horses"] });
+      setShowNewClientModal(false);
+      resetNewClientForm();
+    } catch (err: any) {
+      console.error("Error creating client:", err);
+      toast({ title: "Fehler beim Anlegen", description: err.message, variant: "destructive" });
+    } finally {
+      setSavingNewClient(false);
+    }
+  };
 
   // Fetch profiles (clients) - both created by provider AND connected via access_grants (ACTIVE only)
   const { data: clients = [] } = useQuery({
