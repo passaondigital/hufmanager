@@ -238,6 +238,9 @@ export default function ClientHorseDetail() {
           {activeTab === "gesundheit" && (
             <HorseHealthTracker horseId={horse.id} />
           )}
+          {activeTab === "impfung" && (
+            <TabImpfungEntwurmung horseId={horse.id} readOnly />
+          )}
           {activeTab === "dokumente" && (
             <TabDokumente 
               horseId={horse.id} 
