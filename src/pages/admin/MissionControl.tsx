@@ -2236,6 +2236,10 @@ export default function MissionControl() {
             <AdminBrowserAnalytics />
           </TabsContent>
 
+          <TabsContent value="succession" className="space-y-6">
+            <PlatformSuccession />
+          </TabsContent>
+
           {/* ESCALATIONS TAB */}
           <TabsContent value="escalations" className="space-y-4">
             <Card>
