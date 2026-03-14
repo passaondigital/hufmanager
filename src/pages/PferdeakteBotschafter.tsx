@@ -126,12 +126,9 @@ export default function PferdeakteBotschafter() {
       return;
     }
 
-    // 2. INSERT pferdeakte_botschafter direkt im Frontend
-    const refCode = generateRef();
-
-    const { data: botData, error: dbErr } = await supabase
-      .from("pferdeakte_botschafter")
-      .insert({
+    // 2. Registrierung über Edge Function (service_role), damit kein RLS-Fehler bei fehlender Session entsteht
+    const { data: registerData, error: registerErr } = await supabase.functions.invoke("register-botschafter", {
+      body: {
         user_id: authData.user.id,
         type,
         first_name: form.first_name.substring(0, 80),
@@ -149,39 +146,35 @@ export default function PferdeakteBotschafter() {
         company_role: type === "unternehmen" ? (form.company_role || null) : null,
         industry: type === "unternehmen" ? (form.industry || null) : null,
         cooperation_types: type === "unternehmen" ? cooperationTypes : null,
-        referral_code: refCode,
-        status: "pending",
         source_role: "extern",
-      } as any)
-      .select("id, bid, referral_code")
-      .single();
+      },
+    });
 
-    if (dbErr) {
+    if (registerErr) {
       setSubmitting(false);
-      if ((dbErr as any).code === "23505") {
-        setError("Diese E-Mail ist bereits als Botschafter registriert.");
-      } else {
-        setError("Fehler: " + dbErr.message);
+
+      let message = "Registrierung konnte nicht gespeichert werden.";
+      try {
+        const payload = await (registerErr as any)?.context?.json?.();
+        if (payload?.error === "already_registered") {
+          message = "Diese E-Mail ist bereits als Botschafter registriert.";
+        } else if (payload?.error) {
+          message = `Fehler: ${payload.error}`;
+        }
+      } catch {
+        if ((registerErr as any)?.message?.includes("409")) {
+          message = "Diese E-Mail ist bereits als Botschafter registriert.";
+        }
       }
+
+      setError(message);
       return;
     }
 
-    // 3. Vorhandenes Profil mit gleicher E-Mail verknüpfen
-    const { data: existingProfile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("email", form.email)
-      .neq("id", authData.user.id)
-      .maybeSingle();
+    const botData = (registerData as any)?.data || registerData;
+    const refCode = (registerData as any)?.referral_code || (botData as any)?.referral_code || "";
 
-    if (existingProfile && botData) {
-      await supabase
-        .from("pferdeakte_botschafter")
-        .update({ source_user_id: existingProfile.id } as any)
-        .eq("id", botData.id);
-    }
-
-    // 4. Send welcome email
+    // 3. Send welcome email
     try {
       await supabase.functions.invoke("botschafter-welcome", {
         body: {
