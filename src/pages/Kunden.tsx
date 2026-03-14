@@ -335,7 +335,7 @@ const Kunden = () => {
         count={clients.length}
         countLabel="Kunden"
         action={
-          <Button className="gap-2 min-h-[44px]" onClick={() => navigate("/aufnahme")}>
+          <Button className="gap-2 min-h-[44px]" onClick={() => setShowNewClientModal(true)}>
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Neuer Kunde</span>
           </Button>
