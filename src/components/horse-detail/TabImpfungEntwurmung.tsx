@@ -259,11 +259,17 @@ export function TabImpfungEntwurmung({ horseId, readOnly = false }: TabImpfungEn
         </TabsList>
 
         <TabsContent value="impfpass" className="space-y-3 mt-3">
-          {!readOnly && (
-            <Button size="sm" onClick={() => setShowVaccModal(true)} className="w-full">
-              <Plus className="h-4 w-4 mr-1" /> Impfung eintragen
+          <div className="flex gap-2">
+            {!readOnly && (
+              <Button size="sm" onClick={() => setShowVaccModal(true)} className="flex-1">
+                <Plus className="h-4 w-4 mr-1" /> Impfung eintragen
+              </Button>
+            )}
+            <Button size="sm" variant="outline" onClick={handleExportPdf} disabled={exportingPdf}>
+              {exportingPdf ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Download className="h-4 w-4 mr-1" />}
+              PDF Export
             </Button>
-          )}
+          </div>
           {vaccinations.length === 0 ? (
             <Card className="border-dashed"><CardContent className="p-6 text-center text-sm text-muted-foreground">Noch keine Impfungen eingetragen</CardContent></Card>
           ) : (
