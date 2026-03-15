@@ -1,38 +1,17 @@
 import { useEffect } from "react";
 import Navbar from "@/components/website/Navbar";
 import { useGA4 } from "@/hooks/useGA4";
-import HeroV2 from "@/components/website/HeroV2";
-import ProblemSection from "@/components/website/ProblemSection";
-import PainSolutionSection from "@/components/website/PainSolutionSection";
-import IdentitySection from "@/components/website/IdentitySection";
+import HeroMinimal from "@/components/website/HeroMinimal";
+import PainCardsSection from "@/components/website/PainCardsSection";
+import EcosystemHeader from "@/components/website/EcosystemMinimal";
 import HorseEcosystem from "@/components/website/HorseEcosystem";
-import SolutionSection from "@/components/website/SolutionSection";
-import FeatureCockpitSection from "@/components/website/FeatureCockpitSection";
-import FeatureFuelSection from "@/components/website/FeatureFuelSection";
-import FeatureNavigationSection from "@/components/website/FeatureNavigationSection";
-import FeatureNotificationsSection from "@/components/website/FeatureNotificationsSection";
-import FeatureLogbookSection from "@/components/website/FeatureLogbookSection";
-import ProfessionsSection from "@/components/website/ProfessionsSection";
-import EcosystemSection from "@/components/website/EcosystemSection";
-import AudienceTabsSection from "@/components/website/AudienceTabsSection";
 import { DataSovereigntyBadge } from "@/components/shared/DataSovereigntyBadge";
-import PillarsSection from "@/components/website/PillarsSection";
-import OfflineSection from "@/components/website/OfflineSection";
-import DemoSection from "@/components/website/DemoSection";
-import PricingV2 from "@/components/website/PricingV2";
-import TestimonialsSection from "@/components/website/TestimonialsSection";
-import TrustSection from "@/components/website/TrustSection";
-import ContactFormSection from "@/components/website/ContactFormSection";
-import ChangelogSection from "@/components/website/ChangelogSection";
-import HufrenteSection from "@/components/website/HufrenteSection";
-import ForWhomSection from "@/components/website/ForWhomSection";
-
 import BigPictureSection from "@/components/website/BigPictureSection";
 import WhyHufManagerSection from "@/components/website/WhyHufManagerSection";
-import FAQ from "@/components/website/FAQ";
+import PricingV2 from "@/components/website/PricingV2";
+import TestimonialsSection from "@/components/website/TestimonialsSection";
 import FinalCTA from "@/components/website/FinalCTA";
 import FooterNew from "@/components/website/FooterNew";
-import LatestBlogPosts from "@/components/website/LatestBlogPosts";
 import CookieBanner from "@/components/website/CookieBanner";
 
 const WebsiteHome = () => {
@@ -89,41 +68,30 @@ const WebsiteHome = () => {
   return (
     <main className="min-h-screen bg-black">
       <Navbar />
-      <HeroV2 />
-      <ProblemSection />
-      <PainSolutionSection />
-      <IdentitySection />
+      {/* 1. Hero */}
+      <HeroMinimal />
+      {/* 2. Drei Schmerzen */}
+      <PainCardsSection />
+      {/* 3. Ökosystem */}
+      <EcosystemHeader />
       <HorseEcosystem />
-      <SolutionSection />
-      <FeatureCockpitSection />
-      <FeatureFuelSection />
-      <FeatureNavigationSection />
-      <FeatureLogbookSection />
-      <FeatureNotificationsSection />
-      <ProfessionsSection />
-      <EcosystemSection />
-      <AudienceTabsSection />
+      {/* 4. Datensouveränität */}
       <section className="py-16 bg-zinc-950">
         <div className="container max-w-3xl">
           <DataSovereigntyBadge />
         </div>
       </section>
-      <PillarsSection />
-      <OfflineSection />
-      <DemoSection />
-      <PricingV2 />
-      <TestimonialsSection />
-      <ContactFormSection />
-      <TrustSection />
-      <LatestBlogPosts />
-      <ChangelogSection />
-      <HufrenteSection />
-      <ForWhomSection />
-      
+      {/* 5. Das große Ganze */}
       <BigPictureSection />
+      {/* 6. Gründer + Szenarien + Historisch */}
       <WhyHufManagerSection />
-      <FAQ />
+      {/* 7. Preise */}
+      <PricingV2 />
+      {/* 8. Social Proof */}
+      <TestimonialsSection />
+      {/* 9. Finaler CTA */}
       <FinalCTA />
+      {/* 10. Footer */}
       <FooterNew />
       <CookieBanner />
     </main>
