@@ -49,11 +49,11 @@ export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props
           .maybeSingle();
         lastVisitDate = (data as any)?.created_at || null;
       } else if (userRole === "client") {
-        const { data } = await supabase
+        const { data } = await (supabase
           .from("horse_diary_entries")
           .select("created_at")
           .eq("horse_id", horseId)
-          .eq("created_by", currentUserId)
+          .eq("created_by", currentUserId) as any)
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
