@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, Phone, AlertTriangle, Shield, Heart } from "lucide-react";
+import { Loader2, Phone, AlertTriangle, Shield, Heart, Footprints } from "lucide-react";
 
 interface EmergencyData {
   horse: {
@@ -18,10 +18,12 @@ interface EmergencyData {
     contacts: Record<string, any> | null;
     insurance_company: string | null;
     insurance_type: string | null;
-    insurance_number: string | null;
+    current_medications: string | null;
+    known_allergies: string | null;
   };
   ownerName: string | null;
   ownerPhone: string | null;
+  lastTreatment: { date: string; type: string } | null;
 }
 
 export default function NotfallZugang() {
@@ -29,6 +31,15 @@ export default function NotfallZugang() {
   const [data, setData] = useState<EmergencyData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Set theme-color meta tag for red emergency look
+    const meta = document.createElement("meta");
+    meta.name = "theme-color";
+    meta.content = "#dc2626";
+    document.head.appendChild(meta);
+    return () => { document.head.removeChild(meta); };
+  }, []);
 
   useEffect(() => {
     loadEmergencyData();
@@ -42,11 +53,10 @@ export default function NotfallZugang() {
     }
 
     try {
-      // Find horse by readable_id
       const readableId = eqid.startsWith("#") ? eqid : `#${eqid}`;
       const { data: horseData, error: horseErr } = await supabase
         .from("horses")
-        .select("id, name, breed, birth_year, gender, photo_url, readable_id, chip_number, contacts, insurance_company, insurance_type, owner_id")
+        .select("id, name, breed, birth_year, gender, photo_url, readable_id, chip_number, contacts, insurance_company, insurance_type, owner_id, current_medications, known_allergies")
         .or(`readable_id.eq.${readableId},readable_id.eq.${eqid}`)
         .is("deleted_at", null)
         .maybeSingle();
@@ -72,18 +82,15 @@ export default function NotfallZugang() {
         return;
       }
 
-      // Get owner info
-      let ownerName: string | null = null;
-      let ownerPhone: string | null = null;
-      if (horseData.owner_id) {
-        const { data: ownerData } = await supabase
-          .from("profiles")
-          .select("full_name, phone")
-          .eq("id", horseData.owner_id)
-          .single();
-        ownerName = ownerData?.full_name || null;
-        ownerPhone = ownerData?.phone || null;
-      }
+      // Get owner info + last treatment in parallel
+      const [ownerRes, apptRes] = await Promise.all([
+        horseData.owner_id
+          ? supabase.from("profiles").select("full_name, phone").eq("id", horseData.owner_id).single()
+          : Promise.resolve({ data: null }),
+        supabase.from("appointments").select("date, service_type").eq("horse_id", horseData.id).eq("status", "completed").order("date", { ascending: false }).limit(1),
+      ]);
+
+      const lastAppt = (apptRes.data as any)?.[0];
 
       setData({
         horse: {
@@ -97,12 +104,14 @@ export default function NotfallZugang() {
           contacts: horseData.contacts as any,
           insurance_company: (horseData as any).insurance_company,
           insurance_type: (horseData as any).insurance_type,
-          insurance_number: null,
+          current_medications: (horseData as any).current_medications || null,
+          known_allergies: (horseData as any).known_allergies || null,
         },
-        ownerName,
-        ownerPhone,
+        ownerName: ownerRes.data?.full_name || null,
+        ownerPhone: ownerRes.data?.phone || null,
+        lastTreatment: lastAppt ? { date: lastAppt.date, type: lastAppt.service_type || "Behandlung" } : null,
       });
-    } catch (err) {
+    } catch {
       setError("Fehler beim Laden der Daten");
     } finally {
       setLoading(false);
@@ -163,14 +172,22 @@ export default function NotfallZugang() {
       <div className="bg-destructive text-destructive-foreground px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 flex-shrink-0" />
-          <div>
+          <div className="flex-1">
             <p className="text-sm font-bold">NOTFALL-ZUGANG</p>
             <p className="text-xs opacity-80">HufManager Pferdeakte</p>
           </div>
         </div>
       </div>
 
-      <main className="max-w-lg mx-auto px-4 py-6 space-y-4">
+      <main className="max-w-lg mx-auto px-4 py-4 space-y-3">
+        {/* 112 Emergency Call */}
+        <a href="tel:112" className="block">
+          <Button size="lg" className="w-full gap-2 bg-destructive hover:bg-destructive/90 text-lg py-6">
+            <Phone className="h-6 w-6" />
+            112 – Notruf anrufen
+          </Button>
+        </a>
+
         {/* Horse Info */}
         <Card>
           <CardContent className="p-5">
@@ -197,6 +214,45 @@ export default function NotfallZugang() {
           </CardContent>
         </Card>
 
+        {/* Medications & Allergies Alert */}
+        {(horse.current_medications || horse.known_allergies) && (
+          <Card className="border-destructive/30">
+            <CardContent className="p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Heart className="h-4 w-4 text-destructive" />
+                <h2 className="text-sm font-bold text-foreground">Medizinische Hinweise</h2>
+              </div>
+              {horse.current_medications && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Aktuelle Medikation</p>
+                  <p className="text-sm text-foreground">{horse.current_medications}</p>
+                </div>
+              )}
+              {horse.known_allergies && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Bekannte Allergien</p>
+                  <p className="text-sm text-foreground">{horse.known_allergies}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Last Treatment */}
+        {data.lastTreatment && (
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <Footprints className="h-5 w-5 text-primary flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-foreground">Letzte Behandlung</p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(data.lastTreatment.date).toLocaleDateString("de-DE")} – {data.lastTreatment.type}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Emergency Contacts */}
         <div className="space-y-2">
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1">
@@ -211,7 +267,7 @@ export default function NotfallZugang() {
                 </div>
                 {c.phone && (
                   <a href={`tel:${c.phone}`}>
-                    <Button size="lg" className="gap-2 bg-destructive hover:bg-destructive/90 min-w-[120px]">
+                    <Button size="lg" className="gap-2 bg-destructive hover:bg-destructive/90 min-w-[120px] min-h-[44px]">
                       <Phone className="h-5 w-5" />
                       Anrufen
                     </Button>
@@ -240,9 +296,9 @@ export default function NotfallZugang() {
                 <Shield className="h-5 w-5 text-primary" />
                 <div>
                   <p className="text-sm font-medium text-foreground">{horse.insurance_company}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {[horse.insurance_type, horse.insurance_number].filter(Boolean).join(" · ")}
-                  </p>
+                  {horse.insurance_type && (
+                    <p className="text-xs text-muted-foreground">{horse.insurance_type}</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -250,9 +306,10 @@ export default function NotfallZugang() {
         )}
 
         {/* Footer */}
-        <div className="text-center pt-6 pb-4">
+        <div className="text-center pt-6 pb-4 space-y-1">
           <p className="text-xs text-muted-foreground">
-            Powered by <span className="font-semibold text-foreground">HufManager</span>
+            Diese Notfall-Seite wird durch die digitale Pferdeakte von{" "}
+            <span className="font-semibold text-foreground">HufManager</span> bereitgestellt.
           </p>
           <a href="https://hufmanager.de" className="text-xs text-primary hover:underline">
             hufmanager.de
