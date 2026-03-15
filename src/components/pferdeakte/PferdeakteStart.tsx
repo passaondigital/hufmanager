@@ -39,10 +39,10 @@ export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props
           .maybeSingle();
         lastVisitDate = data?.date || null;
       } else if (userRole === "partner") {
-        const { data } = await supabase
+        const { data } = await (supabase
           .from("partner_treatment_notes")
           .select("created_at")
-          .eq("horse_id", horseId)
+          .eq("horse_id", horseId) as any)
           .eq("partner_id", currentUserId)
           .order("created_at", { ascending: false })
           .limit(1)
@@ -52,8 +52,8 @@ export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props
         const { data } = await (supabase
           .from("horse_diary_entries")
           .select("created_at")
-          .eq("horse_id", horseId)
-          .eq("created_by", currentUserId) as any)
+          .eq("horse_id", horseId) as any)
+          .eq("created_by", currentUserId)
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
