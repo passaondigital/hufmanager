@@ -561,6 +561,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/hm-connect" element={<HMConnect />} />
               <Route path="/autoflow" element={<AutoFlow />} />
               <Route path="/abo-matrix" element={<AboMatrix />} />
+              <Route path="/marketplace" element={<Marketplace />} />
               {/* neu: Notfall-Dashboard für Provider */}
               <Route path="/notfall" element={<EmergencyDashboard />} />
               {/* Provider Horse Detail - Direct Access */}
