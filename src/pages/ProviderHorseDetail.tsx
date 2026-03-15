@@ -45,6 +45,7 @@ interface OwnerProfile {
 
 const TABS = [
   { value: "historie", label: "Historie", icon: Clock },
+  { value: "pferdeakte", label: "Akte", icon: BookOpen },
   { value: "steckbrief", label: "Steckbrief", icon: FileText },
   { value: "foto-timeline", label: "Fotos", icon: Camera },
   { value: "huf-doku", label: "HufCam", icon: Camera },
@@ -55,7 +56,6 @@ const TABS = [
   { value: "dokumente", label: "Doku", icon: FolderOpen },
   { value: "partner", label: "Partner", icon: Users },
   { value: "material", label: "Material", icon: Activity },
-  { value: "pferdeakte", label: "Akte", icon: BookOpen },
   { value: "aktivitaeten", label: "Aktivitäten", icon: Activity },
 ] as const;
 
