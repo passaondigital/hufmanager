@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Zap, Bell, Footprints, Stethoscope, Activity, FileText, Camera, Clock, CheckCircle, Lightbulb } from "lucide-react";
 import { toast } from "sonner";
+import { DemoFeatureHighlight } from "@/components/demo/DemoFeatureHighlight";
 import type { PferdeakteUserRole } from "./types";
 import type { Horse } from "@/components/horse-detail/types";
 
