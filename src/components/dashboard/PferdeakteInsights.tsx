@@ -37,7 +37,7 @@ export function PferdeakteInsights() {
         .from("horses")
         .select("id, name, breed, gender, birth_year, chip_number, passport_number, contacts, insurance_company")
         .eq("provider_id", user!.id)
-        .is("deleted_at", null);
+        .filter("deleted_at", "is", "null") as { data: any[] | null };
 
       const horses = horseRows || [];
       const ids = horses.map((h) => h.id);
