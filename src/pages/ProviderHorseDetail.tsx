@@ -385,6 +385,9 @@ export default function ProviderHorseDetail() {
         {activeTab === "material" && (
           <HorseMaterialHistory horseId={horse.id} />
         )}
+        {activeTab === "pferdeakte" && (
+          <Pferdeakte horseId={horse.id} userRole="provider" horse={horse as any} />
+        )}
         {activeTab === "aktivitaeten" && (
           <TabAktivitaeten horseId={horse.id} />
         )}
