@@ -83,7 +83,35 @@ export function TabImpfungEntwurmung({ horseId, readOnly = false }: TabImpfungEn
   const [saving, setSaving] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [docFile, setDocFile] = useState<File | null>(null);
+  const [exportingPdf, setExportingPdf] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExportPdf = async () => {
+    setExportingPdf(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Nicht angemeldet");
+
+      const { data, error } = await supabase.functions.invoke("generate-vaccination-report", {
+        body: { horse_id: horseId },
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, "_blank");
+        toast.success("Impfprotokoll erstellt");
+      } else if (data?.html) {
+        const blob = new Blob([data.html], { type: "text/html" });
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank");
+        toast.success("Impfprotokoll erstellt");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Export fehlgeschlagen");
+    } finally {
+      setExportingPdf(false);
+    }
+  };
 
   const [vaccForm, setVaccForm] = useState({
     vaccine_type: "", vaccine_name: "", vaccination_date: "",
