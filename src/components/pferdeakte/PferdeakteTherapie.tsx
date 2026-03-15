@@ -172,6 +172,16 @@ export function PferdeakteTherapie({ horseId, horseName, userRole }: Props) {
           Therapie-Bericht als PDF
         </Button>
       )}
+
+      {/* Partner Invite Modal */}
+      <InvitePartnerModal
+        open={showInvite}
+        onClose={() => setShowInvite(false)}
+        horseId={horseId}
+        horseName={horseName || "Pferd"}
+        inviterRole={userRole === "client" ? "client" : "provider"}
+        onSent={() => setShowInvite(false)}
+      />
     </div>
   );
 }
