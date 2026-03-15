@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { uploadFile, getStorageUrl } from "@/lib/storage";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { DemoFeatureHighlight } from "@/components/demo/DemoFeatureHighlight";
 import { EmergencyQRCode } from "./EmergencyQRCode";
 
 interface PferdeakteTresorProps {
