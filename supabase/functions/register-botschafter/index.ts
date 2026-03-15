@@ -88,6 +88,14 @@ Deno.serve(async (req) => {
         .eq("id", data.id);
     }
 
+    // Kurz warten damit auth.users verfügbar ist, dann user_id nachtragen
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    await supabaseAdmin
+      .from("pferdeakte_botschafter")
+      .update({ user_id: user_id })
+      .eq("email", email)
+      .is("user_id", null);
+
     return new Response(
       JSON.stringify({ data, referral_code: refCode }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }

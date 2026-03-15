@@ -118,16 +118,32 @@ export default function BotschafterAuth() {
     }
 
     if (data.user) {
+      // Zuerst per user_id suchen, falls nicht gefunden per E-Mail
       const { data: bot } = await supabase
         .from("pferdeakte_botschafter")
-        .select("id, status")
-        .eq("user_id", data.user.id)
+        .select("id, status, user_id")
+        .or(`user_id.eq.${data.user.id},email.eq.${data.user.email || loginEmail}`)
         .maybeSingle();
 
-      if (bot?.status === "active") {
-        navigate("/botschafter/uebersicht", { replace: true });
-      } else if (bot?.status === "pending") {
-        navigate("/botschafter/warten", { replace: true });
+      if (bot) {
+        // user_id nachträglich setzen falls per E-Mail gefunden
+        if (!bot.user_id || bot.user_id !== data.user.id) {
+          await supabase
+            .from("pferdeakte_botschafter")
+            .update({ user_id: data.user.id } as any)
+            .eq("id", bot.id);
+        }
+
+        if (bot.status === "active") {
+          navigate("/botschafter/uebersicht", { replace: true });
+        } else if (bot.status === "pending") {
+          navigate("/botschafter/warten", { replace: true });
+        } else {
+          setNoBotschafter(true);
+          setLoggedInUser({ id: data.user.id, email: data.user.email || loginEmail });
+          setLoginLoading(false);
+          sessionStorage.removeItem("botschafter_login_source");
+        }
       } else {
         setNoBotschafter(true);
         setLoggedInUser({ id: data.user.id, email: data.user.email || loginEmail });
