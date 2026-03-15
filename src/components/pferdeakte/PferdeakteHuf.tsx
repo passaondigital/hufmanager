@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Minus, Camera, FileText, ArrowUpDown, ImageIcon, Mic } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Camera, FileText, ArrowUpDown, ImageIcon, Mic, Footprints } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { HoofPhotoComparison } from "./HoofPhotoComparison";
 import { HufiAIVoiceRecorder } from "./HufiAIVoiceRecorder";
