@@ -23,13 +23,21 @@ export default function BotschafterWarten() {
         setLoading(false);
         return;
       }
+      // Zuerst per user_id suchen, falls nicht gefunden per E-Mail
       const { data: bot } = await supabase
         .from("pferdeakte_botschafter")
-        .select("id, bid, referral_code, status")
-        .eq("user_id", user.id)
+        .select("id, bid, referral_code, status, user_id")
+        .or(`user_id.eq.${user.id},email.eq.${user.email}`)
         .maybeSingle();
       
       if (bot) {
+        // user_id nachträglich setzen falls per E-Mail gefunden
+        if (!bot.user_id || bot.user_id !== user.id) {
+          await supabase
+            .from("pferdeakte_botschafter")
+            .update({ user_id: user.id } as any)
+            .eq("id", bot.id);
+        }
         // If already active, redirect to dashboard
         if (bot.status === "active") {
           navigate("/botschafter/uebersicht", { replace: true });

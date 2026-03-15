@@ -44,14 +44,23 @@ export default function BotschafterUebersicht() {
 
   const loadData = async () => {
     setLoading(true);
+    const userEmail = user!.email || "";
+    // Zuerst per user_id suchen, falls nicht gefunden per E-Mail
     const { data: bot } = await supabase
       .from("pferdeakte_botschafter")
-      .select("id, referral_code, total_clicks, total_conversions, total_earnings_cents, commission_rate, copecart_username, onboarding_completed, bid")
-      .eq("user_id", user!.id)
+      .select("id, referral_code, total_clicks, total_conversions, total_earnings_cents, commission_rate, copecart_username, onboarding_completed, bid, user_id")
+      .or(`user_id.eq.${user!.id},email.eq.${userEmail}`)
       .eq("status", "active")
       .maybeSingle();
 
     if (bot) {
+      // user_id nachträglich setzen falls per E-Mail gefunden
+      if (!bot.user_id || bot.user_id !== user!.id) {
+        await supabase
+          .from("pferdeakte_botschafter")
+          .update({ user_id: user!.id } as any)
+          .eq("id", bot.id);
+      }
       setData(bot as unknown as BotschafterData);
       if (!(bot as any).onboarding_completed) {
         setShowOnboarding(true);
