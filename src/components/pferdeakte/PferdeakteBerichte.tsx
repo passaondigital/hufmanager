@@ -69,8 +69,8 @@ export function PferdeakteBerichte({ horseId }: Props) {
         body: { horse_id: horseId },
       });
       if (error) throw error;
-      if (data?.pdf_url) {
-        window.open(data.pdf_url, "_blank");
+      if (data?.pdf_url || data?.url) {
+        window.open(data.pdf_url || data.url, "_blank");
         toast.success("Bericht erstellt");
       } else {
         toast.info(data?.message || "Bericht wird erstellt...");
