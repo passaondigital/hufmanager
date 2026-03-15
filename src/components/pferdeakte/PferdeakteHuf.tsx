@@ -149,8 +149,10 @@ export function PferdeakteHuf({ horseId, userRole }: Props) {
 
       {!latestAnalysis && (
         <Card>
-          <CardContent className="p-6 text-center text-muted-foreground text-sm">
-            Noch keine Hufanalyse-Daten vorhanden.
+          <CardContent className="p-6 text-center">
+            <Footprints className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
+            <p className="text-sm font-medium text-foreground mb-1">Noch keine Hufanalyse-Daten</p>
+            <p className="text-xs text-muted-foreground">Nach der ersten Bearbeitung erscheinen hier die Werte und Verlaufskurven.</p>
           </CardContent>
         </Card>
       )}
