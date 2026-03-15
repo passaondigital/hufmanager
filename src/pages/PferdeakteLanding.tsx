@@ -180,47 +180,13 @@ function StickyNav({ scrolled }: { scrolled: boolean }) {
    ═════════════════════════════════════════════════════════════ */
 function HeroIllustration() {
   return (
-    <div className="relative w-full max-w-md mx-auto" style={{ minHeight: 440 }}>
-      {/* Phone */}
-      <div className="relative mx-auto w-60 rounded-[2rem] border-4 border-zinc-200 bg-white shadow-2xl overflow-hidden" style={{ height: 400 }}>
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-5 bg-zinc-200 rounded-b-xl" />
-        <div className="pt-8 px-4 space-y-3">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ backgroundColor: "#fff7ed" }}>
-              <span className="text-base">🐴</span>
-            </div>
-            <div>
-              <p className="text-xs font-bold" style={{ color: "#0a0a0a" }}>Charly</p>
-              <p className="text-[10px]" style={{ color: "#6b7280" }}>Hannoveraner · 8 Jahre</p>
-            </div>
-          </div>
-          {[
-            { t: "Impfpass", s: "Tetanus · 14.02.2026 ✓", w: "w-4/5" },
-            { t: "Hufbearbeitung", s: "Barhuf · 28.01.2026", w: "w-3/5" },
-            { t: "Tierarzt", s: "Zahnkontrolle · 10.01.2026", w: "w-2/3" },
-          ].map((e) => (
-            <div key={e.t} className="rounded-lg p-2.5 border" style={{ borderColor: "#e5e7eb", backgroundColor: "#fafafa" }}>
-              <p className="text-[10px] font-semibold" style={{ color: "#0a0a0a" }}>{e.t}</p>
-              <p className="text-[9px]" style={{ color: "#6b7280" }}>{e.s}</p>
-              <div className={`mt-1 h-1 rounded-full ${e.w}`} style={{ backgroundColor: "#f97316" }} />
-            </div>
-          ))}
-        </div>
-      </div>
-      {/* Floating cards */}
-      <Card className="pa-f1 absolute -top-2 -right-2 md:right-0" icon="🛡️" text="Datensouveränität — Du entscheidest wer Zugriff hat" />
-      <Card className="pa-f2 absolute top-28 -left-8 md:-left-14" icon="✅" text="Impfpass aktuell — Tetanus 14.02.2026" />
-      <Card className="pa-f3 absolute bottom-24 -right-4 md:-right-10" icon="📋" text="Lückenloser Verlauf seit 2019" />
-      <Card className="pa-f4 absolute bottom-4 -left-6 md:-left-10" icon="🔗" text="Geteilt mit: Tierarzt, Hufbearbeiter" />
-    </div>
-  );
-}
-
-function Card({ className, icon, text }: { className: string; icon: string; text: string }) {
-  return (
-    <div className={`${className} bg-white rounded-xl shadow-lg border border-zinc-100 px-3 py-2 text-xs flex items-center gap-2 max-w-[200px]`} style={{ color: "#0a0a0a" }}>
-      <span>{icon}</span>
-      <span className="font-medium leading-tight">{text}</span>
+    <div className="relative w-full flex items-center justify-center">
+      <img
+        src={pferdeakteIcon}
+        alt="Digitale Pferdeakte – Das Gesundheitsbuch für dein Pferd"
+        className="w-[240px] sm:w-[280px] md:w-[340px] lg:w-[400px] h-auto drop-shadow-2xl"
+        loading="eager"
+      />
     </div>
   );
 }
