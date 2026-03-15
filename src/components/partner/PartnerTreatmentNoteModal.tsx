@@ -7,8 +7,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, X } from "lucide-react";
+
+interface Recommendation {
+  target_role: string;
+  message: string;
+  due_date: string | null;
+}
+
+const RECOMMENDATION_TARGETS = [
+  { value: "hufpfleger", label: "Hufpfleger" },
+  { value: "tierarzt", label: "Tierarzt" },
+  { value: "besitzer", label: "Besitzer" },
+  { value: "trainer", label: "Trainer" },
+  { value: "sattler", label: "Sattler" },
+];
 
 interface Props {
   open: boolean;
@@ -28,6 +43,21 @@ export function PartnerTreatmentNoteModal({ open, onClose, horseId, partnerType,
   const [nextTreatment, setNextTreatment] = useState("");
   const [visibleToPid, setVisibleToPid] = useState(true);
   const [visibleToKid, setVisibleToKid] = useState(true);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [showRecForm, setShowRecForm] = useState(false);
+
+  const addRecommendation = () => {
+    setRecommendations([...recommendations, { target_role: "hufpfleger", message: "", due_date: null }]);
+    setShowRecForm(true);
+  };
+
+  const removeRecommendation = (idx: number) => {
+    setRecommendations(recommendations.filter((_, i) => i !== idx));
+  };
+
+  const updateRecommendation = (idx: number, field: keyof Recommendation, value: string | null) => {
+    setRecommendations(recommendations.map((r, i) => i === idx ? { ...r, [field]: value } : r));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +65,8 @@ export function PartnerTreatmentNoteModal({ open, onClose, horseId, partnerType,
       toast.error("Bitte Pflichtfelder ausfüllen");
       return;
     }
+
+    const validRecs = recommendations.filter((r) => r.message.trim());
 
     setLoading(true);
     const { error } = await supabase.from("partner_treatment_notes").insert({
@@ -48,7 +80,8 @@ export function PartnerTreatmentNoteModal({ open, onClose, horseId, partnerType,
       next_treatment: nextTreatment || null,
       visible_to_pid: visibleToPid,
       visible_to_kid: visibleToKid,
-    });
+      recommendation_for: validRecs.length > 0 ? validRecs : null,
+    } as any);
 
     setLoading(false);
 
@@ -91,6 +124,48 @@ export function PartnerTreatmentNoteModal({ open, onClose, horseId, partnerType,
           <div>
             <Label>Behandlung / Notizen</Label>
             <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Durchgeführte Maßnahmen..." rows={3} />
+          </div>
+
+          {/* Recommendations */}
+          <div className="space-y-3 border-t border-border pt-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-foreground">Empfehlung an andere Dienstleister</p>
+              <Button type="button" variant="outline" size="sm" className="gap-1" onClick={addRecommendation}>
+                <Plus className="h-3 w-3" />
+                Hinzufügen
+              </Button>
+            </div>
+            {recommendations.map((rec, idx) => (
+              <div key={idx} className="p-3 rounded-lg bg-muted/50 space-y-2 border border-border">
+                <div className="flex items-center gap-2">
+                  <Select value={rec.target_role} onValueChange={(v) => updateRecommendation(idx, "target_role", v)}>
+                    <SelectTrigger className="w-36 h-8"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {RECOMMENDATION_TARGETS.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="date"
+                    value={rec.due_date || ""}
+                    onChange={(e) => updateRecommendation(idx, "due_date", e.target.value || null)}
+                    className="h-8 w-36"
+                    placeholder="Bis wann?"
+                  />
+                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => removeRecommendation(idx)}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+                <Textarea
+                  value={rec.message}
+                  onChange={(e) => updateRecommendation(idx, "message", e.target.value)}
+                  placeholder="Was soll geprüft/beachtet werden?"
+                  rows={2}
+                  className="text-sm"
+                />
+              </div>
+            ))}
           </div>
 
           <div className="space-y-3 border-t border-border pt-3">
