@@ -220,8 +220,8 @@ ${partnerNotes.length > 0 ? (() => {
         <tbody>${notes.map((n: any) => `<tr>
           <td>${fmtDate(n.treatment_date)}</td>
           <td>${esc(n.title)}</td>
-          <td>${esc((n.findings || '').substring(0, 100))}${(n.findings || '').length > 100 ? '…' : ''}</td>
-          <td>${esc((n.next_treatment || '').substring(0, 100))}</td>
+          <td>${esc((n.findings || '').substring(0, isAku ? 1000 : 100))}${!isAku && (n.findings || '').length > 100 ? '…' : ''}</td>
+          <td>${esc((n.recommendations || n.next_treatment || '').substring(0, isAku ? 1000 : 100))}</td>
         </tr>`).join('')}</tbody>
       </table>`).join('');
   })() : '<p style="color:#888">Keine Therapie-Notizen vorhanden.</p>'}
