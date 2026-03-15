@@ -152,13 +152,13 @@ serve(async (req) => {
 <h2>2. Hufverlauf</h2>
 <p>${completedAppts.length} abgeschlossene Bearbeitungen${completedAppts.length > 0 ? ' · ' + fmtDate(completedAppts[completedAppts.length - 1]?.date) + ' bis ' + fmtDate(completedAppts[0]?.date) : ''}</p>
 
-<h3>Letzte 6 Termine</h3>
-${completedAppts.length > 0 ? `<table>
+<h3>${apptSectionTitle}</h3>
+${apptSlice.length > 0 ? `<table>
   <thead><tr><th>Datum</th><th>Typ</th><th>Zusammenfassung</th><th>#EDID</th></tr></thead>
-  <tbody>${completedAppts.slice(0, 6).map((a: any) => `<tr>
+  <tbody>${apptSlice.map((a: any) => `<tr>
     <td>${fmtDate(a.date)}</td>
     <td>${esc(a.service_type) || 'Bearbeitung'}</td>
-    <td>${esc((a.completion_notes || a.notes || '').substring(0, 120))}${(a.completion_notes || a.notes || '').length > 120 ? '…' : ''}</td>
+    <td>${esc((a.completion_notes || a.notes || '').substring(0, isAku ? 500 : 120))}${!isAku && (a.completion_notes || a.notes || '').length > 120 ? '…' : ''}</td>
     <td style="font-family:monospace;font-size:10px">${esc(a.edid) || '—'}</td>
   </tr>`).join('')}</tbody>
 </table>` : '<p style="color:#888">Keine Termine vorhanden.</p>'}
