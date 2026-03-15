@@ -18,7 +18,7 @@ import { PferdeakteHuf } from "./PferdeakteHuf";
 import { PferdeakteVet } from "./PferdeakteVet";
 import { PferdeakteTherapie } from "./PferdeakteTherapie";
 import { PferdeakteBerichte } from "./PferdeakteBerichte";
-import { VaultTab } from "@/components/client/VaultTab";
+import { PferdeakteTresor } from "./PferdeakteTresor";
 
 const PFERDEAKTE_TABS = [
   { value: "start", label: "Start", icon: Play },
