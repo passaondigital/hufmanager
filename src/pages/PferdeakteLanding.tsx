@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { useAnimatedCounter } from "@/hooks/useAnimatedCounter";
 import FounderSection from "@/components/website/FounderSection";
 import WhyPferdeakteSection from "@/components/website/WhyPferdeakteSection";
+import PferdeakteComparisonTable from "@/components/website/PferdeakteComparisonTable";
 
 function FounderSectionPA() {
   return <FounderSection variant="pferdeakte" />;
@@ -144,6 +145,8 @@ export default function PferdeakteLanding() {
       <WhyPferdeakteSection />
       {/* 7. SOCIAL PROOF */}
       <SocialProofSection />
+      {/* 7b. MARKTVERGLEICH */}
+      <PferdeakteComparisonTable />
       {/* 8. WAITLIST */}
       <WaitlistSection defaultRef={searchParams.get("ref") ?? ""} />
       {/* 9. BOTSCHAFTER */}
