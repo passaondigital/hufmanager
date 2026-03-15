@@ -35,8 +35,9 @@ export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props
           .eq("horse_id", horseId)
           .eq("provider_id", currentUserId)
           .order("date", { ascending: false })
-          .limit(1);
-        lastVisitDate = data?.[0]?.date || null;
+          .limit(1)
+          .maybeSingle();
+        lastVisitDate = data?.date || null;
       } else if (userRole === "partner") {
         const { data } = await supabase
           .from("partner_treatment_notes")
@@ -44,8 +45,9 @@ export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props
           .eq("horse_id", horseId)
           .eq("partner_id", currentUserId)
           .order("created_at", { ascending: false })
-          .limit(1);
-        lastVisitDate = data?.[0]?.created_at || null;
+          .limit(1)
+          .maybeSingle();
+        lastVisitDate = (data as any)?.created_at || null;
       } else if (userRole === "client") {
         const { data } = await supabase
           .from("horse_diary_entries")
@@ -53,8 +55,9 @@ export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props
           .eq("horse_id", horseId)
           .eq("created_by", currentUserId)
           .order("created_at", { ascending: false })
-          .limit(1);
-        lastVisitDate = data?.[0]?.created_at || null;
+          .limit(1)
+          .maybeSingle();
+        lastVisitDate = (data as any)?.created_at || null;
       }
 
       if (!lastVisitDate) return { items: [], lastVisitDate: null };
