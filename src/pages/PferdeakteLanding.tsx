@@ -16,6 +16,11 @@ import {
 import pferdeakteIcon from "@/assets/pferdeakte-icon.png";
 import { Input } from "@/components/ui/input";
 import { useAnimatedCounter } from "@/hooks/useAnimatedCounter";
+import FounderSection from "@/components/website/FounderSection";
+
+function FounderSectionPA() {
+  return <FounderSection variant="pferdeakte" />;
+}
 
 /* ── helpers ─────────────────────────────────────────────── */
 function generateRef(): string {
@@ -132,6 +137,7 @@ export default function PferdeakteLanding() {
       <SupportersSection />
       <WaitlistSection defaultRef={searchParams.get("ref") ?? ""} />
       <SocialProofSection />
+      <FounderSectionPA />
       <BotschafterSection />
       <ShareSection />
       <FooterSection />
