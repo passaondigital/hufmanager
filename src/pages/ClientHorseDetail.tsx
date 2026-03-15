@@ -38,6 +38,7 @@ import { HorseProfileCompleteness } from "@/components/horse-detail/HorseProfile
 const TABS = [
   { value: "steckbrief", label: "Übersicht", icon: Info },
   { value: "pferdeakte", label: "Akte", icon: BookOpen },
+  { value: "team", label: "Team", icon: Users },
   { value: "verlauf", label: "Verlauf", icon: History },
   { value: "fotos", label: "Fotos & Medien", icon: Image },
   { value: "gesundheit", label: "Gesundheit", icon: Heart },
