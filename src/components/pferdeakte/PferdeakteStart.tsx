@@ -1,10 +1,12 @@
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Zap, Bell, Footprints, Stethoscope, Activity, FileText, Camera, Clock, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Zap, Bell, Footprints, Stethoscope, Activity, FileText, Camera, Clock, CheckCircle, Lightbulb } from "lucide-react";
+import { toast } from "sonner";
 import type { PferdeakteUserRole } from "./types";
 import type { Horse } from "@/components/horse-detail/types";
 
