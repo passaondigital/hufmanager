@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { useAnimatedCounter } from "@/hooks/useAnimatedCounter";
 import FounderSection from "@/components/website/FounderSection";
 import WhyPferdeakteSection from "@/components/website/WhyPferdeakteSection";
+import PferdeakteComparisonTable from "@/components/website/PferdeakteComparisonTable";
 
 function FounderSectionPA() {
   return <FounderSection variant="pferdeakte" />;
