@@ -6962,6 +6962,186 @@ export type Database = {
           },
         ]
       }
+      insurance_claims: {
+        Row: {
+          approved_amount: number | null
+          auto_attached_data: Json | null
+          claim_type: string
+          created_at: string | null
+          description: string
+          estimated_amount: number | null
+          horse_id: string
+          id: string
+          incident_date: string | null
+          policy_id: string
+          reported_by: string
+          reviewer_notes: string | null
+          status: string | null
+          supporting_documents: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          approved_amount?: number | null
+          auto_attached_data?: Json | null
+          claim_type: string
+          created_at?: string | null
+          description: string
+          estimated_amount?: number | null
+          horse_id: string
+          id?: string
+          incident_date?: string | null
+          policy_id: string
+          reported_by: string
+          reviewer_notes?: string | null
+          status?: string | null
+          supporting_documents?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          approved_amount?: number | null
+          auto_attached_data?: Json | null
+          claim_type?: string
+          created_at?: string | null
+          description?: string
+          estimated_amount?: number | null
+          horse_id?: string
+          id?: string
+          incident_date?: string | null
+          policy_id?: string
+          reported_by?: string
+          reviewer_notes?: string | null
+          status?: string | null
+          supporting_documents?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insurance_claims_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_claims_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_claims_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_claims_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_claims_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insurance_policies: {
+        Row: {
+          contract_document_url: string | null
+          coverage_details: Json | null
+          created_at: string | null
+          deductible: number | null
+          horse_id: string
+          id: string
+          org_id: string
+          owner_id: string
+          policy_number: string
+          policy_type: string
+          premium_monthly: number | null
+          premium_yearly: number | null
+          status: string | null
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          contract_document_url?: string | null
+          coverage_details?: Json | null
+          created_at?: string | null
+          deductible?: number | null
+          horse_id: string
+          id?: string
+          org_id: string
+          owner_id: string
+          policy_number: string
+          policy_type: string
+          premium_monthly?: number | null
+          premium_yearly?: number | null
+          status?: string | null
+          valid_from: string
+          valid_until?: string | null
+        }
+        Update: {
+          contract_document_url?: string | null
+          coverage_details?: Json | null
+          created_at?: string | null
+          deductible?: number | null
+          horse_id?: string
+          id?: string
+          org_id?: string
+          owner_id?: string
+          policy_number?: string
+          policy_type?: string
+          premium_monthly?: number | null
+          premium_yearly?: number | null
+          status?: string | null
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insurance_policies_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_policies_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_policies_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_policies_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_policies_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_items: {
         Row: {
           brand: string | null
@@ -8130,30 +8310,240 @@ export type Database = {
         }
         Relationships: []
       }
+      organization_members: {
+        Row: {
+          accepted_at: string | null
+          id: string
+          invited_at: string | null
+          invited_by: string | null
+          is_active: boolean | null
+          org_id: string
+          role: string | null
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          is_active?: boolean | null
+          org_id: string
+          role?: string | null
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          is_active?: boolean | null
+          org_id?: string
+          role?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_orders: {
+        Row: {
+          created_at: string | null
+          id: string
+          items: Json
+          notes: string | null
+          ordered_by: string
+          org_id: string
+          shipping_address: Json | null
+          status: string | null
+          total_net: number | null
+          tracking_number: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          items: Json
+          notes?: string | null
+          ordered_by: string
+          org_id: string
+          shipping_address?: Json | null
+          status?: string | null
+          total_net?: number | null
+          tracking_number?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          items?: Json
+          notes?: string | null
+          ordered_by?: string
+          org_id?: string
+          shipping_address?: Json | null
+          status?: string | null
+          total_net?: number | null
+          tracking_number?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_orders_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_products: {
+        Row: {
+          application_areas: string[] | null
+          category: string | null
+          created_at: string | null
+          description: string | null
+          documentation_url: string | null
+          ean: string | null
+          id: string
+          image_url: string | null
+          images: string[] | null
+          is_active: boolean | null
+          name: string
+          org_id: string
+          price_currency: string | null
+          price_net: number | null
+          recommendation_triggers: Json | null
+          short_description: string | null
+          sizes: string[] | null
+          sku: string | null
+          subcategory: string | null
+          unit: string | null
+          updated_at: string | null
+          video_url: string | null
+        }
+        Insert: {
+          application_areas?: string[] | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          documentation_url?: string | null
+          ean?: string | null
+          id?: string
+          image_url?: string | null
+          images?: string[] | null
+          is_active?: boolean | null
+          name: string
+          org_id: string
+          price_currency?: string | null
+          price_net?: number | null
+          recommendation_triggers?: Json | null
+          short_description?: string | null
+          sizes?: string[] | null
+          sku?: string | null
+          subcategory?: string | null
+          unit?: string | null
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          application_areas?: string[] | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          documentation_url?: string | null
+          ean?: string | null
+          id?: string
+          image_url?: string | null
+          images?: string[] | null
+          is_active?: boolean | null
+          name?: string
+          org_id?: string
+          price_currency?: string | null
+          price_net?: number | null
+          recommendation_triggers?: Json | null
+          short_description?: string | null
+          sizes?: string[] | null
+          sku?: string | null
+          subcategory?: string | null
+          unit?: string | null
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_products_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
+          address: Json | null
+          brand_color_primary: string | null
+          brand_color_secondary: string | null
+          contact_email: string | null
+          contact_phone: string | null
           created_at: string
+          description: string | null
           id: string
+          is_active: boolean | null
           logo_url: string | null
           name: string
           owner_id: string
+          plan: string | null
+          settings: Json | null
+          slug: string | null
+          type: string | null
           updated_at: string
+          website: string | null
         }
         Insert: {
+          address?: Json | null
+          brand_color_primary?: string | null
+          brand_color_secondary?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string
+          description?: string | null
           id?: string
+          is_active?: boolean | null
           logo_url?: string | null
           name: string
           owner_id: string
+          plan?: string | null
+          settings?: Json | null
+          slug?: string | null
+          type?: string | null
           updated_at?: string
+          website?: string | null
         }
         Update: {
+          address?: Json | null
+          brand_color_primary?: string | null
+          brand_color_secondary?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string
+          description?: string | null
           id?: string
+          is_active?: boolean | null
           logo_url?: string | null
           name?: string
           owner_id?: string
+          plan?: string | null
+          settings?: Json | null
+          slug?: string | null
+          type?: string | null
           updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }
@@ -10866,6 +11256,36 @@ export type Database = {
           },
         ]
       }
+      public_statistics: {
+        Row: {
+          data: Json
+          generated_at: string | null
+          horse_count: number | null
+          id: string
+          is_published: boolean | null
+          period: string
+          provider_count: number | null
+        }
+        Insert: {
+          data: Json
+          generated_at?: string | null
+          horse_count?: number | null
+          id?: string
+          is_published?: boolean | null
+          period: string
+          provider_count?: number | null
+        }
+        Update: {
+          data?: Json
+          generated_at?: string | null
+          horse_count?: number | null
+          id?: string
+          is_published?: boolean | null
+          period?: string
+          provider_count?: number | null
+        }
+        Relationships: []
+      }
       purchase_order_items: {
         Row: {
           id: string
@@ -11301,6 +11721,166 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      school_cases: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          due_date: string | null
+          horse_id: string | null
+          id: string
+          instructions: string
+          is_exam: boolean | null
+          max_score: number | null
+          title: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string | null
+          due_date?: string | null
+          horse_id?: string | null
+          id?: string
+          instructions: string
+          is_exam?: boolean | null
+          max_score?: number | null
+          title: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          due_date?: string | null
+          horse_id?: string | null
+          id?: string
+          instructions?: string
+          is_exam?: boolean | null
+          max_score?: number | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_cases_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "school_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_cases_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_cases_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_cases_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_cases_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      school_courses: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          instructor_id: string | null
+          max_students: number | null
+          name: string
+          org_id: string
+          start_date: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          instructor_id?: string | null
+          max_students?: number | null
+          name: string
+          org_id: string
+          start_date?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          instructor_id?: string | null
+          max_students?: number | null
+          name?: string
+          org_id?: string
+          start_date?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_courses_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      school_submissions: {
+        Row: {
+          case_id: string
+          feedback: string | null
+          graded_at: string | null
+          graded_by: string | null
+          id: string
+          score: number | null
+          student_id: string
+          submitted_at: string | null
+        }
+        Insert: {
+          case_id: string
+          feedback?: string | null
+          graded_at?: string | null
+          graded_by?: string | null
+          id?: string
+          score?: number | null
+          student_id: string
+          submitted_at?: string | null
+        }
+        Update: {
+          case_id?: string
+          feedback?: string | null
+          graded_at?: string | null
+          graded_by?: string | null
+          id?: string
+          score?: number | null
+          student_id?: string
+          submitted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_submissions_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "school_cases"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_orders: {
         Row: {
@@ -14108,7 +14688,9 @@ export type Database = {
         Returns: boolean
       }
       is_master_admin: { Args: never; Returns: boolean }
-      is_org_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_org_admin:
+        | { Args: { _user_id: string }; Returns: boolean }
+        | { Args: { _org_id: string; _user_id: string }; Returns: boolean }
       is_org_member: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean

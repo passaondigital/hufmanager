@@ -134,6 +134,11 @@ const HMConnect = lazy(() => import("@/pages/HMConnect"));
 const Buchhaltung = lazy(() => import("@/pages/Buchhaltung"));
 const Fuhrpark = lazy(() => import("@/pages/Fuhrpark"));
 const AutoFlow = lazy(() => import("@/pages/AutoFlow"));
+const Marketplace = lazy(() => import("@/pages/Marketplace"));
+const PortalDashboard = lazy(() => import("@/pages/portal/PortalDashboard"));
+const PortalSettings = lazy(() => import("@/pages/portal/PortalSettings"));
+const AdminOrganizations = lazy(() => import("@/pages/admin/AdminOrganizations"));
+const Statistiken = lazy(() => import("@/pages/Statistiken"));
 const EmployeeNotizbuch = lazy(() => import("@/pages/employee/EmployeeNotizbuch"));
 const EmployeeProfil = lazy(() => import("@/pages/employee/EmployeeProfil"));
 const EmployeeMaterial = lazy(() => import("@/pages/employee/EmployeeMaterial"));
@@ -405,6 +410,11 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/glossar" element={<Glossar />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="/changelog" element={<Changelog />} />
+            <Route path="/statistiken" element={<Statistiken />} />
+            
+            {/* Portal Routes (auth required, handled inside component) */}
+            <Route path="/portal/:slug" element={<PortalDashboard />} />
+            <Route path="/portal/:slug/settings" element={<PortalSettings />} />
             
             {/* Pferdeakte is handled by PferdeakteRouteGuard above AppContent */}
             
@@ -486,6 +496,11 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
                 <AdminSmokeTest />
               </ProtectedRoute>
             } />
+            <Route path="/admin/organizations" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminOrganizations />
+              </ProtectedRoute>
+            } />
 
             {/* --- 2. PROVIDER (PROFI) ROUTES --- */}
             <Route
@@ -546,6 +561,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/hm-connect" element={<HMConnect />} />
               <Route path="/autoflow" element={<AutoFlow />} />
               <Route path="/abo-matrix" element={<AboMatrix />} />
+              <Route path="/marketplace" element={<Marketplace />} />
               {/* neu: Notfall-Dashboard für Provider */}
               <Route path="/notfall" element={<EmergencyDashboard />} />
               {/* Provider Horse Detail - Direct Access */}
