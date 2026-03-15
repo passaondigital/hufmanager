@@ -40,7 +40,7 @@ const Support = ({ basePath }: SupportProps) => {
           icon={<HelpCircle className="w-10 h-10 text-primary" />}
           title="FAQ"
           description="Häufige Fragen"
-          onClick={() => navigate("/hilfe")}
+          onClick={() => navigate("/faq")}
         />
         <Tile
           icon={<Mail className="w-10 h-10 text-primary" />}
