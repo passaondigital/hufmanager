@@ -97,11 +97,20 @@ const rcX = (v: boolean, dir: "left" | "right") =>
 const injectedCSS = `
 @keyframes pa-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
 @keyframes pa-tick{0%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes pa-glow{0%,100%{box-shadow:0 0 4px rgba(249,115,22,.3)}50%{box-shadow:0 0 12px rgba(249,115,22,.6)}}
+@keyframes pa-line-draw{0%{stroke-dashoffset:60}100%{stroke-dashoffset:0}}
+@keyframes pa-dot-pulse{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.6);opacity:1}}
+@keyframes pa-label-in{0%{opacity:0;transform:translateY(8px) scale(.92)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes pa-book-float{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-8px) rotate(1deg)}}
 .pa-f1{animation:pa-float 3s ease-in-out infinite}
 .pa-f2{animation:pa-float 3s ease-in-out .7s infinite}
 .pa-f3{animation:pa-float 3s ease-in-out 1.4s infinite}
 .pa-f4{animation:pa-float 3s ease-in-out 2.1s infinite}
 .pa-tick{animation:pa-tick .3s ease-out}
+.pa-book{animation:pa-book-float 5s ease-in-out infinite}
+.pa-dot{animation:pa-dot-pulse 2s ease-in-out infinite}
+.pa-label{animation:pa-label-in .5s ease-out both}
+.pa-line{stroke-dasharray:60;animation:pa-line-draw .6s ease-out both}
 `;
 
 /* ── smooth scroll helper ────────────────────────────────── */
@@ -179,90 +188,98 @@ function StickyNav({ scrolled }: { scrolled: boolean }) {
    HERO ILLUSTRATION
    ═════════════════════════════════════════════════════════════ */
 function HeroIllustration() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } },
+      { threshold: 0.2 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  // Labels with SVG line endpoints (relative to container center)
   const labels = [
-    { text: "Impfpass", side: "left" as const, top: "14%" },
-    { text: "Hufbefunde", side: "right" as const, top: "28%" },
-    { text: "Tierarzt-Berichte", side: "left" as const, top: "46%" },
-    { text: "Behandlungshistorie", side: "right" as const, top: "64%" },
-    { text: "Röntgenbilder", side: "left" as const, top: "78%" },
+    { text: "🛡️ Impfpass",           side: "left"  as const, mTop: "4%",  mLeft: "2%",   delay: 0 },
+    { text: "📋 Hufbefunde",         side: "right" as const, mTop: "12%", mRight: "2%",  delay: 150 },
+    { text: "🩺 Tierarzt-Berichte",  side: "left"  as const, mTop: "48%", mLeft: "0%",   delay: 300 },
+    { text: "📊 Behandlungshistorie",side: "right" as const, mTop: "58%", mRight: "0%",  delay: 450 },
+    { text: "🔬 Röntgenbilder",      side: "left"  as const, mTop: "82%", mLeft: "8%",   delay: 600 },
   ];
 
   return (
-    <div className="relative w-full flex items-center justify-center py-4">
-      {/* Labels */}
-      {labels.map((l, i) => (
-        <div
-          key={l.text}
-          className="absolute flex items-center gap-0"
-          style={{
-            top: l.top,
-            ...(l.side === "left"
-              ? { right: "calc(50% + 100px)", flexDirection: "row-reverse" }
-              : { left: "calc(50% + 100px)", flexDirection: "row" }),
-          }}
-        >
-          {/* Line */}
-          <div
-            className="hidden sm:block"
-            style={{
-              width: 32,
-              height: 1,
-              backgroundColor: "#f97316",
-              opacity: 0.5,
-            }}
-          />
-          {/* Dot */}
-          <div
-            className="hidden sm:block w-1.5 h-1.5 rounded-full flex-shrink-0"
-            style={{ backgroundColor: "#f97316" }}
-          />
-          {/* Label */}
-          <span
-            className="hidden sm:inline text-[11px] font-semibold whitespace-nowrap px-2 py-1 rounded-md"
-            style={{
-              color: "#f97316",
-              backgroundColor: "#fff7ed",
-            }}
-          >
-            {l.text}
-          </span>
-        </div>
-      ))}
+    <div ref={ref} className="relative w-full flex items-center justify-center py-6 md:py-4">
+      {/* Subtle glow behind book */}
+      <div
+        className="absolute rounded-full blur-3xl opacity-20"
+        style={{
+          width: 280,
+          height: 280,
+          background: "radial-gradient(circle, #f97316 0%, transparent 70%)",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+        }}
+      />
 
-      {/* Mobile labels – small pills around the image */}
-      <div className="absolute inset-0 sm:hidden pointer-events-none">
-        {labels.map((l, i) => {
-          const positions = [
-            { top: "2%", left: "5%" },
-            { top: "8%", right: "0%" },
-            { top: "55%", left: "0%" },
-            { top: "65%", right: "0%" },
-            { bottom: "5%", left: "15%" },
-          ];
-          return (
-            <span
-              key={l.text}
-              className="absolute text-[9px] font-bold whitespace-nowrap px-2 py-0.5 rounded-full"
-              style={{
-                color: "#f97316",
-                backgroundColor: "#fff7ed",
-                border: "1px solid #fed7aa",
-                ...positions[i],
-              }}
-            >
-              {l.text}
-            </span>
-          );
-        })}
-      </div>
-
-      {/* Image */}
+      {/* Book image */}
       <img
         src={pferdeakteIcon}
         alt="Digitale Pferdeakte – Das Gesundheitsbuch für dein Pferd"
-        className="w-[200px] sm:w-[240px] md:w-[280px] lg:w-[340px] h-auto drop-shadow-2xl relative z-10"
+        className={`w-[180px] sm:w-[220px] md:w-[280px] lg:w-[340px] h-auto relative z-10 pa-book transition-all duration-700 ${visible ? "opacity-100 scale-100" : "opacity-0 scale-90"}`}
+        style={{ filter: "drop-shadow(0 20px 40px rgba(249,115,22,.25))" }}
         loading="eager"
       />
+
+      {/* Animated labels */}
+      {labels.map((l, i) => {
+        const isLeft = l.side === "left";
+        return (
+          <div
+            key={l.text}
+            className="absolute z-20 pa-label pointer-events-none"
+            style={{
+              top: l.mTop,
+              ...(isLeft ? { left: l.mLeft } : { right: l.mRight }),
+              animationDelay: visible ? `${l.delay}ms` : "0ms",
+              opacity: visible ? undefined : 0,
+            }}
+          >
+            {/* Connector line + dot */}
+            <div className={`flex items-center ${isLeft ? "flex-row-reverse" : "flex-row"}`}>
+              <span
+                className="text-[10px] sm:text-[11px] font-bold whitespace-nowrap px-2.5 py-1 rounded-full backdrop-blur-sm"
+                style={{
+                  color: "#f97316",
+                  backgroundColor: "rgba(255,247,237,.9)",
+                  border: "1px solid rgba(249,115,22,.2)",
+                  boxShadow: "0 2px 8px rgba(249,115,22,.1)",
+                }}
+              >
+                {l.text}
+              </span>
+              {/* Dot connector */}
+              <div className="flex items-center mx-1">
+                <div
+                  className="w-4 sm:w-6 h-px"
+                  style={{ backgroundColor: "rgba(249,115,22,.35)" }}
+                />
+                <div
+                  className="w-2 h-2 rounded-full pa-dot flex-shrink-0"
+                  style={{
+                    backgroundColor: "#f97316",
+                    animationDelay: `${l.delay + 400}ms`,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
