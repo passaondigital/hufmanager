@@ -33,13 +33,13 @@ export function PferdeakteInsights() {
     queryKey: ["pferdeakte-insights", user?.id],
     queryFn: async () => {
       // Step 1: Get provider horses
-      const { data: horseRows } = await supabase
+      const { data: horseRows } = await (supabase
         .from("horses")
         .select("id, name, breed, gender, birth_year, chip_number, passport_number, contacts, insurance_company")
-        .eq("provider_id", user!.id)
-        .filter("deleted_at", "is", "null") as { data: any[] | null };
+        .eq("provider_id", user!.id) as any)
+        .is("deleted_at", null);
 
-      const horses = horseRows || [];
+      const horses = (horseRows || []) as any[];
       const ids = horses.map((h) => h.id);
 
       if (ids.length === 0) {
