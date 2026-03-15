@@ -402,6 +402,8 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             
             {/* Öffentliches Glossar */}
             <Route path="/glossar" element={<Glossar />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/changelog" element={<Changelog />} />
             
             {/* Pferdeakte is handled by PferdeakteRouteGuard above AppContent */}
             
