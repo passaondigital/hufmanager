@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Download, QrCode, RefreshCw, Share2, Loader2 } from "lucide-react";
+import { DemoFeatureHighlight } from "@/components/demo/DemoFeatureHighlight";
 import { toast } from "sonner";
 
 interface EmergencyQRCodeProps {
