@@ -5,11 +5,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Activity, FileDown, Loader2, UserPlus } from "lucide-react";
+import { Activity, FileDown, Loader2, UserPlus, Lightbulb } from "lucide-react";
 import { getPartnerTypeConfig, PARTNER_TYPE_OPTIONS } from "@/lib/partnerTypes";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { InvitePartnerModal } from "@/components/horse-detail/InvitePartnerModal";
+import { RecommendPartnerModal } from "@/components/horse-detail/RecommendPartnerModal";
 import { DemoFeatureHighlight } from "@/components/demo/DemoFeatureHighlight";
 import type { PferdeakteUserRole } from "./types";
 
@@ -25,12 +26,18 @@ interface Props {
   horseId: string;
   horseName?: string;
   userRole: PferdeakteUserRole;
+  ownerId?: string;
 }
 
-export function PferdeakteTherapie({ horseId, horseName, userRole }: Props) {
+export function PferdeakteTherapie({ horseId, horseName, userRole, ownerId }: Props) {
   const [filter, setFilter] = useState("all");
   const [exporting, setExporting] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
+  const [showRecommend, setShowRecommend] = useState(false);
+
+  const isClient = userRole === "client";
+  const isProvider = userRole === "provider";
+  const isPartnerOrEmployee = userRole === "partner" || userRole === "employee";
 
   const { data: treatmentNotes, isLoading } = useQuery({
     queryKey: ["pferdeakte-therapy", horseId],
@@ -71,6 +78,18 @@ export function PferdeakteTherapie({ horseId, horseName, userRole }: Props) {
     }
   };
 
+  const handleActionClick = () => {
+    if (isClient) {
+      setShowInvite(true);
+    } else if (isProvider && ownerId) {
+      setShowRecommend(true);
+    }
+  };
+
+  const actionLabel = isClient ? "Einladen" : "Empfehlen";
+  const actionLabelFull = isClient ? "Fachpartner einladen" : "Fachpartner empfehlen";
+  const ActionIcon = isClient ? UserPlus : Lightbulb;
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -84,7 +103,7 @@ export function PferdeakteTherapie({ horseId, horseName, userRole }: Props) {
   return (
     <div className="space-y-4">
       <DemoFeatureHighlight label="Cross-Provider Befunde & Empfehlungen" delay={500} />
-      {/* Filter Chips + Invite Button */}
+      {/* Filter Chips + Action Button */}
       <div className="flex items-center gap-2">
         <div className="flex overflow-x-auto gap-1.5 scrollbar-hide flex-1">
           {THERAPY_FILTERS.map((f) => {
@@ -105,10 +124,10 @@ export function PferdeakteTherapie({ horseId, horseName, userRole }: Props) {
             );
           })}
         </div>
-        {(userRole === "provider" || userRole === "client") && (
-          <Button variant="outline" size="sm" className="gap-1.5 flex-shrink-0" onClick={() => setShowInvite(true)}>
-            <UserPlus className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Einladen</span>
+        {(isClient || (isProvider && ownerId)) && (
+          <Button variant="outline" size="sm" className="gap-1.5 flex-shrink-0" onClick={handleActionClick}>
+            <ActionIcon className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">{actionLabel}</span>
           </Button>
         )}
       </div>
@@ -119,11 +138,15 @@ export function PferdeakteTherapie({ horseId, horseName, userRole }: Props) {
           <CardContent className="p-8 text-center">
             <Activity className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
             <p className="text-sm font-medium text-foreground mb-1">Keine Therapie-Einträge</p>
-            <p className="text-xs text-muted-foreground mb-3">Lade einen Fachpartner ein, um Befunde hier zu dokumentieren.</p>
-            {(userRole === "provider" || userRole === "client") && (
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowInvite(true)}>
-                <UserPlus className="h-4 w-4" />
-                Fachpartner einladen
+            <p className="text-xs text-muted-foreground mb-3">
+              {isClient
+                ? "Lade einen Fachpartner ein, um Befunde hier zu dokumentieren."
+                : "Empfiehl dem Besitzer einen Fachpartner für dieses Pferd."}
+            </p>
+            {(isClient || (isProvider && ownerId)) && (
+              <Button variant="outline" size="sm" className="gap-2" onClick={handleActionClick}>
+                <ActionIcon className="h-4 w-4" />
+                {actionLabelFull}
               </Button>
             )}
           </CardContent>
@@ -175,15 +198,29 @@ export function PferdeakteTherapie({ horseId, horseName, userRole }: Props) {
         </Button>
       )}
 
-      {/* Partner Invite Modal */}
-      <InvitePartnerModal
-        open={showInvite}
-        onClose={() => setShowInvite(false)}
-        horseId={horseId}
-        horseName={horseName || "Pferd"}
-        inviterRole={userRole === "client" ? "client" : "provider"}
-        onSent={() => setShowInvite(false)}
-      />
+      {/* Client: Direct Invite Modal */}
+      {isClient && (
+        <InvitePartnerModal
+          open={showInvite}
+          onClose={() => setShowInvite(false)}
+          horseId={horseId}
+          horseName={horseName || "Pferd"}
+          inviterRole="client"
+          onSent={() => setShowInvite(false)}
+        />
+      )}
+
+      {/* Provider: Recommendation Modal */}
+      {isProvider && ownerId && (
+        <RecommendPartnerModal
+          open={showRecommend}
+          onClose={() => setShowRecommend(false)}
+          horseId={horseId}
+          horseName={horseName || "Pferd"}
+          ownerId={ownerId}
+          onSent={() => setShowRecommend(false)}
+        />
+      )}
     </div>
   );
 }
