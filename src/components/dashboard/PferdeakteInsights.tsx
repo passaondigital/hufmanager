@@ -29,24 +29,34 @@ export function PferdeakteInsights() {
   const { data, isLoading } = useQuery({
     queryKey: ["pferdeakte-insights", user?.id],
     queryFn: async () => {
-      const [horsesRes, vaccRes, partnersRes, recentRes] = await Promise.all([
-        supabase
-          .from("horses")
-          .select("id, name, breed, gender, birth_year, chip_number, passport_number, contacts, insurance_company, photo_url, readable_id")
-          .eq("provider_id", user!.id)
-          .is("deleted_at", null),
-        supabase
-          .from("horse_vaccinations")
-          .select("id, horse_id, horses!inner(provider_id)")
-          .lt("next_due_date", new Date().toISOString())
-          .not("next_due_date", "is", null),
-        supabase
-          .from("horse_partner_access")
-          .select("partner_profile_id, horse_id, horses!inner(provider_id)")
-          .eq("status", "active"),
+      const horsesRes = await supabase
+        .from("horses")
+        .select("id, name, breed, gender, birth_year, chip_number, passport_number, contacts, insurance_company")
+        .eq("provider_id", user!.id)
+        .is("deleted_at", null);
+
+      const horses = horsesRes.data || [];
+      const horseIds = horses.map(h => h.id);
+
+      const [vaccRes, partnersRes, recentRes] = await Promise.all([
+        horseIds.length > 0
+          ? supabase
+              .from("horse_vaccinations")
+              .select("id, horse_id")
+              .in("horse_id", horseIds)
+              .lt("next_due_date", new Date().toISOString())
+              .not("next_due_date", "is", null)
+          : Promise.resolve({ data: [] }),
+        horseIds.length > 0
+          ? supabase
+              .from("horse_partner_access")
+              .select("partner_profile_id, horse_id")
+              .in("horse_id", horseIds)
+              .eq("status", "active")
+          : Promise.resolve({ data: [] }),
         supabase
           .from("appointments")
-          .select("id, horse_id, date, service_type, status, horses!inner(name, provider_id)")
+          .select("id, horse_id, date, service_type")
           .eq("provider_id", user!.id)
           .eq("status", "completed")
           .order("date", { ascending: false })
