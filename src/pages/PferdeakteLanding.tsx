@@ -202,84 +202,112 @@ function HeroIllustration() {
     return () => obs.disconnect();
   }, []);
 
-  // Labels with SVG line endpoints (relative to container center)
+  /*
+   * Each label has:
+   * - dotX/dotY: position of the dot ON the book (% of container)
+   * - side: where the label text goes
+   * - text/emoji
+   */
   const labels = [
-    { text: "🛡️ Impfpass",           side: "left"  as const, mTop: "4%",  mLeft: "2%",   delay: 0 },
-    { text: "📋 Hufbefunde",         side: "right" as const, mTop: "12%", mRight: "2%",  delay: 150 },
-    { text: "🩺 Tierarzt-Berichte",  side: "left"  as const, mTop: "48%", mLeft: "0%",   delay: 300 },
-    { text: "📊 Behandlungshistorie",side: "right" as const, mTop: "58%", mRight: "0%",  delay: 450 },
-    { text: "🔬 Röntgenbilder",      side: "left"  as const, mTop: "82%", mLeft: "8%",   delay: 600 },
+    { emoji: "🛡️", text: "Impfpass",            dotX: 30, dotY: 18, side: "left"  as const, delay: 0 },
+    { emoji: "📋", text: "Hufbefunde",          dotX: 72, dotY: 28, side: "right" as const, delay: 150 },
+    { emoji: "🩺", text: "Tierarzt-Berichte",   dotX: 28, dotY: 50, side: "left"  as const, delay: 300 },
+    { emoji: "📊", text: "Behandlungshistorie", dotX: 70, dotY: 62, side: "right" as const, delay: 450 },
+    { emoji: "🔬", text: "Röntgenbilder",       dotX: 32, dotY: 82, side: "left"  as const, delay: 600 },
   ];
 
   return (
     <div ref={ref} className="relative w-full flex items-center justify-center py-6 md:py-4">
       {/* Subtle glow behind book */}
       <div
-        className="absolute rounded-full blur-3xl opacity-20"
+        className="absolute rounded-full blur-3xl opacity-20 pointer-events-none"
         style={{
-          width: 280,
-          height: 280,
+          width: 280, height: 280,
           background: "radial-gradient(circle, #f97316 0%, transparent 70%)",
-          top: "50%",
-          left: "50%",
+          top: "50%", left: "50%",
           transform: "translate(-50%, -50%)",
         }}
       />
 
-      {/* Book image */}
-      <img
-        src={pferdeakteIcon}
-        alt="Digitale Pferdeakte – Das Gesundheitsbuch für dein Pferd"
-        className={`w-[180px] sm:w-[220px] md:w-[280px] lg:w-[340px] h-auto relative z-10 pa-book transition-all duration-700 ${visible ? "opacity-100 scale-100" : "opacity-0 scale-90"}`}
-        style={{ filter: "drop-shadow(0 20px 40px rgba(249,115,22,.25))" }}
-        loading="eager"
-      />
+      {/* Container for book + labels with SVG overlay */}
+      <div className="relative" style={{ width: "min(85vw, 400px)", aspectRatio: "3/4" }}>
+        {/* Book image – centered */}
+        <img
+          src={pferdeakteIcon}
+          alt="Digitale Pferdeakte"
+          className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[55%] h-auto z-10 pa-book transition-all duration-700 ${visible ? "opacity-100 scale-100" : "opacity-0 scale-90"}`}
+          style={{ filter: "drop-shadow(0 20px 40px rgba(249,115,22,.25))" }}
+          loading="eager"
+        />
 
-      {/* Animated labels */}
-      {labels.map((l, i) => {
-        const isLeft = l.side === "left";
-        return (
+        {/* SVG lines from dots to edges */}
+        <svg className="absolute inset-0 w-full h-full z-20 pointer-events-none" preserveAspectRatio="none">
+          {labels.map((l) => {
+            const endX = l.side === "left" ? 5 : 95;
+            const endY = l.dotY;
+            return (
+              <line
+                key={l.text}
+                x1={`${l.dotX}%`} y1={`${l.dotY}%`}
+                x2={`${endX}%`}   y2={`${endY}%`}
+                stroke="#f97316"
+                strokeWidth="1"
+                strokeOpacity="0.3"
+                className="pa-line"
+                style={{
+                  animationDelay: visible ? `${l.delay + 200}ms` : "0ms",
+                  opacity: visible ? undefined : 0,
+                }}
+              />
+            );
+          })}
+        </svg>
+
+        {/* Dots on the book */}
+        {labels.map((l) => (
           <div
-            key={l.text}
-            className="absolute z-20 pa-label pointer-events-none"
+            key={l.text + "-dot"}
+            className="absolute z-30 w-2.5 h-2.5 rounded-full pa-dot"
             style={{
-              top: l.mTop,
-              ...(isLeft ? { left: l.mLeft } : { right: l.mRight }),
-              animationDelay: visible ? `${l.delay}ms` : "0ms",
+              left: `${l.dotX}%`, top: `${l.dotY}%`,
+              transform: "translate(-50%, -50%)",
+              backgroundColor: "#f97316",
+              animationDelay: `${l.delay + 500}ms`,
               opacity: visible ? undefined : 0,
             }}
-          >
-            {/* Connector line + dot */}
-            <div className={`flex items-center ${isLeft ? "flex-row-reverse" : "flex-row"}`}>
+          />
+        ))}
+
+        {/* Labels at the outer edge */}
+        {labels.map((l) => {
+          const isLeft = l.side === "left";
+          return (
+            <div
+              key={l.text + "-label"}
+              className="absolute z-30 pa-label"
+              style={{
+                top: `${l.dotY}%`,
+                transform: "translateY(-50%)",
+                ...(isLeft ? { left: 0 } : { right: 0 }),
+                animationDelay: visible ? `${l.delay}ms` : "0ms",
+                opacity: visible ? undefined : 0,
+              }}
+            >
               <span
-                className="text-[10px] sm:text-[11px] font-bold whitespace-nowrap px-2.5 py-1 rounded-full backdrop-blur-sm"
+                className="text-[10px] sm:text-[11px] font-bold whitespace-nowrap px-2 py-1 rounded-full inline-flex items-center gap-1"
                 style={{
                   color: "#f97316",
-                  backgroundColor: "rgba(255,247,237,.9)",
+                  backgroundColor: "rgba(255,247,237,.92)",
                   border: "1px solid rgba(249,115,22,.2)",
                   boxShadow: "0 2px 8px rgba(249,115,22,.1)",
                 }}
               >
-                {l.text}
+                <span>{l.emoji}</span> {l.text}
               </span>
-              {/* Dot connector */}
-              <div className="flex items-center mx-1">
-                <div
-                  className="w-4 sm:w-6 h-px"
-                  style={{ backgroundColor: "rgba(249,115,22,.35)" }}
-                />
-                <div
-                  className="w-2 h-2 rounded-full pa-dot flex-shrink-0"
-                  style={{
-                    backgroundColor: "#f97316",
-                    animationDelay: `${l.delay + 400}ms`,
-                  }}
-                />
-              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
