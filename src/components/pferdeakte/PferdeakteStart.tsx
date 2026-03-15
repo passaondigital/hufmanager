@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Zap, Bell, Footprints, Stethoscope, Activity, FileText, Camera, Clock, CheckCircle, Lightbulb } from "lucide-react";
+import { FeatureHint } from "@/components/ui/FeatureHint";
 import { toast } from "sonner";
 import { DemoFeatureHighlight } from "@/components/demo/DemoFeatureHighlight";
 import type { PferdeakteUserRole } from "./types";
