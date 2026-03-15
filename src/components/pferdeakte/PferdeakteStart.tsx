@@ -288,6 +288,14 @@ export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props
     <div className="space-y-6">
       <DemoFeatureHighlight label="Rollbasiertes Start-Briefing" delay={500} />
 
+      {/* Feature Connection Hint */}
+      {userRole === "provider" && (
+        <FeatureHint
+          id="pferdeakte-start-briefing"
+          text="Das Start-Briefing zeigt dir automatisch was seit deinem letzten Besuch passiert ist – inklusive Befunde anderer Dienstleister."
+        />
+      )}
+
       {/* News Since Last Visit */}
       <div className="rounded-xl bg-card border border-border overflow-hidden">
         <div className="px-4 py-3 flex items-center gap-2 border-b border-border bg-muted/30">
