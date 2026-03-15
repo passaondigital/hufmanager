@@ -187,7 +187,6 @@ function HeroIllustration() {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    // slight delay so the hero text loads first
     const timer = setTimeout(() => {
       const obs = new IntersectionObserver(
         ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } },
@@ -199,49 +198,102 @@ function HeroIllustration() {
   }, []);
 
   const features = [
-    { emoji: "🛡️", text: "Impfpass",            side: "left"  as const },
-    { emoji: "📋", text: "Hufbefunde",          side: "right" as const },
-    { emoji: "🩺", text: "Tierarzt-Berichte",   side: "left"  as const },
-    { emoji: "📊", text: "Behandlungshistorie", side: "right" as const },
-    { emoji: "🔬", text: "Röntgenbilder",       side: "left"  as const },
+    { emoji: "🛡️", text: "Impfpass" },
+    { emoji: "📋", text: "Hufbefunde" },
+    { emoji: "🩺", text: "Tierarzt-Berichte" },
+    { emoji: "📊", text: "Behandlungshistorie" },
+    { emoji: "🔬", text: "Röntgenbilder" },
   ];
 
+  const Pill = ({ emoji, text, delay, dir }: { emoji: string; text: string; delay: number; dir: string }) => (
+    <span
+      className="pa-label-appear inline-flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-full"
+      style={{
+        "--label-dir": dir,
+        color: "#ea580c",
+        backgroundColor: "#fff7ed",
+        border: "1px solid #fed7aa",
+        animationDelay: visible ? `${delay}ms` : "9999s",
+        opacity: visible ? undefined : 0,
+      } as React.CSSProperties}
+    >
+      <span>{emoji}</span> {text}
+    </span>
+  );
+
+  const Dot = ({ delay }: { delay: number }) => (
+    <div className="w-1.5 h-1.5 rounded-full pa-dot-soft flex-shrink-0" style={{ backgroundColor: "#f97316", animationDelay: `${delay}s` }} />
+  );
+
+  const Line = () => (
+    <div className="w-4 h-px" style={{ backgroundColor: "#fdba74" }} />
+  );
+
   return (
-    <div ref={ref} className="relative w-full flex flex-col items-center gap-0">
+    <div ref={ref} className="relative w-full flex flex-col items-center">
       {/* Soft glow */}
       <div
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[220px] h-[220px] md:w-[300px] md:h-[300px] rounded-full blur-3xl pointer-events-none"
         style={{ background: "radial-gradient(circle, rgba(249,115,22,.12), transparent 70%)" }}
       />
 
-      {/* Book with labels on sides */}
-      <div className="relative flex items-center justify-center w-full max-w-[500px]">
-        {/* Left column */}
-        <div className="flex flex-col gap-3 sm:gap-4 items-end flex-1 pr-3 sm:pr-5">
-          {features.filter(f => f.side === "left").map((f, i) => (
+      {/* ── MOBILE: vertical stack ── */}
+      <div className="flex flex-col items-center gap-3 sm:hidden">
+        {/* Top labels */}
+        <div className="flex flex-wrap justify-center gap-2">
+          {features.slice(0, 3).map((f, i) => (
+            <div key={f.text} className="flex flex-col items-center gap-1">
+              <Pill emoji={f.emoji} text={f.text} delay={600 + i * 350} dir="0px" />
+              <div className="flex flex-col items-center gap-0.5">
+                <Line />
+                <Dot delay={i * 0.7} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Book */}
+        <div className={`transition-all duration-1000 ease-out ${visible ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}>
+          <img
+            src={pferdeakteIcon}
+            alt="Digitale Pferdeakte"
+            className="w-[160px] h-auto pa-book-hover"
+            style={{ filter: "drop-shadow(0 12px 24px rgba(0,0,0,.15))" }}
+            loading="eager"
+          />
+        </div>
+
+        {/* Bottom labels */}
+        <div className="flex flex-wrap justify-center gap-2">
+          {features.slice(3).map((f, i) => (
+            <div key={f.text} className="flex flex-col items-center gap-1">
+              <div className="flex flex-col items-center gap-0.5">
+                <Dot delay={i * 0.7 + 1} />
+                <Line />
+              </div>
+              <Pill emoji={f.emoji} text={f.text} delay={1200 + i * 350} dir="0px" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── DESKTOP: 3-column layout ── */}
+      <div className="hidden sm:flex items-center justify-center w-full max-w-[560px]">
+        {/* Left */}
+        <div className="flex flex-col gap-4 items-end flex-1 pr-5">
+          {features.filter((_, i) => i % 2 === 0).map((f, i) => (
             <div
               key={f.text}
-              className="pa-label-appear flex items-center gap-1.5"
+              className="pa-label-appear flex items-center gap-2"
               style={{
                 "--label-dir": "-16px",
                 animationDelay: visible ? `${600 + i * 400}ms` : "9999s",
                 opacity: visible ? undefined : 0,
               } as React.CSSProperties}
             >
-              <span
-                className="text-[10px] sm:text-xs font-semibold whitespace-nowrap px-2 py-1 sm:px-3 sm:py-1.5 rounded-full"
-                style={{
-                  color: "#ea580c",
-                  backgroundColor: "#fff7ed",
-                  border: "1px solid #fed7aa",
-                }}
-              >
-                {f.emoji} {f.text}
-              </span>
-              <div className="flex items-center gap-0.5">
-                <div className="w-3 sm:w-5 h-px" style={{ backgroundColor: "#fdba74" }} />
-                <div className="w-1.5 h-1.5 rounded-full pa-dot-soft flex-shrink-0" style={{ backgroundColor: "#f97316", animationDelay: `${i * 0.8}s` }} />
-              </div>
+              <Pill emoji={f.emoji} text={f.text} delay={600 + i * 400} dir="-16px" />
+              <Line />
+              <Dot delay={i * 0.8} />
             </div>
           ))}
         </div>
@@ -251,38 +303,27 @@ function HeroIllustration() {
           <img
             src={pferdeakteIcon}
             alt="Digitale Pferdeakte"
-            className="w-[120px] sm:w-[160px] md:w-[220px] lg:w-[260px] h-auto pa-book-hover"
+            className="w-[180px] md:w-[230px] lg:w-[270px] h-auto pa-book-hover"
             style={{ filter: "drop-shadow(0 12px 24px rgba(0,0,0,.15))" }}
             loading="eager"
           />
         </div>
 
-        {/* Right column */}
-        <div className="flex flex-col gap-3 sm:gap-4 items-start flex-1 pl-3 sm:pl-5">
-          {features.filter(f => f.side === "right").map((f, i) => (
+        {/* Right */}
+        <div className="flex flex-col gap-4 items-start flex-1 pl-5">
+          {features.filter((_, i) => i % 2 === 1).map((f, i) => (
             <div
               key={f.text}
-              className="pa-label-appear flex items-center gap-1.5"
+              className="pa-label-appear flex items-center gap-2"
               style={{
                 "--label-dir": "16px",
                 animationDelay: visible ? `${800 + i * 400}ms` : "9999s",
                 opacity: visible ? undefined : 0,
               } as React.CSSProperties}
             >
-              <div className="flex items-center gap-0.5">
-                <div className="w-1.5 h-1.5 rounded-full pa-dot-soft flex-shrink-0" style={{ backgroundColor: "#f97316", animationDelay: `${i * 0.8 + 0.4}s` }} />
-                <div className="w-3 sm:w-5 h-px" style={{ backgroundColor: "#fdba74" }} />
-              </div>
-              <span
-                className="text-[10px] sm:text-xs font-semibold whitespace-nowrap px-2 py-1 sm:px-3 sm:py-1.5 rounded-full"
-                style={{
-                  color: "#ea580c",
-                  backgroundColor: "#fff7ed",
-                  border: "1px solid #fed7aa",
-                }}
-              >
-                {f.emoji} {f.text}
-              </span>
+              <Dot delay={i * 0.8 + 0.4} />
+              <Line />
+              <Pill emoji={f.emoji} text={f.text} delay={800 + i * 400} dir="16px" />
             </div>
           ))}
         </div>
