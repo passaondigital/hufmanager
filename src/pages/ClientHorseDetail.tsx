@@ -31,6 +31,7 @@ import { HoofDevelopmentComparison } from "@/components/client/HoofDevelopmentCo
 import { HorseAccessManager } from "@/components/client/HorseAccessManager";
 import { VaultTab } from "@/components/client/VaultTab";
 import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
+import { HorseProfileCompleteness } from "@/components/horse-detail/HorseProfileCompleteness";
 
 const TABS = [
   { value: "steckbrief", label: "Übersicht", icon: Info },
