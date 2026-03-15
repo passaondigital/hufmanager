@@ -27,6 +27,7 @@ import ChangelogSection from "@/components/website/ChangelogSection";
 import HufrenteSection from "@/components/website/HufrenteSection";
 import ForWhomSection from "@/components/website/ForWhomSection";
 
+import BigPictureSection from "@/components/website/BigPictureSection";
 import WhyHufManagerSection from "@/components/website/WhyHufManagerSection";
 import FAQ from "@/components/website/FAQ";
 import FinalCTA from "@/components/website/FinalCTA";
