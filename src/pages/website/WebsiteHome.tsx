@@ -27,6 +27,7 @@ import ChangelogSection from "@/components/website/ChangelogSection";
 import HufrenteSection from "@/components/website/HufrenteSection";
 import ForWhomSection from "@/components/website/ForWhomSection";
 import FounderSection from "@/components/website/FounderSection";
+import WhyHufManagerSection from "@/components/website/WhyHufManagerSection";
 import FAQ from "@/components/website/FAQ";
 import FinalCTA from "@/components/website/FinalCTA";
 import FooterNew from "@/components/website/FooterNew";
@@ -118,6 +119,7 @@ const WebsiteHome = () => {
       <HufrenteSection />
       <ForWhomSection />
       <FounderSection variant="website" />
+      <WhyHufManagerSection />
       <FAQ />
       <FinalCTA />
       <FooterNew />
