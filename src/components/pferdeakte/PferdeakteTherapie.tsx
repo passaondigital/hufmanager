@@ -82,25 +82,33 @@ export function PferdeakteTherapie({ horseId, horseName, userRole }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Filter Chips */}
-      <div className="flex overflow-x-auto gap-1.5 scrollbar-hide">
-        {THERAPY_FILTERS.map((f) => {
-          const isActive = filter === f.value;
-          return (
-            <button
-              key={f.value}
-              onClick={() => setFilter(f.value)}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0 border",
-                isActive
-                  ? "bg-purple-500/15 text-purple-600 border-purple-500/30"
-                  : "text-muted-foreground border-border hover:bg-secondary"
-              )}
-            >
-              {f.label}
-            </button>
-          );
-        })}
+      {/* Filter Chips + Invite Button */}
+      <div className="flex items-center gap-2">
+        <div className="flex overflow-x-auto gap-1.5 scrollbar-hide flex-1">
+          {THERAPY_FILTERS.map((f) => {
+            const isActive = filter === f.value;
+            return (
+              <button
+                key={f.value}
+                onClick={() => setFilter(f.value)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0 border",
+                  isActive
+                    ? "bg-purple-500/15 text-purple-600 border-purple-500/30"
+                    : "text-muted-foreground border-border hover:bg-secondary"
+                )}
+              >
+                {f.label}
+              </button>
+            );
+          })}
+        </div>
+        {(userRole === "provider" || userRole === "owner") && (
+          <Button variant="outline" size="sm" className="gap-1.5 flex-shrink-0" onClick={() => setShowInvite(true)}>
+            <UserPlus className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Einladen</span>
+          </Button>
+        )}
       </div>
 
       {/* Treatment Notes */}
