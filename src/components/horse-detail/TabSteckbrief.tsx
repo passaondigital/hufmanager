@@ -153,7 +153,7 @@ export function TabSteckbrief({ horse, onEdit }: TabSteckbriefProps) {
       {/* ─── NEW SECTIONS ─── */}
 
       {/* Official Identification */}
-      {(h.ueln || h.fn_number || h.brand_marks) && (
+      {(h.ueln || h.passport_number || h.fn_number || h.brand_marks) && (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
