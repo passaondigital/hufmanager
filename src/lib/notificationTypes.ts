@@ -50,6 +50,12 @@ export const NOTIFICATION_TYPE_CONFIG: Record<string, NotificationTypeConfig> = 
   // Status-Meldungen
   horse_status_stolen: { icon: "🚨", label: "Diebstahl gemeldet", defaultLink: "/mission-control" },
   horse_status_deceased: { icon: "🕊️", label: "Pferd verstorben" },
+
+  // Cross-provider notifications
+  partner_treatment: { icon: "💜", label: "Neuer Befund" },
+  partner_treatment_relevant: { icon: "🔔", label: "Befund relevant" },
+  partner_recommendation: { icon: "💡", label: "Empfehlung erhalten" },
+  owner_diary_shared: { icon: "📝", label: "Besitzer-Notiz" },
 };
 
 /**

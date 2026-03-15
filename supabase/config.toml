@@ -149,3 +149,6 @@ verify_jwt = false
 
 [functions.register-botschafter]
 verify_jwt = false
+
+[functions.hufi-ai-voice-finding]
+verify_jwt = true

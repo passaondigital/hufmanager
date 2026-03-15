@@ -219,6 +219,33 @@ export function PferdeakteHuf({ horseId, userRole }: Props) {
         </>
       )}
 
+      {/* Quick Actions */}
+      <div className="flex gap-2">
+        <Button variant="outline" className="flex-1 gap-2" onClick={() => setShowComparison(true)}>
+          <ImageIcon className="h-4 w-4" />
+          Fotos vergleichen
+        </Button>
+        {userRole === "provider" && (
+          <Button variant="outline" className="flex-1 gap-2" onClick={() => setShowVoiceRecorder(!showVoiceRecorder)}>
+            <Mic className="h-4 w-4" />
+            Sprachnotiz
+          </Button>
+        )}
+      </div>
+
+      {/* Voice Recorder */}
+      {showVoiceRecorder && userRole === "provider" && (
+        <HufiAIVoiceRecorder
+          horseId={horseId}
+          appointmentId={null}
+          onFindingGenerated={handleFindingGenerated}
+          onClose={() => setShowVoiceRecorder(false)}
+        />
+      )}
+
+      {/* Photo Comparison Modal */}
+      <HoofPhotoComparison horseId={horseId} open={showComparison} onClose={() => setShowComparison(false)} />
+
       {/* Hoof History */}
       {hoofHistory && hoofHistory.length > 0 && (
         <Card>
