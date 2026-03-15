@@ -242,6 +242,7 @@ export function PferdeakteTimeline({ horseId, userRole }: Props) {
 
   return (
     <div className="space-y-4">
+      <DemoFeatureHighlight label="Multi-Dienstleister Timeline" delay={1000} />
       {/* Filter Chips */}
       <div className="flex overflow-x-auto gap-1.5 scrollbar-hide">
         {FILTER_CHIPS.map((chip) => {

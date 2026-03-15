@@ -285,6 +285,8 @@ export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props
 
   return (
     <div className="space-y-6">
+      <DemoFeatureHighlight label="Rollbasiertes Start-Briefing" delay={500} />
+
       {/* News Since Last Visit */}
       <div className="rounded-xl bg-card border border-border overflow-hidden">
         <div className="px-4 py-3 flex items-center gap-2 border-b border-border bg-muted/30">

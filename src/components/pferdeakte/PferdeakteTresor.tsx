@@ -412,6 +412,7 @@ export function PferdeakteTresor({ horseId, horse }: PferdeakteTresorProps) {
   // ─── UNLOCKED STATE ───
   return (
     <div className="space-y-4">
+      <DemoFeatureHighlight label="PostIdent-gesicherter Dokumenten-Tresor" delay={500} />
       <TresorHeader verified />
 
       {/* Notfall-Kontakt Bar */}
