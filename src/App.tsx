@@ -225,11 +225,44 @@ const LazyFallback = () => {
 
 // Create persister for IndexedDB storage
 const persister = createIDBPersister();
+// Lazy-load portal pages for subdomain routing
+const PortalLogin = lazy(() => import("@/pages/portal/PortalLogin"));
+const MarketplacePublic = lazy(() => import("@/pages/portal/MarketplacePublic"));
 
-/** Intercepts /pferdeakte routes BEFORE AuthProvider so they render instantly without auth/tour/onboarding */
+/** Intercepts /pferdeakte routes and portal subdomains BEFORE AuthProvider */
 function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const path = location.pathname;
+  const portalMode = detectPortalMode();
+
+  // Subdomain routing: portal.hufmanager.de or versicherung.hufmanager.de
+  if (portalMode.mode === 'portal' || portalMode.mode === 'insurance') {
+    return (
+      <AuthProvider>
+        <Suspense fallback={<LazyFallback />}>
+          <Routes>
+            <Route path="/portal/:slug" element={<PortalDashboard />} />
+            <Route path="/portal/:slug/settings" element={<PortalSettings />} />
+            <Route path="*" element={<PortalLogin mode={portalMode.mode} />} />
+          </Routes>
+        </Suspense>
+      </AuthProvider>
+    );
+  }
+
+  // Subdomain routing: markt.hufmanager.de (public browse, auth for orders)
+  if (portalMode.mode === 'marketplace') {
+    return (
+      <AuthProvider>
+        <Suspense fallback={<LazyFallback />}>
+          <Routes>
+            <Route path="*" element={<MarketplacePublic />} />
+          </Routes>
+        </Suspense>
+      </AuthProvider>
+    );
+  }
+
   // Intercept public routes that don't need AuthProvider
   if (path.startsWith('/pferdeakte') || path.startsWith('/notfall/') || path === '/botschafter/login' || path === '/botschafter/warten') {
     return (
