@@ -135,15 +135,20 @@ export function PferdeakteTherapie({ horseId, horseName, userRole, ownerId }: Pr
 
       {/* Treatment Notes */}
       {filtered.length === 0 ? (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <Activity className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
-            <p className="text-sm font-medium text-foreground mb-1">Keine Therapie-Einträge</p>
-            <p className="text-xs text-muted-foreground mb-3">
-              {isClient
-                ? "Lade einen Fachpartner ein, um Befunde hier zu dokumentieren."
-                : "Empfiehl dem Besitzer einen Fachpartner für dieses Pferd."}
-            </p>
+        <>
+          <FeatureHint
+            id="therapie-empty-hint"
+            text="Noch keine Therapie-Einträge. Lade einen Fachpartner ein → der Besitzer gibt ihm Zugriff → seine Befunde erscheinen hier."
+          />
+          <Card>
+            <CardContent className="p-8 text-center">
+              <Activity className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
+              <p className="text-sm font-medium text-foreground mb-1">Keine Therapie-Einträge</p>
+              <p className="text-xs text-muted-foreground mb-3">
+                {isClient
+                  ? "Lade einen Fachpartner ein, um Befunde hier zu dokumentieren."
+                  : "Empfiehl dem Besitzer einen Fachpartner für dieses Pferd."}
+              </p>
             {(isClient || (isProvider && ownerId)) && (
               <Button variant="outline" size="sm" className="gap-2" onClick={handleActionClick}>
                 <ActionIcon className="h-4 w-4" />
