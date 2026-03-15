@@ -31,6 +31,8 @@ import { HorseDetailHero } from "@/components/horse-detail/HorseDetailHero";
 import { HorseDetailStats } from "@/components/horse-detail/HorseDetailStats";
 import { logHorseAction } from "@/utils/auditLog";
 import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
+import { HorseProfileCompleteness } from "@/components/horse-detail/HorseProfileCompleteness";
+import { HorseMaterialHistory } from "@/components/horse-detail/HorseMaterialHistory";
 
 interface OwnerProfile {
   id: string;
