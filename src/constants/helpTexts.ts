@@ -556,6 +556,18 @@ export const helpTexts: Record<string, Record<string, HelpTextEntry>> = {
       title: "Datenfreigabe",
       description: "Kontrolliere, wer Zugriff auf deine Pferdedaten hat – z.B. Tierärzte oder Fachpartner.",
     },
+    pferdeakte: {
+      title: "Pferdeakte",
+      description: "Die Pferdeakte zeigt alle Behandlungen, Befunde und Gesundheitsdaten deines Pferdes an einem Ort.",
+    },
+    qrcode: {
+      title: "Notfall-QR-Code",
+      description: "Drucke diesen QR-Code aus und hänge ihn an den Stall oder das Halfter. Im Notfall kann jeder scannen und sieht die wichtigsten Kontakte.",
+    },
+    buchung: {
+      title: "Gesundheitsinfos bei Buchung",
+      description: "Diese Infos helfen deinem Hufbearbeiter sich optimal auf den ersten Termin vorzubereiten. Alles optional.",
+    },
   },
   // ─── Client App ─────────────────────────────────────────
   client: {
