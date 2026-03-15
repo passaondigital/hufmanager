@@ -624,14 +624,15 @@ Das System hat **130+ Tabellen**. Hier die für die Pferdeakte relevanten:
 | Feature | Status | Wo | Wie | Lücke |
 |---|---|---|---|---|
 | Dokument-Upload (allgemein) | ✅ | Pferd-Detail | `horse_documents` + Bucket `horse-documents` | – |
-| Tresor-Bereich (geschützt) | ✅ | Pferd-Detail | Bucket `horse-vault` existiert | UNKLAR ob dediziertes Tresor-UI existiert oder nur der Bucket |
-| PostIdent-Verifizierung | ❌ | – | – | Nicht implementiert |
-| Kaufvertrag ablegen | ✅ | horse_documents | Kategorie "Kaufvertrag" | – |
-| Versicherungspolice ablegen | ✅ | horse_documents | Kategorie "Versicherung" + `horses.insurance_*` Felder | – |
-| Eigentumsurkunde ablegen | ✅ | horse_documents | Kategorie möglich | – |
-| Equidenpass (Scan) ablegen | ✅ | horse_documents | Kategorie "Equidenpass" | Kein `passport_number` Feld |
+| Tresor-Bereich (geschützt) | ✅ | Client-App Pferd-Detail | PIN-geschützter Bereich (6-stelliger Hash in `profiles.vault_pin`), privater Bucket `horse-vault`, Sicherheits-Lockout (30min nach 3 Fehlversuchen via `profiles.vault_locked_until` + `vault_failed_attempts`) | – |
+| Tresor Admin-Audit-Log | ✅ | vault_access_log | Tabelle: `vault_access_log` (admin_user_id, horse_id, owner_id, reason, documents_viewed[], accessed_at) – unveränderlich, für Besitzer einsehbar | – |
+| PostIdent-Verifizierung | ❌ | – | – | Nicht implementiert – Kern-USP fehlt |
+| Kaufvertrag ablegen | ✅ | horse_documents / horse-vault | Kategorie "Kaufvertrag", im Tresor oder als normales Dokument | – |
+| Versicherungspolice ablegen | ✅ | horse_documents / horse-vault | Kategorie "Versicherung" + `horses.insurance_*` Felder | – |
+| Eigentumsurkunde ablegen | ✅ | horse_documents / horse-vault | Kategorie möglich | – |
+| Equidenpass (Scan) ablegen | ✅ | horse_documents | Kategorie "Equidenpass" | Kein `passport_number` Feld in DB |
 | QR-Code Notfall-Zugang | ⚠️ | Emergency System | `emergency_otp`, `emergency_escalations` Tabellen existieren | UNKLAR ob QR-Code-Generation für Stalltür-Scan implementiert |
-| Besitzerwechsel-Funktion | ✅ | horse_transfers | 4-Stufen-Prozess mit Passwort-Hash, Vertragsdokumenten | – |
+| Besitzerwechsel-Funktion | ✅ | horse_transfers | 4-Stufen-Prozess mit bcrypt-Hash (Edge Function `hash-password`), Vertragsdokumenten, automatische Revoke aller access_grants + horse_partner_access | – |
 | Notfall-Kontakt am Pferd | ⚠️ | Pferd + Profil | `horses.contacts` (jsonb) + `profiles.emergency_contacts` (jsonb) | Kein dediziertes Emergency-Feld mit Priorität/Reihenfolge |
 
 ## Berichte & Export
