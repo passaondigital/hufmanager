@@ -29,6 +29,7 @@ import { HorseDiary } from "@/components/client/HorseDiary";
 import { HorseHealthTracker } from "@/components/client/HorseHealthTracker";
 import { HoofDevelopmentComparison } from "@/components/client/HoofDevelopmentComparison";
 import { HorseAccessManager } from "@/components/client/HorseAccessManager";
+import { HorseCareTeam } from "@/components/client/HorseCareTeam";
 import { VaultTab } from "@/components/client/VaultTab";
 import { Pferdeakte } from "@/components/pferdeakte";
 import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
@@ -37,6 +38,7 @@ import { HorseProfileCompleteness } from "@/components/horse-detail/HorseProfile
 const TABS = [
   { value: "steckbrief", label: "Übersicht", icon: Info },
   { value: "pferdeakte", label: "Akte", icon: BookOpen },
+  { value: "team", label: "Team", icon: Users },
   { value: "verlauf", label: "Verlauf", icon: History },
   { value: "fotos", label: "Fotos & Medien", icon: Image },
   { value: "gesundheit", label: "Gesundheit", icon: Heart },
@@ -260,6 +262,9 @@ export default function ClientHorseDetail() {
           )}
           {activeTab === "tagebuch" && (
             <HorseDiary horseId={horse.id} />
+          )}
+          {activeTab === "team" && (
+            <HorseCareTeam horseId={horse.id} horse={horse} />
           )}
           {activeTab === "betreuer" && (
             <HorsePartnerPanel horseId={horse.id} horseName={horse.name} inviterRole="client" />
