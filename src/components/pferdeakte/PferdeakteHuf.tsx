@@ -11,6 +11,7 @@ import { HoofPhotoComparison } from "./HoofPhotoComparison";
 import { HufiAIVoiceRecorder } from "./HufiAIVoiceRecorder";
 import type { HoofFindingResult } from "./HufiAIVoiceRecorder";
 import type { PferdeakteUserRole } from "./types";
+import { DemoFeatureHighlight } from "@/components/demo/DemoFeatureHighlight";
 import { toast } from "sonner";
 
 interface Props {
