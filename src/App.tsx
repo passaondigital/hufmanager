@@ -575,6 +575,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client-orders" element={<ClientOrders />} />
               <Route path="/client-notfall" element={<EmergencyDashboard />} />
               <Route path="/client/botschafter" element={<ClientBotschafter />} />
+              <Route path="/client/search-providers" element={<SearchProviders />} />
             </Route>
 
             {/* --- 4. EMPLOYEE (MITARBEITER) ROUTES --- */}
