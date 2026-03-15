@@ -237,8 +237,12 @@ ${healthLogs.length > 0 ? `<table>
   </tr>`).join('')}</tbody>
 </table>` : '<p style="color:#888">Keine Gesundheits-Logs vorhanden.</p>'}
 
+${isAku ? `<div class="info-box">
+  <strong>Hinweis:</strong> Tresor-Dokumente (Röntgenbilder, Befunde) sind über den gesicherten Tresor-Zugang verfügbar und nicht in diesem Bericht enthalten.
+</div>` : ''}
+
 <div class="footer">
-  <p>Erstellt am ${today} via HufManager · #ZukunftHuf2030</p>
+  <p>${reportFooterLabel} erstellt am ${today} via HufManager · #ZukunftHuf2030</p>
   <p style="font-size:9px;margin-top:4px">Tresor-Dokumente sind in diesem Bericht nicht enthalten.</p>
 </div>
 
