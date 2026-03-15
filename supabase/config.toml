@@ -152,3 +152,6 @@ verify_jwt = false
 
 [functions.hufi-ai-voice-finding]
 verify_jwt = true
+
+[functions.send-email]
+verify_jwt = false

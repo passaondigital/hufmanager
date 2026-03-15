@@ -162,7 +162,7 @@ export function ErstbefundTemplate({ horseName, onSubmit, onCancel, isSubmitting
         ))}
       </div>
 
-      <Badge variant="outline" className="bg-orange-500/10 text-orange-500 border-orange-500/30">
+      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
         ERSTBEFUND – {horseName}
       </Badge>
 
