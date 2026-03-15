@@ -71,6 +71,10 @@ const Dashboard = () => {
         <MilestoneCelebration />
         <CompactOnboardingBanner />
 
+        {/* Pferdeakte Insights + Recent */}
+        <PferdeakteInsights />
+        <RecentPferdeakten />
+
         {/* Main Content: Widget Grid + Sidebar */}
         {isMobile ? (
           /* Mobile: stacked layout */

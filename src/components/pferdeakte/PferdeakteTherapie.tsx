@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Activity, FileDown, Loader2 } from "lucide-react";
+import { Activity, FileDown, Loader2, UserPlus } from "lucide-react";
 import { getPartnerTypeConfig, PARTNER_TYPE_OPTIONS } from "@/lib/partnerTypes";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { InvitePartnerModal } from "@/components/horse-detail/InvitePartnerModal";
 import type { PferdeakteUserRole } from "./types";
 
 const THERAPY_FILTERS = [
