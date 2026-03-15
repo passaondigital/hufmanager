@@ -25,6 +25,7 @@ import { SpeedDialFAB } from "./SpeedDialFAB";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { FeierabendWaechter } from "@/components/tracking/FeierabendWaechter";
 import { DemoStickyBanner } from "@/components/demo/DemoStickyBanner";
+import { DemoPresentationBanner } from "@/components/demo/DemoPresentationBanner";
 import { TrialCountdownBanner } from "@/components/subscription/TrialCountdownBanner";
 import { useDemoActivityTracker } from "@/hooks/useDemoActivityTracker";
 import { useAutoflowMode, AutoflowMode } from "@/hooks/useAutoflowMode";
@@ -107,7 +108,9 @@ export function AppLayout() {
   }
 
   return (
-    <div className="min-h-[100dvh] flex w-full bg-background overflow-safe">
+    <div className="min-h-[100dvh] flex flex-col w-full bg-background overflow-safe">
+      <DemoPresentationBanner />
+      <div className="flex flex-1">
       {/* Desktop Sidebar - hidden on mobile */}
       <div className="hidden lg:block">
         <AppSidebar />
@@ -246,6 +249,7 @@ export function AppLayout() {
       
       {/* Botschafter Reminder Banner */}
       <BotschafterReminder />
+      </div>
     </div>
   );
 }

@@ -9,6 +9,8 @@ import { DashboardHeroBanner } from "@/components/dashboard/DashboardHeroBanner"
 import { CompactOnboardingBanner } from "@/components/dashboard/CompactOnboardingBanner";
 import { WidgetGrid } from "@/components/dashboard/widgets/WidgetGrid";
 import { DashboardSidebar } from "@/components/dashboard/sidebar/DashboardSidebar";
+import { PferdeakteInsights } from "@/components/dashboard/PferdeakteInsights";
+import { RecentPferdeakten } from "@/components/dashboard/RecentPferdeakten";
 import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -68,6 +70,10 @@ const Dashboard = () => {
         <PushNotificationBanner />
         <MilestoneCelebration />
         <CompactOnboardingBanner />
+
+        {/* Pferdeakte Insights + Recent */}
+        <PferdeakteInsights />
+        <RecentPferdeakten />
 
         {/* Main Content: Widget Grid + Sidebar */}
         {isMobile ? (
