@@ -132,23 +132,23 @@ export default function PferdeakteLanding() {
       <StickyNav scrolled={scrolled} />
       {/* 1. HERO — Attention */}
       <HeroSection />
-      {/* 2. PROBLEM / Bewusstsein — Attention → Interest */}
+      {/* 2. PROBLEM — drei Szenarien */}
       <ProblemSection />
-      {/* 3. VERSTEHEN — Interest */}
-      <MissionSection />
-      {/* 4. LÖSUNG — Interest → Desire */}
+      {/* 3. LÖSUNG */}
       <SolutionSection />
+      {/* 4. FÜR WEN? */}
       <TargetGroupsSection />
-      {/* 5. VERTRAUEN / Loslassen — Desire */}
+      {/* 5. GRÜNDER */}
       <FounderSectionPA />
+      {/* 6. WARUM DIE PFERDEAKTE EXISTIERT (historisch + CTA) */}
       <WhyPferdeakteSection />
-      {/* 6. NEUAUSRICHTUNG — Desire */}
+      {/* 7. SOCIAL PROOF */}
       <SocialProofSection />
-      <SupportersSection />
-      {/* 7. TUN — Action */}
+      {/* 8. WAITLIST */}
       <WaitlistSection defaultRef={searchParams.get("ref") ?? ""} />
-      {/* 8. VERSTÄRKEN — Action */}
+      {/* 9. BOTSCHAFTER */}
       <BotschafterSection />
+      {/* 10. SHARE + FOOTER */}
       <ShareSection />
       <FooterSection />
     </div>
