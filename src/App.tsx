@@ -470,6 +470,11 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
                 <AdminRoles />
               </ProtectedRoute>
             } />
+            <Route path="/admin/seed-demo" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminSeedDemo />
+              </ProtectedRoute>
+            } />
 
             {/* --- 2. PROVIDER (PROFI) ROUTES --- */}
             <Route
