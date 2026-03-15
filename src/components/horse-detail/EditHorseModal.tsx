@@ -190,6 +190,7 @@ export function EditHorseModal({ horse, open, onClose, onSaved }: EditHorseModal
           height: form.height.trim() || null,
           height_cm: form.height_cm ? parseInt(form.height_cm) : null,
           chip_number: form.chip_number.trim() || null,
+          passport_number: form.passport_number.trim() || null,
           discipline: form.discipline.trim() || null,
           usage: form.usage || null,
           housing: form.housing || null,
