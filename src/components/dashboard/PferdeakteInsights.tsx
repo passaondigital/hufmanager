@@ -63,13 +63,11 @@ export function PferdeakteInsights() {
           .limit(5),
       ]);
 
-      const horses = horsesRes.data || [];
       const avgScore = horses.length > 0
         ? Math.round(horses.reduce((sum, h) => sum + calcCompleteness(h), 0) / horses.length)
         : 0;
 
-      // Filter vacc alerts to provider's horses
-      const providerHorseIds = new Set(horses.map(h => h.id));
+      const overdueVacc = (vaccRes.data || []).length;
       const overdueVacc = (vaccRes.data || []).filter((v: any) =>
         providerHorseIds.has(v.horse_id)
       ).length;
