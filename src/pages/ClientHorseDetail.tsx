@@ -45,6 +45,7 @@ const TABS = [
   { value: "betreuer", label: "Betreuer", icon: Users },
   { value: "zugriffsrechte", label: "Zugriffsrechte", icon: Shield },
   { value: "tresor", label: "Tresor", icon: Lock },
+  { value: "pferdeakte", label: "Akte", icon: BookOpen },
 ] as const;
 
 export default function ClientHorseDetail() {
