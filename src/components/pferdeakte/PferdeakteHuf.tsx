@@ -1,12 +1,17 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Minus, Camera, FileText, ArrowUpDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Camera, FileText, ArrowUpDown, ImageIcon, Mic } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
+import { HoofPhotoComparison } from "./HoofPhotoComparison";
+import { HufiAIVoiceRecorder } from "./HufiAIVoiceRecorder";
+import type { HoofFindingResult } from "./HufiAIVoiceRecorder";
 import type { PferdeakteUserRole } from "./types";
+import { toast } from "sonner";
 
 interface Props {
   horseId: string;
@@ -14,6 +19,15 @@ interface Props {
 }
 
 export function PferdeakteHuf({ horseId, userRole }: Props) {
+  const [showComparison, setShowComparison] = useState(false);
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
+
+  const handleFindingGenerated = (finding: HoofFindingResult) => {
+    // TODO: Save to hoof_entries and hoof_analyses
+    toast.success("Befund übernommen");
+    setShowVoiceRecorder(false);
+    console.log("Finding generated:", finding);
+  };
   // Fetch hoof analyses
   const { data: analyses, isLoading: loadingAnalyses } = useQuery({
     queryKey: ["pferdeakte-hoof-analyses", horseId],
