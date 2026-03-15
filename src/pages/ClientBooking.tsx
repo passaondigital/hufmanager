@@ -247,7 +247,24 @@ export default function ClientBooking() {
         });
       }
 
-      navigate("/client-home");
+      // Save additional health info as diary entry if provided
+      if (selectedHorse && (healthHistory || currentFarrier || vetName || hoofProtection)) {
+        const parts = [];
+        if (healthHistory) parts.push(`Vorerkrankungen: ${healthHistory}`);
+        if (currentFarrier) parts.push(`Bisheriger Hufbearbeiter: ${currentFarrier}`);
+        if (vetName) parts.push(`Tierarzt: ${vetName}${vetPhone ? ` (${vetPhone})` : ''}`);
+        if (hoofProtection) parts.push(`Hufschutz: ${hoofProtection}`);
+        
+        await supabase.from("horse_diary_entries").insert({
+          horse_id: selectedHorse,
+          owner_id: user.id,
+          category: "Onboarding",
+          text: parts.join('\n'),
+          shared_with_provider: true,
+        });
+      }
+
+      setShowSuccess(true);
     } catch (error: any) {
       toast({
         title: "Fehler",
