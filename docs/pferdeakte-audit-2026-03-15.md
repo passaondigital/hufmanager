@@ -758,3 +758,67 @@ Von **87 Features** aus der Checkliste:
 | `partner_treatment_notes.visible_to_pid` | Provider-Benachrichtigung | Partner kann Befund eintragen und für Provider sichtbar machen, aber keine aktive Benachrichtigung "Neuer Befund von Osteopath" |
 | `horses.contacts` (Notfallkontakte) | Emergency QR-Code | Kontaktdaten existieren, aber kein QR-Code der diese Daten für Ersthelfer bereitstellt |
 | `horse_transfers` (Besitzerwechsel) | Lückenlose Owner-Historie | Transfer-Tabelle zeigt aktive Transfers, aber keine historische Ansicht "Alle bisherigen Besitzer" |
+
+---
+
+# NACHTRAG: Korrekturen nach Knowledge-Base-Abgleich (15.03.2026, 19:30)
+
+## Korrigierte Bewertungen
+
+### Tresor-Bereich: UNKLAR → ✅ EXISTIERT
+- **Vorher:** "UNKLAR ob dediziertes Tresor-UI existiert"
+- **Korrektur:** Tresor ist vollständig implementiert in der Client-App:
+  - PIN-geschützter Bereich (6-stelliger Hash in `profiles.vault_pin`)
+  - Sicherheits-Lockout: 30min Sperre nach 3 Fehlversuchen (`profiles.vault_locked_until`, `profiles.vault_failed_attempts`)
+  - Privater Storage-Bucket `horse-vault`
+  - Admin-Audit-Log: `vault_access_log` Tabelle (admin_user_id, horse_id, owner_id, reason, documents_viewed[], accessed_at) – unveränderlich, für Besitzer einsehbar
+  - Dokument-Kategorien: Equidenpass, Kaufvertrag, Versicherungspolice
+
+### Fehlende Tabellen im Audit (existieren aber nicht aufgeführt)
+
+| Tabelle | Zweck |
+|---|---|
+| `vault_access_log` | Tresor-Zugriffs-Protokoll (Admin-Audit) |
+| `price_groups` | Preisgruppen-Management |
+| `service_price_overrides` | Service-Preis-Überschreibungen pro Gruppe |
+| `client_locations` | Kunden-Standorte (Multi-Stall) |
+| `leads` | Neukundenanfragen |
+| `funnel_leads` | Funnel-basierte Leads |
+| `offers` | Angebote |
+| `offer_materials` | Angebots-Materialien |
+| `magic_links` | Magische Login-Links |
+| `broadcast_logs` | Broadcast-Nachrichten-Protokoll |
+| `cooperation_partners` | Kooperationspartner |
+| `education_courses` / `education_schools` / `education_enrollments` | Ausbildungs-Modul |
+| `media_assets` | Medien-Verwaltung |
+| `performance_metrics` | Performance-Metriken |
+| `config_snapshots` | Konfigurations-Snapshots |
+| `data_retention_rules` | DSGVO-Aufbewahrungsfristen |
+| `legal_agreements` / `legal_change_notifications` / `legal_change_confirmations` | Rechtliche Dokumente & Änderungen |
+| `customer_domains` / `domain_orders` / `domain_products` / `domain_waitlist` | Custom-Domain-System |
+| `dashboard_widgets` | Konfigurierbare Dashboard-Widgets |
+| `global_feature_defaults` | Feature-Defaults pro Plan |
+| `payment_products` | Zahlungsprodukte |
+| `manual_payments` | Manuelle Zahlungen |
+| `client_referrals` / `hufrente_referrals` | Empfehlungs-Systeme |
+
+### Korrigierter Readiness-Score
+
+Durch die Tresor-Korrektur (UNKLAR → ✅) und den `vault_access_log` Fund:
+
+| Status | Anzahl | % |
+|---|---|---|
+| ✅ Existiert und funktioniert | **53** (+1) | 60.9% |
+| ⚠️ Existiert teilweise | **20** (-1) | 23.0% |
+| ❌ Existiert nicht | **11** | 12.6% |
+| 📋 Nur geplant/konzipiert | **3** | 3.4% |
+
+**Korrigierter Gesamt-Readiness: ~73%** (53 + 10 = 63 / 87)
+
+### Bestätigte Details aus Knowledge-Base
+
+1. **Besitzerwechsel:** Passwort wird via Edge Function `hash-password` als bcrypt-Hash gespeichert (nicht plaintext)
+2. **Impfungen:** Folgen Tierärztekammer-Standards (Vet-Name, Praxis, Adresse, Hersteller, Applikationsstelle)
+3. **Partner-Templates:** 18 Fach-Templates (z.B. Body-Maps für Physios) über `template_key` in `partner_treatment_notes`
+4. **Zugriffs-Logging:** `horse_audit_log` erfasst alle Datenzugriffe geräuschlos via `logHorseAction` Helper
+5. **Datenhoheit:** Besitzer können Zugriffe jederzeit granular erteilen/widerrufen – technisch über `revoked_at`/`is_active`/`revoke_reason` auf access_grants und horse_partner_access
