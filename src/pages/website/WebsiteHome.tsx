@@ -73,6 +73,8 @@ const WebsiteHome = () => {
       <HeroMinimal />
       {/* 2. Drei Schmerzen */}
       <PainCardsSection />
+      {/* 2b. Was ist HufManager */}
+      <WhatIsHufManagerSection />
       {/* 3. Ökosystem */}
       <EcosystemHeader />
       <HorseEcosystem />
