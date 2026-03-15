@@ -476,6 +476,18 @@ export const helpTexts: Record<string, Record<string, HelpTextEntry>> = {
       title: "Einstellungen",
       description: "Konfiguriere dein Partner-Konto, Benachrichtigungen und Datenschutz-Einstellungen.",
     },
+    "sichtbar-provider": {
+      title: "Sichtbar für Provider",
+      description: "Wenn aktiv, kann der Hufbearbeiter deinen Befund sehen. Empfohlen für bessere Zusammenarbeit.",
+    },
+    empfehlung: {
+      title: "Empfehlung an",
+      description: "Schreibe eine Empfehlung an den Hufbearbeiter oder Besitzer. Sie erscheint beim nächsten Termin-Briefing.",
+    },
+    bodymap: {
+      title: "Body-Map",
+      description: "Tippe auf die Körperregion die du behandelt hast. Die Markierung wird automatisch in der Pferdeakte gespeichert.",
+    },
   },
 
   // ─── Mitarbeiter-App ──────────────────────────────────────
