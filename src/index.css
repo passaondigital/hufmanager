@@ -201,6 +201,18 @@
   }
 }
 
+/* Hero fade-up animation */
+.animate-fade-up {
+  animation: fadeUp 600ms ease-out both;
+}
+
+/* Glow effect for orange CTA buttons */
+.glow-orange {
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.35), 0 0 60px rgba(249, 115, 22, 0.1);
+}
+  }
+}
+
 /* Card Tile hover */
 .card-tile {
   transition: transform 200ms ease, border-color 200ms ease, background-color 200ms ease, box-shadow 200ms ease;
