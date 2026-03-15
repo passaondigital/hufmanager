@@ -318,8 +318,54 @@ export default function ClientBooking() {
           />
         )}
 
+        {/* Success Screen */}
+        {showSuccess && (
+          <div className="space-y-4 text-center py-4">
+            <div className="h-16 w-16 rounded-full bg-green-500/10 mx-auto flex items-center justify-center">
+              <Check className="h-8 w-8 text-green-600" />
+            </div>
+            <h2 className="text-lg font-bold text-foreground">
+              {isDirectBooking ? "Termin gebucht!" : "Anfrage gesendet!"}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {isDirectBooking
+                ? `${selectedDate ? format(selectedDate, "EEEE, d. MMMM", { locale: de }) : ""} um ${selectedTime} Uhr`
+                : "Dein Hufbearbeiter wird sich bald bei dir melden."}
+            </p>
+            
+            {selectedHorse && (
+              <Card className="text-left">
+                <CardContent className="p-4 flex items-start gap-3">
+                  <FileText className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">
+                      Tipp: Fülle die Pferdeakte aus
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      So hat dein Hufbearbeiter beim ersten Termin alle wichtigen Infos.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 gap-1"
+                      onClick={() => navigate(`/client-horse/${selectedHorse}?tab=pferdeakte`)}
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                      Pferdeakte öffnen
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            <Button onClick={() => navigate("/client-home")} className="w-full">
+              Zurück zur Übersicht
+            </Button>
+          </div>
+        )}
+
         {/* Standard Mode: Step-by-step booking */}
-        {bookingMode === "standard" && (
+        {bookingMode === "standard" && !showSuccess && (
           <>
             {/* Step: Select Service */}
             {step === "services" && (
