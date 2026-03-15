@@ -1,0 +1,1 @@
+ALTER TABLE pferdeakte_botschafter DROP CONSTRAINT IF EXISTS pferdeakte_botschafter_user_id_fkey;
