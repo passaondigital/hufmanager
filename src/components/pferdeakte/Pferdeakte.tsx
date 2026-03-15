@@ -203,7 +203,7 @@ export function Pferdeakte({ horseId, userRole, horse: horseProp }: PferdeaktePr
           <PferdeakteBerichte horseId={horseId} />
         )}
         {activeTab === "tresor" && (
-          <VaultTab horseId={horseId} />
+          <PferdeakteTresor horseId={horseId} horse={horse} />
         )}
       </div>
     </div>
