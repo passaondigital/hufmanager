@@ -464,7 +464,7 @@ function ProblemSection() {
             );
           })}
         </div>
-        <p className="text-center mt-14 text-lg max-w-xl mx-auto" style={{ color: "rgba(255,255,255,.6)" }}>
+        <p className="text-center mt-14 text-lg md:text-xl max-w-xl mx-auto" style={{ color: "rgba(255,255,255,.6)" }}>
           Das ist kein Einzelfall. Das ist der Standard.<br />
           <span className="text-white font-semibold">Bis jetzt.</span>
         </p>
