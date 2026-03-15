@@ -52,6 +52,7 @@ export default function ClientHorseDetail() {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   const [horse, setHorse] = useState<Horse | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -59,7 +60,8 @@ export default function ClientHorseDetail() {
   const [documents, setDocuments] = useState<HorseDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [activeTab, setActiveTab] = useState("steckbrief");
+  const defaultTab = searchParams.get("tab") || "steckbrief";
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const [showStatusModal, setShowStatusModal] = useState(false);
 
   const fetchHorseData = async () => {
