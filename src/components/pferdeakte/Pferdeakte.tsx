@@ -63,7 +63,7 @@ export function Pferdeakte({ horseId, userRole, horse: horseProp }: PferdeaktePr
       const [healthRes, vaccRes, apptRes] = await Promise.all([
         supabase
           .from("horse_health_logs")
-          .select("wellbeing_score, date")
+          .select("wellbeing, date")
           .eq("horse_id", horseId)
           .order("date", { ascending: false })
           .limit(1),
