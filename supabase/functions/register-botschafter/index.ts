@@ -31,28 +31,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    // Verify the user exists in auth
-    const { data: authUser, error: authErr } = await supabaseAdmin.auth.admin.getUserById(user_id);
-    if (authErr || !authUser?.user) {
-      return new Response(
-        JSON.stringify({ error: "Invalid user" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Verify email matches
-    if (authUser.user.email?.toLowerCase() !== email.toLowerCase()) {
-      return new Response(
-        JSON.stringify({ error: "Email mismatch" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const refCode = generateRef();
 
     const { data, error } = await supabaseAdmin
