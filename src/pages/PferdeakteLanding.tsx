@@ -95,14 +95,11 @@ const rcX = (v: boolean, dir: "left" | "right") =>
 
 /* ── injected CSS ────────────────────────────────────────── */
 const injectedCSS = `
-@keyframes pa-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @keyframes pa-tick{0%{transform:scale(1.15)}100%{transform:scale(1)}}
 @keyframes pa-book-hover{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-@keyframes pa-label-appear{0%{opacity:0;transform:translateX(var(--label-dir, 12px))}100%{opacity:1;transform:translateX(0)}}
-@keyframes pa-dot-soft{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
+@keyframes pa-dot-soft{0%,100%{opacity:.6}50%{opacity:1}}
 .pa-tick{animation:pa-tick .3s ease-out}
 .pa-book-hover{animation:pa-book-hover 6s ease-in-out infinite}
-.pa-label-appear{animation:pa-label-appear .8s cubic-bezier(.22,1,.36,1) both}
 .pa-dot-soft{animation:pa-dot-soft 3s ease-in-out infinite}
 `;
 
@@ -187,14 +184,12 @@ function HeroIllustration() {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const timer = setTimeout(() => {
-      const obs = new IntersectionObserver(
-        ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } },
-        { threshold: 0.1 }
-      );
-      obs.observe(el);
-    }, 300);
-    return () => clearTimeout(timer);
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } },
+      { threshold: 0.1 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
   }, []);
 
   const features = [
@@ -205,24 +200,25 @@ function HeroIllustration() {
     { emoji: "🔬", text: "Röntgenbilder" },
   ];
 
-  const Pill = ({ emoji, text, delay, dir }: { emoji: string; text: string; delay: number; dir: string }) => (
+  // Simple pill – uses only CSS transitions, no keyframe animations
+  const Pill = ({ emoji, text, delay }: { emoji: string; text: string; delay: number }) => (
     <span
-      className="pa-label-appear inline-flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-full"
+      className="inline-flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-full transition-all duration-700 ease-out"
       style={{
-        "--label-dir": dir,
         color: "#ea580c",
         backgroundColor: "#fff7ed",
         border: "1px solid #fed7aa",
-        animationDelay: visible ? `${delay}ms` : "9999s",
-        opacity: visible ? undefined : 0,
-      } as React.CSSProperties}
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0)" : "translateY(8px)",
+        transitionDelay: `${delay}ms`,
+      }}
     >
       <span>{emoji}</span> {text}
     </span>
   );
 
-  const Dot = ({ delay }: { delay: number }) => (
-    <div className="w-1.5 h-1.5 rounded-full pa-dot-soft flex-shrink-0" style={{ backgroundColor: "#f97316", animationDelay: `${delay}s` }} />
+  const Dot = () => (
+    <div className="w-1.5 h-1.5 rounded-full pa-dot-soft flex-shrink-0" style={{ backgroundColor: "#f97316" }} />
   );
 
   const Line = () => (
@@ -243,17 +239,23 @@ function HeroIllustration() {
         <div className="flex flex-wrap justify-center gap-2">
           {features.slice(0, 3).map((f, i) => (
             <div key={f.text} className="flex flex-col items-center gap-1">
-              <Pill emoji={f.emoji} text={f.text} delay={600 + i * 350} dir="0px" />
+              <Pill emoji={f.emoji} text={f.text} delay={400 + i * 300} />
               <div className="flex flex-col items-center gap-0.5">
                 <Line />
-                <Dot delay={i * 0.7} />
+                <Dot />
               </div>
             </div>
           ))}
         </div>
 
         {/* Book */}
-        <div className={`transition-all duration-1000 ease-out ${visible ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}>
+        <div
+          className="transition-all duration-1000 ease-out"
+          style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? "scale(1)" : "scale(0.95)",
+          }}
+        >
           <img
             src={pferdeakteIcon}
             alt="Digitale Pferdeakte"
@@ -268,10 +270,10 @@ function HeroIllustration() {
           {features.slice(3).map((f, i) => (
             <div key={f.text} className="flex flex-col items-center gap-1">
               <div className="flex flex-col items-center gap-0.5">
-                <Dot delay={i * 0.7 + 1} />
+                <Dot />
                 <Line />
               </div>
-              <Pill emoji={f.emoji} text={f.text} delay={1200 + i * 350} dir="0px" />
+              <Pill emoji={f.emoji} text={f.text} delay={1000 + i * 300} />
             </div>
           ))}
         </div>
@@ -282,24 +284,22 @@ function HeroIllustration() {
         {/* Left */}
         <div className="flex flex-col gap-4 items-end flex-1 pr-5">
           {features.filter((_, i) => i % 2 === 0).map((f, i) => (
-            <div
-              key={f.text}
-              className="pa-label-appear flex items-center gap-2"
-              style={{
-                "--label-dir": "-16px",
-                animationDelay: visible ? `${600 + i * 400}ms` : "9999s",
-                opacity: visible ? undefined : 0,
-              } as React.CSSProperties}
-            >
-              <Pill emoji={f.emoji} text={f.text} delay={600 + i * 400} dir="-16px" />
+            <div key={f.text} className="flex items-center gap-2">
+              <Pill emoji={f.emoji} text={f.text} delay={500 + i * 350} />
               <Line />
-              <Dot delay={i * 0.8} />
+              <Dot />
             </div>
           ))}
         </div>
 
         {/* Book */}
-        <div className={`flex-shrink-0 transition-all duration-1000 ease-out ${visible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-4 scale-95"}`}>
+        <div
+          className="flex-shrink-0 transition-all duration-1000 ease-out"
+          style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? "scale(1) translateY(0)" : "scale(0.95) translateY(8px)",
+          }}
+        >
           <img
             src={pferdeakteIcon}
             alt="Digitale Pferdeakte"
@@ -312,18 +312,10 @@ function HeroIllustration() {
         {/* Right */}
         <div className="flex flex-col gap-4 items-start flex-1 pl-5">
           {features.filter((_, i) => i % 2 === 1).map((f, i) => (
-            <div
-              key={f.text}
-              className="pa-label-appear flex items-center gap-2"
-              style={{
-                "--label-dir": "16px",
-                animationDelay: visible ? `${800 + i * 400}ms` : "9999s",
-                opacity: visible ? undefined : 0,
-              } as React.CSSProperties}
-            >
-              <Dot delay={i * 0.8 + 0.4} />
+            <div key={f.text} className="flex items-center gap-2">
+              <Dot />
               <Line />
-              <Pill emoji={f.emoji} text={f.text} delay={800 + i * 400} dir="16px" />
+              <Pill emoji={f.emoji} text={f.text} delay={650 + i * 350} />
             </div>
           ))}
         </div>
