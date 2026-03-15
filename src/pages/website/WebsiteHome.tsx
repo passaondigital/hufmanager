@@ -120,6 +120,7 @@ const WebsiteHome = () => {
       <HufrenteSection />
       <ForWhomSection />
       
+      <BigPictureSection />
       <WhyHufManagerSection />
       <FAQ />
       <FinalCTA />
