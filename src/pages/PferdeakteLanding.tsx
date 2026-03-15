@@ -445,7 +445,7 @@ function ProblemSection() {
           Die Realität im Pferdesport
         </p>
         <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-center text-white mb-16 leading-tight">
-          Was passiert, wenn niemand<br className="hidden sm:block" /> den Überblick hat.
+          Drei Situationen.<br className="hidden sm:block" /> Jeder kennt eine davon.
         </h2>
         <div className="grid md:grid-cols-3 gap-6">
           {problemCards.map((c, i) => {
