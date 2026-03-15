@@ -95,22 +95,15 @@ const rcX = (v: boolean, dir: "left" | "right") =>
 
 /* ── injected CSS ────────────────────────────────────────── */
 const injectedCSS = `
-@keyframes pa-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes pa-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @keyframes pa-tick{0%{transform:scale(1.15)}100%{transform:scale(1)}}
-@keyframes pa-glow{0%,100%{box-shadow:0 0 4px rgba(249,115,22,.3)}50%{box-shadow:0 0 12px rgba(249,115,22,.6)}}
-@keyframes pa-line-draw{0%{stroke-dashoffset:60}100%{stroke-dashoffset:0}}
-@keyframes pa-dot-pulse{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.6);opacity:1}}
-@keyframes pa-label-in{0%{opacity:0;transform:translateY(8px) scale(.92)}100%{opacity:1;transform:translateY(0) scale(1)}}
-@keyframes pa-book-float{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-8px) rotate(1deg)}}
-.pa-f1{animation:pa-float 3s ease-in-out infinite}
-.pa-f2{animation:pa-float 3s ease-in-out .7s infinite}
-.pa-f3{animation:pa-float 3s ease-in-out 1.4s infinite}
-.pa-f4{animation:pa-float 3s ease-in-out 2.1s infinite}
+@keyframes pa-book-hover{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes pa-label-appear{0%{opacity:0;transform:translateX(var(--label-dir, 12px))}100%{opacity:1;transform:translateX(0)}}
+@keyframes pa-dot-soft{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
 .pa-tick{animation:pa-tick .3s ease-out}
-.pa-book{animation:pa-book-float 5s ease-in-out infinite}
-.pa-dot{animation:pa-dot-pulse 2s ease-in-out infinite}
-.pa-label{animation:pa-label-in .5s ease-out both}
-.pa-line{stroke-dasharray:60;animation:pa-line-draw .6s ease-out both}
+.pa-book-hover{animation:pa-book-hover 6s ease-in-out infinite}
+.pa-label-appear{animation:pa-label-appear .8s cubic-bezier(.22,1,.36,1) both}
+.pa-dot-soft{animation:pa-dot-soft 3s ease-in-out infinite}
 `;
 
 /* ── smooth scroll helper ────────────────────────────────── */
