@@ -117,7 +117,13 @@ export function PferdeakteTherapie({ horseId, horseName, userRole }: Props) {
           <CardContent className="p-8 text-center">
             <Activity className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
             <p className="text-sm font-medium text-foreground mb-1">Keine Therapie-Einträge</p>
-            <p className="text-xs text-muted-foreground">Lade einen Fachpartner ein, um Befunde hier zu dokumentieren.</p>
+            <p className="text-xs text-muted-foreground mb-3">Lade einen Fachpartner ein, um Befunde hier zu dokumentieren.</p>
+            {(userRole === "provider" || userRole === "owner") && (
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowInvite(true)}>
+                <UserPlus className="h-4 w-4" />
+                Fachpartner einladen
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
