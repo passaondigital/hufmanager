@@ -33,6 +33,8 @@ import { logHorseAction } from "@/utils/auditLog";
 import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
 import { HorseProfileCompleteness } from "@/components/horse-detail/HorseProfileCompleteness";
 import { HorseMaterialHistory } from "@/components/horse-detail/HorseMaterialHistory";
+import { Pferdeakte } from "@/components/pferdeakte";
+import { BookOpen } from "lucide-react";
 
 interface OwnerProfile {
   id: string;
