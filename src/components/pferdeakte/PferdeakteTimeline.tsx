@@ -265,8 +265,10 @@ export function PferdeakteTimeline({ horseId, userRole }: Props) {
       {/* Timeline */}
       {filteredItems.length === 0 ? (
         <Card>
-          <CardContent className="p-8 text-center text-muted-foreground text-sm">
-            Keine Einträge vorhanden.
+          <CardContent className="p-8 text-center">
+            <History className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
+            <p className="text-sm font-medium text-foreground mb-1">Noch keine Einträge</p>
+            <p className="text-xs text-muted-foreground">Der erste Termin erstellt den Beginn der Pferdeakte.</p>
           </CardContent>
         </Card>
       ) : (
@@ -275,61 +277,15 @@ export function PferdeakteTimeline({ horseId, userRole }: Props) {
           <div className="absolute left-[11px] top-4 bottom-4 w-px bg-border" />
 
           <div className="space-y-3">
-            {filteredItems.map((item) => {
-              const dotBg = item.type === "huf" ? "bg-primary" :
-                item.type.startsWith("vet") ? "bg-blue-500" :
-                item.type === "therapy" ? "bg-purple-500" :
-                item.type.startsWith("owner") ? "bg-green-500" :
-                "bg-muted-foreground";
-
-              return (
-                <div key={`${item.type}-${item.id}`} className="flex gap-3 relative">
-                  {/* Dot */}
-                  <div className={cn("h-[22px] w-[22px] rounded-full flex-shrink-0 flex items-center justify-center z-10", dotBg)}>
-                    <div className="h-2 w-2 rounded-full bg-background" />
-                  </div>
-
-                  {/* Card */}
-                  <Card className="flex-1">
-                    <CardContent className="p-3">
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{item.badgeText}</Badge>
-                        <span className="text-[10px] text-muted-foreground flex-shrink-0">
-                          {new Date(item.date).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}
-                        </span>
-                      </div>
-                      <p className="text-sm font-medium text-foreground">{item.title}</p>
-                      {item.description && (
-                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{item.description}</p>
-                      )}
-                      {item.edid && (
-                        <span className="text-[10px] font-mono text-muted-foreground mt-1 inline-block">{item.edid}</span>
-                      )}
-                      {item.photos && item.photos.length > 0 && (
-                        <div className="flex gap-1 mt-2">
-                          {item.photos.slice(0, 4).map((url, i) => (
-                            <div key={i} className="h-9 w-9 rounded bg-muted overflow-hidden flex-shrink-0">
-                              <img src={url} alt="" className="h-full w-full object-cover" />
-                            </div>
-                          ))}
-                          {item.photos.length > 4 && (
-                            <div className="h-9 w-9 rounded bg-muted flex items-center justify-center text-[10px] text-muted-foreground">
-                              +{item.photos.length - 4}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              );
-            })}
+            {filteredItems.map((item) => (
+              <TimelineCard key={`${item.type}-${item.id}`} item={item} />
+            ))}
           </div>
 
           {/* Load More */}
           {filteredItems.length >= limit && (
             <div className="text-center mt-4">
-              <Button variant="outline" size="sm" onClick={() => setLimit((l) => l + 20)} className="gap-1">
+              <Button variant="outline" size="sm" onClick={() => setLimit((l) => l + 20)} className="gap-1 min-h-[44px]">
                 <ChevronDown className="h-4 w-4" />
                 Weitere Einträge laden
               </Button>
