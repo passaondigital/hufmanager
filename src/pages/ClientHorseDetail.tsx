@@ -268,6 +268,9 @@ export default function ClientHorseDetail() {
           {activeTab === "tresor" && (
             <VaultTab horseId={horse.id} />
           )}
+          {activeTab === "pferdeakte" && (
+            <Pferdeakte horseId={horse.id} userRole="client" horse={horse as any} />
+          )}
         </div>
       </main>
 
