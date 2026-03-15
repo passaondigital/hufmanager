@@ -118,7 +118,7 @@ const WebsiteHome = () => {
       <ChangelogSection />
       <HufrenteSection />
       <ForWhomSection />
-      <FounderSection variant="website" />
+      
       <WhyHufManagerSection />
       <FAQ />
       <FinalCTA />
