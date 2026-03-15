@@ -187,83 +187,103 @@ function HeroIllustration() {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } },
-      { threshold: 0.15 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
+    // slight delay so the hero text loads first
+    const timer = setTimeout(() => {
+      const obs = new IntersectionObserver(
+        ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } },
+        { threshold: 0.1 }
+      );
+      obs.observe(el);
+    }, 300);
+    return () => clearTimeout(timer);
   }, []);
 
-  const left = [
-    { emoji: "🛡️", text: "Impfpass", delay: 0 },
-    { emoji: "🩺", text: "Tierarzt-Berichte", delay: 200 },
-    { emoji: "🔬", text: "Röntgenbilder", delay: 400 },
+  const features = [
+    { emoji: "🛡️", text: "Impfpass",            side: "left"  as const },
+    { emoji: "📋", text: "Hufbefunde",          side: "right" as const },
+    { emoji: "🩺", text: "Tierarzt-Berichte",   side: "left"  as const },
+    { emoji: "📊", text: "Behandlungshistorie", side: "right" as const },
+    { emoji: "🔬", text: "Röntgenbilder",       side: "left"  as const },
   ];
-  const right = [
-    { emoji: "📋", text: "Hufbefunde", delay: 100 },
-    { emoji: "📊", text: "Behandlungshistorie", delay: 300 },
-  ];
-
-  const Label = ({ emoji, text, delay, side }: { emoji: string; text: string; delay: number; side: "left" | "right" }) => (
-    <div
-      className="pa-label flex items-center gap-1.5"
-      style={{
-        flexDirection: side === "left" ? "row" : "row-reverse",
-        animationDelay: visible ? `${delay}ms` : "0ms",
-        opacity: visible ? undefined : 0,
-      }}
-    >
-      <span
-        className="text-[11px] font-bold whitespace-nowrap px-2.5 py-1.5 rounded-full"
-        style={{
-          color: "#f97316",
-          backgroundColor: "rgba(255,247,237,.95)",
-          border: "1px solid rgba(249,115,22,.15)",
-          boxShadow: "0 1px 6px rgba(249,115,22,.08)",
-        }}
-      >
-        {emoji} {text}
-      </span>
-      <div className="flex items-center" style={{ flexDirection: side === "left" ? "row" : "row-reverse" }}>
-        <div style={{ width: 20, height: 1, backgroundColor: "rgba(249,115,22,.3)" }} />
-        <div
-          className="w-2 h-2 rounded-full pa-dot flex-shrink-0"
-          style={{ backgroundColor: "#f97316", animationDelay: `${delay + 400}ms` }}
-        />
-      </div>
-    </div>
-  );
 
   return (
-    <div ref={ref} className="relative w-full py-2">
-      {/* Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[250px] rounded-full blur-3xl opacity-15 pointer-events-none"
-        style={{ background: "radial-gradient(circle, #f97316, transparent 70%)" }}
+    <div ref={ref} className="relative w-full flex flex-col items-center gap-0">
+      {/* Soft glow */}
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[220px] h-[220px] md:w-[300px] md:h-[300px] rounded-full blur-3xl pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(249,115,22,.12), transparent 70%)" }}
       />
 
-      {/* 3-column layout: labels | book | labels */}
-      <div className="flex items-center justify-center gap-2 sm:gap-4">
-        {/* Left labels */}
-        <div className="flex flex-col gap-5 items-end shrink-0">
-          {left.map((l) => (
-            <Label key={l.text} {...l} side="left" />
+      {/* Book with labels on sides */}
+      <div className="relative flex items-center justify-center w-full max-w-[500px]">
+        {/* Left column */}
+        <div className="flex flex-col gap-3 sm:gap-4 items-end flex-1 pr-3 sm:pr-5">
+          {features.filter(f => f.side === "left").map((f, i) => (
+            <div
+              key={f.text}
+              className="pa-label-appear flex items-center gap-1.5"
+              style={{
+                "--label-dir": "-16px",
+                animationDelay: visible ? `${600 + i * 400}ms` : "9999s",
+                opacity: visible ? undefined : 0,
+              } as React.CSSProperties}
+            >
+              <span
+                className="text-[10px] sm:text-xs font-semibold whitespace-nowrap px-2 py-1 sm:px-3 sm:py-1.5 rounded-full"
+                style={{
+                  color: "#ea580c",
+                  backgroundColor: "#fff7ed",
+                  border: "1px solid #fed7aa",
+                }}
+              >
+                {f.emoji} {f.text}
+              </span>
+              <div className="flex items-center gap-0.5">
+                <div className="w-3 sm:w-5 h-px" style={{ backgroundColor: "#fdba74" }} />
+                <div className="w-1.5 h-1.5 rounded-full pa-dot-soft flex-shrink-0" style={{ backgroundColor: "#f97316", animationDelay: `${i * 0.8}s` }} />
+              </div>
+            </div>
           ))}
         </div>
 
         {/* Book */}
-        <img
-          src={pferdeakteIcon}
-          alt="Digitale Pferdeakte"
-          className={`w-[140px] sm:w-[180px] md:w-[240px] lg:w-[300px] h-auto flex-shrink-0 pa-book transition-all duration-700 ${visible ? "opacity-100 scale-100" : "opacity-0 scale-90"}`}
-          style={{ filter: "drop-shadow(0 16px 32px rgba(249,115,22,.2))" }}
-          loading="eager"
-        />
+        <div className={`flex-shrink-0 transition-all duration-1000 ease-out ${visible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-4 scale-95"}`}>
+          <img
+            src={pferdeakteIcon}
+            alt="Digitale Pferdeakte"
+            className="w-[120px] sm:w-[160px] md:w-[220px] lg:w-[260px] h-auto pa-book-hover"
+            style={{ filter: "drop-shadow(0 12px 24px rgba(0,0,0,.15))" }}
+            loading="eager"
+          />
+        </div>
 
-        {/* Right labels */}
-        <div className="flex flex-col gap-5 items-start shrink-0">
-          {right.map((l) => (
-            <Label key={l.text} {...l} side="right" />
+        {/* Right column */}
+        <div className="flex flex-col gap-3 sm:gap-4 items-start flex-1 pl-3 sm:pl-5">
+          {features.filter(f => f.side === "right").map((f, i) => (
+            <div
+              key={f.text}
+              className="pa-label-appear flex items-center gap-1.5"
+              style={{
+                "--label-dir": "16px",
+                animationDelay: visible ? `${800 + i * 400}ms` : "9999s",
+                opacity: visible ? undefined : 0,
+              } as React.CSSProperties}
+            >
+              <div className="flex items-center gap-0.5">
+                <div className="w-1.5 h-1.5 rounded-full pa-dot-soft flex-shrink-0" style={{ backgroundColor: "#f97316", animationDelay: `${i * 0.8 + 0.4}s` }} />
+                <div className="w-3 sm:w-5 h-px" style={{ backgroundColor: "#fdba74" }} />
+              </div>
+              <span
+                className="text-[10px] sm:text-xs font-semibold whitespace-nowrap px-2 py-1 sm:px-3 sm:py-1.5 rounded-full"
+                style={{
+                  color: "#ea580c",
+                  backgroundColor: "#fff7ed",
+                  border: "1px solid #fed7aa",
+                }}
+              >
+                {f.emoji} {f.text}
+              </span>
+            </div>
           ))}
         </div>
       </div>
