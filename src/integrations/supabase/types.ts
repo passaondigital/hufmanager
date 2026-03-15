@@ -5576,6 +5576,62 @@ export type Database = {
           },
         ]
       }
+      horse_care_team: {
+        Row: {
+          created_at: string | null
+          horse_id: string
+          id: string
+          owner_id: string
+          team_sharing_enabled: boolean | null
+          team_sharing_enabled_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          horse_id: string
+          id?: string
+          owner_id: string
+          team_sharing_enabled?: boolean | null
+          team_sharing_enabled_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          horse_id?: string
+          id?: string
+          owner_id?: string
+          team_sharing_enabled?: boolean | null
+          team_sharing_enabled_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horse_care_team_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: true
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_care_team_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: true
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_care_team_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: true
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_care_team_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: true
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       horse_deworming: {
         Row: {
           active_substance: string | null
@@ -5956,6 +6012,7 @@ export type Database = {
           can_view_hoof_history: boolean
           can_view_insurance: boolean | null
           can_view_medical: boolean
+          can_view_other_partners: boolean | null
           can_view_training: boolean | null
           can_view_vaccinations: boolean | null
           can_view_weight_bcs: boolean | null
@@ -5969,6 +6026,8 @@ export type Database = {
           invited_by_client_id: string | null
           invited_by_provider_id: string | null
           is_active: boolean
+          owner_approved: boolean | null
+          owner_approved_at: string | null
           partner_email: string | null
           partner_name: string | null
           partner_profile_id: string | null
@@ -5994,6 +6053,7 @@ export type Database = {
           can_view_hoof_history?: boolean
           can_view_insurance?: boolean | null
           can_view_medical?: boolean
+          can_view_other_partners?: boolean | null
           can_view_training?: boolean | null
           can_view_vaccinations?: boolean | null
           can_view_weight_bcs?: boolean | null
@@ -6007,6 +6067,8 @@ export type Database = {
           invited_by_client_id?: string | null
           invited_by_provider_id?: string | null
           is_active?: boolean
+          owner_approved?: boolean | null
+          owner_approved_at?: string | null
           partner_email?: string | null
           partner_name?: string | null
           partner_profile_id?: string | null
@@ -6032,6 +6094,7 @@ export type Database = {
           can_view_hoof_history?: boolean
           can_view_insurance?: boolean | null
           can_view_medical?: boolean
+          can_view_other_partners?: boolean | null
           can_view_training?: boolean | null
           can_view_vaccinations?: boolean | null
           can_view_weight_bcs?: boolean | null
@@ -6045,6 +6108,8 @@ export type Database = {
           invited_by_client_id?: string | null
           invited_by_provider_id?: string | null
           is_active?: boolean
+          owner_approved?: boolean | null
+          owner_approved_at?: string | null
           partner_email?: string | null
           partner_name?: string | null
           partner_profile_id?: string | null
@@ -8739,6 +8804,77 @@ export type Database = {
           },
         ]
       }
+      partner_recommendations: {
+        Row: {
+          created_at: string | null
+          horse_id: string
+          id: string
+          owner_id: string
+          reason: string | null
+          recommended_by: string
+          recommended_partner_email: string | null
+          recommended_partner_name: string | null
+          recommended_partner_type: string
+          responded_at: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          horse_id: string
+          id?: string
+          owner_id: string
+          reason?: string | null
+          recommended_by: string
+          recommended_partner_email?: string | null
+          recommended_partner_name?: string | null
+          recommended_partner_type: string
+          responded_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          horse_id?: string
+          id?: string
+          owner_id?: string
+          reason?: string | null
+          recommended_by?: string
+          recommended_partner_email?: string | null
+          recommended_partner_name?: string | null
+          recommended_partner_type?: string
+          responded_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_recommendations_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_recommendations_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_recommendations_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_recommendations_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_service_price_history: {
         Row: {
           changed_at: string
@@ -9618,6 +9754,7 @@ export type Database = {
           avatar_url: string | null
           bank_name: string | null
           bic: string | null
+          bio: string | null
           business_hours: Json | null
           business_name: string | null
           cancellation_policy: string | null
@@ -9654,6 +9791,7 @@ export type Database = {
           invited_at: string | null
           invoice_footer: string | null
           invoice_notes_default: string | null
+          is_discoverable: boolean | null
           is_manually_managed: boolean | null
           is_suspended: boolean | null
           last_name: string | null
@@ -9702,7 +9840,10 @@ export type Database = {
           reminder_evening: boolean | null
           reminder_text: string | null
           role: string | null
+          service_radius_km: number | null
+          service_types: string[] | null
           show_cooperation_badges: boolean | null
+          specializations: string[] | null
           stable_city: string | null
           stable_latitude: number | null
           stable_longitude: number | null
@@ -9737,6 +9878,7 @@ export type Database = {
           avatar_url?: string | null
           bank_name?: string | null
           bic?: string | null
+          bio?: string | null
           business_hours?: Json | null
           business_name?: string | null
           cancellation_policy?: string | null
@@ -9773,6 +9915,7 @@ export type Database = {
           invited_at?: string | null
           invoice_footer?: string | null
           invoice_notes_default?: string | null
+          is_discoverable?: boolean | null
           is_manually_managed?: boolean | null
           is_suspended?: boolean | null
           last_name?: string | null
@@ -9821,7 +9964,10 @@ export type Database = {
           reminder_evening?: boolean | null
           reminder_text?: string | null
           role?: string | null
+          service_radius_km?: number | null
+          service_types?: string[] | null
           show_cooperation_badges?: boolean | null
+          specializations?: string[] | null
           stable_city?: string | null
           stable_latitude?: number | null
           stable_longitude?: number | null
@@ -9856,6 +10002,7 @@ export type Database = {
           avatar_url?: string | null
           bank_name?: string | null
           bic?: string | null
+          bio?: string | null
           business_hours?: Json | null
           business_name?: string | null
           cancellation_policy?: string | null
@@ -9892,6 +10039,7 @@ export type Database = {
           invited_at?: string | null
           invoice_footer?: string | null
           invoice_notes_default?: string | null
+          is_discoverable?: boolean | null
           is_manually_managed?: boolean | null
           is_suspended?: boolean | null
           last_name?: string | null
@@ -9940,7 +10088,10 @@ export type Database = {
           reminder_evening?: boolean | null
           reminder_text?: string | null
           role?: string | null
+          service_radius_km?: number | null
+          service_types?: string[] | null
           show_cooperation_badges?: boolean | null
+          specializations?: string[] | null
           stable_city?: string | null
           stable_latitude?: number | null
           stable_longitude?: number | null
@@ -13918,6 +14069,10 @@ export type Database = {
       }
       has_active_access_grant: {
         Args: { _client_id: string; _provider_id: string }
+        Returns: boolean
+      }
+      has_active_horse_partner_access: {
+        Args: { _horse_id: string; _user_id: string }
         Returns: boolean
       }
       has_horse_partner_access: {
