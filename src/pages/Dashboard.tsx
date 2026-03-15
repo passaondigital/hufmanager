@@ -74,6 +74,7 @@ const Dashboard = () => {
 
         {/* Pferdeakte Insights + Recent */}
         <PferdeakteInsights />
+        <InsuranceInsights />
         <RecentPferdeakten />
 
         {/* Main Content: Widget Grid + Sidebar */}
