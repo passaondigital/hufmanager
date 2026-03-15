@@ -73,7 +73,8 @@ const WebsiteHome = () => {
       {/* 2. Drei Schmerzen */}
       <PainCardsSection />
       {/* 3. Ökosystem */}
-      <EcosystemMinimal />
+      <EcosystemHeader />
+      <HorseEcosystem />
       {/* 4. Datensouveränität */}
       <section className="py-16 bg-zinc-950">
         <div className="container max-w-3xl">
