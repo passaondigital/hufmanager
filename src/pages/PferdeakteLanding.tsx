@@ -310,7 +310,7 @@ function HeroIllustration() {
             src={pferdeakteIcon}
             alt="Digitale Pferdeakte"
             className="w-[180px] md:w-[230px] lg:w-[270px] h-auto pa-book-hover"
-            style={{ filter: "drop-shadow(0 12px 24px rgba(0,0,0,.15))" }}
+            style={{ filter: "drop-shadow(0 12px 24px rgba(0,0,0,.15)) brightness(1.15) contrast(1.1) saturate(1.2)" }}
             loading="eager"
           />
         </div>
