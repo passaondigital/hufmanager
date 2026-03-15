@@ -118,6 +118,7 @@ const EmployeeDashboard = lazy(() => import("@/pages/EmployeeDashboard"));
 const EmployeeInvite = lazy(() => import("@/pages/EmployeeInvite"));
 const EmergencyDashboard = lazy(() => import("@/pages/EmergencyDashboard"));
 const PriceGroupManagement = lazy(() => import("@/pages/PriceGroupManagement"));
+const AdminSeedDemo = lazy(() => import("@/pages/AdminSeedDemo"));
 const EmployeeTour = lazy(() => import("@/pages/EmployeeTour"));
 const EmployeeHorseDetail = lazy(() => import("@/pages/employee/EmployeeHorseDetail"));
 const MeinOffice = lazy(() => import("@/pages/MeinOffice"));
@@ -467,6 +468,11 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/admin/rollen" element={
               <ProtectedRoute allowedRoles={["admin"]}>
                 <AdminRoles />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/seed-demo" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminSeedDemo />
               </ProtectedRoute>
             } />
 
