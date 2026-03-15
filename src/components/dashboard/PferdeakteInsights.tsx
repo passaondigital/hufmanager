@@ -7,19 +7,22 @@ import { useNavigate } from "react-router-dom";
 import { Footprints, ClipboardCheck, Syringe, Users, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const COMPLETENESS_FIELDS = [
-  "name", "breed", "gender", "birth_year",
-  "chip_number", "passport_number", "contacts", "insurance_company",
-] as const;
+const FIELDS = ["name", "breed", "gender", "birth_year", "chip_number", "passport_number", "contacts", "insurance_company"] as const;
 
-function calcCompleteness(horse: any): number {
+function calcScore(horse: Record<string, unknown>): number {
   let filled = 0;
-  for (const f of COMPLETENESS_FIELDS) {
+  for (const f of FIELDS) {
     if (f === "contacts") {
-      if (horse.contacts && typeof horse.contacts === "object" && Object.keys(horse.contacts).length > 0) filled++;
+      const c = horse.contacts;
+      if (c && typeof c === "object" && Object.keys(c).length > 0) filled++;
     } else if (horse[f]) filled++;
   }
-  return Math.round((filled / COMPLETENESS_FIELDS.length) * 100);
+  return Math.round((filled / FIELDS.length) * 100);
+}
+
+function daysAgoLabel(dateStr: string) {
+  const d = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
+  return d === 0 ? "heute" : d === 1 ? "gestern" : `vor ${d} Tagen`;
 }
 
 export function PferdeakteInsights() {
@@ -29,69 +32,42 @@ export function PferdeakteInsights() {
   const { data, isLoading } = useQuery({
     queryKey: ["pferdeakte-insights", user?.id],
     queryFn: async () => {
-      const horsesRes = await supabase
+      // Step 1: Get provider horses
+      const { data: horseRows } = await supabase
         .from("horses")
         .select("id, name, breed, gender, birth_year, chip_number, passport_number, contacts, insurance_company")
         .eq("provider_id", user!.id)
         .is("deleted_at", null);
 
-      const horses = horsesRes.data || [];
-      const horseIds = horses.map(h => h.id);
+      const horses = horseRows || [];
+      const ids = horses.map((h) => h.id);
 
-      const [vaccRes, partnersRes, recentRes] = await Promise.all([
-        horseIds.length > 0
-          ? supabase
-              .from("horse_vaccinations")
-              .select("id, horse_id")
-              .in("horse_id", horseIds)
-              .lt("next_due_date", new Date().toISOString())
-              .not("next_due_date", "is", null)
-          : Promise.resolve({ data: [] }),
-        horseIds.length > 0
-          ? supabase
-              .from("horse_partner_access")
-              .select("partner_profile_id, horse_id")
-              .in("horse_id", horseIds)
-              .eq("status", "active")
-          : Promise.resolve({ data: [] }),
-        supabase
-          .from("appointments")
-          .select("id, horse_id, date, service_type")
-          .eq("provider_id", user!.id)
-          .eq("status", "completed")
-          .order("date", { ascending: false })
-          .limit(5),
+      if (ids.length === 0) {
+        return { horseCount: 0, avgScore: 0, overdueVacc: 0, partnerCount: 0, recent: [] as Array<{ id: string; horseId: string; horseName: string; type: string; date: string }> };
+      }
+
+      // Step 2: parallel queries
+      const [vaccRes, partnerRes, apptRes] = await Promise.all([
+        supabase.from("horse_vaccinations").select("id, horse_id").in("horse_id", ids).lt("next_due_date", new Date().toISOString()).not("next_due_date", "is", null),
+        supabase.from("horse_partner_access").select("partner_profile_id").in("horse_id", ids).eq("status", "active"),
+        supabase.from("appointments").select("id, horse_id, date, service_type").eq("provider_id", user!.id).eq("status", "completed").order("date", { ascending: false }).limit(5),
       ]);
 
-      const avgScore = horses.length > 0
-        ? Math.round(horses.reduce((sum, h) => sum + calcCompleteness(h), 0) / horses.length)
-        : 0;
-
-      const overdueVacc = (vaccRes.data || []).length;
-      const overdueVacc = (vaccRes.data || []).filter((v: any) =>
-        providerHorseIds.has(v.horse_id)
-      ).length;
-
-      const uniquePartners = new Set(
-        (partnersRes.data || [])
-          .filter((p: any) => providerHorseIds.has(p.horse_id))
-          .map((p: any) => p.partner_profile_id)
-      ).size;
-
-      const recent = (recentRes.data || []).map((a: any) => ({
-        id: a.id,
-        horseId: a.horse_id,
-        horseName: (a.horses as any)?.name || "Unbekannt",
-        type: a.service_type || "Termin",
-        date: a.date,
-      }));
+      const avgScore = Math.round(horses.reduce((s, h) => s + calcScore(h as Record<string, unknown>), 0) / horses.length);
+      const nameMap = new Map(horses.map((h) => [h.id, h.name]));
 
       return {
         horseCount: horses.length,
         avgScore,
-        overdueVacc,
-        partnerCount: uniquePartners,
-        recent,
+        overdueVacc: (vaccRes.data || []).length,
+        partnerCount: new Set((partnerRes.data || []).map((p) => p.partner_profile_id)).size,
+        recent: (apptRes.data || []).map((a) => ({
+          id: a.id,
+          horseId: a.horse_id,
+          horseName: nameMap.get(a.horse_id) || "Pferd",
+          type: a.service_type || "Termin",
+          date: a.date,
+        })),
       };
     },
     enabled: !!user,
@@ -103,7 +79,7 @@ export function PferdeakteInsights() {
       <Card>
         <CardContent className="p-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}
+            {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
           </div>
         </CardContent>
       </Card>
@@ -113,16 +89,11 @@ export function PferdeakteInsights() {
   if (!data) return null;
 
   const metrics = [
-    { icon: Footprints, label: "Pferde dokumentiert", value: data.horseCount, color: "text-primary" },
+    { icon: Footprints, label: "Pferde dokumentiert", value: String(data.horseCount), color: "text-primary" },
     { icon: ClipboardCheck, label: "Ø Akten-Score", value: `${data.avgScore}%`, color: "text-blue-500" },
-    { icon: Syringe, label: "Impfalarm", value: data.overdueVacc, color: data.overdueVacc > 0 ? "text-red-500" : "text-green-500", alert: data.overdueVacc > 0 },
-    { icon: Users, label: "Fachpartner", value: data.partnerCount, color: "text-purple-500" },
+    { icon: Syringe, label: "Impfalarm", value: String(data.overdueVacc), color: data.overdueVacc > 0 ? "text-destructive" : "text-green-500", alert: data.overdueVacc > 0 },
+    { icon: Users, label: "Fachpartner", value: String(data.partnerCount), color: "text-purple-500" },
   ];
-
-  const daysAgo = (dateStr: string) => {
-    const d = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
-    return d === 0 ? "heute" : d === 1 ? "gestern" : `vor ${d} Tagen`;
-  };
 
   return (
     <Card>
@@ -133,21 +104,18 @@ export function PferdeakteInsights() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* KPI Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {metrics.map((m) => (
             <div key={m.label} className="rounded-xl border border-border bg-muted/30 p-3 text-center">
               <m.icon className={cn("h-5 w-5 mx-auto mb-1", m.color)} />
-              <p className={cn("text-xl font-bold", m.alert && "text-red-500")}>
-                {m.value}
-                {m.alert && " ⚠️"}
+              <p className={cn("text-xl font-bold", m.alert && "text-destructive")}>
+                {m.value}{m.alert ? " ⚠️" : ""}
               </p>
               <p className="text-[10px] text-muted-foreground leading-tight">{m.label}</p>
             </div>
           ))}
         </div>
 
-        {/* Recent Activity */}
         {data.recent.length > 0 && (
           <div className="space-y-1">
             <p className="text-xs font-medium text-muted-foreground">Letzte Aktivität</p>
@@ -162,7 +130,7 @@ export function PferdeakteInsights() {
                   <span className="text-muted-foreground"> · {r.type}</span>
                 </span>
                 <span className="text-[10px] text-muted-foreground flex items-center gap-1 flex-shrink-0">
-                  {daysAgo(r.date)}
+                  {daysAgoLabel(r.date)}
                   <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </span>
               </button>
