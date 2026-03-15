@@ -247,6 +247,8 @@ export default function ProviderHorseDetail() {
         hoofPhotosCount={hoofPhotos.length}
         documentsCount={documents.length}
       />
+      {/* Profile Completeness */}
+      <HorseProfileCompleteness horse={horse} onEditClick={() => setShowEditModal(true)} />
 
       {/* Hoof Status Grid */}
       <HoofStatusGrid
