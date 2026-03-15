@@ -72,10 +72,10 @@ export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props
           .neq("provider_id", currentUserId!)
           .order("date", { ascending: false })
           .limit(10),
-        supabase
+        (supabase
           .from("partner_treatment_notes")
           .select("id, title, partner_type, treatment_date, visible_to_pid, created_at")
-          .eq("horse_id", horseId)
+          .eq("horse_id", horseId) as any)
           .gt("created_at", lastVisitDate!)
           .neq("partner_id", currentUserId!)
           .order("created_at", { ascending: false })
@@ -87,10 +87,10 @@ export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props
           .gt("date", lastVisitDate!)
           .order("date", { ascending: false })
           .limit(10),
-        supabase
+        (supabase
           .from("horse_diary_entries")
           .select("id, title, category, created_at, shared_with_provider")
-          .eq("horse_id", horseId)
+          .eq("horse_id", horseId) as any)
           .gt("created_at", lastVisitDate!)
           .neq("created_by", currentUserId!)
           .order("created_at", { ascending: false })
