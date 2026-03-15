@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Camera, ChevronDown, ChevronUp, History, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getPartnerTypeConfig } from "@/lib/partnerTypes";
+import { DemoFeatureHighlight } from "@/components/demo/DemoFeatureHighlight";
 import type { PferdeakteUserRole, TimelineItem } from "./types";
 
 const FILTER_CHIPS = [
