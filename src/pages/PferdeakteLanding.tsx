@@ -196,117 +196,83 @@ function HeroIllustration() {
     if (!el) return;
     const obs = new IntersectionObserver(
       ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } },
-      { threshold: 0.2 }
+      { threshold: 0.15 }
     );
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
 
-  /*
-   * Each label has:
-   * - dotX/dotY: position of the dot ON the book (% of container)
-   * - side: where the label text goes
-   * - text/emoji
-   */
-  const labels = [
-    { emoji: "🛡️", text: "Impfpass",            dotX: 30, dotY: 18, side: "left"  as const, delay: 0 },
-    { emoji: "📋", text: "Hufbefunde",          dotX: 72, dotY: 28, side: "right" as const, delay: 150 },
-    { emoji: "🩺", text: "Tierarzt-Berichte",   dotX: 28, dotY: 50, side: "left"  as const, delay: 300 },
-    { emoji: "📊", text: "Behandlungshistorie", dotX: 70, dotY: 62, side: "right" as const, delay: 450 },
-    { emoji: "🔬", text: "Röntgenbilder",       dotX: 32, dotY: 82, side: "left"  as const, delay: 600 },
+  const left = [
+    { emoji: "🛡️", text: "Impfpass", delay: 0 },
+    { emoji: "🩺", text: "Tierarzt-Berichte", delay: 200 },
+    { emoji: "🔬", text: "Röntgenbilder", delay: 400 },
+  ];
+  const right = [
+    { emoji: "📋", text: "Hufbefunde", delay: 100 },
+    { emoji: "📊", text: "Behandlungshistorie", delay: 300 },
   ];
 
-  return (
-    <div ref={ref} className="relative w-full flex items-center justify-center py-6 md:py-4">
-      {/* Subtle glow behind book */}
-      <div
-        className="absolute rounded-full blur-3xl opacity-20 pointer-events-none"
+  const Label = ({ emoji, text, delay, side }: { emoji: string; text: string; delay: number; side: "left" | "right" }) => (
+    <div
+      className="pa-label flex items-center gap-1.5"
+      style={{
+        flexDirection: side === "left" ? "row" : "row-reverse",
+        animationDelay: visible ? `${delay}ms` : "0ms",
+        opacity: visible ? undefined : 0,
+      }}
+    >
+      <span
+        className="text-[11px] font-bold whitespace-nowrap px-2.5 py-1.5 rounded-full"
         style={{
-          width: 280, height: 280,
-          background: "radial-gradient(circle, #f97316 0%, transparent 70%)",
-          top: "50%", left: "50%",
-          transform: "translate(-50%, -50%)",
+          color: "#f97316",
+          backgroundColor: "rgba(255,247,237,.95)",
+          border: "1px solid rgba(249,115,22,.15)",
+          boxShadow: "0 1px 6px rgba(249,115,22,.08)",
         }}
+      >
+        {emoji} {text}
+      </span>
+      <div className="flex items-center" style={{ flexDirection: side === "left" ? "row" : "row-reverse" }}>
+        <div style={{ width: 20, height: 1, backgroundColor: "rgba(249,115,22,.3)" }} />
+        <div
+          className="w-2 h-2 rounded-full pa-dot flex-shrink-0"
+          style={{ backgroundColor: "#f97316", animationDelay: `${delay + 400}ms` }}
+        />
+      </div>
+    </div>
+  );
+
+  return (
+    <div ref={ref} className="relative w-full py-2">
+      {/* Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[250px] rounded-full blur-3xl opacity-15 pointer-events-none"
+        style={{ background: "radial-gradient(circle, #f97316, transparent 70%)" }}
       />
 
-      {/* Container for book + labels with SVG overlay */}
-      <div className="relative" style={{ width: "min(85vw, 400px)", aspectRatio: "3/4" }}>
-        {/* Book image – centered */}
+      {/* 3-column layout: labels | book | labels */}
+      <div className="flex items-center justify-center gap-2 sm:gap-4">
+        {/* Left labels */}
+        <div className="flex flex-col gap-5 items-end shrink-0">
+          {left.map((l) => (
+            <Label key={l.text} {...l} side="left" />
+          ))}
+        </div>
+
+        {/* Book */}
         <img
           src={pferdeakteIcon}
           alt="Digitale Pferdeakte"
-          className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[55%] h-auto z-10 pa-book transition-all duration-700 ${visible ? "opacity-100 scale-100" : "opacity-0 scale-90"}`}
-          style={{ filter: "drop-shadow(0 20px 40px rgba(249,115,22,.25))" }}
+          className={`w-[140px] sm:w-[180px] md:w-[240px] lg:w-[300px] h-auto flex-shrink-0 pa-book transition-all duration-700 ${visible ? "opacity-100 scale-100" : "opacity-0 scale-90"}`}
+          style={{ filter: "drop-shadow(0 16px 32px rgba(249,115,22,.2))" }}
           loading="eager"
         />
 
-        {/* SVG lines from dots to edges */}
-        <svg className="absolute inset-0 w-full h-full z-20 pointer-events-none" preserveAspectRatio="none">
-          {labels.map((l) => {
-            const endX = l.side === "left" ? 5 : 95;
-            const endY = l.dotY;
-            return (
-              <line
-                key={l.text}
-                x1={`${l.dotX}%`} y1={`${l.dotY}%`}
-                x2={`${endX}%`}   y2={`${endY}%`}
-                stroke="#f97316"
-                strokeWidth="1"
-                strokeOpacity="0.3"
-                className="pa-line"
-                style={{
-                  animationDelay: visible ? `${l.delay + 200}ms` : "0ms",
-                  opacity: visible ? undefined : 0,
-                }}
-              />
-            );
-          })}
-        </svg>
-
-        {/* Dots on the book */}
-        {labels.map((l) => (
-          <div
-            key={l.text + "-dot"}
-            className="absolute z-30 w-2.5 h-2.5 rounded-full pa-dot"
-            style={{
-              left: `${l.dotX}%`, top: `${l.dotY}%`,
-              transform: "translate(-50%, -50%)",
-              backgroundColor: "#f97316",
-              animationDelay: `${l.delay + 500}ms`,
-              opacity: visible ? undefined : 0,
-            }}
-          />
-        ))}
-
-        {/* Labels at the outer edge */}
-        {labels.map((l) => {
-          const isLeft = l.side === "left";
-          return (
-            <div
-              key={l.text + "-label"}
-              className="absolute z-30 pa-label"
-              style={{
-                top: `${l.dotY}%`,
-                transform: "translateY(-50%)",
-                ...(isLeft ? { left: 0 } : { right: 0 }),
-                animationDelay: visible ? `${l.delay}ms` : "0ms",
-                opacity: visible ? undefined : 0,
-              }}
-            >
-              <span
-                className="text-[10px] sm:text-[11px] font-bold whitespace-nowrap px-2 py-1 rounded-full inline-flex items-center gap-1"
-                style={{
-                  color: "#f97316",
-                  backgroundColor: "rgba(255,247,237,.92)",
-                  border: "1px solid rgba(249,115,22,.2)",
-                  boxShadow: "0 2px 8px rgba(249,115,22,.1)",
-                }}
-              >
-                <span>{l.emoji}</span> {l.text}
-              </span>
-            </div>
-          );
-        })}
+        {/* Right labels */}
+        <div className="flex flex-col gap-5 items-start shrink-0">
+          {right.map((l) => (
+            <Label key={l.text} {...l} side="right" />
+          ))}
+        </div>
       </div>
     </div>
   );
