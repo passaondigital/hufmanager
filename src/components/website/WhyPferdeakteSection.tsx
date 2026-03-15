@@ -22,24 +22,6 @@ const rc = (v: boolean, extra = "") =>
   `transition-all duration-[600ms] ease-out ${v ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"} ${extra}`;
 
 /* ── data ── */
-const cards = [
-  {
-    icon: "📋",
-    title: "Ich wusste nichts über das Pferd.",
-    text: "Keine Krankheiten, keine Verhaltensauffälligkeiten, keine individuellen Bedürfnisse. Man kann einem Pferd nicht so helfen wie es braucht, wenn man es nicht kennt. Das kostet Zeit, Energie, Geld — und schadet der Mensch-Pferd-Beziehung.",
-  },
-  {
-    icon: "📄",
-    title: "Die Papiere waren unvollständig oder fehlten ganz.",
-    text: "Dinge wurden verschwiegen. Wichtiges geriet in Vergessenheit oder wurde für unwichtig befunden. Vieles hätte sich ersparen lassen — für Mensch und Pferd.",
-  },
-  {
-    icon: "🔄",
-    title: "Im hektischen Alltag hat man nicht alles auf dem Schirm.",
-    text: "Auch bei eigenen Pferden. Man kann sich nicht alles merken. Nicht alles festhalten. Nicht immer überall dabei sein. Das ist keine Schwäche — das ist Realität.",
-  },
-];
-
 const timeline = [
   { period: "4.000 v. Chr.", what: "Nahrung & erste Domestizierung" },
   { period: "3.500 v. Chr.", what: "Mobilität — Reiten verändert alles" },
@@ -53,76 +35,12 @@ const scrollToWaitlist = () =>
 
 /* ── component ── */
 export default function WhyPferdeakteSection() {
-  const rIntro = useReveal();
-  const rCard0 = useReveal();
-  const rCard1 = useReveal();
-  const rCard2 = useReveal();
-  const rAfter = useReveal();
   const rHistory = useReveal();
   const rTable = useReveal();
   const rCta = useReveal();
-  const cardReveals = [rCard0, rCard1, rCard2];
 
   return (
     <>
-      {/* ━━━ INTRO + CARDS (white bg) ━━━ */}
-      <section className="py-20 md:py-28 bg-white">
-        <div className="max-w-5xl mx-auto px-6">
-          {/* Intro */}
-          <div ref={rIntro.ref} className={`text-center mb-14 ${rc(rIntro.visible)}`}>
-            <h2
-              className="text-3xl md:text-4xl lg:text-5xl font-extrabold leading-tight mb-4"
-              style={{ color: "#0a0a0a" }}
-            >
-              Drei Szenarien. Jeder kennt sie.
-            </h2>
-            <p className="text-base md:text-lg max-w-2xl mx-auto" style={{ color: "#6b7280" }}>
-              Ich hatte Pferde vor und bei mir — und jedes dieser Szenarien ist mir persönlich begegnet.
-            </p>
-          </div>
-
-          {/* Cards */}
-          <div className="grid md:grid-cols-3 gap-6 mb-10">
-            {cards.map((card, i) => (
-              <div
-                key={i}
-                ref={cardReveals[i].ref}
-                className={rc(cardReveals[i].visible)}
-                style={{ transitionDelay: `${i * 120}ms` }}
-              >
-                <div
-                  className="rounded-2xl p-6 md:p-8 h-full flex flex-col"
-                  style={{ backgroundColor: "#0a0a0a" }}
-                >
-                  <span className="text-3xl mb-4 block">{card.icon}</span>
-                  <h3
-                    className="text-lg font-bold mb-3 leading-snug"
-                    style={{ color: "#f97316" }}
-                  >
-                    {card.title}
-                  </h3>
-                  <p
-                    className="text-sm leading-relaxed flex-1"
-                    style={{ color: "rgba(255,255,255,.7)" }}
-                  >
-                    {card.text}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* After-cards text */}
-          <div ref={rAfter.ref} className={`text-center ${rc(rAfter.visible)}`}>
-            <p className="text-sm md:text-base max-w-xl mx-auto" style={{ color: "#6b7280" }}>
-              Das sind keine Ausnahmen. Das ist Pferdealltag.
-              <br />
-              Darum gibt es die Pferdeakte.
-            </p>
-          </div>
-        </div>
-      </section>
-
       {/* ━━━ HISTORICAL BLOCK (dark bg) ━━━ */}
       <section className="py-20 md:py-28" style={{ backgroundColor: "#0a0a0a" }}>
         <div className="max-w-4xl mx-auto px-6">

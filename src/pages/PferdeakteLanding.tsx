@@ -132,23 +132,23 @@ export default function PferdeakteLanding() {
       <StickyNav scrolled={scrolled} />
       {/* 1. HERO — Attention */}
       <HeroSection />
-      {/* 2. PROBLEM / Bewusstsein — Attention → Interest */}
+      {/* 2. PROBLEM — drei Szenarien */}
       <ProblemSection />
-      {/* 3. VERSTEHEN — Interest */}
-      <MissionSection />
-      {/* 4. LÖSUNG — Interest → Desire */}
+      {/* 3. LÖSUNG */}
       <SolutionSection />
+      {/* 4. FÜR WEN? */}
       <TargetGroupsSection />
-      {/* 5. VERTRAUEN / Loslassen — Desire */}
+      {/* 5. GRÜNDER */}
       <FounderSectionPA />
+      {/* 6. WARUM DIE PFERDEAKTE EXISTIERT (historisch + CTA) */}
       <WhyPferdeakteSection />
-      {/* 6. NEUAUSRICHTUNG — Desire */}
+      {/* 7. SOCIAL PROOF */}
       <SocialProofSection />
-      <SupportersSection />
-      {/* 7. TUN — Action */}
+      {/* 8. WAITLIST */}
       <WaitlistSection defaultRef={searchParams.get("ref") ?? ""} />
-      {/* 8. VERSTÄRKEN — Action */}
+      {/* 9. BOTSCHAFTER */}
       <BotschafterSection />
+      {/* 10. SHARE + FOOTER */}
       <ShareSection />
       <FooterSection />
     </div>
@@ -427,9 +427,9 @@ function HeroSection() {
    SECTION 2 — PROBLEM
    ═════════════════════════════════════════════════════════════ */
 const problemCards = [
-  { icon: "⚠️", title: "Das Pferd wird zweimal geimpft.", text: "Weil der neue Tierarzt die Vorgeschichte nicht kennt. Weil das Impfheft zu Hause liegt. Weil niemand gefragt hat." },
-  { icon: "⚖️", title: "Der Hufbearbeiter steht im Regen.", text: "Lahmheit festgestellt — aber wer war zuletzt dran? Ohne lückenlosen Nachweis gibt es keine Fakten. Nur Meinungen." },
-  { icon: "💔", title: "Das Pferd wird verkauft. Die Akte bleibt.", text: "Jahrelange Dokumentation — weg. Der neue Besitzer fängt bei null an. Das Pferd auch." },
+  { icon: "🔨", title: "Du bekommst ein Pferd vorgestellt.", text: "Als Profi stehst du vor einem Pferd das du nicht kennst. Keine Akte, keine Geschichte, kein Vorlauf. Du arbeitest blind — und trägst trotzdem die Verantwortung." },
+  { icon: "🐴", title: "Du kaufst, bekommst oder übernimmst ein Pferd.", text: "Was du bekommst ist das Tier — nicht seine Geschichte. Was wurde behandelt? Was wurde verschwiegen? Was liegt im Dunkeln? Du fängst bei null an." },
+  { icon: "📋", title: "Du kennst dein eigenes Pferd seit Jahren.", text: "Aber das große Ganze liegt verteilt auf Ordner, Handys und Köpfe. Behandlungen hier, Befunde dort, Erinnerungen irgendwo. Niemand hat den kompletten Überblick. Oft nicht mal du selbst." },
 ];
 
 function ProblemSection() {
@@ -445,7 +445,7 @@ function ProblemSection() {
           Die Realität im Pferdesport
         </p>
         <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-center text-white mb-16 leading-tight">
-          Was passiert, wenn niemand<br className="hidden sm:block" /> den Überblick hat.
+          Drei Situationen.<br className="hidden sm:block" /> Jeder kennt eine davon.
         </h2>
         <div className="grid md:grid-cols-3 gap-6">
           {problemCards.map((c, i) => {
@@ -464,7 +464,7 @@ function ProblemSection() {
             );
           })}
         </div>
-        <p className="text-center mt-14 text-lg max-w-xl mx-auto" style={{ color: "rgba(255,255,255,.6)" }}>
+        <p className="text-center mt-14 text-lg md:text-xl max-w-xl mx-auto" style={{ color: "rgba(255,255,255,.6)" }}>
           Das ist kein Einzelfall. Das ist der Standard.<br />
           <span className="text-white font-semibold">Bis jetzt.</span>
         </p>
