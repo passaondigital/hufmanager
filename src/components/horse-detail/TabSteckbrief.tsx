@@ -15,6 +15,7 @@ interface TabSteckbriefProps {
 // Extended horse type to include new DB fields
 interface ExtendedHorse extends Horse {
   ueln?: string | null;
+  passport_number?: string | null;
   fn_number?: string | null;
   brand_marks?: string | null;
   markings_diagram_url?: string | null;
