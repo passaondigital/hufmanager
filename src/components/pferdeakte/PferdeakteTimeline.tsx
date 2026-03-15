@@ -302,3 +302,129 @@ export function PferdeakteTimeline({ horseId, userRole }: Props) {
     </div>
   );
 }
+
+function TimelineCard({ item }: { item: TimelineItem }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const dotBg = item.type === "huf" ? "bg-primary" :
+    item.type.startsWith("vet") ? "bg-blue-500" :
+    item.type === "therapy" ? "bg-purple-500" :
+    item.type.startsWith("owner") ? "bg-green-500" :
+    "bg-muted-foreground";
+
+  const raw = item.rawData;
+
+  return (
+    <div className="flex gap-3 relative">
+      <div className={cn("h-[22px] w-[22px] rounded-full flex-shrink-0 flex items-center justify-center z-10", dotBg)}>
+        <div className="h-2 w-2 rounded-full bg-background" />
+      </div>
+
+      <Card className="flex-1 cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => setExpanded(!expanded)}>
+        <CardContent className="p-3">
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{item.badgeText}</Badge>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <span className="text-[10px] text-muted-foreground">
+                {new Date(item.date).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}
+              </span>
+              {expanded ? <ChevronUp className="h-3 w-3 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 text-muted-foreground" />}
+            </div>
+          </div>
+          <p className="text-sm font-medium text-foreground">{item.title}</p>
+          {!expanded && item.description && (
+            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{item.description}</p>
+          )}
+          {item.edid && (
+            <span className="text-[10px] font-mono text-muted-foreground mt-1 inline-block">{item.edid}</span>
+          )}
+
+          {/* Collapsed photo thumbnails */}
+          {!expanded && item.photos && item.photos.length > 0 && (
+            <div className="flex gap-1 mt-2">
+              {item.photos.slice(0, 4).map((url, i) => (
+                <div key={i} className="h-9 w-9 rounded bg-muted overflow-hidden flex-shrink-0">
+                  <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
+                </div>
+              ))}
+              {item.photos.length > 4 && (
+                <div className="h-9 w-9 rounded bg-muted flex items-center justify-center text-[10px] text-muted-foreground">
+                  +{item.photos.length - 4}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Expanded Details */}
+          {expanded && (
+            <div className="mt-3 pt-3 border-t border-border space-y-2 text-xs" onClick={(e) => e.stopPropagation()}>
+              {/* Huf details */}
+              {item.type === "huf" && raw && (
+                <>
+                  {raw.notes && <DetailRow label="Befund" value={raw.notes} />}
+                  {raw.completion_notes && <DetailRow label="Dokumentation" value={raw.completion_notes} />}
+                </>
+              )}
+
+              {/* Therapy details */}
+              {item.type === "therapy" && raw && (
+                <>
+                  {raw.findings && <DetailRow label="Befund" value={raw.findings} />}
+                  {raw.treatment && <DetailRow label="Behandlung" value={raw.treatment} />}
+                  {raw.recommendations && <DetailRow label="Empfehlung" value={raw.recommendations} />}
+                  {raw.next_treatment && <DetailRow label="Nächster Termin" value={raw.next_treatment} />}
+                </>
+              )}
+
+              {/* Vaccination details */}
+              {item.type === "vet_vaccination" && raw && (
+                <>
+                  {raw.batch_number && <DetailRow label="Charge" value={raw.batch_number} />}
+                  {raw.administered_by && <DetailRow label="Tierarzt" value={raw.administered_by} />}
+                  {raw.next_due_date && <DetailRow label="Nächste fällig" value={new Date(raw.next_due_date).toLocaleDateString("de-DE")} />}
+                </>
+              )}
+
+              {/* Deworming details */}
+              {item.type === "vet_deworming" && raw && (
+                <>
+                  {raw.active_substance && <DetailRow label="Wirkstoff" value={raw.active_substance} />}
+                  {raw.fecal_egg_count != null && <DetailRow label="Kotprobe (EPG)" value={String(raw.fecal_egg_count)} />}
+                </>
+              )}
+
+              {/* Owner notes */}
+              {(item.type === "owner_note" || item.type === "owner_health") && raw && (
+                <>
+                  {raw.text && <DetailRow label="Inhalt" value={raw.text} />}
+                  {raw.content && <DetailRow label="Inhalt" value={raw.content} />}
+                  {raw.notes && <DetailRow label="Notizen" value={raw.notes} />}
+                </>
+              )}
+
+              {/* Expanded photos */}
+              {item.photos && item.photos.length > 0 && (
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {item.photos.map((url, i) => (
+                    <div key={i} className="aspect-square rounded-lg overflow-hidden bg-muted">
+                      <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
+      <p className="text-xs text-foreground mt-0.5">{value}</p>
+    </div>
+  );
+}
