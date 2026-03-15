@@ -137,8 +137,8 @@ export function Pferdeakte({ horseId, userRole, horse: horseProp }: PferdeaktePr
         {statusData?.lastHealth && (
           <StatusPill
             icon={<Heart className="h-3.5 w-3.5" />}
-            label={`Wohlbefinden ${statusData.lastHealth.wellbeing_score}/5`}
-            variant={statusData.lastHealth.wellbeing_score >= 4 ? "success" : statusData.lastHealth.wellbeing_score >= 3 ? "warning" : "danger"}
+            label={`Wohlbefinden ${statusData.lastHealth.wellbeing}/5`}
+            variant={(statusData.lastHealth.wellbeing as number) >= 4 ? "success" : (statusData.lastHealth.wellbeing as number) >= 3 ? "warning" : "danger"}
           />
         )}
         {statusData?.nextAppt && (

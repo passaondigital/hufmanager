@@ -68,31 +68,31 @@ export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props
           .from("appointments")
           .select("id, date, service_type, notes, provider_id")
           .eq("horse_id", horseId)
-          .gt("date", lastVisitDate)
-          .neq("provider_id", currentUserId)
+          .gt("date", lastVisitDate!)
+          .neq("provider_id", currentUserId!)
           .order("date", { ascending: false })
           .limit(10),
         supabase
           .from("partner_treatment_notes")
           .select("id, title, partner_type, treatment_date, visible_to_pid, created_at")
           .eq("horse_id", horseId)
-          .gt("created_at", lastVisitDate)
-          .neq("partner_id", currentUserId)
+          .gt("created_at", lastVisitDate!)
+          .neq("partner_id", currentUserId!)
           .order("created_at", { ascending: false })
           .limit(10),
         supabase
           .from("horse_health_logs")
-          .select("id, date, wellbeing_score, notes, created_by")
+          .select("id, date, wellbeing, notes, owner_id")
           .eq("horse_id", horseId)
-          .gt("date", lastVisitDate)
+          .gt("date", lastVisitDate!)
           .order("date", { ascending: false })
           .limit(10),
         supabase
           .from("horse_diary_entries")
           .select("id, title, category, created_at, shared_with_provider")
           .eq("horse_id", horseId)
-          .gt("created_at", lastVisitDate)
-          .neq("created_by", currentUserId)
+          .gt("created_at", lastVisitDate!)
+          .neq("created_by", currentUserId!)
           .order("created_at", { ascending: false })
           .limit(10),
       ]);
