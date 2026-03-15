@@ -82,7 +82,7 @@ export function FirstStepsChecklist() {
         .limit(1);
 
       // Check horses (via contacts)
-      const { data: horsesData } = await supabase
+      const { data: horsesData } = await (supabase as any)
         .from("horses")
         .select("id, contacts!inner(provider_id)")
         .eq("contacts.provider_id", user.id)
