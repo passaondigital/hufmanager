@@ -198,7 +198,7 @@ export function Pferdeakte({ horseId, userRole, horse: horseProp, initialTab }: 
           <PferdeakteVet horseId={horseId} userRole={userRole} />
         )}
         {activeTab === "therapie" && (
-          <PferdeakteTherapie horseId={horseId} horseName={horse?.name} userRole={userRole} />
+          <PferdeakteTherapie horseId={horseId} horseName={horse?.name} userRole={userRole} ownerId={horse?.owner_id} />
         )}
         {activeTab === "berichte" && (
           <PferdeakteBerichte horseId={horseId} />
