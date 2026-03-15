@@ -22,12 +22,14 @@ const THERAPY_FILTERS = [
 
 interface Props {
   horseId: string;
+  horseName?: string;
   userRole: PferdeakteUserRole;
 }
 
-export function PferdeakteTherapie({ horseId, userRole }: Props) {
+export function PferdeakteTherapie({ horseId, horseName, userRole }: Props) {
   const [filter, setFilter] = useState("all");
   const [exporting, setExporting] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
 
   const { data: treatmentNotes, isLoading } = useQuery({
     queryKey: ["pferdeakte-therapy", horseId],
