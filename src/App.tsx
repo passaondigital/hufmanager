@@ -98,6 +98,7 @@ const WebsiteWiderruf = lazy(() => import("@/pages/website/Widerruf"));
 const Glossar = lazy(() => import("@/pages/Glossar"));
 const FAQ = lazy(() => import("@/pages/FAQ"));
 const Changelog = lazy(() => import("@/pages/Changelog"));
+const PferdeakteLanding = lazy(() => import("@/pages/PferdeakteLanding"));
 const PferdeakteBotschafter = lazy(() => import("@/pages/PferdeakteBotschafter"));
 const NotfallZugang = lazy(() => import("@/pages/NotfallZugang"));
 const BotschafterAuth = lazy(() => import("@/pages/botschafter/BotschafterAuth"));
