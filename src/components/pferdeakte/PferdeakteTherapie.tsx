@@ -103,7 +103,7 @@ export function PferdeakteTherapie({ horseId, horseName, userRole }: Props) {
             );
           })}
         </div>
-        {(userRole === "provider" || userRole === "owner") && (
+        {(userRole === "provider" || userRole === "client") && (
           <Button variant="outline" size="sm" className="gap-1.5 flex-shrink-0" onClick={() => setShowInvite(true)}>
             <UserPlus className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Einladen</span>
