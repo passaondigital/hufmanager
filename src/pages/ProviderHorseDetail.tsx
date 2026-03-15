@@ -55,6 +55,7 @@ const TABS = [
   { value: "dokumente", label: "Doku", icon: FolderOpen },
   { value: "partner", label: "Partner", icon: Users },
   { value: "material", label: "Material", icon: Activity },
+  { value: "pferdeakte", label: "Akte", icon: BookOpen },
   { value: "aktivitaeten", label: "Aktivitäten", icon: Activity },
 ] as const;
 
