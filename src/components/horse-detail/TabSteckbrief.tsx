@@ -15,6 +15,7 @@ interface TabSteckbriefProps {
 // Extended horse type to include new DB fields
 interface ExtendedHorse extends Horse {
   ueln?: string | null;
+  passport_number?: string | null;
   fn_number?: string | null;
   brand_marks?: string | null;
   markings_diagram_url?: string | null;
@@ -152,7 +153,7 @@ export function TabSteckbrief({ horse, onEdit }: TabSteckbriefProps) {
       {/* ─── NEW SECTIONS ─── */}
 
       {/* Official Identification */}
-      {(h.ueln || h.fn_number || h.brand_marks) && (
+      {(h.ueln || h.passport_number || h.fn_number || h.brand_marks) && (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
@@ -164,6 +165,7 @@ export function TabSteckbrief({ horse, onEdit }: TabSteckbriefProps) {
           <CardContent>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <InfoItem label={<>Lebensnummer (UELN)<InfoTip text="Universal Equine Life Number – internationale Identifikationsnummer aus dem Equidenpass" /></>} value={h.ueln} />
+              <InfoItem label={<>Passnummer<InfoTip text="Nummer auf dem physischen Equidenpass" /></>} value={h.passport_number} />
               <InfoItem label={<>FN-Nummer<InfoTip text="Nummer der Deutschen Reiterlichen Vereinigung" /></>} value={h.fn_number} />
               <InfoItem label={<>Brandzeichen<InfoTip text="Beschreibung der Abzeichen und Brandzeichen" /></>} value={h.brand_marks} />
             </div>

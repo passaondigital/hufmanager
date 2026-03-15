@@ -31,6 +31,8 @@ import { HorseDetailHero } from "@/components/horse-detail/HorseDetailHero";
 import { HorseDetailStats } from "@/components/horse-detail/HorseDetailStats";
 import { logHorseAction } from "@/utils/auditLog";
 import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
+import { HorseProfileCompleteness } from "@/components/horse-detail/HorseProfileCompleteness";
+import { HorseMaterialHistory } from "@/components/horse-detail/HorseMaterialHistory";
 
 interface OwnerProfile {
   id: string;
@@ -50,6 +52,7 @@ const TABS = [
   { value: "impfung-entwurmung", label: "Impfung", icon: Syringe },
   { value: "dokumente", label: "Doku", icon: FolderOpen },
   { value: "partner", label: "Partner", icon: Users },
+  { value: "material", label: "Material", icon: Activity },
   { value: "aktivitaeten", label: "Aktivitäten", icon: Activity },
 ] as const;
 
@@ -245,6 +248,8 @@ export default function ProviderHorseDetail() {
         hoofPhotosCount={hoofPhotos.length}
         documentsCount={documents.length}
       />
+      {/* Profile Completeness */}
+      <HorseProfileCompleteness horse={horse} onEditClick={() => setShowEditModal(true)} />
 
       {/* Hoof Status Grid */}
       <HoofStatusGrid
@@ -373,6 +378,9 @@ export default function ProviderHorseDetail() {
             horseName={horse.name}
             inviterRole="provider"
           />
+        )}
+        {activeTab === "material" && (
+          <HorseMaterialHistory horseId={horse.id} />
         )}
         {activeTab === "aktivitaeten" && (
           <TabAktivitaeten horseId={horse.id} />

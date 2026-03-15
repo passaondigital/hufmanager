@@ -45,6 +45,7 @@ const buildInitialForm = (h: Horse) => ({
   height: h.height || "",
   height_cm: h.height_cm?.toString() || "",
   chip_number: h.chip_number || "",
+  passport_number: (h as any).passport_number || "",
   discipline: h.discipline || "",
   usage: h.usage || "",
   housing: h.housing || "",
@@ -189,6 +190,7 @@ export function EditHorseModal({ horse, open, onClose, onSaved }: EditHorseModal
           height: form.height.trim() || null,
           height_cm: form.height_cm ? parseInt(form.height_cm) : null,
           chip_number: form.chip_number.trim() || null,
+          passport_number: form.passport_number.trim() || null,
           discipline: form.discipline.trim() || null,
           usage: form.usage || null,
           housing: form.housing || null,
@@ -371,6 +373,15 @@ export function EditHorseModal({ horse, open, onClose, onSaved }: EditHorseModal
                     value={form.chip_number}
                     onChange={e => setForm(f => ({ ...f, chip_number: e.target.value }))}
                     placeholder="15-stellige Chip-ID"
+                  />
+                </div>
+
+                <div>
+                  <Label>Passnummer</Label>
+                  <Input 
+                    value={form.passport_number}
+                    onChange={e => setForm(f => ({ ...f, passport_number: e.target.value }))}
+                    placeholder="z.B. DE 431310012345"
                   />
                 </div>
               </div>

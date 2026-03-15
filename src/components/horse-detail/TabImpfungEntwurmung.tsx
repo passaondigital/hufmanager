@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Syringe, Bug, Plus, FileText, Loader2, Upload } from "lucide-react";
+import { Syringe, Bug, Plus, FileText, Loader2, Upload, Download } from "lucide-react";
 import { HelpTip } from "@/components/ui/HelpTip";
 import { toast } from "sonner";
 import { logHorseAction } from "@/utils/auditLog";
@@ -83,7 +83,35 @@ export function TabImpfungEntwurmung({ horseId, readOnly = false }: TabImpfungEn
   const [saving, setSaving] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [docFile, setDocFile] = useState<File | null>(null);
+  const [exportingPdf, setExportingPdf] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExportPdf = async () => {
+    setExportingPdf(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Nicht angemeldet");
+
+      const { data, error } = await supabase.functions.invoke("generate-vaccination-report", {
+        body: { horse_id: horseId },
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, "_blank");
+        toast.success("Impfprotokoll erstellt");
+      } else if (data?.html) {
+        const blob = new Blob([data.html], { type: "text/html" });
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank");
+        toast.success("Impfprotokoll erstellt");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Export fehlgeschlagen");
+    } finally {
+      setExportingPdf(false);
+    }
+  };
 
   const [vaccForm, setVaccForm] = useState({
     vaccine_type: "", vaccine_name: "", vaccination_date: "",
@@ -231,11 +259,17 @@ export function TabImpfungEntwurmung({ horseId, readOnly = false }: TabImpfungEn
         </TabsList>
 
         <TabsContent value="impfpass" className="space-y-3 mt-3">
-          {!readOnly && (
-            <Button size="sm" onClick={() => setShowVaccModal(true)} className="w-full">
-              <Plus className="h-4 w-4 mr-1" /> Impfung eintragen
+          <div className="flex gap-2">
+            {!readOnly && (
+              <Button size="sm" onClick={() => setShowVaccModal(true)} className="flex-1">
+                <Plus className="h-4 w-4 mr-1" /> Impfung eintragen
+              </Button>
+            )}
+            <Button size="sm" variant="outline" onClick={handleExportPdf} disabled={exportingPdf}>
+              {exportingPdf ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Download className="h-4 w-4 mr-1" />}
+              PDF Export
             </Button>
-          )}
+          </div>
           {vaccinations.length === 0 ? (
             <Card className="border-dashed"><CardContent className="p-6 text-center text-sm text-muted-foreground">Noch keine Impfungen eingetragen</CardContent></Card>
           ) : (

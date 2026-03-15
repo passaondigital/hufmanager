@@ -166,6 +166,7 @@ export interface Appointment {
   provider_id: string | null;
   completed_at: string | null;
   is_confirmed_by_client: boolean | null;
+  edid?: string | null;
 }
 
 export interface HoofPhoto {

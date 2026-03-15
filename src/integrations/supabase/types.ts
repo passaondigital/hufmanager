@@ -1214,6 +1214,7 @@ export type Database = {
           discount_amount: number | null
           discount_reason: string | null
           duration: number | null
+          edid: string | null
           gait_analysis_done: boolean | null
           gait_analysis_ok: boolean | null
           gait_video_url: string | null
@@ -1268,6 +1269,7 @@ export type Database = {
           discount_amount?: number | null
           discount_reason?: string | null
           duration?: number | null
+          edid?: string | null
           gait_analysis_done?: boolean | null
           gait_analysis_ok?: boolean | null
           gait_video_url?: string | null
@@ -1322,6 +1324,7 @@ export type Database = {
           discount_amount?: number | null
           discount_reason?: string | null
           duration?: number | null
+          edid?: string | null
           gait_analysis_done?: boolean | null
           gait_analysis_ok?: boolean | null
           gait_video_url?: string | null
@@ -6559,6 +6562,7 @@ export type Database = {
           official_name: string | null
           organization_id: string | null
           owner_id: string
+          passport_number: string | null
           photo_url: string | null
           primary_location_id: string | null
           readable_id: string | null
@@ -6638,6 +6642,7 @@ export type Database = {
           official_name?: string | null
           organization_id?: string | null
           owner_id: string
+          passport_number?: string | null
           photo_url?: string | null
           primary_location_id?: string | null
           readable_id?: string | null
@@ -6717,6 +6722,7 @@ export type Database = {
           official_name?: string | null
           organization_id?: string | null
           owner_id?: string
+          passport_number?: string | null
           photo_url?: string | null
           primary_location_id?: string | null
           readable_id?: string | null
