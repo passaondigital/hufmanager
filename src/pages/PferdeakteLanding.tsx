@@ -13,6 +13,7 @@ import {
   Instagram,
   LinkIcon,
 } from "lucide-react";
+import pferdeakteIcon from "@/assets/pferdeakte-icon.png";
 import { Input } from "@/components/ui/input";
 import { useAnimatedCounter } from "@/hooks/useAnimatedCounter";
 
