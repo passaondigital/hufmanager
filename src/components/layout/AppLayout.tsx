@@ -108,7 +108,9 @@ export function AppLayout() {
   }
 
   return (
-    <div className="min-h-[100dvh] flex w-full bg-background overflow-safe">
+    <div className="min-h-[100dvh] flex flex-col w-full bg-background overflow-safe">
+      <DemoPresentationBanner />
+      <div className="flex flex-1">
       {/* Desktop Sidebar - hidden on mobile */}
       <div className="hidden lg:block">
         <AppSidebar />
