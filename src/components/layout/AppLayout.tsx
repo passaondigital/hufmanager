@@ -25,6 +25,7 @@ import { SpeedDialFAB } from "./SpeedDialFAB";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { FeierabendWaechter } from "@/components/tracking/FeierabendWaechter";
 import { DemoStickyBanner } from "@/components/demo/DemoStickyBanner";
+import { DemoPresentationBanner } from "@/components/demo/DemoPresentationBanner";
 import { TrialCountdownBanner } from "@/components/subscription/TrialCountdownBanner";
 import { useDemoActivityTracker } from "@/hooks/useDemoActivityTracker";
 import { useAutoflowMode, AutoflowMode } from "@/hooks/useAutoflowMode";
