@@ -496,6 +496,11 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
                 <AdminSmokeTest />
               </ProtectedRoute>
             } />
+            <Route path="/admin/organizations" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminOrganizations />
+              </ProtectedRoute>
+            } />
 
             {/* --- 2. PROVIDER (PROFI) ROUTES --- */}
             <Route
