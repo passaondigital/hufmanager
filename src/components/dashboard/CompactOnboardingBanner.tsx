@@ -20,7 +20,7 @@ export function CompactOnboardingBanner() {
           supabase.from("business_settings").select("business_name").eq("user_id", user.id).maybeSingle(),
           supabase.from("offers").select("id").eq("provider_id", user.id).limit(1),
           supabase.from("contacts").select("id").eq("provider_id", user.id).limit(1),
-          supabase.from("horses").select("id, contacts!inner(provider_id)").eq("contacts.provider_id", user.id).limit(1),
+          (supabase as any).from("horses").select("id, contacts!inner(provider_id)").eq("contacts.provider_id", user.id).limit(1),
           supabase.from("appointments").select("id").eq("provider_id", user.id).limit(1),
           supabase.from("invoices").select("id").eq("provider_id", user.id).limit(1),
         ]);

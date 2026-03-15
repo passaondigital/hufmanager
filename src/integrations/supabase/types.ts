@@ -1223,6 +1223,7 @@ export type Database = {
           id: string
           is_confirmed_by_client: boolean | null
           is_emergency: boolean | null
+          is_initial_assessment: boolean | null
           is_internally_paid: boolean | null
           is_multi_horse: boolean | null
           is_series_appointment: boolean | null
@@ -1278,6 +1279,7 @@ export type Database = {
           id?: string
           is_confirmed_by_client?: boolean | null
           is_emergency?: boolean | null
+          is_initial_assessment?: boolean | null
           is_internally_paid?: boolean | null
           is_multi_horse?: boolean | null
           is_series_appointment?: boolean | null
@@ -1333,6 +1335,7 @@ export type Database = {
           id?: string
           is_confirmed_by_client?: boolean | null
           is_emergency?: boolean | null
+          is_initial_assessment?: boolean | null
           is_internally_paid?: boolean | null
           is_multi_horse?: boolean | null
           is_series_appointment?: boolean | null
@@ -1615,6 +1618,71 @@ export type Database = {
           video_url?: string | null
         }
         Relationships: []
+      }
+      booking_waitlist: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          horse_id: string
+          id: string
+          notes: string | null
+          preference: string | null
+          preferred_week: string | null
+          provider_id: string
+          status: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          horse_id: string
+          id?: string
+          notes?: string | null
+          preference?: string | null
+          preferred_week?: string | null
+          provider_id: string
+          status?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          horse_id?: string
+          id?: string
+          notes?: string | null
+          preference?: string | null
+          preferred_week?: string | null
+          provider_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_waitlist_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_waitlist_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_waitlist_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_waitlist_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       botschafter_abrechnungen: {
         Row: {
@@ -2405,6 +2473,50 @@ export type Database = {
           referrer_id?: string
         }
         Relationships: []
+      }
+      client_subscriptions: {
+        Row: {
+          cancelled_at: string | null
+          client_id: string
+          horse_ids: string[]
+          id: string
+          next_appointment_due: string | null
+          plan_id: string
+          provider_id: string
+          started_at: string | null
+          status: string | null
+        }
+        Insert: {
+          cancelled_at?: string | null
+          client_id: string
+          horse_ids: string[]
+          id?: string
+          next_appointment_due?: string | null
+          plan_id: string
+          provider_id: string
+          started_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          cancelled_at?: string | null
+          client_id?: string
+          horse_ids?: string[]
+          id?: string
+          next_appointment_due?: string | null
+          plan_id?: string
+          provider_id?: string
+          started_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       config_snapshots: {
         Row: {
@@ -5993,6 +6105,101 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      horse_intake_history: {
+        Row: {
+          appointment_id: string | null
+          created_at: string | null
+          current_hoof_protection: string | null
+          horse_id: string
+          id: string
+          known_conditions: string[] | null
+          lameness_history: string | null
+          ownership_duration: string | null
+          previous_farrier: string | null
+          provider_id: string
+          trimming_interval: string | null
+          xrays_available: boolean | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string | null
+          current_hoof_protection?: string | null
+          horse_id: string
+          id?: string
+          known_conditions?: string[] | null
+          lameness_history?: string | null
+          ownership_duration?: string | null
+          previous_farrier?: string | null
+          provider_id: string
+          trimming_interval?: string | null
+          xrays_available?: boolean | null
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string | null
+          current_hoof_protection?: string | null
+          horse_id?: string
+          id?: string
+          known_conditions?: string[] | null
+          lameness_history?: string | null
+          ownership_duration?: string | null
+          previous_farrier?: string | null
+          provider_id?: string
+          trimming_interval?: string | null
+          xrays_available?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horse_intake_history_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_intake_history_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments_partner_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_intake_history_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "safe_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_intake_history_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_intake_history_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_intake_history_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_intake_history_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
             referencedColumns: ["id"]
           },
         ]
@@ -10163,6 +10370,7 @@ export type Database = {
           ecosystem_id: string | null
           education_verified: boolean | null
           email: string | null
+          email_preferences: string | null
           emergency_contacts: Json | null
           feature_flags: Json | null
           feature_statuses: Json | null
@@ -10287,6 +10495,7 @@ export type Database = {
           ecosystem_id?: string | null
           education_verified?: boolean | null
           email?: string | null
+          email_preferences?: string | null
           emergency_contacts?: Json | null
           feature_flags?: Json | null
           feature_statuses?: Json | null
@@ -10411,6 +10620,7 @@ export type Database = {
           ecosystem_id?: string | null
           education_verified?: boolean | null
           email?: string | null
+          email_preferences?: string | null
           emergency_contacts?: Json | null
           feature_flags?: Json | null
           feature_statuses?: Json | null
@@ -12440,6 +12650,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subscription_plans: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          includes: string[] | null
+          interval_weeks: number | null
+          is_active: boolean | null
+          max_horses: number | null
+          name: string
+          price_monthly: number
+          provider_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          includes?: string[] | null
+          interval_weeks?: number | null
+          is_active?: boolean | null
+          max_horses?: number | null
+          name: string
+          price_monthly: number
+          provider_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          includes?: string[] | null
+          interval_weeks?: number | null
+          is_active?: boolean | null
+          max_horses?: number | null
+          name?: string
+          price_monthly?: number
+          provider_id?: string
+        }
+        Relationships: []
       }
       subscription_settings: {
         Row: {
