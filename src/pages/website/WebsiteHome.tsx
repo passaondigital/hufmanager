@@ -117,6 +117,7 @@ const WebsiteHome = () => {
       <ChangelogSection />
       <HufrenteSection />
       <ForWhomSection />
+      <FounderSection variant="website" />
       <FAQ />
       <FinalCTA />
       <FooterNew />

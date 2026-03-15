@@ -132,6 +132,7 @@ export default function PferdeakteLanding() {
       <SupportersSection />
       <WaitlistSection defaultRef={searchParams.get("ref") ?? ""} />
       <SocialProofSection />
+      <FounderSectionPA />
       <BotschafterSection />
       <ShareSection />
       <FooterSection />
