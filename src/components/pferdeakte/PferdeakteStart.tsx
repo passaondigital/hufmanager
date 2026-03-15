@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Zap, Bell, Footprints, Stethoscope, Activity, FileText, Camera, Clock, CheckCircle, Lightbulb } from "lucide-react";
 import { toast } from "sonner";
+import { DemoFeatureHighlight } from "@/components/demo/DemoFeatureHighlight";
 import type { PferdeakteUserRole } from "./types";
 import type { Horse } from "@/components/horse-detail/types";
 
@@ -284,6 +285,8 @@ export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props
 
   return (
     <div className="space-y-6">
+      <DemoFeatureHighlight label="Rollbasiertes Start-Briefing" delay={500} />
+
       {/* News Since Last Visit */}
       <div className="rounded-xl bg-card border border-border overflow-hidden">
         <div className="px-4 py-3 flex items-center gap-2 border-b border-border bg-muted/30">

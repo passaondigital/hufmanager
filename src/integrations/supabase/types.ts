@@ -6575,6 +6575,7 @@ export type Database = {
           color: string | null
           contacts: Json | null
           created_at: string
+          current_medications: string | null
           dam_name: string | null
           deleted_at: string | null
           discipline: string | null
@@ -6605,6 +6606,7 @@ export type Database = {
           insurance_type: string[] | null
           insurance_valid_until: string | null
           is_new_horse: boolean | null
+          known_allergies: string | null
           last_anamnesis_date: string | null
           last_appointment_date: string | null
           latitude: number | null
@@ -6655,6 +6657,7 @@ export type Database = {
           color?: string | null
           contacts?: Json | null
           created_at?: string
+          current_medications?: string | null
           dam_name?: string | null
           deleted_at?: string | null
           discipline?: string | null
@@ -6685,6 +6688,7 @@ export type Database = {
           insurance_type?: string[] | null
           insurance_valid_until?: string | null
           is_new_horse?: boolean | null
+          known_allergies?: string | null
           last_anamnesis_date?: string | null
           last_appointment_date?: string | null
           latitude?: number | null
@@ -6735,6 +6739,7 @@ export type Database = {
           color?: string | null
           contacts?: Json | null
           created_at?: string
+          current_medications?: string | null
           dam_name?: string | null
           deleted_at?: string | null
           discipline?: string | null
@@ -6765,6 +6770,7 @@ export type Database = {
           insurance_type?: string[] | null
           insurance_valid_until?: string | null
           is_new_horse?: boolean | null
+          known_allergies?: string | null
           last_anamnesis_date?: string | null
           last_appointment_date?: string | null
           latitude?: number | null

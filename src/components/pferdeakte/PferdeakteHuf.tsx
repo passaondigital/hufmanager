@@ -11,6 +11,7 @@ import { HoofPhotoComparison } from "./HoofPhotoComparison";
 import { HufiAIVoiceRecorder } from "./HufiAIVoiceRecorder";
 import type { HoofFindingResult } from "./HufiAIVoiceRecorder";
 import type { PferdeakteUserRole } from "./types";
+import { DemoFeatureHighlight } from "@/components/demo/DemoFeatureHighlight";
 import { toast } from "sonner";
 
 interface Props {
@@ -133,6 +134,7 @@ export function PferdeakteHuf({ horseId, userRole }: Props) {
 
   return (
     <div className="space-y-6">
+      <DemoFeatureHighlight label="Strukturierte Hufwerte mit Verlauf" delay={500} />
       {/* Current Values Grid */}
       {latestAnalysis && (
         <div className="grid grid-cols-2 gap-3">

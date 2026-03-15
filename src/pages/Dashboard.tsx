@@ -11,6 +11,7 @@ import { WidgetGrid } from "@/components/dashboard/widgets/WidgetGrid";
 import { DashboardSidebar } from "@/components/dashboard/sidebar/DashboardSidebar";
 import { PferdeakteInsights } from "@/components/dashboard/PferdeakteInsights";
 import { RecentPferdeakten } from "@/components/dashboard/RecentPferdeakten";
+import { InsuranceInsights } from "@/components/dashboard/InsuranceInsights";
 import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -73,6 +74,7 @@ const Dashboard = () => {
 
         {/* Pferdeakte Insights + Recent */}
         <PferdeakteInsights />
+        <InsuranceInsights />
         <RecentPferdeakten />
 
         {/* Main Content: Widget Grid + Sidebar */}

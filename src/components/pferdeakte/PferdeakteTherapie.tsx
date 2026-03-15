@@ -10,6 +10,7 @@ import { getPartnerTypeConfig, PARTNER_TYPE_OPTIONS } from "@/lib/partnerTypes";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { InvitePartnerModal } from "@/components/horse-detail/InvitePartnerModal";
+import { DemoFeatureHighlight } from "@/components/demo/DemoFeatureHighlight";
 import type { PferdeakteUserRole } from "./types";
 
 const THERAPY_FILTERS = [
@@ -82,6 +83,7 @@ export function PferdeakteTherapie({ horseId, horseName, userRole }: Props) {
 
   return (
     <div className="space-y-4">
+      <DemoFeatureHighlight label="Cross-Provider Befunde & Empfehlungen" delay={500} />
       {/* Filter Chips + Invite Button */}
       <div className="flex items-center gap-2">
         <div className="flex overflow-x-auto gap-1.5 scrollbar-hide flex-1">

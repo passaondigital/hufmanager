@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Download, QrCode, RefreshCw, Share2, Loader2 } from "lucide-react";
+import { DemoFeatureHighlight } from "@/components/demo/DemoFeatureHighlight";
 import { toast } from "sonner";
 
 interface EmergencyQRCodeProps {
@@ -128,6 +129,7 @@ export function EmergencyQRCode({ horseId, horseName, horseEqid }: EmergencyQRCo
   return (
     <Card>
       <CardContent className="p-4 space-y-3">
+        <DemoFeatureHighlight label="Stalltor-QR für Notfall-Zugang" delay={800} />
         <div className="flex items-center gap-2">
           <QrCode className="h-4 w-4 text-primary" />
           <h4 className="text-sm font-semibold text-foreground">Notfall QR-Code</h4>

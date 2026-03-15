@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { uploadFile, getStorageUrl } from "@/lib/storage";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import { DemoFeatureHighlight } from "@/components/demo/DemoFeatureHighlight";
 import { EmergencyQRCode } from "./EmergencyQRCode";
 
 interface PferdeakteTresorProps {
@@ -411,6 +412,7 @@ export function PferdeakteTresor({ horseId, horse }: PferdeakteTresorProps) {
   // ─── UNLOCKED STATE ───
   return (
     <div className="space-y-4">
+      <DemoFeatureHighlight label="PostIdent-gesicherter Dokumenten-Tresor" delay={500} />
       <TresorHeader verified />
 
       {/* Notfall-Kontakt Bar */}

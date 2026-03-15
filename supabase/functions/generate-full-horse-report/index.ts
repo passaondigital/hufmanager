@@ -51,7 +51,8 @@ serve(async (req) => {
       });
     }
 
-    const { horse_id } = await req.json();
+    const { horse_id, mode } = await req.json();
+    const isAku = mode === "aku";
     if (!horse_id) {
       return new Response(JSON.stringify({ error: "horse_id required" }), {
         status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -66,7 +67,7 @@ serve(async (req) => {
       supabase.from("horse_vaccinations").select("*").eq("horse_id", horse_id).order("vaccination_date", { ascending: false }),
       supabase.from("horse_deworming").select("*").eq("horse_id", horse_id).order("deworming_date", { ascending: false }),
       supabase.from("partner_treatment_notes").select("*").eq("horse_id", horse_id).order("treatment_date", { ascending: false }),
-      supabase.from("horse_health_logs").select("*").eq("horse_id", horse_id).order("date", { ascending: false }).limit(10),
+      supabase.from("horse_health_logs").select("*").eq("horse_id", horse_id).order("date", { ascending: false }).limit(isAku ? 1000 : 10),
     ]);
 
     if (horseRes.error || !horseRes.data) {
@@ -103,8 +104,13 @@ serve(async (req) => {
       ernaehrungsberater: "Ernährungsberater", other: "Sonstige",
     };
 
+    const reportTitle = isAku ? 'AKU-MAPPE' : '📋 Gesamtbericht';
+    const reportFooterLabel = isAku ? 'AKU-Mappe' : 'Gesamtbericht';
+    const apptSlice = isAku ? completedAppts : completedAppts.slice(0, 6);
+    const apptSectionTitle = isAku ? 'Alle Termine' : 'Letzte 6 Termine';
+
     const html = `<!DOCTYPE html>
-<html lang="de"><head><meta charset="utf-8"><title>Gesamtbericht – ${esc(horse.name)}</title>
+<html lang="de"><head><meta charset="utf-8"><title>${reportTitle} – ${esc(horse.name)}</title>
 <style>
   body { font-family: Arial, Helvetica, sans-serif; max-width: 900px; margin: 0 auto; padding: 24px; color: #1a1a1a; font-size: 13px; line-height: 1.5; }
   h1 { color: #0A0700; border-bottom: 3px solid #F5970A; padding-bottom: 10px; font-size: 22px; margin-bottom: 8px; }
@@ -120,10 +126,11 @@ serve(async (req) => {
   .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; color: white; }
   .footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #ddd; font-size: 10px; color: #999; text-align: center; }
   .subtitle { color: #888; font-size: 13px; margin-top: 0; }
+  .info-box { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 12px; margin: 16px 0; font-size: 12px; color: #9a3412; }
   @media print { body { padding: 12px; } h1 { font-size: 18px; } }
 </style></head><body>
 
-<h1>📋 Gesamtbericht – ${esc(horse.name)}</h1>
+<h1>${reportTitle} – ${esc(horse.name)}</h1>
 <p class="subtitle">${esc(horse.readable_id ? '#' + horse.readable_id : '')} · Erstellt am ${today}</p>
 
 <h2>1. Stammdaten</h2>
@@ -145,13 +152,13 @@ serve(async (req) => {
 <h2>2. Hufverlauf</h2>
 <p>${completedAppts.length} abgeschlossene Bearbeitungen${completedAppts.length > 0 ? ' · ' + fmtDate(completedAppts[completedAppts.length - 1]?.date) + ' bis ' + fmtDate(completedAppts[0]?.date) : ''}</p>
 
-<h3>Letzte 6 Termine</h3>
-${completedAppts.length > 0 ? `<table>
+<h3>${apptSectionTitle}</h3>
+${apptSlice.length > 0 ? `<table>
   <thead><tr><th>Datum</th><th>Typ</th><th>Zusammenfassung</th><th>#EDID</th></tr></thead>
-  <tbody>${completedAppts.slice(0, 6).map((a: any) => `<tr>
+  <tbody>${apptSlice.map((a: any) => `<tr>
     <td>${fmtDate(a.date)}</td>
     <td>${esc(a.service_type) || 'Bearbeitung'}</td>
-    <td>${esc((a.completion_notes || a.notes || '').substring(0, 120))}${(a.completion_notes || a.notes || '').length > 120 ? '…' : ''}</td>
+    <td>${esc((a.completion_notes || a.notes || '').substring(0, isAku ? 500 : 120))}${!isAku && (a.completion_notes || a.notes || '').length > 120 ? '…' : ''}</td>
     <td style="font-family:monospace;font-size:10px">${esc(a.edid) || '—'}</td>
   </tr>`).join('')}</tbody>
 </table>` : '<p style="color:#888">Keine Termine vorhanden.</p>'}
@@ -213,8 +220,8 @@ ${partnerNotes.length > 0 ? (() => {
         <tbody>${notes.map((n: any) => `<tr>
           <td>${fmtDate(n.treatment_date)}</td>
           <td>${esc(n.title)}</td>
-          <td>${esc((n.findings || '').substring(0, 100))}${(n.findings || '').length > 100 ? '…' : ''}</td>
-          <td>${esc((n.next_treatment || '').substring(0, 100))}</td>
+          <td>${esc((n.findings || '').substring(0, isAku ? 1000 : 100))}${!isAku && (n.findings || '').length > 100 ? '…' : ''}</td>
+          <td>${esc((n.recommendations || n.next_treatment || '').substring(0, isAku ? 1000 : 100))}</td>
         </tr>`).join('')}</tbody>
       </table>`).join('');
   })() : '<p style="color:#888">Keine Therapie-Notizen vorhanden.</p>'}
@@ -230,8 +237,12 @@ ${healthLogs.length > 0 ? `<table>
   </tr>`).join('')}</tbody>
 </table>` : '<p style="color:#888">Keine Gesundheits-Logs vorhanden.</p>'}
 
+${isAku ? `<div class="info-box">
+  <strong>Hinweis:</strong> Tresor-Dokumente (Röntgenbilder, Befunde) sind über den gesicherten Tresor-Zugang verfügbar und nicht in diesem Bericht enthalten.
+</div>` : ''}
+
 <div class="footer">
-  <p>Erstellt am ${today} via HufManager · #ZukunftHuf2030</p>
+  <p>${reportFooterLabel} erstellt am ${today} via HufManager · #ZukunftHuf2030</p>
   <p style="font-size:9px;margin-top:4px">Tresor-Dokumente sind in diesem Bericht nicht enthalten.</p>
 </div>
 
