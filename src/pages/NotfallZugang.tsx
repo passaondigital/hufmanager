@@ -46,7 +46,7 @@ export default function NotfallZugang() {
       const readableId = eqid.startsWith("#") ? eqid : `#${eqid}`;
       const { data: horseData, error: horseErr } = await supabase
         .from("horses")
-        .select("id, name, breed, birth_year, gender, photo_url, readable_id, chip_number, contacts, insurance_company, insurance_type, insurance_number, owner_id")
+        .select("id, name, breed, birth_year, gender, photo_url, readable_id, chip_number, contacts, insurance_company, insurance_type, owner_id")
         .or(`readable_id.eq.${readableId},readable_id.eq.${eqid}`)
         .is("deleted_at", null)
         .maybeSingle();
