@@ -324,6 +324,42 @@ export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props
         </div>
       </div>
 
+      {/* Cross-Provider Recommendations */}
+      {activeRecs.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Empfehlungen</p>
+          {activeRecs.map((rec, idx) => (
+            <Card key={`${rec.noteId}-${rec.recIndex}`} className="border-l-4 border-l-primary bg-primary/5">
+              <CardContent className="p-3">
+                <div className="flex items-start gap-2">
+                  <Lightbulb className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-foreground">
+                      <span className="font-medium">{rec.partnerName}</span> empfiehlt:
+                    </p>
+                    <p className="text-sm text-foreground mt-0.5">{rec.message}</p>
+                    {rec.dueDate && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Bis {new Date(rec.dueDate).toLocaleDateString("de-DE")}
+                      </p>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 h-7 text-xs"
+                      onClick={() => acknowledgeRecommendation(rec.noteId, rec.recIndex)}
+                    >
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Gelesen
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
       {/* Reminders */}
       {reminders && reminders.length > 0 && (
         <div className="space-y-2">
