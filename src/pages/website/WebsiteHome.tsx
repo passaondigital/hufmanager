@@ -3,6 +3,7 @@ import Navbar from "@/components/website/Navbar";
 import { useGA4 } from "@/hooks/useGA4";
 import HeroMinimal from "@/components/website/HeroMinimal";
 import PainCardsSection from "@/components/website/PainCardsSection";
+import WhatIsHufManagerSection from "@/components/website/WhatIsHufManagerSection";
 import EcosystemHeader from "@/components/website/EcosystemMinimal";
 import HorseEcosystem from "@/components/website/HorseEcosystem";
 import { DataSovereigntyBadge } from "@/components/shared/DataSovereigntyBadge";
@@ -72,6 +73,8 @@ const WebsiteHome = () => {
       <HeroMinimal />
       {/* 2. Drei Schmerzen */}
       <PainCardsSection />
+      {/* 2b. Was ist HufManager */}
+      <WhatIsHufManagerSection />
       {/* 3. Ökosystem */}
       <EcosystemHeader />
       <HorseEcosystem />
