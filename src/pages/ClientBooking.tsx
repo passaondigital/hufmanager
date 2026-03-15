@@ -523,6 +523,46 @@ export default function ClientBooking() {
               />
             </div>
 
+            {/* Additional health info */}
+            <details className="group">
+              <summary className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer list-none">
+                <Heart className="h-4 w-4 text-primary" />
+                Gesundheitsinfos für deinen Hufbearbeiter (optional)
+                <ChevronDown className="h-4 w-4 text-muted-foreground ml-auto group-open:rotate-180 transition-transform" />
+              </summary>
+              <div className="mt-3 space-y-3">
+                <div>
+                  <Label className="text-xs">Hat dein Pferd bekannte Vorerkrankungen?</Label>
+                  <Textarea value={healthHistory} onChange={e => setHealthHistory(e.target.value)} placeholder="z.B. Hufgeschwür, Hufrehe, Sehnenschaden..." rows={2} className="mt-1 text-base" />
+                </div>
+                <div>
+                  <Label className="text-xs">Wer ist der aktuelle/letzte Hufbearbeiter?</Label>
+                  <Input value={currentFarrier} onChange={e => setCurrentFarrier(e.target.value)} placeholder="Name" className="mt-1 text-base" />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">Tierarzt (Name)</Label>
+                    <Input value={vetName} onChange={e => setVetName(e.target.value)} placeholder="Dr. ..." className="mt-1 text-base" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Tierarzt (Telefon)</Label>
+                    <Input value={vetPhone} onChange={e => setVetPhone(e.target.value)} placeholder="0123..." inputMode="tel" className="mt-1 text-base" />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">Welchen Hufschutz trägt dein Pferd?</Label>
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {["Barhuf", "Eisen", "Kunststoff", "Klebebeschlag", "Hufschuhe", "Weiß nicht"].map(opt => (
+                      <button key={opt} type="button"
+                        onClick={() => setHoofProtection(hoofProtection === opt ? "" : opt)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${hoofProtection === opt ? "bg-primary/15 text-primary border-primary/30" : "text-muted-foreground border-border hover:bg-secondary"}`}
+                      >{opt}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </details>
+
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setStep("horse")}>
                 Zurück
