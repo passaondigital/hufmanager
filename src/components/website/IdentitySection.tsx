@@ -9,7 +9,7 @@ const IdentitySection = () => (
         </h2>
         <div className="space-y-4 text-white/70 text-lg leading-relaxed max-w-2xl mx-auto">
           <p>
-            HufManager wurde gegründet von einem Pferdeprofi mit über 15 Jahren Erfahrung in der Pferdebranche. Nicht aus einem Büro heraus. Aus dem Stall. Von der Praxis – für die Praxis. Für die Menschen, die täglich mit Pferden leben und arbeiten.
+            HufManager wurde gegründet von einem Pferdeprofi mit fast 20 Jahren Erfahrung in der Pferdebranche. Nicht aus einem Büro heraus. Aus dem Stall. Von der Praxis – für die Praxis. Für die Menschen, die täglich mit Pferden leben und arbeiten.
           </p>
         </div>
         <div className="pt-4">
