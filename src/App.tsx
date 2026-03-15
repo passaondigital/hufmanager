@@ -410,6 +410,11 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/glossar" element={<Glossar />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="/changelog" element={<Changelog />} />
+            <Route path="/statistiken" element={<Statistiken />} />
+            
+            {/* Portal Routes (auth required, handled inside component) */}
+            <Route path="/portal/:slug" element={<PortalDashboard />} />
+            <Route path="/portal/:slug/settings" element={<PortalSettings />} />
             
             {/* Pferdeakte is handled by PferdeakteRouteGuard above AppContent */}
             
