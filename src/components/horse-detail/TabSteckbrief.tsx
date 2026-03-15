@@ -312,7 +312,8 @@ export function TabSteckbrief({ horse, onEdit }: TabSteckbriefProps) {
       <HorseContactsSection 
         contacts={h.contacts as HorseContacts | null} 
         onEdit={onEdit} 
-        editable 
+        editable
+        horseId={h.id}
       />
 
       {/* Empty State */}

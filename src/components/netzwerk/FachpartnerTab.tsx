@@ -8,17 +8,24 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Stethoscope, Plus, Heart } from "lucide-react";
-import { getPartnerTypeConfig } from "@/lib/partnerTypes";
+import { getPartnerTypeConfig, PARTNER_TYPE_OPTIONS } from "@/lib/partnerTypes";
 import { InvitePartnerModal } from "@/components/horse-detail/InvitePartnerModal";
+import { cn } from "@/lib/utils";
+
+const PROFESSION_FILTERS = [
+  { value: "all", label: "Alle" },
+  ...PARTNER_TYPE_OPTIONS.filter((o) => o.value !== "other"),
+  { value: "other", label: "Sonstige", icon: undefined, color: "" },
+];
 
 export function FachpartnerTab() {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
+  const [professionFilter, setProfessionFilter] = useState("all");
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [selectedHorseId, setSelectedHorseId] = useState<string>("");
   const [selectedHorseName, setSelectedHorseName] = useState<string>("");
 
-  // Fetch all partner access entries for provider's horses
   const { data: partnerAccess = [], isLoading } = useQuery({
     queryKey: ["fachpartner-netzwerk", user?.id],
     queryFn: async () => {
@@ -34,7 +41,6 @@ export function FachpartnerTab() {
     enabled: !!user?.id,
   });
 
-  // Fetch provider's horses for invite modal
   const { data: horses = [] } = useQuery({
     queryKey: ["provider-horses-for-invite", user?.id],
     queryFn: async () => {
@@ -51,7 +57,7 @@ export function FachpartnerTab() {
   });
 
   // Group by partner
-  const partnerMap = new Map<string, { name: string; email: string; type: string; prid?: string; horses: { id: string; name: string; readableId?: string }[] }>();
+  const partnerMap = new Map<string, { name: string; email: string; type: string; horses: { id: string; name: string; readableId?: string }[] }>();
   
   partnerAccess.forEach((access: any) => {
     const key = access.partner_email || access.partner_profile_id || access.id;
@@ -75,7 +81,13 @@ export function FachpartnerTab() {
   });
 
   const partners = Array.from(partnerMap.values());
-  const filtered = partners.filter(
+  
+  // Apply profession filter
+  const professionFiltered = professionFilter === "all" 
+    ? partners 
+    : partners.filter((p) => p.type === professionFilter);
+
+  const filtered = professionFiltered.filter(
     (p) =>
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -114,6 +126,30 @@ export function FachpartnerTab() {
             Partner einladen
           </Button>
         )}
+      </div>
+
+      {/* Profession Filter Chips */}
+      <div className="flex overflow-x-auto gap-1.5 py-1 scrollbar-hide">
+        {PROFESSION_FILTERS.map((filter) => {
+          const isActive = professionFilter === filter.value;
+          const config = filter.value !== "all" ? getPartnerTypeConfig(filter.value) : null;
+          const Icon = config?.icon;
+          return (
+            <button
+              key={filter.value}
+              onClick={() => setProfessionFilter(filter.value)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors flex-shrink-0 border",
+                isActive
+                  ? "bg-primary/15 text-primary border-primary/30 font-medium"
+                  : "text-muted-foreground border-transparent hover:bg-secondary"
+              )}
+            >
+              {Icon && <Icon className="h-3.5 w-3.5" />}
+              <span>{filter.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {isLoading ? (
