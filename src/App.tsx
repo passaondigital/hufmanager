@@ -97,6 +97,7 @@ const WebsiteWiderruf = lazy(() => import("@/pages/website/Widerruf"));
 const Glossar = lazy(() => import("@/pages/Glossar"));
 const PferdeakteLanding = lazy(() => import("@/pages/PferdeakteLanding"));
 const PferdeakteBotschafter = lazy(() => import("@/pages/PferdeakteBotschafter"));
+const NotfallZugang = lazy(() => import("@/pages/NotfallZugang"));
 const BotschafterAuth = lazy(() => import("@/pages/botschafter/BotschafterAuth"));
 const BotschafterWarten = lazy(() => import("@/pages/botschafter/BotschafterWarten"));
 const ManagementBotschafter = lazy(() => import("@/pages/provider/ManagementBotschafter"));
@@ -219,13 +220,14 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const path = location.pathname;
   // Intercept public routes that don't need AuthProvider
-  if (path.startsWith('/pferdeakte') || path === '/botschafter/login' || path === '/botschafter/warten') {
+  if (path.startsWith('/pferdeakte') || path.startsWith('/notfall/') || path === '/botschafter/login' || path === '/botschafter/warten') {
     return (
       <Suspense fallback={<LazyFallback />}>
         <Routes>
           <Route path="/pferdeakte" element={<PferdeakteLanding />} />
           <Route path="/pferdeakte/botschafter" element={<PferdeakteBotschafter />} />
           <Route path="/pferdeakte/*" element={<PferdeakteLanding />} />
+          <Route path="/notfall/:eqid/:token" element={<NotfallZugang />} />
           <Route path="/botschafter/login" element={<BotschafterAuth />} />
           <Route path="/botschafter/warten" element={<BotschafterWarten />} />
         </Routes>

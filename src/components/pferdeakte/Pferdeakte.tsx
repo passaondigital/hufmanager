@@ -18,7 +18,7 @@ import { PferdeakteHuf } from "./PferdeakteHuf";
 import { PferdeakteVet } from "./PferdeakteVet";
 import { PferdeakteTherapie } from "./PferdeakteTherapie";
 import { PferdeakteBerichte } from "./PferdeakteBerichte";
-import { VaultTab } from "@/components/client/VaultTab";
+import { PferdeakteTresor } from "./PferdeakteTresor";
 
 const PFERDEAKTE_TABS = [
   { value: "start", label: "Start", icon: Play },
@@ -203,7 +203,7 @@ export function Pferdeakte({ horseId, userRole, horse: horseProp }: PferdeaktePr
           <PferdeakteBerichte horseId={horseId} />
         )}
         {activeTab === "tresor" && (
-          <VaultTab horseId={horseId} />
+          <PferdeakteTresor horseId={horseId} horse={horse} />
         )}
       </div>
     </div>
