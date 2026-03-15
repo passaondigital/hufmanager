@@ -165,6 +165,7 @@ export function TabSteckbrief({ horse, onEdit }: TabSteckbriefProps) {
           <CardContent>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <InfoItem label={<>Lebensnummer (UELN)<InfoTip text="Universal Equine Life Number – internationale Identifikationsnummer aus dem Equidenpass" /></>} value={h.ueln} />
+              <InfoItem label={<>Passnummer<InfoTip text="Nummer auf dem physischen Equidenpass" /></>} value={h.passport_number} />
               <InfoItem label={<>FN-Nummer<InfoTip text="Nummer der Deutschen Reiterlichen Vereinigung" /></>} value={h.fn_number} />
               <InfoItem label={<>Brandzeichen<InfoTip text="Beschreibung der Abzeichen und Brandzeichen" /></>} value={h.brand_marks} />
             </div>

@@ -117,6 +117,9 @@ export function TabHistorie({ appointments, horseId }: TabHistorieProps) {
                             <div>
                               <p className="font-medium text-foreground flex items-center gap-2 group-hover:text-primary transition-colors">
                                 {format(new Date(apt.date), "dd. MMMM yyyy", { locale: de })}
+                                {(apt as any).edid && (
+                                  <span className="font-mono text-xs text-muted-foreground">{(apt as any).edid}</span>
+                                )}
                                 {/* Media indicator */}
                                 {hasMedia && (
                                   <span className="inline-flex items-center gap-1 text-xs text-primary bg-primary/10 px-1.5 py-0.5 rounded" title={`${attachedMedia.length} Anhänge`}>

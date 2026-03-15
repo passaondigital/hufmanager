@@ -375,6 +375,15 @@ export function EditHorseModal({ horse, open, onClose, onSaved }: EditHorseModal
                     placeholder="15-stellige Chip-ID"
                   />
                 </div>
+
+                <div>
+                  <Label>Passnummer</Label>
+                  <Input 
+                    value={form.passport_number}
+                    onChange={e => setForm(f => ({ ...f, passport_number: e.target.value }))}
+                    placeholder="z.B. DE 431310012345"
+                  />
+                </div>
               </div>
 
               {/* Sektion: Haltung & Nutzung */}
