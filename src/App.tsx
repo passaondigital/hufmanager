@@ -70,6 +70,7 @@ const ClientHorses = lazy(() => import("@/pages/ClientHorses"));
 const ClientLocations = lazy(() => import("@/pages/ClientLocations"));
 const ClientNotifications = lazy(() => import("@/pages/ClientNotifications"));
 const ClientOrders = lazy(() => import("@/pages/client/ClientOrders"));
+const SearchProviders = lazy(() => import("@/pages/client/SearchProviders"));
 const ProviderLanding = lazy(() => import("@/pages/ProviderLanding"));
 const WidgetPage = lazy(() => import("@/pages/WidgetPage"));
 const MeineWebsite = lazy(() => import("@/pages/MeineWebsite"));
