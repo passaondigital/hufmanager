@@ -104,8 +104,13 @@ serve(async (req) => {
       ernaehrungsberater: "Ernährungsberater", other: "Sonstige",
     };
 
+    const reportTitle = isAku ? 'AKU-MAPPE' : '📋 Gesamtbericht';
+    const reportFooterLabel = isAku ? 'AKU-Mappe' : 'Gesamtbericht';
+    const apptSlice = isAku ? completedAppts : completedAppts.slice(0, 6);
+    const apptSectionTitle = isAku ? 'Alle Termine' : 'Letzte 6 Termine';
+
     const html = `<!DOCTYPE html>
-<html lang="de"><head><meta charset="utf-8"><title>Gesamtbericht – ${esc(horse.name)}</title>
+<html lang="de"><head><meta charset="utf-8"><title>${reportTitle} – ${esc(horse.name)}</title>
 <style>
   body { font-family: Arial, Helvetica, sans-serif; max-width: 900px; margin: 0 auto; padding: 24px; color: #1a1a1a; font-size: 13px; line-height: 1.5; }
   h1 { color: #0A0700; border-bottom: 3px solid #F5970A; padding-bottom: 10px; font-size: 22px; margin-bottom: 8px; }
@@ -121,10 +126,11 @@ serve(async (req) => {
   .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; color: white; }
   .footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #ddd; font-size: 10px; color: #999; text-align: center; }
   .subtitle { color: #888; font-size: 13px; margin-top: 0; }
+  .info-box { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 12px; margin: 16px 0; font-size: 12px; color: #9a3412; }
   @media print { body { padding: 12px; } h1 { font-size: 18px; } }
 </style></head><body>
 
-<h1>📋 Gesamtbericht – ${esc(horse.name)}</h1>
+<h1>${reportTitle} – ${esc(horse.name)}</h1>
 <p class="subtitle">${esc(horse.readable_id ? '#' + horse.readable_id : '')} · Erstellt am ${today}</p>
 
 <h2>1. Stammdaten</h2>
