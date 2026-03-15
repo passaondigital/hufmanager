@@ -63,6 +63,14 @@ export default function ClientBooking() {
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [providerId, setProviderId] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  
+  // Additional health info fields
+  const [healthHistory, setHealthHistory] = useState("");
+  const [currentFarrier, setCurrentFarrier] = useState("");
+  const [vetName, setVetName] = useState("");
+  const [vetPhone, setVetPhone] = useState("");
+  const [hoofProtection, setHoofProtection] = useState("");
   
   const MAX_NOTES_LENGTH = 2000;
 
