@@ -19,6 +19,7 @@ interface Props {
 
 export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const currentUserId = user?.id;
 
   // Fetch news since last visit
