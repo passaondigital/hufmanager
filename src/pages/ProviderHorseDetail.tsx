@@ -379,6 +379,9 @@ export default function ProviderHorseDetail() {
             inviterRole="provider"
           />
         )}
+        {activeTab === "material" && (
+          <HorseMaterialHistory horseId={horse.id} />
+        )}
         {activeTab === "aktivitaeten" && (
           <TabAktivitaeten horseId={horse.id} />
         )}
