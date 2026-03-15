@@ -30,6 +30,7 @@ import { HorseHealthTracker } from "@/components/client/HorseHealthTracker";
 import { HoofDevelopmentComparison } from "@/components/client/HoofDevelopmentComparison";
 import { HorseAccessManager } from "@/components/client/HorseAccessManager";
 import { VaultTab } from "@/components/client/VaultTab";
+import { Pferdeakte } from "@/components/pferdeakte";
 import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
 import { HorseProfileCompleteness } from "@/components/horse-detail/HorseProfileCompleteness";
 
