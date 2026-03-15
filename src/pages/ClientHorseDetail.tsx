@@ -30,6 +30,7 @@ import { HorseHealthTracker } from "@/components/client/HorseHealthTracker";
 import { HoofDevelopmentComparison } from "@/components/client/HoofDevelopmentComparison";
 import { HorseAccessManager } from "@/components/client/HorseAccessManager";
 import { VaultTab } from "@/components/client/VaultTab";
+import { Pferdeakte } from "@/components/pferdeakte";
 import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
 import { HorseProfileCompleteness } from "@/components/horse-detail/HorseProfileCompleteness";
 
@@ -44,6 +45,7 @@ const TABS = [
   { value: "betreuer", label: "Betreuer", icon: Users },
   { value: "zugriffsrechte", label: "Zugriffsrechte", icon: Shield },
   { value: "tresor", label: "Tresor", icon: Lock },
+  { value: "pferdeakte", label: "Akte", icon: BookOpen },
 ] as const;
 
 export default function ClientHorseDetail() {
@@ -265,6 +267,9 @@ export default function ClientHorseDetail() {
           )}
           {activeTab === "tresor" && (
             <VaultTab horseId={horse.id} />
+          )}
+          {activeTab === "pferdeakte" && (
+            <Pferdeakte horseId={horse.id} userRole="client" horse={horse as any} />
           )}
         </div>
       </main>

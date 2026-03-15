@@ -144,12 +144,17 @@ export interface HoofDetailEntry {
 export interface HorseContacts {
   vet?: string;
   vet_phone?: string;
+  vet_partner_profile_id?: string;
   trainer?: string;
   trainer_phone?: string;
+  trainer_partner_profile_id?: string;
   stable?: string;
   stable_phone?: string;
+  stable_partner_profile_id?: string;
   caretaker?: string;
   caretaker_phone?: string;
+  caretaker_partner_profile_id?: string;
+  [key: string]: string | undefined;
 }
 
 export interface Appointment {
