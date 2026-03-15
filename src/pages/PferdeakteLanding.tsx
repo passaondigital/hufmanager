@@ -427,9 +427,9 @@ function HeroSection() {
    SECTION 2 — PROBLEM
    ═════════════════════════════════════════════════════════════ */
 const problemCards = [
-  { icon: "⚠️", title: "Das Pferd wird zweimal geimpft.", text: "Weil der neue Tierarzt die Vorgeschichte nicht kennt. Weil das Impfheft zu Hause liegt. Weil niemand gefragt hat." },
-  { icon: "⚖️", title: "Der Hufbearbeiter steht im Regen.", text: "Lahmheit festgestellt — aber wer war zuletzt dran? Ohne lückenlosen Nachweis gibt es keine Fakten. Nur Meinungen." },
-  { icon: "💔", title: "Das Pferd wird verkauft. Die Akte bleibt.", text: "Jahrelange Dokumentation — weg. Der neue Besitzer fängt bei null an. Das Pferd auch." },
+  { icon: "🔨", title: "Du bekommst ein Pferd vorgestellt.", text: "Als Profi stehst du vor einem Pferd das du nicht kennst. Keine Akte, keine Geschichte, kein Vorlauf. Du arbeitest blind — und trägst trotzdem die Verantwortung." },
+  { icon: "🐴", title: "Du kaufst, bekommst oder übernimmst ein Pferd.", text: "Was du bekommst ist das Tier — nicht seine Geschichte. Was wurde behandelt? Was wurde verschwiegen? Was liegt im Dunkeln? Du fängst bei null an." },
+  { icon: "📋", title: "Du kennst dein eigenes Pferd seit Jahren.", text: "Aber das große Ganze liegt verteilt auf Ordner, Handys und Köpfe. Behandlungen hier, Befunde dort, Erinnerungen irgendwo. Niemand hat den kompletten Überblick. Oft nicht mal du selbst." },
 ];
 
 function ProblemSection() {
