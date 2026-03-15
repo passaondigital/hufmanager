@@ -34,10 +34,11 @@ interface PferdeakteProps {
   horseId: string;
   userRole: PferdeakteUserRole;
   horse?: Horse | null;
+  initialTab?: string;
 }
 
-export function Pferdeakte({ horseId, userRole, horse: horseProp }: PferdeakteProps) {
-  const [activeTab, setActiveTab] = useState("start");
+export function Pferdeakte({ horseId, userRole, horse: horseProp, initialTab }: PferdeakteProps) {
+  const [activeTab, setActiveTab] = useState(initialTab || "start");
 
   const { data: horseData, isLoading } = useQuery({
     queryKey: ["pferdeakte-horse", horseId],

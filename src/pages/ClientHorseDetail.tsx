@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,7 @@ import { HorseProfileCompleteness } from "@/components/horse-detail/HorseProfile
 
 const TABS = [
   { value: "steckbrief", label: "Übersicht", icon: Info },
+  { value: "pferdeakte", label: "Akte", icon: BookOpen },
   { value: "verlauf", label: "Verlauf", icon: History },
   { value: "fotos", label: "Fotos & Medien", icon: Image },
   { value: "gesundheit", label: "Gesundheit", icon: Heart },
@@ -45,13 +46,13 @@ const TABS = [
   { value: "betreuer", label: "Betreuer", icon: Users },
   { value: "zugriffsrechte", label: "Zugriffsrechte", icon: Shield },
   { value: "tresor", label: "Tresor", icon: Lock },
-  { value: "pferdeakte", label: "Akte", icon: BookOpen },
 ] as const;
 
 export default function ClientHorseDetail() {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   const [horse, setHorse] = useState<Horse | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -59,7 +60,8 @@ export default function ClientHorseDetail() {
   const [documents, setDocuments] = useState<HorseDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [activeTab, setActiveTab] = useState("steckbrief");
+  const defaultTab = searchParams.get("tab") || "steckbrief";
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const [showStatusModal, setShowStatusModal] = useState(false);
 
   const fetchHorseData = async () => {
@@ -269,7 +271,7 @@ export default function ClientHorseDetail() {
             <VaultTab horseId={horse.id} />
           )}
           {activeTab === "pferdeakte" && (
-            <Pferdeakte horseId={horse.id} userRole="client" horse={horse as any} />
+            <Pferdeakte horseId={horse.id} userRole="client" horse={horse as any} initialTab={searchParams.get("akte-tab") || undefined} />
           )}
         </div>
       </main>

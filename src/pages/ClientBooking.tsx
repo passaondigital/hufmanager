@@ -7,7 +7,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Scissors, Check, Loader2, Calendar, Clock } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Scissors, Check, Loader2, Calendar, Clock, FileText, Heart, ChevronDown } from "lucide-react";
 import { HelpTip } from "@/components/ui/HelpTip";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -63,6 +65,14 @@ export default function ClientBooking() {
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [providerId, setProviderId] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  
+  // Additional health info fields
+  const [healthHistory, setHealthHistory] = useState("");
+  const [currentFarrier, setCurrentFarrier] = useState("");
+  const [vetName, setVetName] = useState("");
+  const [vetPhone, setVetPhone] = useState("");
+  const [hoofProtection, setHoofProtection] = useState("");
   
   const MAX_NOTES_LENGTH = 2000;
 
@@ -237,7 +247,24 @@ export default function ClientBooking() {
         });
       }
 
-      navigate("/client-home");
+      // Save additional health info as diary entry if provided
+      if (selectedHorse && (healthHistory || currentFarrier || vetName || hoofProtection)) {
+        const parts = [];
+        if (healthHistory) parts.push(`Vorerkrankungen: ${healthHistory}`);
+        if (currentFarrier) parts.push(`Bisheriger Hufbearbeiter: ${currentFarrier}`);
+        if (vetName) parts.push(`Tierarzt: ${vetName}${vetPhone ? ` (${vetPhone})` : ''}`);
+        if (hoofProtection) parts.push(`Hufschutz: ${hoofProtection}`);
+        
+        await supabase.from("horse_diary_entries").insert({
+          horse_id: selectedHorse,
+          owner_id: user.id,
+          category: "Onboarding",
+          text: parts.join('\n'),
+          shared_with_provider: true,
+        });
+      }
+
+      setShowSuccess(true);
     } catch (error: any) {
       toast({
         title: "Fehler",
@@ -291,8 +318,54 @@ export default function ClientBooking() {
           />
         )}
 
+        {/* Success Screen */}
+        {showSuccess && (
+          <div className="space-y-4 text-center py-4">
+            <div className="h-16 w-16 rounded-full bg-green-500/10 mx-auto flex items-center justify-center">
+              <Check className="h-8 w-8 text-green-600" />
+            </div>
+            <h2 className="text-lg font-bold text-foreground">
+              {isDirectBooking ? "Termin gebucht!" : "Anfrage gesendet!"}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {isDirectBooking
+                ? `${selectedDate ? format(selectedDate, "EEEE, d. MMMM", { locale: de }) : ""} um ${selectedTime} Uhr`
+                : "Dein Hufbearbeiter wird sich bald bei dir melden."}
+            </p>
+            
+            {selectedHorse && (
+              <Card className="text-left">
+                <CardContent className="p-4 flex items-start gap-3">
+                  <FileText className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">
+                      Tipp: Fülle die Pferdeakte aus
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      So hat dein Hufbearbeiter beim ersten Termin alle wichtigen Infos.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 gap-1"
+                      onClick={() => navigate(`/client-horse/${selectedHorse}?tab=pferdeakte`)}
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                      Pferdeakte öffnen
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            <Button onClick={() => navigate("/client-home")} className="w-full">
+              Zurück zur Übersicht
+            </Button>
+          </div>
+        )}
+
         {/* Standard Mode: Step-by-step booking */}
-        {bookingMode === "standard" && (
+        {bookingMode === "standard" && !showSuccess && (
           <>
             {/* Step: Select Service */}
             {step === "services" && (
@@ -495,6 +568,46 @@ export default function ClientBooking() {
                 maxLength={MAX_NOTES_LENGTH}
               />
             </div>
+
+            {/* Additional health info */}
+            <details className="group">
+              <summary className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer list-none">
+                <Heart className="h-4 w-4 text-primary" />
+                Gesundheitsinfos für deinen Hufbearbeiter (optional)
+                <ChevronDown className="h-4 w-4 text-muted-foreground ml-auto group-open:rotate-180 transition-transform" />
+              </summary>
+              <div className="mt-3 space-y-3">
+                <div>
+                  <Label className="text-xs">Hat dein Pferd bekannte Vorerkrankungen?</Label>
+                  <Textarea value={healthHistory} onChange={e => setHealthHistory(e.target.value)} placeholder="z.B. Hufgeschwür, Hufrehe, Sehnenschaden..." rows={2} className="mt-1 text-base" />
+                </div>
+                <div>
+                  <Label className="text-xs">Wer ist der aktuelle/letzte Hufbearbeiter?</Label>
+                  <Input value={currentFarrier} onChange={e => setCurrentFarrier(e.target.value)} placeholder="Name" className="mt-1 text-base" />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">Tierarzt (Name)</Label>
+                    <Input value={vetName} onChange={e => setVetName(e.target.value)} placeholder="Dr. ..." className="mt-1 text-base" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Tierarzt (Telefon)</Label>
+                    <Input value={vetPhone} onChange={e => setVetPhone(e.target.value)} placeholder="0123..." inputMode="tel" className="mt-1 text-base" />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">Welchen Hufschutz trägt dein Pferd?</Label>
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {["Barhuf", "Eisen", "Kunststoff", "Klebebeschlag", "Hufschuhe", "Weiß nicht"].map(opt => (
+                      <button key={opt} type="button"
+                        onClick={() => setHoofProtection(hoofProtection === opt ? "" : opt)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${hoofProtection === opt ? "bg-primary/15 text-primary border-primary/30" : "text-muted-foreground border-border hover:bg-secondary"}`}
+                      >{opt}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </details>
 
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setStep("horse")}>

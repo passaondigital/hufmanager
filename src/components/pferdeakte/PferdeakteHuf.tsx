@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Minus, Camera, FileText, ArrowUpDown, ImageIcon, Mic } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Camera, FileText, ArrowUpDown, ImageIcon, Mic, Footprints } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { HoofPhotoComparison } from "./HoofPhotoComparison";
 import { HufiAIVoiceRecorder } from "./HufiAIVoiceRecorder";
@@ -149,8 +149,10 @@ export function PferdeakteHuf({ horseId, userRole }: Props) {
 
       {!latestAnalysis && (
         <Card>
-          <CardContent className="p-6 text-center text-muted-foreground text-sm">
-            Noch keine Hufanalyse-Daten vorhanden.
+          <CardContent className="p-6 text-center">
+            <Footprints className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
+            <p className="text-sm font-medium text-foreground mb-1">Noch keine Hufanalyse-Daten</p>
+            <p className="text-xs text-muted-foreground">Nach der ersten Bearbeitung erscheinen hier die Werte und Verlaufskurven.</p>
           </CardContent>
         </Card>
       )}

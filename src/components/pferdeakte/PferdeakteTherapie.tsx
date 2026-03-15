@@ -103,9 +103,10 @@ export function PferdeakteTherapie({ horseId, userRole }: Props) {
       {/* Treatment Notes */}
       {filtered.length === 0 ? (
         <Card>
-          <CardContent className="p-8 text-center text-muted-foreground text-sm">
+          <CardContent className="p-8 text-center">
             <Activity className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
-            Keine Behandlungsnotizen vorhanden.
+            <p className="text-sm font-medium text-foreground mb-1">Keine Therapie-Einträge</p>
+            <p className="text-xs text-muted-foreground">Lade einen Fachpartner ein, um Befunde hier zu dokumentieren.</p>
           </CardContent>
         </Card>
       ) : (
