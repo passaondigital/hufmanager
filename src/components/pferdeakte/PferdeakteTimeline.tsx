@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Camera, ChevronDown } from "lucide-react";
+import { Camera, ChevronDown, ChevronUp, History, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getPartnerTypeConfig } from "@/lib/partnerTypes";
 import type { PferdeakteUserRole, TimelineItem } from "./types";
