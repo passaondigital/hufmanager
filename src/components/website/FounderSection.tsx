@@ -1,4 +1,5 @@
 import { Quote } from "lucide-react";
+import pascalImage from "@/assets/lp/pascal-founder.png";
 
 interface FounderSectionProps {
   variant?: "website" | "pferdeakte";
@@ -34,7 +35,7 @@ export default function FounderSection({ variant = "website" }: FounderSectionPr
       className="py-20 md:py-28"
       style={{ backgroundColor: "#0a0a0a" }}
     >
-      <div className="container max-w-4xl px-6">
+      <div className="container max-w-5xl px-6">
         <div className="text-center mb-12">
           <span
             className="inline-block text-xs font-bold uppercase tracking-widest mb-4"
@@ -55,35 +56,53 @@ export default function FounderSection({ variant = "website" }: FounderSectionPr
           </h2>
         </div>
 
-        <div className="relative">
-          {/* Orange accent line */}
-          <div
-            className="absolute left-0 top-0 bottom-0 w-1 rounded-full hidden md:block"
-            style={{ backgroundColor: "#f97316" }}
-          />
-
-          <div className="md:pl-8 space-y-5">
-            <Quote
-              className="w-8 h-8 mb-2 opacity-30"
-              style={{ color: "#f97316" }}
+        <div className="flex flex-col md:flex-row gap-10 md:gap-14 items-start">
+          {/* Text column */}
+          <div className="flex-1 relative">
+            <div
+              className="absolute left-0 top-0 bottom-0 w-1 rounded-full hidden md:block"
+              style={{ backgroundColor: "#f97316" }}
             />
 
-            {paragraphs.map((p, i) => (
-              <p
-                key={i}
-                className="text-base md:text-lg leading-relaxed"
-                style={{ color: "rgba(255,255,255,.75)" }}
-              >
-                {p}
+            <div className="md:pl-8 space-y-5">
+              <Quote
+                className="w-8 h-8 mb-2 opacity-30"
+                style={{ color: "#f97316" }}
+              />
+
+              {paragraphs.map((p, i) => (
+                <p
+                  key={i}
+                  className="text-base md:text-lg leading-relaxed"
+                  style={{ color: "rgba(255,255,255,.75)" }}
+                >
+                  {p}
+                </p>
+              ))}
+            </div>
+
+            <div className="md:pl-8 mt-10 pt-6 border-t border-white/10">
+              <p className="text-white font-bold text-lg">Pascal Schmid</p>
+              <p className="text-sm" style={{ color: "rgba(255,255,255,.45)" }}>
+                Gründer HufManager · Hufbearbeiter &amp; Barhufexperte
               </p>
-            ))}
+            </div>
           </div>
 
-          <div className="md:pl-8 mt-10 pt-6 border-t border-white/10">
-            <p className="text-white font-bold text-lg">Pascal Schmid</p>
-            <p className="text-sm" style={{ color: "rgba(255,255,255,.45)" }}>
-              Gründer HufManager · Hufbearbeiter &amp; Barhufexperte
-            </p>
+          {/* Photo column */}
+          <div className="w-full md:w-64 lg:w-72 shrink-0 mx-auto md:mx-0">
+            <div className="relative">
+              <div
+                className="absolute -inset-3 rounded-2xl blur-2xl opacity-20"
+                style={{ backgroundColor: "#f97316" }}
+              />
+              <img
+                src={pascalImage}
+                alt="Pascal Schmid – Gründer HufManager"
+                className="relative w-full aspect-[3/4] object-cover rounded-2xl border border-white/10"
+                loading="lazy"
+              />
+            </div>
           </div>
         </div>
       </div>
