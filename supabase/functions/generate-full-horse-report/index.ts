@@ -51,7 +51,8 @@ serve(async (req) => {
       });
     }
 
-    const { horse_id } = await req.json();
+    const { horse_id, mode } = await req.json();
+    const isAku = mode === "aku";
     if (!horse_id) {
       return new Response(JSON.stringify({ error: "horse_id required" }), {
         status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -66,7 +67,7 @@ serve(async (req) => {
       supabase.from("horse_vaccinations").select("*").eq("horse_id", horse_id).order("vaccination_date", { ascending: false }),
       supabase.from("horse_deworming").select("*").eq("horse_id", horse_id).order("deworming_date", { ascending: false }),
       supabase.from("partner_treatment_notes").select("*").eq("horse_id", horse_id).order("treatment_date", { ascending: false }),
-      supabase.from("horse_health_logs").select("*").eq("horse_id", horse_id).order("date", { ascending: false }).limit(10),
+      supabase.from("horse_health_logs").select("*").eq("horse_id", horse_id).order("date", { ascending: false }).limit(isAku ? 1000 : 10),
     ]);
 
     if (horseRes.error || !horseRes.data) {
