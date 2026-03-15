@@ -208,7 +208,79 @@ export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props
     enabled: !!horseId,
   });
 
+  // Fetch cross-provider recommendations
+  const { data: recommendations } = useQuery({
+    queryKey: ["pferdeakte-recommendations", horseId, userRole],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("partner_treatment_notes")
+        .select("id, recommendation_for, partner_id, created_at, profiles!partner_treatment_notes_partner_id_fkey(full_name)")
+        .eq("horse_id", horseId)
+        .not("recommendation_for", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) return [];
+
+      // Filter recommendations targeting current user's role
+      const roleMap: Record<string, string[]> = {
+        provider: ["hufpfleger", "hufschmied"],
+        client: ["besitzer"],
+        partner: ["tierarzt", "osteopath", "physiotherapeut"],
+      };
+      const targetRoles = roleMap[userRole] || [];
+
+      const items: { noteId: string; recIndex: number; targetRole: string; message: string; dueDate: string | null; partnerName: string; createdAt: string; acknowledged: boolean }[] = [];
+
+      (data || []).forEach((note: any) => {
+        const recs = note.recommendation_for as any[];
+        if (!Array.isArray(recs)) return;
+        recs.forEach((rec: any, idx: number) => {
+          if (targetRoles.includes(rec.target_role) && !rec.acknowledged_by) {
+            items.push({
+              noteId: note.id,
+              recIndex: idx,
+              targetRole: rec.target_role,
+              message: rec.message,
+              dueDate: rec.due_date || null,
+              partnerName: (note as any).profiles?.full_name || "Partner",
+              createdAt: note.created_at,
+              acknowledged: !!rec.acknowledged_by,
+            });
+          }
+        });
+      });
+
+      return items;
+    },
+    enabled: !!horseId,
+  });
+
+  const acknowledgeRecommendation = async (noteId: string, recIndex: number) => {
+    // Fetch current recommendation_for, update the specific entry
+    const { data: note } = await supabase
+      .from("partner_treatment_notes")
+      .select("recommendation_for")
+      .eq("id", noteId)
+      .single();
+
+    if (!note?.recommendation_for) return;
+
+    const recs = note.recommendation_for as any[];
+    if (recs[recIndex]) {
+      recs[recIndex].acknowledged_by = currentUserId;
+      recs[recIndex].acknowledged_at = new Date().toISOString();
+    }
+
+    await (supabase.from("partner_treatment_notes") as any)
+      .update({ recommendation_for: recs })
+      .eq("id", noteId);
+
+    toast.success("Empfehlung als gelesen markiert");
+    queryClient.invalidateQueries({ queryKey: ["pferdeakte-recommendations", horseId] });
+  };
+
   const newsItems = newsSinceLastVisit?.items || [];
+  const activeRecs = recommendations || [];
 
   return (
     <div className="space-y-6">
