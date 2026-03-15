@@ -45,6 +45,7 @@ const buildInitialForm = (h: Horse) => ({
   height: h.height || "",
   height_cm: h.height_cm?.toString() || "",
   chip_number: h.chip_number || "",
+  passport_number: (h as any).passport_number || "",
   discipline: h.discipline || "",
   usage: h.usage || "",
   housing: h.housing || "",
