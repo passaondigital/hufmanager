@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Zap, Bell, Footprints, Stethoscope, Activity, FileText, Camera, Clock, CheckCircle, Lightbulb } from "lucide-react";
+import { FeatureHint } from "@/components/ui/FeatureHint";
 import { toast } from "sonner";
 import { DemoFeatureHighlight } from "@/components/demo/DemoFeatureHighlight";
 import type { PferdeakteUserRole } from "./types";
@@ -286,6 +287,14 @@ export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props
   return (
     <div className="space-y-6">
       <DemoFeatureHighlight label="Rollbasiertes Start-Briefing" delay={500} />
+
+      {/* Feature Connection Hint */}
+      {userRole === "provider" && (
+        <FeatureHint
+          id="pferdeakte-start-briefing"
+          text="Das Start-Briefing zeigt dir automatisch was seit deinem letzten Besuch passiert ist – inklusive Befunde anderer Dienstleister."
+        />
+      )}
 
       {/* News Since Last Visit */}
       <div className="rounded-xl bg-card border border-border overflow-hidden">

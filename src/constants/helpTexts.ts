@@ -476,6 +476,18 @@ export const helpTexts: Record<string, Record<string, HelpTextEntry>> = {
       title: "Einstellungen",
       description: "Konfiguriere dein Partner-Konto, Benachrichtigungen und Datenschutz-Einstellungen.",
     },
+    "sichtbar-provider": {
+      title: "Sichtbar für Provider",
+      description: "Wenn aktiv, kann der Hufbearbeiter deinen Befund sehen. Empfohlen für bessere Zusammenarbeit.",
+    },
+    empfehlung: {
+      title: "Empfehlung an",
+      description: "Schreibe eine Empfehlung an den Hufbearbeiter oder Besitzer. Sie erscheint beim nächsten Termin-Briefing.",
+    },
+    bodymap: {
+      title: "Body-Map",
+      description: "Tippe auf die Körperregion die du behandelt hast. Die Markierung wird automatisch in der Pferdeakte gespeichert.",
+    },
   },
 
   // ─── Mitarbeiter-App ──────────────────────────────────────
@@ -555,6 +567,18 @@ export const helpTexts: Record<string, Record<string, HelpTextEntry>> = {
     freigaben: {
       title: "Datenfreigabe",
       description: "Kontrolliere, wer Zugriff auf deine Pferdedaten hat – z.B. Tierärzte oder Fachpartner.",
+    },
+    pferdeakte: {
+      title: "Pferdeakte",
+      description: "Die Pferdeakte zeigt alle Behandlungen, Befunde und Gesundheitsdaten deines Pferdes an einem Ort.",
+    },
+    qrcode: {
+      title: "Notfall-QR-Code",
+      description: "Drucke diesen QR-Code aus und hänge ihn an den Stall oder das Halfter. Im Notfall kann jeder scannen und sieht die wichtigsten Kontakte.",
+    },
+    buchung: {
+      title: "Gesundheitsinfos bei Buchung",
+      description: "Diese Infos helfen deinem Hufbearbeiter sich optimal auf den ersten Termin vorzubereiten. Alles optional.",
     },
   },
   // ─── Client App ─────────────────────────────────────────
@@ -772,6 +796,27 @@ export const helpTexts: Record<string, Record<string, HelpTextEntry>> = {
       description: "Die aktuellen AGB findest du unter hufmanager.de/agb",
     },
   },
+
+  // ─── Hufwerte (Prompt 10) ────────────────────────────────
+  hufwerte: {
+    zehenlaenge: {
+      title: "Zehenlänge",
+      description: "Miss die Zehenlänge von der Zehenspitze bis zum Kronrand in mm. Idealwert Warmblut: 75-85mm.",
+    },
+    hufwinkel: {
+      title: "Hufwinkel",
+      description: "Der Winkel zwischen Zehenwand und Boden. Idealwert Vorderhufe: 50-55°, Hinterhufe: 55-60°.",
+    },
+    trachtenhoehe: {
+      title: "Trachtenhöhe",
+      description: "Höhe der Trachten in mm. Gemessen am niedrigsten Punkt der Trachte zum Boden.",
+    },
+    strahlqualitaet: {
+      title: "Strahlqualität",
+      description: "Beurteile den Strahl: 'healthy' = fest und elastisch, 'soft' = weich und empfindlich.",
+    },
+  },
+
 };
 
 /**
