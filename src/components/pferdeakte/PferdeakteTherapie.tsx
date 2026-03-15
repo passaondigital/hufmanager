@@ -10,6 +10,7 @@ import { getPartnerTypeConfig, PARTNER_TYPE_OPTIONS } from "@/lib/partnerTypes";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { InvitePartnerModal } from "@/components/horse-detail/InvitePartnerModal";
+import { DemoFeatureHighlight } from "@/components/demo/DemoFeatureHighlight";
 import type { PferdeakteUserRole } from "./types";
 
 const THERAPY_FILTERS = [
