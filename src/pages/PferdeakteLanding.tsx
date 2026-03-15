@@ -130,16 +130,24 @@ export default function PferdeakteLanding() {
     <div className="min-h-screen bg-white font-sans" style={{ color: "#0a0a0a" }}>
       <style>{injectedCSS}</style>
       <StickyNav scrolled={scrolled} />
+      {/* 1. HERO — Attention */}
       <HeroSection />
+      {/* 2. PROBLEM / Bewusstsein — Attention → Interest */}
       <ProblemSection />
+      {/* 3. VERSTEHEN — Interest */}
+      <MissionSection />
+      {/* 4. LÖSUNG — Interest → Desire */}
       <SolutionSection />
       <TargetGroupsSection />
-      <MissionSection />
-      <SupportersSection />
-      <SocialProofSection />
+      {/* 5. VERTRAUEN / Loslassen — Desire */}
       <FounderSectionPA />
       <WhyPferdeakteSection />
+      {/* 6. NEUAUSRICHTUNG — Desire */}
+      <SocialProofSection />
+      <SupportersSection />
+      {/* 7. TUN — Action */}
       <WaitlistSection defaultRef={searchParams.get("ref") ?? ""} />
+      {/* 8. VERSTÄRKEN — Action */}
       <BotschafterSection />
       <ShareSection />
       <FooterSection />
