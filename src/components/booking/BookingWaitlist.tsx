@@ -27,7 +27,7 @@ export function BookingWaitlist({ providerId, horseId, horseName, onSuccess }: B
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("booking_waitlist").insert({
+      const { error } = await (supabase as any).from("booking_waitlist").insert({
         provider_id: providerId,
         client_id: user!.id,
         horse_id: horseId,
@@ -57,7 +57,7 @@ export function BookingWaitlist({ providerId, horseId, horseName, onSuccess }: B
           <Label className="text-xs mb-2 block">Präferenz</Label>
           <div className="flex gap-2">
             {[
-              { value: "next_available" as const, label: "Nächstmöglicher Termin", icon: Clock },
+              { value: "next_available" as const, label: "Nächstmöglich", icon: Clock },
               { value: "specific_week" as const, label: "Bestimmte Woche", icon: CalendarDays },
             ].map(({ value, label, icon: Icon }) => (
               <Badge

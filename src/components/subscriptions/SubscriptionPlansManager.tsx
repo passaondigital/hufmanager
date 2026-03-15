@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,13 +35,13 @@ export function SubscriptionPlansManager() {
   const { data: plans = [], isLoading } = useQuery({
     queryKey: ["subscription-plans", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("subscription_plans")
         .select("id, name, description, interval_weeks, price_monthly, max_horses, includes, is_active")
         .eq("provider_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as SubscriptionPlan[];
+      return (data || []) as SubscriptionPlan[];
     },
     enabled: !!user?.id,
   });
@@ -49,7 +49,7 @@ export function SubscriptionPlansManager() {
   const { data: subCounts = {} } = useQuery({
     queryKey: ["subscription-counts", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("client_subscriptions")
         .select("plan_id, status")
         .eq("provider_id", user!.id)
@@ -64,14 +64,14 @@ export function SubscriptionPlansManager() {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("subscription_plans").insert({
+      const { error } = await (supabase as any).from("subscription_plans").insert({
         provider_id: user!.id,
         name: form.name,
         description: form.description || null,
         interval_weeks: parseInt(form.interval_weeks),
         price_monthly: parseFloat(form.price_monthly),
         max_horses: parseInt(form.max_horses),
-        includes: form.includes.split(",").map((s) => s.trim()).filter(Boolean),
+        includes: form.includes.split(",").map((s: string) => s.trim()).filter(Boolean),
       });
       if (error) throw error;
     },
@@ -86,7 +86,7 @@ export function SubscriptionPlansManager() {
 
   const toggleMutation = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await supabase.from("subscription_plans").update({ is_active }).eq("id", id);
+      const { error } = await (supabase as any).from("subscription_plans").update({ is_active }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {

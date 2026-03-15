@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Pause, XCircle } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
 import { toast } from "sonner";
 
@@ -16,7 +16,7 @@ export function ClientSubscriptionView() {
   const { data: subscriptions = [], isLoading } = useQuery({
     queryKey: ["client-subscriptions", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("client_subscriptions")
         .select(`
           id, status, started_at, next_appointment_due, horse_ids, cancelled_at,
@@ -34,7 +34,7 @@ export function ClientSubscriptionView() {
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const update: Record<string, any> = { status };
       if (status === "cancelled") update.cancelled_at = new Date().toISOString();
-      const { error } = await supabase.from("client_subscriptions").update(update).eq("id", id);
+      const { error } = await (supabase as any).from("client_subscriptions").update(update).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
