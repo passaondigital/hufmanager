@@ -1,12 +1,17 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Minus, Camera, FileText, ArrowUpDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Camera, FileText, ArrowUpDown, ImageIcon, Mic } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
+import { HoofPhotoComparison } from "./HoofPhotoComparison";
+import { HufiAIVoiceRecorder } from "./HufiAIVoiceRecorder";
+import type { HoofFindingResult } from "./HufiAIVoiceRecorder";
 import type { PferdeakteUserRole } from "./types";
+import { toast } from "sonner";
 
 interface Props {
   horseId: string;
@@ -14,6 +19,15 @@ interface Props {
 }
 
 export function PferdeakteHuf({ horseId, userRole }: Props) {
+  const [showComparison, setShowComparison] = useState(false);
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
+
+  const handleFindingGenerated = (finding: HoofFindingResult) => {
+    // TODO: Save to hoof_entries and hoof_analyses
+    toast.success("Befund übernommen");
+    setShowVoiceRecorder(false);
+    console.log("Finding generated:", finding);
+  };
   // Fetch hoof analyses
   const { data: analyses, isLoading: loadingAnalyses } = useQuery({
     queryKey: ["pferdeakte-hoof-analyses", horseId],
@@ -204,6 +218,33 @@ export function PferdeakteHuf({ horseId, userRole }: Props) {
           </Card>
         </>
       )}
+
+      {/* Quick Actions */}
+      <div className="flex gap-2">
+        <Button variant="outline" className="flex-1 gap-2" onClick={() => setShowComparison(true)}>
+          <ImageIcon className="h-4 w-4" />
+          Fotos vergleichen
+        </Button>
+        {userRole === "provider" && (
+          <Button variant="outline" className="flex-1 gap-2" onClick={() => setShowVoiceRecorder(!showVoiceRecorder)}>
+            <Mic className="h-4 w-4" />
+            Sprachnotiz
+          </Button>
+        )}
+      </div>
+
+      {/* Voice Recorder */}
+      {showVoiceRecorder && userRole === "provider" && (
+        <HufiAIVoiceRecorder
+          horseId={horseId}
+          appointmentId={null}
+          onFindingGenerated={handleFindingGenerated}
+          onClose={() => setShowVoiceRecorder(false)}
+        />
+      )}
+
+      {/* Photo Comparison Modal */}
+      <HoofPhotoComparison horseId={horseId} open={showComparison} onClose={() => setShowComparison(false)} />
 
       {/* Hoof History */}
       {hoofHistory && hoofHistory.length > 0 && (

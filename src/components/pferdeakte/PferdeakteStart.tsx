@@ -1,10 +1,12 @@
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Zap, Bell, Footprints, Stethoscope, Activity, FileText, Camera, Clock, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Zap, Bell, Footprints, Stethoscope, Activity, FileText, Camera, Clock, CheckCircle, Lightbulb } from "lucide-react";
+import { toast } from "sonner";
 import type { PferdeakteUserRole } from "./types";
 import type { Horse } from "@/components/horse-detail/types";
 
@@ -17,6 +19,7 @@ interface Props {
 
 export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const currentUserId = user?.id;
 
   // Fetch news since last visit
@@ -205,7 +208,79 @@ export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props
     enabled: !!horseId,
   });
 
+  // Fetch cross-provider recommendations
+  const { data: recommendations } = useQuery({
+    queryKey: ["pferdeakte-recommendations", horseId, userRole],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("partner_treatment_notes")
+        .select("id, recommendation_for, partner_id, created_at, profiles!partner_treatment_notes_partner_id_fkey(full_name)")
+        .eq("horse_id", horseId)
+        .not("recommendation_for", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) return [];
+
+      // Filter recommendations targeting current user's role
+      const roleMap: Record<string, string[]> = {
+        provider: ["hufpfleger", "hufschmied"],
+        client: ["besitzer"],
+        partner: ["tierarzt", "osteopath", "physiotherapeut"],
+      };
+      const targetRoles = roleMap[userRole] || [];
+
+      const items: { noteId: string; recIndex: number; targetRole: string; message: string; dueDate: string | null; partnerName: string; createdAt: string; acknowledged: boolean }[] = [];
+
+      (data || []).forEach((note: any) => {
+        const recs = note.recommendation_for as any[];
+        if (!Array.isArray(recs)) return;
+        recs.forEach((rec: any, idx: number) => {
+          if (targetRoles.includes(rec.target_role) && !rec.acknowledged_by) {
+            items.push({
+              noteId: note.id,
+              recIndex: idx,
+              targetRole: rec.target_role,
+              message: rec.message,
+              dueDate: rec.due_date || null,
+              partnerName: (note as any).profiles?.full_name || "Partner",
+              createdAt: note.created_at,
+              acknowledged: !!rec.acknowledged_by,
+            });
+          }
+        });
+      });
+
+      return items;
+    },
+    enabled: !!horseId,
+  });
+
+  const acknowledgeRecommendation = async (noteId: string, recIndex: number) => {
+    // Fetch current recommendation_for, update the specific entry
+    const { data: note } = await supabase
+      .from("partner_treatment_notes")
+      .select("recommendation_for")
+      .eq("id", noteId)
+      .single();
+
+    if (!note?.recommendation_for) return;
+
+    const recs = note.recommendation_for as any[];
+    if (recs[recIndex]) {
+      recs[recIndex].acknowledged_by = currentUserId;
+      recs[recIndex].acknowledged_at = new Date().toISOString();
+    }
+
+    await (supabase.from("partner_treatment_notes") as any)
+      .update({ recommendation_for: recs })
+      .eq("id", noteId);
+
+    toast.success("Empfehlung als gelesen markiert");
+    queryClient.invalidateQueries({ queryKey: ["pferdeakte-recommendations", horseId] });
+  };
+
   const newsItems = newsSinceLastVisit?.items || [];
+  const activeRecs = recommendations || [];
 
   return (
     <div className="space-y-6">
@@ -248,6 +323,42 @@ export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props
           )}
         </div>
       </div>
+
+      {/* Cross-Provider Recommendations */}
+      {activeRecs.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Empfehlungen</p>
+          {activeRecs.map((rec, idx) => (
+            <Card key={`${rec.noteId}-${rec.recIndex}`} className="border-l-4 border-l-primary bg-primary/5">
+              <CardContent className="p-3">
+                <div className="flex items-start gap-2">
+                  <Lightbulb className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-foreground">
+                      <span className="font-medium">{rec.partnerName}</span> empfiehlt:
+                    </p>
+                    <p className="text-sm text-foreground mt-0.5">{rec.message}</p>
+                    {rec.dueDate && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Bis {new Date(rec.dueDate).toLocaleDateString("de-DE")}
+                      </p>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 h-7 text-xs"
+                      onClick={() => acknowledgeRecommendation(rec.noteId, rec.recIndex)}
+                    >
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Gelesen
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Reminders */}
       {reminders && reminders.length > 0 && (

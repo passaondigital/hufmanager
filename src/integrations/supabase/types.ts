@@ -8826,6 +8826,7 @@ export type Database = {
           partner_id: string
           partner_type: Database["public"]["Enums"]["partner_type"] | null
           photo_urls: string[] | null
+          recommendation_for: Json | null
           template_key: string | null
           title: string
           treatment_date: string
@@ -8844,6 +8845,7 @@ export type Database = {
           partner_id: string
           partner_type?: Database["public"]["Enums"]["partner_type"] | null
           photo_urls?: string[] | null
+          recommendation_for?: Json | null
           template_key?: string | null
           title: string
           treatment_date: string
@@ -8862,6 +8864,7 @@ export type Database = {
           partner_id?: string
           partner_type?: Database["public"]["Enums"]["partner_type"] | null
           photo_urls?: string[] | null
+          recommendation_for?: Json | null
           template_key?: string | null
           title?: string
           treatment_date?: string
