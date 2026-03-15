@@ -156,7 +156,8 @@ export function PferdeakteTherapie({ horseId, horseName, userRole, ownerId }: Pr
               </Button>
             )}
           </CardContent>
-        </Card>
+          </Card>
+        </>
       ) : (
         <div className="space-y-3">
           {filtered.map((note: any) => {
