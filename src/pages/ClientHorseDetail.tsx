@@ -263,6 +263,9 @@ export default function ClientHorseDetail() {
           {activeTab === "tagebuch" && (
             <HorseDiary horseId={horse.id} />
           )}
+          {activeTab === "team" && (
+            <HorseCareTeam horseId={horse.id} horse={horse} />
+          )}
           {activeTab === "betreuer" && (
             <HorsePartnerPanel horseId={horse.id} horseName={horse.name} inviterRole="client" />
           )}
