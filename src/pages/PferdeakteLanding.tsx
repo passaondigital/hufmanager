@@ -179,12 +179,88 @@ function StickyNav({ scrolled }: { scrolled: boolean }) {
    HERO ILLUSTRATION
    ═════════════════════════════════════════════════════════════ */
 function HeroIllustration() {
+  const labels = [
+    { text: "Impfpass", side: "left" as const, top: "14%" },
+    { text: "Hufbefunde", side: "right" as const, top: "28%" },
+    { text: "Tierarzt-Berichte", side: "left" as const, top: "46%" },
+    { text: "Behandlungshistorie", side: "right" as const, top: "64%" },
+    { text: "Röntgenbilder", side: "left" as const, top: "78%" },
+  ];
+
   return (
-    <div className="relative w-full flex items-center justify-center">
+    <div className="relative w-full flex items-center justify-center py-4">
+      {/* Labels */}
+      {labels.map((l, i) => (
+        <div
+          key={l.text}
+          className="absolute flex items-center gap-0"
+          style={{
+            top: l.top,
+            ...(l.side === "left"
+              ? { right: "calc(50% + 100px)", flexDirection: "row-reverse" }
+              : { left: "calc(50% + 100px)", flexDirection: "row" }),
+          }}
+        >
+          {/* Line */}
+          <div
+            className="hidden sm:block"
+            style={{
+              width: 32,
+              height: 1,
+              backgroundColor: "#f97316",
+              opacity: 0.5,
+            }}
+          />
+          {/* Dot */}
+          <div
+            className="hidden sm:block w-1.5 h-1.5 rounded-full flex-shrink-0"
+            style={{ backgroundColor: "#f97316" }}
+          />
+          {/* Label */}
+          <span
+            className="hidden sm:inline text-[11px] font-semibold whitespace-nowrap px-2 py-1 rounded-md"
+            style={{
+              color: "#f97316",
+              backgroundColor: "#fff7ed",
+            }}
+          >
+            {l.text}
+          </span>
+        </div>
+      ))}
+
+      {/* Mobile labels – small pills around the image */}
+      <div className="absolute inset-0 sm:hidden pointer-events-none">
+        {labels.map((l, i) => {
+          const positions = [
+            { top: "2%", left: "5%" },
+            { top: "8%", right: "0%" },
+            { top: "55%", left: "0%" },
+            { top: "65%", right: "0%" },
+            { bottom: "5%", left: "15%" },
+          ];
+          return (
+            <span
+              key={l.text}
+              className="absolute text-[9px] font-bold whitespace-nowrap px-2 py-0.5 rounded-full"
+              style={{
+                color: "#f97316",
+                backgroundColor: "#fff7ed",
+                border: "1px solid #fed7aa",
+                ...positions[i],
+              }}
+            >
+              {l.text}
+            </span>
+          );
+        })}
+      </div>
+
+      {/* Image */}
       <img
         src={pferdeakteIcon}
         alt="Digitale Pferdeakte – Das Gesundheitsbuch für dein Pferd"
-        className="w-[240px] sm:w-[280px] md:w-[340px] lg:w-[400px] h-auto drop-shadow-2xl"
+        className="w-[200px] sm:w-[240px] md:w-[280px] lg:w-[340px] h-auto drop-shadow-2xl relative z-10"
         loading="eager"
       />
     </div>
