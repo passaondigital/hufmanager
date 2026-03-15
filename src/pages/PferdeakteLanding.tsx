@@ -95,14 +95,11 @@ const rcX = (v: boolean, dir: "left" | "right") =>
 
 /* ── injected CSS ────────────────────────────────────────── */
 const injectedCSS = `
-@keyframes pa-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @keyframes pa-tick{0%{transform:scale(1.15)}100%{transform:scale(1)}}
 @keyframes pa-book-hover{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-@keyframes pa-label-appear{0%{opacity:0;transform:translateX(var(--label-dir, 12px))}100%{opacity:1;transform:translateX(0)}}
-@keyframes pa-dot-soft{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
+@keyframes pa-dot-soft{0%,100%{opacity:.6}50%{opacity:1}}
 .pa-tick{animation:pa-tick .3s ease-out}
 .pa-book-hover{animation:pa-book-hover 6s ease-in-out infinite}
-.pa-label-appear{animation:pa-label-appear .8s cubic-bezier(.22,1,.36,1) both}
 .pa-dot-soft{animation:pa-dot-soft 3s ease-in-out infinite}
 `;
 
