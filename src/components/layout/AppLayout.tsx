@@ -249,6 +249,7 @@ export function AppLayout() {
       
       {/* Botschafter Reminder Banner */}
       <BotschafterReminder />
+      </div>
     </div>
   );
 }
