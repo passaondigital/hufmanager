@@ -5,7 +5,7 @@ import { DEMO_EMAILS } from "@/lib/demo-accounts";
 import { toast } from "sonner";
 
 const DEMO_PASSWORD = "HufManagerDemo2030";
-const BUSINESS_PASSWORD = "HMB2030+";
+const BUSINESS_PASSWORD = "HMBusiness2030Demo!";
 
 interface DemoAccount {
   label: string;
