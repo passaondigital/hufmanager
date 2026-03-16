@@ -451,6 +451,9 @@ export default function Auth() {
                       if (data.businessName) {
                         sessionStorage.setItem("hm_pending_business_name", data.businessName);
                       }
+                      if (data.clientType) {
+                        sessionStorage.setItem("hm_pending_client_type", data.clientType);
+                      }
                       // Store country for profile update after email confirmation
                       sessionStorage.setItem("hm_pending_country", data.country);
                       // Store widerrufsausschluss consent for logging after email confirmation
