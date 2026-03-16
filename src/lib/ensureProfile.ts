@@ -92,7 +92,7 @@ export async function ensureUserProfile(user: User): Promise<{ success: boolean;
           .maybeSingle();
 
         if (orphanBid) {
-          console.log("Auto-linking orphan BID to user:", user.id);
+          if (import.meta.env.DEV) console.log("Auto-linking orphan BID to user:", user.id);
           await supabase
             .from("pferdeakte_botschafter")
             .update({ user_id: user.id, source_user_id: user.id } as any)
