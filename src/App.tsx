@@ -152,6 +152,12 @@ const PortalSettings = lazy(() => import("@/pages/portal/PortalSettings"));
 const PortalGallery = lazy(() => import("@/pages/portal/PortalGallery"));
 const PortalApplication = lazy(() => import("@/pages/portal/PortalApplication"));
 const PortalDemo = lazy(() => import("@/pages/portal/PortalDemo"));
+const InsurancePortalDemo = lazy(() => import("@/pages/portal/demos/InsurancePortalDemo"));
+const ManufacturerPortalDemo = lazy(() => import("@/pages/portal/demos/ManufacturerPortalDemo"));
+const VetPortalDemo = lazy(() => import("@/pages/portal/demos/VetPortalDemo"));
+const SupplierPortalDemo = lazy(() => import("@/pages/portal/demos/SupplierPortalDemo"));
+const EducationPortalDemo = lazy(() => import("@/pages/portal/demos/EducationPortalDemo"));
+const AssociationPortalDemo = lazy(() => import("@/pages/portal/demos/AssociationPortalDemo"));
 const AdminOrganizations = lazy(() => import("@/pages/admin/AdminOrganizations"));
 const Statistiken = lazy(() => import("@/pages/Statistiken"));
 const EmployeeNotizbuch = lazy(() => import("@/pages/employee/EmployeeNotizbuch"));
@@ -513,12 +519,12 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             {/* Portal Routes (auth required, handled inside component) */}
             <Route path="/portal/galerie" element={<PortalGallery />} />
             <Route path="/portal/bewerben" element={<PortalApplication />} />
-            <Route path="/portal/versicherung" element={<PortalDemo />} />
-            <Route path="/portal/hersteller" element={<PortalDemo />} />
-            <Route path="/portal/tierarzt" element={<PortalDemo />} />
-            <Route path="/portal/lieferant" element={<PortalDemo />} />
-            <Route path="/portal/ausbildung" element={<PortalDemo />} />
-            <Route path="/portal/verband" element={<PortalDemo />} />
+            <Route path="/portal/versicherung" element={<InsurancePortalDemo />} />
+            <Route path="/portal/hersteller" element={<ManufacturerPortalDemo />} />
+            <Route path="/portal/tierarzt" element={<VetPortalDemo />} />
+            <Route path="/portal/lieferant" element={<SupplierPortalDemo />} />
+            <Route path="/portal/ausbildung" element={<EducationPortalDemo />} />
+            <Route path="/portal/verband" element={<AssociationPortalDemo />} />
             <Route path="/portal/:slug" element={<PortalDashboard />} />
             <Route path="/portal/:slug/settings" element={<PortalSettings />} />
             
