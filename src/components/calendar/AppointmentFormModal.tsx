@@ -236,7 +236,7 @@ export function AppointmentFormModal({
       if (import.meta.env.DEV) console.log("[AppointmentFormModal] mutate", { appointmentsCount: appointments?.length });
     },
     mutationFn: async (appointments: any[]) => {
-      console.log("[AppointmentFormModal] mutationFn start");
+      if (import.meta.env.DEV) console.log("[AppointmentFormModal] mutationFn start");
       // Start upload progress tracking immediately if we have evidence
       if (pendingEvidence.length > 0) {
         setIsUploading(true);
