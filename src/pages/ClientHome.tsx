@@ -47,6 +47,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { DemoTourButton } from "@/components/demo/DemoTourButton";
 import { DemoModeIndicator } from "@/components/demo/DemoModeIndicator";
+import { useBusinessUpgradeHint } from "@/hooks/useBusinessUpgradeHint";
+import { BusinessUpgradeHint } from "@/components/client/BusinessUpgradeHint";
+import { BusinessRegistrationForm } from "@/components/auth/BusinessRegistrationForm";
 
 interface Horse {
   id: string;
