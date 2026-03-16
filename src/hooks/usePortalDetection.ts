@@ -19,8 +19,15 @@ export function detectPortalMode(): PortalDetection {
   if (hostname.startsWith('tierarzt.')) return { mode: 'veterinary', orgSlug: null };
 
   // Path-based fallback: /portal/:slug
+  // Exclude reserved portal paths that have their own routes
+  const RESERVED_PORTAL_PATHS = new Set([
+    'galerie', 'bewerben', 'versicherung', 'hersteller',
+    'tierarzt', 'lieferant', 'ausbildung', 'verband',
+  ]);
   const match = window.location.pathname.match(/^\/portal\/([^/]+)/);
-  if (match) return { mode: 'portal', orgSlug: match[1] };
+  if (match && !RESERVED_PORTAL_PATHS.has(match[1])) {
+    return { mode: 'portal', orgSlug: match[1] };
+  }
 
   return { mode: 'app', orgSlug: null };
 }
