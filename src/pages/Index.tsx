@@ -1,6 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import WebsiteHome from "@/pages/website/WebsiteHome";
+import { getPostLoginPath } from "@/lib/portal-user-detect";
 
 const Index = () => {
   const { user, role, loading } = useAuth();
