@@ -170,6 +170,7 @@ export default function ClientHome() {
   const handleHorseCreated = (horseId: string) => {
     setShowMandatoryHorseModal(false);
     fetchData();
+    checkAfterHorseCreation();
     navigate(`/client-horse/${horseId}`);
   };
 
