@@ -157,7 +157,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
           className="space-y-6"
         >
           {/* Step 0: Name */}
-          {step === 0 && (
+          {currentLogicalStep === 0 && (
             <div className="space-y-4">
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-foreground">Wie heißt du?</h2>
@@ -179,7 +179,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
           )}
 
           {/* Step 1: Role */}
-          {step === 1 && (
+          {currentLogicalStep === 1 && (
             <div className="space-y-4">
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-foreground">Was machst du?</h2>
@@ -222,8 +222,13 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
             </div>
           )}
 
-          {/* Step 2: Country */}
-          {step === 2 && (
+          {/* Step 2: Client Type (Privat / Gewerbe) – only for clients */}
+          {currentLogicalStep === 2 && (
+            <ClientTypeSelection value={clientType} onChange={setClientType} />
+          )}
+
+          {/* Step 3: Country */}
+          {currentLogicalStep === 3 && (
             <div className="space-y-4">
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-foreground">In welchem Land arbeitest du?</h2>
@@ -258,8 +263,8 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
             </div>
           )}
 
-          {/* Step 3: Email & Password */}
-          {step === 3 && (
+          {/* Step 4: Email & Password */}
+          {currentLogicalStep === 4 && (
             <div className="space-y-4">
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-foreground">Dein Zugang</h2>
@@ -281,7 +286,6 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
                     onChange={(e) => setPassword(e.target.value)} className="h-[52px] text-base"
                     onKeyDown={(e) => e.key === "Enter" && canProceed() && handleNext()}
                   />
-                  {/* Password strength indicator */}
                   {password.length > 0 && (
                     <div className="space-y-1">
                       <Progress 
@@ -345,8 +349,8 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
             </div>
           )}
 
-          {/* Step 4: Business Name (providers only) */}
-          {step === 4 && (
+          {/* Step 5: Business Name (providers only) */}
+          {currentLogicalStep === 5 && (
             <div className="space-y-4">
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-foreground">Dein Betrieb</h2>
