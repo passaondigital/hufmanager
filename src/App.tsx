@@ -257,13 +257,32 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Subdomain routing: markt.hufmanager.de (public browse, auth for orders)
+  // Subdomain routing: markt.hufmanager.de
   if (portalMode.mode === 'marketplace') {
     return (
       <AuthProvider>
         <Suspense fallback={<LazyFallback />}>
           <Routes>
             <Route path="*" element={<MarketplacePublic />} />
+          </Routes>
+        </Suspense>
+      </AuthProvider>
+    );
+  }
+
+  // Subdomain routing: tierarzt.hufmanager.de
+  if (portalMode.mode === 'veterinary') {
+    return (
+      <AuthProvider>
+        <Suspense fallback={<LazyFallback />}>
+          <Routes>
+            <Route path="/vet/dashboard" element={<VetDashboard />} />
+            <Route path="/vet/soap" element={<VetSOAPForm />} />
+            <Route path="/vet/pms-connect" element={<VetPMSConnect />} />
+            <Route path="/vet/csv-import" element={<VetCSVImport />} />
+            <Route path="/vet/got-rechner" element={<VetGOTRechner />} />
+            <Route path="/tierarzt-finder" element={<TierarztFinder />} />
+            <Route path="*" element={<VetPortalLogin />} />
           </Routes>
         </Suspense>
       </AuthProvider>
