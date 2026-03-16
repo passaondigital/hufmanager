@@ -20,6 +20,7 @@ interface MultiStepSignupProps {
     password: string;
     country: DachCountry;
     businessName?: string;
+    clientType?: ClientType;
   }) => Promise<void>;
   onCancel: () => void;
   loading: boolean;
