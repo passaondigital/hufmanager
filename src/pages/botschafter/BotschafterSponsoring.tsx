@@ -30,7 +30,7 @@ export default function BotschafterSponsoring() {
       .from("pferdeakte_botschafter")
       .select("id, referral_code, first_name, last_name, type, public_display_name, bio, company_name, discount_code, sponsoring_page_published")
       .or(`user_id.eq.${user!.id},email.eq.${user!.email}`)
-      .eq("status", "active")
+      .in("status", ["active", "pending"])
       .maybeSingle();
 
     if (data) {

@@ -87,7 +87,7 @@ export default function BotschafterWerbemittelPage() {
       .from("pferdeakte_botschafter")
       .select("id, referral_code, first_name")
       .or(`user_id.eq.${user!.id},email.eq.${user!.email}`)
-      .eq("status", "active")
+      .in("status", ["active", "pending"])
       .maybeSingle();
     setBotschafter(botData as any);
 

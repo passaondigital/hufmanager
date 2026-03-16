@@ -190,7 +190,7 @@ export default function PferdeakteBotschafter() {
     }
 
     setSubmitting(false);
-    navigate("/botschafter/warten", { replace: true });
+    navigate("/botschafter/dashboard", { replace: true });
   };
 
   const inputCls = "border-2 border-zinc-200 bg-white focus-visible:ring-[#f97316] focus-visible:border-[#f97316]";

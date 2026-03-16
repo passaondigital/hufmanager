@@ -50,7 +50,7 @@ export default function BotschafterUebersicht() {
       .from("pferdeakte_botschafter")
       .select("id, referral_code, total_clicks, total_conversions, total_earnings_cents, commission_rate, copecart_username, onboarding_completed, bid, user_id")
       .or(`user_id.eq.${user!.id},email.eq.${userEmail}`)
-      .eq("status", "active")
+      .in("status", ["active", "pending"])
       .maybeSingle();
 
     if (bot) {

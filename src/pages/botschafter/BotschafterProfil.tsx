@@ -33,7 +33,7 @@ export default function BotschafterProfil() {
       .from("pferdeakte_botschafter")
       .select("*")
       .or(`user_id.eq.${user!.id},email.eq.${user!.email}`)
-      .eq("status", "active")
+      .in("status", ["active", "pending"])
       .maybeSingle();
     if (data) {
       setBot(data);

@@ -134,10 +134,8 @@ export default function BotschafterAuth() {
             .eq("id", bot.id);
         }
 
-        if (bot.status === "active") {
+        if (bot.status === "active" || bot.status === "pending") {
           navigate("/botschafter/dashboard", { replace: true });
-        } else if (bot.status === "pending") {
-          navigate("/botschafter/warten", { replace: true });
         } else {
           setNoBotschafter(true);
           setLoggedInUser({ id: data.user.id, email: data.user.email || loginEmail });
@@ -265,7 +263,7 @@ export default function BotschafterAuth() {
     }
 
     setRegLoading(false);
-    navigate("/botschafter/warten", { replace: true });
+    navigate("/botschafter/dashboard", { replace: true });
   };
 
   const inputCls = "h-12 border-2 border-zinc-200 bg-white focus-visible:ring-[#f97316] focus-visible:border-[#f97316]";
@@ -440,7 +438,7 @@ export default function BotschafterAuth() {
                                 console.warn("Welcome email failed:", e);
                               }
 
-                              navigate("/botschafter/warten", { replace: true });
+                              navigate("/botschafter/dashboard", { replace: true });
                             } catch (err: any) {
                               toast.error(err.message || "Fehler bei der Registrierung");
                               setInlineLoading(false);

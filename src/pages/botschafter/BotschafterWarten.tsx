@@ -38,8 +38,7 @@ export default function BotschafterWarten() {
             .update({ user_id: user.id } as any)
             .eq("id", bot.id);
         }
-        // If already active, redirect to dashboard
-        if (bot.status === "active") {
+        if (bot.status === "active" || bot.status === "pending") {
           navigate("/botschafter/dashboard", { replace: true });
           return;
         }

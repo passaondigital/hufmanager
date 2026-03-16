@@ -34,7 +34,7 @@ export default function BotschafterUmsaetze() {
       .from("pferdeakte_botschafter")
       .select("id, copecart_username, copecart_verified, total_earnings_cents, total_paid_out_cents, total_conversions, tier")
       .or(`user_id.eq.${user!.id},email.eq.${user!.email}`)
-      .eq("status", "active")
+      .in("status", ["active", "pending"])
       .maybeSingle();
 
     if (botData) {
