@@ -77,10 +77,6 @@ export default function TierarztFinder() {
 
   return (
     <>
-      <Helmet>
-        <title>Tierarzt-Finder | HufManager – Pferdetierärzte in DACH</title>
-        <meta name="description" content="Finde spezialisierte Pferdetierärzte und Pferdekliniken in Deutschland, Österreich und der Schweiz. Mit Notdienst-Filter, Spezialisierungen und direkter Kontaktaufnahme." />
-      </Helmet>
 
       <div className="min-h-screen bg-background">
         {/* Hero */}

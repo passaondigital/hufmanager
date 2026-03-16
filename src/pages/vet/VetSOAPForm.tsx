@@ -56,7 +56,7 @@ export default function VetSOAPForm() {
 
       const { error } = await supabase
         .from("partner_treatment_notes")
-        .insert({
+        .insert([{
           horse_id: selectedHorseId,
           partner_id: user!.id,
           treatment_type: treatmentType,
@@ -65,7 +65,7 @@ export default function VetSOAPForm() {
           treatment_performed: plan,
           visible_to_kid: true,
           visible_to_pid: true,
-        });
+        }] as any);
       if (error) throw error;
     },
     onSuccess: () => {
