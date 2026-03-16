@@ -38,6 +38,7 @@ import { OfferPreviewPanel } from "@/components/landing/OfferPreviewPanel";
 import { OfferRecipeEditor } from "@/components/offers/OfferRecipeEditor";
 import { OfferStockBadge } from "@/components/offers/OfferStockBadge";
 import { useOfferMaterials } from "@/hooks/useOfferMaterials";
+import { useTaxConfig } from "@/hooks/useTaxConfig";
 
 // Extract YouTube video ID from URL
 const getYouTubeId = (url: string): string | null => {
