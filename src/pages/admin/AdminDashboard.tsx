@@ -35,9 +35,10 @@ import { AdminBotschafterAbrechnungen } from "@/components/admin/AdminBotschafte
 import { AdminBotschafterWerbemittel } from "@/components/admin/AdminBotschafterWerbemittel";
 import { AdminBotschafterRangliste } from "@/components/admin/AdminBotschafterRangliste";
 import { AdminBotschafterKommunikation } from "@/components/admin/AdminBotschafterKommunikation";
-import { HeartPulse, FileText, Handshake, Building2, UsersRound, GraduationCap } from "lucide-react";
+import { HeartPulse, FileText, Handshake, Building2, UsersRound, GraduationCap, ShieldCheck } from "lucide-react";
+import { AdminVerifications } from "@/components/admin/AdminVerifications";
 
-type AdminView = "users" | "user-mgmt" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "invoices" | "contracts" | "connections" | "domains" | "self-healing" | "affiliates" | "cooperations" | "hm_team" | "education" | "botschafter" | "botschafter-conversions" | "botschafter-abrechnungen" | "botschafter-werbemittel" | "botschafter-rangliste" | "botschafter-kommunikation";
+type AdminView = "users" | "user-mgmt" | "verifications" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "invoices" | "contracts" | "connections" | "domains" | "self-healing" | "affiliates" | "cooperations" | "hm_team" | "education" | "botschafter" | "botschafter-conversions" | "botschafter-abrechnungen" | "botschafter-werbemittel" | "botschafter-rangliste" | "botschafter-kommunikation";
 
 const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "user-mgmt", label: "Nutzer-Verwaltung", icon: Shield },
