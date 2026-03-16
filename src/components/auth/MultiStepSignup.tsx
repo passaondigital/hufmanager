@@ -45,6 +45,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [businessName, setBusinessName] = useState("");
+  const [clientType, setClientType] = useState<ClientType>("private");
   const [showWelcome, setShowWelcome] = useState(false);
   const [agbAccepted, setAgbAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
