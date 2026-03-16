@@ -2094,7 +2094,9 @@ export type Database = {
           accept_new_customers: boolean | null
           address: string | null
           bank_name: string | null
+          berufsbezeichnung: string | null
           bic: string | null
+          bilanzpflicht: boolean | null
           business_name: string | null
           client_intake_status: string | null
           communication_mode: string | null
@@ -2104,14 +2106,17 @@ export type Database = {
           created_at: string
           currency: string | null
           custom_domain: string | null
+          datev_mandanten_nr: string | null
           default_vat_rate: number | null
           domain_connection_type: string | null
           email: string | null
           exit_intent_enabled: boolean | null
           facebook_pixel_id: string | null
+          finanzamt: string | null
           gallery_images: Json | null
           google_analytics_id: string | null
           google_search_console_code: string | null
+          handelsregister: string | null
           hero_headline: string | null
           hero_image_url: string | null
           horses_treated: number | null
@@ -2120,15 +2125,18 @@ export type Database = {
           impressum_text: string | null
           imprint: string | null
           instagram_posts: Json | null
+          kammer: string | null
           ki_features_enabled: boolean
           kleine_unternehmer: boolean | null
           landing_template: string | null
+          legal_form: string | null
           logo_url: string | null
           meta_description: string | null
           mwst_pflichtig: boolean | null
           owner_name: string | null
           paypal_link: string | null
           phone: string | null
+          price_display_mode: string | null
           primary_color: string | null
           privacy: string | null
           profession_type: string | null
@@ -2144,6 +2152,8 @@ export type Database = {
           social_instagram: string | null
           social_tiktok: string | null
           social_website: string | null
+          steuerberater_email: string | null
+          steuerberater_name: string | null
           stripe_public_key: string | null
           subdomain: string | null
           subdomain_active: boolean | null
@@ -2159,6 +2169,7 @@ export type Database = {
           vat_id: string | null
           vehicle_consumption_per_100km: number | null
           vehicle_fuel_type: string | null
+          vorsteuerabzug: boolean | null
           website_active_pages: Json | null
           website_navigation: Json | null
           whatsapp_enabled: boolean | null
@@ -2170,7 +2181,9 @@ export type Database = {
           accept_new_customers?: boolean | null
           address?: string | null
           bank_name?: string | null
+          berufsbezeichnung?: string | null
           bic?: string | null
+          bilanzpflicht?: boolean | null
           business_name?: string | null
           client_intake_status?: string | null
           communication_mode?: string | null
@@ -2180,14 +2193,17 @@ export type Database = {
           created_at?: string
           currency?: string | null
           custom_domain?: string | null
+          datev_mandanten_nr?: string | null
           default_vat_rate?: number | null
           domain_connection_type?: string | null
           email?: string | null
           exit_intent_enabled?: boolean | null
           facebook_pixel_id?: string | null
+          finanzamt?: string | null
           gallery_images?: Json | null
           google_analytics_id?: string | null
           google_search_console_code?: string | null
+          handelsregister?: string | null
           hero_headline?: string | null
           hero_image_url?: string | null
           horses_treated?: number | null
@@ -2196,15 +2212,18 @@ export type Database = {
           impressum_text?: string | null
           imprint?: string | null
           instagram_posts?: Json | null
+          kammer?: string | null
           ki_features_enabled?: boolean
           kleine_unternehmer?: boolean | null
           landing_template?: string | null
+          legal_form?: string | null
           logo_url?: string | null
           meta_description?: string | null
           mwst_pflichtig?: boolean | null
           owner_name?: string | null
           paypal_link?: string | null
           phone?: string | null
+          price_display_mode?: string | null
           primary_color?: string | null
           privacy?: string | null
           profession_type?: string | null
@@ -2220,6 +2239,8 @@ export type Database = {
           social_instagram?: string | null
           social_tiktok?: string | null
           social_website?: string | null
+          steuerberater_email?: string | null
+          steuerberater_name?: string | null
           stripe_public_key?: string | null
           subdomain?: string | null
           subdomain_active?: boolean | null
@@ -2235,6 +2256,7 @@ export type Database = {
           vat_id?: string | null
           vehicle_consumption_per_100km?: number | null
           vehicle_fuel_type?: string | null
+          vorsteuerabzug?: boolean | null
           website_active_pages?: Json | null
           website_navigation?: Json | null
           whatsapp_enabled?: boolean | null
@@ -2246,7 +2268,9 @@ export type Database = {
           accept_new_customers?: boolean | null
           address?: string | null
           bank_name?: string | null
+          berufsbezeichnung?: string | null
           bic?: string | null
+          bilanzpflicht?: boolean | null
           business_name?: string | null
           client_intake_status?: string | null
           communication_mode?: string | null
@@ -2256,14 +2280,17 @@ export type Database = {
           created_at?: string
           currency?: string | null
           custom_domain?: string | null
+          datev_mandanten_nr?: string | null
           default_vat_rate?: number | null
           domain_connection_type?: string | null
           email?: string | null
           exit_intent_enabled?: boolean | null
           facebook_pixel_id?: string | null
+          finanzamt?: string | null
           gallery_images?: Json | null
           google_analytics_id?: string | null
           google_search_console_code?: string | null
+          handelsregister?: string | null
           hero_headline?: string | null
           hero_image_url?: string | null
           horses_treated?: number | null
@@ -2272,15 +2299,18 @@ export type Database = {
           impressum_text?: string | null
           imprint?: string | null
           instagram_posts?: Json | null
+          kammer?: string | null
           ki_features_enabled?: boolean
           kleine_unternehmer?: boolean | null
           landing_template?: string | null
+          legal_form?: string | null
           logo_url?: string | null
           meta_description?: string | null
           mwst_pflichtig?: boolean | null
           owner_name?: string | null
           paypal_link?: string | null
           phone?: string | null
+          price_display_mode?: string | null
           primary_color?: string | null
           privacy?: string | null
           profession_type?: string | null
@@ -2296,6 +2326,8 @@ export type Database = {
           social_instagram?: string | null
           social_tiktok?: string | null
           social_website?: string | null
+          steuerberater_email?: string | null
+          steuerberater_name?: string | null
           stripe_public_key?: string | null
           subdomain?: string | null
           subdomain_active?: boolean | null
@@ -2311,6 +2343,7 @@ export type Database = {
           vat_id?: string | null
           vehicle_consumption_per_100km?: number | null
           vehicle_fuel_type?: string | null
+          vorsteuerabzug?: boolean | null
           website_active_pages?: Json | null
           website_navigation?: Json | null
           whatsapp_enabled?: boolean | null
@@ -9212,82 +9245,115 @@ export type Database = {
         Row: {
           address: string | null
           bank_name: string | null
+          berufsbezeichnung: string | null
           bic: string | null
+          bilanzpflicht: boolean | null
           bio: string | null
           business_name: string | null
           country: string | null
           created_at: string
           currency: string | null
+          datev_mandanten_nr: string | null
           default_vat_rate: number | null
           email: string | null
+          finanzamt: string | null
+          handelsregister: string | null
           iban: string | null
           id: string
+          kammer: string | null
           kleine_unternehmer: boolean | null
+          legal_form: string | null
           logo_url: string | null
           notification_preferences: Json | null
           owner_name: string | null
           partner_id: string
           phone: string | null
+          price_display_mode: string | null
           public_profile_visible: boolean | null
           qualifications: string | null
           specialty: string | null
+          steuerberater_email: string | null
+          steuerberater_name: string | null
           tax_number: string | null
           updated_at: string
           vat_id: string | null
+          vorsteuerabzug: boolean | null
           website: string | null
         }
         Insert: {
           address?: string | null
           bank_name?: string | null
+          berufsbezeichnung?: string | null
           bic?: string | null
+          bilanzpflicht?: boolean | null
           bio?: string | null
           business_name?: string | null
           country?: string | null
           created_at?: string
           currency?: string | null
+          datev_mandanten_nr?: string | null
           default_vat_rate?: number | null
           email?: string | null
+          finanzamt?: string | null
+          handelsregister?: string | null
           iban?: string | null
           id?: string
+          kammer?: string | null
           kleine_unternehmer?: boolean | null
+          legal_form?: string | null
           logo_url?: string | null
           notification_preferences?: Json | null
           owner_name?: string | null
           partner_id: string
           phone?: string | null
+          price_display_mode?: string | null
           public_profile_visible?: boolean | null
           qualifications?: string | null
           specialty?: string | null
+          steuerberater_email?: string | null
+          steuerberater_name?: string | null
           tax_number?: string | null
           updated_at?: string
           vat_id?: string | null
+          vorsteuerabzug?: boolean | null
           website?: string | null
         }
         Update: {
           address?: string | null
           bank_name?: string | null
+          berufsbezeichnung?: string | null
           bic?: string | null
+          bilanzpflicht?: boolean | null
           bio?: string | null
           business_name?: string | null
           country?: string | null
           created_at?: string
           currency?: string | null
+          datev_mandanten_nr?: string | null
           default_vat_rate?: number | null
           email?: string | null
+          finanzamt?: string | null
+          handelsregister?: string | null
           iban?: string | null
           id?: string
+          kammer?: string | null
           kleine_unternehmer?: boolean | null
+          legal_form?: string | null
           logo_url?: string | null
           notification_preferences?: Json | null
           owner_name?: string | null
           partner_id?: string
           phone?: string | null
+          price_display_mode?: string | null
           public_profile_visible?: boolean | null
           qualifications?: string | null
           specialty?: string | null
+          steuerberater_email?: string | null
+          steuerberater_name?: string | null
           tax_number?: string | null
           updated_at?: string
           vat_id?: string | null
+          vorsteuerabzug?: boolean | null
           website?: string | null
         }
         Relationships: []

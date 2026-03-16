@@ -34,6 +34,8 @@ import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ServicePaymentModal } from "@/components/services/ServicePaymentModal";
 import { GroupPricingSection } from "@/components/services/GroupPricingSection";
+import { useTaxConfig } from "@/hooks/useTaxConfig";
+import { formatPriceLabel } from "@/lib/taxConfig";
 
 const categoryColors: Record<string, string> = {
   Standard: "bg-accent/10 text-accent",
@@ -88,6 +90,7 @@ const Services = () => {
     booking_action: "direct_book" as BookingAction,
   });
   const queryClient = useQueryClient();
+  const taxConfig = useTaxConfig();
 
   const { data: services = [], isLoading } = useQuery({
     queryKey: ["services"],
@@ -246,7 +249,7 @@ const Services = () => {
                   <div className="flex items-center gap-6 text-sm">
                     <span className="flex items-center gap-1.5 text-foreground font-medium">
                       <Euro className="h-4 w-4 text-primary" />
-                      €{service.base_price}
+                      {formatPriceLabel(service.base_price, taxConfig)}
                     </span>
                     <span className="flex items-center gap-1.5 text-muted-foreground">
                       <Clock className="h-4 w-4" />
@@ -339,14 +342,19 @@ const Services = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Preis (€ netto)</Label>
+                <Label>Preis (€ {taxConfig.priceDisplayMode === "brutto" ? "brutto" : "netto"})</Label>
                 <Input
                   type="number"
                   value={formData.base_price}
                   onChange={(e) => setFormData({ ...formData, base_price: Number(e.target.value) })}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Netto-Preis eingeben. Kleinunternehmer (§19 UStG): Netto = Brutto. MwSt wird ggf. auf der Rechnung berechnet.
+                  {taxConfig.kleinunternehmer
+                    ? "Kleinunternehmer: Netto = Brutto (keine MwSt)."
+                    : taxConfig.priceDisplayMode === "brutto"
+                      ? "Brutto-Preis eingeben (MwSt ist enthalten)."
+                      : "Netto-Preis eingeben. MwSt wird auf der Rechnung aufgeschlagen."
+                  }
                 </p>
               </div>
             </div>

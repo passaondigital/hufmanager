@@ -38,6 +38,7 @@ import { OfferPreviewPanel } from "@/components/landing/OfferPreviewPanel";
 import { OfferRecipeEditor } from "@/components/offers/OfferRecipeEditor";
 import { OfferStockBadge } from "@/components/offers/OfferStockBadge";
 import { useOfferMaterials } from "@/hooks/useOfferMaterials";
+import { useTaxConfig } from "@/hooks/useTaxConfig";
 
 // Extract YouTube video ID from URL
 const getYouTubeId = (url: string): string | null => {
@@ -142,6 +143,7 @@ const Angebote = () => {
     auto_deduct: true,
   });
   const queryClient = useQueryClient();
+  const taxConfig = useTaxConfig();
   const { materials, setMaterials, saveMaterials } = useOfferMaterials(editingOffer?.id || null);
 
   // Sync materials when editing offer changes
@@ -683,13 +685,20 @@ const Angebote = () => {
 
                   {formData.price_type !== "auf_anfrage" && (
                     <div className="space-y-2">
-                      <Label>Preis (€ netto)</Label>
+                      <Label>Preis (€ {taxConfig.priceDisplayMode === "brutto" ? "brutto" : "netto"})</Label>
                       <Input
                         type="number"
                         value={formData.price}
                         onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                       />
-                      <p className="text-xs text-muted-foreground">Netto-Preis. Kleinunternehmer (§19 UStG): Netto = Brutto.</p>
+                      <p className="text-xs text-muted-foreground">
+                        {taxConfig.kleinunternehmer
+                          ? "Kleinunternehmer: Netto = Brutto (keine MwSt)."
+                          : taxConfig.priceDisplayMode === "brutto"
+                            ? "Brutto-Preis (MwSt enthalten)."
+                            : "Netto-Preis. MwSt wird auf der Rechnung aufgeschlagen."
+                        }
+                      </p>
                     </div>
                   )}
                 </div>

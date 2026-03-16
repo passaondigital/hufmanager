@@ -58,6 +58,7 @@ export function ServiceCard({
             {priceType && (
               <span className="ml-1 text-sm text-muted-foreground">/ {priceType}</span>
             )}
+            <p className="text-xs text-muted-foreground mt-0.5">zzgl. Anfahrt</p>
           </div>
         )}
       </CardHeader>
