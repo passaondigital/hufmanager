@@ -1,15 +1,13 @@
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Lock, ShieldAlert, ArrowRight } from "lucide-react";
 
 /**
  * Shows a paywall overlay when account_status is 'expired'.
- * Renders nothing if account is active/trial.
  */
 export function TrialPaywall() {
   const { user } = useAuth();
@@ -20,7 +18,7 @@ export function TrialPaywall() {
       if (!user) return null;
       const { data } = await supabase
         .from("profiles")
-        .select("account_status, trial_ends_at, display_name")
+        .select("account_status, trial_ends_at, full_name")
         .eq("id", user.id)
         .single();
       return data;
@@ -29,7 +27,7 @@ export function TrialPaywall() {
     staleTime: 1000 * 60 * 5,
   });
 
-  if (!profile || profile.account_status !== "expired") return null;
+  if (!profile || (profile as any).account_status !== "expired") return null;
 
   const plans = [
     { name: "Starter", price: "29€/Monat", url: "https://www.copecart.com/products/8ef10f74/checkout" },
