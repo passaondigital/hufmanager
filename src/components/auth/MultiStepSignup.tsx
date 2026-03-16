@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { ConfettiEffect } from "@/components/onboarding/ConfettiEffect";
 import { DACH_COUNTRIES, type DachCountry } from "@/lib/dach";
 import { WiderrufsausschlussCheckbox } from "@/components/consent/WiderrufsausschlussCheckbox";
+import { ClientTypeSelection, type ClientType } from "@/components/auth/ClientTypeSelection";
 
 interface MultiStepSignupProps {
   onComplete: (data: {
@@ -19,16 +20,18 @@ interface MultiStepSignupProps {
     password: string;
     country: DachCountry;
     businessName?: string;
+    clientType?: ClientType;
   }) => Promise<void>;
   onCancel: () => void;
   loading: boolean;
   inviteCode?: string | null;
 }
 
-// Steps: Name → Role → Country → Credentials → Business (provider only)
+// Steps: Name → Role → ClientType (if client) → Country → Credentials → Business (provider only)
 const STEPS = [
   { id: "name", motivation: "Schön dass du dabei bist." },
   { id: "role", motivation: "HufManager passt sich deiner Arbeit an." },
+  { id: "client-type", motivation: "Damit wir dir die richtigen Features zeigen." },
   { id: "country", motivation: "Steuerrecht, Währung & Sprache — automatisch korrekt." },
   { id: "credentials", motivation: "Deine Daten. Deine Kontrolle. Deutsche Server." },
   { id: "business", motivation: "Fast geschafft — gleich bist du drin." },
@@ -42,6 +45,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [businessName, setBusinessName] = useState("");
+  const [clientType, setClientType] = useState<ClientType>("private");
   const [showWelcome, setShowWelcome] = useState(false);
   const [agbAccepted, setAgbAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
@@ -50,16 +54,29 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
 
   const firstName = fullName.split(" ")[0] || "";
 
-  // For clients: skip business step (step 4)
-  const maxStep = role === "client" ? 3 : 4;
+  // Dynamic step sequence based on role
+  const getStepSequence = () => {
+    if (role === "provider") {
+      // name → role → country → credentials → business
+      return [0, 1, 3, 4, 5];
+    }
+    // client: name → role → client-type → country → credentials
+    return [0, 1, 2, 3, 4];
+  };
+
+  const stepSequence = getStepSequence();
+  const currentLogicalStep = stepSequence[step] ?? 0;
+  const maxStep = stepSequence.length - 1;
+  const currentStepData = STEPS[currentLogicalStep];
 
   const canProceed = () => {
-    switch (step) {
+    switch (currentLogicalStep) {
       case 0: return fullName.trim().length >= 2;
       case 1: return true;
-      case 2: return true; // country always selected
-      case 3: return email.includes("@") && password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password) && agbAccepted && privacyAccepted && widerrufAccepted;
-      case 4: return true; // business name optional
+      case 2: return true; // client-type always has default
+      case 3: return true; // country always selected
+      case 4: return email.includes("@") && password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password) && agbAccepted && privacyAccepted && widerrufAccepted;
+      case 5: return true; // business name optional
       default: return false;
     }
   };
@@ -80,6 +97,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
       password,
       country,
       businessName: businessName.trim() || undefined,
+      clientType: role === "client" ? clientType : undefined,
     });
     setShowWelcome(true);
   };
@@ -112,7 +130,6 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
   }
 
   const totalDots = maxStep + 1;
-  const currentStepData = STEPS[step];
 
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
@@ -140,7 +157,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
           className="space-y-6"
         >
           {/* Step 0: Name */}
-          {step === 0 && (
+          {currentLogicalStep === 0 && (
             <div className="space-y-4">
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-foreground">Wie heißt du?</h2>
@@ -162,7 +179,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
           )}
 
           {/* Step 1: Role */}
-          {step === 1 && (
+          {currentLogicalStep === 1 && (
             <div className="space-y-4">
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-foreground">Was machst du?</h2>
@@ -205,8 +222,13 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
             </div>
           )}
 
-          {/* Step 2: Country */}
-          {step === 2 && (
+          {/* Step 2: Client Type (Privat / Gewerbe) – only for clients */}
+          {currentLogicalStep === 2 && (
+            <ClientTypeSelection value={clientType} onChange={setClientType} />
+          )}
+
+          {/* Step 3: Country */}
+          {currentLogicalStep === 3 && (
             <div className="space-y-4">
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-foreground">In welchem Land arbeitest du?</h2>
@@ -241,8 +263,8 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
             </div>
           )}
 
-          {/* Step 3: Email & Password */}
-          {step === 3 && (
+          {/* Step 4: Email & Password */}
+          {currentLogicalStep === 4 && (
             <div className="space-y-4">
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-foreground">Dein Zugang</h2>
@@ -264,7 +286,6 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
                     onChange={(e) => setPassword(e.target.value)} className="h-[52px] text-base"
                     onKeyDown={(e) => e.key === "Enter" && canProceed() && handleNext()}
                   />
-                  {/* Password strength indicator */}
                   {password.length > 0 && (
                     <div className="space-y-1">
                       <Progress 
@@ -328,8 +349,8 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
             </div>
           )}
 
-          {/* Step 4: Business Name (providers only) */}
-          {step === 4 && (
+          {/* Step 5: Business Name (providers only) */}
+          {currentLogicalStep === 5 && (
             <div className="space-y-4">
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-foreground">Dein Betrieb</h2>

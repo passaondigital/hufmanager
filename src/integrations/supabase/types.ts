@@ -10672,8 +10672,11 @@ export type Database = {
           bank_name: string | null
           bic: string | null
           bio: string | null
+          business_address: Json | null
+          business_capacity: number | null
           business_hours: Json | null
           business_name: string | null
+          business_type: string | null
           cancellation_policy: string | null
           city: string | null
           client_status: string | null
@@ -10712,6 +10715,7 @@ export type Database = {
           is_discoverable: boolean | null
           is_manually_managed: boolean | null
           is_suspended: boolean | null
+          is_verified_business: boolean | null
           last_active_at: string | null
           last_name: string | null
           latitude: number | null
@@ -10787,6 +10791,12 @@ export type Database = {
           vehicle_consumption_per_100km: number | null
           vehicle_name: string | null
           vehicle_plate: string | null
+          verification_document_url: string | null
+          verification_notes: string | null
+          verification_reviewed_at: string | null
+          verification_reviewed_by: string | null
+          verification_status: string | null
+          verification_submitted_at: string | null
           website: string | null
           working_conditions: string | null
           zip_code: string | null
@@ -10801,8 +10811,11 @@ export type Database = {
           bank_name?: string | null
           bic?: string | null
           bio?: string | null
+          business_address?: Json | null
+          business_capacity?: number | null
           business_hours?: Json | null
           business_name?: string | null
+          business_type?: string | null
           cancellation_policy?: string | null
           city?: string | null
           client_status?: string | null
@@ -10841,6 +10854,7 @@ export type Database = {
           is_discoverable?: boolean | null
           is_manually_managed?: boolean | null
           is_suspended?: boolean | null
+          is_verified_business?: boolean | null
           last_active_at?: string | null
           last_name?: string | null
           latitude?: number | null
@@ -10916,6 +10930,12 @@ export type Database = {
           vehicle_consumption_per_100km?: number | null
           vehicle_name?: string | null
           vehicle_plate?: string | null
+          verification_document_url?: string | null
+          verification_notes?: string | null
+          verification_reviewed_at?: string | null
+          verification_reviewed_by?: string | null
+          verification_status?: string | null
+          verification_submitted_at?: string | null
           website?: string | null
           working_conditions?: string | null
           zip_code?: string | null
@@ -10930,8 +10950,11 @@ export type Database = {
           bank_name?: string | null
           bic?: string | null
           bio?: string | null
+          business_address?: Json | null
+          business_capacity?: number | null
           business_hours?: Json | null
           business_name?: string | null
+          business_type?: string | null
           cancellation_policy?: string | null
           city?: string | null
           client_status?: string | null
@@ -10970,6 +10993,7 @@ export type Database = {
           is_discoverable?: boolean | null
           is_manually_managed?: boolean | null
           is_suspended?: boolean | null
+          is_verified_business?: boolean | null
           last_active_at?: string | null
           last_name?: string | null
           latitude?: number | null
@@ -11045,6 +11069,12 @@ export type Database = {
           vehicle_consumption_per_100km?: number | null
           vehicle_name?: string | null
           vehicle_plate?: string | null
+          verification_document_url?: string | null
+          verification_notes?: string | null
+          verification_reviewed_at?: string | null
+          verification_reviewed_by?: string | null
+          verification_status?: string | null
+          verification_submitted_at?: string | null
           website?: string | null
           working_conditions?: string | null
           zip_code?: string | null

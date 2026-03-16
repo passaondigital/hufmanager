@@ -264,6 +264,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   sessionStorage.removeItem("hm_pending_widerruf_consent");
                 }
               }
+              // Process pending client_type from registration
+              const pendingClientType = sessionStorage.getItem("hm_pending_client_type");
+              if (pendingClientType) {
+                try {
+                  await supabase.from("profiles").update({
+                    client_type: pendingClientType === "business" ? "commercial" : "private",
+                  } as any).eq("id", session.user.id);
+                } catch (err) {
+                  console.error("Error setting client_type:", err);
+                } finally {
+                  sessionStorage.removeItem("hm_pending_client_type");
+                }
+              }
             }
           }, 0);
         } else {

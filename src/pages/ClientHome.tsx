@@ -47,6 +47,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { DemoTourButton } from "@/components/demo/DemoTourButton";
 import { DemoModeIndicator } from "@/components/demo/DemoModeIndicator";
+import { useBusinessUpgradeHint } from "@/hooks/useBusinessUpgradeHint";
+import { BusinessUpgradeHint } from "@/components/client/BusinessUpgradeHint";
+import { BusinessRegistrationForm } from "@/components/auth/BusinessRegistrationForm";
 
 interface Horse {
   id: string;
@@ -82,6 +85,8 @@ export default function ClientHome() {
   const [showMandatoryHorseModal, setShowMandatoryHorseModal] = useState(false);
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [showHMCamModal, setShowHMCamModal] = useState(false);
+  const [showBusinessForm, setShowBusinessForm] = useState(false);
+  const { showHint, checkAfterHorseCreation, dismiss: dismissHint } = useBusinessUpgradeHint();
 
   const fetchData = async () => {
     if (!user) return;
@@ -165,6 +170,7 @@ export default function ClientHome() {
   const handleHorseCreated = (horseId: string) => {
     setShowMandatoryHorseModal(false);
     fetchData();
+    checkAfterHorseCreation();
     navigate(`/client-horse/${horseId}`);
   };
 
@@ -583,6 +589,25 @@ export default function ClientHome() {
         }}
         mode="client"
       />
+      {/* Business Upgrade Hint (6th horse) */}
+      <BusinessUpgradeHint
+        open={showHint}
+        onClose={dismissHint}
+        onUpgrade={() => {
+          dismissHint();
+          setShowBusinessForm(true);
+        }}
+      />
+
+      {/* Business Registration Form Dialog */}
+      {showBusinessForm && (
+        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <BusinessRegistrationForm
+            onComplete={() => setShowBusinessForm(false)}
+            onSkip={() => setShowBusinessForm(false)}
+          />
+        </div>
+      )}
       </div>
     </>
   );
