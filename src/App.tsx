@@ -511,6 +511,14 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/vet/impfungen" element={<VetImpfungen />} />
             
             {/* Portal Routes (auth required, handled inside component) */}
+            <Route path="/portal/galerie" element={<PortalGallery />} />
+            <Route path="/portal/bewerben" element={<PortalApplication />} />
+            <Route path="/portal/versicherung" element={<PortalDemo />} />
+            <Route path="/portal/hersteller" element={<PortalDemo />} />
+            <Route path="/portal/tierarzt" element={<PortalDemo />} />
+            <Route path="/portal/lieferant" element={<PortalDemo />} />
+            <Route path="/portal/ausbildung" element={<PortalDemo />} />
+            <Route path="/portal/verband" element={<PortalDemo />} />
             <Route path="/portal/:slug" element={<PortalDashboard />} />
             <Route path="/portal/:slug/settings" element={<PortalSettings />} />
             
