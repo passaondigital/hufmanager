@@ -370,7 +370,7 @@ export default function PartnerInvoices() {
                 <div key={idx} className="grid grid-cols-12 gap-2">
                   <Input className="col-span-6" placeholder="Beschreibung" value={item.description} onChange={e => { const n = [...items]; n[idx].description = e.target.value; setItems(n); }} />
                   <Input className="col-span-2" type="number" placeholder="Menge" value={item.quantity} onChange={e => { const n = [...items]; n[idx].quantity = e.target.value; setItems(n); }} />
-                  <Input className="col-span-3" type="number" step="0.01" placeholder="Preis" value={item.unit_price} onChange={e => { const n = [...items]; n[idx].unit_price = e.target.value; setItems(n); }} />
+                  <Input className="col-span-3" type="number" step="0.01" placeholder="Preis (netto)" value={item.unit_price} onChange={e => { const n = [...items]; n[idx].unit_price = e.target.value; setItems(n); }} />
                   <Button type="button" variant="ghost" size="icon" className="col-span-1 h-10 text-destructive" onClick={() => setItems(items.filter((_, i) => i !== idx))} disabled={items.length <= 1}>×</Button>
                 </div>
               ))}

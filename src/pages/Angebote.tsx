@@ -683,12 +683,13 @@ const Angebote = () => {
 
                   {formData.price_type !== "auf_anfrage" && (
                     <div className="space-y-2">
-                      <Label>Preis (€)</Label>
+                      <Label>Preis (€ netto)</Label>
                       <Input
                         type="number"
                         value={formData.price}
                         onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                       />
+                      <p className="text-xs text-muted-foreground">Netto-Preis. Kleinunternehmer (§19 UStG): Netto = Brutto.</p>
                     </div>
                   )}
                 </div>

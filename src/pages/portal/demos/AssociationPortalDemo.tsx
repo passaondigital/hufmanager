@@ -258,7 +258,7 @@ export default function AssociationPortalDemo() {
           <div className="space-y-3">
             <Input placeholder="Event-Name" />
             <div className="grid grid-cols-2 gap-3"><Input placeholder="Datum" type="date" /><Input placeholder="Ort" /></div>
-            <div className="grid grid-cols-2 gap-3"><Input placeholder="Max. Teilnehmer" type="number" /><Input placeholder="Preis (€)" /></div>
+            <div className="grid grid-cols-2 gap-3"><Input placeholder="Max. Teilnehmer" type="number" /><Input placeholder="Preis (€ netto)" /></div>
             <Textarea placeholder="Beschreibung…" rows={3} />
             <Button className="w-full" onClick={() => setShowNeuesEvent(false)}>Event erstellen</Button>
           </div>
