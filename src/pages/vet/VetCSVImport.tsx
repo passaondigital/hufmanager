@@ -130,7 +130,7 @@ export default function VetCSVImport() {
           }
 
           // Insert as treatment note
-          await supabase.from("partner_treatment_notes").insert({
+          await supabase.from("partner_treatment_notes").insert([{
             horse_id: horseId,
             partner_id: user!.id,
             treatment_type: "csv_import",
@@ -139,7 +139,7 @@ export default function VetCSVImport() {
             treatment_performed: treatment || null,
             visible_to_kid: true,
             visible_to_pid: true,
-          });
+          }] as any);
 
           // If medication present, also insert
           const medication = row[mappings.medication || ""] || "";
