@@ -53,6 +53,8 @@ const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ cla
   { id: "catalog", label: "Produktkatalog", icon: Package },
   { id: "affiliates", label: "Affiliates", icon: Handshake },
   { id: "cooperations", label: "Kooperationen", icon: Building2 },
+  { id: "portal-applications", label: "Portal-Bewerbungen", icon: ClipboardList },
+  { id: "portal-customers", label: "Portal-Kunden", icon: Building2 },
   { id: "education", label: "Hufschulen", icon: GraduationCap },
   { id: "hm_team", label: "HM Team", icon: UsersRound },
   { id: "botschafter", label: "Botschafter", icon: Mic },
