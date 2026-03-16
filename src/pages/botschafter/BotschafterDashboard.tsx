@@ -78,8 +78,6 @@ export default function BotschafterDashboard() {
 
     if (bot) {
       setData(bot as unknown as BotschafterData);
-    } else {
-      navigate("/botschafter/login", { replace: true });
     }
     setLoading(false);
   };
