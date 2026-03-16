@@ -233,11 +233,7 @@ export function AppointmentFormModal({
   const createAppointments = useMutation({
     networkMode: "always",
     onMutate: (appointments: any[]) => {
-      console.log("[AppointmentFormModal] mutate", {
-        online: typeof navigator !== "undefined" ? navigator.onLine : undefined,
-        appointmentsCount: appointments?.length,
-        evidenceCount: pendingEvidence.length,
-      });
+      if (import.meta.env.DEV) console.log("[AppointmentFormModal] mutate", { appointmentsCount: appointments?.length });
     },
     mutationFn: async (appointments: any[]) => {
       console.log("[AppointmentFormModal] mutationFn start");
