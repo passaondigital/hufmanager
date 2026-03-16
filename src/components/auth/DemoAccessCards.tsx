@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Hammer, Heart, Users, Stethoscope, ChevronDown, ChevronUp, Copy, Check } from "lucide-react";
+import { Hammer, Heart, Users, Stethoscope, Building2, ChevronDown, ChevronUp, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DEMO_EMAILS } from "@/lib/demo-accounts";
 import { toast } from "sonner";
 
 const DEMO_PASSWORD = "HufManagerDemo2030";
+const BUSINESS_PASSWORD = "HMB2030+";
 
 interface DemoAccount {
   label: string;
@@ -72,47 +73,90 @@ export function DemoAccessCards({ onSelectAccount }: DemoAccessCardsProps) {
       </button>
 
       {expanded && (
-        <div className="grid grid-cols-2 gap-2 mt-2 animate-in slide-in-from-top-2 duration-200">
-          {DEMO_ACCOUNTS.map((account) => {
-            const Icon = account.icon;
-            const isCopied = copiedEmail === account.email;
+        <div className="space-y-3 mt-2 animate-in slide-in-from-top-2 duration-200">
+          <div className="grid grid-cols-2 gap-2">
+            {DEMO_ACCOUNTS.map((account) => {
+              const Icon = account.icon;
+              const isCopied = copiedEmail === account.email;
 
-            return (
-              <button
-                key={account.email}
-                type="button"
-                onClick={() => onSelectAccount(account.email, DEMO_PASSWORD)}
-                className={cn(
-                  "flex flex-col items-center gap-1.5 p-3 rounded-xl border border-border",
-                  "bg-card hover:bg-muted/50 hover:border-primary/40 transition-all duration-200",
-                  "text-center group cursor-pointer"
-                )}
-              >
-                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                  <Icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                </div>
-                <span className="text-xs font-semibold text-foreground">{account.label}</span>
-                <span className="text-[10px] text-muted-foreground">{account.description}</span>
-                <div className="flex items-center gap-1 mt-0.5">
-                  <span className="text-[9px] text-muted-foreground/70 truncate max-w-[120px]">
-                    {account.email.split("@")[0]}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={(e) => handleCopyEmail(account.email, e)}
-                    className="text-muted-foreground/50 hover:text-primary transition-colors"
-                  >
-                    {isCopied ? (
-                      <Check className="h-2.5 w-2.5 text-green-500" />
-                    ) : (
-                      <Copy className="h-2.5 w-2.5" />
-                    )}
-                  </button>
-                </div>
-              </button>
-            );
-          })}
-          <p className="col-span-2 text-[10px] text-muted-foreground/60 text-center mt-1">
+              return (
+                <button
+                  key={account.email}
+                  type="button"
+                  onClick={() => onSelectAccount(account.email, DEMO_PASSWORD)}
+                  className={cn(
+                    "flex flex-col items-center gap-1.5 p-3 rounded-xl border border-border",
+                    "bg-card hover:bg-muted/50 hover:border-primary/40 transition-all duration-200",
+                    "text-center group cursor-pointer"
+                  )}
+                >
+                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                    <Icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
+                  <span className="text-xs font-semibold text-foreground">{account.label}</span>
+                  <span className="text-[10px] text-muted-foreground">{account.description}</span>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <span className="text-[9px] text-muted-foreground/70 truncate max-w-[120px]">
+                      {account.email.split("@")[0]}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => handleCopyEmail(account.email, e)}
+                      className="text-muted-foreground/50 hover:text-primary transition-colors"
+                    >
+                      {isCopied ? (
+                        <Check className="h-2.5 w-2.5 text-green-500" />
+                      ) : (
+                        <Copy className="h-2.5 w-2.5" />
+                      )}
+                    </button>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Business Portal Card */}
+          <div className="border-t border-border pt-3">
+            <p className="text-[10px] text-muted-foreground text-center mb-2 font-medium">Für Unternehmen & Organisationen</p>
+            <button
+              type="button"
+              onClick={() => onSelectAccount(DEMO_EMAILS.business, BUSINESS_PASSWORD)}
+              className={cn(
+                "w-full flex items-center gap-3 p-3 rounded-xl border border-border",
+                "bg-card hover:bg-muted/50 hover:border-primary/40 transition-all duration-200",
+                "text-left group cursor-pointer"
+              )}
+            >
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors shrink-0">
+                <Building2 className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="text-xs font-semibold text-foreground block">HufManager Business Portal</span>
+                <span className="text-[10px] text-muted-foreground block">
+                  Versicherungen · Hersteller · Verbände · Kliniken · Ausbildung · Lieferanten
+                </span>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <span className="text-[9px] text-muted-foreground/70 truncate max-w-[100px] hidden sm:inline">
+                  {DEMO_EMAILS.business.split("@")[0]}
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => handleCopyEmail(DEMO_EMAILS.business, e)}
+                  className="text-muted-foreground/50 hover:text-primary transition-colors"
+                >
+                  {copiedEmail === DEMO_EMAILS.business ? (
+                    <Check className="h-2.5 w-2.5 text-green-500" />
+                  ) : (
+                    <Copy className="h-2.5 w-2.5" />
+                  )}
+                </button>
+              </div>
+            </button>
+          </div>
+
+          <p className="text-[10px] text-muted-foreground/60 text-center mt-1">
             Klick = Auto-Login · Entdecke auch die <span className="text-primary font-medium">3 AutoFlow-Modi</span>
           </p>
         </div>
