@@ -27,7 +27,7 @@ const Navbar = () => {
               <Link to="/auth?force=login">Login</Link>
             </Button>
             <Button asChild>
-              <a href="/#demo">Demo ansehen</a>
+              <Link to="/auth">Kostenlos starten</Link>
             </Button>
           </div>
 
