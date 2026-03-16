@@ -90,6 +90,7 @@ const Services = () => {
     booking_action: "direct_book" as BookingAction,
   });
   const queryClient = useQueryClient();
+  const taxConfig = useTaxConfig();
 
   const { data: services = [], isLoading } = useQuery({
     queryKey: ["services"],
