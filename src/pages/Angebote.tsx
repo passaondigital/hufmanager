@@ -142,6 +142,7 @@ const Angebote = () => {
     auto_deduct: true,
   });
   const queryClient = useQueryClient();
+  const taxConfig = useTaxConfig();
   const { materials, setMaterials, saveMaterials } = useOfferMaterials(editingOffer?.id || null);
 
   // Sync materials when editing offer changes
