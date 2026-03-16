@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { ConfettiEffect } from "@/components/onboarding/ConfettiEffect";
 import { DACH_COUNTRIES, type DachCountry } from "@/lib/dach";
 import { WiderrufsausschlussCheckbox } from "@/components/consent/WiderrufsausschlussCheckbox";
+import { ClientTypeSelection, type ClientType } from "@/components/auth/ClientTypeSelection";
 
 interface MultiStepSignupProps {
   onComplete: (data: {
