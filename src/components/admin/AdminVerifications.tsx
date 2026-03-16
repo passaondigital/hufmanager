@@ -49,14 +49,14 @@ export function AdminVerifications() {
       let q = supabase
         .from("profiles")
         .select("id, full_name, email, business_name, business_type, business_address, business_capacity, verification_document_url, verification_status, verification_submitted_at, verification_notes, created_at")
-        .eq("client_type", "business")
+        .eq("client_type", "commercial" as any)
         .order("verification_submitted_at", { ascending: false });
 
       if (filter !== "all") {
-        q = q.eq("verification_status", filter);
+        q = q.eq("verification_status" as any, filter);
       }
 
-      const { data, error } = await q.limit(100);
+      const { data, error } = await (q as any).limit(100);
       if (error) throw error;
       return (data || []) as VerificationRequest[];
     },

@@ -61,7 +61,7 @@ export function BusinessRegistrationForm({ onComplete, onSkip }: BusinessRegistr
       const { error } = await supabase
         .from("profiles")
         .update({
-          client_type: "business",
+          client_type: "commercial",
           business_name: businessName.trim(),
           business_type: businessType,
           business_address: { street, zip, city },
