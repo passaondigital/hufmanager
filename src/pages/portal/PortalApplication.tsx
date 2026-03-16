@@ -72,7 +72,7 @@ export default function PortalApplication() {
 
     setLoading(true);
     try {
-      const { error } = await supabase.from("portal_applications").insert({
+      const { error } = await (supabase as any).from("portal_applications").insert({
         company_name: form.company_name,
         portal_type: form.portal_type,
         website: form.website || null,

@@ -49,7 +49,7 @@ export function AdminPortalApplications() {
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("portal_applications")
         .update({
           status,

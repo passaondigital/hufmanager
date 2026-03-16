@@ -10457,6 +10457,75 @@ export type Database = {
         }
         Relationships: []
       }
+      portal_applications: {
+        Row: {
+          company_name: string
+          contact_email: string
+          contact_name: string
+          contact_phone: string | null
+          contact_position: string | null
+          created_at: string | null
+          description: string
+          estimated_users: string | null
+          expectations: string
+          id: string
+          newsletter_accepted: boolean | null
+          portal_type: string
+          preferred_payment: string | null
+          privacy_accepted: boolean | null
+          referral_source: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string | null
+          website: string | null
+        }
+        Insert: {
+          company_name: string
+          contact_email: string
+          contact_name: string
+          contact_phone?: string | null
+          contact_position?: string | null
+          created_at?: string | null
+          description: string
+          estimated_users?: string | null
+          expectations: string
+          id?: string
+          newsletter_accepted?: boolean | null
+          portal_type: string
+          preferred_payment?: string | null
+          privacy_accepted?: boolean | null
+          referral_source?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          website?: string | null
+        }
+        Update: {
+          company_name?: string
+          contact_email?: string
+          contact_name?: string
+          contact_phone?: string | null
+          contact_position?: string | null
+          created_at?: string | null
+          description?: string
+          estimated_users?: string | null
+          expectations?: string
+          id?: string
+          newsletter_accepted?: boolean | null
+          portal_type?: string
+          preferred_payment?: string | null
+          privacy_accepted?: boolean | null
+          referral_source?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       preview_feedback: {
         Row: {
           comment: string | null
