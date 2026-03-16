@@ -35,11 +35,14 @@ export function BotschafterLayout() {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/botschafter/login");
+    try { await supabase.auth.signOut(); } catch (e) { /* proceed */ }
+    queryClient.clear();
+    sessionStorage.removeItem("botschafter_login_source");
+    navigate("/botschafter/login", { replace: true });
   };
 
   const isActive = (path: string) => location.pathname === path;

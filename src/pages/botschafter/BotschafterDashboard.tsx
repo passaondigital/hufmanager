@@ -83,7 +83,20 @@ export default function BotschafterDashboard() {
   };
 
   if (loading) return <div className="flex items-center justify-center p-12"><Loader2 className="w-8 h-8 animate-spin" style={{ color: "#F5970A" }} /></div>;
-  if (!data) return null;
+  if (!data) return (
+    <div className="p-6 max-w-2xl mx-auto text-center py-16 space-y-4">
+      <p className="text-lg font-semibold">Du bist noch kein Botschafter.</p>
+      <p className="text-sm" style={{ color: "#9ca3af" }}>Registriere dich jetzt und verdiene mit HufManager.</p>
+      <div className="flex gap-3 justify-center">
+        <Button onClick={() => navigate("/botschafter/login")} style={{ backgroundColor: "#F5970A", color: "#0a0700" }}>
+          Jetzt Botschafter werden
+        </Button>
+        <Button variant="outline" onClick={async () => { await supabase.auth.signOut(); navigate("/botschafter/login", { replace: true }); }} style={{ borderColor: "#2a2a1f" }}>
+          Abmelden
+        </Button>
+      </div>
+    </div>
+  );
 
   const conversions = data.total_conversions || 0;
   const currentTier = [...TIERS].reverse().find(t => conversions >= t.min) || TIERS[0];

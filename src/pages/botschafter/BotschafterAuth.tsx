@@ -292,6 +292,14 @@ export default function BotschafterAuth() {
   const inputCls = "h-12 border-2 border-zinc-200 bg-white focus-visible:ring-[#f97316] focus-visible:border-[#f97316]";
   const selectCls = "flex h-12 w-full rounded-lg border-2 border-zinc-200 bg-white px-4 py-3 text-base appearance-none focus:outline-none focus:ring-2 focus:ring-[#f97316] focus:border-[#f97316]";
 
+  if (!sessionChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f9fafb]">
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#f97316" }} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f9fafb] font-sans" style={{ color: "#0a0a0a" }}>
       {/* Nav */}
