@@ -177,54 +177,8 @@ export function LegalSettings() {
       {/* DACH Tax Country Selection */}
       <TaxCountryCard />
 
-      {/* Tax Information for ZUGFeRD / E-Invoicing */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
-            Steuerdaten für E-Rechnungen (ZUGFeRD)
-          </CardTitle>
-          <CardDescription>
-            Pflichtangaben für B2B-Rechnungen nach EU-Norm
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="vat_id">USt-IdNr. (Umsatzsteuer-ID)</Label>
-              <Input
-                id="vat_id"
-                placeholder="DE123456789"
-                value={taxInfo.vat_id}
-                onChange={(e) => setTaxInfo({ ...taxInfo, vat_id: e.target.value })}
-              />
-              <p className="text-xs text-muted-foreground">
-                Erforderlich für B2B-Rechnungen innerhalb der EU
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="tax_number">Steuernummer</Label>
-              <Input
-                id="tax_number"
-                placeholder="12/345/67890"
-                value={taxInfo.tax_number}
-                onChange={(e) => setTaxInfo({ ...taxInfo, tax_number: e.target.value })}
-              />
-              <p className="text-xs text-muted-foreground">
-                Alternative für lokale Geschäfte ohne USt-IdNr.
-              </p>
-            </div>
-          </div>
-          <Button onClick={handleSaveTaxInfo} disabled={savingTax}>
-            {savingTax ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <FileText className="h-4 w-4 mr-2" />
-            )}
-            Steuerdaten speichern
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Comprehensive Tax & Legal Form Settings */}
+      <ComprehensiveTaxSettings />
 
       {/* AVV Section - New Signing Card */}
       <AVVSigningCard />
