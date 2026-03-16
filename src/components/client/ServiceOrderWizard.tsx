@@ -378,7 +378,7 @@ export function ServiceOrderWizard({ open, onClose, horseId, horseName, horseRea
             </div>
 
             <div>
-              <Label>Geschätzter Preis (optional)</Label>
+              <Label>Geschätzter Preis (optional, netto)</Label>
               <div className="flex items-center gap-2 mt-1">
                 <Input
                   type="number"
@@ -390,6 +390,7 @@ export function ServiceOrderWizard({ open, onClose, horseId, horseName, horseRea
                 />
                 <span className="text-sm text-muted-foreground">€</span>
               </div>
+              <p className="text-xs text-muted-foreground mt-1">Netto-Preis. MwSt wird ggf. auf der Rechnung ausgewiesen.</p>
             </div>
 
             {/* Horse selection */}
