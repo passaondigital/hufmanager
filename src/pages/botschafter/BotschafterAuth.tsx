@@ -135,7 +135,7 @@ export default function BotschafterAuth() {
         }
 
         if (bot.status === "active") {
-          navigate("/botschafter/uebersicht", { replace: true });
+          navigate("/botschafter/dashboard", { replace: true });
         } else if (bot.status === "pending") {
           navigate("/botschafter/warten", { replace: true });
         } else {

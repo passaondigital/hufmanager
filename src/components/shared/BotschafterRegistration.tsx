@@ -163,7 +163,7 @@ export function BotschafterRegistration({ sourceRole }: Props) {
               </div>
             </div>
 
-            <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white" onClick={() => window.open("/botschafter/uebersicht", "_blank")}>
+            <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white" onClick={() => window.open("/botschafter/dashboard", "_blank")}>
               <ExternalLink className="w-4 h-4 mr-2" />
               Zum Botschafter-Dashboard
             </Button>

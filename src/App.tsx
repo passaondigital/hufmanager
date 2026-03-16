@@ -13,6 +13,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PasswordRecoveryRedirect } from "@/components/auth/PasswordRecoveryRedirect";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { BotschafterLayout } from "@/components/botschafter/BotschafterLayout";
 import { CockpitFullscreenProvider } from "@/components/day-cockpit/CockpitFullscreenContext";
 import { AuthLoadingScreen } from "@/components/auth/AuthLoadingScreen";
 import { ProfileGuardianScreen } from "@/components/auth/ProfileGuardianScreen";
@@ -112,6 +113,16 @@ const BotschafterWerbemittelPage = lazy(() => import("@/pages/botschafter/Botsch
 const WerbemittelEditor = lazy(() => import("@/pages/botschafter/WerbemittelEditor"));
 const BotschafterNachrichten = lazy(() => import("@/pages/botschafter/BotschafterNachrichten"));
 const BotschafterUebersicht = lazy(() => import("@/pages/botschafter/BotschafterUebersicht"));
+const BotschafterDashboard = lazy(() => import("@/pages/botschafter/BotschafterDashboard"));
+const BotschafterLinks = lazy(() => import("@/pages/botschafter/BotschafterLinks"));
+const BotschafterConversions = lazy(() => import("@/pages/botschafter/BotschafterConversions"));
+const BotschafterUmsaetze = lazy(() => import("@/pages/botschafter/BotschafterUmsaetze"));
+const BotschafterSponsoring = lazy(() => import("@/pages/botschafter/BotschafterSponsoring"));
+const BotschafterInsights = lazy(() => import("@/pages/botschafter/BotschafterInsights"));
+const BotschafterRangliste = lazy(() => import("@/pages/botschafter/BotschafterRangliste"));
+const BotschafterProfil = lazy(() => import("@/pages/botschafter/BotschafterProfil"));
+const BotschafterHufmanager = lazy(() => import("@/pages/botschafter/BotschafterHufmanager"));
+const SponsoringPublic = lazy(() => import("@/pages/botschafter/SponsoringPublic"));
 const Lager = lazy(() => import("@/pages/Lager"));
 const Ausgaben = lazy(() => import("@/pages/Ausgaben"));
 const GuV = lazy(() => import("@/pages/GuV"));
@@ -294,7 +305,7 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
   }
 
   // Intercept public routes that don't need AuthProvider
-  if (path.startsWith('/pferdeakte') || path.startsWith('/notfall/') || path === '/botschafter/login' || path === '/botschafter/warten') {
+  if (path.startsWith('/pferdeakte') || path.startsWith('/notfall/') || path === '/botschafter/login' || path === '/botschafter/warten' || path.startsWith('/ref/')) {
     return (
       <Suspense fallback={<LazyFallback />}>
         <Routes>
@@ -304,6 +315,7 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
           <Route path="/notfall/:eqid/:token" element={<NotfallZugang />} />
           <Route path="/botschafter/login" element={<BotschafterAuth />} />
           <Route path="/botschafter/warten" element={<BotschafterWarten />} />
+          <Route path="/ref/:code" element={<SponsoringPublic />} />
         </Routes>
       </Suspense>
     );
@@ -349,13 +361,18 @@ function App() {
     };
   }, []);
 
-  // Affiliate ?ref= tracking
+  // Affiliate ?ref= + ?src= tracking
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const ref = params.get("ref");
+    const src = params.get("src");
     if (ref && ref.length <= 20 && /^[A-Z0-9-]+$/i.test(ref)) {
       localStorage.setItem("huf_affiliate_ref", ref.toUpperCase());
       localStorage.setItem("huf_affiliate_ref_ts", Date.now().toString());
+      if (!sessionStorage.getItem("hm_referral_code")) {
+        sessionStorage.setItem("hm_referral_code", ref.toUpperCase());
+        sessionStorage.setItem("hm_referral_source", src || "direct");
+      }
     }
   }, []);
 
@@ -500,27 +517,26 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/docs" element={<Docs />} />
             <Route path="/docs/changelog" element={<Docs />} />
 
-            {/* Botschafter-App - für alle eingeloggten Nutzer (inkl. reine Botschafter ohne App-Rolle) */}
-            <Route path="/botschafter/uebersicht" element={
+            {/* Botschafter Portal – eigenes Layout */}
+            <Route element={
               <ProtectedRoute>
-                <BotschafterUebersicht />
+                <BotschafterLayout />
               </ProtectedRoute>
-            } />
-            <Route path="/botschafter/werbemittel" element={
-              <ProtectedRoute>
-                <BotschafterWerbemittelPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/botschafter/werbemittel/erstellen" element={
-              <ProtectedRoute>
-                <WerbemittelEditor />
-              </ProtectedRoute>
-            } />
-            <Route path="/botschafter/nachrichten" element={
-              <ProtectedRoute>
-                <BotschafterNachrichten />
-              </ProtectedRoute>
-            } />
+            }>
+              <Route path="/botschafter/dashboard" element={<BotschafterDashboard />} />
+              <Route path="/botschafter/uebersicht" element={<Navigate to="/botschafter/dashboard" replace />} />
+              <Route path="/botschafter/links" element={<BotschafterLinks />} />
+              <Route path="/botschafter/conversions" element={<BotschafterConversions />} />
+              <Route path="/botschafter/umsaetze" element={<BotschafterUmsaetze />} />
+              <Route path="/botschafter/sponsoring" element={<BotschafterSponsoring />} />
+              <Route path="/botschafter/insights" element={<BotschafterInsights />} />
+              <Route path="/botschafter/werbemittel" element={<BotschafterWerbemittelPage />} />
+              <Route path="/botschafter/werbemittel/erstellen" element={<WerbemittelEditor />} />
+              <Route path="/botschafter/rangliste" element={<BotschafterRangliste />} />
+              <Route path="/botschafter/profil" element={<BotschafterProfil />} />
+              <Route path="/botschafter/hufmanager" element={<BotschafterHufmanager />} />
+              <Route path="/botschafter/nachrichten" element={<BotschafterNachrichten />} />
+            </Route>
             
             {/* Admin Mission Control - nur für Admins */}
             <Route path="/admin/mission-control" element={

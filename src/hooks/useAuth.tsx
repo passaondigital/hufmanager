@@ -221,7 +221,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     .eq("user_id", session.user.id)
                     .maybeSingle();
                   if (bot?.status === "active") {
-                    navigate("/botschafter/uebersicht", { replace: true });
+                    navigate("/botschafter/dashboard", { replace: true });
                     return;
                   }
                   if (bot?.status === "pending") {

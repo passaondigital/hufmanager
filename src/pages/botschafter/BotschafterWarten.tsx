@@ -40,7 +40,7 @@ export default function BotschafterWarten() {
         }
         // If already active, redirect to dashboard
         if (bot.status === "active") {
-          navigate("/botschafter/uebersicht", { replace: true });
+          navigate("/botschafter/dashboard", { replace: true });
           return;
         }
         setData(bot as BotschafterInfo);
