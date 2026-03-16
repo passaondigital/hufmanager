@@ -158,7 +158,7 @@ export default function BotschafterAuth() {
   const handleForgotPassword = async () => {
     if (!loginEmail.trim()) { toast.error("Bitte zuerst E-Mail eingeben."); return; }
     const { error } = await supabase.auth.resetPasswordForEmail(loginEmail, {
-      redirectTo: `${window.location.origin}/botschafter/login`,
+      redirectTo: `${window.location.origin}/reset-password`,
     });
     if (error) toast.error(error.message);
     else toast.success("E-Mail zum Zurücksetzen gesendet!");
