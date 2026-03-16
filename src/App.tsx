@@ -481,6 +481,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/vet/pms-connect" element={<VetPMSConnect />} />
             <Route path="/vet/csv-import" element={<VetCSVImport />} />
             <Route path="/vet/got-rechner" element={<VetGOTRechner />} />
+            <Route path="/vet/impfungen" element={<VetImpfungen />} />
             
             {/* Portal Routes (auth required, handled inside component) */}
             <Route path="/portal/:slug" element={<PortalDashboard />} />
