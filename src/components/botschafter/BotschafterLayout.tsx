@@ -7,6 +7,7 @@ import {
   LayoutDashboard, Link2, Users, Coins, Globe, Newspaper,
   Palette, Trophy, User, LogOut, Menu, X, ChevronRight
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
