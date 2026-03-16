@@ -235,6 +235,7 @@ const VetPMSConnect = lazy(() => import("@/pages/vet/VetPMSConnect"));
 const VetCSVImport = lazy(() => import("@/pages/vet/VetCSVImport"));
 const VetGOTRechner = lazy(() => import("@/pages/vet/VetGOTRechner"));
 const TierarztFinder = lazy(() => import("@/pages/TierarztFinder"));
+const VetImpfungen = lazy(() => import("@/pages/vet/VetImpfungen"));
 
 /** Intercepts /pferdeakte routes and portal subdomains BEFORE AuthProvider */
 function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
