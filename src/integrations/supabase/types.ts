@@ -1775,6 +1775,44 @@ export type Database = {
           },
         ]
       }
+      botschafter_campaigns: {
+        Row: {
+          botschafter_id: string
+          campaign_name: string
+          clicks: number | null
+          created_at: string | null
+          id: string
+          registrations: number | null
+          source_tag: string
+        }
+        Insert: {
+          botschafter_id: string
+          campaign_name: string
+          clicks?: number | null
+          created_at?: string | null
+          id?: string
+          registrations?: number | null
+          source_tag: string
+        }
+        Update: {
+          botschafter_id?: string
+          campaign_name?: string
+          clicks?: number | null
+          created_at?: string | null
+          id?: string
+          registrations?: number | null
+          source_tag?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "botschafter_campaigns_botschafter_id_fkey"
+            columns: ["botschafter_id"]
+            isOneToOne: false
+            referencedRelation: "pferdeakte_botschafter"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       botschafter_clicks: {
         Row: {
           botschafter_id: string | null
@@ -10188,7 +10226,9 @@ export type Database = {
       pferdeakte_botschafter: {
         Row: {
           bid: string | null
+          bio: string | null
           commission_rate: number | null
+          company_logo_url: string | null
           company_name: string | null
           company_role: string | null
           converted_at: string | null
@@ -10198,6 +10238,7 @@ export type Database = {
           copecart_verified: boolean | null
           created_at: string | null
           customer_count: string | null
+          discount_code: string | null
           email: string
           first_name: string
           gid_type: string | null
@@ -10211,24 +10252,30 @@ export type Database = {
           phone: string | null
           plz: string | null
           profession: string | null
+          profile_image_url: string | null
           public_description: string | null
           public_display_name: string | null
           referral_code: string
           social_handle: string | null
           source_role: string | null
           source_user_id: string | null
+          sponsoring_page_published: boolean | null
           status: string | null
+          tier: string | null
           total_clicks: number | null
           total_conversions: number | null
           total_earnings_cents: number | null
           total_leads: number | null
+          total_paid_out_cents: number | null
           type: string
           user_id: string | null
           website: string | null
         }
         Insert: {
           bid?: string | null
+          bio?: string | null
           commission_rate?: number | null
+          company_logo_url?: string | null
           company_name?: string | null
           company_role?: string | null
           converted_at?: string | null
@@ -10238,6 +10285,7 @@ export type Database = {
           copecart_verified?: boolean | null
           created_at?: string | null
           customer_count?: string | null
+          discount_code?: string | null
           email: string
           first_name: string
           gid_type?: string | null
@@ -10251,24 +10299,30 @@ export type Database = {
           phone?: string | null
           plz?: string | null
           profession?: string | null
+          profile_image_url?: string | null
           public_description?: string | null
           public_display_name?: string | null
           referral_code: string
           social_handle?: string | null
           source_role?: string | null
           source_user_id?: string | null
+          sponsoring_page_published?: boolean | null
           status?: string | null
+          tier?: string | null
           total_clicks?: number | null
           total_conversions?: number | null
           total_earnings_cents?: number | null
           total_leads?: number | null
+          total_paid_out_cents?: number | null
           type: string
           user_id?: string | null
           website?: string | null
         }
         Update: {
           bid?: string | null
+          bio?: string | null
           commission_rate?: number | null
+          company_logo_url?: string | null
           company_name?: string | null
           company_role?: string | null
           converted_at?: string | null
@@ -10278,6 +10332,7 @@ export type Database = {
           copecart_verified?: boolean | null
           created_at?: string | null
           customer_count?: string | null
+          discount_code?: string | null
           email?: string
           first_name?: string
           gid_type?: string | null
@@ -10291,17 +10346,21 @@ export type Database = {
           phone?: string | null
           plz?: string | null
           profession?: string | null
+          profile_image_url?: string | null
           public_description?: string | null
           public_display_name?: string | null
           referral_code?: string
           social_handle?: string | null
           source_role?: string | null
           source_user_id?: string | null
+          sponsoring_page_published?: boolean | null
           status?: string | null
+          tier?: string | null
           total_clicks?: number | null
           total_conversions?: number | null
           total_earnings_cents?: number | null
           total_leads?: number | null
+          total_paid_out_cents?: number | null
           type?: string
           user_id?: string | null
           website?: string | null
