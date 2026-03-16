@@ -259,7 +259,7 @@ export function AppointmentFormModal({
           throw new Error("Keine Termine erstellt - unbekannter Fehler");
         }
 
-        console.log("[AppointmentFormModal] createdAppointments", createdAppointments);
+        if (import.meta.env.DEV) console.log("[AppointmentFormModal] createdAppointments", createdAppointments.length);
 
         // Step B: Get the first appointment ID for evidence linking
         const firstAppointment = createdAppointments[0];
