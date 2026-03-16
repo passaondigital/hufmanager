@@ -249,7 +249,7 @@ const Services = () => {
                   <div className="flex items-center gap-6 text-sm">
                     <span className="flex items-center gap-1.5 text-foreground font-medium">
                       <Euro className="h-4 w-4 text-primary" />
-                      €{service.base_price}
+                      {formatPriceLabel(service.base_price, taxConfig)}
                     </span>
                     <span className="flex items-center gap-1.5 text-muted-foreground">
                       <Clock className="h-4 w-4" />
