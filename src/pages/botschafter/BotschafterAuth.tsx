@@ -134,10 +134,8 @@ export default function BotschafterAuth() {
             .eq("id", bot.id);
         }
 
-        if (bot.status === "active") {
+        if (bot.status === "active" || bot.status === "pending") {
           navigate("/botschafter/dashboard", { replace: true });
-        } else if (bot.status === "pending") {
-          navigate("/botschafter/warten", { replace: true });
         } else {
           setNoBotschafter(true);
           setLoggedInUser({ id: data.user.id, email: data.user.email || loginEmail });
