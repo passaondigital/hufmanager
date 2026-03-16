@@ -34,7 +34,7 @@ export async function ensureUserProfile(user: User): Promise<{ success: boolean;
 
     // Profile missing - auto-heal by creating it
     if (!existingProfile) {
-      console.log("Auto-healing missing profile for user:", user.id);
+      if (import.meta.env.DEV) console.log("Auto-healing missing profile for user:", user.id);
       
       const fullName = user.user_metadata?.full_name || 
                        user.user_metadata?.name ||
