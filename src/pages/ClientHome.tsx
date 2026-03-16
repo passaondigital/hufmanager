@@ -85,6 +85,8 @@ export default function ClientHome() {
   const [showMandatoryHorseModal, setShowMandatoryHorseModal] = useState(false);
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [showHMCamModal, setShowHMCamModal] = useState(false);
+  const [showBusinessForm, setShowBusinessForm] = useState(false);
+  const { showHint, checkAfterHorseCreation, dismiss: dismissHint } = useBusinessUpgradeHint();
 
   const fetchData = async () => {
     if (!user) return;
