@@ -86,7 +86,8 @@ const DEMO_CONFIG: Record<string, {
 };
 
 export default function PortalDemo() {
-  const { type } = useParams<{ type: string }>();
+  const location = useLocation();
+  const type = location.pathname.split("/portal/")[1]?.split("/")[0];
   const navigate = useNavigate();
   const config = DEMO_CONFIG[type || ""];
 
