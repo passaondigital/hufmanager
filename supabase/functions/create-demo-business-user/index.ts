@@ -9,14 +9,14 @@ Deno.serve(async (req) => {
 
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email: "hufmanagerbusiness@gmail.com",
-      password: "HMB2030+",
+      password: "HMBusiness2030Demo!",
       email_confirm: true,
-      user_metadata: { full_name: "HufManager Business Demo", role: "provider" },
+      user_metadata: { full_name: "HufManager Business Demo" },
     });
 
     if (error) {
       console.error("Create user error:", JSON.stringify(error));
-      return new Response(JSON.stringify({ error: error.message, details: error }), {
+      return new Response(JSON.stringify({ error: error.message, details: JSON.stringify(error) }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
