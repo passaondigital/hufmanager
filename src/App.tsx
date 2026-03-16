@@ -228,6 +228,13 @@ const persister = createIDBPersister();
 // Lazy-load portal pages for subdomain routing
 const PortalLogin = lazy(() => import("@/pages/portal/PortalLogin"));
 const MarketplacePublic = lazy(() => import("@/pages/portal/MarketplacePublic"));
+const VetPortalLogin = lazy(() => import("@/pages/portal/VetPortalLogin"));
+const VetDashboard = lazy(() => import("@/pages/vet/VetDashboard"));
+const VetSOAPForm = lazy(() => import("@/pages/vet/VetSOAPForm"));
+const VetPMSConnect = lazy(() => import("@/pages/vet/VetPMSConnect"));
+const VetCSVImport = lazy(() => import("@/pages/vet/VetCSVImport"));
+const VetGOTRechner = lazy(() => import("@/pages/vet/VetGOTRechner"));
+const TierarztFinder = lazy(() => import("@/pages/TierarztFinder"));
 
 /** Intercepts /pferdeakte routes and portal subdomains BEFORE AuthProvider */
 function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
