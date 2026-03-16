@@ -459,12 +459,7 @@ export function AppointmentFormModal({
   };
 
   const handleSubmit = () => {
-    console.log("[AppointmentFormModal] handleSubmit click", {
-      selectedDate,
-      horseId: formData.horseId,
-      evidenceCount: pendingEvidence.length,
-      online: typeof navigator !== "undefined" ? navigator.onLine : undefined,
-    });
+    if (import.meta.env.DEV) console.log("[AppointmentFormModal] handleSubmit click");
 
     if (!selectedDate || !user?.id) {
       toast({
