@@ -101,6 +101,7 @@ export function GroupPricingSection({ serviceId, basePrice }: GroupPricingSectio
 
       {enabled && (
         <div className="space-y-2 pt-2">
+          <p className="text-xs text-muted-foreground">Alle Preise netto. MwSt wird auf der Rechnung berechnet.</p>
           {/* Standard = base_price (read-only) */}
           <div className="flex items-center gap-3">
             <Badge variant="secondary" className="w-24 justify-center text-xs">Standard</Badge>

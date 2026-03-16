@@ -339,12 +339,15 @@ const Services = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Preis (€)</Label>
+                <Label>Preis (€ netto)</Label>
                 <Input
                   type="number"
                   value={formData.base_price}
                   onChange={(e) => setFormData({ ...formData, base_price: Number(e.target.value) })}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Netto-Preis eingeben. Kleinunternehmer (§19 UStG): Netto = Brutto. MwSt wird ggf. auf der Rechnung berechnet.
+                </p>
               </div>
             </div>
 
