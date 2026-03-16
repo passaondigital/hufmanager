@@ -75,7 +75,7 @@ export default function ForWhomSection() {
             "HufManager ist kein Tool für jeden – und das ist gut so. Wer mobil mit Pferden arbeitet, für den haben wir jeden Detail durchdacht."
           </p>
           <Button size="lg" className="glow-orange text-lg font-bold bg-primary hover:bg-primary/90 text-white" asChild>
-            <a href="#demo">Jetzt kostenlos testen <ArrowRight className="ml-2 h-5 w-5" /></a>
+            <a href="/auth">Jetzt kostenlos testen <ArrowRight className="ml-2 h-5 w-5" /></a>
           </Button>
         </div>
       </div>
