@@ -77,10 +77,12 @@ export const ServiceListItem = ({
             Gratis
           </Badge>
         ) : price !== null ? (
-          <span className="font-semibold" style={{ color: primaryColor }}>
-            €{price}
-            {priceType && <span className="text-xs text-muted-foreground ml-1">/{priceType}</span>}
-          </span>
+          <div className="text-right">
+            <span className="font-semibold" style={{ color: primaryColor }}>
+              €{price}
+              {priceType && <span className="text-xs text-muted-foreground ml-1">/{priceType}</span>}
+            </span>
+          </div>
         ) : (
           <Badge variant="secondary" className="text-xs">Auf Anfrage</Badge>
         )}
