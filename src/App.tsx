@@ -444,7 +444,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
         <PWAInstallPrompt />
         <VersionChecker />
         <SystemStatusBanner />
-        <TrialPaywall />
+        {/* <TrialPaywall /> */}
         <PendingVerificationOverlay />
         
         
