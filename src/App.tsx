@@ -471,6 +471,14 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/faq" element={<FAQ />} />
             <Route path="/changelog" element={<Changelog />} />
             <Route path="/statistiken" element={<Statistiken />} />
+            <Route path="/tierarzt-finder" element={<TierarztFinder />} />
+            
+            {/* Vet Portal Routes (accessible from main app too) */}
+            <Route path="/vet/dashboard" element={<VetDashboard />} />
+            <Route path="/vet/soap" element={<VetSOAPForm />} />
+            <Route path="/vet/pms-connect" element={<VetPMSConnect />} />
+            <Route path="/vet/csv-import" element={<VetCSVImport />} />
+            <Route path="/vet/got-rechner" element={<VetGOTRechner />} />
             
             {/* Portal Routes (auth required, handled inside component) */}
             <Route path="/portal/:slug" element={<PortalDashboard />} />
