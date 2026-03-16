@@ -259,6 +259,8 @@ export default function AdminDashboard() {
         {activeView === "botschafter-werbemittel" && <AdminBotschafterWerbemittel />}
         {activeView === "botschafter-rangliste" && <AdminBotschafterRangliste />}
         {activeView === "botschafter-kommunikation" && <AdminBotschafterKommunikation />}
+        {activeView === "portal-applications" && <AdminPortalApplications />}
+        {activeView === "portal-customers" && <AdminPortalCustomers />}
       </main>
 
       {/* Quick Note FAB */}
