@@ -10664,6 +10664,7 @@ export type Database = {
       profiles: {
         Row: {
           access_valid_until: string | null
+          account_status: string | null
           address: string | null
           affiliate_opt_in: boolean | null
           affiliate_slug: string | null
@@ -10711,6 +10712,7 @@ export type Database = {
           is_discoverable: boolean | null
           is_manually_managed: boolean | null
           is_suspended: boolean | null
+          last_active_at: string | null
           last_name: string | null
           latitude: number | null
           lifecycle_status:
@@ -10775,6 +10777,8 @@ export type Database = {
           tax_id: string | null
           tax_model: string | null
           tax_number: string | null
+          trial_ends_at: string | null
+          trial_started_at: string | null
           updated_at: string
           vat_number: string | null
           vault_failed_attempts: number | null
@@ -10789,6 +10793,7 @@ export type Database = {
         }
         Insert: {
           access_valid_until?: string | null
+          account_status?: string | null
           address?: string | null
           affiliate_opt_in?: boolean | null
           affiliate_slug?: string | null
@@ -10836,6 +10841,7 @@ export type Database = {
           is_discoverable?: boolean | null
           is_manually_managed?: boolean | null
           is_suspended?: boolean | null
+          last_active_at?: string | null
           last_name?: string | null
           latitude?: number | null
           lifecycle_status?:
@@ -10900,6 +10906,8 @@ export type Database = {
           tax_id?: string | null
           tax_model?: string | null
           tax_number?: string | null
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
           updated_at?: string
           vat_number?: string | null
           vault_failed_attempts?: number | null
@@ -10914,6 +10922,7 @@ export type Database = {
         }
         Update: {
           access_valid_until?: string | null
+          account_status?: string | null
           address?: string | null
           affiliate_opt_in?: boolean | null
           affiliate_slug?: string | null
@@ -10961,6 +10970,7 @@ export type Database = {
           is_discoverable?: boolean | null
           is_manually_managed?: boolean | null
           is_suspended?: boolean | null
+          last_active_at?: string | null
           last_name?: string | null
           latitude?: number | null
           lifecycle_status?:
@@ -11025,6 +11035,8 @@ export type Database = {
           tax_id?: string | null
           tax_model?: string | null
           tax_number?: string | null
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
           updated_at?: string
           vat_number?: string | null
           vault_failed_attempts?: number | null
