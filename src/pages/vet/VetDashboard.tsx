@@ -10,6 +10,7 @@ import {
   ArrowRight, RefreshCw, Upload, Calculator, Search, Link2
 } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
+import { VetImpfDashboard } from "@/components/vet/VetImpfDashboard";
 
 export default function VetDashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -151,6 +152,20 @@ export default function VetDashboard() {
               </CardContent>
             </Card>
           </Link>
+          <Link to="/vet/impfungen">
+            <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+                  <Syringe className="h-5 w-5 text-emerald-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Impf-Management</p>
+                  <p className="text-xs text-muted-foreground">Impfstatus & überfällige Impfungen</p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto" />
+              </CardContent>
+            </Card>
+          </Link>
           <Link to="/vet/csv-import">
             <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
               <CardContent className="p-4 flex items-center gap-3">
@@ -160,20 +175,6 @@ export default function VetDashboard() {
                 <div>
                   <p className="text-sm font-medium">CSV-Import</p>
                   <p className="text-xs text-muted-foreground">Befunde aus Praxissoftware importieren</p>
-                </div>
-                <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto" />
-              </CardContent>
-            </Card>
-          </Link>
-          <Link to="/tierarzt-finder">
-            <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0">
-                  <Search className="h-5 w-5 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Mein Profil im Finder</p>
-                  <p className="text-xs text-muted-foreground">Öffentliches Tierarzt-Profil verwalten</p>
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto" />
               </CardContent>

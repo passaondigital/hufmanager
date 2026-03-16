@@ -235,6 +235,7 @@ const VetPMSConnect = lazy(() => import("@/pages/vet/VetPMSConnect"));
 const VetCSVImport = lazy(() => import("@/pages/vet/VetCSVImport"));
 const VetGOTRechner = lazy(() => import("@/pages/vet/VetGOTRechner"));
 const TierarztFinder = lazy(() => import("@/pages/TierarztFinder"));
+const VetImpfungen = lazy(() => import("@/pages/vet/VetImpfungen"));
 
 /** Intercepts /pferdeakte routes and portal subdomains BEFORE AuthProvider */
 function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
@@ -281,6 +282,7 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
             <Route path="/vet/pms-connect" element={<VetPMSConnect />} />
             <Route path="/vet/csv-import" element={<VetCSVImport />} />
             <Route path="/vet/got-rechner" element={<VetGOTRechner />} />
+            <Route path="/vet/impfungen" element={<VetImpfungen />} />
             <Route path="/tierarzt-finder" element={<TierarztFinder />} />
             <Route path="*" element={<VetPortalLogin />} />
           </Routes>
@@ -479,6 +481,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/vet/pms-connect" element={<VetPMSConnect />} />
             <Route path="/vet/csv-import" element={<VetCSVImport />} />
             <Route path="/vet/got-rechner" element={<VetGOTRechner />} />
+            <Route path="/vet/impfungen" element={<VetImpfungen />} />
             
             {/* Portal Routes (auth required, handled inside component) */}
             <Route path="/portal/:slug" element={<PortalDashboard />} />

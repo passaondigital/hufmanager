@@ -4722,6 +4722,78 @@ export type Database = {
           },
         ]
       }
+      equine_clinics: {
+        Row: {
+          address: string | null
+          city: string
+          clinic_type: string | null
+          country: string | null
+          created_at: string | null
+          description: string | null
+          email: string | null
+          emergency_phone: string | null
+          emergency_service: boolean | null
+          id: string
+          is_active: boolean | null
+          is_verified: boolean | null
+          latitude: number | null
+          longitude: number | null
+          name: string
+          opening_hours: Json | null
+          phone: string | null
+          photo_url: string | null
+          specializations: string[] | null
+          state: string | null
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          city: string
+          clinic_type?: string | null
+          country?: string | null
+          created_at?: string | null
+          description?: string | null
+          email?: string | null
+          emergency_phone?: string | null
+          emergency_service?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          is_verified?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          opening_hours?: Json | null
+          phone?: string | null
+          photo_url?: string | null
+          specializations?: string[] | null
+          state?: string | null
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string
+          clinic_type?: string | null
+          country?: string | null
+          created_at?: string | null
+          description?: string | null
+          email?: string | null
+          emergency_phone?: string | null
+          emergency_service?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          is_verified?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          opening_hours?: Json | null
+          phone?: string | null
+          photo_url?: string | null
+          specializations?: string[] | null
+          state?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number
@@ -6249,9 +6321,97 @@ export type Database = {
           },
         ]
       }
-      horse_medications: {
+      horse_lab_results: {
         Row: {
           created_at: string | null
+          document_url: string | null
+          documented_by: string
+          external_id: string | null
+          horse_id: string
+          id: string
+          is_abnormal: boolean | null
+          lab_name: string | null
+          lab_type: string
+          notes: string | null
+          reference_range: string | null
+          result_date: string
+          result_value: string | null
+          source_system: string | null
+          test_name: string
+          unit: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          document_url?: string | null
+          documented_by: string
+          external_id?: string | null
+          horse_id: string
+          id?: string
+          is_abnormal?: boolean | null
+          lab_name?: string | null
+          lab_type: string
+          notes?: string | null
+          reference_range?: string | null
+          result_date: string
+          result_value?: string | null
+          source_system?: string | null
+          test_name: string
+          unit?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          document_url?: string | null
+          documented_by?: string
+          external_id?: string | null
+          horse_id?: string
+          id?: string
+          is_abnormal?: boolean | null
+          lab_name?: string | null
+          lab_type?: string
+          notes?: string | null
+          reference_range?: string | null
+          result_date?: string
+          result_value?: string | null
+          source_system?: string | null
+          test_name?: string
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horse_lab_results_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_lab_results_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_lab_results_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_lab_results_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      horse_medications: {
+        Row: {
+          active_ingredient: string | null
+          created_at: string | null
+          documented_by: string | null
           dosage: string | null
           end_date: string | null
           external_id: string | null
@@ -6262,14 +6422,19 @@ export type Database = {
           medication_name: string
           notes: string | null
           prescribed_by: string | null
+          prescribing_vet: string | null
           reason: string | null
           route: string | null
           source: string | null
+          source_system: string | null
           start_date: string | null
           updated_at: string | null
+          withdrawal_period_days: number | null
         }
         Insert: {
+          active_ingredient?: string | null
           created_at?: string | null
+          documented_by?: string | null
           dosage?: string | null
           end_date?: string | null
           external_id?: string | null
@@ -6280,14 +6445,19 @@ export type Database = {
           medication_name: string
           notes?: string | null
           prescribed_by?: string | null
+          prescribing_vet?: string | null
           reason?: string | null
           route?: string | null
           source?: string | null
+          source_system?: string | null
           start_date?: string | null
           updated_at?: string | null
+          withdrawal_period_days?: number | null
         }
         Update: {
+          active_ingredient?: string | null
           created_at?: string | null
+          documented_by?: string | null
           dosage?: string | null
           end_date?: string | null
           external_id?: string | null
@@ -6298,11 +6468,14 @@ export type Database = {
           medication_name?: string
           notes?: string | null
           prescribed_by?: string | null
+          prescribing_vet?: string | null
           reason?: string | null
           route?: string | null
           source?: string | null
+          source_system?: string | null
           start_date?: string | null
           updated_at?: string | null
+          withdrawal_period_days?: number | null
         }
         Relationships: [
           {
@@ -9747,14 +9920,19 @@ export type Database = {
           findings: string | null
           horse_id: string
           id: string
+          next_check_date: string | null
           next_treatment: string | null
           notes: string | null
           partner_id: string
           partner_type: Database["public"]["Enums"]["partner_type"] | null
           photo_urls: string[] | null
           recommendation_for: Json | null
+          recommendation_for_farrier: string | null
+          recommendation_for_owner: string | null
+          soap_data: Json | null
           template_key: string | null
           title: string
+          treatment_category: string | null
           treatment_date: string
           updated_at: string | null
           visible_to_kid: boolean
@@ -9766,14 +9944,19 @@ export type Database = {
           findings?: string | null
           horse_id: string
           id?: string
+          next_check_date?: string | null
           next_treatment?: string | null
           notes?: string | null
           partner_id: string
           partner_type?: Database["public"]["Enums"]["partner_type"] | null
           photo_urls?: string[] | null
           recommendation_for?: Json | null
+          recommendation_for_farrier?: string | null
+          recommendation_for_owner?: string | null
+          soap_data?: Json | null
           template_key?: string | null
           title: string
+          treatment_category?: string | null
           treatment_date: string
           updated_at?: string | null
           visible_to_kid?: boolean
@@ -9785,14 +9968,19 @@ export type Database = {
           findings?: string | null
           horse_id?: string
           id?: string
+          next_check_date?: string | null
           next_treatment?: string | null
           notes?: string | null
           partner_id?: string
           partner_type?: Database["public"]["Enums"]["partner_type"] | null
           photo_urls?: string[] | null
           recommendation_for?: Json | null
+          recommendation_for_farrier?: string | null
+          recommendation_for_owner?: string | null
+          soap_data?: Json | null
           template_key?: string | null
           title?: string
+          treatment_category?: string | null
           treatment_date?: string
           updated_at?: string | null
           visible_to_kid?: boolean
@@ -13830,6 +14018,9 @@ export type Database = {
       }
       vet_sync_connections: {
         Row: {
+          auto_sync: boolean | null
+          clinic_url: string | null
+          connection_name: string | null
           created_at: string | null
           credentials_encrypted: string | null
           error_message: string | null
@@ -13840,6 +14031,7 @@ export type Database = {
           oauth_access_token: string | null
           oauth_expires_at: string | null
           oauth_refresh_token: string | null
+          pms_type: string | null
           provider_type: string
           status: string | null
           sync_config: Json | null
@@ -13848,6 +14040,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          auto_sync?: boolean | null
+          clinic_url?: string | null
+          connection_name?: string | null
           created_at?: string | null
           credentials_encrypted?: string | null
           error_message?: string | null
@@ -13858,6 +14053,7 @@ export type Database = {
           oauth_access_token?: string | null
           oauth_expires_at?: string | null
           oauth_refresh_token?: string | null
+          pms_type?: string | null
           provider_type: string
           status?: string | null
           sync_config?: Json | null
@@ -13866,6 +14062,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          auto_sync?: boolean | null
+          clinic_url?: string | null
+          connection_name?: string | null
           created_at?: string | null
           credentials_encrypted?: string | null
           error_message?: string | null
@@ -13876,6 +14075,7 @@ export type Database = {
           oauth_access_token?: string | null
           oauth_expires_at?: string | null
           oauth_refresh_token?: string | null
+          pms_type?: string | null
           provider_type?: string
           status?: string | null
           sync_config?: Json | null
