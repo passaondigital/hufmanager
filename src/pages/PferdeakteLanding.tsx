@@ -19,6 +19,7 @@ import { useAnimatedCounter } from "@/hooks/useAnimatedCounter";
 import FounderSection from "@/components/website/FounderSection";
 import WhyPferdeakteSection from "@/components/website/WhyPferdeakteSection";
 import PferdeakteComparisonTable from "@/components/website/PferdeakteComparisonTable";
+import TresorPricing from "@/components/website/TresorPricing";
 
 function FounderSectionPA() {
   return <FounderSection variant="pferdeakte" />;
@@ -147,6 +148,8 @@ export default function PferdeakteLanding() {
       <SocialProofSection />
       {/* 7b. MARKTVERGLEICH */}
       <PferdeakteComparisonTable />
+      {/* 7c. TRESOR PRICING */}
+      <TresorPricing />
       {/* 8. WAITLIST */}
       <WaitlistSection defaultRef={searchParams.get("ref") ?? ""} />
       {/* 9. BOTSCHAFTER */}
