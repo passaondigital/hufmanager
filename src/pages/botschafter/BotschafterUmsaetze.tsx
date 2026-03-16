@@ -10,10 +10,10 @@ import { toast } from "sonner";
 const COPECART_SIGNUP = "https://copecart.com/users/sign_up?cp=barhufserviceschmid&language=de";
 
 const TIERS = [
-  { key: "bronze", label: "Bronze", min: 0, rate: 20, extra: "", icon: "🥉" },
-  { key: "silver", label: "Silber", min: 10, rate: 22, extra: "+ 10% Tresor recurring", icon: "🥈" },
-  { key: "gold", label: "Gold", min: 20, rate: 25, extra: "+ 15% Tresor recurring", icon: "🥇" },
-  { key: "platinum", label: "Platin", min: 50, rate: 30, extra: "+ 20% Tresor + Events", icon: "💎" },
+  { key: "bronze", label: "Bronze", min: 0, hm: 20, tresor: 10, extra: "", icon: "🥉" },
+  { key: "silver", label: "Silber", min: 10, hm: 22, tresor: 12, extra: "+ Badge", icon: "🥈" },
+  { key: "gold", label: "Gold", min: 20, hm: 25, tresor: 15, extra: "+ Prio-Support", icon: "🥇" },
+  { key: "platinum", label: "Platin", min: 50, hm: 30, tresor: 20, extra: "+ Events + Beta", icon: "💎" },
 ];
 
 export default function BotschafterUmsaetze() {
@@ -96,13 +96,8 @@ export default function BotschafterUmsaetze() {
                 <span className="font-bold" style={{ color: "#F5970A" }}>1.</span>
                 <div>
                   <p className="font-medium">CopeCart-Account anlegen (kostenlos)</p>
-                  <a
-                    href={COPECART_SIGNUP}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs mt-1 hover:underline"
-                    style={{ color: "#F5970A" }}
-                  >
+                  <a href={COPECART_SIGNUP} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs mt-1 hover:underline" style={{ color: "#F5970A" }}>
                     Jetzt bei CopeCart registrieren <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
@@ -116,12 +111,8 @@ export default function BotschafterUmsaetze() {
                 <div className="flex-1">
                   <p className="font-medium mb-2">CopeCart-E-Mail hier eintragen</p>
                   <div className="flex gap-2">
-                    <Input
-                      value={copecartEmail}
-                      onChange={e => setCopecartEmail(e.target.value)}
-                      placeholder="deine@copecart-email.de"
-                      className="bg-[#0a0700] border-[#2a2a1f] text-white text-sm"
-                    />
+                    <Input value={copecartEmail} onChange={e => setCopecartEmail(e.target.value)}
+                      placeholder="deine@copecart-email.de" className="bg-[#0a0700] border-[#2a2a1f] text-white text-sm" />
                     <Button size="sm" onClick={saveCopecart} disabled={saving} style={{ backgroundColor: "#F5970A", color: "#0a0700" }}>
                       Speichern
                     </Button>
@@ -129,7 +120,6 @@ export default function BotschafterUmsaetze() {
                 </div>
               </div>
             </div>
-
             <div className="flex items-center gap-2 text-xs" style={{ color: "#9ca3af" }}>
               <span>Status:</span>
               <span style={{ color: "#eab308" }}>🟡 CopeCart nicht verbunden</span>
@@ -164,20 +154,46 @@ export default function BotschafterUmsaetze() {
         </>
       )}
 
+      {/* Dual Provision Breakdown */}
+      <Card style={{ backgroundColor: "#1a1a12", borderColor: "#2a2a1f" }}>
+        <CardContent className="p-4 space-y-3">
+          <h3 className="font-semibold text-sm">💰 Provisionsstruktur</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="p-3 rounded-lg space-y-2" style={{ backgroundColor: "#0a0700" }}>
+              <p className="text-xs font-bold" style={{ color: "#F5970A" }}>HUFBEARBEITER & PARTNER</p>
+              <p className="text-xs" style={{ color: "#9ca3af" }}>{currentTier.hm}% Lifetime · Monat für Monat</p>
+              <div className="space-y-1 text-xs" style={{ color: "#d1d5db" }}>
+                <p>Starter (19€) → <strong style={{ color: "#F5970A" }}>{(19 * currentTier.hm / 100).toFixed(2)}€</strong></p>
+                <p>Pro (29€) → <strong style={{ color: "#F5970A" }}>{(29 * currentTier.hm / 100).toFixed(2)}€</strong></p>
+                <p>Duo (49€) → <strong style={{ color: "#F5970A" }}>{(49 * currentTier.hm / 100).toFixed(2)}€</strong></p>
+                <p>Team (79€) → <strong style={{ color: "#F5970A" }}>{(79 * currentTier.hm / 100).toFixed(2)}€</strong></p>
+              </div>
+            </div>
+            <div className="p-3 rounded-lg space-y-2" style={{ backgroundColor: "#0a0700" }}>
+              <p className="text-xs font-bold" style={{ color: "#F5970A" }}>PFERDEAKTE TRESOR-ABOS</p>
+              <p className="text-xs" style={{ color: "#9ca3af" }}>{currentTier.tresor}% Lifetime · Jede Akte, jeden Monat</p>
+              <div className="space-y-1 text-xs" style={{ color: "#d1d5db" }}>
+                <p>Light (2,99€) → <strong style={{ color: "#F5970A" }}>{(2.99 * currentTier.tresor / 100).toFixed(2)}€</strong></p>
+                <p>Pro (7,99€) → <strong style={{ color: "#F5970A" }}>{(7.99 * currentTier.tresor / 100).toFixed(2)}€</strong></p>
+                <p>Gestüt (14,99€) → <strong style={{ color: "#F5970A" }}>{(14.99 * currentTier.tresor / 100).toFixed(2)}€</strong></p>
+                <p>Unlimited (24,99€) → <strong style={{ color: "#F5970A" }}>{(24.99 * currentTier.tresor / 100).toFixed(2)}€</strong></p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Tier Progress */}
       <Card style={{ backgroundColor: "#1a1a12", borderColor: "#2a2a1f" }}>
         <CardContent className="p-4 space-y-3">
           <h3 className="font-semibold text-sm">Dein Level</h3>
           <div className="flex gap-2">
             {TIERS.map(t => (
-              <div
-                key={t.key}
-                className="flex-1 text-center p-2 rounded-lg text-xs"
+              <div key={t.key} className="flex-1 text-center p-2 rounded-lg text-xs"
                 style={{
                   backgroundColor: currentTier.key === t.key ? "rgba(245,151,10,0.15)" : "transparent",
                   border: currentTier.key === t.key ? "1px solid #F5970A" : "1px solid #2a2a1f",
-                }}
-              >
+                }}>
                 <div className="text-lg">{t.icon}</div>
                 <div className="font-semibold" style={{ color: currentTier.key === t.key ? "#F5970A" : "#9ca3af" }}>{t.label}</div>
               </div>
@@ -191,7 +207,7 @@ export default function BotschafterUmsaetze() {
             {TIERS.map(t => (
               <div key={t.key} className="flex justify-between" style={{ color: currentTier.key === t.key ? "#F5970A" : undefined }}>
                 <span>{t.label} ({t.min}+):</span>
-                <span>{t.rate}% Provision {t.extra}</span>
+                <span>{t.hm}% HufManager · {t.tresor}% Tresor {t.extra}</span>
               </div>
             ))}
           </div>
