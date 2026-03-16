@@ -46,17 +46,18 @@ export function AdminVerifications() {
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ["admin-verifications", filter],
     queryFn: async () => {
-      let q = supabase
+      const baseQuery: any = supabase
         .from("profiles")
         .select("id, full_name, email, business_name, business_type, business_address, business_capacity, verification_document_url, verification_status, verification_submitted_at, verification_notes, created_at")
-        .eq("client_type", "commercial" as any)
-        .order("verification_submitted_at", { ascending: false });
+        .eq("client_type", "commercial")
+        .order("verification_submitted_at", { ascending: false })
+        .limit(100);
 
       if (filter !== "all") {
-        q = q.eq("verification_status" as any, filter);
+        baseQuery.eq("verification_status", filter);
       }
 
-      const { data, error } = await (q as any).limit(100);
+      const { data, error } = await baseQuery;
       if (error) throw error;
       return (data || []) as VerificationRequest[];
     },
