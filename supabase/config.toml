@@ -158,3 +158,6 @@ verify_jwt = false
 
 [functions.sync-vet-pms]
 verify_jwt = true
+
+[functions.send-system-update]
+verify_jwt = true
