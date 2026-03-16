@@ -13,6 +13,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PasswordRecoveryRedirect } from "@/components/auth/PasswordRecoveryRedirect";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { BotschafterLayout } from "@/components/botschafter/BotschafterLayout";
 import { CockpitFullscreenProvider } from "@/components/day-cockpit/CockpitFullscreenContext";
 import { AuthLoadingScreen } from "@/components/auth/AuthLoadingScreen";
 import { ProfileGuardianScreen } from "@/components/auth/ProfileGuardianScreen";
