@@ -276,6 +276,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 } finally {
                   sessionStorage.removeItem("hm_pending_client_type");
                 }
+              }
             }
           }, 0);
         } else {
