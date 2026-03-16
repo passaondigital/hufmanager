@@ -342,14 +342,19 @@ const Services = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Preis (€ netto)</Label>
+                <Label>Preis (€ {taxConfig.priceDisplayMode === "brutto" ? "brutto" : "netto"})</Label>
                 <Input
                   type="number"
                   value={formData.base_price}
                   onChange={(e) => setFormData({ ...formData, base_price: Number(e.target.value) })}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Netto-Preis eingeben. Kleinunternehmer (§19 UStG): Netto = Brutto. MwSt wird ggf. auf der Rechnung berechnet.
+                  {taxConfig.kleinunternehmer
+                    ? "Kleinunternehmer: Netto = Brutto (keine MwSt)."
+                    : taxConfig.priceDisplayMode === "brutto"
+                      ? "Brutto-Preis eingeben (MwSt ist enthalten)."
+                      : "Netto-Preis eingeben. MwSt wird auf der Rechnung aufgeschlagen."
+                  }
                 </p>
               </div>
             </div>
