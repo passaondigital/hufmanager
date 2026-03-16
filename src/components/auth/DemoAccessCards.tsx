@@ -142,17 +142,18 @@ export function DemoAccessCards({ onSelectAccount }: DemoAccessCardsProps) {
                 <span className="text-[9px] text-muted-foreground/70 truncate max-w-[100px] hidden sm:inline">
                   {DEMO_EMAILS.business.split("@")[0]}
                 </span>
-                <button
-                  type="button"
+                <span
+                  role="button"
+                  tabIndex={0}
                   onClick={(e) => handleCopyEmail(DEMO_EMAILS.business, e)}
-                  className="text-muted-foreground/50 hover:text-primary transition-colors"
+                  className="text-muted-foreground/50 hover:text-primary transition-colors cursor-pointer"
                 >
                   {copiedEmail === DEMO_EMAILS.business ? (
                     <Check className="h-2.5 w-2.5 text-green-500" />
                   ) : (
                     <Copy className="h-2.5 w-2.5" />
                   )}
-                </button>
+                </span>
               </div>
             </button>
           </div>
