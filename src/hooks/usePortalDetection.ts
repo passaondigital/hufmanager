@@ -1,8 +1,8 @@
 /**
  * Detects if the app is running on a portal subdomain or the main app.
- * Subdomains: portal.hufmanager.de, versicherung.hufmanager.de, markt.hufmanager.de
+ * Subdomains: portal.hufmanager.de, versicherung.hufmanager.de, markt.hufmanager.de, tierarzt.hufmanager.de
  */
-export type PortalMode = 'app' | 'portal' | 'insurance' | 'marketplace';
+export type PortalMode = 'app' | 'portal' | 'insurance' | 'marketplace' | 'veterinary';
 
 export interface PortalDetection {
   mode: PortalMode;
@@ -16,6 +16,7 @@ export function detectPortalMode(): PortalDetection {
   if (hostname.startsWith('portal.')) return { mode: 'portal', orgSlug: null };
   if (hostname.startsWith('versicherung.')) return { mode: 'insurance', orgSlug: null };
   if (hostname.startsWith('markt.')) return { mode: 'marketplace', orgSlug: null };
+  if (hostname.startsWith('tierarzt.')) return { mode: 'veterinary', orgSlug: null };
 
   // Path-based fallback: /portal/:slug
   const match = window.location.pathname.match(/^\/portal\/([^/]+)/);
