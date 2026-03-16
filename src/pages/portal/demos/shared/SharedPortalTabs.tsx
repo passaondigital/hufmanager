@@ -8,11 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Progress } from "@/components/ui/progress";
 import { Send, UserPlus, Link2, Globe, Eye, Search, Heart } from "lucide-react";
 import { DEMO_PFERDE, DEMO_CHAT_KONTAKTE, DEMO_CHAT_MESSAGES, DEMO_HM_CONNECT, createDemoNutzer, createDemoMitarbeiter } from "./DemoPortalData";
-
-/** Kleine Mono-ID-Badge für System-IDs wie #EQID-D001 */
-function SystemId({ id }: { id: string }) {
-  return <span className="font-mono text-[11px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{id}</span>;
-}
+import { DemoSystemId } from "@/components/demo/DemoSystemId";
 
 // ─── Pferdeakten Tab ────────────────────────────
 export function PferdeaktenTab() {
@@ -46,9 +42,11 @@ export function PferdeaktenTab() {
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="font-medium">{p.name}</p>
-                      <SystemId id={p.id} />
+                      <DemoSystemId id={p.id} />
                     </div>
-                    <p className="text-xs text-muted-foreground">{p.rasse} · {p.alter} · {p.besitzer} <SystemId id={p.besitzerId} /></p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 flex-wrap">
+                      {p.rasse} · {p.alter} · {p.besitzer} <DemoSystemId id={p.besitzerId} compact />
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -57,9 +55,9 @@ export function PferdeaktenTab() {
                   <Eye className="h-4 w-4 text-muted-foreground" />
                 </div>
               </div>
-              <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+              <div className="flex gap-4 mt-2 text-xs text-muted-foreground items-center flex-wrap">
                 <span>Chip: {p.chipNr}</span>
-                <span>Provider: <SystemId id={p.provider} /></span>
+                <span className="flex items-center gap-1">Provider: <DemoSystemId id={p.provider} compact /></span>
                 <span>Impfstatus: {p.impfStatus}</span>
                 <span>Letzte Beh.: {p.letzteBeh}</span>
               </div>
@@ -70,8 +68,8 @@ export function PferdeaktenTab() {
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">{selected?.name} <SystemId id={selected?.id || ""} /></DialogTitle>
-            <DialogDescription>{selected?.rasse} · {selected?.alter} · {selected?.besitzer} <SystemId id={selected?.besitzerId || ""} /></DialogDescription>
+            <DialogTitle className="flex items-center gap-2">{selected?.name} <DemoSystemId id={selected?.id || ""} /></DialogTitle>
+            <DialogDescription className="flex items-center gap-1 flex-wrap">{selected?.rasse} · {selected?.alter} · {selected?.besitzer} <DemoSystemId id={selected?.besitzerId || ""} compact /></DialogDescription>
           </DialogHeader>
           {selected && (
             <div className="space-y-4 text-sm">
@@ -79,8 +77,8 @@ export function PferdeaktenTab() {
                 <div><span className="text-muted-foreground">Chip-Nr.:</span> <span className="font-medium">{selected.chipNr}</span></div>
                 <div><span className="text-muted-foreground">Status:</span> {statusBadge(selected.status)}</div>
                 <div><span className="text-muted-foreground">Impfstatus:</span> <Badge variant={selected.impfStatus === "aktuell" ? "default" : "destructive"}>{selected.impfStatus}</Badge></div>
-                <div><span className="text-muted-foreground">Provider:</span> <SystemId id={selected.provider} /></div>
-                <div><span className="text-muted-foreground">Besitzer:</span> <SystemId id={selected.besitzerId} /></div>
+                <div className="flex items-center gap-1"><span className="text-muted-foreground">Provider:</span> <DemoSystemId id={selected.provider} /></div>
+                <div className="flex items-center gap-1"><span className="text-muted-foreground">Besitzer:</span> <DemoSystemId id={selected.besitzerId} /></div>
                 <div><span className="text-muted-foreground">Letzte Behandlung:</span> <span className="font-medium">{selected.letzteBeh}</span></div>
               </div>
               <div>
@@ -116,9 +114,9 @@ export function ChatTab() {
             {DEMO_CHAT_KONTAKTE.map((k) => (
               <button key={k.id} onClick={() => setActiveChat(k.id)} className={`w-full text-left p-3 rounded-lg transition-colors ${activeChat === k.id ? "bg-primary/10" : "hover:bg-muted/50"}`}>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="font-medium text-sm">{k.name}</span>
-                    <SystemId id={k.visibleId} />
+                    <DemoSystemId id={k.visibleId} compact />
                   </div>
                   {k.ungelesen > 0 && <Badge className="h-5 w-5 p-0 flex items-center justify-center text-[10px]">{k.ungelesen}</Badge>}
                 </div>
@@ -132,7 +130,7 @@ export function ChatTab() {
           <CardHeader className="pb-2 border-b shrink-0">
             <div className="flex items-center gap-2">
               <CardTitle className="text-sm">{activeKontakt?.name || "Chat wählen"}</CardTitle>
-              {activeKontakt && <SystemId id={activeKontakt.visibleId} />}
+              {activeKontakt && <DemoSystemId id={activeKontakt.visibleId} />}
             </div>
             {activeKontakt && <p className="text-xs text-muted-foreground">{activeKontakt.rolle}</p>}
           </CardHeader>
@@ -140,7 +138,11 @@ export function ChatTab() {
             {DEMO_CHAT_MESSAGES.map((m) => (
               <div key={m.id} className={`flex ${m.typ === "ausgehend" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[75%] rounded-2xl px-4 py-2 text-sm ${m.typ === "ausgehend" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-                  {m.typ === "eingehend" && <p className="text-[10px] font-medium mb-0.5 opacity-70">{m.absender} {m.absenderId && <SystemId id={m.absenderId} />}</p>}
+                  {m.typ === "eingehend" && (
+                    <p className="text-[10px] font-medium mb-0.5 opacity-70 flex items-center gap-1">
+                      {m.absender} {m.absenderId && <DemoSystemId id={m.absenderId} compact />}
+                    </p>
+                  )}
                   <p>{m.text}</p>
                   <p className={`text-[10px] mt-1 ${m.typ === "ausgehend" ? "text-primary-foreground/60" : "text-muted-foreground"}`}>{m.zeit}</p>
                 </div>
@@ -176,7 +178,7 @@ export function HMConnectTab() {
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-sm">{c.name}</p>
-                    <SystemId id={c.visibleId} />
+                    <DemoSystemId id={c.visibleId} />
                   </div>
                   <p className="text-xs text-muted-foreground">{c.typ} · {c.pferde} Pferde geteilt</p>
                 </div>
@@ -201,7 +203,10 @@ export function NutzerTab({ orgDomain, orgId }: { orgDomain: string; orgId?: str
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div><h1 className="text-2xl font-bold">Nutzer-Verwaltung</h1><p className="text-sm text-muted-foreground">{users.length} Nutzer (Demo-Daten) · Org: <SystemId id={orgId || "#OID-D001"} /></p></div>
+        <div>
+          <h1 className="text-2xl font-bold">Nutzer-Verwaltung</h1>
+          <p className="text-sm text-muted-foreground flex items-center gap-1">{users.length} Nutzer (Demo-Daten) · Org: <DemoSystemId id={orgId || "#OID-D001"} compact /></p>
+        </div>
         <Button onClick={() => setShowInvite(true)}><UserPlus className="h-4 w-4 mr-1" /> Nutzer einladen</Button>
       </div>
       <Card>
@@ -211,7 +216,7 @@ export function NutzerTab({ orgDomain, orgId }: { orgDomain: string; orgId?: str
             <TableBody>
               {users.map((u) => (
                 <TableRow key={u.email}>
-                  <TableCell><SystemId id={u.id} /></TableCell>
+                  <TableCell><DemoSystemId id={u.id} /></TableCell>
                   <TableCell className="font-medium">{u.name}</TableCell>
                   <TableCell><Badge variant="outline">{u.rolle}</Badge></TableCell>
                   <TableCell className="text-muted-foreground">{u.email}</TableCell>
@@ -244,7 +249,10 @@ export function MitarbeiterTab({ orgDomain, orgId }: { orgDomain: string; orgId?
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div><h1 className="text-2xl font-bold">Mitarbeiter</h1><p className="text-sm text-muted-foreground">{mitarbeiter.length} Mitarbeiter (Demo-Daten) · Org: <SystemId id={orgId || "#OID-D001"} /></p></div>
+        <div>
+          <h1 className="text-2xl font-bold">Mitarbeiter</h1>
+          <p className="text-sm text-muted-foreground flex items-center gap-1">{mitarbeiter.length} Mitarbeiter (Demo-Daten) · Org: <DemoSystemId id={orgId || "#OID-D001"} compact /></p>
+        </div>
         <Button><UserPlus className="h-4 w-4 mr-1" /> Mitarbeiter anlegen</Button>
       </div>
       <Card>
@@ -254,7 +262,7 @@ export function MitarbeiterTab({ orgDomain, orgId }: { orgDomain: string; orgId?
             <TableBody>
               {mitarbeiter.map((m) => (
                 <TableRow key={m.id}>
-                  <TableCell><SystemId id={m.id} /></TableCell>
+                  <TableCell><DemoSystemId id={m.id} /></TableCell>
                   <TableCell className="font-medium">{m.name}</TableCell>
                   <TableCell>{m.position}</TableCell>
                   <TableCell><Badge variant="outline">{m.abteilung}</Badge></TableCell>
