@@ -112,6 +112,16 @@ const BotschafterWerbemittelPage = lazy(() => import("@/pages/botschafter/Botsch
 const WerbemittelEditor = lazy(() => import("@/pages/botschafter/WerbemittelEditor"));
 const BotschafterNachrichten = lazy(() => import("@/pages/botschafter/BotschafterNachrichten"));
 const BotschafterUebersicht = lazy(() => import("@/pages/botschafter/BotschafterUebersicht"));
+const BotschafterDashboard = lazy(() => import("@/pages/botschafter/BotschafterDashboard"));
+const BotschafterLinks = lazy(() => import("@/pages/botschafter/BotschafterLinks"));
+const BotschafterConversions = lazy(() => import("@/pages/botschafter/BotschafterConversions"));
+const BotschafterUmsaetze = lazy(() => import("@/pages/botschafter/BotschafterUmsaetze"));
+const BotschafterSponsoring = lazy(() => import("@/pages/botschafter/BotschafterSponsoring"));
+const BotschafterInsights = lazy(() => import("@/pages/botschafter/BotschafterInsights"));
+const BotschafterRangliste = lazy(() => import("@/pages/botschafter/BotschafterRangliste"));
+const BotschafterProfil = lazy(() => import("@/pages/botschafter/BotschafterProfil"));
+const BotschafterHufmanager = lazy(() => import("@/pages/botschafter/BotschafterHufmanager"));
+const SponsoringPublic = lazy(() => import("@/pages/botschafter/SponsoringPublic"));
 const Lager = lazy(() => import("@/pages/Lager"));
 const Ausgaben = lazy(() => import("@/pages/Ausgaben"));
 const GuV = lazy(() => import("@/pages/GuV"));
