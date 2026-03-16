@@ -14,7 +14,7 @@ const FinalCTA = () => (
           Kündigung jederzeit.
         </p>
         <Button size="lg" className="text-lg font-bold bg-white hover:bg-white/90 gap-2" style={{ color: "#f97316" }} asChild>
-          <a href="#demo">
+          <a href="/auth">
             Jetzt kostenlos starten
             <ArrowRight className="h-5 w-5" />
           </a>

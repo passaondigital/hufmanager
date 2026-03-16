@@ -251,9 +251,9 @@ const PricingV2 = () => (
                   className="w-full text-white/50 hover:text-white text-xs"
                   asChild
                 >
-                  <a href="#demo">
+                  <a href="/auth">
                     <Play className="mr-1 h-3 w-3" />
-                    Demo ansehen
+                    Kostenlos testen
                   </a>
                 </Button>
               </div>

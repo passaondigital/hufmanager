@@ -32,7 +32,7 @@ const HeroV2 = () => {
 
             <div className="flex flex-col sm:flex-row gap-4 pt-2 animate-fade-up" style={{ animationDelay: "200ms" }}>
               <Button size="lg" className="glow-orange text-lg font-bold bg-[#F5970A] hover:bg-[#E08A09] text-white gap-2" asChild>
-                <a href="#demo">
+                <a href="/auth">
                   🐴 14 Tage kostenlos testen
                   <ArrowRight className="h-5 w-5" />
                 </a>

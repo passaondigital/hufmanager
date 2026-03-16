@@ -46,14 +46,14 @@ const HeroMinimal = () => {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
             <Button size="lg" className="glow-orange text-lg font-bold bg-[#F5970A] hover:bg-[#E08A09] text-white gap-2" asChild>
-              <a href="#demo">
+              <a href="/auth">
                 🐴 14 Tage kostenlos testen
                 <ArrowRight className="h-5 w-5" />
               </a>
             </Button>
             <Button size="lg" variant="ghost" className="text-lg text-white/80 hover:text-white border border-white/15 hover:border-white/30 gap-2" asChild>
-              <a href="#demo">
-                Demo ansehen
+              <a href="/auth?force=login">
+                Anmelden
                 <ArrowRight className="h-5 w-5" />
               </a>
             </Button>

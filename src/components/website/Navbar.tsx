@@ -27,7 +27,7 @@ const Navbar = () => {
               <Link to="/auth?force=login">Login</Link>
             </Button>
             <Button asChild>
-              <a href="/#demo">Demo ansehen</a>
+              <Link to="/auth">Kostenlos starten</Link>
             </Button>
           </div>
 
@@ -48,7 +48,7 @@ const Navbar = () => {
                   <Link to="/auth?force=login">Login</Link>
                 </Button>
                 <Button className="w-full" asChild>
-                  <a href="/#demo" onClick={() => setIsOpen(false)}>Demo ansehen</a>
+                  <Link to="/auth" onClick={() => setIsOpen(false)}>Kostenlos starten</Link>
                 </Button>
               </div>
             </nav>
