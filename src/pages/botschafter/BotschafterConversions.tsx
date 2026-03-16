@@ -10,6 +10,7 @@ type Conversion = {
   product_name: string | null;
   amount_cents: number | null;
   commission_cents: number | null;
+  commission_rate: number | null;
   status: string | null;
   created_at: string | null;
 };
@@ -43,11 +44,11 @@ export default function BotschafterConversions() {
     if (bot) {
       const { data: convs } = await supabase
         .from("botschafter_conversions")
-        .select("id, referral_code, product_name, amount_cents, commission_cents, status, created_at")
+        .select("id, referral_code, product_name, amount_cents, commission_cents, commission_rate, status, created_at")
         .eq("botschafter_id", bot.id)
         .order("created_at", { ascending: false });
       setConversions(convs || []);
-      
+
       const confirmed = (convs || []).filter(c => c.status === "confirmed");
       const pending = (convs || []).filter(c => c.status === "pending");
       setTotalPaid(confirmed.length);
@@ -58,11 +59,18 @@ export default function BotschafterConversions() {
 
   if (loading) return <div className="flex items-center justify-center p-12"><Loader2 className="w-8 h-8 animate-spin" style={{ color: "#F5970A" }} /></div>;
 
+  // Determine if conversion is Provider (20%) or Tresor (10%)
+  const getConvType = (conv: Conversion) => {
+    const rate = conv.commission_rate || 20;
+    if (rate <= 12) return { label: "Tresor", badge: "🐴", rateLabel: `${rate}%` };
+    return { label: "Provider", badge: "🔨", rateLabel: `${rate}%` };
+  };
+
   return (
     <div className="p-4 md:p-6 space-y-5 max-w-3xl mx-auto">
       <h1 className="text-xl font-bold">👥 Gewonnene Partner/innen</h1>
 
-      <div className="flex gap-4 text-sm" style={{ color: "#9ca3af" }}>
+      <div className="flex gap-4 text-sm flex-wrap" style={{ color: "#9ca3af" }}>
         <span>Gesamt: {conversions.length} Registrierungen</span>
         <span>·</span>
         <span>{totalPaid} zahlend</span>
@@ -74,11 +82,15 @@ export default function BotschafterConversions() {
         <span>🟢 zahlend</span>
         <span>🟡 trial</span>
         <span>⚪ inaktiv</span>
+        <span className="ml-2">·</span>
+        <span>🔨 Provider ({"\u2265"}20%)</span>
+        <span>🐴 Tresor (10%)</span>
       </div>
 
       <div className="space-y-2">
         {conversions.map(conv => {
           const s = STATUS_MAP[conv.status || "pending"] || STATUS_MAP.pending;
+          const ct = getConvType(conv);
           const date = conv.created_at ? new Date(conv.created_at).toLocaleDateString("de-DE") : "";
           return (
             <Card key={conv.id} style={{ backgroundColor: "#1a1a12", borderColor: "#2a2a1f" }}>
@@ -87,7 +99,12 @@ export default function BotschafterConversions() {
                   <div className="flex items-center gap-2">
                     <span>{s.icon}</span>
                     <div>
-                      <p className="text-sm font-medium">{conv.product_name || "Registrierung"}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium">{conv.product_name || "Registrierung"}</p>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: "rgba(245,151,10,0.15)", color: "#F5970A" }}>
+                          {ct.badge} {ct.label} ({ct.rateLabel})
+                        </span>
+                      </div>
                       <p className="text-xs" style={{ color: "#9ca3af" }}>{date} · Status: {s.label}</p>
                     </div>
                   </div>
@@ -110,6 +127,11 @@ export default function BotschafterConversions() {
           </div>
         )}
       </div>
+
+      {/* Privacy note */}
+      <p className="text-[11px] text-center" style={{ color: "#6b7280" }}>
+        Datenschutz: Es werden nur Vorname + Initial, Rolle und Status angezeigt. Keine E-Mails oder persönliche Daten.
+      </p>
     </div>
   );
 }
