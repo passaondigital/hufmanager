@@ -58,7 +58,7 @@ export async function ensureUserProfile(user: User): Promise<{ success: boolean;
           return { success: false, error: insertError.message };
         }
       } else {
-        console.log("Successfully auto-healed profile for user:", user.id);
+        if (import.meta.env.DEV) console.log("Successfully auto-healed profile for user:", user.id);
         profileCreated = true;
         // The DB trigger will auto-create the role, so we're done
       }
