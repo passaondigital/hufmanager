@@ -11,6 +11,7 @@ import { toast } from "sonner";
 
 // Admin Views
 import { AdminUserDB } from "@/components/admin/AdminUserDB";
+import { AdminUserManagement } from "@/components/admin/AdminUserManagement";
 import { AdminHorseDB } from "@/components/admin/AdminHorseDB";
 import { AdminDevZentrale } from "@/components/admin/AdminDevZentrale";
 import { AdminSystemHealth } from "@/components/admin/AdminSystemHealth";
