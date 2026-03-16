@@ -282,6 +282,7 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
             <Route path="/vet/pms-connect" element={<VetPMSConnect />} />
             <Route path="/vet/csv-import" element={<VetCSVImport />} />
             <Route path="/vet/got-rechner" element={<VetGOTRechner />} />
+            <Route path="/vet/impfungen" element={<VetImpfungen />} />
             <Route path="/tierarzt-finder" element={<TierarztFinder />} />
             <Route path="*" element={<VetPortalLogin />} />
           </Routes>
