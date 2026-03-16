@@ -361,13 +361,18 @@ function App() {
     };
   }, []);
 
-  // Affiliate ?ref= tracking
+  // Affiliate ?ref= + ?src= tracking
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const ref = params.get("ref");
+    const src = params.get("src");
     if (ref && ref.length <= 20 && /^[A-Z0-9-]+$/i.test(ref)) {
       localStorage.setItem("huf_affiliate_ref", ref.toUpperCase());
       localStorage.setItem("huf_affiliate_ref_ts", Date.now().toString());
+      if (!sessionStorage.getItem("hm_referral_code")) {
+        sessionStorage.setItem("hm_referral_code", ref.toUpperCase());
+        sessionStorage.setItem("hm_referral_source", src || "direct");
+      }
     }
   }, []);
 
