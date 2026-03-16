@@ -419,6 +419,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
         <VersionChecker />
         <SystemStatusBanner />
         <TrialPaywall />
+        <PendingVerificationOverlay />
         
         
         <PasswordRecoveryRedirect>
