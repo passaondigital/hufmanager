@@ -519,12 +519,12 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             {/* Portal Routes (auth required, handled inside component) */}
             <Route path="/portal/galerie" element={<PortalGallery />} />
             <Route path="/portal/bewerben" element={<PortalApplication />} />
-            <Route path="/portal/versicherung" element={<PortalDemo />} />
-            <Route path="/portal/hersteller" element={<PortalDemo />} />
-            <Route path="/portal/tierarzt" element={<PortalDemo />} />
-            <Route path="/portal/lieferant" element={<PortalDemo />} />
-            <Route path="/portal/ausbildung" element={<PortalDemo />} />
-            <Route path="/portal/verband" element={<PortalDemo />} />
+            <Route path="/portal/versicherung" element={<InsurancePortalDemo />} />
+            <Route path="/portal/hersteller" element={<ManufacturerPortalDemo />} />
+            <Route path="/portal/tierarzt" element={<VetPortalDemo />} />
+            <Route path="/portal/lieferant" element={<SupplierPortalDemo />} />
+            <Route path="/portal/ausbildung" element={<EducationPortalDemo />} />
+            <Route path="/portal/verband" element={<AssociationPortalDemo />} />
             <Route path="/portal/:slug" element={<PortalDashboard />} />
             <Route path="/portal/:slug/settings" element={<PortalSettings />} />
             
