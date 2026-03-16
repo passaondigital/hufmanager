@@ -228,6 +228,13 @@ const persister = createIDBPersister();
 // Lazy-load portal pages for subdomain routing
 const PortalLogin = lazy(() => import("@/pages/portal/PortalLogin"));
 const MarketplacePublic = lazy(() => import("@/pages/portal/MarketplacePublic"));
+const VetPortalLogin = lazy(() => import("@/pages/portal/VetPortalLogin"));
+const VetDashboard = lazy(() => import("@/pages/vet/VetDashboard"));
+const VetSOAPForm = lazy(() => import("@/pages/vet/VetSOAPForm"));
+const VetPMSConnect = lazy(() => import("@/pages/vet/VetPMSConnect"));
+const VetCSVImport = lazy(() => import("@/pages/vet/VetCSVImport"));
+const VetGOTRechner = lazy(() => import("@/pages/vet/VetGOTRechner"));
+const TierarztFinder = lazy(() => import("@/pages/TierarztFinder"));
 
 /** Intercepts /pferdeakte routes and portal subdomains BEFORE AuthProvider */
 function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
@@ -250,13 +257,32 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Subdomain routing: markt.hufmanager.de (public browse, auth for orders)
+  // Subdomain routing: markt.hufmanager.de
   if (portalMode.mode === 'marketplace') {
     return (
       <AuthProvider>
         <Suspense fallback={<LazyFallback />}>
           <Routes>
             <Route path="*" element={<MarketplacePublic />} />
+          </Routes>
+        </Suspense>
+      </AuthProvider>
+    );
+  }
+
+  // Subdomain routing: tierarzt.hufmanager.de
+  if (portalMode.mode === 'veterinary') {
+    return (
+      <AuthProvider>
+        <Suspense fallback={<LazyFallback />}>
+          <Routes>
+            <Route path="/vet/dashboard" element={<VetDashboard />} />
+            <Route path="/vet/soap" element={<VetSOAPForm />} />
+            <Route path="/vet/pms-connect" element={<VetPMSConnect />} />
+            <Route path="/vet/csv-import" element={<VetCSVImport />} />
+            <Route path="/vet/got-rechner" element={<VetGOTRechner />} />
+            <Route path="/tierarzt-finder" element={<TierarztFinder />} />
+            <Route path="*" element={<VetPortalLogin />} />
           </Routes>
         </Suspense>
       </AuthProvider>
@@ -445,6 +471,14 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/faq" element={<FAQ />} />
             <Route path="/changelog" element={<Changelog />} />
             <Route path="/statistiken" element={<Statistiken />} />
+            <Route path="/tierarzt-finder" element={<TierarztFinder />} />
+            
+            {/* Vet Portal Routes (accessible from main app too) */}
+            <Route path="/vet/dashboard" element={<VetDashboard />} />
+            <Route path="/vet/soap" element={<VetSOAPForm />} />
+            <Route path="/vet/pms-connect" element={<VetPMSConnect />} />
+            <Route path="/vet/csv-import" element={<VetCSVImport />} />
+            <Route path="/vet/got-rechner" element={<VetGOTRechner />} />
             
             {/* Portal Routes (auth required, handled inside component) */}
             <Route path="/portal/:slug" element={<PortalDashboard />} />

@@ -5054,6 +5054,51 @@ export type Database = {
         }
         Relationships: []
       }
+      got_positions: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string
+          id: string
+          is_equine_relevant: boolean | null
+          notes: string | null
+          position_number: string
+          price_1x: number
+          price_2x: number | null
+          price_3x: number | null
+          price_4x: number | null
+          unit: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description: string
+          id?: string
+          is_equine_relevant?: boolean | null
+          notes?: string | null
+          position_number: string
+          price_1x: number
+          price_2x?: number | null
+          price_3x?: number | null
+          price_4x?: number | null
+          unit?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          is_equine_relevant?: boolean | null
+          notes?: string | null
+          position_number?: string
+          price_1x?: number
+          price_2x?: number | null
+          price_3x?: number | null
+          price_4x?: number | null
+          unit?: string | null
+        }
+        Relationships: []
+      }
       help_articles: {
         Row: {
           call_to_action: string | null
@@ -6197,6 +6242,92 @@ export type Database = {
           },
           {
             foreignKeyName: "horse_intake_history_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      horse_medications: {
+        Row: {
+          created_at: string | null
+          dosage: string | null
+          end_date: string | null
+          external_id: string | null
+          frequency: string | null
+          horse_id: string
+          id: string
+          is_active: boolean | null
+          medication_name: string
+          notes: string | null
+          prescribed_by: string | null
+          reason: string | null
+          route: string | null
+          source: string | null
+          start_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dosage?: string | null
+          end_date?: string | null
+          external_id?: string | null
+          frequency?: string | null
+          horse_id: string
+          id?: string
+          is_active?: boolean | null
+          medication_name: string
+          notes?: string | null
+          prescribed_by?: string | null
+          reason?: string | null
+          route?: string | null
+          source?: string | null
+          start_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dosage?: string | null
+          end_date?: string | null
+          external_id?: string | null
+          frequency?: string | null
+          horse_id?: string
+          id?: string
+          is_active?: boolean | null
+          medication_name?: string
+          notes?: string | null
+          prescribed_by?: string | null
+          reason?: string | null
+          route?: string | null
+          source?: string | null
+          start_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horse_medications_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_medications_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_medications_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_medications_horse_id_fkey"
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "safe_horses"
@@ -13589,6 +13720,217 @@ export type Database = {
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "provider_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vet_profiles: {
+        Row: {
+          accepts_new_patients: boolean | null
+          address_city: string | null
+          address_country: string | null
+          address_state: string | null
+          address_street: string | null
+          address_zip: string | null
+          clinic_name: string | null
+          clinic_type: string | null
+          created_at: string | null
+          description: string | null
+          display_name: string
+          email: string | null
+          emergency_service: boolean | null
+          id: string
+          is_public: boolean | null
+          is_verified: boolean | null
+          languages: string[] | null
+          latitude: number | null
+          longitude: number | null
+          opening_hours: Json | null
+          organization_id: string | null
+          phone: string | null
+          photo_url: string | null
+          plan: string | null
+          pms_software: string | null
+          specializations: string[] | null
+          updated_at: string | null
+          user_id: string | null
+          website: string | null
+        }
+        Insert: {
+          accepts_new_patients?: boolean | null
+          address_city?: string | null
+          address_country?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zip?: string | null
+          clinic_name?: string | null
+          clinic_type?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_name: string
+          email?: string | null
+          emergency_service?: boolean | null
+          id?: string
+          is_public?: boolean | null
+          is_verified?: boolean | null
+          languages?: string[] | null
+          latitude?: number | null
+          longitude?: number | null
+          opening_hours?: Json | null
+          organization_id?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          plan?: string | null
+          pms_software?: string | null
+          specializations?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+          website?: string | null
+        }
+        Update: {
+          accepts_new_patients?: boolean | null
+          address_city?: string | null
+          address_country?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zip?: string | null
+          clinic_name?: string | null
+          clinic_type?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_name?: string
+          email?: string | null
+          emergency_service?: boolean | null
+          id?: string
+          is_public?: boolean | null
+          is_verified?: boolean | null
+          languages?: string[] | null
+          latitude?: number | null
+          longitude?: number | null
+          opening_hours?: Json | null
+          organization_id?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          plan?: string | null
+          pms_software?: string | null
+          specializations?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vet_profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vet_sync_connections: {
+        Row: {
+          created_at: string | null
+          credentials_encrypted: string | null
+          error_message: string | null
+          external_clinic_id: string | null
+          id: string
+          last_sync_at: string | null
+          next_sync_at: string | null
+          oauth_access_token: string | null
+          oauth_expires_at: string | null
+          oauth_refresh_token: string | null
+          provider_type: string
+          status: string | null
+          sync_config: Json | null
+          sync_interval_minutes: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          credentials_encrypted?: string | null
+          error_message?: string | null
+          external_clinic_id?: string | null
+          id?: string
+          last_sync_at?: string | null
+          next_sync_at?: string | null
+          oauth_access_token?: string | null
+          oauth_expires_at?: string | null
+          oauth_refresh_token?: string | null
+          provider_type: string
+          status?: string | null
+          sync_config?: Json | null
+          sync_interval_minutes?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          credentials_encrypted?: string | null
+          error_message?: string | null
+          external_clinic_id?: string | null
+          id?: string
+          last_sync_at?: string | null
+          next_sync_at?: string | null
+          oauth_access_token?: string | null
+          oauth_expires_at?: string | null
+          oauth_refresh_token?: string | null
+          provider_type?: string
+          status?: string | null
+          sync_config?: Json | null
+          sync_interval_minutes?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vet_sync_log: {
+        Row: {
+          completed_at: string | null
+          connection_id: string
+          details: Json | null
+          error_message: string | null
+          id: string
+          records_failed: number | null
+          records_synced: number | null
+          started_at: string | null
+          status: string | null
+          sync_type: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          connection_id: string
+          details?: Json | null
+          error_message?: string | null
+          id?: string
+          records_failed?: number | null
+          records_synced?: number | null
+          started_at?: string | null
+          status?: string | null
+          sync_type: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          connection_id?: string
+          details?: Json | null
+          error_message?: string | null
+          id?: string
+          records_failed?: number | null
+          records_synced?: number | null
+          started_at?: string | null
+          status?: string | null
+          sync_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vet_sync_log_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "vet_sync_connections"
             referencedColumns: ["id"]
           },
         ]

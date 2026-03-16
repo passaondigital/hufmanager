@@ -47,6 +47,15 @@ const NAV_ITEMS: Record<string, { label: string; icon: React.ElementType; path: 
     { label: "Statistiken", icon: BarChart3, path: "/statistiken" },
     { label: "Einstellungen", icon: Settings, path: "/settings" },
   ],
+  veterinary: [
+    { label: "Dashboard", icon: LayoutDashboard, path: "" },
+    { label: "Patienten", icon: Users, path: "/patienten" },
+    { label: "Befunde", icon: FileText, path: "/befunde" },
+    { label: "Impfungen", icon: ClipboardList, path: "/impfungen" },
+    { label: "Analytics", icon: BarChart3, path: "/analytics" },
+    { label: "Team", icon: Users, path: "/team" },
+    { label: "Einstellungen", icon: Settings, path: "/settings" },
+  ],
 };
 
 interface PortalSidebarProps {
