@@ -512,27 +512,26 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/docs" element={<Docs />} />
             <Route path="/docs/changelog" element={<Docs />} />
 
-            {/* Botschafter-App - für alle eingeloggten Nutzer (inkl. reine Botschafter ohne App-Rolle) */}
-            <Route path="/botschafter/uebersicht" element={
+            {/* Botschafter Portal – eigenes Layout */}
+            <Route element={
               <ProtectedRoute>
-                <BotschafterUebersicht />
+                <BotschafterLayout />
               </ProtectedRoute>
-            } />
-            <Route path="/botschafter/werbemittel" element={
-              <ProtectedRoute>
-                <BotschafterWerbemittelPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/botschafter/werbemittel/erstellen" element={
-              <ProtectedRoute>
-                <WerbemittelEditor />
-              </ProtectedRoute>
-            } />
-            <Route path="/botschafter/nachrichten" element={
-              <ProtectedRoute>
-                <BotschafterNachrichten />
-              </ProtectedRoute>
-            } />
+            }>
+              <Route path="/botschafter/dashboard" element={<BotschafterDashboard />} />
+              <Route path="/botschafter/uebersicht" element={<Navigate to="/botschafter/dashboard" replace />} />
+              <Route path="/botschafter/links" element={<BotschafterLinks />} />
+              <Route path="/botschafter/conversions" element={<BotschafterConversions />} />
+              <Route path="/botschafter/umsaetze" element={<BotschafterUmsaetze />} />
+              <Route path="/botschafter/sponsoring" element={<BotschafterSponsoring />} />
+              <Route path="/botschafter/insights" element={<BotschafterInsights />} />
+              <Route path="/botschafter/werbemittel" element={<BotschafterWerbemittelPage />} />
+              <Route path="/botschafter/werbemittel/erstellen" element={<WerbemittelEditor />} />
+              <Route path="/botschafter/rangliste" element={<BotschafterRangliste />} />
+              <Route path="/botschafter/profil" element={<BotschafterProfil />} />
+              <Route path="/botschafter/hufmanager" element={<BotschafterHufmanager />} />
+              <Route path="/botschafter/nachrichten" element={<BotschafterNachrichten />} />
+            </Route>
             
             {/* Admin Mission Control - nur für Admins */}
             <Route path="/admin/mission-control" element={
