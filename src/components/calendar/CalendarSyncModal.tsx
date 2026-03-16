@@ -298,7 +298,7 @@ export function CalendarSyncModal({
                               {i + 1}
                             </span>
                           )}
-                          <span dangerouslySetInnerHTML={{ __html: step.replace(/✅\s?/, "") }} />
+                          <span>{step.replace(/✅\s?/, "")}</span>
                           {isLast && <Check className="h-4 w-4 shrink-0 mt-0.5" />}
                         </li>
                       );

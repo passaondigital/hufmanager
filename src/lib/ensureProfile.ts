@@ -34,7 +34,7 @@ export async function ensureUserProfile(user: User): Promise<{ success: boolean;
 
     // Profile missing - auto-heal by creating it
     if (!existingProfile) {
-      console.log("Auto-healing missing profile for user:", user.id);
+      if (import.meta.env.DEV) console.log("Auto-healing missing profile for user:", user.id);
       
       const fullName = user.user_metadata?.full_name || 
                        user.user_metadata?.name ||
@@ -52,13 +52,13 @@ export async function ensureUserProfile(user: User): Promise<{ success: boolean;
       if (insertError) {
         // Handle unique constraint violation (profile was created by another process)
         if (insertError.code === "23505") {
-          console.log("Profile was created by another process, continuing...");
+          if (import.meta.env.DEV) console.log("Profile was created by another process, continuing...");
         } else {
           console.error("Error creating profile:", insertError);
           return { success: false, error: insertError.message };
         }
       } else {
-        console.log("Successfully auto-healed profile for user:", user.id);
+        if (import.meta.env.DEV) console.log("Successfully auto-healed profile for user:", user.id);
         profileCreated = true;
         // The DB trigger will auto-create the role, so we're done
       }
@@ -92,7 +92,7 @@ export async function ensureUserProfile(user: User): Promise<{ success: boolean;
           .maybeSingle();
 
         if (orphanBid) {
-          console.log("Auto-linking orphan BID to user:", user.id);
+          if (import.meta.env.DEV) console.log("Auto-linking orphan BID to user:", user.id);
           await supabase
             .from("pferdeakte_botschafter")
             .update({ user_id: user.id, source_user_id: user.id } as any)

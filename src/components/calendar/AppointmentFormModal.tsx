@@ -233,14 +233,10 @@ export function AppointmentFormModal({
   const createAppointments = useMutation({
     networkMode: "always",
     onMutate: (appointments: any[]) => {
-      console.log("[AppointmentFormModal] mutate", {
-        online: typeof navigator !== "undefined" ? navigator.onLine : undefined,
-        appointmentsCount: appointments?.length,
-        evidenceCount: pendingEvidence.length,
-      });
+      if (import.meta.env.DEV) console.log("[AppointmentFormModal] mutate", { appointmentsCount: appointments?.length });
     },
     mutationFn: async (appointments: any[]) => {
-      console.log("[AppointmentFormModal] mutationFn start");
+      if (import.meta.env.DEV) console.log("[AppointmentFormModal] mutationFn start");
       // Start upload progress tracking immediately if we have evidence
       if (pendingEvidence.length > 0) {
         setIsUploading(true);
@@ -263,7 +259,7 @@ export function AppointmentFormModal({
           throw new Error("Keine Termine erstellt - unbekannter Fehler");
         }
 
-        console.log("[AppointmentFormModal] createdAppointments", createdAppointments);
+        if (import.meta.env.DEV) console.log("[AppointmentFormModal] createdAppointments", createdAppointments.length);
 
         // Step B: Get the first appointment ID for evidence linking
         const firstAppointment = createdAppointments[0];
@@ -463,12 +459,7 @@ export function AppointmentFormModal({
   };
 
   const handleSubmit = () => {
-    console.log("[AppointmentFormModal] handleSubmit click", {
-      selectedDate,
-      horseId: formData.horseId,
-      evidenceCount: pendingEvidence.length,
-      online: typeof navigator !== "undefined" ? navigator.onLine : undefined,
-    });
+    if (import.meta.env.DEV) console.log("[AppointmentFormModal] handleSubmit click");
 
     if (!selectedDate || !user?.id) {
       toast({
@@ -547,10 +538,7 @@ export function AppointmentFormModal({
       });
     }
 
-    console.log("[AppointmentFormModal] submitting appointments", {
-      count: appointments.length,
-      first: appointments[0],
-    });
+    if (import.meta.env.DEV) console.log("[AppointmentFormModal] submitting", appointments.length);
 
     createAppointments
       .mutateAsync(appointments)
