@@ -3,20 +3,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { Send, UserPlus, Link2, FileText, Users, MessageSquare, Globe, Briefcase, Eye, Search, ChevronRight, Heart } from "lucide-react";
+import { Send, UserPlus, Link2, Globe, Eye, Search, Heart } from "lucide-react";
 import { DEMO_PFERDE, DEMO_CHAT_KONTAKTE, DEMO_CHAT_MESSAGES, DEMO_HM_CONNECT, createDemoNutzer, createDemoMitarbeiter } from "./DemoPortalData";
+
+/** Kleine Mono-ID-Badge für System-IDs wie #EQID-D001 */
+function SystemId({ id }: { id: string }) {
+  return <span className="font-mono text-[11px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{id}</span>;
+}
 
 // ─── Pferdeakten Tab ────────────────────────────
 export function PferdeaktenTab() {
   const [selected, setSelected] = useState<typeof DEMO_PFERDE[0] | null>(null);
   const [search, setSearch] = useState("");
-  const filtered = DEMO_PFERDE.filter(p => 
-    p.name.toLowerCase().includes(search.toLowerCase()) || 
-    p.besitzer.toLowerCase().includes(search.toLowerCase())
+  const filtered = DEMO_PFERDE.filter(p =>
+    p.name.toLowerCase().includes(search.toLowerCase()) ||
+    p.besitzer.toLowerCase().includes(search.toLowerCase()) ||
+    p.id.toLowerCase().includes(search.toLowerCase())
   );
 
   const scoreColor = (s: number) => s >= 80 ? "text-emerald-500" : s >= 60 ? "text-amber-500" : "text-red-500";
@@ -30,7 +35,7 @@ export function PferdeaktenTab() {
       <div className="flex items-center justify-between">
         <div><h1 className="text-2xl font-bold">Geteilte Pferdeakten</h1><p className="text-sm text-muted-foreground">{DEMO_PFERDE.length} Pferde mit Zugriff (Demo-Daten)</p></div>
       </div>
-      <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="Pferd oder Besitzer suchen…" className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
+      <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="Pferd, Besitzer oder #EQID suchen…" className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
       <div className="grid gap-3">
         {filtered.map((p) => (
           <Card key={p.id} className="cursor-pointer hover:border-primary/40 transition-colors" onClick={() => setSelected(p)}>
@@ -39,8 +44,11 @@ export function PferdeaktenTab() {
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"><Heart className="h-5 w-5 text-primary" /></div>
                   <div>
-                    <p className="font-medium">{p.name}</p>
-                    <p className="text-xs text-muted-foreground">{p.rasse} · {p.alter} · {p.besitzer}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{p.name}</p>
+                      <SystemId id={p.id} />
+                    </div>
+                    <p className="text-xs text-muted-foreground">{p.rasse} · {p.alter} · {p.besitzer} <SystemId id={p.besitzerId} /></p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -51,6 +59,7 @@ export function PferdeaktenTab() {
               </div>
               <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
                 <span>Chip: {p.chipNr}</span>
+                <span>Provider: <SystemId id={p.provider} /></span>
                 <span>Impfstatus: {p.impfStatus}</span>
                 <span>Letzte Beh.: {p.letzteBeh}</span>
               </div>
@@ -60,13 +69,18 @@ export function PferdeaktenTab() {
       </div>
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{selected?.name}</DialogTitle><DialogDescription>{selected?.rasse} · {selected?.alter} · {selected?.besitzer}</DialogDescription></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">{selected?.name} <SystemId id={selected?.id || ""} /></DialogTitle>
+            <DialogDescription>{selected?.rasse} · {selected?.alter} · {selected?.besitzer} <SystemId id={selected?.besitzerId || ""} /></DialogDescription>
+          </DialogHeader>
           {selected && (
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-3">
                 <div><span className="text-muted-foreground">Chip-Nr.:</span> <span className="font-medium">{selected.chipNr}</span></div>
                 <div><span className="text-muted-foreground">Status:</span> {statusBadge(selected.status)}</div>
                 <div><span className="text-muted-foreground">Impfstatus:</span> <Badge variant={selected.impfStatus === "aktuell" ? "default" : "destructive"}>{selected.impfStatus}</Badge></div>
+                <div><span className="text-muted-foreground">Provider:</span> <SystemId id={selected.provider} /></div>
+                <div><span className="text-muted-foreground">Besitzer:</span> <SystemId id={selected.besitzerId} /></div>
                 <div><span className="text-muted-foreground">Letzte Behandlung:</span> <span className="font-medium">{selected.letzteBeh}</span></div>
               </div>
               <div>
@@ -97,13 +111,15 @@ export function ChatTab() {
     <div className="space-y-4">
       <div><h1 className="text-2xl font-bold">Nachrichten</h1><p className="text-sm text-muted-foreground">Kommunikation mit Profis & Besitzern (Demo-Daten)</p></div>
       <div className="grid lg:grid-cols-[280px_1fr] gap-4">
-        {/* Kontaktliste */}
         <Card className="lg:h-[500px] overflow-y-auto">
           <CardContent className="p-2 space-y-1">
             {DEMO_CHAT_KONTAKTE.map((k) => (
               <button key={k.id} onClick={() => setActiveChat(k.id)} className={`w-full text-left p-3 rounded-lg transition-colors ${activeChat === k.id ? "bg-primary/10" : "hover:bg-muted/50"}`}>
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm">{k.name}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium text-sm">{k.name}</span>
+                    <SystemId id={k.visibleId} />
+                  </div>
                   {k.ungelesen > 0 && <Badge className="h-5 w-5 p-0 flex items-center justify-center text-[10px]">{k.ungelesen}</Badge>}
                 </div>
                 <p className="text-xs text-muted-foreground truncate mt-0.5">{k.letzteNachricht}</p>
@@ -112,17 +128,19 @@ export function ChatTab() {
             ))}
           </CardContent>
         </Card>
-        {/* Chat-Bereich */}
         <Card className="lg:h-[500px] flex flex-col">
           <CardHeader className="pb-2 border-b shrink-0">
-            <CardTitle className="text-sm">{activeKontakt?.name || "Chat wählen"}</CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-sm">{activeKontakt?.name || "Chat wählen"}</CardTitle>
+              {activeKontakt && <SystemId id={activeKontakt.visibleId} />}
+            </div>
             {activeKontakt && <p className="text-xs text-muted-foreground">{activeKontakt.rolle}</p>}
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto p-4 space-y-3">
             {DEMO_CHAT_MESSAGES.map((m) => (
               <div key={m.id} className={`flex ${m.typ === "ausgehend" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[75%] rounded-2xl px-4 py-2 text-sm ${m.typ === "ausgehend" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-                  {m.typ === "eingehend" && <p className="text-[10px] font-medium mb-0.5 opacity-70">{m.absender}</p>}
+                  {m.typ === "eingehend" && <p className="text-[10px] font-medium mb-0.5 opacity-70">{m.absender} {m.absenderId && <SystemId id={m.absenderId} />}</p>}
                   <p>{m.text}</p>
                   <p className={`text-[10px] mt-1 ${m.typ === "ausgehend" ? "text-primary-foreground/60" : "text-muted-foreground"}`}>{m.zeit}</p>
                 </div>
@@ -156,7 +174,10 @@ export function HMConnectTab() {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"><Link2 className="h-5 w-5 text-primary" /></div>
                 <div>
-                  <p className="font-medium text-sm">{c.name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-sm">{c.name}</p>
+                    <SystemId id={c.visibleId} />
+                  </div>
                   <p className="text-xs text-muted-foreground">{c.typ} · {c.pferde} Pferde geteilt</p>
                 </div>
               </div>
@@ -173,23 +194,29 @@ export function HMConnectTab() {
 }
 
 // ─── Nutzer Tab (allgemein) ────────────────────────────
-export function NutzerTab({ orgDomain }: { orgDomain: string }) {
-  const users = createDemoNutzer("demo", orgDomain);
+export function NutzerTab({ orgDomain, orgId }: { orgDomain: string; orgId?: string }) {
+  const users = createDemoNutzer("demo", orgDomain, orgId);
   const [showInvite, setShowInvite] = useState(false);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div><h1 className="text-2xl font-bold">Nutzer-Verwaltung</h1><p className="text-sm text-muted-foreground">{users.length} Nutzer (Demo-Daten)</p></div>
+        <div><h1 className="text-2xl font-bold">Nutzer-Verwaltung</h1><p className="text-sm text-muted-foreground">{users.length} Nutzer (Demo-Daten) · Org: <SystemId id={orgId || "#OID-D001"} /></p></div>
         <Button onClick={() => setShowInvite(true)}><UserPlus className="h-4 w-4 mr-1" /> Nutzer einladen</Button>
       </div>
       <Card>
         <CardContent className="p-0">
           <Table>
-            <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Rolle</TableHead><TableHead>E-Mail</TableHead><TableHead>Letzter Login</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>#ID</TableHead><TableHead>Name</TableHead><TableHead>Rolle</TableHead><TableHead>E-Mail</TableHead><TableHead>Letzter Login</TableHead></TableRow></TableHeader>
             <TableBody>
               {users.map((u) => (
-                <TableRow key={u.email}><TableCell className="font-medium">{u.name}</TableCell><TableCell><Badge variant="outline">{u.rolle}</Badge></TableCell><TableCell className="text-muted-foreground">{u.email}</TableCell><TableCell className="text-muted-foreground">{u.letzterLogin}</TableCell></TableRow>
+                <TableRow key={u.email}>
+                  <TableCell><SystemId id={u.id} /></TableCell>
+                  <TableCell className="font-medium">{u.name}</TableCell>
+                  <TableCell><Badge variant="outline">{u.rolle}</Badge></TableCell>
+                  <TableCell className="text-muted-foreground">{u.email}</TableCell>
+                  <TableCell className="text-muted-foreground">{u.letzterLogin}</TableCell>
+                </TableRow>
               ))}
             </TableBody>
           </Table>
@@ -211,22 +238,29 @@ export function NutzerTab({ orgDomain }: { orgDomain: string }) {
 }
 
 // ─── Mitarbeiter Tab ────────────────────────────
-export function MitarbeiterTab({ orgDomain }: { orgDomain: string }) {
-  const mitarbeiter = createDemoMitarbeiter(orgDomain);
+export function MitarbeiterTab({ orgDomain, orgId }: { orgDomain: string; orgId?: string }) {
+  const mitarbeiter = createDemoMitarbeiter(orgDomain, orgId);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div><h1 className="text-2xl font-bold">Mitarbeiter</h1><p className="text-sm text-muted-foreground">{mitarbeiter.length} Mitarbeiter (Demo-Daten)</p></div>
+        <div><h1 className="text-2xl font-bold">Mitarbeiter</h1><p className="text-sm text-muted-foreground">{mitarbeiter.length} Mitarbeiter (Demo-Daten) · Org: <SystemId id={orgId || "#OID-D001"} /></p></div>
         <Button><UserPlus className="h-4 w-4 mr-1" /> Mitarbeiter anlegen</Button>
       </div>
       <Card>
         <CardContent className="p-0">
           <Table>
-            <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Position</TableHead><TableHead>Abteilung</TableHead><TableHead>E-Mail</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>#ID</TableHead><TableHead>Name</TableHead><TableHead>Position</TableHead><TableHead>Abteilung</TableHead><TableHead>E-Mail</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
             <TableBody>
               {mitarbeiter.map((m) => (
-                <TableRow key={m.id}><TableCell className="font-medium">{m.name}</TableCell><TableCell>{m.position}</TableCell><TableCell><Badge variant="outline">{m.abteilung}</Badge></TableCell><TableCell className="text-muted-foreground">{m.email}</TableCell><TableCell><Badge variant={m.status === "aktiv" ? "default" : "secondary"}>{m.status}</Badge></TableCell></TableRow>
+                <TableRow key={m.id}>
+                  <TableCell><SystemId id={m.id} /></TableCell>
+                  <TableCell className="font-medium">{m.name}</TableCell>
+                  <TableCell>{m.position}</TableCell>
+                  <TableCell><Badge variant="outline">{m.abteilung}</Badge></TableCell>
+                  <TableCell className="text-muted-foreground">{m.email}</TableCell>
+                  <TableCell><Badge variant={m.status === "aktiv" ? "default" : "secondary"}>{m.status}</Badge></TableCell>
+                </TableRow>
               ))}
             </TableBody>
           </Table>
