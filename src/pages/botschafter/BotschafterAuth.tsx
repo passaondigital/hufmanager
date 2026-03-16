@@ -67,6 +67,7 @@ export default function BotschafterAuth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [tab, setTab] = useState<"login" | "register">("login");
+  const [sessionChecked, setSessionChecked] = useState(false);
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
@@ -91,6 +92,28 @@ export default function BotschafterAuth() {
   const [regLoading, setRegLoading] = useState(false);
   const [regError, setRegError] = useState("");
   const [regShowPw, setRegShowPw] = useState(false);
+
+  // Auto-redirect if already logged in and has botschafter record
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: bot } = await supabase
+          .from("pferdeakte_botschafter")
+          .select("id, status")
+          .or(`user_id.eq.${session.user.id},email.eq.${session.user.email}`)
+          .in("status", ["active", "pending"])
+          .maybeSingle();
+
+        if (bot) {
+          navigate("/botschafter/dashboard", { replace: true });
+          return;
+        }
+      }
+      setSessionChecked(true);
+    };
+    checkSession();
+  }, [navigate]);
 
   const setReg = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setRegForm(f => ({ ...f, [k]: e.target.value }));
@@ -268,6 +291,14 @@ export default function BotschafterAuth() {
 
   const inputCls = "h-12 border-2 border-zinc-200 bg-white focus-visible:ring-[#f97316] focus-visible:border-[#f97316]";
   const selectCls = "flex h-12 w-full rounded-lg border-2 border-zinc-200 bg-white px-4 py-3 text-base appearance-none focus:outline-none focus:ring-2 focus:ring-[#f97316] focus:border-[#f97316]";
+
+  if (!sessionChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f9fafb]">
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#f97316" }} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f9fafb] font-sans" style={{ color: "#0a0a0a" }}>
