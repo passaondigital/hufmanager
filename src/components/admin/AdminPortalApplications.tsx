@@ -38,7 +38,7 @@ export function AdminPortalApplications() {
   const { data: applications, isLoading } = useQuery({
     queryKey: ["admin-portal-applications"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("portal_applications")
         .select("*")
         .order("created_at", { ascending: false });
