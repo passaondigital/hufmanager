@@ -148,6 +148,8 @@ export default function PferdeakteLanding() {
       <SocialProofSection />
       {/* 7b. MARKTVERGLEICH */}
       <PferdeakteComparisonTable />
+      {/* 7c. TRESOR PRICING */}
+      <TresorPricing />
       {/* 8. WAITLIST */}
       <WaitlistSection defaultRef={searchParams.get("ref") ?? ""} />
       {/* 9. BOTSCHAFTER */}
