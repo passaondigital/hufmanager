@@ -67,6 +67,7 @@ export default function BotschafterAuth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [tab, setTab] = useState<"login" | "register">("login");
+  const [sessionChecked, setSessionChecked] = useState(false);
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
@@ -91,6 +92,28 @@ export default function BotschafterAuth() {
   const [regLoading, setRegLoading] = useState(false);
   const [regError, setRegError] = useState("");
   const [regShowPw, setRegShowPw] = useState(false);
+
+  // Auto-redirect if already logged in and has botschafter record
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: bot } = await supabase
+          .from("pferdeakte_botschafter")
+          .select("id, status")
+          .or(`user_id.eq.${session.user.id},email.eq.${session.user.email}`)
+          .in("status", ["active", "pending"])
+          .maybeSingle();
+
+        if (bot) {
+          navigate("/botschafter/dashboard", { replace: true });
+          return;
+        }
+      }
+      setSessionChecked(true);
+    };
+    checkSession();
+  }, [navigate]);
 
   const setReg = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setRegForm(f => ({ ...f, [k]: e.target.value }));
