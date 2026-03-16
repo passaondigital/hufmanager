@@ -116,8 +116,23 @@ export default function Auth() {
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
+  // Auto-sign-out when ?force=login is present
+  useEffect(() => {
+    if (forceLogin && user) {
+      supabase.auth.signOut().then(() => {
+        // Reload without the force param to show clean auth page
+        window.location.href = "/auth";
+      });
+    }
+  }, [forceLogin, user]);
+
   useEffect(() => {
     if (!user || !role || authLoading || forceLogin) return;
+    // Portal/business accounts skip onboarding entirely
+    if (isPortalBusinessEmail(user.email)) {
+      setOnboardingChecked(true);
+      return;
+    }
     // Skip onboarding check for demo accounts
     if (role === "provider" && !isDemoEmail(user.email)) {
       supabase
@@ -138,7 +153,7 @@ export default function Auth() {
   }, [user, role, authLoading, forceLogin]);
 
   if (!authLoading && user && role && !forceLogin) {
-    if (role === "provider" && !onboardingChecked) {
+    if (role === "provider" && !onboardingChecked && !isPortalBusinessEmail(user.email)) {
       // Show loading while checking onboarding status
       return (
         <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
@@ -147,20 +162,13 @@ export default function Auth() {
         </div>
       );
     }
-    if (role === "provider" && needsOnboarding) {
+    if (role === "provider" && needsOnboarding && !isPortalBusinessEmail(user.email)) {
       return <Navigate to="/welcome" replace />;
     }
     if (redirectTo) {
       return <Navigate to={redirectTo} replace />;
     }
-    const roleToPath: Record<string, string> = {
-      admin: "/admin/mission-control",
-      provider: "/home",
-      employee: "/employee",
-      partner: "/partner-home",
-      client: "/client-home",
-    };
-    return <Navigate to={roleToPath[role] || "/home"} replace />;
+    return <Navigate to={getPostLoginPath(role, user.email)} replace />;
   }
 
   const openPricingModal = (title: string, description: string) => {
