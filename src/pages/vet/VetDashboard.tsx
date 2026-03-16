@@ -10,6 +10,7 @@ import {
   ArrowRight, RefreshCw, Upload, Calculator, Search, Link2
 } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
+import { VetImpfDashboard } from "@/components/vet/VetImpfDashboard";
 
 export default function VetDashboard() {
   const { user, loading: authLoading } = useAuth();
