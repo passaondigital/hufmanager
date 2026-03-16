@@ -35,10 +35,12 @@ import { AdminBotschafterAbrechnungen } from "@/components/admin/AdminBotschafte
 import { AdminBotschafterWerbemittel } from "@/components/admin/AdminBotschafterWerbemittel";
 import { AdminBotschafterRangliste } from "@/components/admin/AdminBotschafterRangliste";
 import { AdminBotschafterKommunikation } from "@/components/admin/AdminBotschafterKommunikation";
-import { HeartPulse, FileText, Handshake, Building2, UsersRound, GraduationCap, ShieldCheck } from "lucide-react";
+import { HeartPulse, FileText, Handshake, Building2, UsersRound, GraduationCap, ShieldCheck, ClipboardList } from "lucide-react";
 import { AdminVerifications } from "@/components/admin/AdminVerifications";
+import { AdminPortalApplications } from "@/components/admin/AdminPortalApplications";
+import { AdminPortalCustomers } from "@/components/admin/AdminPortalCustomers";
 
-type AdminView = "users" | "user-mgmt" | "verifications" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "invoices" | "contracts" | "connections" | "domains" | "self-healing" | "affiliates" | "cooperations" | "hm_team" | "education" | "botschafter" | "botschafter-conversions" | "botschafter-abrechnungen" | "botschafter-werbemittel" | "botschafter-rangliste" | "botschafter-kommunikation";
+type AdminView = "users" | "user-mgmt" | "verifications" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "invoices" | "contracts" | "connections" | "domains" | "self-healing" | "affiliates" | "cooperations" | "hm_team" | "education" | "botschafter" | "botschafter-conversions" | "botschafter-abrechnungen" | "botschafter-werbemittel" | "botschafter-rangliste" | "botschafter-kommunikation" | "portal-applications" | "portal-customers";
 
 const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "user-mgmt", label: "Nutzer-Verwaltung", icon: Shield },
@@ -51,6 +53,8 @@ const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ cla
   { id: "catalog", label: "Produktkatalog", icon: Package },
   { id: "affiliates", label: "Affiliates", icon: Handshake },
   { id: "cooperations", label: "Kooperationen", icon: Building2 },
+  { id: "portal-applications", label: "Portal-Bewerbungen", icon: ClipboardList },
+  { id: "portal-customers", label: "Portal-Kunden", icon: Building2 },
   { id: "education", label: "Hufschulen", icon: GraduationCap },
   { id: "hm_team", label: "HM Team", icon: UsersRound },
   { id: "botschafter", label: "Botschafter", icon: Mic },
@@ -255,6 +259,8 @@ export default function AdminDashboard() {
         {activeView === "botschafter-werbemittel" && <AdminBotschafterWerbemittel />}
         {activeView === "botschafter-rangliste" && <AdminBotschafterRangliste />}
         {activeView === "botschafter-kommunikation" && <AdminBotschafterKommunikation />}
+        {activeView === "portal-applications" && <AdminPortalApplications />}
+        {activeView === "portal-customers" && <AdminPortalCustomers />}
       </main>
 
       {/* Quick Note FAB */}

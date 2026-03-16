@@ -149,6 +149,9 @@ const AutoFlow = lazy(() => import("@/pages/AutoFlow"));
 const Marketplace = lazy(() => import("@/pages/Marketplace"));
 const PortalDashboard = lazy(() => import("@/pages/portal/PortalDashboard"));
 const PortalSettings = lazy(() => import("@/pages/portal/PortalSettings"));
+const PortalGallery = lazy(() => import("@/pages/portal/PortalGallery"));
+const PortalApplication = lazy(() => import("@/pages/portal/PortalApplication"));
+const PortalDemo = lazy(() => import("@/pages/portal/PortalDemo"));
 const AdminOrganizations = lazy(() => import("@/pages/admin/AdminOrganizations"));
 const Statistiken = lazy(() => import("@/pages/Statistiken"));
 const EmployeeNotizbuch = lazy(() => import("@/pages/employee/EmployeeNotizbuch"));
@@ -508,6 +511,14 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/vet/impfungen" element={<VetImpfungen />} />
             
             {/* Portal Routes (auth required, handled inside component) */}
+            <Route path="/portal/galerie" element={<PortalGallery />} />
+            <Route path="/portal/bewerben" element={<PortalApplication />} />
+            <Route path="/portal/versicherung" element={<PortalDemo />} />
+            <Route path="/portal/hersteller" element={<PortalDemo />} />
+            <Route path="/portal/tierarzt" element={<PortalDemo />} />
+            <Route path="/portal/lieferant" element={<PortalDemo />} />
+            <Route path="/portal/ausbildung" element={<PortalDemo />} />
+            <Route path="/portal/verband" element={<PortalDemo />} />
             <Route path="/portal/:slug" element={<PortalDashboard />} />
             <Route path="/portal/:slug/settings" element={<PortalSettings />} />
             

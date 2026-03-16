@@ -8,6 +8,7 @@ export const DEMO_EMAILS = {
   client: "pferdebesitzer.hufmanager@gmail.com",
   employee: "mitarbeiter.hufmanager@gmail.com",
   partner: "partner.hufmanager@gmail.com",
+  business: "hufmanagerbusiness@gmail.com",
 } as const;
 
 /** Alle Demo-E-Mails als Set für schnelle Lookups */
