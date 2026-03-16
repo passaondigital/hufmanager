@@ -538,10 +538,7 @@ export function AppointmentFormModal({
       });
     }
 
-    console.log("[AppointmentFormModal] submitting appointments", {
-      count: appointments.length,
-      first: appointments[0],
-    });
+    if (import.meta.env.DEV) console.log("[AppointmentFormModal] submitting", appointments.length);
 
     createAppointments
       .mutateAsync(appointments)
