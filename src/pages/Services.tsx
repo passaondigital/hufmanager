@@ -34,6 +34,8 @@ import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ServicePaymentModal } from "@/components/services/ServicePaymentModal";
 import { GroupPricingSection } from "@/components/services/GroupPricingSection";
+import { useTaxConfig } from "@/hooks/useTaxConfig";
+import { formatPriceLabel } from "@/lib/taxConfig";
 
 const categoryColors: Record<string, string> = {
   Standard: "bg-accent/10 text-accent",
