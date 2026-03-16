@@ -27,10 +27,11 @@ interface MultiStepSignupProps {
   inviteCode?: string | null;
 }
 
-// Steps: Name → Role → Country → Credentials → Business (provider only)
+// Steps: Name → Role → ClientType (if client) → Country → Credentials → Business (provider only)
 const STEPS = [
   { id: "name", motivation: "Schön dass du dabei bist." },
   { id: "role", motivation: "HufManager passt sich deiner Arbeit an." },
+  { id: "client-type", motivation: "Damit wir dir die richtigen Features zeigen." },
   { id: "country", motivation: "Steuerrecht, Währung & Sprache — automatisch korrekt." },
   { id: "credentials", motivation: "Deine Daten. Deine Kontrolle. Deutsche Server." },
   { id: "business", motivation: "Fast geschafft — gleich bist du drin." },
