@@ -263,7 +263,7 @@ export default function BotschafterAuth() {
     }
 
     setRegLoading(false);
-    navigate("/botschafter/warten", { replace: true });
+    navigate("/botschafter/dashboard", { replace: true });
   };
 
   const inputCls = "h-12 border-2 border-zinc-200 bg-white focus-visible:ring-[#f97316] focus-visible:border-[#f97316]";
