@@ -130,7 +130,6 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
   }
 
   const totalDots = maxStep + 1;
-  const currentStepData = STEPS[step];
 
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
