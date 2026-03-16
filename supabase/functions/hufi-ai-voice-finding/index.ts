@@ -59,7 +59,39 @@ serve(async (req) => {
       });
     }
 
-    const { horse_id, appointment_id, audio_url, transcript } = await req.json();
+    // Support both JSON and FormData (audio file upload)
+    const contentType = req.headers.get("content-type") || "";
+    let horse_id: string | null = null;
+    let appointment_id: string | null = null;
+    let audio_url: string | null = null;
+    let transcript: string | null = null;
+    let audioBlob: Blob | null = null;
+
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await req.formData();
+      horse_id = formData.get("horse_id") as string;
+      appointment_id = formData.get("appointment_id") as string;
+      transcript = formData.get("transcript") as string;
+      const audioFile = formData.get("audio") as File;
+      if (audioFile) {
+        audioBlob = audioFile;
+      }
+    } else {
+      const body = await req.json();
+      horse_id = body.horse_id;
+      appointment_id = body.appointment_id;
+      audio_url = body.audio_url;
+      transcript = body.transcript;
+      // Accept base64 audio
+      if (body.audio_base64) {
+        const binaryStr = atob(body.audio_base64);
+        const bytes = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; i++) {
+          bytes[i] = binaryStr.charCodeAt(i);
+        }
+        audioBlob = new Blob([bytes], { type: body.audio_mime || "audio/webm" });
+      }
+    }
 
     if (!horse_id) {
       return new Response(JSON.stringify({ error: "horse_id erforderlich" }), {
@@ -70,24 +102,82 @@ serve(async (req) => {
 
     let finalTranscript = transcript || "";
 
-    // If no transcript provided, use audio_url as context (we can't transcribe without external STT)
-    // In this implementation, we accept transcript directly or manual text
-    if (!finalTranscript && audio_url) {
-      // Fallback: inform that transcript is needed
-      finalTranscript = "[Audio-Datei hochgeladen – bitte Text eingeben für AI-Analyse]";
+    // Step 1: Transcribe audio using ElevenLabs STT if we have audio but no transcript
+    if (!finalTranscript && (audioBlob || audio_url)) {
+      const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
+
+      if (ELEVENLABS_API_KEY) {
+        try {
+          let audioData: Blob;
+
+          if (audioBlob) {
+            audioData = audioBlob;
+          } else if (audio_url) {
+            // Download audio from URL
+            const audioResp = await fetch(audio_url);
+            if (!audioResp.ok) throw new Error("Audio-Download fehlgeschlagen");
+            audioData = await audioResp.blob();
+          } else {
+            throw new Error("Keine Audio-Daten");
+          }
+
+          console.log("[voice-finding] Transcribing with ElevenLabs STT, size:", audioData.size);
+
+          const sttFormData = new FormData();
+          sttFormData.append("file", audioData, "recording.webm");
+          sttFormData.append("model_id", "scribe_v2");
+          sttFormData.append("language_code", "deu");
+
+          const sttResp = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
+            method: "POST",
+            headers: {
+              "xi-api-key": ELEVENLABS_API_KEY,
+            },
+            body: sttFormData,
+          });
+
+          if (!sttResp.ok) {
+            const errText = await sttResp.text();
+            console.error("[voice-finding] ElevenLabs STT error:", sttResp.status, errText);
+            throw new Error(`STT failed: ${sttResp.status}`);
+          }
+
+          const sttResult = await sttResp.json();
+          finalTranscript = sttResult.text || "";
+          console.log("[voice-finding] Transcription result:", finalTranscript.substring(0, 100));
+        } catch (sttErr) {
+          console.error("[voice-finding] STT error:", sttErr);
+          return new Response(JSON.stringify({
+            success: false,
+            error: "Spracherkennung fehlgeschlagen. Bitte versuche die Texteingabe.",
+          }), {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      } else {
+        console.warn("[voice-finding] No ELEVENLABS_API_KEY set, cannot transcribe audio");
+        return new Response(JSON.stringify({
+          success: false,
+          error: "Spracherkennung nicht konfiguriert. Bitte Text eingeben.",
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
-    if (!finalTranscript || finalTranscript.startsWith("[Audio")) {
+    if (!finalTranscript) {
       return new Response(JSON.stringify({
         success: false,
-        error: "Transkription benötigt. Bitte Text eingeben.",
+        error: "Keine Sprach- oder Textdaten empfangen.",
       }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Call Lovable AI Gateway for structured extraction
+    // Step 2: Call Lovable AI Gateway for structured extraction
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       return new Response(JSON.stringify({ error: "AI nicht konfiguriert" }), {
@@ -113,8 +203,7 @@ serve(async (req) => {
 
     if (!aiResponse.ok) {
       const status = aiResponse.status;
-      const text = await aiResponse.text();
-      console.error("AI gateway error:", status, text);
+      console.error("AI gateway error:", status);
 
       if (status === 429) {
         return new Response(JSON.stringify({ error: "Rate-Limit erreicht. Bitte später erneut versuchen." }), {
@@ -141,10 +230,9 @@ serve(async (req) => {
     // Parse JSON from AI response
     let finding: any;
     try {
-      // Strip potential markdown code blocks
       const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
       finding = JSON.parse(cleaned);
-    } catch (parseErr) {
+    } catch {
       console.error("Failed to parse AI response:", content);
       return new Response(JSON.stringify({
         success: false,
