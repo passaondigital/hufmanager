@@ -42,6 +42,7 @@ type AdminView = "users" | "user-mgmt" | "verifications" | "horses" | "dev" | "h
 
 const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "user-mgmt", label: "Nutzer-Verwaltung", icon: Shield },
+  { id: "verifications", label: "Gewerbe-Verifizierung", icon: ShieldCheck },
   { id: "users", label: "User-DB", icon: Users },
   { id: "horses", label: "Pferde-DB", icon: Database },
   { id: "revenue", label: "Einnahmen", icon: PiggyBank },
