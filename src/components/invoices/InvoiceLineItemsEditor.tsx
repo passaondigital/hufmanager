@@ -146,7 +146,7 @@ export function InvoiceLineItemsEditor({
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <Label className="text-xs text-muted-foreground shrink-0 flex items-center gap-1">Preis €: <HelpTip id="rechnungen.einzel-preis" /></Label>
+                  <Label className="text-xs text-muted-foreground shrink-0 flex items-center gap-1">Netto €: <HelpTip id="rechnungen.einzel-preis" /></Label>
                   <Input
                     type="number"
                     step="0.01"

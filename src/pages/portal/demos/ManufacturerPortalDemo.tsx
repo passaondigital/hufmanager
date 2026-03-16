@@ -243,7 +243,7 @@ export default function ManufacturerPortalDemo() {
           <div className="space-y-3">
             <Input placeholder="Produktname" /><Input placeholder="SKU / Artikelnummer" />
             <Select><SelectTrigger><SelectValue placeholder="Kategorie" /></SelectTrigger><SelectContent>{KATALOG_KATEGORIEN.map(k => <SelectItem key={k.name} value={k.name}>{k.name}</SelectItem>)}</SelectContent></Select>
-            <div className="grid grid-cols-2 gap-3"><Input placeholder="Preis (€)" /><Input placeholder="Min-Bestand" type="number" /></div>
+            <div className="grid grid-cols-2 gap-3"><Input placeholder="Preis (€ netto)" /><Input placeholder="Min-Bestand" type="number" /></div>
             <Textarea placeholder="Produktbeschreibung…" rows={3} />
             <Button className="w-full" onClick={() => setShowNeuesProdukt(false)}>Produkt anlegen</Button>
           </div>
