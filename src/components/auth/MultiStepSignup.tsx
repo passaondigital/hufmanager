@@ -54,16 +54,29 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
 
   const firstName = fullName.split(" ")[0] || "";
 
-  // For clients: skip business step (step 4)
-  const maxStep = role === "client" ? 3 : 4;
+  // Dynamic step sequence based on role
+  const getStepSequence = () => {
+    if (role === "provider") {
+      // name → role → country → credentials → business
+      return [0, 1, 3, 4, 5];
+    }
+    // client: name → role → client-type → country → credentials
+    return [0, 1, 2, 3, 4];
+  };
+
+  const stepSequence = getStepSequence();
+  const currentLogicalStep = stepSequence[step] ?? 0;
+  const maxStep = stepSequence.length - 1;
+  const currentStepData = STEPS[currentLogicalStep];
 
   const canProceed = () => {
-    switch (step) {
+    switch (currentLogicalStep) {
       case 0: return fullName.trim().length >= 2;
       case 1: return true;
-      case 2: return true; // country always selected
-      case 3: return email.includes("@") && password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password) && agbAccepted && privacyAccepted && widerrufAccepted;
-      case 4: return true; // business name optional
+      case 2: return true; // client-type always has default
+      case 3: return true; // country always selected
+      case 4: return email.includes("@") && password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password) && agbAccepted && privacyAccepted && widerrufAccepted;
+      case 5: return true; // business name optional
       default: return false;
     }
   };
@@ -84,6 +97,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
       password,
       country,
       businessName: businessName.trim() || undefined,
+      clientType: role === "client" ? clientType : undefined,
     });
     setShowWelcome(true);
   };
