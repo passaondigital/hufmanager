@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { AVVSigningCard } from "./AVVSigningCard";
 import { TaxCountryCard } from "./TaxCountryCard";
+import { ComprehensiveTaxSettings } from "./ComprehensiveTaxSettings";
 import { uploadFile, getStorageUrl } from "@/lib/storage";
 
 interface LegalAgreement {
