@@ -52,7 +52,7 @@ export async function ensureUserProfile(user: User): Promise<{ success: boolean;
       if (insertError) {
         // Handle unique constraint violation (profile was created by another process)
         if (insertError.code === "23505") {
-          console.log("Profile was created by another process, continuing...");
+          if (import.meta.env.DEV) console.log("Profile was created by another process, continuing...");
         } else {
           console.error("Error creating profile:", insertError);
           return { success: false, error: insertError.message };
