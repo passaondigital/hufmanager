@@ -9,7 +9,7 @@ import {
   Search, MapPin, Stethoscope, Phone, Globe, Clock,
   AlertTriangle, CheckCircle, Filter, ChevronRight
 } from "lucide-react";
-import { Helmet } from "react-helmet";
+
 
 const SPECIALIZATION_LABELS: Record<string, string> = {
   orthopaedie: "Orthopädie",
