@@ -589,6 +589,25 @@ export default function ClientHome() {
         }}
         mode="client"
       />
+      {/* Business Upgrade Hint (6th horse) */}
+      <BusinessUpgradeHint
+        open={showHint}
+        onClose={dismissHint}
+        onUpgrade={() => {
+          dismissHint();
+          setShowBusinessForm(true);
+        }}
+      />
+
+      {/* Business Registration Form Dialog */}
+      {showBusinessForm && (
+        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <BusinessRegistrationForm
+            onComplete={() => setShowBusinessForm(false)}
+            onSkip={() => setShowBusinessForm(false)}
+          />
+        </div>
+      )}
       </div>
     </>
   );
