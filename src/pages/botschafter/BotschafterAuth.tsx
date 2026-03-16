@@ -438,7 +438,7 @@ export default function BotschafterAuth() {
                                 console.warn("Welcome email failed:", e);
                               }
 
-                              navigate("/botschafter/warten", { replace: true });
+                              navigate("/botschafter/dashboard", { replace: true });
                             } catch (err: any) {
                               toast.error(err.message || "Fehler bei der Registrierung");
                               setInlineLoading(false);

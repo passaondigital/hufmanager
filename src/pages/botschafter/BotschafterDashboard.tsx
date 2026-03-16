@@ -73,7 +73,7 @@ export default function BotschafterDashboard() {
       .from("pferdeakte_botschafter")
       .select("id, type, first_name, last_name, referral_code, total_clicks, total_conversions, total_earnings_cents, tier, created_at, company_name, social_handle")
       .or(`user_id.eq.${user!.id},email.eq.${user!.email}`)
-      .eq("status", "active")
+      .in("status", ["active", "pending"])
       .maybeSingle();
 
     if (bot) {

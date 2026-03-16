@@ -26,7 +26,7 @@ export default function BotschafterLinks() {
       .from("pferdeakte_botschafter")
       .select("id, referral_code")
       .or(`user_id.eq.${user!.id},email.eq.${user!.email}`)
-      .eq("status", "active")
+      .in("status", ["active", "pending"])
       .maybeSingle();
 
     if (bot) {

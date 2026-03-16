@@ -38,7 +38,7 @@ export default function BotschafterConversions() {
       .from("pferdeakte_botschafter")
       .select("id")
       .or(`user_id.eq.${user!.id},email.eq.${user!.email}`)
-      .eq("status", "active")
+      .in("status", ["active", "pending"])
       .maybeSingle();
 
     if (bot) {

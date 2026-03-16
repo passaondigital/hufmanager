@@ -83,7 +83,7 @@ export default function WerbemittelEditor() {
       .from("pferdeakte_botschafter")
       .select("id, referral_code")
       .eq("user_id", user!.id)
-      .eq("status", "active")
+      .in("status", ["active", "pending"])
       .maybeSingle();
     setBotschafter(data);
     setLoading(false);

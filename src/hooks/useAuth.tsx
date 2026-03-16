@@ -220,12 +220,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     .select("id, status")
                     .eq("user_id", session.user.id)
                     .maybeSingle();
-                  if (bot?.status === "active") {
+                  if (bot?.status === "active" || bot?.status === "pending") {
                     navigate("/botschafter/dashboard", { replace: true });
-                    return;
-                  }
-                  if (bot?.status === "pending") {
-                    navigate("/botschafter/warten", { replace: true });
                     return;
                   }
                 } catch (err) {

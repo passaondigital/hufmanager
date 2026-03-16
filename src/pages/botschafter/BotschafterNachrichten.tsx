@@ -96,7 +96,7 @@ export default function BotschafterNachrichten() {
       .from("pferdeakte_botschafter")
       .select("id, type")
       .eq("user_id", user!.id)
-      .eq("status", "active")
+      .in("status", ["active", "pending"])
       .maybeSingle();
 
     if (!bot) { setLoading(false); return; }
