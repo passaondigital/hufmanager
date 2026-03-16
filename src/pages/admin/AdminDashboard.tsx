@@ -11,6 +11,7 @@ import { toast } from "sonner";
 
 // Admin Views
 import { AdminUserDB } from "@/components/admin/AdminUserDB";
+import { AdminUserManagement } from "@/components/admin/AdminUserManagement";
 import { AdminHorseDB } from "@/components/admin/AdminHorseDB";
 import { AdminDevZentrale } from "@/components/admin/AdminDevZentrale";
 import { AdminSystemHealth } from "@/components/admin/AdminSystemHealth";
@@ -36,9 +37,10 @@ import { AdminBotschafterRangliste } from "@/components/admin/AdminBotschafterRa
 import { AdminBotschafterKommunikation } from "@/components/admin/AdminBotschafterKommunikation";
 import { HeartPulse, FileText, Handshake, Building2, UsersRound, GraduationCap } from "lucide-react";
 
-type AdminView = "users" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "invoices" | "contracts" | "connections" | "domains" | "self-healing" | "affiliates" | "cooperations" | "hm_team" | "education" | "botschafter" | "botschafter-conversions" | "botschafter-abrechnungen" | "botschafter-werbemittel" | "botschafter-rangliste" | "botschafter-kommunikation";
+type AdminView = "users" | "user-mgmt" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "invoices" | "contracts" | "connections" | "domains" | "self-healing" | "affiliates" | "cooperations" | "hm_team" | "education" | "botschafter" | "botschafter-conversions" | "botschafter-abrechnungen" | "botschafter-werbemittel" | "botschafter-rangliste" | "botschafter-kommunikation";
 
 const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: "user-mgmt", label: "Nutzer-Verwaltung", icon: Shield },
   { id: "users", label: "User-DB", icon: Users },
   { id: "horses", label: "Pferde-DB", icon: Database },
   { id: "revenue", label: "Einnahmen", icon: PiggyBank },
@@ -226,6 +228,7 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
+        {activeView === "user-mgmt" && <AdminUserManagement />}
         {activeView === "users" && <AdminUserDB isMasterAdmin={isMasterAdmin} />}
         {activeView === "horses" && <AdminHorseDB isMasterAdmin={isMasterAdmin} />}
         {activeView === "revenue" && <AdminRevenue />}

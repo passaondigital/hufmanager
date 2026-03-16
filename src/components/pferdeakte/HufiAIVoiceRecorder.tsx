@@ -97,31 +97,46 @@ export function HufiAIVoiceRecorder({ horseId, appointmentId, onFindingGenerated
 
   const processAudio = async (blob: Blob) => {
     try {
-      // Upload to storage
-      const fileName = `voice-notes/${horseId}/${Date.now()}.webm`;
-      const { error: uploadError } = await supabase.storage
-        .from("hoof-photos")
-        .upload(fileName, blob, { contentType: blob.type });
+      // Convert blob to base64 and send directly to edge function for STT + analysis
+      const arrayBuffer = await blob.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = "";
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const audioBase64 = btoa(binary);
 
-      if (uploadError) throw uploadError;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Nicht eingeloggt");
 
-      const { data: urlData } = supabase.storage.from("hoof-photos").getPublicUrl(fileName);
-      const audioUrl = urlData.publicUrl;
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hufi-ai-voice-finding`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            horse_id: horseId,
+            appointment_id: appointmentId,
+            audio_base64: audioBase64,
+            audio_mime: blob.type,
+          }),
+        }
+      );
 
-      // Call edge function
-      const { data, error } = await supabase.functions.invoke("hufi-ai-voice-finding", {
-        body: { horse_id: horseId, appointment_id: appointmentId, audio_url: audioUrl },
-      });
-
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || "AI-Analyse fehlgeschlagen");
+      const data = await resp.json();
+      if (!resp.ok || !data?.success) {
+        throw new Error(data?.error || "AI-Analyse fehlgeschlagen");
+      }
 
       setTranscript(data.transcript || "");
       setFinding(data.finding);
       setState("result");
     } catch (err: any) {
       console.error("Voice processing error:", err);
-      toast.error("Fehler bei der Verarbeitung. Bitte versuche die Texteingabe.");
+      toast.error(err.message || "Fehler bei der Verarbeitung. Bitte versuche die Texteingabe.");
       setManualMode(true);
       setState("idle");
     }
@@ -187,6 +202,7 @@ export function HufiAIVoiceRecorder({ horseId, appointmentId, onFindingGenerated
             ) : (
               <div className="text-center">
                 <p className="text-sm text-foreground font-medium">Sprachnotiz aufnehmen</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Audio wird automatisch transkribiert</p>
                 <button onClick={() => setManualMode(true)} className="text-xs text-primary mt-1 underline">
                   Lieber Text eingeben
                 </button>
@@ -226,7 +242,7 @@ export function HufiAIVoiceRecorder({ horseId, appointmentId, onFindingGenerated
             <Loader2 className="h-8 w-8 text-primary animate-spin" />
             <p className="text-sm font-medium text-foreground">HufiAI analysiert...</p>
             <div className="flex gap-2">
-              <Badge variant="secondary" className="text-xs">Transkription</Badge>
+              <Badge variant="secondary" className="text-xs">Spracherkennung</Badge>
               <Badge variant="secondary" className="text-xs">→ Analyse</Badge>
               <Badge variant="secondary" className="text-xs">→ Befund</Badge>
             </div>

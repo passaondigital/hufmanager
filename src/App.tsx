@@ -188,6 +188,7 @@ import { AIChatWidget } from "@/components/chat/AIChatWidget";
 import { PWAInstallPrompt } from "@/components/pwa/PWAInstallPrompt";
 import { VersionChecker } from "@/components/version/VersionChecker";
 import { SystemStatusBanner } from "@/components/notifications/SystemStatusBanner";
+import { TrialPaywall } from "@/components/subscription/TrialPaywall";
 
 // Suspense fallback with timeout
 const LazyFallback = () => {
@@ -416,6 +417,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
         <PWAInstallPrompt />
         <VersionChecker />
         <SystemStatusBanner />
+        <TrialPaywall />
         
         
         <PasswordRecoveryRedirect>
