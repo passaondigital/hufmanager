@@ -685,13 +685,20 @@ const Angebote = () => {
 
                   {formData.price_type !== "auf_anfrage" && (
                     <div className="space-y-2">
-                      <Label>Preis (€ netto)</Label>
+                      <Label>Preis (€ {taxConfig.priceDisplayMode === "brutto" ? "brutto" : "netto"})</Label>
                       <Input
                         type="number"
                         value={formData.price}
                         onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                       />
-                      <p className="text-xs text-muted-foreground">Netto-Preis. Kleinunternehmer (§19 UStG): Netto = Brutto.</p>
+                      <p className="text-xs text-muted-foreground">
+                        {taxConfig.kleinunternehmer
+                          ? "Kleinunternehmer: Netto = Brutto (keine MwSt)."
+                          : taxConfig.priceDisplayMode === "brutto"
+                            ? "Brutto-Preis (MwSt enthalten)."
+                            : "Netto-Preis. MwSt wird auf der Rechnung aufgeschlagen."
+                        }
+                      </p>
                     </div>
                   )}
                 </div>
