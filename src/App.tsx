@@ -454,6 +454,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             {/* --- 1. ÖFFENTLICHE ROUTES (Kein Login nötig) --- */}
             {/* WICHTIG: Diese müssen VOR den Protected Routes stehen */}
             <Route path="/auth" element={<Auth />} />
+            <Route path="/audit" element={<Auth />} />
             <Route path="/login" element={<Navigate to="/auth?force=login" replace />} />
             <Route path="/signup" element={<Navigate to="/auth" replace />} />
             <Route path="/register" element={<Navigate to="/auth" replace />} />
