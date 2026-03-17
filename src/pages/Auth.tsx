@@ -23,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PricingModal } from "@/components/subscription/PricingModal";
 import { DemoAccessCards } from "@/components/auth/DemoAccessCards";
 import { MultiStepSignup } from "@/components/auth/MultiStepSignup";
+import { clear } from "idb-keyval";
 
 // NOTE: Admin access is controlled server-side via user_roles table and RLS policies
 // Do NOT add client-side email whitelists - they can be bypassed
@@ -45,6 +46,38 @@ type RoleOption = "provider" | "client";
 type LoginMode = "provider" | "client" | "team";
 
 const SWITCH_ACCOUNT_STORAGE_KEY = "hm_switch_account_target";
+const AUTH_STORAGE_PRESERVE_KEYS = ["theme", "vite-ui-theme"];
+
+function clearStoredAuthState() {
+  const storageKeysToRemove = Object.keys(localStorage).filter((key) =>
+    key.startsWith("sb-") && key.endsWith("-auth-token")
+  );
+
+  storageKeysToRemove.forEach((key) => localStorage.removeItem(key));
+  sessionStorage.removeItem(SWITCH_ACCOUNT_STORAGE_KEY);
+}
+
+async function clearClientSessionState() {
+  const preservedValues = AUTH_STORAGE_PRESERVE_KEYS.reduce<Record<string, string | null>>((acc, key) => {
+    acc[key] = localStorage.getItem(key);
+    return acc;
+  }, {});
+
+  clearStoredAuthState();
+
+  AUTH_STORAGE_PRESERVE_KEYS.forEach((key) => {
+    const value = preservedValues[key];
+    if (value !== null) {
+      localStorage.setItem(key, value);
+    }
+  });
+
+  try {
+    await clear();
+  } catch (error) {
+    console.warn("IndexedDB clear error during switch-account:", error);
+  }
+}
 
 export default function Auth() {
   const { user, role, loading: authLoading, signIn, signUp } = useAuth();
@@ -140,24 +173,16 @@ export default function Auth() {
     switchSignOutStartedRef.current = true;
 
     const finishSwitch = () => {
-      sessionStorage.removeItem(SWITCH_ACCOUNT_STORAGE_KEY);
       window.location.replace(currentEntryPath);
     };
 
-    if (!user) {
-      finishSwitch();
-      return;
-    }
-
-    supabase.auth
-      .signOut({ scope: "local" })
+    clearClientSessionState()
+      .then(() => finishSwitch())
       .catch((error) => {
-        console.warn("Switch-account sign out error:", error);
-      })
-      .finally(() => {
+        console.warn("Switch-account local clear error:", error);
         finishSwitch();
       });
-  }, [authLoading, currentEntryPath, isSwitchingAccount, user]);
+  }, [authLoading, currentEntryPath, isSwitchingAccount]);
 
   useEffect(() => {
     if (!user || !role || authLoading || isSwitchingAccount || signingOut) return;
@@ -240,7 +265,7 @@ export default function Auth() {
               className="w-full"
               onClick={() => {
                 sessionStorage.setItem(SWITCH_ACCOUNT_STORAGE_KEY, currentEntryPath);
-                window.location.replace(`${currentEntryPath}?force=login`);
+                window.location.replace(currentEntryPath);
               }}
             >
               Konto wechseln
