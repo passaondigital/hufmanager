@@ -127,32 +127,37 @@ export default function Auth() {
   useEffect(() => {
     if (!isSwitchingAccount) {
       switchSignOutStartedRef.current = false;
+      setSigningOut(false);
       return;
     }
 
     setSigningOut(true);
 
-    if (!authLoading && !user) {
-      sessionStorage.removeItem(SWITCH_ACCOUNT_STORAGE_KEY);
-      switchSignOutStartedRef.current = false;
-
-      if (forceLogin) {
-        window.location.replace(currentEntryPath);
-        return;
-      }
-
-      setSigningOut(false);
+    if (authLoading || switchSignOutStartedRef.current) {
       return;
     }
 
-    if (!authLoading && user && !switchSignOutStartedRef.current) {
-      switchSignOutStartedRef.current = true;
-      supabase.auth.signOut().catch((error) => {
-        console.warn("Switch-account sign out error:", error);
-        switchSignOutStartedRef.current = false;
-      });
+    switchSignOutStartedRef.current = true;
+
+    const finishSwitch = () => {
+      sessionStorage.removeItem(SWITCH_ACCOUNT_STORAGE_KEY);
+      window.location.replace(currentEntryPath);
+    };
+
+    if (!user) {
+      finishSwitch();
+      return;
     }
-  }, [authLoading, currentEntryPath, forceLogin, isSwitchingAccount, user]);
+
+    supabase.auth
+      .signOut({ scope: "local" })
+      .catch((error) => {
+        console.warn("Switch-account sign out error:", error);
+      })
+      .finally(() => {
+        finishSwitch();
+      });
+  }, [authLoading, currentEntryPath, isSwitchingAccount, user]);
 
   useEffect(() => {
     if (!user || !role || authLoading || isSwitchingAccount || signingOut) return;
