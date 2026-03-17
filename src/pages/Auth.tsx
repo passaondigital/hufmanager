@@ -23,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PricingModal } from "@/components/subscription/PricingModal";
 import { DemoAccessCards } from "@/components/auth/DemoAccessCards";
 import { MultiStepSignup } from "@/components/auth/MultiStepSignup";
+import { clear } from "idb-keyval";
 
 // NOTE: Admin access is controlled server-side via user_roles table and RLS policies
 // Do NOT add client-side email whitelists - they can be bypassed
