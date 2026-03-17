@@ -128,18 +128,8 @@ export default function Auth() {
     }
   }, [forceLogin]);
 
-  // Show loading screen while signing out to prevent flash
-  if (signingOut || forceLogin) {
-    return (
-      <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
-        <img src="/hufmanager-logo.png" alt="HufManager" className="h-24 w-auto animate-pulse" />
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   useEffect(() => {
-    if (!user || !role || authLoading || forceLogin) return;
+    if (!user || !role || authLoading || forceLogin || signingOut) return;
     // Portal/business accounts skip onboarding entirely
     if (isPortalBusinessEmail(user.email)) {
       setOnboardingChecked(true);
@@ -162,7 +152,17 @@ export default function Auth() {
     } else {
       setOnboardingChecked(true);
     }
-  }, [user, role, authLoading, forceLogin]);
+  }, [user, role, authLoading, forceLogin, signingOut]);
+
+  // Show loading screen while signing out to prevent flash
+  if (signingOut || forceLogin) {
+    return (
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
+        <img src="/hufmanager-logo.png" alt="HufManager" className="h-24 w-auto animate-pulse" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!authLoading && user && role && !forceLogin) {
     if (role === "provider" && !onboardingChecked && !isPortalBusinessEmail(user.email)) {
