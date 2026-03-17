@@ -196,10 +196,9 @@ export default function Auth() {
             <Button
               variant="outline"
               className="w-full"
-              onClick={async () => {
-                await supabase.auth.signOut();
-                // Clear query cache
-                window.location.href = "/auth";
+              onClick={() => {
+                const basePath = window.location.pathname === "/audit" ? "/audit" : "/auth";
+                window.location.href = `${basePath}?force=login`;
               }}
             >
               Konto wechseln
