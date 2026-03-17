@@ -165,10 +165,48 @@ export default function Auth() {
     if (role === "provider" && needsOnboarding && !isPortalBusinessEmail(user.email)) {
       return <Navigate to="/welcome" replace />;
     }
-    if (redirectTo) {
-      return <Navigate to={redirectTo} replace />;
-    }
-    return <Navigate to={getPostLoginPath(role, user.email)} replace />;
+
+    // User is already logged in – show intermediate screen instead of auto-redirect
+    // This prevents the "stuck in redirect loop" problem when users navigate to /auth
+    const targetPath = redirectTo || getPostLoginPath(role, user.email);
+    const roleLabels: Record<string, string> = {
+      provider: "Hufbearbeiter",
+      client: "Pferdebesitzer",
+      admin: "Administrator",
+      employee: "Mitarbeiter",
+      partner: "Partner",
+    };
+
+    return (
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6 px-4">
+        <img src="/hufmanager-logo.png" alt="HufManager" className="h-16 w-auto" />
+        <Card className="max-w-sm w-full">
+          <CardHeader className="text-center pb-2">
+            <CardTitle className="text-lg">Bereits angemeldet</CardTitle>
+            <CardDescription>
+              Du bist eingeloggt als <span className="font-medium text-foreground">{user.email}</span>
+              {role && <span className="block text-xs mt-1">Rolle: {roleLabels[role] || role}</span>}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button className="w-full" onClick={() => navigate(targetPath, { replace: true })}>
+              Weiter zum Dashboard
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={async () => {
+                await supabase.auth.signOut();
+                // Clear query cache
+                window.location.href = "/auth";
+              }}
+            >
+              Konto wechseln
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   const openPricingModal = (title: string, description: string) => {
