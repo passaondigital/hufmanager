@@ -46,8 +46,39 @@ type RoleOption = "provider" | "client";
 type LoginMode = "provider" | "client" | "team";
 
 const SWITCH_ACCOUNT_STORAGE_KEY = "hm_switch_account_target";
+const AUTH_STORAGE_PRESERVE_KEYS = ["theme", "vite-ui-theme"];
 
-export default function Auth() {
+function clearStoredAuthState() {
+  const storageKeysToRemove = Object.keys(localStorage).filter((key) =>
+    key.startsWith("sb-") && key.endsWith("-auth-token")
+  );
+
+  storageKeysToRemove.forEach((key) => localStorage.removeItem(key));
+  sessionStorage.removeItem(SWITCH_ACCOUNT_STORAGE_KEY);
+}
+
+async function clearClientSessionState() {
+  const preservedValues = AUTH_STORAGE_PRESERVE_KEYS.reduce<Record<string, string | null>>((acc, key) => {
+    acc[key] = localStorage.getItem(key);
+    return acc;
+  }, {});
+
+  clearStoredAuthState();
+
+  AUTH_STORAGE_PRESERVE_KEYS.forEach((key) => {
+    const value = preservedValues[key];
+    if (value !== null) {
+      localStorage.setItem(key, value);
+    }
+  });
+
+  try {
+    await clear();
+  } catch (error) {
+    console.warn("IndexedDB clear error during switch-account:", error);
+  }
+}
+
   const { user, role, loading: authLoading, signIn, signUp } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
