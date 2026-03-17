@@ -155,7 +155,7 @@ export default function Auth() {
   }, [authLoading, currentEntryPath, forceLogin, isSwitchingAccount, user]);
 
   useEffect(() => {
-    if (!user || !role || authLoading || forceLogin || signingOut) return;
+    if (!user || !role || authLoading || isSwitchingAccount || signingOut) return;
     // Portal/business accounts skip onboarding entirely
     if (isPortalBusinessEmail(user.email)) {
       setOnboardingChecked(true);
@@ -178,10 +178,10 @@ export default function Auth() {
     } else {
       setOnboardingChecked(true);
     }
-  }, [user, role, authLoading, forceLogin, signingOut]);
+  }, [user, role, authLoading, isSwitchingAccount, signingOut]);
 
   // Show loading screen while signing out to prevent flash
-  if (signingOut || forceLogin) {
+  if (signingOut || isSwitchingAccount) {
     return (
       <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
         <img src="/hufmanager-logo.png" alt="HufManager" className="h-24 w-auto animate-pulse" />
@@ -190,7 +190,7 @@ export default function Auth() {
     );
   }
 
-  if (!authLoading && user && role && !forceLogin) {
+  if (!authLoading && user && role && !isSwitchingAccount) {
     if (role === "provider" && !onboardingChecked && !isPortalBusinessEmail(user.email)) {
       // Show loading while checking onboarding status
       return (
@@ -234,8 +234,8 @@ export default function Auth() {
               variant="outline"
               className="w-full"
               onClick={() => {
-                const basePath = window.location.pathname === "/audit" ? "/audit" : "/auth";
-                window.location.href = `${basePath}?force=login`;
+                sessionStorage.setItem(SWITCH_ACCOUNT_STORAGE_KEY, currentEntryPath);
+                window.location.replace(`${currentEntryPath}?force=login`);
               }}
             >
               Konto wechseln
