@@ -119,9 +119,10 @@ export default function Auth() {
   // Auto-sign-out when ?force=login is present
   useEffect(() => {
     if (forceLogin && user) {
+      const returnPath = window.location.pathname === "/audit" ? "/audit" : "/auth";
       supabase.auth.signOut().then(() => {
-        // Reload without the force param to show clean auth page
-        window.location.href = "/auth";
+        // Reload without the force param to show clean auth page on the same auth surface
+        window.location.href = returnPath;
       });
     }
   }, [forceLogin, user]);
@@ -195,10 +196,9 @@ export default function Auth() {
             <Button
               variant="outline"
               className="w-full"
-              onClick={async () => {
-                await supabase.auth.signOut();
-                // Clear query cache
-                window.location.href = "/auth";
+              onClick={() => {
+                const basePath = window.location.pathname === "/audit" ? "/audit" : "/auth";
+                window.location.href = `${basePath}?force=login`;
               }}
             >
               Konto wechseln
