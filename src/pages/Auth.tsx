@@ -79,6 +79,7 @@ async function clearClientSessionState() {
   }
 }
 
+export default function Auth() {
   const { user, role, loading: authLoading, signIn, signUp } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
