@@ -265,7 +265,7 @@ export default function Auth() {
               className="w-full"
               onClick={() => {
                 sessionStorage.setItem(SWITCH_ACCOUNT_STORAGE_KEY, currentEntryPath);
-                window.location.replace(`${currentEntryPath}?force=login`);
+                window.location.replace(currentEntryPath);
               }}
             >
               Konto wechseln
