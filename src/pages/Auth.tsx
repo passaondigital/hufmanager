@@ -117,15 +117,26 @@ export default function Auth() {
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   // Auto-sign-out when ?force=login is present
+  const [signingOut, setSigningOut] = useState(false);
   useEffect(() => {
-    if (forceLogin && user) {
-      const returnPath = window.location.pathname === "/audit" ? "/audit" : "/auth";
+    if (forceLogin) {
+      setSigningOut(true);
       supabase.auth.signOut().then(() => {
-        // Reload without the force param to show clean auth page on the same auth surface
-        window.location.href = returnPath;
+        const returnPath = window.location.pathname === "/audit" ? "/audit" : "/auth";
+        window.location.replace(returnPath);
       });
     }
-  }, [forceLogin, user]);
+  }, [forceLogin]);
+
+  // Show loading screen while signing out to prevent flash
+  if (signingOut || forceLogin) {
+    return (
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
+        <img src="/hufmanager-logo.png" alt="HufManager" className="h-24 w-auto animate-pulse" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (!user || !role || authLoading || forceLogin) return;
