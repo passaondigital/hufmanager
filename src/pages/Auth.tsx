@@ -173,24 +173,16 @@ export default function Auth() {
     switchSignOutStartedRef.current = true;
 
     const finishSwitch = () => {
-      sessionStorage.removeItem(SWITCH_ACCOUNT_STORAGE_KEY);
       window.location.replace(currentEntryPath);
     };
 
-    if (!user) {
-      finishSwitch();
-      return;
-    }
-
-    supabase.auth
-      .signOut({ scope: "local" })
+    clearClientSessionState()
+      .then(() => finishSwitch())
       .catch((error) => {
-        console.warn("Switch-account sign out error:", error);
-      })
-      .finally(() => {
+        console.warn("Switch-account local clear error:", error);
         finishSwitch();
       });
-  }, [authLoading, currentEntryPath, isSwitchingAccount, user]);
+  }, [authLoading, currentEntryPath, isSwitchingAccount]);
 
   useEffect(() => {
     if (!user || !role || authLoading || isSwitchingAccount || signingOut) return;
