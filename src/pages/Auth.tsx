@@ -119,9 +119,10 @@ export default function Auth() {
   // Auto-sign-out when ?force=login is present
   useEffect(() => {
     if (forceLogin && user) {
+      const returnPath = window.location.pathname === "/audit" ? "/audit" : "/auth";
       supabase.auth.signOut().then(() => {
-        // Reload without the force param to show clean auth page
-        window.location.href = "/auth";
+        // Reload without the force param to show clean auth page on the same auth surface
+        window.location.href = returnPath;
       });
     }
   }, [forceLogin, user]);
