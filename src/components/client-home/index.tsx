@@ -88,7 +88,7 @@ export default function ClientHomePage() {
           .from("service_orders")
           .select("id", { count: "exact", head: true })
           .eq("client_id", user.id)
-          .in("status", ["pending", "open"]);
+          .in("status", ["pending", "open"] as string[]);
         setOpenOrders(ordersCount || 0);
       } catch (err) {
         console.error(err);
