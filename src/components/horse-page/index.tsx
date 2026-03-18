@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,17 @@ import { HoofGrid } from "./HoofGrid";
 import { MediaDocuments } from "./MediaDocuments";
 import { StammdatenAccordion } from "./StammdatenAccordion";
 import { BottomNav } from "./BottomNav";
+import { HorsePageTabNav } from "./HorsePageTabNav";
+
+// Pferdeakte sub-components
+import { PferdeakteTimeline } from "@/components/pferdeakte/PferdeakteTimeline";
+import { PferdeakteHuf } from "@/components/pferdeakte/PferdeakteHuf";
+import { PferdeakteVet } from "@/components/pferdeakte/PferdeakteVet";
+import { PferdeakteTherapie } from "@/components/pferdeakte/PferdeakteTherapie";
+import { PferdeakteBerichte } from "@/components/pferdeakte/PferdeakteBerichte";
+import { PferdeakteTresor } from "@/components/pferdeakte/PferdeakteTresor";
+
+export type HorsePageTab = "start" | "verlauf" | "huf" | "vet" | "therapie" | "berichte" | "tresor";
 
 export default function ClientHorsePage() {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +37,7 @@ export default function ClientHorsePage() {
   const [hoofPhotos, setHoofPhotos] = useState<HoofPhoto[]>([]);
   const [documents, setDocuments] = useState<HorseDocument[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<HorsePageTab>("start");
 
   useEffect(() => {
     if (!user || !id) return;
@@ -69,6 +81,10 @@ export default function ClientHorsePage() {
 
     fetchData();
   }, [user, id]);
+
+  const handleTabChange = useCallback((tab: string) => {
+    setActiveTab(tab as HorsePageTab);
+  }, []);
 
   if (authLoading || loading) {
     return (
@@ -114,7 +130,7 @@ export default function ClientHorsePage() {
   return (
     <div className="horse-page pb-24">
       <div className="max-w-[480px] mx-auto space-y-5">
-        {/* Zone A — Hero */}
+        {/* Hero — always visible */}
         <div className="hp-fade-up" style={{ animationDelay: "0s" }}>
           <HorseHero
             horse={horse}
@@ -129,31 +145,56 @@ export default function ClientHorsePage() {
           <QuickActions horseId={horse.id} />
         </div>
 
-        {/* Zone B — Health Monitor */}
-        <div className="hp-fade-up" style={{ animationDelay: "0.1s" }}>
-          <HealthMonitor horseId={horse.id} />
+        {/* Tab Navigation */}
+        <div className="hp-fade-up" style={{ animationDelay: "0.08s" }}>
+          <HorsePageTabNav activeTab={activeTab} onTabChange={handleTabChange} />
         </div>
 
-        {/* Zone C — Hoof Grid */}
-        <div className="hp-fade-up" style={{ animationDelay: "0.15s" }}>
-          <HoofGrid
-            hoofDetails={horse.hoof_details as HoofDetails}
-            lastAppointmentDate={horse.last_appointment_date || latestAppointment?.date}
-          />
-        </div>
+        {/* Tab Content */}
+        <div className="hp-fade-up" style={{ animationDelay: "0.12s" }}>
+          {activeTab === "start" && (
+            <div className="space-y-5">
+              <HealthMonitor horseId={horse.id} />
+              <HoofGrid
+                hoofDetails={horse.hoof_details as HoofDetails}
+                lastAppointmentDate={horse.last_appointment_date || latestAppointment?.date}
+              />
+              <MediaDocuments hoofPhotos={hoofPhotos} documents={documents} />
+              <StammdatenAccordion horse={horse} />
+            </div>
+          )}
 
-        {/* Zone D — Media & Documents */}
-        <div className="hp-fade-up" style={{ animationDelay: "0.2s" }}>
-          <MediaDocuments hoofPhotos={hoofPhotos} documents={documents} />
-        </div>
+          {activeTab === "verlauf" && (
+            <PferdeakteTimeline horseId={horse.id} userRole="client" />
+          )}
 
-        {/* Zone E — Stammdaten */}
-        <div className="hp-fade-up" style={{ animationDelay: "0.25s" }}>
-          <StammdatenAccordion horse={horse} />
+          {activeTab === "huf" && (
+            <PferdeakteHuf horseId={horse.id} userRole="client" />
+          )}
+
+          {activeTab === "vet" && (
+            <PferdeakteVet horseId={horse.id} userRole="client" />
+          )}
+
+          {activeTab === "therapie" && (
+            <PferdeakteTherapie
+              horseId={horse.id}
+              horseName={horse.name}
+              userRole="client"
+              ownerId={horse.owner_id}
+            />
+          )}
+
+          {activeTab === "berichte" && (
+            <PferdeakteBerichte horseId={horse.id} />
+          )}
+
+          {activeTab === "tresor" && (
+            <PferdeakteTresor horseId={horse.id} horse={horse as any} />
+          )}
         </div>
       </div>
 
-      {/* Bottom Navigation */}
       <BottomNav />
     </div>
   );
