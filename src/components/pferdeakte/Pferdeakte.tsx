@@ -1,16 +1,15 @@
-import { useState, useMemo } from "react";
+import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Play, History, Footprints, Stethoscope, Activity, FileText, Lock,
-  Heart, Syringe, AlertTriangle, Clock, CheckCircle
-} from "lucide-react";
+import { Heart, Syringe, Clock } from "lucide-react";
 import type { Horse } from "@/components/horse-detail/types";
 import type { PferdeakteUserRole } from "./types";
+import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
+import { PferdeakteTabGrid, PFERDEAKTE_TABS } from "./PferdeakteTabGrid";
+import type { PferdeakteTabValue } from "./PferdeakteTabGrid";
 
 import { PferdeakteStart } from "./PferdeakteStart";
 import { PferdeakteTimeline } from "./PferdeakteTimeline";
@@ -20,16 +19,6 @@ import { PferdeakteTherapie } from "./PferdeakteTherapie";
 import { PferdeakteBerichte } from "./PferdeakteBerichte";
 import { PferdeakteTresor } from "./PferdeakteTresor";
 
-const PFERDEAKTE_TABS = [
-  { value: "start", label: "Start", icon: Play },
-  { value: "verlauf", label: "Verlauf", icon: History },
-  { value: "huf", label: "Huf", icon: Footprints },
-  { value: "vet", label: "Vet", icon: Stethoscope },
-  { value: "therapie", label: "Therapie", icon: Activity },
-  { value: "berichte", label: "Berichte", icon: FileText },
-  { value: "tresor", label: "Tresor", icon: Lock },
-] as const;
-
 interface PferdeakteProps {
   horseId: string;
   userRole: PferdeakteUserRole;
@@ -37,8 +26,25 @@ interface PferdeakteProps {
   initialTab?: string;
 }
 
+const TAB_VALUES = PFERDEAKTE_TABS.map((t) => t.value);
+
 export function Pferdeakte({ horseId, userRole, horse: horseProp, initialTab }: PferdeakteProps) {
-  const [activeTab, setActiveTab] = useState(initialTab || "start");
+  const [activeTab, setActiveTab] = useState<string>(initialTab || "start");
+
+  const currentIndex = TAB_VALUES.indexOf(activeTab as PferdeakteTabValue);
+
+  const goNext = useCallback(() => {
+    if (currentIndex < TAB_VALUES.length - 1) setActiveTab(TAB_VALUES[currentIndex + 1]);
+  }, [currentIndex]);
+
+  const goPrev = useCallback(() => {
+    if (currentIndex > 0) setActiveTab(TAB_VALUES[currentIndex - 1]);
+  }, [currentIndex]);
+
+  const swipeHandlers = useSwipeNavigation({
+    onSwipeLeft: goNext,
+    onSwipeRight: goPrev,
+  });
 
   const { data: horseData, isLoading } = useQuery({
     queryKey: ["pferdeakte-horse", horseId],
@@ -57,7 +63,6 @@ export function Pferdeakte({ horseId, userRole, horse: horseProp, initialTab }: 
 
   const horse = (horseProp || horseData) as any;
 
-  // Status pills data
   const { data: statusData } = useQuery({
     queryKey: ["pferdeakte-status", horseId],
     queryFn: async () => {
@@ -110,13 +115,12 @@ export function Pferdeakte({ horseId, userRole, horse: horseProp, initialTab }: 
   if (!horse) return null;
 
   const age = horse.birth_year ? new Date().getFullYear() - horse.birth_year : null;
-  const ownerName = (horse as any).profiles?.full_name || null;
 
   return (
     <div className="space-y-4">
       {/* Horse Header */}
       <div className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border">
-        <Avatar className="h-16 w-16">
+        <Avatar className="h-14 w-14 sm:h-16 sm:w-16">
           <AvatarImage src={horse.photo_url || undefined} alt={horse.name} />
           <AvatarFallback className="bg-primary/10 text-primary text-lg font-bold">
             {horse.name?.substring(0, 2).toUpperCase()}
@@ -145,7 +149,7 @@ export function Pferdeakte({ horseId, userRole, horse: horseProp, initialTab }: 
         {statusData?.nextAppt && (
           <StatusPill
             icon={<Clock className="h-3.5 w-3.5" />}
-            label={`Nächster Termin ${new Date(statusData.nextAppt.date).toLocaleDateString("de-DE", { day: "2-digit", month: "short" })}`}
+            label={`Termin ${new Date(statusData.nextAppt.date).toLocaleDateString("de-DE", { day: "2-digit", month: "short" })}`}
             variant="info"
           />
         )}
@@ -158,33 +162,27 @@ export function Pferdeakte({ horseId, userRole, horse: horseProp, initialTab }: 
         )}
       </div>
 
-      {/* Tab Navigation */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border -mx-4 px-4">
-        <div className="flex overflow-x-auto gap-1 py-3 scrollbar-hide">
-          {PFERDEAKTE_TABS.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.value;
-            return (
-              <button
-                key={tab.value}
-                onClick={() => setActiveTab(tab.value)}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors flex-shrink-0",
-                  isActive
-                    ? "bg-primary/15 text-primary border border-primary/30 font-medium"
-                    : "text-muted-foreground hover:bg-secondary"
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
+      {/* Tab Navigation — Grid on mobile, pills on desktop */}
+      <PferdeakteTabGrid activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* Swipe indicator (mobile) */}
+      <div className="flex justify-center gap-1 sm:hidden pb-1">
+        {TAB_VALUES.map((t, i) => (
+          <div
+            key={t}
+            className={cn(
+              "h-1 rounded-full transition-all",
+              i === currentIndex ? "w-4 bg-primary" : "w-1.5 bg-muted-foreground/30"
+            )}
+          />
+        ))}
       </div>
 
-      {/* Tab Content */}
-      <div className="min-h-[200px]">
+      {/* Tab Content with swipe */}
+      <div
+        className="min-h-[200px]"
+        {...swipeHandlers}
+      >
         {activeTab === "start" && (
           <PferdeakteStart horseId={horseId} userRole={userRole} horse={horse} onTabChange={setActiveTab} />
         )}
