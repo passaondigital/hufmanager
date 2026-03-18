@@ -1,13 +1,13 @@
 import { Home, Footprints, CalendarDays, ClipboardList, User } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
-const NAV_ITEMS = [
+const NAV_ITEMS: { label: string; icon: typeof Home; path: string; match?: string }[] = [
   { label: "Home", icon: Home, path: "/client-home" },
   { label: "Pferde", icon: Footprints, path: "/client-home", match: "/client-horse" },
   { label: "Termine", icon: CalendarDays, path: "/kalender" },
   { label: "Aufträge", icon: ClipboardList, path: "/auftraege" },
   { label: "Profil", icon: User, path: "/profil" },
-] as const;
+];
 
 export function BottomNav() {
   const navigate = useNavigate();
