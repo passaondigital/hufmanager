@@ -287,6 +287,23 @@ export default function ClientProfile() {
 
         {/* DSGVO: Account Deletion (Art. 17) */}
         <DeleteAccountSection />
+
+        {/* Logout */}
+        <Card className="border-destructive/30">
+          <CardContent className="pt-6">
+            <Button
+              variant="destructive"
+              className="w-full gap-2"
+              onClick={async () => {
+                await logout();
+                toast.success("Erfolgreich abgemeldet");
+              }}
+            >
+              <LogOut className="h-4 w-4" />
+              Abmelden
+            </Button>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );
