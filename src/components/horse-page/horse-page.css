@@ -1,0 +1,191 @@
+/* ============================================
+   Horse Page — Design Tokens & Animations
+   ============================================ */
+
+.horse-page {
+  --hp-bg: #0a0700;
+  --hp-bg2: #13110a;
+  --hp-bg3: #1c1912;
+  --hp-bg4: #262219;
+  --hp-border: #2e2a20;
+  --hp-text: #f0ece4;
+  --hp-text2: #b8b2a4;
+  --hp-text3: #7a7568;
+  --hp-amber: #F5970A;
+  --hp-green: #3dba6f;
+  --hp-red: #e05252;
+  --hp-yellow: #e8b84a;
+
+  background: var(--hp-bg);
+  color: var(--hp-text);
+  min-height: 100dvh;
+  scrollbar-width: none;
+}
+
+.horse-page::-webkit-scrollbar {
+  display: none;
+}
+
+/* Score Ring Animation */
+.score-ring-track {
+  stroke: rgba(245, 151, 10, 0.15);
+}
+
+.score-ring-value {
+  stroke: var(--hp-amber);
+  transition: stroke-dashoffset 0.8s ease;
+}
+
+/* Accordion */
+.hp-accordion-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease, padding 0.35s ease;
+}
+
+.hp-accordion-body.open {
+  max-height: 400px;
+  padding-top: 8px;
+  padding-bottom: 14px;
+}
+
+.hp-accordion-arrow {
+  transition: transform 0.25s ease;
+  font-size: 12px;
+  color: var(--hp-text3);
+}
+
+.hp-accordion-arrow.open {
+  transform: rotate(180deg);
+}
+
+/* Stagger Fade Up */
+@keyframes horseFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hp-fade-up {
+  animation: horseFadeUp 0.4s ease both;
+}
+
+/* Avatar Pulse */
+@keyframes avatarPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 151, 10, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(245, 151, 10, 0); }
+}
+
+.hp-avatar-pulse {
+  animation: avatarPulse 3s ease-in-out infinite;
+}
+
+/* Quick Action Buttons */
+.hp-ghost-btn {
+  background: var(--hp-bg3);
+  border: 1px solid var(--hp-border);
+  color: var(--hp-text2);
+  transition: all 0.2s ease;
+}
+
+.hp-ghost-btn:hover {
+  border-color: var(--hp-amber);
+  color: var(--hp-amber);
+}
+
+.hp-primary-btn {
+  background: var(--hp-amber);
+  color: var(--hp-bg);
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.hp-primary-btn:hover {
+  filter: brightness(1.1);
+}
+
+/* Hoof Card */
+.hp-hoof-card {
+  background: var(--hp-bg3);
+  border: 0.5px solid var(--hp-border);
+  border-radius: 8px;
+  padding: 14px;
+  text-align: center;
+  transition: all 0.25s ease;
+}
+
+.hp-hoof-card:hover {
+  border-color: var(--hp-amber);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 151, 10, 0.08);
+}
+
+.hp-hoof-card.has-issue {
+  border-left: 3px solid var(--hp-yellow);
+}
+
+/* Health Monitor */
+.hp-health-monitor {
+  background: linear-gradient(135deg, rgba(245, 151, 10, 0.08), rgba(245, 151, 10, 0.02));
+  border: 1px solid rgba(245, 151, 10, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hp-health-monitor::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(245, 151, 10, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Timeline Card */
+.hp-timeline-card {
+  background: var(--hp-bg3);
+  border: 1px solid var(--hp-border);
+  border-radius: 6px;
+  padding: 10px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.hp-timeline-card:hover {
+  border-color: var(--hp-amber);
+  background: var(--hp-bg4);
+}
+
+/* Section Header */
+.hp-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.hp-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--hp-text);
+}
+
+.hp-section-link {
+  font-size: 12px;
+  color: var(--hp-amber);
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.hp-section-link:hover {
+  opacity: 0.8;
+}
