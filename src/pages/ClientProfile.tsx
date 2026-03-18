@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, User, Loader2, Save, Bell, Globe } from "lucide-react";
+import { ArrowLeft, User, Loader2, Save, Bell, Globe, LogOut } from "lucide-react";
+import { useLogout } from "@/hooks/useLogout";
 import { HelpTip } from "@/components/ui/HelpTip";
 import { toast } from "sonner";
 import { StableLocationCard } from "@/components/client/StableLocationCard";
@@ -40,6 +41,7 @@ interface Profile {
 export default function ClientProfile() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const logout = useLogout();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -285,6 +287,23 @@ export default function ClientProfile() {
 
         {/* DSGVO: Account Deletion (Art. 17) */}
         <DeleteAccountSection />
+
+        {/* Logout */}
+        <Card className="border-destructive/30">
+          <CardContent className="pt-6">
+            <Button
+              variant="destructive"
+              className="w-full gap-2"
+              onClick={async () => {
+                await logout();
+                toast.success("Erfolgreich abgemeldet");
+              }}
+            >
+              <LogOut className="h-4 w-4" />
+              Abmelden
+            </Button>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );

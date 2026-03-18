@@ -18,16 +18,17 @@ export function QuickActions({ horseId }: QuickActionsProps) {
   const handleAction = (action: string) => {
     switch (action) {
       case "hufcam":
-        navigate(`/client-horse/${horseId}?tab=fotos`);
+        // Navigate to horse detail — photos section is visible on the single-page layout
+        navigate(`/client-horse/${horseId}`);
         break;
       case "befund":
-        navigate(`/client-horse/${horseId}?tab=gesundheit`);
+        navigate(`/client-horse/${horseId}`);
         break;
       case "termin":
-        navigate(`/kalender?horse=${horseId}&action=new`);
+        navigate(`/client-booking`);
         break;
       case "chat":
-        navigate(`/client-horse/${horseId}?tab=team`);
+        navigate(`/client-chat`);
         break;
     }
   };
