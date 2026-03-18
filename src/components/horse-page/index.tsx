@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
 
+import "@/styles/hm-theme.css";
 import "./horse-page.css";
 import { HorseHero } from "./HorseHero";
 import { QuickActions } from "./QuickActions";

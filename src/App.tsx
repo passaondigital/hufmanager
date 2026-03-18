@@ -60,7 +60,7 @@ const Support = lazy(() => import("@/pages/Support"));
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 const Welcome = lazy(() => import("@/pages/Welcome"));
 const UpdatePassword = lazy(() => import("@/pages/UpdatePassword"));
-const ClientHome = lazy(() => import("@/pages/ClientHome"));
+const ClientHome = lazy(() => import("@/components/client-home/index"));
 const ClientHorseDetail = lazy(() => import("@/components/horse-page/index"));
 const ClientInvoices = lazy(() => import("@/pages/ClientInvoices"));
 const ClientPermissions = lazy(() => import("@/pages/ClientPermissions"));

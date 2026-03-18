@@ -1,0 +1,178 @@
+/* ============================================
+   HufManager — Shared Dark Theme
+   Used by horse-page + client-home
+   ============================================ */
+
+.hm-page {
+  --hm-bg: #0a0700;
+  --hm-bg2: #13110a;
+  --hm-bg3: #1c1912;
+  --hm-bg4: #262219;
+  --hm-border: #2e2a20;
+  --hm-border-hover: #3d3828;
+  --hm-text: #f0ece4;
+  --hm-text2: #b8b2a4;
+  --hm-text3: #7a7568;
+  --hm-amber: #F5970A;
+  --hm-amber-dim: #c47808;
+  --hm-amber-glow: rgba(245,151,10,0.12);
+  --hm-green: #3dba6f;
+  --hm-green-bg: rgba(61,186,111,0.1);
+  --hm-red: #e8564a;
+  --hm-red-bg: rgba(232,86,74,0.1);
+  --hm-yellow: #e8b84a;
+  --hm-yellow-bg: rgba(232,184,74,0.1);
+
+  background: var(--hm-bg);
+  color: var(--hm-text);
+  min-height: 100dvh;
+  scrollbar-width: none;
+}
+.hm-page::-webkit-scrollbar { display: none; }
+
+/* Shared fade-up animation */
+@keyframes hmFadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.hm-fade-up {
+  animation: hmFadeUp 0.4s ease both;
+}
+
+/* Avatar pulse */
+@keyframes hmAvatarPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245,151,10,0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(245,151,10,0); }
+}
+.hm-avatar-pulse {
+  animation: hmAvatarPulse 3s ease-in-out infinite;
+}
+
+/* Button styles */
+.hm-btn-primary {
+  background: var(--hm-amber);
+  color: var(--hm-bg);
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.hm-btn-primary:hover { background: var(--hm-amber-dim); }
+
+.hm-btn-ghost {
+  background: var(--hm-bg3);
+  border: 1px solid var(--hm-border);
+  color: var(--hm-text2);
+  transition: all 0.2s ease;
+}
+.hm-btn-ghost:hover {
+  border-color: var(--hm-amber);
+  color: var(--hm-amber);
+}
+
+/* Card base */
+.hm-card {
+  background: var(--hm-bg3);
+  border: 0.5px solid var(--hm-border);
+  border-radius: 8px;
+  padding: 14px;
+  transition: all 0.2s ease;
+}
+.hm-card:hover {
+  border-color: var(--hm-border-hover);
+  transform: translateY(-1px);
+}
+
+/* Section header */
+.hm-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.hm-section-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--hm-text);
+}
+.hm-section-link {
+  font-size: 12px;
+  color: var(--hm-amber);
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.hm-section-link:hover { opacity: 0.8; }
+
+/* Accordion */
+.hm-accordion-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease, padding 0.35s ease;
+}
+.hm-accordion-body.open {
+  max-height: 400px;
+  padding-top: 8px;
+  padding-bottom: 14px;
+}
+
+/* Score ring */
+.hm-score-ring-track { stroke: rgba(245,151,10,0.15); }
+.hm-score-ring-value {
+  stroke: var(--hm-amber);
+  transition: stroke-dashoffset 0.8s ease;
+}
+
+/* Health monitor gradient card */
+.hm-gradient-card {
+  background: linear-gradient(135deg, rgba(245,151,10,0.1), rgba(245,151,10,0.03));
+  border: 1px solid rgba(245,151,10,0.25);
+  border-radius: 12px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+.hm-gradient-card:hover {
+  border-color: var(--hm-amber);
+}
+.hm-gradient-card::before {
+  content: '';
+  position: absolute;
+  top: -30px; right: -30px;
+  width: 80px; height: 80px;
+  background: radial-gradient(circle, rgba(245,151,10,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Filter pill */
+.hm-pill {
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid var(--hm-border);
+  color: var(--hm-text3);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.hm-pill:hover {
+  border-color: var(--hm-border-hover);
+  color: var(--hm-text2);
+}
+.hm-pill.active {
+  background: var(--hm-amber);
+  border-color: var(--hm-amber);
+  color: var(--hm-bg);
+}
+
+/* Horizontal scroll hide */
+.hm-h-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 4px;
+}
+.hm-h-scroll::-webkit-scrollbar { display: none; }
+.hm-h-scroll > * { scroll-snap-align: start; }
