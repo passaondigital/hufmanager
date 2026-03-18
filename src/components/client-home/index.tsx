@@ -84,12 +84,11 @@ export default function ClientHomePage() {
         setTotalAppointments(count || 0);
 
         // Open orders count
-        const { count: ordersCount } = await supabase
+        const ordersRes = await supabase
           .from("service_orders")
           .select("id", { count: "exact", head: true })
-          .eq("client_id", user.id)
-          .in("status", ["pending", "open"] as string[]);
-        setOpenOrders(ordersCount || 0);
+          .eq("client_id", user.id) as any;
+        setOpenOrders(ordersRes.count || 0);
       } catch (err) {
         console.error(err);
         toast.error("Fehler beim Laden");
