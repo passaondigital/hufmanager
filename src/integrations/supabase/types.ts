@@ -3278,6 +3278,59 @@ export type Database = {
         }
         Relationships: []
       }
+      ecosystem_errors: {
+        Row: {
+          app_key: string
+          created_at: string | null
+          error_code: string | null
+          error_context: Json | null
+          error_message: string
+          id: string
+          resolved: boolean | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          sync_log_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          app_key: string
+          created_at?: string | null
+          error_code?: string | null
+          error_context?: Json | null
+          error_message: string
+          id?: string
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          sync_log_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          app_key?: string
+          created_at?: string | null
+          error_code?: string | null
+          error_context?: Json | null
+          error_message?: string
+          id?: string
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          sync_log_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ecosystem_errors_sync_log_id_fkey"
+            columns: ["sync_log_id"]
+            isOneToOne: false
+            referencedRelation: "ecosystem_sync_log"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ecosystem_links: {
         Row: {
           app_id: string | null
@@ -3330,6 +3383,144 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ecosystem_mappings: {
+        Row: {
+          app_key: string
+          created_at: string | null
+          entity_type: string
+          external_id: string
+          id: string
+          last_synced_at: string | null
+          local_id: string
+          metadata: Json | null
+          sync_hash: string | null
+          user_id: string
+        }
+        Insert: {
+          app_key: string
+          created_at?: string | null
+          entity_type: string
+          external_id: string
+          id?: string
+          last_synced_at?: string | null
+          local_id: string
+          metadata?: Json | null
+          sync_hash?: string | null
+          user_id: string
+        }
+        Update: {
+          app_key?: string
+          created_at?: string | null
+          entity_type?: string
+          external_id?: string
+          id?: string
+          last_synced_at?: string | null
+          local_id?: string
+          metadata?: Json | null
+          sync_hash?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ecosystem_settings: {
+        Row: {
+          app_key: string
+          auto_sync_enabled: boolean | null
+          created_at: string | null
+          enabled_entity_types: string[] | null
+          id: string
+          last_sync_at: string | null
+          notification_on_error: boolean | null
+          notification_on_sync: boolean | null
+          settings_json: Json | null
+          sync_direction: string | null
+          sync_interval_minutes: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          app_key: string
+          auto_sync_enabled?: boolean | null
+          created_at?: string | null
+          enabled_entity_types?: string[] | null
+          id?: string
+          last_sync_at?: string | null
+          notification_on_error?: boolean | null
+          notification_on_sync?: boolean | null
+          settings_json?: Json | null
+          sync_direction?: string | null
+          sync_interval_minutes?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          app_key?: string
+          auto_sync_enabled?: boolean | null
+          created_at?: string | null
+          enabled_entity_types?: string[] | null
+          id?: string
+          last_sync_at?: string | null
+          notification_on_error?: boolean | null
+          notification_on_sync?: boolean | null
+          settings_json?: Json | null
+          sync_direction?: string | null
+          sync_interval_minutes?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ecosystem_sync_log: {
+        Row: {
+          app_key: string
+          completed_at: string | null
+          created_at: string | null
+          duration_ms: number | null
+          entity_id: string | null
+          entity_type: string
+          error_message: string | null
+          id: string
+          request_payload: Json | null
+          response_payload: Json | null
+          retry_count: number | null
+          status: string
+          sync_type: string
+          user_id: string
+        }
+        Insert: {
+          app_key: string
+          completed_at?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          entity_id?: string | null
+          entity_type: string
+          error_message?: string | null
+          id?: string
+          request_payload?: Json | null
+          response_payload?: Json | null
+          retry_count?: number | null
+          status?: string
+          sync_type?: string
+          user_id: string
+        }
+        Update: {
+          app_key?: string
+          completed_at?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          entity_id?: string | null
+          entity_type?: string
+          error_message?: string | null
+          id?: string
+          request_payload?: Json | null
+          response_payload?: Json | null
+          retry_count?: number | null
+          status?: string
+          sync_type?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       education_courses: {
         Row: {
