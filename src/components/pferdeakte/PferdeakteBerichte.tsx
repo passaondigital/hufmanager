@@ -7,9 +7,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { PFERDEAKTE_HELP } from "./pferdeakteHelpTexts";
 import { toast } from "sonner";
+import type { PferdeakteUserRole } from "./types";
 
 interface Props {
   horseId: string;
+  userRole: PferdeakteUserRole;
 }
 
 const REPORTS = [
