@@ -13,6 +13,12 @@ export const STATIC_QUERY_KEYS = [
   "services",
   "profiles",
   "business-settings",
+  "horse-health-logs",
+  "horse-vaccinations",
+  "horse-diary-entries",
+  "horse-documents",
+  "pferdeakte-horse",
+  "pferdeakte-status",
 ] as const;
 
 // Query keys for dynamic data (shorter stale time)
