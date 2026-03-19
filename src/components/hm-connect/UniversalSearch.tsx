@@ -62,7 +62,7 @@ export function UniversalSearch({ onConnectionRequested }: { onConnectionRequest
 
       if (error) throw error;
 
-      const parsed = (data as UniversalResult[]) || [];
+      const parsed = (data as unknown as UniversalResult[]) || [];
       // Filter out self
       setResults(parsed.filter(r => r.id !== user?.id));
     } catch (err) {
