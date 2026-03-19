@@ -8,6 +8,7 @@ import { Heart, Syringe, Clock } from "lucide-react";
 import type { Horse } from "@/components/horse-detail/types";
 import type { PferdeakteUserRole } from "./types";
 import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
+import { usePferdeakteLiveSync, PFERDEAKTE_STALE_TIME } from "@/hooks/usePferdeakteLiveSync";
 import { PferdeakteTabGrid, PFERDEAKTE_TABS } from "./PferdeakteTabGrid";
 import type { PferdeakteTabValue } from "./PferdeakteTabGrid";
 
