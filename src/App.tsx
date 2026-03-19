@@ -650,6 +650,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/management/kommunikation" element={<ManagementKommunikation />} />
               <Route path="/management/abo" element={<ManagementAbo />} />
               <Route path="/management/rechtliches" element={<ManagementRechtliches />} />
+              <Route path="/management/steuer" element={<ManagementSteuer />} />
               <Route path="/management/import" element={<ImportCenter />} />
               <Route path="/management/botschafter" element={<ManagementBotschafter />} />
               <Route path="/academy" element={<Academy />} />
