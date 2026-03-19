@@ -40,7 +40,6 @@ interface Profile {
 export default function ClientProfile() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const logout = useLogout();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
