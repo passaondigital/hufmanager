@@ -72,8 +72,13 @@ export default function PartnerCalendar() {
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     const dy = e.changedTouches[0].clientY - touchStartY.current;
     if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      if (dx > 0) setCurrentMonth(subMonths(currentMonth, 1));
-      else setCurrentMonth(addMonths(currentMonth, 1));
+      if (view === "week") {
+        if (dx > 0) setCurrentDate(subWeeks(currentDate, 1));
+        else setCurrentDate(addWeeks(currentDate, 1));
+      } else {
+        if (dx > 0) setCurrentMonth(subMonths(currentMonth, 1));
+        else setCurrentMonth(addMonths(currentMonth, 1));
+      }
     }
   };
 
