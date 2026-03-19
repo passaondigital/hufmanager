@@ -7,6 +7,7 @@ import type { WidgetContentProps } from "./types";
 
 export default function RevenueMonthContent(_props: WidgetContentProps) {
   const { user } = useAuth();
+  const taxConfig = useTaxConfig();
   const now = new Date();
   const monthStart = format(startOfMonth(now), "yyyy-MM-dd");
   const monthEnd = format(endOfMonth(now), "yyyy-MM-dd");
