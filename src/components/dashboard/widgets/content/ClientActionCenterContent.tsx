@@ -12,7 +12,9 @@ export default function ClientActionCenterContent({ settings }: WidgetContentPro
   const { data } = useQuery({
     queryKey: ["client-action-center", user?.id],
     queryFn: async (): Promise<{ unreadMessages: number; openOrders: number; healthIssues: number }> => {
-      const messagesRes: any = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sb = supabase as any;
+      const messagesRes = await sb
         .from("messages")
         .select("id", { count: "exact", head: true })
         .eq("receiver_id", user!.id)
