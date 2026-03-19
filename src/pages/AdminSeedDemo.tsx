@@ -182,7 +182,7 @@ export default function AdminSeedDemo() {
         { ...vaccinations[0], horse_id: horseId, next_due_date: futureDate(7) },
         { ...vaccinations[1], horse_id: horseId, next_due_date: futureDate(19) },
         { ...vaccinations[2], horse_id: horseId, next_due_date: ago(1) }, // OVERDUE
-        { vaccine_type: "Influenza", vaccine_name: "ProteqFlu-Te", vaccination_date: ago(11), administered_by: "Dr. K. Müller", horse_id: horseId },
+        { vaccine_type: "Influenza", vaccine_name: "ProteqFlu-Te", vaccination_date: ago(11), administered_by: "Demo-Tierärztin", horse_id: horseId },
       ];
 
       const { error: vaccError } = await supabase.from("horse_vaccinations").insert(vaccData);
