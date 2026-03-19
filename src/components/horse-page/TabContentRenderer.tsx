@@ -89,9 +89,9 @@ export function TabContentRenderer({ activeTab, horse, hoofPhotos, documents, la
           />
         );
       case "berichte":
-        return <PferdeakteBerichte horseId={horse.id} />;
+        return <PferdeakteBerichte horseId={horse.id} userRole="client" />;
       case "tresor":
-        return <PferdeakteTresor horseId={horse.id} horse={horse as any} />;
+        return <PferdeakteTresor horseId={horse.id} horse={horse as any} userRole="client" />;
       default:
         return null;
     }
