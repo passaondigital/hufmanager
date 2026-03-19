@@ -10,7 +10,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 interface WidgetGridProps {
   widgets: DashboardWidgetData[];
   isLoading: boolean;
-  role: "provider" | "partner" | "employee";
+  role: "provider" | "partner" | "employee" | "client";
   onUpdateWidget: (update: Partial<DashboardWidgetData> & { id: string }) => void;
   onAddWidget: (widget: Omit<DashboardWidgetData, "id" | "user_id">) => void;
   onRemoveWidget: (id: string) => void;

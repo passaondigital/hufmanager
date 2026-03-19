@@ -6,7 +6,7 @@ export interface WidgetDefinition {
   icon: string;
   defaultWidth: 1 | 2;
   defaultHeight: 1 | 2;
-  roles: ("provider" | "partner" | "employee")[];
+  roles: ("provider" | "partner" | "employee" | "client")[];
   category: string;
 }
 
@@ -31,9 +31,16 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
   { type: "statistik_pferde", label: "Pferde-Statistik", icon: "📊", defaultWidth: 1, defaultHeight: 1, roles: ["provider"], category: "Analyse" },
   { type: "geburtstage", label: "Geburtstage", icon: "🎂", defaultWidth: 1, defaultHeight: 1, roles: ["provider", "partner"], category: "Sonstiges" },
   { type: "arbeitszeit", label: "Arbeitszeit", icon: "⏱️", defaultWidth: 1, defaultHeight: 1, roles: ["provider", "employee"], category: "Tracking" },
+  // Client-specific widgets
+  { type: "client_naechster_termin", label: "Nächster Termin", icon: "📅", defaultWidth: 2, defaultHeight: 1, roles: ["client"], category: "Termine" },
+  { type: "client_pferde", label: "Meine Pferde", icon: "🐴", defaultWidth: 2, defaultHeight: 1, roles: ["client"], category: "Pferde" },
+  { type: "client_gesundheits_feed", label: "Gesundheits-Feed", icon: "💚", defaultWidth: 2, defaultHeight: 2, roles: ["client"], category: "Gesundheit" },
+  { type: "client_aktions_center", label: "Aktions-Center", icon: "🔔", defaultWidth: 1, defaultHeight: 1, roles: ["client"], category: "Aufgaben" },
+  { type: "client_experten", label: "Meine Experten", icon: "👤", defaultWidth: 1, defaultHeight: 1, roles: ["client"], category: "Team" },
+  { type: "client_auftraege", label: "Aufträge", icon: "📋", defaultWidth: 1, defaultHeight: 1, roles: ["client"], category: "Aufträge" },
 ];
 
-export function getWidgetsForRole(role: "provider" | "partner" | "employee"): WidgetDefinition[] {
+export function getWidgetsForRole(role: "provider" | "partner" | "employee" | "client"): WidgetDefinition[] {
   return WIDGET_DEFINITIONS.filter((w) => w.roles.includes(role));
 }
 
@@ -74,4 +81,14 @@ export const DEFAULT_EMPLOYEE_WIDGETS: Omit<DashboardWidgetData, "id" | "user_id
   { widget_type: "kalender_tag", position_x: 0, position_y: 0, width: 2, height: 1, is_active: true, settings: {} },
   { widget_type: "naechste_termine", position_x: 0, position_y: 1, width: 1, height: 1, is_active: true, settings: {} },
   { widget_type: "arbeitszeit", position_x: 1, position_y: 1, width: 1, height: 1, is_active: true, settings: {} },
+];
+
+export const DEFAULT_CLIENT_WIDGETS: Omit<DashboardWidgetData, "id" | "user_id">[] = [
+  { widget_type: "client_naechster_termin", position_x: 0, position_y: 0, width: 2, height: 1, is_active: true, settings: {} },
+  { widget_type: "client_pferde", position_x: 0, position_y: 1, width: 2, height: 1, is_active: true, settings: {} },
+  { widget_type: "client_aktions_center", position_x: 0, position_y: 2, width: 1, height: 1, is_active: true, settings: {} },
+  { widget_type: "client_experten", position_x: 1, position_y: 2, width: 1, height: 1, is_active: true, settings: {} },
+  { widget_type: "client_gesundheits_feed", position_x: 0, position_y: 3, width: 2, height: 2, is_active: true, settings: {} },
+  { widget_type: "client_auftraege", position_x: 0, position_y: 5, width: 1, height: 1, is_active: true, settings: {} },
+  { widget_type: "wetter", position_x: 1, position_y: 5, width: 1, height: 1, is_active: true, settings: {} },
 ];

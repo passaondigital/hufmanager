@@ -4,46 +4,52 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { de } from "date-fns/locale";
+import { Settings, Sparkles } from "lucide-react";
 
-import "@/styles/hm-theme.css";
-import { HomeHero } from "./HomeHero";
-import { StatusGrid } from "./StatusGrid";
-import { HorseCarousel } from "./HorseCarousel";
-import { OrdersSection } from "./OrdersSection";
-import { ServiceHistory } from "./ServiceHistory";
-import { HufbearbeiterCard } from "./HufbearbeiterCard";
-import { BottomNav } from "@/components/horse-page/BottomNav";
+import { WidgetGrid } from "@/components/dashboard/widgets/WidgetGrid";
+import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
 import { CreateHorseModal } from "@/components/horse-detail/CreateHorseModal";
 import { MandatoryHorseModal } from "@/components/onboarding/MandatoryHorseModal";
 import { ClientOnboarding } from "@/components/client/ClientOnboarding";
 import { useOnboarding } from "@/hooks/useOnboarding";
+import { DemoBadge } from "@/components/demo/DemoBadge";
+import { isDemoEmail } from "@/lib/demo-accounts";
 
-interface HorseData {
-  id: string;
-  name: string;
-  breed: string | null;
-  photo_url: string | null;
-  birth_year: number | null;
-  health_status: string | null;
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 11) return "Guten Morgen";
+  if (h >= 11 && h < 17) return "Guten Tag";
+  if (h >= 17 && h < 22) return "Guten Abend";
+  return "Gute Nacht";
 }
 
 export default function ClientHomePage() {
   const { user, loading: authLoading } = useAuth();
   const { showOnboarding, completeOnboarding } = useOnboarding();
   const navigate = useNavigate();
+  const isDemo = isDemoEmail(user?.email);
 
   const [firstName, setFirstName] = useState("Kunde");
-  const [horses, setHorses] = useState<HorseData[]>([]);
-  const [totalAppointments, setTotalAppointments] = useState(0);
-  const [openOrders, setOpenOrders] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showMandatoryHorseModal, setShowMandatoryHorseModal] = useState(false);
   const [isFirstLogin, setIsFirstLogin] = useState(false);
+  const [showWidgetHint, setShowWidgetHint] = useState(false);
+
+  const {
+    widgets,
+    isLoading: widgetsLoading,
+    updateWidget,
+    addWidget,
+    removeWidget,
+    resetWidgets,
+  } = useDashboardWidgets("client");
 
   useEffect(() => {
     if (!user) return;
-    const fetch = async () => {
+    const fetchProfile = async () => {
       setLoading(true);
       try {
         const { data: prof } = await supabase
@@ -56,35 +62,22 @@ export default function ClientHomePage() {
           setFirstName(prof.full_name?.split(" ")[0] || "Kunde");
           if (!prof.has_logged_in) {
             setIsFirstLogin(true);
+            setShowWidgetHint(true);
             await supabase.from("profiles").update({ has_logged_in: true }).eq("id", user.id);
           }
         }
 
+        // Check if horses exist for mandatory modal
         const { data: horsesData } = await supabase
           .from("horses")
-          .select("id, name, breed, photo_url, birth_year, health_status")
+          .select("id")
           .eq("owner_id", user.id)
           .is("deleted_at", null)
-          .order("name");
-
-        setHorses((horsesData || []) as HorseData[]);
+          .limit(1);
 
         if (isFirstLogin && (!horsesData || horsesData.length === 0)) {
           setShowMandatoryHorseModal(true);
         }
-
-        const { count } = await supabase
-          .from("appointments")
-          .select("id", { count: "exact", head: true })
-          .eq("client_id", user.id)
-          .eq("status", "completed");
-        setTotalAppointments(count || 0);
-
-        const ordersRes = await supabase
-          .from("service_orders")
-          .select("id", { count: "exact", head: true })
-          .eq("client_id", user.id) as any;
-        setOpenOrders(ordersRes.count || 0);
       } catch (err) {
         console.error(err);
         toast.error("Fehler beim Laden");
@@ -92,7 +85,7 @@ export default function ClientHomePage() {
         setLoading(false);
       }
     };
-    fetch();
+    fetchProfile();
   }, [user]);
 
   const handleHorseCreated = (horseId: string) => {
@@ -103,15 +96,14 @@ export default function ClientHomePage() {
 
   if (authLoading || loading) {
     return (
-      <div className="hm-page">
-        <div className="max-w-5xl mx-auto px-4 py-6 space-y-4">
-          <Skeleton className="h-7 w-48 bg-[#1c1912]" />
-          <Skeleton className="h-4 w-64 bg-[#1c1912]" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Skeleton className="h-32 rounded-xl bg-[#1c1912]" />
-            <Skeleton className="h-32 rounded-xl bg-[#1c1912]" />
-            <Skeleton className="h-32 rounded-xl bg-[#1c1912]" />
-          </div>
+      <div className="p-4 sm:p-6 space-y-4 max-w-6xl mx-auto">
+        <Skeleton className="h-7 w-48" />
+        <Skeleton className="h-4 w-64" />
+        <div className="grid grid-cols-2 gap-4">
+          <Skeleton className="h-48 rounded-2xl" />
+          <Skeleton className="h-48 rounded-2xl" />
+          <Skeleton className="h-48 rounded-2xl" />
+          <Skeleton className="h-48 rounded-2xl" />
         </div>
       </div>
     );
@@ -121,8 +113,7 @@ export default function ClientHomePage() {
     return <ClientOnboarding onComplete={completeOnboarding} />;
   }
 
-  const horsesWithIssues = horses.filter(h => h.health_status && h.health_status !== "healthy").length;
-  const healthOk = horsesWithIssues === 0;
+  const today = new Date();
 
   return (
     <>
@@ -130,62 +121,50 @@ export default function ClientHomePage() {
         <MandatoryHorseModal open={showMandatoryHorseModal} onComplete={handleHorseCreated} />
       )}
 
-      <div className="hm-page pb-24 md:pb-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Zone 1 — Hero (full width) */}
-          <div className="hm-fade-up" style={{ animationDelay: "0s" }}>
-            <HomeHero firstName={firstName} userId={user!.id} />
-          </div>
-
-          {/* Desktop: 2-column layout / Mobile: stacked */}
-          <div className="md:grid md:grid-cols-12 md:gap-6 md:px-6 lg:px-8">
-            {/* Left column — main content */}
-            <div className="md:col-span-8 space-y-5">
-              {/* Status Grid */}
-              <div className="hm-fade-up" style={{ animationDelay: "0.05s" }}>
-                <StatusGrid
-                  horsesCount={horses.length}
-                  horsesWithIssues={horsesWithIssues}
-                  openOrders={openOrders}
-                  totalAppointments={totalAppointments}
-                  healthOk={healthOk}
-                  healthIssues={horsesWithIssues}
-                />
-              </div>
-
-              {/* Horse Carousel / Grid */}
-              <div className="hm-fade-up" style={{ animationDelay: "0.1s" }}>
-                <HorseCarousel
-                  horses={horses}
-                  onAddHorse={() => setShowCreateModal(true)}
-                />
-              </div>
-
-              {/* Orders */}
-              <div className="hm-fade-up" style={{ animationDelay: "0.15s" }}>
-                <OrdersSection userId={user!.id} />
-              </div>
-            </div>
-
-            {/* Right column — sidebar (desktop) / stacked (mobile) */}
-            <div className="md:col-span-4 space-y-5 mt-5 md:mt-0">
-              {/* Hufbearbeiter */}
-              <div className="hm-fade-up" style={{ animationDelay: "0.2s" }}>
-                <HufbearbeiterCard userId={user!.id} />
-              </div>
-
-              {/* Service History */}
-              <div className="hm-fade-up" style={{ animationDelay: "0.25s" }}>
-                <ServiceHistory userId={user!.id} />
-              </div>
-            </div>
+      <div className="p-4 sm:p-6 max-w-6xl mx-auto pb-24 lg:pb-8">
+        {/* Hero Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-foreground tracking-tight">
+            {getGreeting()}, {firstName}! 👋
+          </h1>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-sm text-muted-foreground">
+              {format(today, "EEEE, d. MMMM yyyy", { locale: de })}
+            </p>
+            {isDemo && <DemoBadge />}
           </div>
         </div>
 
-        {/* Bottom Nav only on mobile */}
-        <div className="md:hidden">
-          <BottomNav />
-        </div>
+        {/* Widget Customization Hint */}
+        {showWidgetHint && (
+          <div className="mb-6 p-4 rounded-2xl border border-primary/20 bg-primary/5 flex items-start gap-3">
+            <Sparkles className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-foreground">Dein Dashboard ist anpassbar! ✨</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Klicke oben rechts auf „Anpassen", um Widgets hinzuzufügen, zu entfernen oder neu anzuordnen. 
+                Gestalte dein Dashboard genau so, wie du es brauchst.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowWidgetHint(false)}
+              className="text-xs text-muted-foreground hover:text-foreground flex-shrink-0"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* Widget Grid */}
+        <WidgetGrid
+          widgets={widgets}
+          isLoading={widgetsLoading}
+          role="client"
+          onUpdateWidget={updateWidget}
+          onAddWidget={addWidget}
+          onRemoveWidget={removeWidget}
+          onResetWidgets={resetWidgets}
+        />
       </div>
 
       <CreateHorseModal

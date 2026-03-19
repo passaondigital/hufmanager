@@ -20,6 +20,12 @@ const QuoteContent = lazy(() => import("./content/QuoteContent"));
 const BirthdaysContent = lazy(() => import("./content/BirthdaysContent"));
 const WorkTimeContent = lazy(() => import("./content/WorkTimeContent"));
 const PlaceholderContent = lazy(() => import("./content/PlaceholderContent"));
+const ClientNextAppointmentContent = lazy(() => import("./content/ClientNextAppointmentContent"));
+const ClientHorsesContent = lazy(() => import("./content/ClientHorsesContent"));
+const ClientHealthFeedContent = lazy(() => import("./content/ClientHealthFeedContent"));
+const ClientActionCenterContent = lazy(() => import("./content/ClientActionCenterContent"));
+const ClientProviderContent = lazy(() => import("./content/ClientProviderContent"));
+const ClientOrdersContent = lazy(() => import("./content/ClientOrdersContent"));
 
 interface WidgetRendererProps {
   type: string;
@@ -49,6 +55,13 @@ const WIDGET_MAP: Record<string, React.LazyExoticComponent<ComponentType<WidgetC
   impfungen_faellig: PlaceholderContent,
   statistik_kunden: PlaceholderContent,
   statistik_pferde: PlaceholderContent,
+  // Client widgets
+  client_naechster_termin: ClientNextAppointmentContent,
+  client_pferde: ClientHorsesContent,
+  client_gesundheits_feed: ClientHealthFeedContent,
+  client_aktions_center: ClientActionCenterContent,
+  client_experten: ClientProviderContent,
+  client_auftraege: ClientOrdersContent,
 };
 
 export function WidgetRenderer({ type, settings, widgetId, onUpdateSettings }: WidgetRendererProps) {
