@@ -47,12 +47,12 @@ export default function ClientMarketplace() {
       let query = supabase
         .from("client_marketplace_listings")
         .select("*")
-        .eq("status", "active")
+        .eq("status", "active" as any)
         .order("is_featured", { ascending: false })
         .order("created_at", { ascending: false });
 
       if (typeFilter !== "all") {
-        query = query.eq("listing_type", typeFilter);
+        query = query.eq("listing_type", typeFilter as any);
       }
 
       const { data, error } = await query;
