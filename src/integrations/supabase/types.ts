@@ -6123,6 +6123,117 @@ export type Database = {
           },
         ]
       }
+      horse_chat_channels: {
+        Row: {
+          created_at: string
+          horse_id: string
+          id: string
+          is_active: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          horse_id: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          horse_id?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horse_chat_channels_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: true
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_chat_channels_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: true
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_chat_channels_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: true
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_chat_channels_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: true
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      horse_chat_messages: {
+        Row: {
+          channel_id: string
+          content: string
+          created_at: string
+          file_url: string | null
+          id: string
+          is_read_by: Json | null
+          message_type: string
+          sender_id: string
+          updated_at: string
+        }
+        Insert: {
+          channel_id: string
+          content: string
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          is_read_by?: Json | null
+          message_type?: string
+          sender_id: string
+          updated_at?: string
+        }
+        Update: {
+          channel_id?: string
+          content?: string
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          is_read_by?: Json | null
+          message_type?: string
+          sender_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horse_chat_messages_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "horse_chat_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_chat_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_chat_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       horse_deworming: {
         Row: {
           active_substance: string | null
@@ -6779,6 +6890,7 @@ export type Database = {
           can_upload_documents: boolean | null
           can_view_basic: boolean
           can_view_breeding: boolean | null
+          can_view_chat: boolean | null
           can_view_deworming: boolean | null
           can_view_diary: boolean | null
           can_view_documents: boolean | null
@@ -6820,6 +6932,7 @@ export type Database = {
           can_upload_documents?: boolean | null
           can_view_basic?: boolean
           can_view_breeding?: boolean | null
+          can_view_chat?: boolean | null
           can_view_deworming?: boolean | null
           can_view_diary?: boolean | null
           can_view_documents?: boolean | null
@@ -6861,6 +6974,7 @@ export type Database = {
           can_upload_documents?: boolean | null
           can_view_basic?: boolean
           can_view_breeding?: boolean | null
+          can_view_chat?: boolean | null
           can_view_deworming?: boolean | null
           can_view_diary?: boolean | null
           can_view_documents?: boolean | null
@@ -15871,6 +15985,10 @@ export type Database = {
       }
       has_active_horse_partner_access: {
         Args: { _horse_id: string; _user_id: string }
+        Returns: boolean
+      }
+      has_horse_chat_access: {
+        Args: { p_horse_id: string; p_user_id: string }
         Returns: boolean
       }
       has_horse_partner_access: {
