@@ -152,7 +152,16 @@ export function HorseTransferWizard({ horseId, horseName, onComplete, onCancel }
         buyer_id: buyer.id,
       });
 
-      // Notify buyer
+      // Notify ALL stakeholders about the transfer
+      await notifyHorseStakeholders({
+        horseId,
+        horseName,
+        event: "transfer_initiated",
+        triggeredBy: user.id,
+        extra: { buyerName: buyer.full_name || buyer.email || "" },
+      });
+
+      // Notify buyer specifically
       await supabase.from("notifications").insert({
         user_id: buyer.id,
         title: "🐴 Pferdeübernahme angefragt",
