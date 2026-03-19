@@ -65,6 +65,17 @@ export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props
           .limit(1)
           .maybeSingle();
         lastVisitDate = (data as any)?.created_at || null;
+      } else if (userRole === "employee") {
+        // Employees: use last appointment they were assigned to
+        const { data } = await supabase
+          .from("appointments")
+          .select("date")
+          .eq("horse_id", horseId)
+          .eq("assigned_to_user_id", currentUserId!)
+          .order("date", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        lastVisitDate = data?.date || null;
       }
 
       if (!lastVisitDate) return { items: [], lastVisitDate: null };
