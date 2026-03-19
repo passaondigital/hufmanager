@@ -304,9 +304,7 @@ export default function VetGOTRechner() {
                     <span>Gesamt (netto)</span>
                     <span className="font-mono">{total.toFixed(2)}€</span>
                   </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    inkl. 19% MwSt: {(total * 1.19).toFixed(2)}€
-                  </p>
+                  <VetMwstLine total={total} />
                 </div>
 
                 <p className="text-[10px] text-muted-foreground border-t pt-2">
