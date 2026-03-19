@@ -94,7 +94,15 @@ export function HorseStatusReport({ horseId, horseName, reportType, onComplete, 
         incident_date: incidentDate,
       });
 
-      // Notify admin
+      // Notify ALL stakeholders (providers, partners, employees, admins)
+      await notifyHorseStakeholders({
+        horseId,
+        horseName,
+        event: isStolen ? "stolen" : "deceased",
+        triggeredBy: user.id,
+      });
+
+      // Also notify admins explicitly (they may not be stakeholders)
       const { data: admins } = await supabase
         .from("user_roles")
         .select("user_id")
@@ -107,7 +115,7 @@ export function HorseStatusReport({ horseId, horseName, reportType, onComplete, 
             title: isStolen ? "🚨 Diebstahl gemeldet" : "🕊️ Pferd verstorben",
             message: `${horseName}: ${isStolen ? "Als gestohlen gemeldet" : "Als verstorben gemeldet"}`,
             type: isStolen ? "horse_status_stolen" : "horse_status_deceased",
-            link: isStolen ? "/mission-control" : null,
+            link: "/mission-control",
           } as any);
         }
       }
