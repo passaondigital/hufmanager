@@ -12,11 +12,11 @@ export default function ClientActionCenterContent({ settings }: WidgetContentPro
   const { data } = useQuery({
     queryKey: ["client-action-center", user?.id],
     queryFn: async () => {
-      const messagesRes = await supabase
+      const messagesRes = await (supabase
         .from("messages")
         .select("id", { count: "exact", head: true })
         .eq("receiver_id", user!.id)
-        .eq("read", false);
+        .eq("read", false) as any);
 
       const ordersRes = await supabase
         .from("service_orders")
