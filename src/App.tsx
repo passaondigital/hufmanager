@@ -720,6 +720,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client-notfall" element={<EmergencyDashboard />} />
               <Route path="/client/botschafter" element={<ClientBotschafter />} />
               <Route path="/client/search-providers" element={<SearchProviders />} />
+              <Route path="/client-connect" element={<HMConnect />} />
             </Route>
 
             {/* --- 4. EMPLOYEE (MITARBEITER) ROUTES --- */}

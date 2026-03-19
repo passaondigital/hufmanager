@@ -28,8 +28,8 @@ const providerNavItems: NavItem[] = [
 const clientNavItems: NavItem[] = [
   { icon: Home, label: "Home", path: "/client-home" },
   { icon: Calendar, label: "Buchen", path: "/client-booking" },
+  { icon: Link2, label: "Connect", path: "/client-connect" },
   { icon: MessageSquare, label: "Chat", path: "/client-chat" },
-  { icon: User, label: "Profil", path: "/client-profile" },
 ];
 
 const quickActions = [

@@ -189,7 +189,7 @@ export function UniversalSearch({ onConnectionRequested }: { onConnectionRequest
         <div className="space-y-2">
           <div className="flex gap-2">
             <Input
-              placeholder="Name, PLZ, E-Mail oder #ID eingeben..."
+              placeholder="Name, PLZ, E-Mail, Beruf oder #ID eingeben..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
