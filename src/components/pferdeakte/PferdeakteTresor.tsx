@@ -517,7 +517,6 @@ export function PferdeakteTresor({ horseId, horse }: PferdeakteTresorProps) {
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteDoc(doc)}>
                       <Trash2 className="h-3.5 w-3.5 text-destructive" />
                     </Button>
-                    </Button>
                   </div>
                 ) : (
                   <Button variant="ghost" size="sm" className="h-8 text-xs gap-1"
