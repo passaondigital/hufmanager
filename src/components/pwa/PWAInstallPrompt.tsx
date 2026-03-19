@@ -176,9 +176,51 @@ export function PWAInstallPrompt() {
     );
   }
 
-  // Don't show desktop prompt for Mac Safari (handled in header)
+  // Mac Safari: show desktop banner with install instructions
   if (isMacSafari) {
-    return null;
+    return (
+      <div className="fixed bottom-4 right-4 z-50 max-w-sm">
+        <div className="bg-card border border-border rounded-xl p-4 shadow-2xl">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Monitor className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-foreground text-sm">Als App installieren</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                HufManager als Desktop-App im Dock nutzen
+              </p>
+              <div className="flex items-center gap-2 mt-3">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={handleDismiss}
+                  className="h-8 text-xs"
+                >
+                  Später
+                </Button>
+                <Button 
+                  size="sm"
+                  onClick={handleInstallClick}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground h-8 text-xs"
+                >
+                  <Download className="h-3.5 w-3.5 mr-1.5" />
+                  Anleitung
+                </Button>
+              </div>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleDismiss}
+              className="h-6 w-6 -mt-1 -mr-1"
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // Desktop/Tablet Banner
