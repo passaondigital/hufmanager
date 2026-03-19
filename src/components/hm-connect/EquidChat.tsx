@@ -49,7 +49,7 @@ export function EquidChat() {
         .from("horses")
         .select("id, name, readable_id")
         .eq("owner_id", user.id);
-      if (owned) allHorses.push(...owned);
+      if (owned) allHorses.push(...owned.map(h => ({ ...h, avatar_url: undefined })));
 
       // Provider horses (via appointments)
       const { data: providerAppts } = await supabase
