@@ -299,7 +299,7 @@ export function ClientAppLayout() {
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <AppSidebar
-          appName="PferdebesitzerApp"
+          appName={`${MODE_ICONS[mode]} ${modeInfo.label}`}
           userDisplayName={displayName}
           navigationConfig={clientNavigationConfig}
         />
@@ -309,7 +309,7 @@ export function ClientAppLayout() {
       <MobileAppSidebar
         open={mobileMenuOpen}
         onOpenChange={setMobileMenuOpen}
-        appName="PferdebesitzerApp"
+        appName={`${MODE_ICONS[mode]} ${modeInfo.label}`}
         userDisplayName={displayName}
         navigationConfig={clientNavigationConfig}
       />
