@@ -194,6 +194,7 @@ const PartnerManagementOeffentlich = lazy(() => import("@/pages/partner/PartnerM
 const PartnerManagementKommunikation = lazy(() => import("@/pages/partner/PartnerManagementKommunikation"));
 const PartnerManagementAbo = lazy(() => import("@/pages/partner/PartnerManagementAbo"));
 const PartnerManagementRechtliches = lazy(() => import("@/pages/partner/PartnerManagementRechtliches"));
+const PartnerManagementSteuer = lazy(() => import("@/pages/partner/PartnerManagementSteuer"));
 const PartnerPferde = lazy(() => import("@/pages/partner/PartnerPferde"));
 const PartnerKunden = lazy(() => import("@/pages/partner/PartnerKunden"));
 const PartnerConnect = lazy(() => import("@/pages/partner/PartnerConnect"));
