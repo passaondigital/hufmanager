@@ -6,8 +6,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useClientMode, type ClientMode } from "@/hooks/useClientMode";
 import { toast } from "sonner";
-
-interface ClientModeSettingsProps {
+import { VerificationDocuments } from "./VerificationDocuments";
   /** If true, shows as onboarding-style card. If false, as settings section. */
   variant?: "onboarding" | "settings";
   onComplete?: () => void;
