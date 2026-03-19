@@ -724,6 +724,14 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client-account-type" element={<ClientAccountType />} />
               <Route path="/client-chat" element={<ClientChat />} />
               <Route path="/client-stall" element={<ClientStallBoard />} />
+              <Route path="/client-stall-management" element={<ClientStallManagement />} />
+              <Route path="/client-stall/overview" element={<ClientStallOverview />} />
+              <Route path="/client-stall/boarders" element={<ClientStallBoarders />} />
+              <Route path="/client-stall/experts" element={<ClientStallExperts />} />
+              <Route path="/client-stall/staff" element={<ClientStallStaff />} />
+              <Route path="/client-stall/reports" element={<ClientStallReports />} />
+              <Route path="/client-business" element={<ClientBusinessHub />} />
+              <Route path="/client-business/overview" element={<ClientBusinessOverview />} />
               <Route path="/client-horses" element={<ClientHorses />} />
               <Route path="/client-locations" element={<ClientLocations />} />
               <Route path="/client-notifications" element={<ClientNotifications />} />
