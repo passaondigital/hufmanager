@@ -398,7 +398,7 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
             id="clientName"
             value={clientName}
             onChange={(e) => setClientName(e.target.value)}
-            placeholder="z.B. Maria Müller"
+            placeholder="z.B. Vorname Nachname"
             className="h-12 text-lg"
             autoFocus
           />

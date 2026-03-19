@@ -358,7 +358,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
               <div className="space-y-1.5">
                 <Label htmlFor="s-biz">Betriebsname (optional)</Label>
                 <Input
-                  id="s-biz" type="text" placeholder="z.B. Hufservice Müller" autoFocus
+                  id="s-biz" type="text" placeholder="z.B. Hufservice Mein-Name" autoFocus
                   value={businessName} onChange={(e) => setBusinessName(e.target.value)}
                   className="h-[52px] text-base"
                   onKeyDown={(e) => e.key === "Enter" && handleNext()}

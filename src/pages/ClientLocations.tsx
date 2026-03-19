@@ -253,7 +253,7 @@ export default function ClientLocations() {
           <div className="space-y-4">
             <div>
               <Label>Name *</Label>
-              <Input placeholder="z.B. Stall Müller" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+              <Input placeholder="z.B. Mein Reitstall" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
             </div>
             <div>
               <Label>Straße</Label>
