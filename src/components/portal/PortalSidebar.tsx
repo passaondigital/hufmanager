@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import {
   BarChart3, Package, ShoppingCart, Users, Settings,
   FileText, AlertTriangle, GraduationCap, BookOpen, Award,
-  LayoutDashboard, ClipboardList
+  LayoutDashboard, ClipboardList, CalendarDays, Wrench,
 } from "lucide-react";
 import type { Organization } from "@/hooks/useOrganization";
 
