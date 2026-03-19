@@ -63,7 +63,7 @@ const REPORTS = [
   },
 ];
 
-export function PferdeakteBerichte({ horseId }: Props) {
+export function PferdeakteBerichte({ horseId, userRole }: Props) {
   const [loading, setLoading] = useState<string | null>(null);
 
   const handleExport = async (report: typeof REPORTS[0]) => {
