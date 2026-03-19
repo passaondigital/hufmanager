@@ -304,7 +304,7 @@ export default function VetGOTRechner() {
                     <span>Gesamt (netto)</span>
                     <span className="font-mono">{total.toFixed(2)}€</span>
                   </div>
-                  <VetMwstLine total={total} />
+                  <VetMwstDisplay total={total} />
                 </div>
 
                 <p className="text-[10px] text-muted-foreground border-t pt-2">
