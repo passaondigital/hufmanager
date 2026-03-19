@@ -73,7 +73,7 @@ const clientNavigationConfig: NavigationConfig = {
         { id: "permissions", label: "Berechtigungen", iconName: "Shield", path: "/client-permissions" },
         { id: "locations", label: "Standorte", iconName: "MapPin", path: "/client-locations" },
         { id: "notfall", label: "Notfall", iconName: "AlertTriangle", path: "/client-notfall" },
-        { id: "search-providers", label: "Hufschmied finden", iconName: "Search", path: "/client/search-providers" },
+        { id: "search-providers", label: "Experten-Verzeichnis", iconName: "Search", path: "/client/search-providers" },
       ],
     },
     {
