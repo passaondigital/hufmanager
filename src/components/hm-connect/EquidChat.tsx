@@ -47,7 +47,7 @@ export function EquidChat() {
       // Owned horses
       const { data: owned } = await supabase
         .from("horses")
-        .select("id, name, readable_id, avatar_url")
+        .select("id, name, readable_id")
         .eq("owner_id", user.id);
       if (owned) allHorses.push(...owned);
 
