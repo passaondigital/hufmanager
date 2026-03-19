@@ -106,6 +106,9 @@ export function PferdeakteTherapie({ horseId, horseName, userRole, ownerId }: Pr
   return (
     <div className="space-y-4">
       <DemoFeatureHighlight label="Cross-Provider Befunde & Empfehlungen" delay={500} />
+      <div className="flex items-center gap-1 mb-1">
+        <InfoTooltip {...PFERDEAKTE_HELP.tabs.therapie} />
+      </div>
       {/* Filter Chips + Action Button */}
       <div className="flex items-center gap-2">
         <div className="flex overflow-x-auto gap-1.5 scrollbar-hide flex-1">

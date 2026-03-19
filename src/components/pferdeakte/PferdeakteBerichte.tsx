@@ -86,9 +86,22 @@ export function PferdeakteBerichte({ horseId, userRole }: Props) {
     }
   };
 
+  // Partners and employees can only see limited reports
+  const visibleReports = (userRole === "partner" || userRole === "employee")
+    ? REPORTS.filter(r => r.id !== "full" && r.id !== "aku")
+    : REPORTS;
+
   return (
     <div className="space-y-3">
-      {REPORTS.map((report) => {
+      <div className="flex items-center gap-2 mb-1">
+        <InfoTooltip {...PFERDEAKTE_HELP.tabs.berichte} />
+        <span className="text-xs text-muted-foreground">
+          {userRole === "partner" || userRole === "employee"
+            ? "Eingeschränkte Berichtsauswahl — Vollberichte nur für Besitzer und Hufbearbeiter."
+            : "Wähle einen Bericht zum Exportieren."}
+        </span>
+      </div>
+      {visibleReports.map((report) => {
         const Icon = report.icon;
         return (
           <Card key={report.id} className="hover:shadow-sm transition-shadow">

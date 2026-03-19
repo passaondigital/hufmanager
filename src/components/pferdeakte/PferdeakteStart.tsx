@@ -314,6 +314,7 @@ export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props
         <div className="px-4 py-3 flex items-center gap-2 border-b border-border bg-muted/30">
           <Zap className="h-4 w-4 text-primary" />
           <span className="text-sm font-semibold text-foreground">Seit deinem letzten Besuch</span>
+          <InfoTooltip {...PFERDEAKTE_HELP.tabs.start} />
           {newsItems.length > 0 && (
             <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5">{newsItems.length}</Badge>
           )}

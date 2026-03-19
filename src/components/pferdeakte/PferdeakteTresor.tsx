@@ -29,9 +29,14 @@ import { DocumentViewer } from "./DocumentViewer";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { PFERDEAKTE_HELP } from "./pferdeakteHelpTexts";
 
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { PFERDEAKTE_HELP } from "./pferdeakteHelpTexts";
+import type { PferdeakteUserRole } from "./types";
+
 interface PferdeakteTresorProps {
   horseId: string;
   horse?: any;
+  userRole: PferdeakteUserRole;
 }
 
 const VAULT_CATEGORIES = [
