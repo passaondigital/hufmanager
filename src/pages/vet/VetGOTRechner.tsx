@@ -305,7 +305,15 @@ export default function VetGOTRechner() {
                     <span>Gesamt (netto)</span>
                     <span className="font-mono">{total.toFixed(2)}€</span>
                   </div>
-                  <VetMwstDisplay total={total} />
+                  {taxConfig.mwstPflichtig && !taxConfig.kleinunternehmer ? (
+                    <p className="text-[10px] text-muted-foreground">
+                      inkl. {taxConfig.vatRate}% {VAT_RATES[taxConfig.country]?.label || "MwSt"}: {(total * (1 + taxConfig.vatRate / 100)).toFixed(2)}€
+                    </p>
+                  ) : taxConfig.kleinunternehmer ? (
+                    <p className="text-[10px] text-muted-foreground">
+                      Kleinunternehmer – keine MwSt
+                    </p>
+                  ) : null}
                 </div>
 
                 <p className="text-[10px] text-muted-foreground border-t pt-2">
