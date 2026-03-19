@@ -63,6 +63,7 @@ export function Pferdeakte({ horseId, userRole, horse: horseProp, initialTab }: 
       return data;
     },
     enabled: !!horseId && !horseProp,
+    staleTime: PFERDEAKTE_STALE_TIME,
   });
 
   const horse = (horseProp || horseData) as any;
