@@ -42,10 +42,15 @@ export default function RevenueWeekContent(_props: WidgetContentProps) {
   const total = data?.total || 0;
   const maxVal = Math.max(...days.map((d) => d.value), 1);
 
+  const suffix = taxConfig.mwstPflichtig && !taxConfig.kleinunternehmer
+    ? ` ${taxConfig.priceDisplayMode === "netto" ? "netto" : "brutto"}`
+    : "";
+  const currency = taxConfig.country === "CH" ? "CHF" : "€";
+
   return (
     <div className="space-y-3">
       <div className="flex items-baseline justify-between">
-        <span className="text-lg font-bold text-foreground">{total.toFixed(2)} €</span>
+        <span className="text-lg font-bold text-foreground">{total.toFixed(2)} {currency}{suffix && <span className="text-[10px] font-normal text-muted-foreground ml-1">{suffix}</span>}</span>
         <span className="text-[10px] text-muted-foreground">Diese Woche</span>
       </div>
       <div className="flex items-end gap-1 h-16">
