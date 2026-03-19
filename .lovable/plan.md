@@ -1,68 +1,86 @@
 
-# Fokus-Effekt fuer HM-CAM: Vignette und Hintergrund-Blur
 
-## Was wird gebaut?
-Ein optionaler "Fokus-Modus" fuer die HM-CAM, der nach dem Fotografieren einen professionellen Vignette-Effekt auf das Bild anwendet. Die Bildraender werden abgedunkelt und leicht unscharf, wodurch das zentrale Motiv (der Huf) visuell hervorgehoben wird.
+## Analyse: Client-App vs. andere Instanzen
 
-## Warum kein echter Portrait-Modus?
-Echte Hintergrund-Segmentierung (wie beim iPhone) erfordert Machine-Learning-Modelle, die auf bestimmte Motive trainiert sind. Fuer Pferdehufe existiert kein solches Modell, und ein generisches wuerde unzuverlaessige Ergebnisse liefern -- das widerspricht der "Stability First"-Philosophie der HM-CAM.
+### Ist-Zustand
 
-## Loesung: Canvas-basierter Radial-Fokus-Effekt
+| Feature | Provider | Employee | Partner | **Client** |
+|---|---|---|---|---|
+| Desktop-Sidebar | `AppSidebar` | `AppSidebar` | `AppSidebar` | **Keine** |
+| Mobile-Sidebar (Sheet) | ✅ | ✅ | ✅ | **Keine** |
+| Desktop-Header mit Suche/Theme | `AppHeader` | `AppHeader` | `AppHeader` | **Kein Header** |
+| Bottom-Nav (mobil) | ✅ | ✅ mit Plus-FAB | ✅ | ✅ (`ClientBottomNav`) |
+| Logout-Button sichtbar | Sidebar + Management | Sidebar + Profil | Sidebar | **Nur tief in `/client-profile` versteckt** |
+| 5A-Navigation (gruppiert) | ✅ | ✅ | ✅ | **Flat, 5 Tabs** |
 
-### Effekt-Beschreibung
-- Kreisfoermiger Fokusbereich in der Bildmitte (ca. 60% des Bildes) bleibt unberuehrt
-- Uebergangszone: sanfter Gradient von klar zu Effekt
-- Randbereich: leichte Abdunklung (Vignette) + optionaler Weichzeichner (Gaussian Blur)
-- Ergebnis: Professioneller Look, Blick wird auf den Huf gelenkt
+**Kernprobleme:**
+1. Client hat **kein Layout-System** — `ClientLayout` ist nur ein `<div>` + `<Outlet>`
+2. **Kein Logout** in der Navigation — nur am Ende der Profilseite als destructive Button
+3. **Keine Sidebar** auf Desktop — Client sieht eine mobile-only App auch auf 1920px
+4. Navigation ist **flat** statt gruppiert wie bei den anderen 3 Instanzen
 
-### Technische Umsetzung
+### Plan: Client-App auf Instanz-Level bringen
 
-**1. Neuer Hook: `usePhotoFocusEffect.ts`**
-- Nimmt ein Canvas/Image und wendet den Effekt an
-- Nutzt `CanvasRenderingContext2D` mit `radialGradient` fuer die Vignette
-- Optionaler StackBlur-Algorithmus (rein clientseitig, keine externe Lib) fuer den Weichzeichner am Rand
-- Konfigurierbare Intensitaet (leicht/mittel/stark)
-
-**2. Aenderung in `HMCamCapture.tsx`**
-- Neuer State: `focusEffectEnabled` (Toggle-Button im Vorschau-Modus)
-- Nach dem Capture und VOR dem Bestaetigen: Effekt wird auf das Canvas angewendet
-- Der Nutzer sieht die Vorschau mit Effekt und kann ihn ein-/ausschalten
-- Beim Speichern wird das Bild MIT Effekt hochgeladen (wenn aktiviert)
-
-**3. UI-Erweiterung: Fokus-Toggle**
-- Kleiner Button in der Vorschau-Ansicht (nach Foto-Aufnahme)
-- Icon: Kreissymbol (Target/Focus)
-- Drei Stufen: Aus / Leicht / Stark
-- Default: "Leicht" (dezenter Profi-Look)
-
-### Ablauf
+#### Schritt 1 — Client NavigationConfig definieren
+Neue Datei mit der 5A-Struktur, angepasst auf Client-Funktionen:
 
 ```text
-Foto aufnehmen
-      |
-      v
-Vorschau anzeigen
-      |
-      v
-[Fokus: Aus] [Fokus: Leicht] [Fokus: Stark]
-      |
-      v
-Nutzer waehlt Stufe (Live-Vorschau)
-      |
-      v
-"Speichern" -> Effekt wird eingebrannt -> Upload
+directItems:
+  - Dashboard → /client-home
+
+groups:
+  "Meine Pferde"
+    - Pferde → /client-horses
+    - Pferdeakte (dynamisch pro Pferd)
+    - Stallboard → /client-stall
+
+  "Termine & Aufträge"
+    - Buchen → /client-booking
+    - Aufträge → /client-orders
+    - Rechnungen → /client-invoices
+
+  "Kommunikation"
+    - Chat → /client-chat
+    - Benachrichtigungen → /client-notifications
+    - HM Connect → /client-connect
+
+  "Verwaltung"
+    - Berechtigungen → /client-permissions
+    - Standorte → /client-locations
+    - Notfall → /client-notfall
+
+  "Konto"
+    - Profil → /client-profile
+    - Botschafter → /client/botschafter
+    - Hilfe & Support (HelpCenter)
 ```
 
-### Dateien
+#### Schritt 2 — ClientAppLayout erstellen
+Neuer Layout-Wrapper analog zu `EmployeeAppLayout`:
+- **Desktop (lg+):** `AppSidebar` links (w-64) + `AppHeader` oben + Content
+- **Mobil:** Hamburger-Header + Bottom-Nav + Sheet-Sidebar
+- **Logout** im Sidebar-Footer (über `AppSidebar`, das `useLogout` bereits integriert hat)
+- Theme-Toggle, Suche, Notification-Bell im Header
 
-| Datei | Aenderung |
-|-------|-----------|
-| `src/hooks/usePhotoFocusEffect.ts` | Neu: Canvas-basierter Vignette/Blur-Effekt |
-| `src/components/hufcam/FocusEffectControls.tsx` | Neu: Toggle-UI (Aus/Leicht/Stark) |
-| `src/components/hufcam/HMCamCapture.tsx` | Erweitert: Effekt in Vorschau und Speicher-Logik integrieren |
+#### Schritt 3 — ClientBottomNav erweitern
+- 5 Tabs behalten, aber Logout-Indikator nicht nötig (ist jetzt im Sidebar/Header)
+- Optional: Plus-FAB in der Mitte wie Employee (Quick Actions: Termin buchen, Pferd hinzufügen, Chat)
 
-### Wichtig
-- Kein externes ML-Modell, keine zusaetzliche Bibliothek
-- Rein Canvas-basiert = funktioniert offline, schnell, zuverlaessig
-- Effekt wird nur auf das gespeicherte Bild angewendet, nicht auf den Live-Stream (Stabilitaet)
-- Respektiert die "Stability First"-Philosophie: Der Effekt ist optional und greift nie in den Aufnahmeprozess ein
+#### Schritt 4 — ClientLayout in App.tsx austauschen
+- `ClientLayout()` (Zeile 826-846) durch `<ClientAppLayout />` ersetzen
+- Alle `/client-*` Routen bleiben gleich, nur das Layout-Wrapper ändert sich
+
+#### Schritt 5 — ClientProfile bereinigen
+- Logout-Card am Ende entfernen (ist jetzt im Sidebar)
+- Header mit ArrowLeft entfernen (Sidebar-Navigation übernimmt)
+
+### Technische Details
+
+- Wiederverwendung von `AppSidebar` + `MobileAppSidebar` + `AppHeader` — gleiche Shared-Components wie Employee/Partner
+- `useLogout` Hook ist bereits vorhanden und wird vom `AppSidebar` Footer-Button aufgerufen
+- DemoBanner, AIChatWidget, HelpCenterFAB werden in das neue Layout integriert
+- Responsive Breakpoint: `lg:` (1024px) für Sidebar-Sichtbarkeit, konsistent mit allen anderen Instanzen
+
+### Ergebnis
+Der Client bekommt exakt dieselbe Layout-Architektur wie Provider/Employee/Partner: Desktop-Sidebar mit gruppierten Menüs, mobiler Hamburger + Bottom-Nav, und einen **jederzeit sichtbaren Logout-Button**.
+
