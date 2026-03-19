@@ -12,28 +12,22 @@ export default function ClientActionCenterContent({ settings }: WidgetContentPro
   const { data } = useQuery({
     queryKey: ["client-action-center", user?.id],
     queryFn: async () => {
-      const [messagesRes, ordersRes, horsesRes] = await Promise.all([
-        // Unread messages
-        supabase
-          .from("messages")
-          .select("id", { count: "exact", head: true })
-          .eq("receiver_id", user!.id)
-          .eq("read", false),
-        // Open orders
-        supabase
-          .from("service_orders")
-          .select("id", { count: "exact", head: true })
-          .eq("client_id", user!.id)
-          .in("status", ["pending", "open"]),
-        // Horses with issues
-        supabase
-          .from("horses")
-          .select("id", { count: "exact", head: true })
-          .eq("owner_id", user!.id)
-          .is("deleted_at", null)
-          .neq("health_status", "healthy")
-          .not("health_status", "is", null),
-      ]);
+      const messagesRes = await supabase
+        .from("messages")
+        .select("id", { count: "exact", head: true })
+        .eq("receiver_id", user!.id)
+        .eq("read", false);
+
+      const ordersRes = await supabase
+        .from("service_orders")
+        .select("id", { count: "exact", head: true })
+        .eq("client_id", user!.id) as any;
+
+      const horsesRes = await supabase
+        .from("horses")
+        .select("id", { count: "exact", head: true })
+        .eq("owner_id", user!.id)
+        .is("deleted_at", null) as any;
 
       return {
         unreadMessages: messagesRes.count || 0,
