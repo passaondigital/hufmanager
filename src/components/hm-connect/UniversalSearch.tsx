@@ -181,7 +181,7 @@ export function UniversalSearch({ onConnectionRequested }: { onConnectionRequest
           Universelle Suche
         </CardTitle>
         <CardDescription>
-          Suche nach Name, PLZ, E-Mail, Beruf oder #ID (#PID, #KID, #PRID, #EQID)
+          Suche nach Name, PLZ, E-Mail, Beruf/Fachgebiet oder #ID (#PID, #KID, #PRID, #EQID)
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
