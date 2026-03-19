@@ -49,10 +49,10 @@ export function PWAInstallPrompt() {
     return null;
   }
 
-  // iOS Instructions Modal
-  if (showIOSInstructions && isIOS) {
+  // iOS / Mac Safari Instructions Modal
+  if (showIOSInstructions && (isIOS || isMacSafari)) {
     return (
-      <div className="fixed inset-0 z-50 flex items-end justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
         <div className="w-full max-w-md bg-card border border-border rounded-2xl p-6 shadow-2xl animate-in slide-in-from-bottom-4">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -61,7 +61,9 @@ export function PWAInstallPrompt() {
               </div>
               <div>
                 <h3 className="font-semibold text-foreground">App installieren</h3>
-                <p className="text-sm text-muted-foreground">Folge diesen Schritten</p>
+                <p className="text-sm text-muted-foreground">
+                  {isMacSafari ? "Folge diesen Schritten in Safari" : "Folge diesen Schritten"}
+                </p>
               </div>
             </div>
             <Button variant="ghost" size="icon" onClick={handleDismiss} className="h-8 w-8">
@@ -70,38 +72,64 @@ export function PWAInstallPrompt() {
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                1
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-foreground">
-                  Tippe auf <Share className="inline h-4 w-4 mx-1" /> <strong>Teilen</strong>
+            {isMacSafari && !isIOS ? (
+              <>
+                <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">1</div>
+                  <div className="flex-1">
+                    <p className="text-sm text-foreground">
+                      Klicke in der Menüleiste auf <strong>Ablage</strong> → <strong>Zum Dock hinzufügen</strong>
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">2</div>
+                  <div className="flex-1">
+                    <p className="text-sm text-foreground">
+                      Oder: <Share className="inline h-4 w-4 mx-1" /> <strong>Teilen</strong> → <Plus className="inline h-4 w-4 mx-1" /> <strong>Zum Dock hinzufügen</strong>
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">3</div>
+                  <div className="flex-1">
+                    <p className="text-sm text-foreground">
+                      Klicke auf <strong>Hinzufügen</strong> – fertig!
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground bg-muted/30 p-2 rounded">
+                  💡 Tipp: Funktioniert ab macOS Sonoma (14) und Safari 17. Falls du die Option nicht siehst, aktualisiere macOS.
                 </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                2
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-foreground">
-                  Wähle <Plus className="inline h-4 w-4 mx-1" /> <strong>Zum Home-Bildschirm</strong>
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                3
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-foreground">
-                  Tippe auf <strong>Hinzufügen</strong>
-                </p>
-              </div>
-            </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">1</div>
+                  <div className="flex-1">
+                    <p className="text-sm text-foreground">
+                      Tippe auf <Share className="inline h-4 w-4 mx-1" /> <strong>Teilen</strong>
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">2</div>
+                  <div className="flex-1">
+                    <p className="text-sm text-foreground">
+                      Wähle <Plus className="inline h-4 w-4 mx-1" /> <strong>Zum Home-Bildschirm</strong>
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">3</div>
+                  <div className="flex-1">
+                    <p className="text-sm text-foreground">
+                      Tippe auf <strong>Hinzufügen</strong>
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           <Button 
