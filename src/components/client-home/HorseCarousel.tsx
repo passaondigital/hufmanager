@@ -25,7 +25,7 @@ export function HorseCarousel({ horses, onAddHorse }: HorseCarouselProps) {
       </div>
 
       {/* Mobile: horizontal scroll / Desktop: grid */}
-      <div className="hm-h-scroll md:hidden" role="list">
+      <div className="flex gap-2.5 overflow-x-auto snap-x snap-mandatory pb-1 md:!hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" role="list">
         {horses.map((horse) => (
           <HorseCard key={horse.id} horse={horse} onClick={() => navigate(`/client-horse/${horse.id}`)} />
         ))}
