@@ -12,7 +12,7 @@ import {
 import {
   Shield, ChevronDown, Eye, Stethoscope, Footprints,
   FileText, Syringe, Scale, HeartPulse, BookOpen,
-  CalendarDays, Upload, Users, Bug, Dna, Loader2,
+  CalendarDays, Upload, Users, Bug, Dna, Loader2, MessageCircle,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
