@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
+import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
 
 import "@/styles/hm-theme.css";
 import "./horse-page.css";
@@ -16,16 +17,11 @@ import { MediaDocuments } from "./MediaDocuments";
 import { StammdatenAccordion } from "./StammdatenAccordion";
 import { BottomNav } from "./BottomNav";
 import { HorsePageTabNav } from "./HorsePageTabNav";
-
-// Pferdeakte sub-components
-import { PferdeakteTimeline } from "@/components/pferdeakte/PferdeakteTimeline";
-import { PferdeakteHuf } from "@/components/pferdeakte/PferdeakteHuf";
-import { PferdeakteVet } from "@/components/pferdeakte/PferdeakteVet";
-import { PferdeakteTherapie } from "@/components/pferdeakte/PferdeakteTherapie";
-import { PferdeakteBerichte } from "@/components/pferdeakte/PferdeakteBerichte";
-import { PferdeakteTresor } from "@/components/pferdeakte/PferdeakteTresor";
+import { TabContentRenderer } from "./TabContentRenderer";
 
 export type HorsePageTab = "start" | "verlauf" | "huf" | "vet" | "therapie" | "berichte" | "tresor";
+
+const TAB_ORDER: HorsePageTab[] = ["start", "verlauf", "huf", "vet", "therapie", "berichte", "tresor"];
 
 export default function ClientHorsePage() {
   const { id } = useParams<{ id: string }>();
@@ -38,6 +34,21 @@ export default function ClientHorsePage() {
   const [documents, setDocuments] = useState<HorseDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<HorsePageTab>("start");
+
+  const currentIndex = TAB_ORDER.indexOf(activeTab);
+
+  const goNext = useCallback(() => {
+    if (currentIndex < TAB_ORDER.length - 1) setActiveTab(TAB_ORDER[currentIndex + 1]);
+  }, [currentIndex]);
+
+  const goPrev = useCallback(() => {
+    if (currentIndex > 0) setActiveTab(TAB_ORDER[currentIndex - 1]);
+  }, [currentIndex]);
+
+  const swipeHandlers = useSwipeNavigation({
+    onSwipeLeft: goNext,
+    onSwipeRight: goPrev,
+  });
 
   useEffect(() => {
     if (!user || !id) return;
@@ -86,6 +97,10 @@ export default function ClientHorsePage() {
     setActiveTab(tab as HorsePageTab);
   }, []);
 
+  const handleHorseUpdate = useCallback((updatedHorse: Horse) => {
+    setHorse(updatedHorse);
+  }, []);
+
   if (authLoading || loading) {
     return (
       <div className="horse-page">
@@ -130,7 +145,7 @@ export default function ClientHorsePage() {
   return (
     <div className="horse-page pb-24">
       <div className="max-w-[480px] mx-auto space-y-5">
-        {/* Hero — always visible */}
+        {/* Hero */}
         <div className="hp-fade-up" style={{ animationDelay: "0s" }}>
           <HorseHero
             horse={horse}
@@ -150,48 +165,16 @@ export default function ClientHorsePage() {
           <HorsePageTabNav activeTab={activeTab} onTabChange={handleTabChange} />
         </div>
 
-        {/* Tab Content */}
-        <div className="hp-fade-up" style={{ animationDelay: "0.12s" }}>
-          {activeTab === "start" && (
-            <div className="space-y-5">
-              <HealthMonitor horseId={horse.id} />
-              <HoofGrid
-                hoofDetails={horse.hoof_details as HoofDetails}
-                lastAppointmentDate={horse.last_appointment_date || latestAppointment?.date}
-              />
-              <MediaDocuments hoofPhotos={hoofPhotos} documents={documents} />
-              <StammdatenAccordion horse={horse} />
-            </div>
-          )}
-
-          {activeTab === "verlauf" && (
-            <PferdeakteTimeline horseId={horse.id} userRole="client" />
-          )}
-
-          {activeTab === "huf" && (
-            <PferdeakteHuf horseId={horse.id} userRole="client" />
-          )}
-
-          {activeTab === "vet" && (
-            <PferdeakteVet horseId={horse.id} userRole="client" />
-          )}
-
-          {activeTab === "therapie" && (
-            <PferdeakteTherapie
-              horseId={horse.id}
-              horseName={horse.name}
-              userRole="client"
-              ownerId={horse.owner_id}
-            />
-          )}
-
-          {activeTab === "berichte" && (
-            <PferdeakteBerichte horseId={horse.id} />
-          )}
-
-          {activeTab === "tresor" && (
-            <PferdeakteTresor horseId={horse.id} horse={horse as any} />
-          )}
+        {/* Tab Content with swipe */}
+        <div className="hp-fade-up" style={{ animationDelay: "0.12s" }} {...swipeHandlers}>
+          <TabContentRenderer
+            activeTab={activeTab}
+            horse={horse}
+            hoofPhotos={hoofPhotos}
+            documents={documents}
+            latestAppointment={latestAppointment}
+            onHorseUpdate={handleHorseUpdate}
+          />
         </div>
       </div>
 
