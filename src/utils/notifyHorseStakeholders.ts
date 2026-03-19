@@ -103,21 +103,20 @@ async function collectStakeholders(horseId: string, excludeUserId: string): Prom
     .from("employee_horse_access")
     .select("employee_id")
     .eq("horse_id", horseId)
-    .eq("is_active", true);
+    .eq("can_view", true);
 
   employees?.forEach((e) => {
     if (e.employee_id) userIds.add(e.employee_id);
   });
 
-  // 4. Care team members
+  // 4. Care team owner (horse_care_team tracks team_sharing, owner_id is the horse owner)
   const { data: careTeam } = await supabase
     .from("horse_care_team")
-    .select("user_id")
-    .eq("horse_id", horseId)
-    .eq("is_active", true);
+    .select("owner_id")
+    .eq("horse_id", horseId);
 
   careTeam?.forEach((c) => {
-    if (c.user_id) userIds.add(c.user_id);
+    if (c.owner_id) userIds.add(c.owner_id);
   });
 
   // 5. Add horse owner if not the trigger
