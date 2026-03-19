@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Horse } from "@/components/horse-detail/types";
 import { HOOF_PROTECTION_OPTIONS } from "@/components/horse-detail/types";
@@ -50,7 +50,7 @@ export function HorseHero({ horse, appointmentsCount, hoofPhotosCount, documents
         <span className="text-xs">Zurück</span>
       </button>
 
-      {/* Avatar + Name */}
+      {/* Avatar + Name + Pferdeakte Badge */}
       <div className="flex items-center gap-4">
         <div
           className="hp-avatar-pulse w-[72px] h-[72px] rounded-full border-2 border-[var(--hp-amber)] flex-shrink-0 overflow-hidden"
@@ -69,6 +69,25 @@ export function HorseHero({ horse, appointmentsCount, hoofPhotosCount, documents
           <p className="text-[13px] text-[var(--hp-text3)] mt-0.5">
             {[horse.breed, age ? `${age} J.` : null, genderLabel].filter(Boolean).join(" · ")}
           </p>
+          {horse.readable_id && (
+            <span className="text-[10px] font-mono text-[var(--hp-text3)] mt-0.5 block">
+              #{horse.readable_id}
+            </span>
+          )}
+        </div>
+
+        {/* Pferdeakte Badge */}
+        <div className="flex-shrink-0 flex flex-col items-center gap-1">
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center"
+            style={{
+              background: "linear-gradient(135deg, rgba(245,151,10,0.15), rgba(245,151,10,0.05))",
+              border: "1px solid rgba(245,151,10,0.25)",
+            }}
+          >
+            <BookOpen className="h-5 w-5 text-[var(--hp-amber)]" />
+          </div>
+          <span className="text-[9px] font-semibold text-[var(--hp-amber)] tracking-wide uppercase">Akte</span>
         </div>
       </div>
 
