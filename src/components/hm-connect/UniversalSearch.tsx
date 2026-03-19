@@ -145,7 +145,7 @@ export function UniversalSearch({ onConnectionRequested }: { onConnectionRequest
           revoked_at: null,
         }).eq("id", existing.id);
       } else {
-        const { error } = await supabase.from("access_grants").insert(grantData);
+        const { error } = await supabase.from("access_grants").insert(grantData as any);
         if (error) throw error;
       }
 
