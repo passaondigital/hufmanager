@@ -32,6 +32,7 @@ import {
   UserPlus,
   QrCode,
   Eye,
+  MessageCircle,
 } from "lucide-react";
 
 // Connection overview component
