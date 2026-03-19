@@ -32,6 +32,9 @@ const TAB_VALUES = PFERDEAKTE_TABS.map((t) => t.value);
 export function Pferdeakte({ horseId, userRole, horse: horseProp, initialTab }: PferdeakteProps) {
   const [activeTab, setActiveTab] = useState<string>(initialTab || "start");
 
+  // Live-sync: subscribe to realtime changes for this horse
+  usePferdeakteLiveSync(horseId);
+
   const currentIndex = TAB_VALUES.indexOf(activeTab as PferdeakteTabValue);
 
   const goNext = useCallback(() => {
