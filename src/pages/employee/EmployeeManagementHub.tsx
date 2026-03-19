@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEmployeeProfile } from "@/hooks/useEmployees";
-import { User, Settings, Mic } from "lucide-react";
+import { User, Settings, Briefcase, Mic } from "lucide-react";
 import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
 
 const TAB_REDIRECTS: Record<string, string> = {
@@ -35,11 +35,15 @@ export default function EmployeeManagementHub() {
           status={profileComplete ? "✅ Vollständig" : "⚠️ Profil vervollständigen"}
           onClick={() => navigate("/employee/management/profil")}
         />
+      </TileCategory>
+
+      <TileCategory title="Arbeitsplatz-Einstellungen">
         <Tile
-          icon={<Settings className="w-10 h-10 text-primary" />}
-          title="Einstellungen"
-          description="Benachrichtigungen, Passwort, Sprache, Datenschutz"
+          icon={<Briefcase className="w-10 h-10 text-primary" />}
+          title="Meine Einstellungen"
+          description="Benachrichtigungen, Passwort, Sprache, Datenschutz, Vertrag, Abwesenheiten"
           onClick={() => navigate("/employee/management/einstellungen")}
+          colSpan
         />
       </TileCategory>
 

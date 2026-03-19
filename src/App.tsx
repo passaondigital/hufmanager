@@ -151,6 +151,8 @@ const AutoFlow = lazy(() => import("@/pages/AutoFlow"));
 const Marketplace = lazy(() => import("@/pages/Marketplace"));
 const PortalDashboard = lazy(() => import("@/pages/portal/PortalDashboard"));
 const PortalSettings = lazy(() => import("@/pages/portal/PortalSettings"));
+const PortalCalendar = lazy(() => import("@/pages/portal/PortalCalendar"));
+const PortalManagementHub = lazy(() => import("@/pages/portal/PortalManagementHub"));
 const PortalGallery = lazy(() => import("@/pages/portal/PortalGallery"));
 const PortalApplication = lazy(() => import("@/pages/portal/PortalApplication"));
 const PortalDemo = lazy(() => import("@/pages/portal/PortalDemo"));
@@ -276,6 +278,8 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
         <Suspense fallback={<LazyFallback />}>
           <Routes>
             <Route path="/portal/:slug" element={<PortalDashboard />} />
+            <Route path="/portal/:slug/kalender" element={<PortalCalendar />} />
+            <Route path="/portal/:slug/management" element={<PortalManagementHub />} />
             <Route path="/portal/:slug/settings" element={<PortalSettings />} />
             <Route path="*" element={<PortalLogin mode={portalMode.mode} />} />
           </Routes>
@@ -531,6 +535,8 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/portal/ausbildung" element={<EducationPortalDemo />} />
             <Route path="/portal/verband" element={<AssociationPortalDemo />} />
             <Route path="/portal/:slug" element={<PortalDashboard />} />
+            <Route path="/portal/:slug/kalender" element={<PortalCalendar />} />
+            <Route path="/portal/:slug/management" element={<PortalManagementHub />} />
             <Route path="/portal/:slug/settings" element={<PortalSettings />} />
             
             {/* Pferdeakte is handled by PferdeakteRouteGuard above AppContent */}
