@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -9,20 +10,49 @@ interface ProtectedRouteProps {
   allowedRoles?: ("provider" | "client" | "admin" | "employee" | "partner")[];
 }
 
+function RouteLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+}
+
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   const { user, role, loading } = useAuth();
   const { status, loading: subLoading } = useSubscription();
   const location = useLocation();
+  const lastKnownUserRef = useRef(user);
+  const [authGraceExpired, setAuthGraceExpired] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      lastKnownUserRef.current = user;
+      setAuthGraceExpired(false);
+      return;
+    }
+
+    if (loading) return;
+
+    if (!lastKnownUserRef.current) {
+      setAuthGraceExpired(true);
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      lastKnownUserRef.current = null;
+      setAuthGraceExpired(true);
+    }, 2000);
+
+    return () => window.clearTimeout(timeout);
+  }, [user, loading]);
 
   // Check if this is a botschafter route — only needs auth, not a specific role
   const isBotschafterRoute = location.pathname.startsWith("/botschafter");
+  const isRecoveringRecentSession = !user && !!lastKnownUserRef.current && !authGraceExpired;
 
-  if (loading || subLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+  if (loading || subLoading || isRecoveringRecentSession) {
+    return <RouteLoader />;
   }
 
   // Not authenticated
@@ -42,11 +72,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
 
   // Role not yet loaded (non-botschafter routes)
   if (!role) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <RouteLoader />;
   }
 
   // Check for payment issues (only for providers)
