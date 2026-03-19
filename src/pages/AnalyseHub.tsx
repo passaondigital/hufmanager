@@ -44,26 +44,26 @@ export default function AnalyseHub() {
         <Tile
           icon={<TrendingUp className="w-10 h-10 text-primary" />}
           title="Statistiken"
-          description="Kunden, Pferde, Termine"
+          description="Kunden, Pferde, Termine, Wachstum, Auslastung"
           status={clientCount ? `${clientCount} Kunden gesamt` : undefined}
           onClick={() => navigate("/analyse/betriebszahlen")}
         />
         <Tile
           icon={<Euro className="w-10 h-10 text-primary" />}
           title="Umsatz"
-          description="Einnahmen & Rechnungen"
+          description="Einnahmen, Rechnungen, Zahlungseingänge, Offene Posten"
           onClick={() => navigate("/rechnungen")}
         />
         <Tile
           icon={<Footprints className="w-10 h-10 text-primary" />}
           title="Pferde-Auswertung"
-          description="Huf-Analysen & Behandlungen"
+          description="Huf-Analysen, Behandlungen, Intervalle, Vergleiche"
           onClick={() => navigate("/work-mode?tab=analyse")}
         />
         <Tile
           icon={<Star className="w-10 h-10 text-primary" />}
           title="Bewertungen"
-          description="Deine öffentlichen Reviews"
+          description="Öffentliche Reviews, Durchschnitt, Feedback, Trends"
           status={
             reviewStats
               ? `⭐ ${reviewStats.avg} · ${reviewStats.count} Bewertungen`

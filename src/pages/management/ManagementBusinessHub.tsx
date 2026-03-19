@@ -51,7 +51,7 @@ export default function ManagementBusinessHub() {
         <Tile
           icon={<Receipt className="w-10 h-10 text-primary" />}
           title="Steuer & MwSt"
-          description="Umsatzsteuer, Kleinunternehmer, Preisanzeige"
+          description="Umsatzsteuer, Kleinunternehmer, Steuernummer, Preisanzeige, Netto/Brutto"
           status={
             !hasTaxConfig ? (
               <Badge variant="secondary" className="bg-amber-500/15 text-amber-500 border-amber-500/30 text-xs">
@@ -64,7 +64,7 @@ export default function ManagementBusinessHub() {
         <Tile
           icon={<CreditCard className="w-10 h-10 text-primary" />}
           title="Abo & Zahlung"
-          description="Plan, Rechnungen, Vertrag"
+          description="Plan, Rechnungen, Vertrag, Zahlungsmethode, Laufzeit"
           status={
             planLabel ? (
               <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-xs">
@@ -77,7 +77,7 @@ export default function ManagementBusinessHub() {
         <Tile
           icon={<FileText className="w-10 h-10 text-primary" />}
           title="Rechtliches"
-          description="AGB, Datenschutz, Impressum"
+          description="AGB, Datenschutz, Impressum, Widerrufsbelehrung"
           onClick={() => navigate("/management/rechtliches")}
         />
       </TileCategory>
@@ -86,7 +86,7 @@ export default function ManagementBusinessHub() {
         <Tile
           icon={<Globe className="w-10 h-10 text-primary" />}
           title="Meine Website"
-          description="Website, Domain, Vorschau"
+          description="Website, Domain, Vorschau, SEO, Farben, Logo"
           status={
             !hasWebsite ? (
               <Badge variant="secondary" className="bg-amber-500/15 text-amber-500 border-amber-500/30 text-xs">
@@ -99,7 +99,7 @@ export default function ManagementBusinessHub() {
         <Tile
           icon={<MessageSquare className="w-10 h-10 text-primary" />}
           title="Kommunikation"
-          description="Vorlagen, Push, E-Mail"
+          description="Vorlagen, Push, E-Mail, SMS, Erinnerungen"
           onClick={() => navigate("/management/kommunikation")}
         />
       </TileCategory>
