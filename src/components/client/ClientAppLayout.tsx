@@ -25,7 +25,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, Download, Copy, Check } from "lucide-react";
+import { LogOut, Settings, Download, Copy, Check, Building2, Warehouse as WarehouseIcon } from "lucide-react";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -36,56 +36,74 @@ import {
   SheetTitle as QuickSheetTitle,
 } from "@/components/ui/sheet";
 import { useEffect } from "react";
+import { useClientMode } from "@/hooks/useClientMode";
 
-// ── Navigation Config ──────────────────────────────────
+// ── Navigation Config (dynamic based on client mode) ──────────────────────────────────
 
-const clientNavigationConfig: NavigationConfig = {
-  directItems: [
-    { id: "dashboard", label: "Dashboard", iconName: "Home", path: "/client-home" },
-  ],
-  groups: [
-    {
-      label: "Meine Pferde",
-      items: [
-        { id: "horses", label: "Pferde", iconName: "Heart", path: "/client-horses" },
-        { id: "stall", label: "Stallboard", iconName: "Warehouse", path: "/client-stall" },
-      ],
-    },
-    {
-      label: "Termine & Aufträge",
-      items: [
-        { id: "booking", label: "Buchen", iconName: "Calendar", path: "/client-booking" },
-        { id: "orders", label: "Aufträge", iconName: "ClipboardList", path: "/client-orders" },
-        { id: "invoices", label: "Rechnungen", iconName: "Receipt", path: "/client-invoices" },
-      ],
-    },
-    {
-      label: "Kommunikation",
-      items: [
-        { id: "chat", label: "Chat", iconName: "MessageSquare", path: "/client-chat" },
-        { id: "notifications", label: "Benachrichtigungen", iconName: "Bell", path: "/client-notifications" },
-        { id: "connect", label: "HM Connect", iconName: "Link2", path: "/client-connect" },
-      ],
-    },
-    {
-      label: "Verwaltung",
-      items: [
-        { id: "permissions", label: "Berechtigungen", iconName: "Shield", path: "/client-permissions" },
-        { id: "locations", label: "Standorte", iconName: "MapPin", path: "/client-locations" },
-        { id: "notfall", label: "Notfall", iconName: "AlertTriangle", path: "/client-notfall" },
-        { id: "search-providers", label: "Experten-Verzeichnis", iconName: "Search", path: "/client/search-providers" },
-      ],
-    },
-    {
-      label: "Konto",
-      items: [
-        { id: "profile", label: "Profil", iconName: "User", path: "/client-profile" },
-        { id: "botschafter", label: "Botschafter", iconName: "Megaphone", path: "/client/botschafter" },
-        { id: "support", label: "Hilfe & Support", iconName: "LifeBuoy", path: "/client-support" },
-      ],
-    },
-  ],
-};
+type ClientModeType = "private" | "stall" | "commercial";
+
+function getClientNavigationConfig(mode: ClientModeType, isVerified: boolean): NavigationConfig {
+  const base: NavigationConfig = {
+    directItems: [
+      { id: "dashboard", label: "Dashboard", iconName: "Home", path: "/client-home" },
+    ],
+    groups: [
+      {
+        label: "Meine Pferde",
+        items: [
+          { id: "horses", label: "Pferde", iconName: "Heart", path: "/client-horses" },
+          // Stallboard only for stall/commercial modes
+          ...(mode !== "private" && isVerified
+            ? [{ id: "stall", label: "Stallboard", iconName: "Warehouse", path: "/client-stall" }]
+            : []),
+        ],
+      },
+      {
+        label: "Termine & Aufträge",
+        items: [
+          { id: "booking", label: "Buchen", iconName: "Calendar", path: "/client-booking" },
+          { id: "orders", label: "Aufträge", iconName: "ClipboardList", path: "/client-orders" },
+          { id: "invoices", label: "Rechnungen", iconName: "Receipt", path: "/client-invoices" },
+        ],
+      },
+      {
+        label: "Kommunikation",
+        items: [
+          { id: "chat", label: "Chat", iconName: "MessageSquare", path: "/client-chat" },
+          { id: "notifications", label: "Benachrichtigungen", iconName: "Bell", path: "/client-notifications" },
+          { id: "connect", label: "HM Connect", iconName: "Link2", path: "/client-connect" },
+        ],
+      },
+      {
+        label: "Verwaltung",
+        items: [
+          { id: "permissions", label: "Berechtigungen", iconName: "Shield", path: "/client-permissions" },
+          { id: "locations", label: "Standorte", iconName: "MapPin", path: "/client-locations" },
+          { id: "notfall", label: "Notfall", iconName: "AlertTriangle", path: "/client-notfall" },
+          { id: "search-providers", label: "Experten-Verzeichnis", iconName: "Search", path: "/client/search-providers" },
+          // Stall management only for stall mode
+          ...(mode === "stall" && isVerified
+            ? [{ id: "stall-mgmt", label: "Stallverwaltung", iconName: "Building2", path: "/client-stall-management" }]
+            : []),
+          // Business features for commercial mode
+          ...(mode === "commercial" && isVerified
+            ? [{ id: "business", label: "Gewerbeverwaltung", iconName: "Briefcase", path: "/client-business" }]
+            : []),
+        ],
+      },
+      {
+        label: "Konto",
+        items: [
+          { id: "profile", label: "Profil", iconName: "User", path: "/client-profile" },
+          { id: "account-type", label: "Account-Typ", iconName: "Settings2", path: "/client-account-type" },
+          { id: "botschafter", label: "Botschafter", iconName: "Megaphone", path: "/client/botschafter" },
+          { id: "support", label: "Hilfe & Support", iconName: "LifeBuoy", path: "/client-support" },
+        ],
+      },
+    ],
+  };
+  return base;
+}
 
 // ── Bottom Nav Items ──────────────────────────────────
 
@@ -259,8 +277,16 @@ export function ClientAppLayout() {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const { user } = useAuth();
+  const { mode, modeInfo } = useClientMode();
 
   const displayName = user?.email?.split("@")[0] || "Pferdebesitzer";
+  const clientNavigationConfig = getClientNavigationConfig(mode, modeInfo.isVerified);
+
+  const MODE_ICONS: Record<ClientModeType, string> = {
+    private: "🏠",
+    stall: "🏇",
+    commercial: "🏢",
+  };
 
   const isActive = (path: string, match?: string) => {
     if (location.pathname === path) return true;
@@ -273,7 +299,7 @@ export function ClientAppLayout() {
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <AppSidebar
-          appName="PferdebesitzerApp"
+          appName={`${MODE_ICONS[mode]} ${modeInfo.label}`}
           userDisplayName={displayName}
           navigationConfig={clientNavigationConfig}
         />
@@ -283,7 +309,7 @@ export function ClientAppLayout() {
       <MobileAppSidebar
         open={mobileMenuOpen}
         onOpenChange={setMobileMenuOpen}
-        appName="PferdebesitzerApp"
+        appName={`${MODE_ICONS[mode]} ${modeInfo.label}`}
         userDisplayName={displayName}
         navigationConfig={clientNavigationConfig}
       />

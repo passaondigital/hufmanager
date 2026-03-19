@@ -68,6 +68,7 @@ const ClientInvoices = lazy(() => import("@/pages/ClientInvoices"));
 const ClientPermissions = lazy(() => import("@/pages/ClientPermissions"));
 const ClientBooking = lazy(() => import("@/pages/ClientBooking"));
 const ClientProfile = lazy(() => import("@/pages/ClientProfile"));
+const ClientAccountType = lazy(() => import("@/pages/ClientAccountType"));
 const ClientChat = lazy(() => import("@/pages/ClientChat"));
 const ClientStallBoard = lazy(() => import("@/pages/ClientStallBoard"));
 const ClientHorses = lazy(() => import("@/pages/ClientHorses"));
@@ -712,6 +713,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client-permissions" element={<ClientPermissions />} />
               <Route path="/client-booking" element={<ClientBooking />} />
               <Route path="/client-profile" element={<ClientProfile />} />
+              <Route path="/client-account-type" element={<ClientAccountType />} />
               <Route path="/client-chat" element={<ClientChat />} />
               <Route path="/client-stall" element={<ClientStallBoard />} />
               <Route path="/client-horses" element={<ClientHorses />} />
