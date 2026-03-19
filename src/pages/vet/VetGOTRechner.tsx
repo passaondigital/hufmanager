@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { ArrowLeft, Calculator, Plus, Trash2, FileDown, Search } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTaxConfig } from "@/hooks/useTaxConfig";
+import { VAT_RATES } from "@/lib/taxConfig";
 
 interface GOTPosition {
   id: string;
