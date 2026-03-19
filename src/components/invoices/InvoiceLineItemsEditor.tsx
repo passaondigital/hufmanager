@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/select";
 import { Package, Plus, Trash2 } from "lucide-react";
 import { HelpTip } from "@/components/ui/HelpTip";
+import { useTaxConfig } from "@/hooks/useTaxConfig";
+import { calculateDisplayPrice, VAT_RATES } from "@/lib/taxConfig";
 
 export interface InvoiceLineItem {
   id: string;
