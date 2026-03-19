@@ -278,6 +278,8 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
         <Suspense fallback={<LazyFallback />}>
           <Routes>
             <Route path="/portal/:slug" element={<PortalDashboard />} />
+            <Route path="/portal/:slug/kalender" element={<PortalCalendar />} />
+            <Route path="/portal/:slug/management" element={<PortalManagementHub />} />
             <Route path="/portal/:slug/settings" element={<PortalSettings />} />
             <Route path="*" element={<PortalLogin mode={portalMode.mode} />} />
           </Routes>
