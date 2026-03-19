@@ -1,10 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
-import { User, Globe, MessageSquare, CreditCard, FileText, Mic } from "lucide-react";
+import { User, Globe, MessageSquare, CreditCard, FileText, Mic, Receipt } from "lucide-react";
 import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
 import { Badge } from "@/components/ui/badge";
 
@@ -14,6 +11,7 @@ const TAB_REDIRECTS: Record<string, string> = {
   kommunikation: "/partner-management/kommunikation",
   abo: "/partner-management/abo",
   rechtliches: "/partner-management/rechtliches",
+  steuer: "/partner-management/steuer",
 };
 
 const PLAN_LABELS: Record<string, string> = {
@@ -27,7 +25,6 @@ const PLAN_LABELS: Record<string, string> = {
 export default function PartnerManagementHub() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user } = useAuth();
   const { plan } = useSubscription();
 
   useEffect(() => {
@@ -43,18 +40,29 @@ export default function PartnerManagementHub() {
     <div className="space-y-6 animate-fade-in">
       <TileHubHeader icon="⚙️" title="Management" subtitle="Einstellungen & Verwaltung" />
 
-      <TileCategory title="Einstellungen">
+      {/* Category 1: Mein Account */}
+      <TileCategory title="Mein Account">
         <Tile
           icon={<User className="w-10 h-10 text-primary" />}
           title="Mein Profil"
           description="Persönliche Daten, Foto"
           onClick={() => navigate("/partner-management/profil")}
         />
+      </TileCategory>
+
+      {/* Category 2: Business-Einstellungen */}
+      <TileCategory title="Business-Einstellungen">
         <Tile
           icon={<Globe className="w-10 h-10 text-primary" />}
           title="Öffentliches Profil"
           description="Sichtbar für Pferdebesitzer"
           onClick={() => navigate("/partner-management/oeffentlich")}
+        />
+        <Tile
+          icon={<Receipt className="w-10 h-10 text-primary" />}
+          title="Steuer & MwSt"
+          description="Umsatzsteuer, Preisanzeige"
+          onClick={() => navigate("/partner-management/steuer")}
         />
         <Tile
           icon={<MessageSquare className="w-10 h-10 text-primary" />}
@@ -81,6 +89,10 @@ export default function PartnerManagementHub() {
           description="AGB, Datenschutz, Impressum"
           onClick={() => navigate("/partner-management/rechtliches")}
         />
+      </TileCategory>
+
+      {/* Category 3: HufManager */}
+      <TileCategory title="HufManager">
         <Tile
           icon={<Mic className="w-10 h-10 text-primary" />}
           title="Botschafter werden"

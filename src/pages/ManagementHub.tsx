@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
-import { User, Globe, MessageSquare, CreditCard, FileText, Mic } from "lucide-react";
+import { User, Globe, MessageSquare, CreditCard, FileText, Mic, Receipt } from "lucide-react";
 import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
 import { Badge } from "@/components/ui/badge";
 
@@ -15,6 +15,7 @@ const TAB_REDIRECTS: Record<string, string> = {
   kommunikation: "/management/kommunikation",
   abo: "/management/abo",
   rechtliches: "/management/rechtliches",
+  steuer: "/management/steuer",
 };
 
 // Plan display names
@@ -46,26 +47,45 @@ export default function ManagementHub() {
     queryFn: async () => {
       const { data } = await supabase
         .from("business_settings")
-        .select("subdomain, subdomain_active")
+        .select("subdomain, subdomain_active, mwst_pflichtig, kleine_unternehmer")
         .eq("user_id", user!.id)
         .maybeSingle();
       return data;
     },
   });
 
-  const hasWebsite = settings?.subdomain_active && settings?.subdomain;
+  const hasWebsite = settings?.subdomain_active && (settings as any)?.subdomain;
   const planLabel = plan ? PLAN_LABELS[plan] || plan : null;
+  const hasTaxConfig = settings?.mwst_pflichtig || settings?.kleine_unternehmer;
 
   return (
     <div className="space-y-6 animate-fade-in">
       <TileHubHeader icon="⚙️" title="Management" subtitle="Einstellungen & Verwaltung" />
 
-      <TileCategory title="Einstellungen">
+      {/* Category 1: Mein Account */}
+      <TileCategory title="Mein Account">
         <Tile
           icon={<User className="w-10 h-10 text-primary" />}
           title="Mein Profil"
           description="Profil, Zertifikate, Fotos"
           onClick={() => navigate("/management/profil")}
+        />
+      </TileCategory>
+
+      {/* Category 2: Business-Einstellungen */}
+      <TileCategory title="Business-Einstellungen">
+        <Tile
+          icon={<Receipt className="w-10 h-10 text-primary" />}
+          title="Steuer & MwSt"
+          description="Umsatzsteuer, Kleinunternehmer, Preisanzeige"
+          status={
+            !hasTaxConfig ? (
+              <Badge variant="secondary" className="bg-amber-500/15 text-amber-500 border-amber-500/30 text-xs">
+                Einrichten
+              </Badge>
+            ) : undefined
+          }
+          onClick={() => navigate("/management/steuer")}
         />
         <Tile
           icon={<Globe className="w-10 h-10 text-primary" />}
@@ -105,6 +125,10 @@ export default function ManagementHub() {
           description="AGB, Datenschutz, Impressum"
           onClick={() => navigate("/management/rechtliches")}
         />
+      </TileCategory>
+
+      {/* Category 3: HufManager */}
+      <TileCategory title="HufManager">
         <Tile
           icon={<Mic className="w-10 h-10 text-primary" />}
           title="Botschafter werden"

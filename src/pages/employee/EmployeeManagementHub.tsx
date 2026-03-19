@@ -27,7 +27,8 @@ export default function EmployeeManagementHub() {
     <div className="space-y-6 animate-fade-in">
       <TileHubHeader icon="⚙️" title="Management" subtitle="Profil & Einstellungen" />
 
-      <TileCategory title="Einstellungen">
+      {/* Category 1: Mein Account */}
+      <TileCategory title="Mein Account">
         <Tile
           icon={<User className="w-10 h-10 text-primary" />}
           title="Mein Profil"
@@ -41,6 +42,10 @@ export default function EmployeeManagementHub() {
           description="Benachrichtigungen, Passwort"
           onClick={() => navigate("/employee/management/einstellungen")}
         />
+      </TileCategory>
+
+      {/* Category 2: HufManager */}
+      <TileCategory title="HufManager">
         <Tile
           icon={<Mic className="w-10 h-10 text-primary" />}
           title="Botschafter werden"
