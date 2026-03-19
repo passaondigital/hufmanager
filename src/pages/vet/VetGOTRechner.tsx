@@ -60,6 +60,7 @@ export default function VetGOTRechner() {
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [selected, setSelected] = useState<SelectedPosition[]>([]);
   const [distance, setDistance] = useState(0);
+  const taxConfig = useTaxConfig();
 
   const { data: positions, isLoading } = useQuery({
     queryKey: ["got-positions"],
