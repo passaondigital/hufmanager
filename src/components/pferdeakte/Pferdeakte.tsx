@@ -105,6 +105,7 @@ export function Pferdeakte({ horseId, userRole, horse: horseProp, initialTab }: 
       return { lastHealth, nextVacc, nextAppt };
     },
     enabled: !!horseId,
+    staleTime: PFERDEAKTE_STALE_TIME,
   });
 
   if (isLoading && !horse) {
