@@ -417,6 +417,10 @@ export default function HMConnect() {
           <EquidPermissionManager />
         </TabsContent>
 
+        <TabsContent value="equid-chat" className="mt-6">
+          <EquidChat />
+        </TabsContent>
+
         <TabsContent value="permissions" className="mt-6 space-y-6">
           <ConnectionPermissions viewerRole={role || "provider"} targetRole={isClient ? "provider" : "client"} />
           <CommunicationMatrix />
