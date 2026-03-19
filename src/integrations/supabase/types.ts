@@ -15943,6 +15943,10 @@ export type Database = {
         Args: { search_id: string }
         Returns: Json
       }
+      search_profiles_universal: {
+        Args: { search_limit?: number; search_term: string }
+        Returns: Json
+      }
       sync_affiliate_stats: {
         Args: { p_provider_id: string }
         Returns: undefined
