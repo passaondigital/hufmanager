@@ -45,8 +45,10 @@ export default function PartnerCalendar() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const [view, setView] = useState<"week" | "month">(isMobile ? "week" : "month");
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [createOpen, setCreateOpen] = useState(false);
   const [detailApt, setDetailApt] = useState<any>(null);
   const [isRescheduling, setIsRescheduling] = useState(false);
