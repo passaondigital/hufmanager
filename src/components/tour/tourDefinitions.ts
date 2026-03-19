@@ -30,8 +30,8 @@ export const dashboardTourSteps: TourStep[] = [
   },
   {
     target: 'header',
-    title: 'So sieht es deine Kundin Maria',
-    description: 'Alles was du hier dokumentierst, sieht Maria Müller in ihrem Pferdeportal — in Echtzeit. Termine, Befunde, Rechnungen — alles vernetzt.',
+    title: 'So sieht es deine Demo-Kundin',
+    description: 'Alles was du hier dokumentierst, sieht die Demo-Kundin in ihrem Pferdeportal — in Echtzeit. Termine, Befunde, Rechnungen — alles vernetzt.',
     position: 'bottom',
   },
 ];
