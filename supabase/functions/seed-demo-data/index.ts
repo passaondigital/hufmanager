@@ -437,42 +437,66 @@ serve(async (req: Request) => {
       if (partnerId) {
         addLog("Setting up partner access to horses...");
         
+        // Delete existing partner access for this partner
+        await admin.from("horse_partner_access").delete().eq("partner_profile_id", partnerId);
+        
         for (const horse of insertedHorses.slice(0, 2)) {
-          await admin.from("horse_partner_access").upsert({
+          await admin.from("horse_partner_access").insert({
             horse_id: horse.id,
-            partner_id: partnerId,
-            granted_by: providerId,
+            partner_profile_id: partnerId,
+            partner_name: "Demo-Tierärztin",
+            partner_email: PARTNER_EMAIL,
+            partner_type: "veterinarian",
+            invited_by_provider_id: providerId,
             status: "active",
+            is_active: true,
             can_view_basic: true,
             can_view_medical: true,
             can_view_hoof_history: true,
-            can_write_notes: true,
-          }, { onConflict: "horse_id,partner_id" });
+            can_add_treatment_notes: true,
+            can_view_vaccinations: true,
+            can_view_deworming: true,
+            owner_approved: true,
+            owner_approved_at: new Date().toISOString(),
+            granted_by: providerId,
+            granted_at: new Date().toISOString(),
+            accepted_at: new Date().toISOString(),
+          });
         }
-        addLog("Partner access granted for 2 horses");
+        addLog("Partner access granted for 2 horses (Carlotta + Donnerstern)");
 
         // Partner treatment notes
+        await admin.from("partner_treatment_notes").delete().eq("partner_id", partnerId);
         await admin.from("partner_treatment_notes").insert([
           {
             horse_id: insertedHorses[0].id,
             partner_id: partnerId,
-            note_type: "treatment",
+            treatment_category: "treatment",
             title: "[DEMO] Kontrolluntersuchung Huffäule",
-            content: "[DEMO] Strahlfäule rechts hinten deutlich verbessert seit orthopädischem Beschlag. Empfehle weiterhin regelmäßige Desinfektion und trockene Einstreu.",
+            notes: "[DEMO] Strahlfäule rechts hinten deutlich verbessert seit orthopädischem Beschlag. Empfehle weiterhin regelmäßige Desinfektion und trockene Einstreu.",
+            treatment_date: d(-10),
+            visible_to_pid: true,
+            visible_to_kid: true,
           },
           {
             horse_id: insertedHorses[0].id,
             partner_id: partnerId,
-            note_type: "treatment",
+            treatment_category: "treatment",
             title: "[DEMO] Osteopathische Kontrolle",
-            content: "[DEMO] Beckenstand symmetrisch. Schulter links deutlich besser. Normales Training freigegeben.",
+            notes: "[DEMO] Beckenstand symmetrisch. Schulter links deutlich besser. Normales Training freigegeben.",
+            treatment_date: d(-5),
+            visible_to_pid: true,
+            visible_to_kid: true,
           },
           {
             horse_id: insertedHorses[1].id,
             partner_id: partnerId,
-            note_type: "examination",
+            treatment_category: "examination",
             title: "[DEMO] Lahmheitsuntersuchung Donnerstern",
-            content: "[DEMO] Leichte Lahmheit vorne links nach hartem Boden. Röntgen unauffällig. Empfehlung: weicher Boden, Schritt, Kontrolle in 2 Wochen.",
+            notes: "[DEMO] Leichte Lahmheit vorne links nach hartem Boden. Röntgen unauffällig. Empfehlung: weicher Boden, Schritt, Kontrolle in 2 Wochen.",
+            treatment_date: d(-3),
+            visible_to_pid: true,
+            visible_to_kid: true,
           },
         ]);
         addLog("Created 3 partner treatment notes");
