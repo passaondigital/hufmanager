@@ -54,7 +54,7 @@ export function EquidChat() {
       // Provider horses (via appointments)
       const { data: providerAppts } = await supabase
         .from("appointments")
-        .select("horse_id, horses!inner(id, name, readable_id, avatar_url)")
+        .select("horse_id, horses!inner(id, name, readable_id)")
         .eq("provider_id", user.id)
         .limit(50);
       if (providerAppts) {
