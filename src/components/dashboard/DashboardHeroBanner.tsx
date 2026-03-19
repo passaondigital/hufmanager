@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { Calendar, Inbox, Users } from "lucide-react";
+import { Calendar, Inbox, Users, Heart, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { DemoBadge } from "@/components/demo/DemoBadge";
@@ -17,16 +17,17 @@ function getGreeting(): string {
 
 interface DashboardHeroBannerProps {
   fullName?: string | null;
+  variant?: "provider" | "partner" | "employee";
 }
 
-export function DashboardHeroBanner({ fullName }: DashboardHeroBannerProps) {
+export function DashboardHeroBanner({ fullName, variant = "provider" }: DashboardHeroBannerProps) {
   const { user } = useAuth();
   const firstName = fullName?.split(" ")[0];
   const isDemo = isDemoEmail(user?.email);
   const today = new Date();
   const todayStr = format(today, "yyyy-MM-dd");
 
-  // Today's appointments count
+  // Provider stats
   const { data: todayCount = 0 } = useQuery({
     queryKey: ["hero-today-count", user?.id, todayStr],
     queryFn: async () => {
@@ -38,11 +39,10 @@ export function DashboardHeroBanner({ fullName }: DashboardHeroBannerProps) {
         .in("status", ["scheduled", "confirmed"]);
       return count ?? 0;
     },
-    enabled: !!user,
+    enabled: !!user && variant === "provider",
     staleTime: 60_000,
   });
 
-  // Open leads count
   const { data: leadsCount = 0 } = useQuery({
     queryKey: ["hero-leads-count", user?.id],
     queryFn: async () => {
@@ -52,11 +52,10 @@ export function DashboardHeroBanner({ fullName }: DashboardHeroBannerProps) {
         .eq("status", "neu");
       return count ?? 0;
     },
-    enabled: !!user,
+    enabled: !!user && variant === "provider",
     staleTime: 60_000,
   });
 
-  // Active clients count
   const { data: clientsCount = 0 } = useQuery({
     queryKey: ["hero-clients-count", user?.id],
     queryFn: async () => {
@@ -67,15 +66,67 @@ export function DashboardHeroBanner({ fullName }: DashboardHeroBannerProps) {
         .is("deleted_at", null);
       return count ?? 0;
     },
-    enabled: !!user,
+    enabled: !!user && variant === "provider",
     staleTime: 60_000,
   });
 
-  const stats = [
-    { icon: Calendar, value: todayCount, label: "Termine heute" },
-    { icon: Inbox, value: leadsCount, label: "Offene Anfragen" },
-    { icon: Users, value: clientsCount, label: "Aktive Kunden" },
-  ];
+  // Partner stats
+  const { data: partnerHorseCount = 0 } = useQuery({
+    queryKey: ["hero-partner-horses", user?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("horse_partner_access")
+        .select("*", { count: "exact", head: true })
+        .eq("partner_profile_id", user!.id)
+        .eq("status", "active")
+        .eq("is_active", true);
+      return count ?? 0;
+    },
+    enabled: !!user && variant === "partner",
+    staleTime: 60_000,
+  });
+
+  const { data: partnerApptsCount = 0 } = useQuery({
+    queryKey: ["hero-partner-appts", user?.id, todayStr],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("partner_appointments")
+        .select("*", { count: "exact", head: true })
+        .eq("partner_id", user!.id)
+        .gte("appointment_date", todayStr)
+        .in("status", ["planned", "confirmed", "requested"]);
+      return count ?? 0;
+    },
+    enabled: !!user && variant === "partner",
+    staleTime: 60_000,
+  });
+
+  const { data: partnerNotesCount = 0 } = useQuery({
+    queryKey: ["hero-partner-notes", user?.id],
+    queryFn: async () => {
+      const start = format(today, "yyyy-MM-01");
+      const { count } = await supabase
+        .from("partner_treatment_notes")
+        .select("*", { count: "exact", head: true })
+        .eq("partner_id", user!.id)
+        .gte("treatment_date", start);
+      return count ?? 0;
+    },
+    enabled: !!user && variant === "partner",
+    staleTime: 60_000,
+  });
+
+  const stats = variant === "partner"
+    ? [
+        { icon: Heart, value: partnerHorseCount, label: "Betreute Pferde" },
+        { icon: Calendar, value: partnerApptsCount, label: "Anstehende Termine" },
+        { icon: FileText, value: partnerNotesCount, label: "Behandlungen/Monat" },
+      ]
+    : [
+        { icon: Calendar, value: todayCount, label: "Termine heute" },
+        { icon: Inbox, value: leadsCount, label: "Offene Anfragen" },
+        { icon: Users, value: clientsCount, label: "Aktive Kunden" },
+      ];
 
   return (
     <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border -mx-4 px-4 sm:-mx-6 sm:px-6 py-4">
