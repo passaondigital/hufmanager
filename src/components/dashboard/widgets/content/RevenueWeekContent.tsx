@@ -8,6 +8,7 @@ import type { WidgetContentProps } from "./types";
 
 export default function RevenueWeekContent(_props: WidgetContentProps) {
   const { user } = useAuth();
+  const taxConfig = useTaxConfig();
   const now = new Date();
   const weekStart = startOfWeek(now, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
