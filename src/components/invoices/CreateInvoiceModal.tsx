@@ -858,7 +858,7 @@ export function CreateInvoiceModal({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="privat">Privatkunde (inkl. 19% MwSt)</SelectItem>
+            <SelectItem value="privat">Privatkunde (inkl. MwSt)</SelectItem>
             <SelectItem value="gewerbe">Gewerbekunde (Netto)</SelectItem>
             <SelectItem value="kleinunternehmer">Kleinunternehmer (§19 UStG)</SelectItem>
           </SelectContent>
