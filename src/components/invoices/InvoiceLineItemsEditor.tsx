@@ -153,7 +153,9 @@ export function InvoiceLineItemsEditor({
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <Label className="text-xs text-muted-foreground shrink-0 flex items-center gap-1">Netto €: <HelpTip id="rechnungen.einzel-preis" /></Label>
+                  <Label className="text-xs text-muted-foreground shrink-0 flex items-center gap-1">
+                    {mode === "brutto" ? `Brutto ${currencySymbol}` : `Netto ${currencySymbol}`}: <HelpTip id="rechnungen.einzel-preis" />
+                  </Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -168,6 +170,13 @@ export function InvoiceLineItemsEditor({
                   <span className="text-sm font-semibold">
                     {formatCurrency(item.quantity * item.unit_price)}
                   </span>
+                  {isMwstPflichtig && item.unit_price > 0 && (
+                    <p className="text-[10px] text-muted-foreground">
+                      {mode === "netto" ? "brutto" : "netto"}: {formatCurrency(
+                        calculateDisplayPrice(item.quantity * item.unit_price, taxConfig, mode === "netto" ? "brutto" : "netto")
+                      )}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
