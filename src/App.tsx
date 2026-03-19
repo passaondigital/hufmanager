@@ -121,6 +121,9 @@ const ClientStallReports = lazy(() => import("@/pages/client/ClientStallReports"
 const ClientBusinessHub = lazy(() => import("@/pages/client/ClientBusinessHub"));
 const ClientBusinessOverview = lazy(() => import("@/pages/client/ClientBusinessOverview"));
 const ClientNetwork = lazy(() => import("@/pages/client/ClientNetwork"));
+const ClientMarketplace = lazy(() => import("@/pages/client/ClientMarketplace"));
+const ClientMarketplaceCreate = lazy(() => import("@/pages/client/ClientMarketplaceCreate"));
+const ClientMyListings = lazy(() => import("@/pages/client/ClientMyListings"));
 const BotschafterWerbemittelPage = lazy(() => import("@/pages/botschafter/BotschafterWerbemittelPage"));
 const WerbemittelEditor = lazy(() => import("@/pages/botschafter/WerbemittelEditor"));
 const BotschafterNachrichten = lazy(() => import("@/pages/botschafter/BotschafterNachrichten"));
