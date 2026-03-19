@@ -713,6 +713,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client-permissions" element={<ClientPermissions />} />
               <Route path="/client-booking" element={<ClientBooking />} />
               <Route path="/client-profile" element={<ClientProfile />} />
+              <Route path="/client-account-type" element={<ClientAccountType />} />
               <Route path="/client-chat" element={<ClientChat />} />
               <Route path="/client-stall" element={<ClientStallBoard />} />
               <Route path="/client-horses" element={<ClientHorses />} />
