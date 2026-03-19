@@ -1,14 +1,8 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useSubscription } from "@/hooks/useSubscription";
-import { User, Globe, MessageSquare, CreditCard, FileText, Mic, Receipt } from "lucide-react";
+import { User, Briefcase, Mic } from "lucide-react";
 import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
-import { Badge } from "@/components/ui/badge";
 
-// Map old ?tab= params to new routes
 const TAB_REDIRECTS: Record<string, string> = {
   profil: "/management/profil",
   website: "/management/website",
@@ -18,22 +12,10 @@ const TAB_REDIRECTS: Record<string, string> = {
   steuer: "/management/steuer",
 };
 
-// Plan display names
-const PLAN_LABELS: Record<string, string> = {
-  starter: "Starter",
-  advanced: "Advanced",
-  pro: "Pro",
-  duo: "Duo",
-  team: "Team",
-};
-
 export default function ManagementHub() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user } = useAuth();
-  const { plan } = useSubscription();
 
-  // Redirect old ?tab=... deep links
   useEffect(() => {
     const tab = searchParams.get("tab");
     if (tab && TAB_REDIRECTS[tab]) {
@@ -41,28 +23,10 @@ export default function ManagementHub() {
     }
   }, [searchParams, navigate]);
 
-  const { data: settings } = useQuery({
-    queryKey: ["business-settings-hub", user?.id],
-    enabled: !!user?.id,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("business_settings")
-        .select("subdomain, subdomain_active, mwst_pflichtig, kleine_unternehmer")
-        .eq("user_id", user!.id)
-        .maybeSingle();
-      return data;
-    },
-  });
-
-  const hasWebsite = settings?.subdomain_active && (settings as any)?.subdomain;
-  const planLabel = plan ? PLAN_LABELS[plan] || plan : null;
-  const hasTaxConfig = settings?.mwst_pflichtig || settings?.kleine_unternehmer;
-
   return (
     <div className="space-y-6 animate-fade-in">
       <TileHubHeader icon="⚙️" title="Management" subtitle="Einstellungen & Verwaltung" />
 
-      {/* Category 1: Mein Account */}
       <TileCategory title="Mein Account">
         <Tile
           icon={<User className="w-10 h-10 text-primary" />}
@@ -72,62 +36,16 @@ export default function ManagementHub() {
         />
       </TileCategory>
 
-      {/* Category 2: Business-Einstellungen */}
       <TileCategory title="Business-Einstellungen">
         <Tile
-          icon={<Receipt className="w-10 h-10 text-primary" />}
-          title="Steuer & MwSt"
-          description="Umsatzsteuer, Kleinunternehmer, Preisanzeige"
-          status={
-            !hasTaxConfig ? (
-              <Badge variant="secondary" className="bg-amber-500/15 text-amber-500 border-amber-500/30 text-xs">
-                Einrichten
-              </Badge>
-            ) : undefined
-          }
-          onClick={() => navigate("/management/steuer")}
-        />
-        <Tile
-          icon={<Globe className="w-10 h-10 text-primary" />}
-          title="Meine Website"
-          description="Website, Domain, Vorschau"
-          status={
-            !hasWebsite ? (
-              <Badge variant="secondary" className="bg-amber-500/15 text-amber-500 border-amber-500/30 text-xs">
-                Einrichten
-              </Badge>
-            ) : undefined
-          }
-          onClick={() => navigate("/management/website")}
-        />
-        <Tile
-          icon={<MessageSquare className="w-10 h-10 text-primary" />}
-          title="Kommunikation"
-          description="Vorlagen, Push, E-Mail"
-          onClick={() => navigate("/management/kommunikation")}
-        />
-        <Tile
-          icon={<CreditCard className="w-10 h-10 text-primary" />}
-          title="Abo & Zahlung"
-          description="Plan, Rechnungen, Vertrag"
-          status={
-            planLabel ? (
-              <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-xs">
-                {planLabel}
-              </Badge>
-            ) : undefined
-          }
-          onClick={() => navigate("/management/abo")}
-        />
-        <Tile
-          icon={<FileText className="w-10 h-10 text-primary" />}
-          title="Rechtliches"
-          description="AGB, Datenschutz, Impressum"
-          onClick={() => navigate("/management/rechtliches")}
+          icon={<Briefcase className="w-10 h-10 text-primary" />}
+          title="Meine Business-Einstellungen"
+          description="Steuer, MwSt, Website, Abo, Rechnungen, Kommunikation, AGB, Datenschutz, Impressum, Preisanzeige"
+          onClick={() => navigate("/management/business")}
+          colSpan
         />
       </TileCategory>
 
-      {/* Category 3: HufManager */}
       <TileCategory title="HufManager">
         <Tile
           icon={<Mic className="w-10 h-10 text-primary" />}

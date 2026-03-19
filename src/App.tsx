@@ -51,6 +51,7 @@ const ManagementKommunikation = lazy(() => import("@/pages/management/Management
 const ManagementAbo = lazy(() => import("@/pages/management/ManagementAbo"));
 const ManagementRechtliches = lazy(() => import("@/pages/management/ManagementRechtliches"));
 const ManagementSteuer = lazy(() => import("@/pages/management/ManagementSteuer"));
+const ManagementBusinessHub = lazy(() => import("@/pages/management/ManagementBusinessHub"));
 const Academy = lazy(() => import("@/pages/Academy"));
 const Chat = lazy(() => import("@/pages/Chat"));
 const GeldVerdienen = lazy(() => import("@/pages/GeldVerdienen"));
@@ -195,6 +196,7 @@ const PartnerManagementKommunikation = lazy(() => import("@/pages/partner/Partne
 const PartnerManagementAbo = lazy(() => import("@/pages/partner/PartnerManagementAbo"));
 const PartnerManagementRechtliches = lazy(() => import("@/pages/partner/PartnerManagementRechtliches"));
 const PartnerManagementSteuer = lazy(() => import("@/pages/partner/PartnerManagementSteuer"));
+const PartnerManagementBusinessHub = lazy(() => import("@/pages/partner/PartnerManagementBusinessHub"));
 const PartnerPferde = lazy(() => import("@/pages/partner/PartnerPferde"));
 const PartnerKunden = lazy(() => import("@/pages/partner/PartnerKunden"));
 const PartnerConnect = lazy(() => import("@/pages/partner/PartnerConnect"));
@@ -646,6 +648,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/mein-angebot" element={<MeinAngebot />} />
               <Route path="/management" element={<ManagementHub />} />
               <Route path="/management/profil" element={<ManagementProfil />} />
+              <Route path="/management/business" element={<ManagementBusinessHub />} />
               <Route path="/management/website" element={<ManagementWebsite />} />
               <Route path="/management/kommunikation" element={<ManagementKommunikation />} />
               <Route path="/management/abo" element={<ManagementAbo />} />
@@ -788,6 +791,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner-autoflow" element={<AutoFlow />} />
               <Route path="/partner-management" element={<PartnerManagementHub />} />
               <Route path="/partner-management/profil" element={<PartnerManagementProfil />} />
+              <Route path="/partner-management/business" element={<PartnerManagementBusinessHub />} />
               <Route path="/partner-management/oeffentlich" element={<PartnerManagementOeffentlich />} />
               <Route path="/partner-management/kommunikation" element={<PartnerManagementKommunikation />} />
               <Route path="/partner-management/abo" element={<PartnerManagementAbo />} />
