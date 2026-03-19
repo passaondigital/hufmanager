@@ -791,6 +791,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner-autoflow" element={<AutoFlow />} />
               <Route path="/partner-management" element={<PartnerManagementHub />} />
               <Route path="/partner-management/profil" element={<PartnerManagementProfil />} />
+              <Route path="/partner-management/business" element={<PartnerManagementBusinessHub />} />
               <Route path="/partner-management/oeffentlich" element={<PartnerManagementOeffentlich />} />
               <Route path="/partner-management/kommunikation" element={<PartnerManagementKommunikation />} />
               <Route path="/partner-management/abo" element={<PartnerManagementAbo />} />
