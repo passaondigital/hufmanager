@@ -51,6 +51,7 @@ const ManagementKommunikation = lazy(() => import("@/pages/management/Management
 const ManagementAbo = lazy(() => import("@/pages/management/ManagementAbo"));
 const ManagementRechtliches = lazy(() => import("@/pages/management/ManagementRechtliches"));
 const ManagementSteuer = lazy(() => import("@/pages/management/ManagementSteuer"));
+const ManagementBusinessHub = lazy(() => import("@/pages/management/ManagementBusinessHub"));
 const Academy = lazy(() => import("@/pages/Academy"));
 const Chat = lazy(() => import("@/pages/Chat"));
 const GeldVerdienen = lazy(() => import("@/pages/GeldVerdienen"));
