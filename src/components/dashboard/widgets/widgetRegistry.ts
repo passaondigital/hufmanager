@@ -82,3 +82,13 @@ export const DEFAULT_EMPLOYEE_WIDGETS: Omit<DashboardWidgetData, "id" | "user_id
   { widget_type: "naechste_termine", position_x: 0, position_y: 1, width: 1, height: 1, is_active: true, settings: {} },
   { widget_type: "arbeitszeit", position_x: 1, position_y: 1, width: 1, height: 1, is_active: true, settings: {} },
 ];
+
+export const DEFAULT_CLIENT_WIDGETS: Omit<DashboardWidgetData, "id" | "user_id">[] = [
+  { widget_type: "client_naechster_termin", position_x: 0, position_y: 0, width: 2, height: 1, is_active: true, settings: {} },
+  { widget_type: "client_pferde", position_x: 0, position_y: 1, width: 2, height: 1, is_active: true, settings: {} },
+  { widget_type: "client_aktions_center", position_x: 0, position_y: 2, width: 1, height: 1, is_active: true, settings: {} },
+  { widget_type: "client_experten", position_x: 1, position_y: 2, width: 1, height: 1, is_active: true, settings: {} },
+  { widget_type: "client_gesundheits_feed", position_x: 0, position_y: 3, width: 2, height: 2, is_active: true, settings: {} },
+  { widget_type: "client_auftraege", position_x: 0, position_y: 5, width: 1, height: 1, is_active: true, settings: {} },
+  { widget_type: "wetter", position_x: 1, position_y: 5, width: 1, height: 1, is_active: true, settings: {} },
+];

@@ -7,14 +7,16 @@ import {
   DEFAULT_PROVIDER_WIDGETS,
   DEFAULT_PARTNER_WIDGETS,
   DEFAULT_EMPLOYEE_WIDGETS,
+  DEFAULT_CLIENT_WIDGETS,
 } from "@/components/dashboard/widgets/widgetRegistry";
 
-type Role = "provider" | "partner" | "employee";
+type Role = "provider" | "partner" | "employee" | "client";
 
 function getDefaults(role: Role) {
   switch (role) {
     case "partner": return DEFAULT_PARTNER_WIDGETS;
     case "employee": return DEFAULT_EMPLOYEE_WIDGETS;
+    case "client": return DEFAULT_CLIENT_WIDGETS;
     default: return DEFAULT_PROVIDER_WIDGETS;
   }
 }

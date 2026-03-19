@@ -55,6 +55,13 @@ const WIDGET_MAP: Record<string, React.LazyExoticComponent<ComponentType<WidgetC
   impfungen_faellig: PlaceholderContent,
   statistik_kunden: PlaceholderContent,
   statistik_pferde: PlaceholderContent,
+  // Client widgets
+  client_naechster_termin: ClientNextAppointmentContent,
+  client_pferde: ClientHorsesContent,
+  client_gesundheits_feed: ClientHealthFeedContent,
+  client_aktions_center: ClientActionCenterContent,
+  client_experten: ClientProviderContent,
+  client_auftraege: ClientOrdersContent,
 };
 
 export function WidgetRenderer({ type, settings, widgetId, onUpdateSettings }: WidgetRendererProps) {
