@@ -37,7 +37,7 @@ export function OrdersSection({ userId }: OrdersSectionProps) {
     : orders.filter((o: any) => STATUS_MAP[activeFilter]?.includes(o.status));
 
   return (
-    <div className="px-4">
+    <div className="px-4 md:px-0">
       <div className="hm-section-header">
         <span className="hm-section-title">📋 Aufträge</span>
         <span className="hm-section-link">Alle →</span>
@@ -77,15 +77,15 @@ export function OrdersSection({ userId }: OrdersSectionProps) {
                   style={{ background: isOpen ? "var(--hm-amber)" : "var(--hm-green)" }}
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] truncate" style={{ color: "var(--hm-text)" }}>
+                  <p className="text-[13px] md:text-[14px] truncate" style={{ color: "var(--hm-text)" }}>
                     {order.title || "Auftrag"}
                   </p>
-                  <p className="text-[11px]" style={{ color: "var(--hm-text3)" }}>
+                  <p className="text-[11px] md:text-[12px]" style={{ color: "var(--hm-text3)" }}>
                     {(order as any).horses?.name || "–"} · {new Date(order.created_at).toLocaleDateString("de-DE")}
                   </p>
                 </div>
                 <span
-                  className="text-[10px] font-medium px-2 py-0.5 rounded-[20px] flex-shrink-0"
+                  className="text-[10px] md:text-[11px] font-medium px-2 py-0.5 rounded-[20px] flex-shrink-0"
                   style={{
                     background: isOpen ? "var(--hm-amber-glow)" : "var(--hm-green-bg)",
                     color: isOpen ? "var(--hm-amber)" : "var(--hm-green)",

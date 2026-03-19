@@ -48,15 +48,15 @@ export function StatusGrid({
   ];
 
   return (
-    <div className="px-4">
+    <div className="px-4 md:px-0">
       <div className="hm-section-header">
         <span className="hm-section-title">📊 Überblick</span>
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
         {cards.map((card) => (
           <div
             key={card.label}
-            className="rounded-lg p-3.5 transition-all hover:-translate-y-px"
+            className="rounded-lg p-3.5 md:p-4 transition-all hover:-translate-y-px"
             style={{
               background: card.highlight
                 ? "linear-gradient(135deg, rgba(245,151,10,0.08), rgba(245,151,10,0.02))"
@@ -66,15 +66,15 @@ export function StatusGrid({
                 : "0.5px solid var(--hm-border)",
             }}
           >
-            <span className="text-[20px] block mb-1">{card.icon}</span>
-            <p className="text-[11px]" style={{ color: "var(--hm-text3)" }}>{card.label}</p>
+            <span className="text-[20px] md:text-[24px] block mb-1">{card.icon}</span>
+            <p className="text-[11px] md:text-[12px]" style={{ color: "var(--hm-text3)" }}>{card.label}</p>
             <p
-              className="text-[18px] font-semibold mt-0.5"
+              className="text-[18px] md:text-[22px] font-semibold mt-0.5"
               style={{ color: card.valueColor || "var(--hm-text)" }}
             >
               {card.value}
             </p>
-            <p className="text-[11px] mt-1" style={{ color: "var(--hm-text3)" }}>
+            <p className="text-[11px] md:text-[12px] mt-1" style={{ color: "var(--hm-text3)" }}>
               {card.subtitle}
             </p>
           </div>
