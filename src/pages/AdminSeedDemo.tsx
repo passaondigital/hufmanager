@@ -165,10 +165,10 @@ export default function AdminSeedDemo() {
       updateStep(3, { status: "running" });
 
       const vaccinations = [
-        { vaccine_type: "Influenza", vaccine_name: "ProteqFlu-Te", vaccination_date: ago(5), next_due_date: ago(-7), batch_number: "INFL-2025-4892", administered_by: "Dr. K. Müller" },
-        { vaccine_type: "Tetanus", vaccine_name: "ProteqFlu-Te", vaccination_date: ago(5), next_due_date: ago(-19), batch_number: "INFL-2025-4892", administered_by: "Dr. K. Müller" },
-        { vaccine_type: "Herpes", vaccine_name: "Equip EHV", vaccination_date: ago(7), next_due_date: ago(-1), batch_number: "EHV-2025-1122", administered_by: "Dr. K. Müller" },
-        { vaccine_type: "Influenza", vaccine_name: "ProteqFlu-Te", vaccination_date: ago(11), administered_by: "Dr. K. Müller" },
+        { vaccine_type: "Influenza", vaccine_name: "ProteqFlu-Te", vaccination_date: ago(5), next_due_date: ago(-7), batch_number: "DEMO-2025-4892", administered_by: "Demo-Tierärztin" },
+        { vaccine_type: "Tetanus", vaccine_name: "ProteqFlu-Te", vaccination_date: ago(5), next_due_date: ago(-19), batch_number: "DEMO-2025-4892", administered_by: "Demo-Tierärztin" },
+        { vaccine_type: "Herpes", vaccine_name: "Equip EHV", vaccination_date: ago(7), next_due_date: ago(-1), batch_number: "DEMO-2025-1122", administered_by: "Demo-Tierärztin" },
+        { vaccine_type: "Influenza", vaccine_name: "ProteqFlu-Te", vaccination_date: ago(11), administered_by: "Demo-Tierärztin" },
       ];
 
       // next_due_date: negative months = future
