@@ -20,6 +20,12 @@ const QuoteContent = lazy(() => import("./content/QuoteContent"));
 const BirthdaysContent = lazy(() => import("./content/BirthdaysContent"));
 const WorkTimeContent = lazy(() => import("./content/WorkTimeContent"));
 const PlaceholderContent = lazy(() => import("./content/PlaceholderContent"));
+const ClientNextAppointmentContent = lazy(() => import("./content/ClientNextAppointmentContent"));
+const ClientHorsesContent = lazy(() => import("./content/ClientHorsesContent"));
+const ClientHealthFeedContent = lazy(() => import("./content/ClientHealthFeedContent"));
+const ClientActionCenterContent = lazy(() => import("./content/ClientActionCenterContent"));
+const ClientProviderContent = lazy(() => import("./content/ClientProviderContent"));
+const ClientOrdersContent = lazy(() => import("./content/ClientOrdersContent"));
 
 interface WidgetRendererProps {
   type: string;
