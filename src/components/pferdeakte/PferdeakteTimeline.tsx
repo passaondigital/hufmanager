@@ -12,6 +12,7 @@ import { getPartnerTypeConfig } from "@/lib/partnerTypes";
 import { DemoFeatureHighlight } from "@/components/demo/DemoFeatureHighlight";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { PFERDEAKTE_HELP } from "./pferdeakteHelpTexts";
+import { DocumentViewer } from "./DocumentViewer";
 import type { PferdeakteUserRole, TimelineItem } from "./types";
 
 const FILTER_CHIPS = [
@@ -309,6 +310,7 @@ export function PferdeakteTimeline({ horseId, userRole }: Props) {
 
 function TimelineCard({ item }: { item: TimelineItem }) {
   const [expanded, setExpanded] = useState(false);
+  const [viewerPhoto, setViewerPhoto] = useState<string | null>(null);
 
   const dotBg = item.type === "huf" ? "bg-primary" :
     item.type.startsWith("vet") ? "bg-blue-500" :
@@ -406,11 +408,15 @@ function TimelineCard({ item }: { item: TimelineItem }) {
                 </>
               )}
 
-              {/* Expanded photos */}
+              {/* Expanded photos — clickable for in-app viewer */}
               {item.photos && item.photos.length > 0 && (
                 <div className="grid grid-cols-2 gap-2 mt-2">
                   {item.photos.map((url, i) => (
-                    <div key={i} className="aspect-square rounded-lg overflow-hidden bg-muted">
+                    <div
+                      key={i}
+                      className="aspect-square rounded-lg overflow-hidden bg-muted cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                      onClick={() => setViewerPhoto(url)}
+                    >
                       <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
                     </div>
                   ))}
@@ -420,6 +426,17 @@ function TimelineCard({ item }: { item: TimelineItem }) {
           )}
         </CardContent>
       </Card>
+
+      {/* In-App Photo Viewer */}
+      {viewerPhoto && (
+        <DocumentViewer
+          open={!!viewerPhoto}
+          onClose={() => setViewerPhoto(null)}
+          url={viewerPhoto}
+          fileName={`Foto-${item.date}`}
+          fileType="image"
+        />
+      )}
     </div>
   );
 }

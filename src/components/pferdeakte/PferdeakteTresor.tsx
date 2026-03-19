@@ -25,6 +25,9 @@ import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { DemoFeatureHighlight } from "@/components/demo/DemoFeatureHighlight";
 import { EmergencyQRCode } from "./EmergencyQRCode";
+import { DocumentViewer } from "./DocumentViewer";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { PFERDEAKTE_HELP } from "./pferdeakteHelpTexts";
 
 interface PferdeakteTresorProps {
   horseId: string;
@@ -261,10 +264,18 @@ export function PferdeakteTresor({ horseId, horse }: PferdeakteTresorProps) {
     }
   };
 
+  const [viewerDoc, setViewerDoc] = useState<{ url: string; name: string; type: string } | null>(null);
+
   const handleDownload = async (doc: VaultDocument) => {
     const url = await getStorageUrl('horse-vault', doc.file_url);
     if (url) window.open(url, '_blank');
     else toast.error("Download fehlgeschlagen");
+  };
+
+  const handlePreview = async (doc: VaultDocument) => {
+    const url = await getStorageUrl('horse-vault', doc.file_url);
+    if (url) setViewerDoc({ url, name: doc.file_name, type: doc.file_type || "" });
+    else toast.error("Vorschau nicht verfügbar");
   };
 
   // Emergency contacts from horse
@@ -497,6 +508,9 @@ export function PferdeakteTresor({ horseId, horse }: PferdeakteTresorProps) {
                 {doc ? (
                   <div className="flex items-center gap-1">
                     <CheckCircle className="h-4 w-4 text-green-500" />
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handlePreview(doc)} title="Vorschau">
+                      <Eye className="h-4 w-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDownload(doc)}>
                       <Download className="h-4 w-4" />
                     </Button>
@@ -650,6 +664,18 @@ export function PferdeakteTresor({ horseId, horse }: PferdeakteTresorProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* In-App Document Viewer */}
+      {viewerDoc && (
+        <DocumentViewer
+          open={!!viewerDoc}
+          onClose={() => setViewerDoc(null)}
+          url={viewerDoc.url}
+          fileName={viewerDoc.name}
+          fileType={viewerDoc.type}
+          protectScreenshot
+        />
+      )}
     </div>
   );
 }

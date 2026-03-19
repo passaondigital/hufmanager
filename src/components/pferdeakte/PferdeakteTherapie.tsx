@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Activity, FileDown, Loader2, UserPlus, Lightbulb } from "lucide-react";
 import { FeatureHint } from "@/components/ui/FeatureHint";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { PFERDEAKTE_HELP } from "./pferdeakteHelpTexts";
 import { getPartnerTypeConfig, PARTNER_TYPE_OPTIONS } from "@/lib/partnerTypes";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";

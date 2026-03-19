@@ -1,12 +1,14 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Syringe, CheckCircle, AlertTriangle, Clock, FileDown } from "lucide-react";
+import { Syringe, CheckCircle, AlertTriangle, Clock, FileDown, ImagePlus } from "lucide-react";
 import { TabImpfungEntwurmung } from "@/components/horse-detail/TabImpfungEntwurmung";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { PFERDEAKTE_HELP } from "./pferdeakteHelpTexts";
+import { XrayUpload } from "./XrayUpload";
 import { toast } from "sonner";
 import type { PferdeakteUserRole } from "./types";
 
@@ -16,6 +18,7 @@ interface Props {
 }
 
 export function PferdeakteVet({ horseId, userRole }: Props) {
+  const [showXrayUpload, setShowXrayUpload] = useState(false);
   // Fetch vaccination status summary
   const { data: vaccStatus } = useQuery({
     queryKey: ["pferdeakte-vacc-status", horseId],
@@ -105,6 +108,39 @@ export function PferdeakteVet({ horseId, userRole }: Props) {
               ))}
             </div>
           </CardContent>
+        </Card>
+      )}
+
+      {/* Röntgenbilder */}
+      {(userRole === "provider" || userRole === "client") && (
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <ImagePlus className="h-4 w-4 text-muted-foreground" />
+                Röntgenbilder
+                <InfoTooltip {...PFERDEAKTE_HELP.sections.xray} />
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs gap-1"
+                onClick={() => setShowXrayUpload(!showXrayUpload)}
+              >
+                <ImagePlus className="h-3.5 w-3.5" />
+                {showXrayUpload ? "Abbrechen" : "Hochladen"}
+              </Button>
+            </div>
+          </CardHeader>
+          {showXrayUpload && (
+            <CardContent>
+              <XrayUpload
+                horseId={horseId}
+                onComplete={() => setShowXrayUpload(false)}
+                onCancel={() => setShowXrayUpload(false)}
+              />
+            </CardContent>
+          )}
         </Card>
       )}
 
