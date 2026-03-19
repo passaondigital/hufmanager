@@ -2586,6 +2586,125 @@ export type Database = {
           },
         ]
       }
+      client_marketplace_inquiries: {
+        Row: {
+          created_at: string | null
+          id: string
+          listing_id: string
+          message: string
+          sender_id: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          listing_id: string
+          message: string
+          sender_id: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          listing_id?: string
+          message?: string
+          sender_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_marketplace_inquiries_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "client_marketplace_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_marketplace_listings: {
+        Row: {
+          available_from: string | null
+          available_until: string | null
+          capacity: number | null
+          category: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string | null
+          description: string | null
+          expires_at: string | null
+          id: string
+          images: string[] | null
+          is_featured: boolean | null
+          listing_type: Database["public"]["Enums"]["listing_type"]
+          location_country: string | null
+          location_name: string | null
+          location_plz: string | null
+          owner_id: string
+          price_amount: number | null
+          price_label: string | null
+          price_unit: string | null
+          status: Database["public"]["Enums"]["listing_status"]
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+          view_count: number | null
+        }
+        Insert: {
+          available_from?: string | null
+          available_until?: string | null
+          capacity?: number | null
+          category?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          images?: string[] | null
+          is_featured?: boolean | null
+          listing_type: Database["public"]["Enums"]["listing_type"]
+          location_country?: string | null
+          location_name?: string | null
+          location_plz?: string | null
+          owner_id: string
+          price_amount?: number | null
+          price_label?: string | null
+          price_unit?: string | null
+          status?: Database["public"]["Enums"]["listing_status"]
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          available_from?: string | null
+          available_until?: string | null
+          capacity?: number | null
+          category?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          images?: string[] | null
+          is_featured?: boolean | null
+          listing_type?: Database["public"]["Enums"]["listing_type"]
+          location_country?: string | null
+          location_name?: string | null
+          location_plz?: string | null
+          owner_id?: string
+          price_amount?: number | null
+          price_label?: string | null
+          price_unit?: string | null
+          status?: Database["public"]["Enums"]["listing_status"]
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Relationships: []
+      }
       client_referrals: {
         Row: {
           channel: string
@@ -16375,6 +16494,14 @@ export type Database = {
       help_article_role_access: "all" | "pid_only" | "kid_only"
       holding_type: "box" | "open_stable" | "mixed" | "pasture"
       lifecycle_status: "new" | "active" | "archive"
+      listing_status: "active" | "paused" | "expired" | "draft"
+      listing_type:
+        | "einstellplatz"
+        | "kurs"
+        | "dienstleistung"
+        | "produkt"
+        | "gesuch"
+        | "sonstiges"
       organization_role: "admin" | "employee"
       partner_type:
         | "tierarzt"
@@ -16558,6 +16685,15 @@ export const Constants = {
       help_article_role_access: ["all", "pid_only", "kid_only"],
       holding_type: ["box", "open_stable", "mixed", "pasture"],
       lifecycle_status: ["new", "active", "archive"],
+      listing_status: ["active", "paused", "expired", "draft"],
+      listing_type: [
+        "einstellplatz",
+        "kurs",
+        "dienstleistung",
+        "produkt",
+        "gesuch",
+        "sonstiges",
+      ],
       organization_role: ["admin", "employee"],
       partner_type: [
         "tierarzt",
