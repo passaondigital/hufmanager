@@ -68,7 +68,7 @@ interface AccessLogEntry {
 
 type VaultState = "loading" | "setup_pin" | "enter_pin" | "locked" | "unlocked";
 
-export function PferdeakteTresor({ horseId, horse }: PferdeakteTresorProps) {
+export function PferdeakteTresor({ horseId, horse, userRole }: PferdeakteTresorProps) {
   const { user } = useAuth();
   const [state, setState] = useState<VaultState>("loading");
   const [pin, setPin] = useState("");
