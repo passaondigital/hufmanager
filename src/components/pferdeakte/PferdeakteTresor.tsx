@@ -664,6 +664,18 @@ export function PferdeakteTresor({ horseId, horse }: PferdeakteTresorProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* In-App Document Viewer */}
+      {viewerDoc && (
+        <DocumentViewer
+          open={!!viewerDoc}
+          onClose={() => setViewerDoc(null)}
+          url={viewerDoc.url}
+          fileName={viewerDoc.name}
+          fileType={viewerDoc.type}
+          protectScreenshot
+        />
+      )}
     </div>
   );
 }
