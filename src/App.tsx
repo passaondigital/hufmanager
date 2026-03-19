@@ -741,6 +741,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client/botschafter" element={<ClientBotschafter />} />
               <Route path="/client/search-providers" element={<SearchProviders />} />
               <Route path="/client-connect" element={<HMConnect />} />
+              <Route path="/client-network" element={<ClientNetwork />} />
             </Route>
 
             {/* --- 4. EMPLOYEE (MITARBEITER) ROUTES --- */}
