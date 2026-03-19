@@ -65,7 +65,7 @@ export default function RevenueWeekContent(_props: WidgetContentProps) {
         ))}
       </div>
       <p className="text-[10px] text-muted-foreground">
-        Ø pro Tag: {(total / 7).toFixed(2)} €
+        Ø pro Tag: {(total / 7).toFixed(2)} {currency}
       </p>
     </div>
   );

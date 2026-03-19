@@ -30,10 +30,15 @@ export default function RevenueMonthContent(_props: WidgetContentProps) {
     enabled: !!user?.id,
   });
 
+  const suffix = taxConfig.mwstPflichtig && !taxConfig.kleinunternehmer
+    ? ` ${taxConfig.priceDisplayMode === "netto" ? "netto" : "brutto"}`
+    : "";
+  const currency = taxConfig.country === "CH" ? "CHF" : "€";
+
   return (
     <div className="space-y-2">
       <div className="flex items-baseline justify-between">
-        <span className="text-2xl font-bold text-foreground">{(data?.total || 0).toFixed(2)} €</span>
+        <span className="text-2xl font-bold text-foreground">{(data?.total || 0).toFixed(2)} {currency}{suffix && <span className="text-xs font-normal text-muted-foreground ml-1">{suffix}</span>}</span>
         <span className="text-xs text-muted-foreground">{format(now, "MMMM yyyy", { locale: undefined })}</span>
       </div>
       <p className="text-xs text-muted-foreground">
