@@ -11,22 +11,26 @@ export async function logHorseAction(
   actionDetail?: Record<string, unknown>
 ): Promise<void> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const user = session?.user;
     if (!user) return;
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name, readable_id")
-      .eq("id", user.id)
-      .single();
-
-    // Determine role from user_roles
-    const { data: roleData } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .limit(1)
-      .maybeSingle();
+    const [{ data: profile }, { data: roleData }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("full_name, readable_id")
+        .eq("id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .limit(1)
+        .maybeSingle(),
+    ]);
 
     await supabase.from("horse_audit_log").insert({
       horse_id: horseId,
