@@ -1025,7 +1025,7 @@ export function CreateInvoiceModal({
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <Label className="text-xs text-muted-foreground shrink-0">Netto €:</Label>
+                  <Label className="text-xs text-muted-foreground shrink-0">Preis €:</Label>
                   <Input
                     type="number"
                     step="0.01"

@@ -35,7 +35,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ServicePaymentModal } from "@/components/services/ServicePaymentModal";
 import { GroupPricingSection } from "@/components/services/GroupPricingSection";
 import { useTaxConfig } from "@/hooks/useTaxConfig";
-import { formatPriceLabel } from "@/lib/taxConfig";
+import { formatPriceLabel, calculateDisplayPrice, VAT_RATES } from "@/lib/taxConfig";
 
 const categoryColors: Record<string, string> = {
   Standard: "bg-accent/10 text-accent",
@@ -348,14 +348,21 @@ const Services = () => {
                   value={formData.base_price}
                   onChange={(e) => setFormData({ ...formData, base_price: Number(e.target.value) })}
                 />
-                <p className="text-xs text-muted-foreground">
-                  {taxConfig.kleinunternehmer
-                    ? "Kleinunternehmer: Netto = Brutto (keine MwSt)."
-                    : taxConfig.priceDisplayMode === "brutto"
-                      ? "Brutto-Preis eingeben (MwSt ist enthalten)."
-                      : "Netto-Preis eingeben. MwSt wird auf der Rechnung aufgeschlagen."
-                  }
-                </p>
+                {taxConfig.mwstPflichtig && !taxConfig.kleinunternehmer && formData.base_price > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    = {calculateDisplayPrice(formData.base_price, taxConfig, taxConfig.priceDisplayMode === "netto" ? "brutto" : "netto").toFixed(2)} € {taxConfig.priceDisplayMode === "netto" ? "brutto" : "netto"} ({taxConfig.vatRate}% {VAT_RATES[taxConfig.country]?.label || "MwSt"})
+                  </p>
+                )}
+                {taxConfig.kleinunternehmer && (
+                  <p className="text-xs text-muted-foreground">
+                    Kleinunternehmer: Netto = Brutto (keine MwSt).
+                  </p>
+                )}
+                {!taxConfig.kleinunternehmer && !taxConfig.mwstPflichtig && (
+                  <p className="text-xs text-muted-foreground">
+                    MwSt wird auf der Rechnung berechnet.
+                  </p>
+                )}
               </div>
             </div>
 
