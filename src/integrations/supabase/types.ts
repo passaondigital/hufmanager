@@ -2382,6 +2382,71 @@ export type Database = {
         }
         Relationships: []
       }
+      client_connections: {
+        Row: {
+          connection_type: string
+          created_at: string
+          id: string
+          message: string | null
+          requester_id: string
+          responded_at: string | null
+          status: string
+          target_id: string
+          updated_at: string
+        }
+        Insert: {
+          connection_type?: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          requester_id: string
+          responded_at?: string | null
+          status?: string
+          target_id: string
+          updated_at?: string
+        }
+        Update: {
+          connection_type?: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          requester_id?: string
+          responded_at?: string | null
+          status?: string
+          target_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_connections_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_connections_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_connections_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_connections_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_consents: {
         Row: {
           client_id: string
@@ -2585,6 +2650,77 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_verification_documents: {
+        Row: {
+          document_name: string
+          document_type: string
+          file_url: string | null
+          id: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          uploaded_at: string
+          user_id: string
+        }
+        Insert: {
+          document_name: string
+          document_type: string
+          file_url?: string | null
+          id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          uploaded_at?: string
+          user_id: string
+        }
+        Update: {
+          document_name?: string
+          document_type?: string
+          file_url?: string | null
+          id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          uploaded_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_verification_documents_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_verification_documents_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_verification_documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_verification_documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -13439,6 +13575,134 @@ export type Database = {
           {
             foreignKeyName: "stall_board_posts_author_id_fkey"
             columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stall_horse_access: {
+        Row: {
+          can_view_basic: boolean
+          can_view_emergency: boolean
+          can_view_equidenpass: boolean
+          can_view_feeding: boolean
+          can_view_health_status: boolean
+          can_view_hoof_status: boolean
+          can_view_insurance: boolean
+          can_view_vaccination: boolean
+          can_view_vet_reports: boolean
+          granted_at: string
+          granted_by: string | null
+          horse_id: string
+          horse_owner_id: string
+          id: string
+          stall_owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          can_view_basic?: boolean
+          can_view_emergency?: boolean
+          can_view_equidenpass?: boolean
+          can_view_feeding?: boolean
+          can_view_health_status?: boolean
+          can_view_hoof_status?: boolean
+          can_view_insurance?: boolean
+          can_view_vaccination?: boolean
+          can_view_vet_reports?: boolean
+          granted_at?: string
+          granted_by?: string | null
+          horse_id: string
+          horse_owner_id: string
+          id?: string
+          stall_owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          can_view_basic?: boolean
+          can_view_emergency?: boolean
+          can_view_equidenpass?: boolean
+          can_view_feeding?: boolean
+          can_view_health_status?: boolean
+          can_view_hoof_status?: boolean
+          can_view_insurance?: boolean
+          can_view_vaccination?: boolean
+          can_view_vet_reports?: boolean
+          granted_at?: string
+          granted_by?: string | null
+          horse_id?: string
+          horse_owner_id?: string
+          id?: string
+          stall_owner_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stall_horse_access_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stall_horse_access_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stall_horse_access_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stall_horse_access_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stall_horse_access_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stall_horse_access_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stall_horse_access_horse_owner_id_fkey"
+            columns: ["horse_owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stall_horse_access_horse_owner_id_fkey"
+            columns: ["horse_owner_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stall_horse_access_stall_owner_id_fkey"
+            columns: ["stall_owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stall_horse_access_stall_owner_id_fkey"
+            columns: ["stall_owner_id"]
             isOneToOne: false
             referencedRelation: "safe_provider_profiles"
             referencedColumns: ["id"]
