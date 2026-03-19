@@ -745,6 +745,9 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client/search-providers" element={<SearchProviders />} />
               <Route path="/client-connect" element={<HMConnect />} />
               <Route path="/client-network" element={<ClientNetwork />} />
+              <Route path="/client-marketplace" element={<ClientMarketplace />} />
+              <Route path="/client-marketplace/create" element={<ClientMarketplaceCreate />} />
+              <Route path="/client-marketplace/mine" element={<ClientMyListings />} />
             </Route>
 
             {/* --- 4. EMPLOYEE (MITARBEITER) ROUTES --- */}

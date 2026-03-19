@@ -77,6 +77,10 @@ function getClientNavigationConfig(mode: ClientModeType, isVerified: boolean): N
           { id: "notifications", label: "Benachrichtigungen", iconName: "Bell", path: "/client-notifications" },
           { id: "connect", label: "HM Connect", iconName: "Link2", path: "/client-connect" },
           { id: "network", label: "Netzwerk", iconName: "Users", path: "/client-network" },
+          { id: "marketplace", label: "Pferdemarkt", iconName: "Store", path: "/client-marketplace" },
+          ...(isBusiness
+            ? [{ id: "my-listings", label: "Meine Inserate", iconName: "Tag", path: "/client-marketplace/mine" }]
+            : []),
         ],
       },
       // --- Stallbetreiber-Bereich ---
