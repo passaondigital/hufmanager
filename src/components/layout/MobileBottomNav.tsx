@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useState } from "react";
+import { Link2 } from "lucide-react";
 import { Home, Calendar, Plus, User, MessageSquare, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,8 +28,8 @@ const providerNavItems: NavItem[] = [
 const clientNavItems: NavItem[] = [
   { icon: Home, label: "Home", path: "/client-home" },
   { icon: Calendar, label: "Buchen", path: "/client-booking" },
+  { icon: Link2, label: "Connect", path: "/client-connect" },
   { icon: MessageSquare, label: "Chat", path: "/client-chat" },
-  { icon: User, label: "Profil", path: "/client-profile" },
 ];
 
 const quickActions = [

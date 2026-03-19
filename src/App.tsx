@@ -720,6 +720,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client-notfall" element={<EmergencyDashboard />} />
               <Route path="/client/botschafter" element={<ClientBotschafter />} />
               <Route path="/client/search-providers" element={<SearchProviders />} />
+              <Route path="/client-connect" element={<HMConnect />} />
             </Route>
 
             {/* --- 4. EMPLOYEE (MITARBEITER) ROUTES --- */}
@@ -754,6 +755,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/employee/management/botschafter" element={<EmployeeManagementBotschafter />} />
               <Route path="/employee/support" element={<Support />} />
               <Route path="/employee/pferde" element={<EmployeePferde />} />
+              <Route path="/employee/connect" element={<HMConnect />} />
             </Route>
 
             {/* --- 5. PARTNER (FACHPARTNER) ROUTES --- */}

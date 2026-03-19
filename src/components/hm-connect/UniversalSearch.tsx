@@ -170,7 +170,7 @@ export function UniversalSearch({ onConnectionRequested }: { onConnectionRequest
     if (q.includes("@")) return "📧 E-Mail-Suche";
     if (/^\d{4,5}$/.test(q)) return "📍 PLZ-Suche";
     if (/^#?[A-Z]{2,4}-/i.test(q)) return "🔑 ID-Suche";
-    return "🔤 Name-Suche";
+    return "🔤 Name/Beruf-Suche";
   };
 
   return (
@@ -181,7 +181,7 @@ export function UniversalSearch({ onConnectionRequested }: { onConnectionRequest
           Universelle Suche
         </CardTitle>
         <CardDescription>
-          Suche nach Name, PLZ, E-Mail, Beruf oder #ID (#PID, #KID, #PRID, #EQID)
+          Suche nach Name, PLZ, E-Mail, Beruf/Fachgebiet oder #ID (#PID, #KID, #PRID, #EQID)
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -189,7 +189,7 @@ export function UniversalSearch({ onConnectionRequested }: { onConnectionRequest
         <div className="space-y-2">
           <div className="flex gap-2">
             <Input
-              placeholder="Name, PLZ, E-Mail oder #ID eingeben..."
+              placeholder="Name, PLZ, E-Mail, Beruf oder #ID eingeben..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
