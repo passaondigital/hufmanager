@@ -68,6 +68,7 @@ const ClientInvoices = lazy(() => import("@/pages/ClientInvoices"));
 const ClientPermissions = lazy(() => import("@/pages/ClientPermissions"));
 const ClientBooking = lazy(() => import("@/pages/ClientBooking"));
 const ClientProfile = lazy(() => import("@/pages/ClientProfile"));
+const ClientAccountType = lazy(() => import("@/pages/ClientAccountType"));
 const ClientChat = lazy(() => import("@/pages/ClientChat"));
 const ClientStallBoard = lazy(() => import("@/pages/ClientStallBoard"));
 const ClientHorses = lazy(() => import("@/pages/ClientHorses"));
