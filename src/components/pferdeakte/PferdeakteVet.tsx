@@ -18,6 +18,7 @@ interface Props {
 }
 
 export function PferdeakteVet({ horseId, userRole }: Props) {
+  const [showXrayUpload, setShowXrayUpload] = useState(false);
   // Fetch vaccination status summary
   const { data: vaccStatus } = useQuery({
     queryKey: ["pferdeakte-vacc-status", horseId],
