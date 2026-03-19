@@ -349,9 +349,9 @@ export default function HMConnect() {
         <CardContent className="p-4 flex items-start gap-3">
           <Shield className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
           <div className="text-sm">
-            <p className="font-medium text-foreground">4 Wege zur Vernetzung</p>
+            <p className="font-medium text-foreground">5 Wege zur Vernetzung</p>
             <p className="text-muted-foreground mt-1">
-              <strong>🔍 Suchen</strong> — Name, PLZ, E-Mail oder #ID. 
+              <strong>🔍 Suchen</strong> — Name, PLZ, E-Mail, Beruf oder #ID. 
               <strong> 📱 QR-Code</strong> — Scannen oder teilen. 
               <strong> ✉️ Einladen</strong> — Per E-Mail einladen.
               <strong> 🐴 Equid-Rechte</strong> — Pro Pferd granular steuern.
