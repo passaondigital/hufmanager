@@ -6,6 +6,8 @@ import { HorseTransferWizard } from "./HorseTransferWizard";
 import { HorseStatusReport } from "./HorseStatusReport";
 import { supabase } from "@/integrations/supabase/client";
 import { logHorseAction } from "@/utils/auditLog";
+import { notifyHorseStakeholders } from "@/utils/notifyHorseStakeholders";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 interface HorseStatusModalProps {
