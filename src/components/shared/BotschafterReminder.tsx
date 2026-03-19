@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Megaphone, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,24 +36,22 @@ export function BotschafterReminder() {
   const [showJoinTooltip, setShowJoinTooltip] = useState(false);
   const checkedRef = useRef(false);
 
+  // Swipe state
+  const touchStartY = useRef(0);
+  const touchDeltaY = useRef(0);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const bannerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!user?.id || checkedRef.current) return;
     checkedRef.current = true;
 
-    // Date check
     if (new Date() >= LAUNCH_DATE) return;
-
-    // Route check
     const path = location.pathname;
     if (path.startsWith("/botschafter") || path.startsWith("/pferdeakte")) return;
-
-    // Permanent dismiss
     if (localStorage.getItem(DISMISS_KEY) === "true") return;
-
-    // Session dismiss
     if (sessionStorage.getItem(SESSION_KEY) === "true") return;
 
-    // DB check — is user already a Botschafter?
     supabase
       .from("pferdeakte_botschafter")
       .select("id")
@@ -61,13 +59,12 @@ export function BotschafterReminder() {
       .limit(1)
       .maybeSingle()
       .then(({ data }) => {
-        if (data) return; // Already a Botschafter
+        if (data) return;
         setVisible(true);
         requestAnimationFrame(() => setAnimateIn(true));
       });
   }, [user?.id, location.pathname]);
 
-  // Also hide on route changes to botschafter/pferdeakte
   useEffect(() => {
     const path = location.pathname;
     if (path.startsWith("/botschafter") || path.startsWith("/pferdeakte")) {
@@ -75,25 +72,48 @@ export function BotschafterReminder() {
     }
   }, [location.pathname]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     sessionStorage.setItem(SESSION_KEY, "true");
     setAnimateOut(true);
     setTimeout(() => setVisible(false), 300);
-  };
+  }, []);
 
-  const handleDismissPermanent = () => {
+  const handleDismissPermanent = useCallback(() => {
     localStorage.setItem(DISMISS_KEY, "true");
     setAnimateOut(true);
     setTimeout(() => setVisible(false), 300);
-  };
+  }, []);
 
-  const handleJoin = () => {
+  const handleJoin = useCallback(() => {
     setShowJoinTooltip(true);
     setTimeout(() => {
       setShowJoinTooltip(false);
       navigate(getTargetRoute(role));
     }, 1500);
-  };
+  }, [navigate, role]);
+
+  // Touch handlers for swipe-to-dismiss
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+    touchDeltaY.current = 0;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    const delta = e.touches[0].clientY - touchStartY.current;
+    // Only allow downward swipe (positive delta = swipe down to dismiss)
+    const clampedDelta = Math.max(0, delta);
+    touchDeltaY.current = clampedDelta;
+    setSwipeOffset(clampedDelta);
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (touchDeltaY.current > 80) {
+      // Swiped far enough — dismiss for session
+      handleClose();
+    }
+    setSwipeOffset(0);
+    touchDeltaY.current = 0;
+  }, [handleClose]);
 
   if (!visible) return null;
 
@@ -101,21 +121,36 @@ export function BotschafterReminder() {
 
   return (
     <div
+      ref={bannerRef}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       className={cn(
         "fixed bottom-0 left-0 right-0 z-40 transition-transform duration-300 ease-out",
         animateIn && !animateOut ? "translate-y-0" : "translate-y-full"
       )}
-      style={{ background: "#0a0a0a" }}
+      style={{
+        background: "#0a0a0a",
+        transform: animateIn && !animateOut && swipeOffset > 0
+          ? `translateY(${swipeOffset}px)`
+          : undefined,
+        transition: swipeOffset > 0 ? "none" : undefined,
+      }}
     >
+      {/* Swipe indicator */}
+      <div className="flex justify-center pt-2 pb-0 lg:hidden">
+        <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 py-3 lg:py-4 flex flex-col lg:flex-row items-start lg:items-center gap-3 lg:gap-6">
         {/* Left — Icon + Text */}
         <div className="flex items-start gap-3 flex-1 min-w-0">
           <Megaphone className="h-6 w-6 text-primary shrink-0 mt-0.5" />
           <div className="min-w-0">
-            <p className="text-white font-bold text-[15px] leading-tight">
+            <p className="text-foreground font-bold text-[15px] leading-tight">
               🐴 Werde HufManager Botschafter — bis zu 50% Provision
             </p>
-            <p className="text-gray-400 text-[13px] mt-0.5 leading-snug">
+            <p className="text-muted-foreground text-[13px] mt-0.5 leading-snug">
               Empfehle HufManager und verdiene. Die Kunden-App ist kostenlos — du verdienst wenn Profis buchen.
             </p>
           </div>
@@ -144,7 +179,7 @@ export function BotschafterReminder() {
               🎙️ Jetzt mitmachen
             </Button>
             {showJoinTooltip && (
-              <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-64 rounded-lg bg-white text-foreground text-xs p-3 shadow-lg border border-border z-50 text-center">
+              <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-64 rounded-lg bg-card text-foreground text-xs p-3 shadow-lg border border-border z-50 text-center">
                 Du findest das Botschafter-Programm immer unter Management → Botschafter werden 🎙️
               </div>
             )}
@@ -155,7 +190,7 @@ export function BotschafterReminder() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-gray-400 hover:text-white hover:bg-white/10 h-9 px-3 text-xs"
+                className="text-muted-foreground hover:text-foreground hover:bg-muted/10 h-9 px-3 text-xs"
               >
                 Kein Interesse
               </Button>
@@ -175,7 +210,7 @@ export function BotschafterReminder() {
                   onClick={handleDismissPermanent}
                   className="flex-1 text-xs h-9"
                 >
-                  Ja, kein Interesse
+                  Ja, dauerhaft ausblenden
                 </Button>
                 <Button
                   size="sm"
@@ -190,7 +225,7 @@ export function BotschafterReminder() {
 
           <button
             onClick={handleClose}
-            className="text-gray-500 hover:text-gray-300 transition-colors p-1"
+            className="text-muted-foreground hover:text-foreground transition-colors p-1"
             aria-label="Schließen"
           >
             <X className="h-4 w-4" />
@@ -236,7 +271,6 @@ export function useBotschafterReminderVisible(): boolean {
     }
   }, [location.pathname]);
 
-  // Listen for dismiss events
   useEffect(() => {
     const check = () => {
       if (localStorage.getItem(DISMISS_KEY) === "true" || sessionStorage.getItem(SESSION_KEY) === "true") {
