@@ -10,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ArrowLeft, Search, Upload, CheckCircle, HelpCircle, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { logHorseAction } from "@/utils/auditLog";
+import { notifyHorseStakeholders } from "@/utils/notifyHorseStakeholders";
 import { toast } from "sonner";
 
 interface Props {
@@ -151,7 +152,16 @@ export function HorseTransferWizard({ horseId, horseName, onComplete, onCancel }
         buyer_id: buyer.id,
       });
 
-      // Notify buyer
+      // Notify ALL stakeholders about the transfer
+      await notifyHorseStakeholders({
+        horseId,
+        horseName,
+        event: "transfer_initiated",
+        triggeredBy: user.id,
+        extra: { buyerName: buyer.full_name || buyer.email || "" },
+      });
+
+      // Notify buyer specifically
       await supabase.from("notifications").insert({
         user_id: buyer.id,
         title: "🐴 Pferdeübernahme angefragt",

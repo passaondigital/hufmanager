@@ -10,6 +10,8 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { HoofPhotoComparison } from "./HoofPhotoComparison";
 import { HufiAIVoiceRecorder } from "./HufiAIVoiceRecorder";
 import type { HoofFindingResult } from "./HufiAIVoiceRecorder";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { PFERDEAKTE_HELP } from "./pferdeakteHelpTexts";
 import type { PferdeakteUserRole } from "./types";
 import { DemoFeatureHighlight } from "@/components/demo/DemoFeatureHighlight";
 import { toast } from "sonner";

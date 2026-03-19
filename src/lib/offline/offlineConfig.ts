@@ -13,6 +13,12 @@ export const STATIC_QUERY_KEYS = [
   "services",
   "profiles",
   "business-settings",
+  "horse-health-logs",
+  "horse-vaccinations",
+  "horse-diary-entries",
+  "horse-documents",
+  "pferdeakte-horse",
+  "pferdeakte-status",
 ] as const;
 
 // Query keys for dynamic data (shorter stale time)
@@ -35,6 +41,11 @@ export const OFFLINE_MUTATION_TABLES = [
   "messages",
   "hoof_analyses",
   "vehicle_mileage_logs",
+  "horse_health_logs",
+  "horse_vaccinations",
+  "horse_diary_entries",
+  "partner_treatment_notes",
+  "horse_status_reports",
 ] as const;
 
 export type OfflineMutationTable = typeof OFFLINE_MUTATION_TABLES[number];

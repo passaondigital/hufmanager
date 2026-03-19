@@ -8,6 +8,7 @@ import { Heart, Syringe, Clock } from "lucide-react";
 import type { Horse } from "@/components/horse-detail/types";
 import type { PferdeakteUserRole } from "./types";
 import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
+import { usePferdeakteLiveSync, PFERDEAKTE_STALE_TIME } from "@/hooks/usePferdeakteLiveSync";
 import { PferdeakteTabGrid, PFERDEAKTE_TABS } from "./PferdeakteTabGrid";
 import type { PferdeakteTabValue } from "./PferdeakteTabGrid";
 
@@ -30,6 +31,9 @@ const TAB_VALUES = PFERDEAKTE_TABS.map((t) => t.value);
 
 export function Pferdeakte({ horseId, userRole, horse: horseProp, initialTab }: PferdeakteProps) {
   const [activeTab, setActiveTab] = useState<string>(initialTab || "start");
+
+  // Live-sync: subscribe to realtime changes for this horse
+  usePferdeakteLiveSync(horseId);
 
   const currentIndex = TAB_VALUES.indexOf(activeTab as PferdeakteTabValue);
 
@@ -59,6 +63,7 @@ export function Pferdeakte({ horseId, userRole, horse: horseProp, initialTab }: 
       return data;
     },
     enabled: !!horseId && !horseProp,
+    staleTime: PFERDEAKTE_STALE_TIME,
   });
 
   const horse = (horseProp || horseData) as any;
@@ -100,6 +105,7 @@ export function Pferdeakte({ horseId, userRole, horse: horseProp, initialTab }: 
       return { lastHealth, nextVacc, nextAppt };
     },
     enabled: !!horseId,
+    staleTime: PFERDEAKTE_STALE_TIME,
   });
 
   if (isLoading && !horse) {

@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Syringe, CheckCircle, AlertTriangle, Clock, FileDown } from "lucide-react";
 import { TabImpfungEntwurmung } from "@/components/horse-detail/TabImpfungEntwurmung";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { PFERDEAKTE_HELP } from "./pferdeakteHelpTexts";
 import { toast } from "sonner";
 import type { PferdeakteUserRole } from "./types";
 

@@ -6,6 +6,8 @@ import { HorseTransferWizard } from "./HorseTransferWizard";
 import { HorseStatusReport } from "./HorseStatusReport";
 import { supabase } from "@/integrations/supabase/client";
 import { logHorseAction } from "@/utils/auditLog";
+import { notifyHorseStakeholders } from "@/utils/notifyHorseStakeholders";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 interface HorseStatusModalProps {
@@ -20,6 +22,7 @@ type ModalView = "menu" | "transfer" | "deceased" | "stolen" | "archive";
 
 export function HorseStatusModal({ open, onClose, horseId, horseName, onStatusChanged }: HorseStatusModalProps) {
   const [view, setView] = useState<ModalView>("menu");
+  const { user } = useAuth();
 
   const handleArchive = async () => {
     const { error } = await supabase
@@ -37,6 +40,17 @@ export function HorseStatusModal({ open, onClose, horseId, horseName, onStatusCh
     }
 
     await logHorseAction(horseId, "status_changed", { new_status: "archived" });
+
+    // Notify all stakeholders
+    if (user) {
+      await notifyHorseStakeholders({
+        horseId,
+        horseName,
+        event: "archived",
+        triggeredBy: user.id,
+      });
+    }
+
     toast.success(`${horseName} wurde archiviert`);
     onStatusChanged?.();
     handleClose();
