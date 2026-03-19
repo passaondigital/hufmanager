@@ -112,6 +112,14 @@ const ManagementBotschafter = lazy(() => import("@/pages/provider/ManagementBots
 const PartnerManagementBotschafter = lazy(() => import("@/pages/partner/PartnerManagementBotschafter"));
 const EmployeeManagementBotschafter = lazy(() => import("@/pages/employee/EmployeeManagementBotschafter"));
 const ClientBotschafter = lazy(() => import("@/pages/client/ClientBotschafter"));
+const ClientStallManagement = lazy(() => import("@/pages/client/ClientStallManagement"));
+const ClientStallOverview = lazy(() => import("@/pages/client/ClientStallOverview"));
+const ClientStallBoarders = lazy(() => import("@/pages/client/ClientStallBoarders"));
+const ClientStallExperts = lazy(() => import("@/pages/client/ClientStallExperts"));
+const ClientStallStaff = lazy(() => import("@/pages/client/ClientStallStaff"));
+const ClientStallReports = lazy(() => import("@/pages/client/ClientStallReports"));
+const ClientBusinessHub = lazy(() => import("@/pages/client/ClientBusinessHub"));
+const ClientBusinessOverview = lazy(() => import("@/pages/client/ClientBusinessOverview"));
 const BotschafterWerbemittelPage = lazy(() => import("@/pages/botschafter/BotschafterWerbemittelPage"));
 const WerbemittelEditor = lazy(() => import("@/pages/botschafter/WerbemittelEditor"));
 const BotschafterNachrichten = lazy(() => import("@/pages/botschafter/BotschafterNachrichten"));
