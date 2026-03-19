@@ -10,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ArrowLeft, Search, Upload, CheckCircle, HelpCircle, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { logHorseAction } from "@/utils/auditLog";
+import { notifyHorseStakeholders } from "@/utils/notifyHorseStakeholders";
 import { toast } from "sonner";
 
 interface Props {
