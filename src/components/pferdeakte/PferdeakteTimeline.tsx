@@ -310,6 +310,7 @@ export function PferdeakteTimeline({ horseId, userRole }: Props) {
 
 function TimelineCard({ item }: { item: TimelineItem }) {
   const [expanded, setExpanded] = useState(false);
+  const [viewerPhoto, setViewerPhoto] = useState<string | null>(null);
 
   const dotBg = item.type === "huf" ? "bg-primary" :
     item.type.startsWith("vet") ? "bg-blue-500" :
