@@ -12,7 +12,7 @@ import {
 import {
   Shield, ChevronDown, Eye, Stethoscope, Footprints,
   FileText, Syringe, Scale, HeartPulse, BookOpen,
-  CalendarDays, Upload, Users, Bug, Dna, Loader2,
+  CalendarDays, Upload, Users, Bug, Dna, Loader2, MessageCircle,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,6 +42,7 @@ const PERMISSION_TOGGLES: PermissionToggle[] = [
   { key: "can_add_treatment_notes", label: "Behandlungsnotizen", icon: Stethoscope, description: "Eigene Befunde & Notizen hinzufügen" },
   { key: "can_create_appointments", label: "Termine erstellen", icon: CalendarDays, description: "Termine für dieses Pferd anlegen" },
   { key: "can_upload_documents", label: "Dokumente hochladen", icon: Upload, description: "Dokumente zum Pferd hochladen" },
+  { key: "can_view_chat", label: "Equid-Chat", icon: MessageCircle, description: "Am Pferde-Chat teilnehmen" },
 ];
 
 interface HorseAccess {

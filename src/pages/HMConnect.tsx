@@ -11,6 +11,7 @@ import { InviteToHufManager } from "@/components/hm-connect/InviteToHufManager";
 import { MyQRCode } from "@/components/hm-connect/MyQRCode";
 import { ConnectionPermissions } from "@/components/hm-connect/ConnectionPermissions";
 import { EquidPermissionManager } from "@/components/hm-connect/EquidPermissionManager";
+import { EquidChat } from "@/components/hm-connect/EquidChat";
 import { CommunicationMatrix } from "@/components/shared/CommunicationMatrix";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -31,6 +32,7 @@ import {
   UserPlus,
   QrCode,
   Eye,
+  MessageCircle,
 } from "lucide-react";
 
 // Connection overview component
@@ -384,6 +386,11 @@ export default function HMConnect() {
             <span className="hidden sm:inline">Equid-Rechte</span>
             <span className="sm:hidden">Rechte</span>
           </TabsTrigger>
+          <TabsTrigger value="equid-chat" className="gap-1.5 text-xs">
+            <MessageCircle className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Equid-Chat</span>
+            <span className="sm:hidden">Chat</span>
+          </TabsTrigger>
           <TabsTrigger value="permissions" className="gap-1.5 text-xs">
             <Eye className="h-3.5 w-3.5" />
             Info
@@ -408,6 +415,10 @@ export default function HMConnect() {
 
         <TabsContent value="equid" className="mt-6">
           <EquidPermissionManager />
+        </TabsContent>
+
+        <TabsContent value="equid-chat" className="mt-6">
+          <EquidChat />
         </TabsContent>
 
         <TabsContent value="permissions" className="mt-6 space-y-6">
