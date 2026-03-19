@@ -43,6 +43,11 @@ import { useClientMode } from "@/hooks/useClientMode";
 type ClientModeType = "private" | "stall" | "commercial";
 
 function getClientNavigationConfig(mode: ClientModeType, isVerified: boolean): NavigationConfig {
+  const isStall = mode === "stall";
+  const isCommercial = mode === "commercial";
+  const isBusiness = isStall || isCommercial;
+  const verified = isBusiness && isVerified;
+
   const base: NavigationConfig = {
     directItems: [
       { id: "dashboard", label: "Dashboard", iconName: "Home", path: "/client-home" },
@@ -52,8 +57,7 @@ function getClientNavigationConfig(mode: ClientModeType, isVerified: boolean): N
         label: "Meine Pferde",
         items: [
           { id: "horses", label: "Pferde", iconName: "Heart", path: "/client-horses" },
-          // Stallboard only for stall/commercial modes
-          ...(mode !== "private" && isVerified
+          ...(isStall
             ? [{ id: "stall", label: "Stallboard", iconName: "Warehouse", path: "/client-stall" }]
             : []),
         ],
@@ -74,6 +78,33 @@ function getClientNavigationConfig(mode: ClientModeType, isVerified: boolean): N
           { id: "connect", label: "HM Connect", iconName: "Link2", path: "/client-connect" },
         ],
       },
+      // --- Stallbetreiber-Bereich ---
+      ...(isStall
+        ? [{
+            label: "🏇 Stallbetrieb",
+            items: [
+              { id: "stall-mgmt", label: "Stallverwaltung", iconName: "Building2", path: "/client-stall-management" },
+              { id: "stall-overview", label: "Betriebsübersicht", iconName: "BarChart3", path: "/client-stall/overview" },
+              { id: "stall-boarders", label: "Einsteller", iconName: "Users", path: "/client-stall/boarders" },
+              { id: "stall-experts", label: "Stall-Experten", iconName: "Award", path: "/client-stall/experts" },
+              { id: "stall-staff", label: "Mitarbeiter", iconName: "UserPlus", path: "/client-stall/staff" },
+              { id: "stall-reports", label: "Berichte & Behörden", iconName: "FileText", path: "/client-stall/reports" },
+            ],
+          }]
+        : []),
+      // --- Gewerblich-Bereich ---
+      ...(isCommercial
+        ? [{
+            label: "🏢 Gewerbebetrieb",
+            items: [
+              { id: "business-hub", label: "Gewerbeverwaltung", iconName: "Briefcase", path: "/client-business" },
+              { id: "business-overview", label: "Betriebsübersicht", iconName: "BarChart3", path: "/client-business/overview" },
+              { id: "business-customers", label: "Kunden", iconName: "Users", path: "/client-business/customers" },
+              { id: "business-invoices", label: "Betriebsrechnungen", iconName: "FileText", path: "/client-business/invoices" },
+              { id: "business-reports", label: "Berichte & Behörden", iconName: "FileText", path: "/client-business/reports" },
+            ],
+          }]
+        : []),
       {
         label: "Verwaltung",
         items: [
@@ -81,14 +112,6 @@ function getClientNavigationConfig(mode: ClientModeType, isVerified: boolean): N
           { id: "locations", label: "Standorte", iconName: "MapPin", path: "/client-locations" },
           { id: "notfall", label: "Notfall", iconName: "AlertTriangle", path: "/client-notfall" },
           { id: "search-providers", label: "Experten-Verzeichnis", iconName: "Search", path: "/client/search-providers" },
-          // Stall management only for stall mode
-          ...(mode === "stall" && isVerified
-            ? [{ id: "stall-mgmt", label: "Stallverwaltung", iconName: "Building2", path: "/client-stall-management" }]
-            : []),
-          // Business features for commercial mode
-          ...(mode === "commercial" && isVerified
-            ? [{ id: "business", label: "Gewerbeverwaltung", iconName: "Briefcase", path: "/client-business" }]
-            : []),
         ],
       },
       {

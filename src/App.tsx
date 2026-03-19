@@ -112,6 +112,14 @@ const ManagementBotschafter = lazy(() => import("@/pages/provider/ManagementBots
 const PartnerManagementBotschafter = lazy(() => import("@/pages/partner/PartnerManagementBotschafter"));
 const EmployeeManagementBotschafter = lazy(() => import("@/pages/employee/EmployeeManagementBotschafter"));
 const ClientBotschafter = lazy(() => import("@/pages/client/ClientBotschafter"));
+const ClientStallManagement = lazy(() => import("@/pages/client/ClientStallManagement"));
+const ClientStallOverview = lazy(() => import("@/pages/client/ClientStallOverview"));
+const ClientStallBoarders = lazy(() => import("@/pages/client/ClientStallBoarders"));
+const ClientStallExperts = lazy(() => import("@/pages/client/ClientStallExperts"));
+const ClientStallStaff = lazy(() => import("@/pages/client/ClientStallStaff"));
+const ClientStallReports = lazy(() => import("@/pages/client/ClientStallReports"));
+const ClientBusinessHub = lazy(() => import("@/pages/client/ClientBusinessHub"));
+const ClientBusinessOverview = lazy(() => import("@/pages/client/ClientBusinessOverview"));
 const BotschafterWerbemittelPage = lazy(() => import("@/pages/botschafter/BotschafterWerbemittelPage"));
 const WerbemittelEditor = lazy(() => import("@/pages/botschafter/WerbemittelEditor"));
 const BotschafterNachrichten = lazy(() => import("@/pages/botschafter/BotschafterNachrichten"));
@@ -716,6 +724,14 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client-account-type" element={<ClientAccountType />} />
               <Route path="/client-chat" element={<ClientChat />} />
               <Route path="/client-stall" element={<ClientStallBoard />} />
+              <Route path="/client-stall-management" element={<ClientStallManagement />} />
+              <Route path="/client-stall/overview" element={<ClientStallOverview />} />
+              <Route path="/client-stall/boarders" element={<ClientStallBoarders />} />
+              <Route path="/client-stall/experts" element={<ClientStallExperts />} />
+              <Route path="/client-stall/staff" element={<ClientStallStaff />} />
+              <Route path="/client-stall/reports" element={<ClientStallReports />} />
+              <Route path="/client-business" element={<ClientBusinessHub />} />
+              <Route path="/client-business/overview" element={<ClientBusinessOverview />} />
               <Route path="/client-horses" element={<ClientHorses />} />
               <Route path="/client-locations" element={<ClientLocations />} />
               <Route path="/client-notifications" element={<ClientNotifications />} />
