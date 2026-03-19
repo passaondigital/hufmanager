@@ -40,7 +40,7 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
   { type: "client_auftraege", label: "Aufträge", icon: "📋", defaultWidth: 1, defaultHeight: 1, roles: ["client"], category: "Aufträge" },
 ];
 
-export function getWidgetsForRole(role: "provider" | "partner" | "employee"): WidgetDefinition[] {
+export function getWidgetsForRole(role: "provider" | "partner" | "employee" | "client"): WidgetDefinition[] {
   return WIDGET_DEFINITIONS.filter((w) => w.roles.includes(role));
 }
 
