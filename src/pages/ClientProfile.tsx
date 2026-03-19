@@ -138,11 +138,11 @@ export default function ClientProfile() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/client-home")}>
-            <ArrowLeft className="h-5 w-5" />
+      {/* Page Title */}
+      <div className="px-4 py-4 lg:px-6 lg:py-6">
+        <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
+          <User className="h-5 w-5 text-primary" />
+          Mein Profil
           </Button>
           <h1 className="font-semibold text-lg flex items-center gap-2">Mein Profil <HelpTip id="kunden.profil" /></h1>
         </div>

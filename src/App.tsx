@@ -702,7 +702,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route
               element={
                 <ProtectedRoute allowedRoles={["client"]}>
-                  <ClientLayout />
+                  <ClientAppLayout />
                 </ProtectedRoute>
               }
             >
