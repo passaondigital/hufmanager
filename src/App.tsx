@@ -648,6 +648,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/mein-angebot" element={<MeinAngebot />} />
               <Route path="/management" element={<ManagementHub />} />
               <Route path="/management/profil" element={<ManagementProfil />} />
+              <Route path="/management/business" element={<ManagementBusinessHub />} />
               <Route path="/management/website" element={<ManagementWebsite />} />
               <Route path="/management/kommunikation" element={<ManagementKommunikation />} />
               <Route path="/management/abo" element={<ManagementAbo />} />
