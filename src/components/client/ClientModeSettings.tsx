@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { useClientMode, type ClientMode } from "@/hooks/useClientMode";
 import { toast } from "sonner";
 import { VerificationDocuments } from "./VerificationDocuments";
+
+interface ClientModeSettingsProps {
   /** If true, shows as onboarding-style card. If false, as settings section. */
   variant?: "onboarding" | "settings";
   onComplete?: () => void;
