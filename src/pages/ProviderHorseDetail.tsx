@@ -73,7 +73,7 @@ export default function ProviderHorseDetail() {
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   
-  const defaultTab = searchParams.get("tab") || "historie";
+  const defaultTab = searchParams.get("tab") || "pferdeakte";
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [latestVisitExpanded, setLatestVisitExpanded] = useState(true);
 
