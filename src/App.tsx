@@ -50,6 +50,7 @@ const ManagementWebsite = lazy(() => import("@/pages/management/ManagementWebsit
 const ManagementKommunikation = lazy(() => import("@/pages/management/ManagementKommunikation"));
 const ManagementAbo = lazy(() => import("@/pages/management/ManagementAbo"));
 const ManagementRechtliches = lazy(() => import("@/pages/management/ManagementRechtliches"));
+const ManagementSteuer = lazy(() => import("@/pages/management/ManagementSteuer"));
 const Academy = lazy(() => import("@/pages/Academy"));
 const Chat = lazy(() => import("@/pages/Chat"));
 const GeldVerdienen = lazy(() => import("@/pages/GeldVerdienen"));
@@ -193,6 +194,7 @@ const PartnerManagementOeffentlich = lazy(() => import("@/pages/partner/PartnerM
 const PartnerManagementKommunikation = lazy(() => import("@/pages/partner/PartnerManagementKommunikation"));
 const PartnerManagementAbo = lazy(() => import("@/pages/partner/PartnerManagementAbo"));
 const PartnerManagementRechtliches = lazy(() => import("@/pages/partner/PartnerManagementRechtliches"));
+const PartnerManagementSteuer = lazy(() => import("@/pages/partner/PartnerManagementSteuer"));
 const PartnerPferde = lazy(() => import("@/pages/partner/PartnerPferde"));
 const PartnerKunden = lazy(() => import("@/pages/partner/PartnerKunden"));
 const PartnerConnect = lazy(() => import("@/pages/partner/PartnerConnect"));
@@ -648,6 +650,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/management/kommunikation" element={<ManagementKommunikation />} />
               <Route path="/management/abo" element={<ManagementAbo />} />
               <Route path="/management/rechtliches" element={<ManagementRechtliches />} />
+              <Route path="/management/steuer" element={<ManagementSteuer />} />
               <Route path="/management/import" element={<ImportCenter />} />
               <Route path="/management/botschafter" element={<ManagementBotschafter />} />
               <Route path="/academy" element={<Academy />} />
@@ -789,6 +792,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner-management/kommunikation" element={<PartnerManagementKommunikation />} />
               <Route path="/partner-management/abo" element={<PartnerManagementAbo />} />
               <Route path="/partner-management/rechtliches" element={<PartnerManagementRechtliches />} />
+              <Route path="/partner-management/steuer" element={<PartnerManagementSteuer />} />
               <Route path="/partner-management/botschafter" element={<PartnerManagementBotschafter />} />
               <Route path="/partner-support" element={<Support />} />
               <Route path="/partner-rechtliches" element={<PartnerRechtliches />} />
