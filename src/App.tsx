@@ -208,6 +208,7 @@ const PreviewLanding = lazy(() => import("@/pages/PreviewLanding"));
 // Layouts (lazy)
 const EmployeeAppLayout = lazy(() => import("@/components/employee/EmployeeAppLayout").then(m => ({ default: m.EmployeeAppLayout })));
 const PartnerAppLayout = lazy(() => import("@/components/partner/PartnerAppLayout").then(m => ({ default: m.PartnerAppLayout })));
+const ClientAppLayout = lazy(() => import("@/components/client/ClientAppLayout").then(m => ({ default: m.ClientAppLayout })));
 
 // Components
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
