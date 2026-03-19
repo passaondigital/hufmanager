@@ -6516,6 +6516,7 @@ export type Database = {
           ate_normally: boolean | null
           created_at: string | null
           date: string
+          deleted_at: string | null
           hoof_rating: number | null
           horse_id: string
           id: string
@@ -6530,6 +6531,7 @@ export type Database = {
           ate_normally?: boolean | null
           created_at?: string | null
           date?: string
+          deleted_at?: string | null
           hoof_rating?: number | null
           horse_id: string
           id?: string
@@ -6544,6 +6546,7 @@ export type Database = {
           ate_normally?: boolean | null
           created_at?: string | null
           date?: string
+          deleted_at?: string | null
           hoof_rating?: number | null
           horse_id?: string
           id?: string
@@ -7398,6 +7401,7 @@ export type Database = {
           batch_number: string | null
           created_at: string | null
           created_by: string | null
+          deleted_at: string | null
           document_url: string | null
           horse_id: string
           id: string
@@ -7418,6 +7422,7 @@ export type Database = {
           batch_number?: string | null
           created_at?: string | null
           created_by?: string | null
+          deleted_at?: string | null
           document_url?: string | null
           horse_id: string
           id?: string
@@ -7438,6 +7443,7 @@ export type Database = {
           batch_number?: string | null
           created_at?: string | null
           created_by?: string | null
+          deleted_at?: string | null
           document_url?: string | null
           horse_id?: string
           id?: string
@@ -10326,6 +10332,7 @@ export type Database = {
         Row: {
           body_map_zones: Json | null
           created_at: string | null
+          deleted_at: string | null
           findings: string | null
           horse_id: string
           id: string
@@ -10350,6 +10357,7 @@ export type Database = {
         Insert: {
           body_map_zones?: Json | null
           created_at?: string | null
+          deleted_at?: string | null
           findings?: string | null
           horse_id: string
           id?: string
@@ -10374,6 +10382,7 @@ export type Database = {
         Update: {
           body_map_zones?: Json | null
           created_at?: string | null
+          deleted_at?: string | null
           findings?: string | null
           horse_id?: string
           id?: string
