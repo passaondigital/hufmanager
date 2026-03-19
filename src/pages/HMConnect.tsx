@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +8,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConnectionSearch } from "@/components/network/ConnectionSearch";
 import { InviteToHufManager } from "@/components/hm-connect/InviteToHufManager";
+import { MyQRCode } from "@/components/hm-connect/MyQRCode";
+import { ConnectionPermissions } from "@/components/hm-connect/ConnectionPermissions";
+import { CommunicationMatrix } from "@/components/shared/CommunicationMatrix";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,13 +23,13 @@ import {
   UserCheck,
   UserX,
   Shield,
-  ArrowRight,
   Check,
   X,
   Loader2,
-  Info,
   Crown,
   UserPlus,
+  QrCode,
+  Eye,
 } from "lucide-react";
 
 // Connection overview component
@@ -48,7 +52,6 @@ function MyConnections() {
 
       if (error) throw error;
 
-      // Fetch profile info for the other party
       const otherIds = (data || []).map(g =>
         g.client_id === user.id ? g.provider_id : g.client_id
       );
@@ -58,7 +61,7 @@ function MyConnections() {
 
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, full_name, avatar_url, readable_id")
+        .select("id, full_name, avatar_url, readable_id, role")
         .in("id", uniqueIds);
 
       const profileMap = new Map((profiles || []).map(p => [p.id, p]));
@@ -72,6 +75,7 @@ function MyConnections() {
           other_name: profile?.full_name || "Unbekannt",
           other_avatar: profile?.avatar_url,
           other_readable_id: profile?.readable_id,
+          other_role: profile?.role || "unknown",
           is_incoming: g.requested_by !== user.id,
           my_role: g.client_id === user.id ? "client" : "provider",
         };
@@ -136,8 +140,31 @@ function MyConnections() {
   const active = connections.filter(c => c.status === "active" && c.is_active);
   const inactive = connections.filter(c => c.status !== "pending" && !(c.status === "active" && c.is_active));
 
+  const roleLabels: Record<string, string> = {
+    provider: "Hufpfleger",
+    client: "Besitzer",
+    partner: "Fachpartner",
+    employee: "Mitarbeiter",
+  };
+
   return (
     <div className="space-y-6">
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-3">
+        <Card className="p-3 text-center">
+          <p className="text-2xl font-bold text-primary">{active.length}</p>
+          <p className="text-xs text-muted-foreground">Aktiv</p>
+        </Card>
+        <Card className="p-3 text-center">
+          <p className="text-2xl font-bold text-amber-500">{pending.length}</p>
+          <p className="text-xs text-muted-foreground">Ausstehend</p>
+        </Card>
+        <Card className="p-3 text-center">
+          <p className="text-2xl font-bold text-muted-foreground">{inactive.length}</p>
+          <p className="text-xs text-muted-foreground">Inaktiv</p>
+        </Card>
+      </div>
+
       {/* Pending Requests */}
       {pending.length > 0 && (
         <div className="space-y-3">
@@ -161,6 +188,9 @@ function MyConnections() {
                       {conn.other_readable_id && (
                         <Badge variant="outline" className="font-mono text-xs">#{conn.other_readable_id}</Badge>
                       )}
+                      <Badge variant="secondary" className="text-xs">
+                        {roleLabels[conn.other_role] || conn.other_role}
+                      </Badge>
                       <Badge variant="secondary" className="text-xs bg-amber-500/15 text-amber-600">
                         {conn.is_incoming ? "Eingehend" : "Gesendet"}
                       </Badge>
@@ -200,7 +230,7 @@ function MyConnections() {
               <Link2 className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
               <p className="text-muted-foreground">Noch keine aktiven Verbindungen.</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Nutze die <strong>#ID-Suche</strong>, um dich mit anderen zu vernetzen.
+                Nutze <strong>Suchen</strong>, <strong>QR-Code</strong> oder <strong>Einladen</strong> um dich zu vernetzen.
               </p>
             </CardContent>
           </Card>
@@ -218,10 +248,13 @@ function MyConnections() {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{conn.other_name}</p>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {conn.other_readable_id && (
                           <Badge variant="outline" className="font-mono text-xs">#{conn.other_readable_id}</Badge>
                         )}
+                        <Badge variant="secondary" className="text-xs">
+                          {roleLabels[conn.other_role] || conn.other_role}
+                        </Badge>
                         <Badge className="text-xs bg-emerald-500/15 text-emerald-600 border-emerald-500/30" variant="outline">
                           Verbunden
                         </Badge>
@@ -260,10 +293,18 @@ function MyConnections() {
 export default function HMConnect() {
   const { plan } = useSubscription();
   const { role } = useAuth();
-  const [activeTab, setActiveTab] = useState("search");
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState("connections");
+
+  // Auto-open search if ?id= param is present (from QR scan)
+  const prefilledId = searchParams.get("id");
+  useEffect(() => {
+    if (prefilledId) {
+      setActiveTab("search");
+    }
+  }, [prefilledId]);
 
   // Plan gate: Clients can always use HM Connect for free
-  // Only providers/partners need Pro plan
   const isClient = role === "client";
   const isAdmin = role === "admin";
   const isPlanAllowed = plan === "pro" || plan === "duo" || plan === "team";
@@ -304,16 +345,14 @@ export default function HMConnect() {
   return (
     <div className="container max-w-4xl py-6 space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-3">
-            <Link2 className="h-7 w-7 text-primary" />
-            HM Connect
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Vernetze dich DSGVO-konform mit Profis, Kunden & Pferden über ihre #ID.
-          </p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-3">
+          <Link2 className="h-7 w-7 text-primary" />
+          HM Connect
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          Dein Netzwerk — Suchen, Verbinden, Verwalten. Alles DSGVO-konform.
+        </p>
       </div>
 
       {/* Info Banner */}
@@ -321,10 +360,11 @@ export default function HMConnect() {
         <CardContent className="p-4 flex items-start gap-3">
           <Shield className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
           <div className="text-sm">
-            <p className="font-medium text-foreground">So funktioniert HM Connect</p>
+            <p className="font-medium text-foreground">3 Wege zur Vernetzung</p>
             <p className="text-muted-foreground mt-1">
-              Jeder Nutzer hat eine einzigartige #ID (z.B. <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">#PID-123456</code>). 
-              Gib die #ID ein, um eine Verbindungsanfrage zu senden. 
+              <strong>🔍 ID-Suche</strong> — Gib eine #PID, #KID, #PRID oder #EQID ein. 
+              <strong> 📱 QR-Code</strong> — Scannen oder teilen. 
+              <strong> ✉️ Einladen</strong> — Per E-Mail einladen.
               Daten werden erst nach beidseitiger Bestätigung geteilt.
             </p>
           </div>
@@ -332,20 +372,33 @@ export default function HMConnect() {
       </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="search" className="gap-2">
-            <Search className="h-4 w-4" />
-            Suchen & Verbinden
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="connections" className="gap-1.5 text-xs">
+            <Users className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Verbindungen</span>
+            <span className="sm:hidden">Netzwerk</span>
           </TabsTrigger>
-          <TabsTrigger value="invite" className="gap-2">
-            <UserPlus className="h-4 w-4" />
+          <TabsTrigger value="search" className="gap-1.5 text-xs">
+            <Search className="h-3.5 w-3.5" />
+            Suchen
+          </TabsTrigger>
+          <TabsTrigger value="qr" className="gap-1.5 text-xs">
+            <QrCode className="h-3.5 w-3.5" />
+            QR-Code
+          </TabsTrigger>
+          <TabsTrigger value="invite" className="gap-1.5 text-xs">
+            <UserPlus className="h-3.5 w-3.5" />
             Einladen
           </TabsTrigger>
-          <TabsTrigger value="connections" className="gap-2">
-            <Users className="h-4 w-4" />
-            Verbindungen
+          <TabsTrigger value="permissions" className="gap-1.5 text-xs">
+            <Eye className="h-3.5 w-3.5" />
+            Rechte
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="connections" className="mt-6">
+          <MyConnections />
+        </TabsContent>
 
         <TabsContent value="search" className="mt-6 space-y-4">
           {searchTypes.map(st => (
@@ -357,12 +410,17 @@ export default function HMConnect() {
           ))}
         </TabsContent>
 
+        <TabsContent value="qr" className="mt-6">
+          <MyQRCode />
+        </TabsContent>
+
         <TabsContent value="invite" className="mt-6">
           <InviteToHufManager />
         </TabsContent>
 
-        <TabsContent value="connections" className="mt-6">
-          <MyConnections />
+        <TabsContent value="permissions" className="mt-6 space-y-6">
+          <ConnectionPermissions viewerRole={role || "provider"} targetRole={isClient ? "provider" : "client"} />
+          <CommunicationMatrix />
         </TabsContent>
       </Tabs>
     </div>

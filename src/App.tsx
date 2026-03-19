@@ -779,7 +779,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner-settings" element={<PartnerSettings />} />
               <Route path="/partner-profile" element={<PartnerProfile />} />
               <Route path="/partner-notfall" element={<EmergencyDashboard />} />
-              <Route path="/partner-connect" element={<PartnerConnect />} />
+              <Route path="/partner-connect" element={<Navigate to="/hm-connect" replace />} />
               <Route path="/partner-tour" element={<Tour />} />
               <Route path="/partner-work-mode" element={<WorkMode />} />
               <Route path="/partner-feedback" element={<Auffassen />} />

@@ -98,7 +98,7 @@ const PARTNER_NAV: NavigationConfig = {
       items: [
         { id: "office", label: "Mein Office", iconName: "FileText", path: "/partner-office" },
         { id: "lager", label: "Lager & Material", iconName: "Warehouse", path: "/partner-lager" },
-        { id: "connect", label: "HM Connect", iconName: "Link2", path: "/partner-connect" },
+        { id: "connect", label: "HM Connect", iconName: "Link2", path: "/hm-connect" },
         { id: "autoflow", label: "AutoFlow", iconName: "Zap", path: "/partner-autoflow" },
       ],
     },
