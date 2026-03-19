@@ -34,7 +34,7 @@ export function PWAInstallPrompt() {
   const handleInstallClick = async () => {
     if (canInstall) {
       await promptInstall();
-    } else if (isIOS) {
+    } else if (isIOS || isMacSafari) {
       setShowIOSInstructions(true);
     }
   };
