@@ -5,3 +5,6 @@ export { PferdeakteHuf } from "./PferdeakteHuf";
 export { PferdeakteVet } from "./PferdeakteVet";
 export { PferdeakteTherapie } from "./PferdeakteTherapie";
 export { PferdeakteBerichte } from "./PferdeakteBerichte";
+export { PferdeakteTresor } from "./PferdeakteTresor";
+export { DocumentViewer } from "./DocumentViewer";
+export { XrayUpload } from "./XrayUpload";
