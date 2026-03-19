@@ -139,18 +139,17 @@ export function HorseTransferReceive() {
       // Transfer ownership
       await supabase
         .from("horses")
-        .update({ owner_id: user.id } as any)
+        .update({ owner_id: user.id, horse_status: "active" } as any)
         .eq("id", selectedTransfer.horse_id);
 
-      // Revoke old horse_partner_access
-      await supabase
-        .from("horse_partner_access")
-        .update({ revoked_at: new Date().toISOString(), is_active: false } as any)
-        .eq("horse_id", selectedTransfer.horse_id);
+      // Revoke ALL old access and notify affected stakeholders
+      await revokeAndNotifyAllAccess(
+        selectedTransfer.horse_id,
+        selectedTransfer.horse_name || "Pferd",
+        user.id
+      );
 
-      // Revoke all active access_grants of the seller (old owner)
-      // access_grants has no horse_id — it links client↔provider,
-      // so we deactivate all grants where seller was the client
+      // Also revoke old owner's access_grants
       await supabase
         .from("access_grants")
         .update({
