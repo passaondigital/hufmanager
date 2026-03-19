@@ -9,6 +9,7 @@ import { Upload, ArrowLeft, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { logHorseAction } from "@/utils/auditLog";
+import { notifyHorseStakeholders } from "@/utils/notifyHorseStakeholders";
 import { toast } from "sonner";
 
 interface Props {
