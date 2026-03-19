@@ -16101,7 +16101,7 @@ export type Database = {
         | "tiered"
         | "early_bird"
         | "free"
-      client_type: "private" | "commercial"
+      client_type: "private" | "commercial" | "stall"
       contact_category: "client" | "partner" | "supplier" | "lead"
       employee_role: "view" | "employee" | "team_lead"
       employee_status: "active" | "sick" | "vacation" | "suspended" | "inactive"
@@ -16284,7 +16284,7 @@ export const Constants = {
         "early_bird",
         "free",
       ],
-      client_type: ["private", "commercial"],
+      client_type: ["private", "commercial", "stall"],
       contact_category: ["client", "partner", "supplier", "lead"],
       employee_role: ["view", "employee", "team_lead"],
       employee_status: ["active", "sick", "vacation", "suspended", "inactive"],
