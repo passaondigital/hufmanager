@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
@@ -18,11 +19,13 @@ import {
 import {
   Calendar, Plus, Clock, MapPin, ChevronLeft, ChevronRight, Loader2,
   Check, X as XIcon, ArrowLeftRight, Save, CalendarClock, StickyNote, Trash2,
+  CalendarDays, CheckCircle2,
 } from "lucide-react";
 import { HelpTip } from "@/components/ui/HelpTip";
 import {
   format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval,
   isSameMonth, isSameDay, isToday, startOfWeek, endOfWeek, addDays,
+  addWeeks, subWeeks,
 } from "date-fns";
 import { de } from "date-fns/locale";
 import { toast } from "sonner";
