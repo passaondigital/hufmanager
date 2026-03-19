@@ -287,6 +287,24 @@ export function PferdeakteTresor({ horseId, horse, userRole }: PferdeakteTresorP
         .map(([key, v]: [string, any]) => ({ role: key, name: v.name, phone: v.phone, email: v.email }))
     : [];
 
+  // ─── ROLE GATE: Only owner (client) and provider can access the vault ───
+  if (userRole === "partner" || userRole === "employee") {
+    return (
+      <div className="space-y-4">
+        <TresorHeader />
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Lock className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
+            <p className="text-sm font-medium text-foreground mb-1">Zugang eingeschränkt</p>
+            <p className="text-xs text-muted-foreground">
+              Der Dokumenten-Tresor ist nur für den Besitzer und den Haupt-Hufbearbeiter zugänglich.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // ─── PREMIUM GATE ───
   if (!isPremium) {
     return (
