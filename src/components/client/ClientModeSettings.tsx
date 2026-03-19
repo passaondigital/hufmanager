@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useClientMode, type ClientMode } from "@/hooks/useClientMode";
 import { toast } from "sonner";
+import { VerificationDocuments } from "./VerificationDocuments";
 
 interface ClientModeSettingsProps {
   /** If true, shows as onboarding-style card. If false, as settings section. */
@@ -168,11 +169,23 @@ export function ClientModeSettings({ variant = "settings", onComplete }: ClientM
               />
             </div>
 
+            {/* Verification Documents Upload */}
+            <VerificationDocuments mode={selectedMode} />
+
             <div className="p-3 rounded-lg bg-muted/50 text-xs text-muted-foreground">
               <p className="font-medium text-foreground mb-1">Was passiert als Nächstes?</p>
               <ul className="space-y-1">
                 <li>• Dein Antrag wird an unser Team gesendet</li>
-                <li>• Wir prüfen deine Angaben (1-2 Werktage)</li>
+                {selectedMode === "stall" && (
+                  <>
+                    <li>• Wir prüfen deinen <span className="font-medium">Gewerbeschein</span> und die <span className="font-medium">§11 TierSchG Erlaubnis</span></li>
+                    <li>• Ohne §11-Nachweis kann kein Stall-Account freigeschaltet werden</li>
+                  </>
+                )}
+                {selectedMode === "commercial" && (
+                  <li>• Wir prüfen deinen <span className="font-medium">Gewerbeschein</span></li>
+                )}
+                <li>• Prüfung dauert 1-2 Werktage</li>
                 <li>• Nach Freigabe werden alle {MODE_LABELS[selectedMode]}-Features aktiviert</li>
               </ul>
             </div>

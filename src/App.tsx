@@ -120,6 +120,7 @@ const ClientStallStaff = lazy(() => import("@/pages/client/ClientStallStaff"));
 const ClientStallReports = lazy(() => import("@/pages/client/ClientStallReports"));
 const ClientBusinessHub = lazy(() => import("@/pages/client/ClientBusinessHub"));
 const ClientBusinessOverview = lazy(() => import("@/pages/client/ClientBusinessOverview"));
+const ClientNetwork = lazy(() => import("@/pages/client/ClientNetwork"));
 const BotschafterWerbemittelPage = lazy(() => import("@/pages/botschafter/BotschafterWerbemittelPage"));
 const WerbemittelEditor = lazy(() => import("@/pages/botschafter/WerbemittelEditor"));
 const BotschafterNachrichten = lazy(() => import("@/pages/botschafter/BotschafterNachrichten"));
@@ -740,6 +741,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client/botschafter" element={<ClientBotschafter />} />
               <Route path="/client/search-providers" element={<SearchProviders />} />
               <Route path="/client-connect" element={<HMConnect />} />
+              <Route path="/client-network" element={<ClientNetwork />} />
             </Route>
 
             {/* --- 4. EMPLOYEE (MITARBEITER) ROUTES --- */}

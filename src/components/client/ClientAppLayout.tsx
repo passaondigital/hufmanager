@@ -76,6 +76,7 @@ function getClientNavigationConfig(mode: ClientModeType, isVerified: boolean): N
           { id: "chat", label: "Chat", iconName: "MessageSquare", path: "/client-chat" },
           { id: "notifications", label: "Benachrichtigungen", iconName: "Bell", path: "/client-notifications" },
           { id: "connect", label: "HM Connect", iconName: "Link2", path: "/client-connect" },
+          { id: "network", label: "Netzwerk", iconName: "Users", path: "/client-network" },
         ],
       },
       // --- Stallbetreiber-Bereich ---
