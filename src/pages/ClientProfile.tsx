@@ -140,13 +140,12 @@ export default function ClientProfile() {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       {/* Page Title */}
       <div className="px-4 py-4 lg:px-6 lg:py-6">
-        <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
+        <h1 className="font-semibold text-lg flex items-center gap-2">
           <User className="h-5 w-5 text-primary" />
           Mein Profil
-          </Button>
-          <h1 className="font-semibold text-lg flex items-center gap-2">Mein Profil <HelpTip id="kunden.profil" /></h1>
-        </div>
-      </header>
+          <HelpTip id="kunden.profil" />
+        </h1>
+      </div>
 
       <main className="px-4 py-6 max-w-lg mx-auto space-y-4">
         {/* Avatar */}
