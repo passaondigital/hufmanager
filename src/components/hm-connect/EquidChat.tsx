@@ -59,9 +59,9 @@ export function EquidChat() {
         .limit(50);
       if (providerAppts) {
         providerAppts.forEach((a: any) => {
-          const h = a.horses;
+          const h = a.horses as any;
           if (h && !allHorses.find(x => x.id === h.id)) {
-            allHorses.push({ id: h.id, name: h.name, readable_id: h.readable_id, avatar_url: h.avatar_url });
+            allHorses.push({ id: h.id, name: h.name, readable_id: h.readable_id });
           }
         });
       }
