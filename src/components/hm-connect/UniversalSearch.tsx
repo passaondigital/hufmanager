@@ -170,7 +170,7 @@ export function UniversalSearch({ onConnectionRequested }: { onConnectionRequest
     if (q.includes("@")) return "📧 E-Mail-Suche";
     if (/^\d{4,5}$/.test(q)) return "📍 PLZ-Suche";
     if (/^#?[A-Z]{2,4}-/i.test(q)) return "🔑 ID-Suche";
-    return "🔤 Name-Suche";
+    return "🔤 Name/Beruf-Suche";
   };
 
   return (
