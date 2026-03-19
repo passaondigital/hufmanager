@@ -3,10 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format, startOfWeek, endOfWeek, addDays } from "date-fns";
 import { de } from "date-fns/locale";
+import { useTaxConfig } from "@/hooks/useTaxConfig";
 import type { WidgetContentProps } from "./types";
 
 export default function RevenueWeekContent(_props: WidgetContentProps) {
   const { user } = useAuth();
+  const taxConfig = useTaxConfig();
   const now = new Date();
   const weekStart = startOfWeek(now, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
@@ -40,10 +42,15 @@ export default function RevenueWeekContent(_props: WidgetContentProps) {
   const total = data?.total || 0;
   const maxVal = Math.max(...days.map((d) => d.value), 1);
 
+  const suffix = taxConfig.mwstPflichtig && !taxConfig.kleinunternehmer
+    ? ` ${taxConfig.priceDisplayMode === "netto" ? "netto" : "brutto"}`
+    : "";
+  const currency = taxConfig.country === "CH" ? "CHF" : "€";
+
   return (
     <div className="space-y-3">
       <div className="flex items-baseline justify-between">
-        <span className="text-lg font-bold text-foreground">{total.toFixed(2)} €</span>
+        <span className="text-lg font-bold text-foreground">{total.toFixed(2)} {currency}{suffix && <span className="text-[10px] font-normal text-muted-foreground ml-1">{suffix}</span>}</span>
         <span className="text-[10px] text-muted-foreground">Diese Woche</span>
       </div>
       <div className="flex items-end gap-1 h-16">
@@ -58,7 +65,7 @@ export default function RevenueWeekContent(_props: WidgetContentProps) {
         ))}
       </div>
       <p className="text-[10px] text-muted-foreground">
-        Ø pro Tag: {(total / 7).toFixed(2)} €
+        Ø pro Tag: {(total / 7).toFixed(2)} {currency}
       </p>
     </div>
   );

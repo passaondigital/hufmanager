@@ -858,7 +858,7 @@ export function CreateInvoiceModal({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="privat">Privatkunde (inkl. 19% MwSt)</SelectItem>
+            <SelectItem value="privat">Privatkunde (inkl. MwSt)</SelectItem>
             <SelectItem value="gewerbe">Gewerbekunde (Netto)</SelectItem>
             <SelectItem value="kleinunternehmer">Kleinunternehmer (§19 UStG)</SelectItem>
           </SelectContent>
@@ -1025,7 +1025,7 @@ export function CreateInvoiceModal({
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <Label className="text-xs text-muted-foreground shrink-0">Preis €:</Label>
+                  <Label className="text-xs text-muted-foreground shrink-0">Preis € ({formData.customer_type === "gewerbe" ? "netto" : "brutto"}):</Label>
                   <Input
                     type="number"
                     step="0.01"

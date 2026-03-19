@@ -39,6 +39,7 @@ import { OfferRecipeEditor } from "@/components/offers/OfferRecipeEditor";
 import { OfferStockBadge } from "@/components/offers/OfferStockBadge";
 import { useOfferMaterials } from "@/hooks/useOfferMaterials";
 import { useTaxConfig } from "@/hooks/useTaxConfig";
+import { VAT_RATES } from "@/lib/taxConfig";
 
 // Extract YouTube video ID from URL
 const getYouTubeId = (url: string): string | null => {
@@ -496,6 +497,11 @@ const Angebote = () => {
                         ) : offer.price ? (
                           <span className="text-2xl font-bold text-primary">
                             {offer.price_type === "ab" && "ab "}€{offer.price}
+                            {taxConfig.mwstPflichtig && !taxConfig.kleinunternehmer && (
+                              <span className="text-xs font-normal text-muted-foreground ml-1">
+                                {taxConfig.priceDisplayMode === "netto" ? "zzgl." : "inkl."} {VAT_RATES[taxConfig.country]?.label || "MwSt"}
+                              </span>
+                            )}
                           </span>
                         ) : (
                           <Badge variant="secondary">{priceTypeLabels[offer.price_type || "auf_anfrage"]}</Badge>

@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { ArrowLeft, Calculator, Plus, Trash2, FileDown, Search } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTaxConfig } from "@/hooks/useTaxConfig";
+import { VAT_RATES } from "@/lib/taxConfig";
 
 interface GOTPosition {
   id: string;
@@ -58,6 +60,7 @@ export default function VetGOTRechner() {
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [selected, setSelected] = useState<SelectedPosition[]>([]);
   const [distance, setDistance] = useState(0);
+  const taxConfig = useTaxConfig();
 
   const { data: positions, isLoading } = useQuery({
     queryKey: ["got-positions"],
@@ -302,9 +305,15 @@ export default function VetGOTRechner() {
                     <span>Gesamt (netto)</span>
                     <span className="font-mono">{total.toFixed(2)}€</span>
                   </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    inkl. 19% MwSt: {(total * 1.19).toFixed(2)}€
-                  </p>
+                  {taxConfig.mwstPflichtig && !taxConfig.kleinunternehmer ? (
+                    <p className="text-[10px] text-muted-foreground">
+                      inkl. {taxConfig.vatRate}% {VAT_RATES[taxConfig.country]?.label || "MwSt"}: {(total * (1 + taxConfig.vatRate / 100)).toFixed(2)}€
+                    </p>
+                  ) : taxConfig.kleinunternehmer ? (
+                    <p className="text-[10px] text-muted-foreground">
+                      Kleinunternehmer – keine MwSt
+                    </p>
+                  ) : null}
                 </div>
 
                 <p className="text-[10px] text-muted-foreground border-t pt-2">
