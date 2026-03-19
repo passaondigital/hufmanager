@@ -11,6 +11,7 @@ import { InviteToHufManager } from "@/components/hm-connect/InviteToHufManager";
 import { MyQRCode } from "@/components/hm-connect/MyQRCode";
 import { ConnectionPermissions } from "@/components/hm-connect/ConnectionPermissions";
 import { EquidPermissionManager } from "@/components/hm-connect/EquidPermissionManager";
+import { EquidChat } from "@/components/hm-connect/EquidChat";
 import { CommunicationMatrix } from "@/components/shared/CommunicationMatrix";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
