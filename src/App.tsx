@@ -823,27 +823,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
   );
 }
 
-// Simple client layout wrapper with ErrorBoundary
-function ClientLayout() {
-  const location = useLocation();
-  
-  // Dynamic import to avoid circular dependencies
-  const [HelpCenterFAB, setHelpCenterFAB] = useState<React.ComponentType<{ currentRoute?: string }> | null>(null);
-  
-  useEffect(() => {
-    import("@/components/help").then((mod) => {
-      setHelpCenterFAB(() => mod.HelpCenterFAB);
-    });
-  }, []);
-  
-  return (
-    <div className="min-h-screen bg-background">
-      <ErrorBoundary name="ClientApp" fallback={<ClientErrorFallbackComponent />}>
-        <Outlet />
-      </ErrorBoundary>
-      {HelpCenterFAB && <HelpCenterFAB currentRoute={location.pathname} />}
-    </div>
-  );
-}
+
+
 
 export default App;
