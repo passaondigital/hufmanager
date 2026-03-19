@@ -535,6 +535,8 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/portal/ausbildung" element={<EducationPortalDemo />} />
             <Route path="/portal/verband" element={<AssociationPortalDemo />} />
             <Route path="/portal/:slug" element={<PortalDashboard />} />
+            <Route path="/portal/:slug/kalender" element={<PortalCalendar />} />
+            <Route path="/portal/:slug/management" element={<PortalManagementHub />} />
             <Route path="/portal/:slug/settings" element={<PortalSettings />} />
             
             {/* Pferdeakte is handled by PferdeakteRouteGuard above AppContent */}
