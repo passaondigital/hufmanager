@@ -176,19 +176,19 @@ export async function revokeAndNotifyAllAccess(
       .eq("horse_id", horseId)
       .eq("status", "active");
 
-    // Revoke employee_horse_access
+    // Revoke employee_horse_access (set can_view to false)
     await supabase
       .from("employee_horse_access")
-      .update({ is_active: false } as any)
+      .update({ can_view: false, can_edit: false, can_add_notes: false } as any)
       .eq("horse_id", horseId)
-      .eq("is_active", true);
+      .eq("can_view", true);
 
-    // Deactivate care team entries
+    // Deactivate care team sharing
     await supabase
       .from("horse_care_team")
-      .update({ is_active: false } as any)
+      .update({ team_sharing_enabled: false } as any)
       .eq("horse_id", horseId)
-      .eq("is_active", true);
+      .eq("team_sharing_enabled", true);
 
     // Notify all affected stakeholders
     if (stakeholders.length > 0) {
