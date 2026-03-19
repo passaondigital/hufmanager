@@ -386,6 +386,11 @@ export default function HMConnect() {
             <span className="hidden sm:inline">Equid-Rechte</span>
             <span className="sm:hidden">Rechte</span>
           </TabsTrigger>
+          <TabsTrigger value="equid-chat" className="gap-1.5 text-xs">
+            <MessageCircle className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Equid-Chat</span>
+            <span className="sm:hidden">Chat</span>
+          </TabsTrigger>
           <TabsTrigger value="permissions" className="gap-1.5 text-xs">
             <Eye className="h-3.5 w-3.5" />
             Info
