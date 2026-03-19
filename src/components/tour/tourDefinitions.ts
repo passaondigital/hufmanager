@@ -187,7 +187,7 @@ export const clientTourSteps: TourStep[] = [
   {
     target: 'header',
     title: 'Vernetzung in Aktion',
-    description: 'Alles was dein Hufbearbeiter bei Luna dokumentiert, siehst du hier — Befunde, Fotos, Rechnungen. Und Dr. Lisa Meier (Physiotherapeutin) hat ebenfalls Zugriff, den du jederzeit widerrufen kannst.',
+    description: 'Alles was dein Hufbearbeiter bei Luna dokumentiert, siehst du hier — Befunde, Fotos, Rechnungen. Und die Demo-Tierärztin hat ebenfalls Zugriff, den du jederzeit widerrufen kannst.',
     position: 'bottom',
   },
 ];

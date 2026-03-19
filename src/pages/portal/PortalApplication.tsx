@@ -28,7 +28,7 @@ const REFERRAL_SOURCES = [
   "Messe / Event",
   "Social Media",
   "Presse / Artikel",
-  "Fischer Versicherung",
+  "HufManager Portal",
   "Sonstiges",
 ];
 

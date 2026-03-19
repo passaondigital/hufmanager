@@ -124,7 +124,7 @@ const providerSteps: Record<string, { quick: TourStep[]; detailed: TourStep[] }>
       { target: '[data-tour="stats-grid"]', title: 'Fachpartner einladen', description: 'Lade Tierärzte oder Physiotherapeuten ein. Sie bekommen Zugriff auf die freigegebenen Pferdeakten.', position: 'bottom' },
       { target: '[data-tour="stats-grid"]', title: 'Mitarbeiter verwalten', description: 'Dein Team bekommt eigene Zugänge mit zugewiesenen Aufträgen und Tourenplanung.', position: 'bottom' },
       { target: '[data-tour="stats-grid"]', title: 'Gemeinsame Akte', description: 'Alle Beteiligten dokumentieren in einer gemeinsamen Pferdeakte — keine doppelten Unterlagen mehr.', position: 'bottom' },
-      { target: 'header', title: '🔗 So funktioniert die Vernetzung', description: 'Du dokumentierst → Maria (Besitzerin) sieht den Befund → Dr. Meier (Tierärztin) ergänzt ihre Diagnose → Alle haben den gleichen Wissensstand.', position: 'bottom' },
+      { target: 'header', title: '🔗 So funktioniert die Vernetzung', description: 'Du dokumentierst → Demo-Kundin (Besitzerin) sieht den Befund → Demo-Tierärztin ergänzt ihre Diagnose → Alle haben den gleichen Wissensstand.', position: 'bottom' },
     ],
     detailed: [
       { target: '[data-tour="stats-grid"]', title: 'Das Ökosystem', description: 'HufManager ist mehr als eine App — es ist ein Netzwerk für alle, die mit Pferden arbeiten.', position: 'bottom' },
