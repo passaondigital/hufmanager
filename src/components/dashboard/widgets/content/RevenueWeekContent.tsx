@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format, startOfWeek, endOfWeek, addDays } from "date-fns";
 import { de } from "date-fns/locale";
+import { useTaxConfig } from "@/hooks/useTaxConfig";
 import type { WidgetContentProps } from "./types";
 
 export default function RevenueWeekContent(_props: WidgetContentProps) {
