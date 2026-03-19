@@ -49,7 +49,7 @@ const providerSteps: Record<string, { quick: TourStep[]; detailed: TourStep[] }>
       { target: '[data-tour="stats-grid"]', title: 'Erinnerungen', description: 'HufManager sendet automatisch Terminerinnerungen an deine Kunden — per Push-Benachrichtigung oder E-Mail.', position: 'bottom' },
       { target: '[data-tour="stats-grid"]', title: 'Wiederkehrende Termine', description: 'Erstelle Serien-Termine für regelmäßige Bearbeitungsintervalle. HufManager plant automatisch den nächsten Termin.', position: 'bottom' },
       { target: '[data-tour="stats-grid"]', title: 'Stallgruppen', description: 'Fasse Pferde am gleichen Standort zusammen und bearbeite sie in einem Besuch — spart Fahrzeit und Organisation.', position: 'bottom' },
-      { target: 'header', title: '🔗 Vernetzung in Aktion', description: 'Wenn du bei Luna die Bearbeitung dokumentierst, sieht Maria (Besitzerin) den Befund sofort in ihrer App. Dr. Meier (Tierärztin) hat ebenfalls Zugriff — alles DSGVO-konform.', position: 'bottom' },
+      { target: 'header', title: '🔗 Vernetzung in Aktion', description: 'Wenn du bei Luna die Bearbeitung dokumentierst, sieht die Demo-Kundin (Besitzerin) den Befund sofort in ihrer App. Die Demo-Tierärztin hat ebenfalls Zugriff — alles DSGVO-konform.', position: 'bottom' },
     ],
   },
   pferdeakte: {
