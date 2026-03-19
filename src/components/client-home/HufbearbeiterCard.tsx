@@ -39,14 +39,14 @@ export function HufbearbeiterCard({ userId }: HufbearbeiterCardProps) {
     .toUpperCase();
 
   return (
-    <div className="px-4">
+    <div className="px-4 md:px-0">
       <div className="hm-section-header">
         <span className="hm-section-title">👤 Dein Hufbearbeiter</span>
       </div>
 
       <div className="hm-card flex items-center gap-3.5">
         <div
-          className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 border-[1.5px] text-[18px] font-medium"
+          className="w-11 h-11 md:w-12 md:h-12 rounded-full flex items-center justify-center flex-shrink-0 border-[1.5px] text-[18px] font-medium"
           style={{
             borderColor: "var(--hm-amber)",
             background: "var(--hm-amber-glow)",
@@ -60,18 +60,18 @@ export function HufbearbeiterCard({ userId }: HufbearbeiterCardProps) {
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[14px] font-medium" style={{ color: "var(--hm-text)" }}>
+          <p className="text-[14px] md:text-[15px] font-medium" style={{ color: "var(--hm-text)" }}>
             {provider.name}
           </p>
           {provider.city && (
-            <p className="text-[11px]" style={{ color: "var(--hm-text3)" }}>
+            <p className="text-[11px] md:text-[12px]" style={{ color: "var(--hm-text3)" }}>
               {provider.city}
             </p>
           )}
         </div>
         <div className="flex gap-1.5">
           <button
-            className="w-8 h-8 rounded-md flex items-center justify-center text-sm"
+            className="w-8 h-8 md:w-9 md:h-9 rounded-md flex items-center justify-center text-sm"
             style={{ background: "var(--hm-bg4)", border: "0.5px solid var(--hm-border)" }}
           >
             💬
@@ -79,7 +79,7 @@ export function HufbearbeiterCard({ userId }: HufbearbeiterCardProps) {
           {provider.phone && (
             <a
               href={`tel:${provider.phone}`}
-              className="w-8 h-8 rounded-md flex items-center justify-center text-sm"
+              className="w-8 h-8 md:w-9 md:h-9 rounded-md flex items-center justify-center text-sm"
               style={{ background: "var(--hm-bg4)", border: "0.5px solid var(--hm-border)" }}
             >
               📞

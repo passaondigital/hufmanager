@@ -46,7 +46,6 @@ export default function ClientHomePage() {
     const fetch = async () => {
       setLoading(true);
       try {
-        // Profile
         const { data: prof } = await supabase
           .from("profiles")
           .select("full_name, has_logged_in")
@@ -61,7 +60,6 @@ export default function ClientHomePage() {
           }
         }
 
-        // Horses
         const { data: horsesData } = await supabase
           .from("horses")
           .select("id, name, breed, photo_url, birth_year, health_status")
@@ -75,7 +73,6 @@ export default function ClientHomePage() {
           setShowMandatoryHorseModal(true);
         }
 
-        // Appointments count
         const { count } = await supabase
           .from("appointments")
           .select("id", { count: "exact", head: true })
@@ -83,7 +80,6 @@ export default function ClientHomePage() {
           .eq("status", "completed");
         setTotalAppointments(count || 0);
 
-        // Open orders count
         const ordersRes = await supabase
           .from("service_orders")
           .select("id", { count: "exact", head: true })
@@ -108,15 +104,13 @@ export default function ClientHomePage() {
   if (authLoading || loading) {
     return (
       <div className="hm-page">
-        <div className="max-w-[480px] mx-auto px-4 py-6 space-y-4">
+        <div className="max-w-5xl mx-auto px-4 py-6 space-y-4">
           <Skeleton className="h-7 w-48 bg-[#1c1912]" />
           <Skeleton className="h-4 w-64 bg-[#1c1912]" />
-          <Skeleton className="h-20 w-full rounded-xl bg-[#1c1912]" />
-          <div className="grid grid-cols-2 gap-2">
-            <Skeleton className="h-24 rounded-lg bg-[#1c1912]" />
-            <Skeleton className="h-24 rounded-lg bg-[#1c1912]" />
-            <Skeleton className="h-24 rounded-lg bg-[#1c1912]" />
-            <Skeleton className="h-24 rounded-lg bg-[#1c1912]" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Skeleton className="h-32 rounded-xl bg-[#1c1912]" />
+            <Skeleton className="h-32 rounded-xl bg-[#1c1912]" />
+            <Skeleton className="h-32 rounded-xl bg-[#1c1912]" />
           </div>
         </div>
       </div>
@@ -136,50 +130,62 @@ export default function ClientHomePage() {
         <MandatoryHorseModal open={showMandatoryHorseModal} onComplete={handleHorseCreated} />
       )}
 
-      <div className="hm-page pb-24">
-        <div className="max-w-[480px] mx-auto space-y-5">
-          {/* Zone 1 — Hero */}
+      <div className="hm-page pb-24 md:pb-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Zone 1 — Hero (full width) */}
           <div className="hm-fade-up" style={{ animationDelay: "0s" }}>
             <HomeHero firstName={firstName} userId={user!.id} />
           </div>
 
-          {/* Zone 2 — Status Grid */}
-          <div className="hm-fade-up" style={{ animationDelay: "0.05s" }}>
-            <StatusGrid
-              horsesCount={horses.length}
-              horsesWithIssues={horsesWithIssues}
-              openOrders={openOrders}
-              totalAppointments={totalAppointments}
-              healthOk={healthOk}
-              healthIssues={horsesWithIssues}
-            />
-          </div>
+          {/* Desktop: 2-column layout / Mobile: stacked */}
+          <div className="md:grid md:grid-cols-12 md:gap-6 md:px-6 lg:px-8">
+            {/* Left column — main content */}
+            <div className="md:col-span-8 space-y-5">
+              {/* Status Grid */}
+              <div className="hm-fade-up" style={{ animationDelay: "0.05s" }}>
+                <StatusGrid
+                  horsesCount={horses.length}
+                  horsesWithIssues={horsesWithIssues}
+                  openOrders={openOrders}
+                  totalAppointments={totalAppointments}
+                  healthOk={healthOk}
+                  healthIssues={horsesWithIssues}
+                />
+              </div>
 
-          {/* Zone 3 — Horse Carousel */}
-          <div className="hm-fade-up" style={{ animationDelay: "0.1s" }}>
-            <HorseCarousel
-              horses={horses}
-              onAddHorse={() => setShowCreateModal(true)}
-            />
-          </div>
+              {/* Horse Carousel / Grid */}
+              <div className="hm-fade-up" style={{ animationDelay: "0.1s" }}>
+                <HorseCarousel
+                  horses={horses}
+                  onAddHorse={() => setShowCreateModal(true)}
+                />
+              </div>
 
-          {/* Orders */}
-          <div className="hm-fade-up" style={{ animationDelay: "0.15s" }}>
-            <OrdersSection userId={user!.id} />
-          </div>
+              {/* Orders */}
+              <div className="hm-fade-up" style={{ animationDelay: "0.15s" }}>
+                <OrdersSection userId={user!.id} />
+              </div>
+            </div>
 
-          {/* Service History */}
-          <div className="hm-fade-up" style={{ animationDelay: "0.2s" }}>
-            <ServiceHistory userId={user!.id} />
-          </div>
+            {/* Right column — sidebar (desktop) / stacked (mobile) */}
+            <div className="md:col-span-4 space-y-5 mt-5 md:mt-0">
+              {/* Hufbearbeiter */}
+              <div className="hm-fade-up" style={{ animationDelay: "0.2s" }}>
+                <HufbearbeiterCard userId={user!.id} />
+              </div>
 
-          {/* Hufbearbeiter */}
-          <div className="hm-fade-up" style={{ animationDelay: "0.25s" }}>
-            <HufbearbeiterCard userId={user!.id} />
+              {/* Service History */}
+              <div className="hm-fade-up" style={{ animationDelay: "0.25s" }}>
+                <ServiceHistory userId={user!.id} />
+              </div>
+            </div>
           </div>
         </div>
 
-        <BottomNav />
+        {/* Bottom Nav only on mobile */}
+        <div className="md:hidden">
+          <BottomNav />
+        </div>
       </div>
 
       <CreateHorseModal
