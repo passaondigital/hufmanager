@@ -6,7 +6,7 @@ export interface WidgetDefinition {
   icon: string;
   defaultWidth: 1 | 2;
   defaultHeight: 1 | 2;
-  roles: ("provider" | "partner" | "employee")[];
+  roles: ("provider" | "partner" | "employee" | "client")[];
   category: string;
 }
 
