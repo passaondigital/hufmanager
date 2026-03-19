@@ -31,6 +31,13 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
   { type: "statistik_pferde", label: "Pferde-Statistik", icon: "📊", defaultWidth: 1, defaultHeight: 1, roles: ["provider"], category: "Analyse" },
   { type: "geburtstage", label: "Geburtstage", icon: "🎂", defaultWidth: 1, defaultHeight: 1, roles: ["provider", "partner"], category: "Sonstiges" },
   { type: "arbeitszeit", label: "Arbeitszeit", icon: "⏱️", defaultWidth: 1, defaultHeight: 1, roles: ["provider", "employee"], category: "Tracking" },
+  // Client-specific widgets
+  { type: "client_naechster_termin", label: "Nächster Termin", icon: "📅", defaultWidth: 2, defaultHeight: 1, roles: ["client"], category: "Termine" },
+  { type: "client_pferde", label: "Meine Pferde", icon: "🐴", defaultWidth: 2, defaultHeight: 1, roles: ["client"], category: "Pferde" },
+  { type: "client_gesundheits_feed", label: "Gesundheits-Feed", icon: "💚", defaultWidth: 2, defaultHeight: 2, roles: ["client"], category: "Gesundheit" },
+  { type: "client_aktions_center", label: "Aktions-Center", icon: "🔔", defaultWidth: 1, defaultHeight: 1, roles: ["client"], category: "Aufgaben" },
+  { type: "client_experten", label: "Meine Experten", icon: "👤", defaultWidth: 1, defaultHeight: 1, roles: ["client"], category: "Team" },
+  { type: "client_auftraege", label: "Aufträge", icon: "📋", defaultWidth: 1, defaultHeight: 1, roles: ["client"], category: "Aufträge" },
 ];
 
 export function getWidgetsForRole(role: "provider" | "partner" | "employee"): WidgetDefinition[] {
