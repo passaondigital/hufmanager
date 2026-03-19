@@ -50,6 +50,7 @@ const ManagementWebsite = lazy(() => import("@/pages/management/ManagementWebsit
 const ManagementKommunikation = lazy(() => import("@/pages/management/ManagementKommunikation"));
 const ManagementAbo = lazy(() => import("@/pages/management/ManagementAbo"));
 const ManagementRechtliches = lazy(() => import("@/pages/management/ManagementRechtliches"));
+const ManagementSteuer = lazy(() => import("@/pages/management/ManagementSteuer"));
 const Academy = lazy(() => import("@/pages/Academy"));
 const Chat = lazy(() => import("@/pages/Chat"));
 const GeldVerdienen = lazy(() => import("@/pages/GeldVerdienen"));
