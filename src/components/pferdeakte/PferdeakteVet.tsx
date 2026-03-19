@@ -1,12 +1,14 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Syringe, CheckCircle, AlertTriangle, Clock, FileDown } from "lucide-react";
+import { Syringe, CheckCircle, AlertTriangle, Clock, FileDown, ImagePlus } from "lucide-react";
 import { TabImpfungEntwurmung } from "@/components/horse-detail/TabImpfungEntwurmung";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { PFERDEAKTE_HELP } from "./pferdeakteHelpTexts";
+import { XrayUpload } from "./XrayUpload";
 import { toast } from "sonner";
 import type { PferdeakteUserRole } from "./types";
 
