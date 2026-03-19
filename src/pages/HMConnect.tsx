@@ -331,18 +331,6 @@ export default function HMConnect() {
     );
   }
 
-  const searchTypes = isClient
-    ? [
-        { key: "provider" as const, label: "Hufbearbeiter finden", prefix: "#PID" },
-        { key: "partner" as const, label: "Fachpartner finden", prefix: "#PRID" },
-      ]
-    : [
-        { key: "client" as const, label: "Kunde finden", prefix: "#KID" },
-        { key: "provider" as const, label: "Profi finden", prefix: "#PID" },
-        { key: "partner" as const, label: "Fachpartner finden", prefix: "#PRID" },
-        { key: "horse" as const, label: "Pferd finden", prefix: "#EQID" },
-      ];
-
   return (
     <div className="container max-w-4xl py-6 space-y-6 animate-fade-in">
       {/* Header */}
@@ -361,19 +349,19 @@ export default function HMConnect() {
         <CardContent className="p-4 flex items-start gap-3">
           <Shield className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
           <div className="text-sm">
-            <p className="font-medium text-foreground">3 Wege zur Vernetzung</p>
+            <p className="font-medium text-foreground">4 Wege zur Vernetzung</p>
             <p className="text-muted-foreground mt-1">
-              <strong>🔍 ID-Suche</strong> — Gib eine #PID, #KID, #PRID oder #EQID ein. 
+              <strong>🔍 Suchen</strong> — Name, PLZ, E-Mail oder #ID. 
               <strong> 📱 QR-Code</strong> — Scannen oder teilen. 
               <strong> ✉️ Einladen</strong> — Per E-Mail einladen.
-              Daten werden erst nach beidseitiger Bestätigung geteilt.
+              <strong> 🐴 Equid-Rechte</strong> — Pro Pferd granular steuern.
             </p>
           </div>
         </CardContent>
       </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
           <TabsTrigger value="connections" className="gap-1.5 text-xs">
             <Users className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Verbindungen</span>
@@ -385,15 +373,20 @@ export default function HMConnect() {
           </TabsTrigger>
           <TabsTrigger value="qr" className="gap-1.5 text-xs">
             <QrCode className="h-3.5 w-3.5" />
-            QR-Code
+            QR
           </TabsTrigger>
           <TabsTrigger value="invite" className="gap-1.5 text-xs">
             <UserPlus className="h-3.5 w-3.5" />
             Einladen
           </TabsTrigger>
+          <TabsTrigger value="equid" className="gap-1.5 text-xs">
+            🐴
+            <span className="hidden sm:inline">Equid-Rechte</span>
+            <span className="sm:hidden">Rechte</span>
+          </TabsTrigger>
           <TabsTrigger value="permissions" className="gap-1.5 text-xs">
             <Eye className="h-3.5 w-3.5" />
-            Rechte
+            Info
           </TabsTrigger>
         </TabsList>
 
@@ -401,14 +394,8 @@ export default function HMConnect() {
           <MyConnections />
         </TabsContent>
 
-        <TabsContent value="search" className="mt-6 space-y-4">
-          {searchTypes.map(st => (
-            <ConnectionSearch
-              key={st.key}
-              searchType={st.key}
-              onConnectionRequested={() => setActiveTab("connections")}
-            />
-          ))}
+        <TabsContent value="search" className="mt-6">
+          <UniversalSearch onConnectionRequested={() => setActiveTab("connections")} />
         </TabsContent>
 
         <TabsContent value="qr" className="mt-6">
@@ -417,6 +404,10 @@ export default function HMConnect() {
 
         <TabsContent value="invite" className="mt-6">
           <InviteToHufManager />
+        </TabsContent>
+
+        <TabsContent value="equid" className="mt-6">
+          <EquidPermissionManager />
         </TabsContent>
 
         <TabsContent value="permissions" className="mt-6 space-y-6">
