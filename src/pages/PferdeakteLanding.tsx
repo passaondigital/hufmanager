@@ -684,8 +684,8 @@ function SupportersSection() {
 
         <div className="grid sm:grid-cols-2 gap-6 mb-10">
           {[
-            { name: "Fischer Versichert", role: "Offizieller Versicherungspartner" },
-            { name: "Uelzener Versicherungen", role: "Offizieller Versicherungspartner" },
+            { name: "Demo-Versicherung A", role: "Beispiel-Versicherungspartner" },
+            { name: "Demo-Versicherung B", role: "Beispiel-Versicherungspartner" },
           ].map((p) => (
             <div key={p.name} className="rounded-2xl p-6 bg-white border-2 border-dashed flex flex-col items-center text-center gap-3" style={{ borderColor: "#f97316" }}>
               <div className="w-full h-16 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#f9fafb" }}>

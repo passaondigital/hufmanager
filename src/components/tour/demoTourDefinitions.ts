@@ -49,7 +49,7 @@ const providerSteps: Record<string, { quick: TourStep[]; detailed: TourStep[] }>
       { target: '[data-tour="stats-grid"]', title: 'Erinnerungen', description: 'HufManager sendet automatisch Terminerinnerungen an deine Kunden — per Push-Benachrichtigung oder E-Mail.', position: 'bottom' },
       { target: '[data-tour="stats-grid"]', title: 'Wiederkehrende Termine', description: 'Erstelle Serien-Termine für regelmäßige Bearbeitungsintervalle. HufManager plant automatisch den nächsten Termin.', position: 'bottom' },
       { target: '[data-tour="stats-grid"]', title: 'Stallgruppen', description: 'Fasse Pferde am gleichen Standort zusammen und bearbeite sie in einem Besuch — spart Fahrzeit und Organisation.', position: 'bottom' },
-      { target: 'header', title: '🔗 Vernetzung in Aktion', description: 'Wenn du bei Luna die Bearbeitung dokumentierst, sieht Maria (Besitzerin) den Befund sofort in ihrer App. Dr. Meier (Tierärztin) hat ebenfalls Zugriff — alles DSGVO-konform.', position: 'bottom' },
+      { target: 'header', title: '🔗 Vernetzung in Aktion', description: 'Wenn du bei Luna die Bearbeitung dokumentierst, sieht die Demo-Kundin (Besitzerin) den Befund sofort in ihrer App. Die Demo-Tierärztin hat ebenfalls Zugriff — alles DSGVO-konform.', position: 'bottom' },
     ],
   },
   pferdeakte: {
@@ -124,7 +124,7 @@ const providerSteps: Record<string, { quick: TourStep[]; detailed: TourStep[] }>
       { target: '[data-tour="stats-grid"]', title: 'Fachpartner einladen', description: 'Lade Tierärzte oder Physiotherapeuten ein. Sie bekommen Zugriff auf die freigegebenen Pferdeakten.', position: 'bottom' },
       { target: '[data-tour="stats-grid"]', title: 'Mitarbeiter verwalten', description: 'Dein Team bekommt eigene Zugänge mit zugewiesenen Aufträgen und Tourenplanung.', position: 'bottom' },
       { target: '[data-tour="stats-grid"]', title: 'Gemeinsame Akte', description: 'Alle Beteiligten dokumentieren in einer gemeinsamen Pferdeakte — keine doppelten Unterlagen mehr.', position: 'bottom' },
-      { target: 'header', title: '🔗 So funktioniert die Vernetzung', description: 'Du dokumentierst → Maria (Besitzerin) sieht den Befund → Dr. Meier (Tierärztin) ergänzt ihre Diagnose → Alle haben den gleichen Wissensstand.', position: 'bottom' },
+      { target: 'header', title: '🔗 So funktioniert die Vernetzung', description: 'Du dokumentierst → Demo-Kundin (Besitzerin) sieht den Befund → Demo-Tierärztin ergänzt ihre Diagnose → Alle haben den gleichen Wissensstand.', position: 'bottom' },
     ],
     detailed: [
       { target: '[data-tour="stats-grid"]', title: 'Das Ökosystem', description: 'HufManager ist mehr als eine App — es ist ein Netzwerk für alle, die mit Pferden arbeiten.', position: 'bottom' },

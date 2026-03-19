@@ -417,7 +417,7 @@ export function MileageTracker() {
               {/* Add new stop */}
               <div className="flex gap-2">
                 <Input
-                  placeholder="Neuer Stop (z.B. Stall Müller)"
+                  placeholder="Neuer Stop (z.B. Reitstall Sonnenhof)"
                   value={newStopName}
                   onChange={(e) => setNewStopName(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && addStop()}

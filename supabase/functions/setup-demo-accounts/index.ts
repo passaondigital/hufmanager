@@ -8,30 +8,44 @@ const corsHeaders = {
 
 const DEMO_PASSWORD = "HufManagerDemo2030";
 
+/**
+ * DEMO-ACCOUNT-SCHEMA (alle Namen sind fiktiv und klar als Demo erkennbar)
+ *
+ * #PID-DEMO01  Demo-Hufbearbeiter    (Provider)   → betreibt "Demo-Hufservice"
+ * #KID-DEMO01  Demo-Kundin           (Client)     → besitzt Luna, Carlotta, Sunny
+ * #EID-DEMO01  Demo-Mitarbeiter      (Employee)   → arbeitet für Demo-Hufbearbeiter
+ * #PRID-DEMO01 Demo-Tierärztin       (Partner)    → betreut Pferde der Demo-Kundin
+ *
+ * Zusammenhänge:
+ *   Provider ↔ Client: access_grant (aktiv)
+ *   Provider → Employee: employee_profiles (Geselle)
+ *   Client → Partner: horse_partner_access (Tierärztin hat Zugriff auf Pferde)
+ *   Provider → Client: contacts, conversations, invoices, appointments
+ */
 const DEMO_ACCOUNTS = [
   {
     email: "hufbearbeiter.hufmanager@gmail.com",
-    fullName: "Demo Hufbearbeiter",
+    fullName: "Demo-Hufbearbeiter",
     role: "provider",
     readableIdPrefix: "PID-DEMO01",
   },
   {
     email: "pferdebesitzer.hufmanager@gmail.com",
-    fullName: "Maria Müller",
+    fullName: "Demo-Kundin",
     role: "client",
-    readableIdPrefix: "KID-DEM001",
+    readableIdPrefix: "KID-DEMO01",
   },
   {
     email: "mitarbeiter.hufmanager@gmail.com",
-    fullName: "Demo Mitarbeiter",
+    fullName: "Demo-Mitarbeiter",
     role: "employee",
     readableIdPrefix: "EID-DEMO01",
   },
   {
     email: "partner.hufmanager@gmail.com",
-    fullName: "Dr. Lisa Meier",
+    fullName: "Demo-Tierärztin",
     role: "partner",
-    readableIdPrefix: "PRID-DEM001",
+    readableIdPrefix: "PRID-DEMO01",
   },
 ];
 
@@ -74,7 +88,6 @@ serve(async (req: Request) => {
     const isDemoCaller = DEMO_EMAIL_SET.has(caller.email?.toLowerCase() ?? "");
 
     if (!isDemoCaller) {
-      // Fall back to admin check
       const { data: adminRole } = await supabaseAdmin
         .from("user_roles")
         .select("role")
@@ -147,7 +160,7 @@ serve(async (req: Request) => {
         await supabaseAdmin.from("business_settings").upsert({
           id: userId,
           user_id: userId,
-          business_name: "Demo Hufbearbeitung",
+          business_name: "Demo-Hufservice",
           owner_name: account.fullName,
         }, { onConflict: "user_id" });
       }
@@ -172,13 +185,13 @@ serve(async (req: Request) => {
       await supabaseAdmin.from("employee_profiles").upsert({
         user_id: employeeId,
         provider_id: providerId,
-        display_name: "Demo Mitarbeiter",
+        display_name: "Demo-Mitarbeiter",
         role: "farrier",
         status: "active",
       }, { onConflict: "user_id" });
     }
 
-    // === Phase 3: Access grants (provider→client, partner→client) ===
+    // === Phase 3: Access grants (provider→client) ===
     await supabaseAdmin.from("access_grants").upsert({
       provider_id: providerId,
       client_id: clientId,
@@ -189,27 +202,10 @@ serve(async (req: Request) => {
       can_create_appointments: true,
     }, { onConflict: "provider_id,client_id" });
 
-    if (partnerId) {
-      // Partner access grant with partner_email
-      await supabaseAdmin.from("access_grants").upsert({
-        provider_id: providerId,
-        client_id: clientId,
-        partner_email: "partner.hufmanager@gmail.com",
-        partner_name: "Dr. Lisa Meier",
-        is_active: true,
-        status: "active",
-        can_view_basic: true,
-        can_view_medical: true,
-        can_create_appointments: false,
-      }, { onConflict: "provider_id,client_id" });
-    }
-
-    // === Phase 4: Horse "Luna" ===
+    // === Phase 4: Horse "Luna" (Demo-Pferd) ===
     const sixWeeksAgo = new Date(Date.now() - 42 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-    const today = new Date().toISOString().split("T")[0];
     const inOneWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
-    // Check if Luna already exists
     const { data: existingLuna } = await supabaseAdmin
       .from("horses")
       .select("id")
@@ -219,36 +215,28 @@ serve(async (req: Request) => {
       .maybeSingle();
 
     let lunaId: string;
+    const lunaData = {
+      breed: "Haflinger",
+      color: "Fuchs",
+      birth_year: 2018,
+      readable_id: "EQID-DEMO01",
+      hoof_type: "barhuf",
+      hoof_protection: "keine",
+      health_status: "gesund",
+      special_notes: "[DEMO] Empfindlich an der rechten Vorderhufe. Regelmäßige 6-Wochen-Intervalle empfohlen.",
+      medical_history: "[DEMO] 2024: Hufreheanfall rechts vorne, vollständig ausgeheilt. Regelmäßige Kontrolle empfohlen.",
+      zip_code: "00000",
+      stable_name: "Demo-Reitstall Sonnenhügel",
+    };
+
     if (existingLuna) {
       lunaId = existingLuna.id;
-      await supabaseAdmin.from("horses").update({
-        breed: "Haflinger",
-        color: "Fuchs",
-        birth_year: 2018,
-        readable_id: "EQID-DEM001",
-        hoof_type: "barhuf",
-        hoof_protection: "keine",
-        health_status: "gesund",
-        special_notes: "Empfindlich an der rechten Vorderhufe. Regelmäßige 6-Wochen-Intervalle empfohlen.",
-        medical_history: "2024: Hufreheanfall rechts vorne, vollständig ausgeheilt. Regelmäßige Kontrolle empfohlen.",
-        zip_code: "82467",
-        stable_name: "Reiterhof Sonnenhügel",
-      }).eq("id", lunaId);
+      await supabaseAdmin.from("horses").update(lunaData).eq("id", lunaId);
     } else {
       const { data: newHorse, error: horseErr } = await supabaseAdmin.from("horses").insert({
         name: "Luna",
         owner_id: clientId,
-        breed: "Haflinger",
-        color: "Fuchs",
-        birth_year: 2018,
-        readable_id: "EQID-DEM001",
-        hoof_type: "barhuf",
-        hoof_protection: "keine",
-        health_status: "gesund",
-        special_notes: "Empfindlich an der rechten Vorderhufe. Regelmäßige 6-Wochen-Intervalle empfohlen.",
-        medical_history: "2024: Hufreheanfall rechts vorne, vollständig ausgeheilt. Regelmäßige Kontrolle empfohlen.",
-        zip_code: "82467",
-        stable_name: "Reiterhof Sonnenhügel",
+        ...lunaData,
       }).select("id").single();
 
       if (horseErr) {
@@ -276,7 +264,6 @@ serve(async (req: Request) => {
     }
 
     // === Phase 6: Appointments ===
-    // Past appointment (6 weeks ago, completed)
     const { data: existingPastApt } = await supabaseAdmin
       .from("appointments")
       .select("id")
@@ -296,8 +283,8 @@ serve(async (req: Request) => {
         status: "completed",
         service_type: "Barhufbearbeitung",
         price: 85,
-        location: "Reiterhof Sonnenhügel, 82467 Garmisch",
-        notes: "Alle vier Hufe bearbeitet. Rechts vorne etwas empfindlich, Sohle leicht dünn.",
+        location: "Demo-Reitstall Sonnenhügel, 00000 Demo-Ort",
+        notes: "[DEMO] Alle vier Hufe bearbeitet. Rechts vorne etwas empfindlich, Sohle leicht dünn.",
         completed_at: `${sixWeeksAgo}T11:30:00Z`,
       }).select("id").single();
       pastAptId = pastApt?.id;
@@ -305,7 +292,7 @@ serve(async (req: Request) => {
       pastAptId = existingPastApt.id;
     }
 
-    // Upcoming appointment (in 1 week, planned)
+    // Upcoming appointment
     const { data: existingFutureApt } = await supabaseAdmin
       .from("appointments")
       .select("id")
@@ -324,7 +311,7 @@ serve(async (req: Request) => {
         status: "planned",
         service_type: "Barhufbearbeitung",
         price: 85,
-        location: "Reiterhof Sonnenhügel, 82467 Garmisch",
+        location: "Demo-Reitstall Sonnenhügel, 00000 Demo-Ort",
       });
     }
 
@@ -343,18 +330,17 @@ serve(async (req: Request) => {
         await supabaseAdmin.from("partner_treatment_notes").insert({
           partner_id: partnerId,
           horse_id: lunaId,
-          title: "Physiotherapie – Rückenmuskulatur",
+          title: "[DEMO] Physiotherapie – Rückenmuskulatur",
           treatment_date: twoWeeksAgo,
-          findings: "Verspannung im Bereich LWS, rechts stärker als links. Zusammenhang mit Hufstellung rechts vorne möglich.",
-          treatment: "Manuelle Therapie, Dehnübungen, Wärmebehandlung. 30 Min Behandlungsdauer.",
-          recommendations: "Kontrolltermin in 4 Wochen empfohlen. Besitzerin soll tägliche Dehnübungen durchführen.",
+          findings: "[DEMO] Verspannung im Bereich LWS, rechts stärker als links. Zusammenhang mit Hufstellung rechts vorne möglich.",
+          treatment: "[DEMO] Manuelle Therapie, Dehnübungen, Wärmebehandlung. 30 Min Behandlungsdauer.",
+          recommendations: "[DEMO] Kontrolltermin in 4 Wochen empfohlen. Besitzerin soll tägliche Dehnübungen durchführen.",
         });
       }
     }
 
-    // === Phase 8: Employee assignment for today ===
+    // === Phase 8: Employee assignment ===
     if (employeeId) {
-      // Get employee profile id
       const { data: empProfile } = await supabaseAdmin
         .from("employee_profiles")
         .select("id")
@@ -362,7 +348,6 @@ serve(async (req: Request) => {
         .maybeSingle();
 
       if (empProfile) {
-        // Get the upcoming appointment for assignment
         const { data: futureApt } = await supabaseAdmin
           .from("appointments")
           .select("id")
@@ -377,13 +362,13 @@ serve(async (req: Request) => {
             provider_id: providerId,
             appointment_id: futureApt.id,
             status: "pending",
-            instructions: "Barhufbearbeitung bei Luna. Rechts vorne besonders vorsichtig – dünne Sohle.",
+            instructions: "[DEMO] Barhufbearbeitung bei Luna. Rechts vorne besonders vorsichtig – dünne Sohle.",
           }, { onConflict: "employee_id,appointment_id" });
         }
       }
     }
 
-    // === Phase 9: Conversation + message (provider → client) ===
+    // === Phase 9: Conversation ===
     const { data: existingConv } = await supabaseAdmin
       .from("conversations")
       .select("id")
@@ -398,12 +383,11 @@ serve(async (req: Request) => {
       const { data: newConv } = await supabaseAdmin.from("conversations").insert({
         provider_id: providerId,
         client_id: clientId,
-        subject: "Luna – nächster Termin",
+        subject: "[DEMO] Luna – nächster Termin",
       }).select("id").single();
       convId = newConv!.id;
     }
 
-    // Add a demo message if none exist
     const { count: msgCount } = await supabaseAdmin
       .from("messages")
       .select("id", { count: "exact", head: true })
@@ -413,11 +397,11 @@ serve(async (req: Request) => {
       await supabaseAdmin.from("messages").insert({
         conversation_id: convId,
         sender_id: providerId,
-        content: `Hallo Maria, Lunas nächster Termin ist am ${new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString("de-DE")} um 09:30 Uhr. Bitte stelle sicher, dass Luna trocken steht. Bis dann! 🐴`,
+        content: `[DEMO] Hallo, Lunas nächster Termin ist am ${new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString("de-DE")} um 09:30 Uhr. Bitte stelle sicher, dass Luna trocken steht. Bis dann! 🐴`,
       });
     }
 
-    // === Phase 10: Contact entry for provider's customer list ===
+    // === Phase 10: Contact entry ===
     const { data: existingContact } = await supabaseAdmin
       .from("contacts")
       .select("id")
@@ -429,17 +413,17 @@ serve(async (req: Request) => {
       await supabaseAdmin.from("contacts").insert({
         provider_id: providerId,
         profile_id: clientId,
-        full_name: "Maria Müller",
+        full_name: "Demo-Kundin",
         email: "pferdebesitzer.hufmanager@gmail.com",
         category: "client",
-        phone: "+49 171 1234567",
-        zip_code: "82467",
-        city: "Garmisch-Partenkirchen",
-        street: "Am Reiterhof 12",
+        phone: "+49 000 0000001",
+        zip_code: "00000",
+        city: "Demo-Ort",
+        street: "Demo-Straße 1",
       });
     }
 
-    // === Phase 11: Invoice for completed appointment ===
+    // === Phase 11: Invoice ===
     if (pastAptId) {
       const { data: existingInvoice } = await supabaseAdmin
         .from("invoices")
@@ -461,7 +445,7 @@ serve(async (req: Request) => {
           subtotal: 71.43,
           issue_date: sixWeeksAgo,
           due_date: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-          items: [{ description: "Barhufbearbeitung – Luna", quantity: 1, unit_price: 85, total: 85 }],
+          items: [{ description: "[DEMO] Barhufbearbeitung – Luna", quantity: 1, unit_price: 85, total: 85 }],
         });
       }
     }

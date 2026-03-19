@@ -51,21 +51,21 @@ export default function AdminSeedDemo() {
         color: "Dunkelbraun",
         height_cm: 168,
         weight_kg: 580,
-        chip_number: "276020000654321",
-        ueln: "DE 431310654321",
-        passport_number: "DE-04311-S-00654321",
-        studbook: "Hannoveraner Verband",
-        insurance_company: "Uelzener Versicherung",
+        chip_number: "000000000000001",
+        ueln: "DE 000000000001",
+        passport_number: "DE-00000-S-00000001",
+        studbook: "Demo-Verband",
+        insurance_company: "Demo-Versicherung",
         insurance_type: ["OP-Versicherung", "Haftpflicht"],
         housing: "Offenstall",
         holding_type: "Privatpferd",
         usage: "Dressur",
         usage_type: "leisure" as const,
         contacts: {
-          vet: { name: "Dr. Katharina Müller", phone: "0211-555-1234" },
-          trainer: { name: "Anna Bergmann", phone: "0211-555-5678" },
-          stable: { name: "Reitstall Sonnenhof", phone: "0211-555-9012" },
-          caretaker: { name: "Maria Hoffmann", phone: "0176-12345678" },
+          vet: { name: "Demo-Tierärztin", phone: "+49 000 0000004" },
+          trainer: { name: "Demo-Trainerin", phone: "+49 000 0000005" },
+          stable: { name: "Demo-Reitstall Sonnenhof", phone: "+49 000 0000006" },
+          caretaker: { name: "Demo-Pflegerin", phone: "+49 000 0000007" },
         },
         owner_id: userId,
         horse_status: "active",
@@ -165,10 +165,10 @@ export default function AdminSeedDemo() {
       updateStep(3, { status: "running" });
 
       const vaccinations = [
-        { vaccine_type: "Influenza", vaccine_name: "ProteqFlu-Te", vaccination_date: ago(5), next_due_date: ago(-7), batch_number: "INFL-2025-4892", administered_by: "Dr. K. Müller" },
-        { vaccine_type: "Tetanus", vaccine_name: "ProteqFlu-Te", vaccination_date: ago(5), next_due_date: ago(-19), batch_number: "INFL-2025-4892", administered_by: "Dr. K. Müller" },
-        { vaccine_type: "Herpes", vaccine_name: "Equip EHV", vaccination_date: ago(7), next_due_date: ago(-1), batch_number: "EHV-2025-1122", administered_by: "Dr. K. Müller" },
-        { vaccine_type: "Influenza", vaccine_name: "ProteqFlu-Te", vaccination_date: ago(11), administered_by: "Dr. K. Müller" },
+        { vaccine_type: "Influenza", vaccine_name: "ProteqFlu-Te", vaccination_date: ago(5), next_due_date: ago(-7), batch_number: "DEMO-2025-4892", administered_by: "Demo-Tierärztin" },
+        { vaccine_type: "Tetanus", vaccine_name: "ProteqFlu-Te", vaccination_date: ago(5), next_due_date: ago(-19), batch_number: "DEMO-2025-4892", administered_by: "Demo-Tierärztin" },
+        { vaccine_type: "Herpes", vaccine_name: "Equip EHV", vaccination_date: ago(7), next_due_date: ago(-1), batch_number: "DEMO-2025-1122", administered_by: "Demo-Tierärztin" },
+        { vaccine_type: "Influenza", vaccine_name: "ProteqFlu-Te", vaccination_date: ago(11), administered_by: "Demo-Tierärztin" },
       ];
 
       // next_due_date: negative months = future
@@ -182,7 +182,7 @@ export default function AdminSeedDemo() {
         { ...vaccinations[0], horse_id: horseId, next_due_date: futureDate(7) },
         { ...vaccinations[1], horse_id: horseId, next_due_date: futureDate(19) },
         { ...vaccinations[2], horse_id: horseId, next_due_date: ago(1) }, // OVERDUE
-        { vaccine_type: "Influenza", vaccine_name: "ProteqFlu-Te", vaccination_date: ago(11), administered_by: "Dr. K. Müller", horse_id: horseId },
+        { vaccine_type: "Influenza", vaccine_name: "ProteqFlu-Te", vaccination_date: ago(11), administered_by: "Demo-Tierärztin", horse_id: horseId },
       ];
 
       const { error: vaccError } = await supabase.from("horse_vaccinations").insert(vaccData);
@@ -193,8 +193,8 @@ export default function AdminSeedDemo() {
       updateStep(4, { status: "running" });
 
       const { error: dewormError } = await supabase.from("horse_deworming").insert([
-        { horse_id: horseId, product_name: "Equest Pramox", active_substance: "Moxidectin + Praziquantel", deworming_date: ago(2), fecal_egg_count: 0, administered_by: "Dr. K. Müller" },
-        { horse_id: horseId, product_name: "Ivermectin", active_substance: "Ivermectin", deworming_date: ago(8), fecal_egg_count: 150, administered_by: "Dr. K. Müller" },
+        { horse_id: horseId, product_name: "Equest Pramox", active_substance: "Moxidectin + Praziquantel", deworming_date: ago(2), fecal_egg_count: 0, administered_by: "Demo-Tierärztin" },
+        { horse_id: horseId, product_name: "Ivermectin", active_substance: "Ivermectin", deworming_date: ago(8), fecal_egg_count: 150, administered_by: "Demo-Tierärztin" },
       ]);
       if (dewormError) throw dewormError;
       updateStep(4, { status: "done", detail: "2 Entwurmungen" });

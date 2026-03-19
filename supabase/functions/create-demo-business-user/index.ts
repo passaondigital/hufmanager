@@ -11,7 +11,7 @@ Deno.serve(async (_req) => {
       email: "hufmanagerbusiness@gmail.com",
       password: "HMBusiness2030Demo!",
       email_confirm: true,
-      user_metadata: { full_name: "HufManager Business Demo" },
+      user_metadata: { full_name: "Demo-Business Portal" },
     });
 
     if (error) {

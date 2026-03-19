@@ -30,8 +30,8 @@ export const dashboardTourSteps: TourStep[] = [
   },
   {
     target: 'header',
-    title: 'So sieht es deine Kundin Maria',
-    description: 'Alles was du hier dokumentierst, sieht Maria Müller in ihrem Pferdeportal — in Echtzeit. Termine, Befunde, Rechnungen — alles vernetzt.',
+    title: 'So sieht es deine Demo-Kundin',
+    description: 'Alles was du hier dokumentierst, sieht die Demo-Kundin in ihrem Pferdeportal — in Echtzeit. Termine, Befunde, Rechnungen — alles vernetzt.',
     position: 'bottom',
   },
 ];
@@ -187,7 +187,7 @@ export const clientTourSteps: TourStep[] = [
   {
     target: 'header',
     title: 'Vernetzung in Aktion',
-    description: 'Alles was dein Hufbearbeiter bei Luna dokumentiert, siehst du hier — Befunde, Fotos, Rechnungen. Und Dr. Lisa Meier (Physiotherapeutin) hat ebenfalls Zugriff, den du jederzeit widerrufen kannst.',
+    description: 'Alles was dein Hufbearbeiter bei Luna dokumentiert, siehst du hier — Befunde, Fotos, Rechnungen. Und die Demo-Tierärztin hat ebenfalls Zugriff, den du jederzeit widerrufen kannst.',
     position: 'bottom',
   },
 ];

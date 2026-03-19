@@ -243,7 +243,7 @@ export default function PartnerSettings({ tabs: tabFilter, hideChrome }: Partner
             <CardHeader><CardTitle className="text-lg">Praxis- / Geschäftsdaten</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
-                <div><Label>Praxis- / Firmenname</Label><Input value={form.business_name} onChange={e => setForm(p => ({ ...p, business_name: e.target.value }))} placeholder="z.B. Pferdeosteopathie Müller" /></div>
+                <div><Label>Praxis- / Firmenname</Label><Input value={form.business_name} onChange={e => setForm(p => ({ ...p, business_name: e.target.value }))} placeholder="z.B. Pferdeosteopathie Mein-Name" /></div>
                 <div><Label>Inhaber:in</Label><Input value={form.owner_name} onChange={e => setForm(p => ({ ...p, owner_name: e.target.value }))} /></div>
                 <div><Label>Fachgebiet</Label><Input value={form.specialty} onChange={e => setForm(p => ({ ...p, specialty: e.target.value }))} placeholder="z.B. Equine Osteopathie" /></div>
                 <div><Label>Telefon</Label><Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
