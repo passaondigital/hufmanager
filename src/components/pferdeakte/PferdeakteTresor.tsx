@@ -264,10 +264,18 @@ export function PferdeakteTresor({ horseId, horse }: PferdeakteTresorProps) {
     }
   };
 
+  const [viewerDoc, setViewerDoc] = useState<{ url: string; name: string; type: string } | null>(null);
+
   const handleDownload = async (doc: VaultDocument) => {
     const url = await getStorageUrl('horse-vault', doc.file_url);
     if (url) window.open(url, '_blank');
     else toast.error("Download fehlgeschlagen");
+  };
+
+  const handlePreview = async (doc: VaultDocument) => {
+    const url = await getStorageUrl('horse-vault', doc.file_url);
+    if (url) setViewerDoc({ url, name: doc.file_name, type: doc.file_type || "" });
+    else toast.error("Vorschau nicht verfügbar");
   };
 
   // Emergency contacts from horse

@@ -12,6 +12,7 @@ import { getPartnerTypeConfig } from "@/lib/partnerTypes";
 import { DemoFeatureHighlight } from "@/components/demo/DemoFeatureHighlight";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { PFERDEAKTE_HELP } from "./pferdeakteHelpTexts";
+import { DocumentViewer } from "./DocumentViewer";
 import type { PferdeakteUserRole, TimelineItem } from "./types";
 
 const FILTER_CHIPS = [

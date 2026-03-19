@@ -111,6 +111,39 @@ export function PferdeakteVet({ horseId, userRole }: Props) {
         </Card>
       )}
 
+      {/* Röntgenbilder */}
+      {(userRole === "provider" || userRole === "client") && (
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <ImagePlus className="h-4 w-4 text-muted-foreground" />
+                Röntgenbilder
+                <InfoTooltip {...PFERDEAKTE_HELP.sections.xray} />
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs gap-1"
+                onClick={() => setShowXrayUpload(!showXrayUpload)}
+              >
+                <ImagePlus className="h-3.5 w-3.5" />
+                {showXrayUpload ? "Abbrechen" : "Hochladen"}
+              </Button>
+            </div>
+          </CardHeader>
+          {showXrayUpload && (
+            <CardContent>
+              <XrayUpload
+                horseId={horseId}
+                onComplete={() => setShowXrayUpload(false)}
+                onCancel={() => setShowXrayUpload(false)}
+              />
+            </CardContent>
+          )}
+        </Card>
+      )}
+
       {/* Existing Impfung/Entwurmung component */}
       <TabImpfungEntwurmung horseId={horseId} readOnly={userRole !== "provider"} />
     </div>
