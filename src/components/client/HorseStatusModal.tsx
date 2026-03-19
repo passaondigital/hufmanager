@@ -22,6 +22,7 @@ type ModalView = "menu" | "transfer" | "deceased" | "stolen" | "archive";
 
 export function HorseStatusModal({ open, onClose, horseId, horseName, onStatusChanged }: HorseStatusModalProps) {
   const [view, setView] = useState<ModalView>("menu");
+  const { user } = useAuth();
 
   const handleArchive = async () => {
     const { error } = await supabase
@@ -39,6 +40,17 @@ export function HorseStatusModal({ open, onClose, horseId, horseName, onStatusCh
     }
 
     await logHorseAction(horseId, "status_changed", { new_status: "archived" });
+
+    // Notify all stakeholders
+    if (user) {
+      await notifyHorseStakeholders({
+        horseId,
+        horseName,
+        event: "archived",
+        triggeredBy: user.id,
+      });
+    }
+
     toast.success(`${horseName} wurde archiviert`);
     onStatusChanged?.();
     handleClose();
