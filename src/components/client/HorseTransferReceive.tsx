@@ -10,6 +10,7 @@ import { Upload, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { logHorseAction } from "@/utils/auditLog";
+import { revokeAndNotifyAllAccess, notifyHorseStakeholders } from "@/utils/notifyHorseStakeholders";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
