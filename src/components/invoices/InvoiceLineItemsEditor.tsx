@@ -46,10 +46,17 @@ export function InvoiceLineItemsEditor({
   onRemoveItem,
   onInventorySelect,
 }: InvoiceLineItemsEditorProps) {
+  const taxConfig = useTaxConfig();
+  const currency = taxConfig.country === "CH" ? "CHF" : "EUR";
+  const currencySymbol = taxConfig.country === "CH" ? "Fr." : "€";
+  const vatLabel = VAT_RATES[taxConfig.country]?.label || "MwSt";
+  const isMwstPflichtig = taxConfig.mwstPflichtig && !taxConfig.kleinunternehmer;
+  const mode = taxConfig.priceDisplayMode;
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("de-DE", {
       style: "currency",
-      currency: "EUR",
+      currency,
     }).format(amount);
   };
 
