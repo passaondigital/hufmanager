@@ -65,6 +65,17 @@ export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props
           .limit(1)
           .maybeSingle();
         lastVisitDate = (data as any)?.created_at || null;
+      } else if (userRole === "employee") {
+        // Employees: use last appointment they were assigned to
+        const { data } = await supabase
+          .from("appointments")
+          .select("date")
+          .eq("horse_id", horseId)
+          .eq("assigned_to_user_id", currentUserId!)
+          .order("date", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        lastVisitDate = data?.date || null;
       }
 
       if (!lastVisitDate) return { items: [], lastVisitDate: null };
@@ -303,6 +314,7 @@ export function PferdeakteStart({ horseId, userRole, horse, onTabChange }: Props
         <div className="px-4 py-3 flex items-center gap-2 border-b border-border bg-muted/30">
           <Zap className="h-4 w-4 text-primary" />
           <span className="text-sm font-semibold text-foreground">Seit deinem letzten Besuch</span>
+          <InfoTooltip {...PFERDEAKTE_HELP.tabs.start} />
           {newsItems.length > 0 && (
             <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5">{newsItems.length}</Badge>
           )}
