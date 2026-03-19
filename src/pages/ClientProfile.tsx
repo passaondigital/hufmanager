@@ -8,8 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, User, Loader2, Save, Bell, Globe, LogOut } from "lucide-react";
-import { useLogout } from "@/hooks/useLogout";
+import { User, Loader2, Save, Bell, Globe } from "lucide-react";
 import { HelpTip } from "@/components/ui/HelpTip";
 import { toast } from "sonner";
 import { StableLocationCard } from "@/components/client/StableLocationCard";
@@ -41,7 +40,6 @@ interface Profile {
 export default function ClientProfile() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const logout = useLogout();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -138,15 +136,14 @@ export default function ClientProfile() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/client-home")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="font-semibold text-lg flex items-center gap-2">Mein Profil <HelpTip id="kunden.profil" /></h1>
-        </div>
-      </header>
+      {/* Page Title */}
+      <div className="px-4 py-4 lg:px-6 lg:py-6">
+        <h1 className="font-semibold text-lg flex items-center gap-2">
+          <User className="h-5 w-5 text-primary" />
+          Mein Profil
+          <HelpTip id="kunden.profil" />
+        </h1>
+      </div>
 
       <main className="px-4 py-6 max-w-lg mx-auto space-y-4">
         {/* Avatar */}
@@ -288,22 +285,6 @@ export default function ClientProfile() {
         {/* DSGVO: Account Deletion (Art. 17) */}
         <DeleteAccountSection />
 
-        {/* Logout */}
-        <Card className="border-destructive/30">
-          <CardContent className="pt-6">
-            <Button
-              variant="destructive"
-              className="w-full gap-2"
-              onClick={async () => {
-                await logout();
-                toast.success("Erfolgreich abgemeldet");
-              }}
-            >
-              <LogOut className="h-4 w-4" />
-              Abmelden
-            </Button>
-          </CardContent>
-        </Card>
       </main>
     </div>
   );
