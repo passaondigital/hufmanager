@@ -193,8 +193,8 @@ export default function AdminSeedDemo() {
       updateStep(4, { status: "running" });
 
       const { error: dewormError } = await supabase.from("horse_deworming").insert([
-        { horse_id: horseId, product_name: "Equest Pramox", active_substance: "Moxidectin + Praziquantel", deworming_date: ago(2), fecal_egg_count: 0, administered_by: "Dr. K. Müller" },
-        { horse_id: horseId, product_name: "Ivermectin", active_substance: "Ivermectin", deworming_date: ago(8), fecal_egg_count: 150, administered_by: "Dr. K. Müller" },
+        { horse_id: horseId, product_name: "Equest Pramox", active_substance: "Moxidectin + Praziquantel", deworming_date: ago(2), fecal_egg_count: 0, administered_by: "Demo-Tierärztin" },
+        { horse_id: horseId, product_name: "Ivermectin", active_substance: "Ivermectin", deworming_date: ago(8), fecal_egg_count: 150, administered_by: "Demo-Tierärztin" },
       ]);
       if (dewormError) throw dewormError;
       updateStep(4, { status: "done", detail: "2 Entwurmungen" });
