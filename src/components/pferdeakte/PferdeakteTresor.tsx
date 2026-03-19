@@ -25,6 +25,9 @@ import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { DemoFeatureHighlight } from "@/components/demo/DemoFeatureHighlight";
 import { EmergencyQRCode } from "./EmergencyQRCode";
+import { DocumentViewer } from "./DocumentViewer";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { PFERDEAKTE_HELP } from "./pferdeakteHelpTexts";
 
 interface PferdeakteTresorProps {
   horseId: string;
