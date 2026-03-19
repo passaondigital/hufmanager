@@ -277,8 +277,16 @@ export function ClientAppLayout() {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const { user } = useAuth();
+  const { mode, modeInfo } = useClientMode();
 
   const displayName = user?.email?.split("@")[0] || "Pferdebesitzer";
+  const clientNavigationConfig = getClientNavigationConfig(mode, modeInfo.isVerified);
+
+  const MODE_ICONS: Record<ClientModeType, string> = {
+    private: "🏠",
+    stall: "🏇",
+    commercial: "🏢",
+  };
 
   const isActive = (path: string, match?: string) => {
     if (location.pathname === path) return true;
