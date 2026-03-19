@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Footprints, Activity, Syringe, Shield, Loader2, FileDown, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { PFERDEAKTE_HELP } from "./pferdeakteHelpTexts";
 import { toast } from "sonner";
 
 interface Props {

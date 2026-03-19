@@ -10,6 +10,8 @@ import { Camera, ChevronDown, ChevronUp, History, FileText } from "lucide-react"
 import { cn } from "@/lib/utils";
 import { getPartnerTypeConfig } from "@/lib/partnerTypes";
 import { DemoFeatureHighlight } from "@/components/demo/DemoFeatureHighlight";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { PFERDEAKTE_HELP } from "./pferdeakteHelpTexts";
 import type { PferdeakteUserRole, TimelineItem } from "./types";
 
 const FILTER_CHIPS = [
