@@ -27,29 +27,27 @@ export default function EmployeeManagementHub() {
     <div className="space-y-6 animate-fade-in">
       <TileHubHeader icon="⚙️" title="Management" subtitle="Profil & Einstellungen" />
 
-      {/* Category 1: Mein Account */}
       <TileCategory title="Mein Account">
         <Tile
           icon={<User className="w-10 h-10 text-primary" />}
           title="Mein Profil"
-          description="Persönliche Daten, Vertrag"
+          description="Persönliche Daten, Vertrag, Kontakt, Dokumente"
           status={profileComplete ? "✅ Vollständig" : "⚠️ Profil vervollständigen"}
           onClick={() => navigate("/employee/management/profil")}
         />
         <Tile
           icon={<Settings className="w-10 h-10 text-primary" />}
           title="Einstellungen"
-          description="Benachrichtigungen, Passwort"
+          description="Benachrichtigungen, Passwort, Sprache, Datenschutz"
           onClick={() => navigate("/employee/management/einstellungen")}
         />
       </TileCategory>
 
-      {/* Category 2: HufManager */}
       <TileCategory title="HufManager">
         <Tile
           icon={<Mic className="w-10 h-10 text-primary" />}
           title="Botschafter werden"
-          description="Provision verdienen & HufManager empfehlen"
+          description="Provision verdienen, Empfehlungslinks, Statistiken, Auszahlungen, Werbemittel"
           onClick={() => navigate("/employee/management/botschafter")}
         />
       </TileCategory>

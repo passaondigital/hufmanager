@@ -31,13 +31,13 @@ export default function PartnerManagementBusinessHub() {
         <Tile
           icon={<Receipt className="w-10 h-10 text-primary" />}
           title="Steuer & MwSt"
-          description="Umsatzsteuer, Preisanzeige"
+          description="Umsatzsteuer, Steuernummer, Preisanzeige, Netto/Brutto"
           onClick={() => navigate("/partner-management/steuer")}
         />
         <Tile
           icon={<CreditCard className="w-10 h-10 text-primary" />}
           title="Abo & Zahlung"
-          description="Plan, Rechnungen"
+          description="Plan, Rechnungen, Vertrag, Zahlungsmethode, Laufzeit"
           status={
             planLabel ? (
               <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-xs">
@@ -50,7 +50,7 @@ export default function PartnerManagementBusinessHub() {
         <Tile
           icon={<FileText className="w-10 h-10 text-primary" />}
           title="Rechtliches"
-          description="AGB, Datenschutz, Impressum"
+          description="AGB, Datenschutz, Impressum, Widerrufsbelehrung"
           onClick={() => navigate("/partner-management/rechtliches")}
         />
       </TileCategory>
@@ -59,13 +59,13 @@ export default function PartnerManagementBusinessHub() {
         <Tile
           icon={<Globe className="w-10 h-10 text-primary" />}
           title="Öffentliches Profil"
-          description="Sichtbar für Pferdebesitzer"
+          description="Sichtbar für Pferdebesitzer, Beschreibung, Fotos, Leistungen"
           onClick={() => navigate("/partner-management/oeffentlich")}
         />
         <Tile
           icon={<MessageSquare className="w-10 h-10 text-primary" />}
           title="Kommunikation"
-          description="Vorlagen, Benachrichtigungen"
+          description="Vorlagen, Benachrichtigungen, E-Mail, Push"
           onClick={() => navigate("/partner-management/kommunikation")}
         />
       </TileCategory>

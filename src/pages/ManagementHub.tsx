@@ -31,7 +31,7 @@ export default function ManagementHub() {
         <Tile
           icon={<User className="w-10 h-10 text-primary" />}
           title="Mein Profil"
-          description="Profil, Zertifikate, Fotos"
+          description="Profil, Zertifikate, Fotos, Kontaktdaten, Qualifikationen"
           onClick={() => navigate("/management/profil")}
         />
       </TileCategory>
@@ -50,7 +50,7 @@ export default function ManagementHub() {
         <Tile
           icon={<Mic className="w-10 h-10 text-primary" />}
           title="Botschafter werden"
-          description="Provision verdienen & HufManager empfehlen"
+          description="Provision verdienen, Empfehlungslinks, Statistiken, Auszahlungen, Werbemittel"
           onClick={() => navigate("/management/botschafter")}
         />
       </TileCategory>

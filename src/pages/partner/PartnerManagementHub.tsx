@@ -31,7 +31,7 @@ export default function PartnerManagementHub() {
         <Tile
           icon={<User className="w-10 h-10 text-primary" />}
           title="Mein Profil"
-          description="Persönliche Daten, Foto"
+          description="Persönliche Daten, Foto, Kontakt, Firmendaten"
           onClick={() => navigate("/partner-management/profil")}
         />
       </TileCategory>
@@ -50,7 +50,7 @@ export default function PartnerManagementHub() {
         <Tile
           icon={<Mic className="w-10 h-10 text-primary" />}
           title="Botschafter werden"
-          description="Provision verdienen & HufManager empfehlen"
+          description="Provision verdienen, Empfehlungslinks, Statistiken, Auszahlungen, Werbemittel"
           onClick={() => navigate("/partner-management/botschafter")}
         />
       </TileCategory>
