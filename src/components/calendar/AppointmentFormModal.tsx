@@ -1174,12 +1174,14 @@ export function AppointmentFormModal({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={createAppointments.isPending || isUploading}
+            disabled={createAppointments.isPending || isUploading || formData.horseIds.length === 0}
           >
             {(createAppointments.isPending || isUploading) ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
             ) : null}
-            {recurrence !== "none" ? "Termine erstellen" : "Speichern"}
+            {formData.horseIds.length > 1
+              ? `${formData.horseIds.length} Termine erstellen`
+              : recurrence !== "none" ? "Termine erstellen" : "Speichern"}
             {pendingEvidence.length > 0 && ` (${pendingEvidence.length} Beweise)`}
           </Button>
         </DialogFooter>
