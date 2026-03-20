@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Play, History, Footprints, Stethoscope, Activity, FileText, Lock,
+  Wheat, Bike, Pill,
 } from "lucide-react";
 
 const PFERDEAKTE_TABS = [
@@ -10,6 +11,9 @@ const PFERDEAKTE_TABS = [
   { value: "huf", label: "Huf", icon: Footprints, category: "medical" },
   { value: "vet", label: "Vet", icon: Stethoscope, category: "medical" },
   { value: "therapie", label: "Therapie", icon: Activity, category: "medical" },
+  { value: "futter", label: "Futter", icon: Wheat, category: "care" },
+  { value: "bewegung", label: "Bewegung", icon: Bike, category: "care" },
+  { value: "medikamente", label: "Medikamente", icon: Pill, category: "care" },
   { value: "berichte", label: "Berichte", icon: FileText, category: "docs" },
   { value: "tresor", label: "Tresor", icon: Lock, category: "docs" },
 ] as const;
