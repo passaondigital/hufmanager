@@ -559,42 +559,40 @@ export function AppointmentFormModal({
     const weeksInterval = recurrence === "custom" ? customWeeks : (recurrence === "none" ? 1 : parseInt(recurrence) || 4);
     const occurrences = recurrence === "none" ? 1 : Math.floor(52 / weeksInterval) || 1;
 
-    for (let i = 0; i < occurrences; i++) {
-      const appointmentDate = addWeeks(selectedDate, i * weeksInterval);
-      
-      // Check if this specific occurrence is in the past
-      const occurrenceIsPast = appointmentDate < today;
-      
-      // Resolve price group override
-      const selectedHorse = horses.find((h: any) => h.id === validated.horseIds[0]);
-      const ownerPriceGroup = selectedHorse?.owner?.price_group || "standard";
-      const override = priceOverrides.find((o: any) => o.price_group === ownerPriceGroup);
-      const resolvedPrice = isFlatRate ? 0 : (override ? override.price : (currentService?.base_price || 0));
-      const appliedGroup = override ? ownerPriceGroup : (ownerPriceGroup !== "standard" ? ownerPriceGroup : null);
+    // Create appointments for EACH selected horse × EACH recurrence
+    for (const horseId of validated.horseIds) {
+      for (let i = 0; i < occurrences; i++) {
+        const appointmentDate = addWeeks(selectedDate, i * weeksInterval);
+        const occurrenceIsPast = appointmentDate < today;
+        
+        const selectedHorse = horses.find((h: any) => h.id === horseId);
+        const ownerPriceGroup = selectedHorse?.owner?.price_group || "standard";
+        const override = priceOverrides.find((o: any) => o.price_group === ownerPriceGroup);
+        const resolvedPrice = isFlatRate ? 0 : (override ? override.price : (currentService?.base_price || 0));
+        const appliedGroup = override ? ownerPriceGroup : (ownerPriceGroup !== "standard" ? ownerPriceGroup : null);
 
-      appointments.push({
-        horse_id: validated.horseIds[0],
-        date: format(appointmentDate, "yyyy-MM-dd"),
-        time: validated.time,
-        service_type: validated.serviceType,
-        notes: validated.notes || "",
-        location: validated.location || "",
-        duration: validated.duration,
-        provider_id: user.id,
-        recurring_group_id: recurringGroupId,
-        // Price group resolution
-        price: resolvedPrice,
-        applied_price: resolvedPrice,
-        price_group_applied: appliedGroup,
-        is_internally_paid: isFlatRate,
-        // Series appointment tracking
-        is_series_appointment: formData.isSeriesAppointment || isSeriesService,
-        series_current: (formData.isSeriesAppointment || isSeriesService) ? formData.seriesCurrent + i : null,
-        series_total: (formData.isSeriesAppointment || isSeriesService) ? formData.seriesTotal : null,
-        // Auto-complete past appointments (Time Travel feature)
-        status: visitStatusLabelToDbStatus(occurrenceIsPast ? "Erledigt" : "Geplant"),
-        completed_at: occurrenceIsPast ? new Date().toISOString() : null,
-      });
+        appointments.push({
+          horse_id: horseId,
+          date: format(appointmentDate, "yyyy-MM-dd"),
+          time: validated.time,
+          service_type: validated.serviceType,
+          notes: validated.notes || "",
+          location: validated.location || "",
+          duration: validated.duration,
+          provider_id: user.id,
+          recurring_group_id: recurringGroupId,
+          price: resolvedPrice,
+          applied_price: resolvedPrice,
+          price_group_applied: appliedGroup,
+          is_internally_paid: isFlatRate,
+          is_series_appointment: formData.isSeriesAppointment || isSeriesService,
+          series_current: (formData.isSeriesAppointment || isSeriesService) ? formData.seriesCurrent + i : null,
+          series_total: (formData.isSeriesAppointment || isSeriesService) ? formData.seriesTotal : null,
+          is_multi_horse: validated.horseIds.length > 1,
+          status: visitStatusLabelToDbStatus(occurrenceIsPast ? "Erledigt" : "Geplant"),
+          completed_at: occurrenceIsPast ? new Date().toISOString() : null,
+        });
+      }
     }
 
     if (import.meta.env.DEV) console.log("[AppointmentFormModal] submitting", appointments.length);
