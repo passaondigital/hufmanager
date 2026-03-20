@@ -2,7 +2,6 @@ import { DEMO_EMAILS } from "@/lib/demo-accounts";
 
 /**
  * Checks if a user email belongs to the business/portal demo account.
- * These users should be redirected to /portal/galerie instead of /home.
  */
 export function isPortalBusinessEmail(email: string | undefined | null): boolean {
   if (!email) return false;
@@ -10,16 +9,27 @@ export function isPortalBusinessEmail(email: string | undefined | null): boolean
 }
 
 /**
+ * Checks if a user email belongs to the Stallbetreiber demo account.
+ */
+export function isStallbetreiberDemoEmail(email: string | undefined | null): boolean {
+  if (!email) return false;
+  return email.toLowerCase() === DEMO_EMAILS.stallbetreiber;
+}
+
+/**
  * Returns the correct post-login redirect path for a user,
- * taking portal/business accounts into account.
+ * taking portal/business/stallbetreiber accounts into account.
  */
 export function getPostLoginPath(
   role: string,
   email: string | undefined | null
 ): string {
-  // Business/portal demo account → portal gallery
   if (isPortalBusinessEmail(email)) {
     return "/portal/galerie";
+  }
+
+  if (isStallbetreiberDemoEmail(email)) {
+    return "/client-home";
   }
 
   const roleToPath: Record<string, string> = {

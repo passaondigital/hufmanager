@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { isDemoEmail } from "@/lib/demo-accounts";
-import { isPortalBusinessEmail, getPostLoginPath } from "@/lib/portal-user-detect";
+import { isPortalBusinessEmail, isStallbetreiberDemoEmail, getPostLoginPath } from "@/lib/portal-user-detect";
 import { Navigate, useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -186,8 +186,7 @@ export default function Auth() {
 
   useEffect(() => {
     if (!user || !role || authLoading || isSwitchingAccount || signingOut) return;
-    // Portal/business accounts skip onboarding entirely
-    if (isPortalBusinessEmail(user.email)) {
+    if (isPortalBusinessEmail(user.email) || isStallbetreiberDemoEmail(user.email)) {
       setOnboardingChecked(true);
       return;
     }
@@ -221,7 +220,7 @@ export default function Auth() {
   }
 
   if (!authLoading && user && role && !isSwitchingAccount) {
-    if (role === "provider" && !onboardingChecked && !isPortalBusinessEmail(user.email)) {
+    if (role === "provider" && !onboardingChecked && !isPortalBusinessEmail(user.email) && !isStallbetreiberDemoEmail(user.email)) {
       // Show loading while checking onboarding status
       return (
         <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
@@ -230,7 +229,7 @@ export default function Auth() {
         </div>
       );
     }
-    if (role === "provider" && needsOnboarding && !isPortalBusinessEmail(user.email)) {
+    if (role === "provider" && needsOnboarding && !isPortalBusinessEmail(user.email) && !isStallbetreiberDemoEmail(user.email)) {
       return <Navigate to="/welcome" replace />;
     }
 
@@ -624,6 +623,7 @@ export default function Auth() {
                 "partner.hufmanager@gmail.com": "/partner-home",
                 "mitarbeiter.hufmanager@gmail.com": "/employee",
                 "hufmanagerbusiness@gmail.com": "/portal/galerie",
+                "hufmanagerstallbetreiber@gmail.com": "/client-home",
               };
               const target = roleMap[email.toLowerCase()] || "/home";
               window.location.replace(target);
