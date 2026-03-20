@@ -96,7 +96,24 @@ export function PferdeakteMedikamente({ horseId, userRole }: Props) {
   const markGiven = useMutation({
     mutationFn: async (id: string) => {
       const today = new Date().toISOString().split("T")[0];
-      const { error } = await (supabase as any).from("horse_medication_reminders").update({ last_given_date: today }).eq("id", id);
+      const item = reminders.find(r => r.id === id);
+      const updates: Record<string, unknown> = { last_given_date: today };
+
+      // Advance next_due_date based on frequency
+      if (item?.frequency && item.frequency !== "einmalig") {
+        const nextDate = new Date();
+        switch (item.frequency) {
+          case "täglich": nextDate.setDate(nextDate.getDate() + 1); break;
+          case "wöchentlich": nextDate.setDate(nextDate.getDate() + 7); break;
+          case "monatlich": nextDate.setMonth(nextDate.getMonth() + 1); break;
+          case "quartalsweise": nextDate.setMonth(nextDate.getMonth() + 3); break;
+          case "halbjährlich": nextDate.setMonth(nextDate.getMonth() + 6); break;
+          case "jährlich": nextDate.setFullYear(nextDate.getFullYear() + 1); break;
+        }
+        updates.next_due_date = nextDate.toISOString().split("T")[0];
+      }
+
+      const { error } = await (supabase as any).from("horse_medication_reminders").update(updates).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {

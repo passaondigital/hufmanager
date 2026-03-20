@@ -34,13 +34,17 @@ export function PferdeakteShareDialog({ horseId, horseName, children }: Props) {
     setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
-  const handleCopyLink = () => {
+  const handleCopyLink = async () => {
     const sections = selected.join(",");
-    const shareUrl = `${window.location.origin}/shared/horse/${horseId}?sections=${sections}`;
-    navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast.success("Link kopiert!");
+    const shareUrl = `${window.location.origin}/emergency/${horseId}?sections=${sections}`;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast.success("Link kopiert!");
+    } catch {
+      toast.error("Link konnte nicht kopiert werden");
+    }
   };
 
   const handleSend = () => {
