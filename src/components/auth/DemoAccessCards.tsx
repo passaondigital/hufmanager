@@ -88,7 +88,7 @@ export function DemoAccessCards({ onSelectAccount }: DemoAccessCardsProps) {
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors py-2"
       >
-        <span className="font-medium">1-Click Demo – 5 Perspektiven entdecken</span>
+        <span className="font-medium">1-Click Demo – 6 Perspektiven entdecken</span>
         {expanded ? (
           <ChevronUp className="h-3.5 w-3.5" />
         ) : (
