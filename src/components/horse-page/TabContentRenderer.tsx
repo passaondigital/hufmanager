@@ -12,6 +12,9 @@ import { PferdeakteVet } from "@/components/pferdeakte/PferdeakteVet";
 import { PferdeakteTherapie } from "@/components/pferdeakte/PferdeakteTherapie";
 import { PferdeakteBerichte } from "@/components/pferdeakte/PferdeakteBerichte";
 import { PferdeakteTresor } from "@/components/pferdeakte/PferdeakteTresor";
+import { PferdeakteFutter } from "@/components/pferdeakte/PferdeakteFutter";
+import { PferdeakteBewegung } from "@/components/pferdeakte/PferdeakteBewegung";
+import { PferdeakteMedikamente } from "@/components/pferdeakte/PferdeakteMedikamente";
 
 // Error boundary to prevent tab crashes from redirecting
 class TabErrorBoundary extends Component<
