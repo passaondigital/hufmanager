@@ -672,30 +672,116 @@ export function AppointmentFormModal({
             </Alert>
           )}
 
-          <div className="space-y-2">
-            <Label>Pferd auswählen *</Label>
-            <Select
-              value={formData.horseIds[0]}
-              onValueChange={(value) => setFormData({ ...formData, horseIds: [value] })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Pferd auswählen..." />
-              </SelectTrigger>
-              <SelectContent>
-                {horses.map((horse) => (
-                  <SelectItem key={horse.id} value={horse.id}>
-                    {horse.name} ({horse.breed || "Unbekannt"})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {/* Price group warning */}
-            {formData.horseIds[0] && (() => {
+          {/* Selection Mode Toggle */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Label className="flex-shrink-0">Zuweisen nach:</Label>
+              <div className="flex rounded-lg border border-border overflow-hidden">
+                <button
+                  type="button"
+                  className={cn(
+                    "px-3 py-1.5 text-xs font-medium transition-colors",
+                    selectionMode === "horse" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  )}
+                  onClick={() => { setSelectionMode("horse"); setSelectedOwnerId(""); }}
+                >
+                  Pferd
+                </button>
+                <button
+                  type="button"
+                  className={cn(
+                    "px-3 py-1.5 text-xs font-medium transition-colors",
+                    selectionMode === "owner" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  )}
+                  onClick={() => setSelectionMode("owner")}
+                >
+                  Besitzer
+                </button>
+              </div>
+            </div>
+
+            {/* Owner selector (when in owner mode) */}
+            {selectionMode === "owner" && (
+              <div className="space-y-2">
+                <Label className="text-xs">Besitzer auswählen</Label>
+                <Select value={selectedOwnerId} onValueChange={(v) => {
+                  setSelectedOwnerId(v);
+                  selectAllOwnerHorses(v);
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Besitzer wählen..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from(owners.entries()).map(([ownerId, data]) => (
+                      <SelectItem key={ownerId} value={ownerId}>
+                        {contactMap.get(ownerId) || "Unbekannt"} ({data.horses.length} Pferde)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Horse checkboxes */}
+            <div className="space-y-1.5 max-h-[180px] overflow-y-auto rounded-lg border border-border p-2">
+              <div className="flex items-center justify-between mb-1">
+                <Label className="text-xs text-muted-foreground">
+                  {formData.horseIds.length > 0
+                    ? `${formData.horseIds.length} Pferd(e) ausgewählt`
+                    : "Pferd(e) auswählen *"}
+                </Label>
+                {filteredHorses.length > 1 && (
+                  <button
+                    type="button"
+                    className="text-[10px] text-primary hover:underline"
+                    onClick={() => {
+                      const allIds = filteredHorses.map((h: any) => h.id);
+                      const allSelected = allIds.every(id => formData.horseIds.includes(id));
+                      setFormData(prev => ({
+                        ...prev,
+                        horseIds: allSelected ? prev.horseIds.filter(id => !allIds.includes(id)) : [...new Set([...prev.horseIds, ...allIds])],
+                      }));
+                    }}
+                  >
+                    {filteredHorses.every((h: any) => formData.horseIds.includes(h.id)) ? "Alle abwählen" : "Alle auswählen"}
+                  </button>
+                )}
+              </div>
+              {filteredHorses.map((horse: any) => (
+                <label
+                  key={horse.id}
+                  className={cn(
+                    "flex items-center gap-2.5 p-2 rounded-md cursor-pointer transition-colors",
+                    formData.horseIds.includes(horse.id) ? "bg-primary/10" : "hover:bg-muted"
+                  )}
+                >
+                  <Checkbox
+                    checked={formData.horseIds.includes(horse.id)}
+                    onCheckedChange={() => toggleHorse(horse.id)}
+                  />
+                  <span className="text-sm font-medium">{horse.name}</span>
+                  <span className="text-xs text-muted-foreground">({horse.breed || "Unbekannt"})</span>
+                  {horse.owner_id && contactMap.get(horse.owner_id) && selectionMode === "horse" && (
+                    <span className="text-[10px] text-muted-foreground ml-auto truncate max-w-[100px]">
+                      {contactMap.get(horse.owner_id)}
+                    </span>
+                  )}
+                </label>
+              ))}
+              {filteredHorses.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-4">
+                  {selectionMode === "owner" ? "Bitte zuerst einen Besitzer wählen" : "Keine Pferde gefunden"}
+                </p>
+              )}
+            </div>
+
+            {/* Price group info for first selected horse */}
+            {formData.horseIds.length > 0 && (() => {
               const h = horses.find((ho: any) => ho.id === formData.horseIds[0]);
               const pg = h?.owner?.price_group;
               if (!pg || pg === "standard") {
                 return (
-                  <p className="text-xs text-amber-600 flex items-center gap-1 mt-1">
+                  <p className="text-xs text-destructive/80 flex items-center gap-1">
                     <AlertTriangle className="h-3 w-3" />
                     Kunde hat keine Preisgruppe → Basispreis wird verwendet
                   </p>
@@ -703,7 +789,7 @@ export function AppointmentFormModal({
               }
               const override = priceOverrides.find((o: any) => o.price_group === pg);
               return (
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground">
                   Preisgruppe: <span className="font-medium">{pg.toUpperCase()}</span>
                   {override ? ` → €${override.price}` : " (kein Override → Basispreis)"}
                 </p>
