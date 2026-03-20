@@ -920,7 +920,7 @@ export function AppointmentFormModal({
                   size="sm" 
                   variant="default"
                   onClick={() => cameraInputRef.current?.click()}
-                  disabled={!formData.horseIds[0]}
+                  disabled={formData.horseIds.length === 0}
                   className="gap-1"
                 >
                   <Camera className="h-4 w-4" />
@@ -931,7 +931,7 @@ export function AppointmentFormModal({
                   size="sm" 
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={!formData.horseIds[0]}
+                  disabled={formData.horseIds.length === 0}
                 >
                   <Upload className="h-4 w-4 mr-1" />
                   Datei
@@ -939,7 +939,7 @@ export function AppointmentFormModal({
               </div>
             </div>
             
-            {!formData.horseIds[0] && (
+            {formData.horseIds.length === 0 && (
               <p className="text-xs text-muted-foreground">
                 Bitte zuerst ein Pferd auswählen
               </p>
@@ -1025,7 +1025,7 @@ export function AppointmentFormModal({
               </div>
             )}
             
-            {pendingEvidence.length === 0 && formData.horseIds[0] && (
+            {pendingEvidence.length === 0 && formData.horseIds.length > 0 && (
               <p className="text-xs text-muted-foreground text-center py-2">
                 Chat-Screenshots, Fotos vom Zustand, Befunde...
               </p>
