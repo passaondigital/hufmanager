@@ -49,7 +49,7 @@ import { useServicePresets } from "@/hooks/useServicePresets";
 import { sendTypedPush, resolveProviderDisplayName } from "@/lib/pushNotificationService";
 
 const appointmentSchema = z.object({
-  horseId: z.string().min(1, "Bitte wählen Sie ein Pferd aus"),
+  horseIds: z.array(z.string()).min(1, "Bitte wählen Sie mindestens ein Pferd aus"),
   time: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Ungültiges Zeitformat"),
   serviceType: z.string().min(1, "Bitte wählen Sie einen Service-Typ"),
   notes: z.string().max(2000, "Notizen dürfen maximal 2000 Zeichen haben").optional(),
