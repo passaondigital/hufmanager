@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Building2, Home, Warehouse, ChevronRight, Upload, Shield, Check } from "lucide-react";
+import { Building2, Home, Warehouse, ChevronRight, Shield, Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,27 +9,26 @@ import { toast } from "sonner";
 import { VerificationDocuments } from "./VerificationDocuments";
 
 interface ClientModeSettingsProps {
-  /** If true, shows as onboarding-style card. If false, as settings section. */
   variant?: "onboarding" | "settings";
   onComplete?: () => void;
 }
 
-const MODES: { mode: ClientMode; icon: typeof Home; badge?: string }[] = [
+const MODES: { mode: ClientMode; icon: typeof Home; badge?: string; trialInfo?: string }[] = [
   { mode: "private", icon: Home },
-  { mode: "stall", icon: Warehouse, badge: "Verifizierung nötig" },
-  { mode: "commercial", icon: Building2, badge: "Verifizierung nötig" },
+  { mode: "stall", icon: Warehouse, badge: "90 Tage kostenlos", trialInfo: "Teste alle Stallbetreiber-Features 90 Tage lang kostenlos. Danach ist eine Verifizierung erforderlich." },
+  { mode: "commercial", icon: Building2, badge: "90 Tage kostenlos", trialInfo: "Teste alle Gewerbe-Features 90 Tage lang kostenlos. Danach ist eine Verifizierung erforderlich." },
 ];
 
 export function ClientModeSettings({ variant = "settings", onComplete }: ClientModeSettingsProps) {
   const { mode, modeInfo, setMode, isSettingMode, MODE_LABELS, MODE_DESCRIPTIONS } = useClientMode();
   const [selectedMode, setSelectedMode] = useState<ClientMode>(mode);
   const [companyName, setCompanyName] = useState(modeInfo.companyName || "");
-  const [step, setStep] = useState<"select" | "verify">("select");
+  const [step, setStep] = useState<"select" | "details">("select");
 
   const handleSelect = (m: ClientMode) => {
     setSelectedMode(m);
     if (m !== "private" && m !== mode) {
-      setStep("verify");
+      setStep("details");
     }
   };
 
@@ -51,7 +50,7 @@ export function ClientModeSettings({ variant = "settings", onComplete }: ClientM
           if (selectedMode === "private") {
             toast.success("Modus auf Pferdebesitzer gesetzt.");
           } else {
-            toast.success("Verifizierungsantrag eingereicht! Ein Admin wird deinen Account prüfen.");
+            toast.success(`${MODE_LABELS[selectedMode]}-Modus aktiviert! 90 Tage kostenlos testen.`);
           }
           onComplete?.();
         },
@@ -96,17 +95,23 @@ export function ClientModeSettings({ variant = "settings", onComplete }: ClientM
 
       {step === "select" && (
         <div className="grid gap-3">
-          {MODES.map(({ mode: m, icon: Icon, badge }) => (
+          {MODES.map(({ mode: m, icon: Icon, badge, trialInfo }) => (
             <button
               key={m}
               onClick={() => handleSelect(m)}
               className={cn(
-                "flex items-center gap-4 p-4 rounded-xl border text-left transition-all",
+                "flex items-center gap-4 p-4 rounded-xl border text-left transition-all relative",
                 selectedMode === m
                   ? "border-primary bg-primary/5 ring-1 ring-primary/20"
                   : "border-border bg-card hover:border-muted-foreground/30"
               )}
             >
+              {badge && (
+                <div className="absolute -top-2 right-3 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" />
+                  {badge}
+                </div>
+              )}
               <div className={cn(
                 "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
                 selectedMode === m ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
@@ -114,15 +119,11 @@ export function ClientModeSettings({ variant = "settings", onComplete }: ClientM
                 <Icon className="h-6 w-6" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-foreground">{MODE_LABELS[m]}</p>
-                  {badge && m !== "private" && (
-                    <span className="text-[10px] font-medium text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                      {badge}
-                    </span>
-                  )}
-                </div>
+                <p className="text-sm font-semibold text-foreground">{MODE_LABELS[m]}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{MODE_DESCRIPTIONS[m]}</p>
+                {trialInfo && selectedMode === m && (
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-1.5 font-medium">{trialInfo}</p>
+                )}
               </div>
               <ChevronRight className={cn(
                 "h-4 w-4 flex-shrink-0 transition-colors",
@@ -139,18 +140,18 @@ export function ClientModeSettings({ variant = "settings", onComplete }: ClientM
         </div>
       )}
 
-      {step === "verify" && (
+      {step === "details" && (
         <div className="space-y-4 p-4 rounded-xl border border-border bg-card">
           <div className="flex items-center gap-3">
-            <Shield className="h-5 w-5 text-primary" />
+            <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+              <Sparkles className="h-5 w-5 text-green-600" />
+            </div>
             <div>
               <p className="text-sm font-semibold text-foreground">
-                Verifizierung für {MODE_LABELS[selectedMode]}
+                {MODE_LABELS[selectedMode]} – 90 Tage kostenlos
               </p>
               <p className="text-xs text-muted-foreground">
-                {selectedMode === "stall"
-                  ? "Stallbetreiber-Features werden nach Admin-Prüfung freigeschaltet."
-                  : "Gewerbliche Features werden nach Admin-Prüfung freigeschaltet."}
+                Sofort alle Features nutzen. Verifizierung innerhalb von 90 Tagen.
               </p>
             </div>
           </div>
@@ -169,34 +170,39 @@ export function ClientModeSettings({ variant = "settings", onComplete }: ClientM
               />
             </div>
 
-            {/* Verification Documents Upload */}
-            <VerificationDocuments mode={selectedMode} />
-
             <div className="p-3 rounded-lg bg-muted/50 text-xs text-muted-foreground">
-              <p className="font-medium text-foreground mb-1">Was passiert als Nächstes?</p>
+              <p className="font-medium text-foreground mb-1">So funktioniert's:</p>
               <ul className="space-y-1">
-                <li>• Dein Antrag wird an unser Team gesendet</li>
+                <li>✅ Sofort alle {MODE_LABELS[selectedMode]}-Features nutzen</li>
+                <li>📅 90 Tage kostenloser Testzeitraum</li>
+                <li>📄 Innerhalb der 90 Tage: Verifizierung einreichen</li>
                 {selectedMode === "stall" && (
-                  <>
-                    <li>• Wir prüfen deinen <span className="font-medium">Gewerbeschein</span> und die <span className="font-medium">§11 TierSchG Erlaubnis</span></li>
-                    <li>• Ohne §11-Nachweis kann kein Stall-Account freigeschaltet werden</li>
-                  </>
+                  <li>📋 Benötigt: Gewerbeschein + §11 TierSchG Erlaubnis</li>
                 )}
                 {selectedMode === "commercial" && (
-                  <li>• Wir prüfen deinen <span className="font-medium">Gewerbeschein</span></li>
+                  <li>📋 Benötigt: Gewerbeschein oder Registerauszug</li>
                 )}
-                <li>• Prüfung dauert 1-2 Werktage</li>
-                <li>• Nach Freigabe werden alle {MODE_LABELS[selectedMode]}-Features aktiviert</li>
+                <li>🔒 Nach Prüfung: Verifiziertes Badge & voller Zugang</li>
               </ul>
             </div>
+
+            <details className="group">
+              <summary className="text-xs text-primary cursor-pointer font-medium flex items-center gap-1">
+                <Shield className="h-3 w-3" />
+                Jetzt schon Dokumente hochladen (optional)
+              </summary>
+              <div className="mt-3">
+                <VerificationDocuments mode={selectedMode} />
+              </div>
+            </details>
           </div>
 
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setStep("select")} className="flex-1">
               Zurück
             </Button>
-            <Button onClick={handleConfirm} disabled={isSettingMode} className="flex-1">
-              {isSettingMode ? "Wird gesendet..." : "Antrag senden"}
+            <Button onClick={handleConfirm} disabled={isSettingMode} className="flex-1 bg-green-600 hover:bg-green-700 text-white">
+              {isSettingMode ? "Wird aktiviert..." : "Kostenlos starten 🚀"}
             </Button>
           </div>
         </div>
