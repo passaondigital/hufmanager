@@ -19,6 +19,10 @@ import { PferdeakteVet } from "./PferdeakteVet";
 import { PferdeakteTherapie } from "./PferdeakteTherapie";
 import { PferdeakteBerichte } from "./PferdeakteBerichte";
 import { PferdeakteTresor } from "./PferdeakteTresor";
+import { PferdeakteFutter } from "./PferdeakteFutter";
+import { PferdeakteBewegung } from "./PferdeakteBewegung";
+import { PferdeakteMedikamente } from "./PferdeakteMedikamente";
+import { PferdeakteShareDialog } from "./PferdeakteShareDialog";
 
 interface PferdeakteProps {
   horseId: string;
