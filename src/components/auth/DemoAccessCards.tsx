@@ -209,6 +209,7 @@ export function DemoAccessCards({ onSelectAccount }: DemoAccessCardsProps) {
                 <span className="text-[10px] text-muted-foreground block">
                   Versicherungen · Hersteller · Verbände · Kliniken · Ausbildung · Lieferanten
                 </span>
+                <span className="text-[9px] text-primary font-medium mt-0.5 block">30 Tage kostenlos · danach auf Anfrage</span>
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 <span className="text-[9px] text-muted-foreground/70 truncate max-w-[100px] hidden sm:inline">
