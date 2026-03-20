@@ -158,8 +158,44 @@ export function AppointmentFormModal({
     },
   });
 
-  // Fetch client locations for selected horse's owner
-  const selectedHorseOwnerId = horses.find((h: any) => h.id === formData.horseId)?.owner_id;
+  // Unique owners from horses list
+  const owners = useMemo(() => {
+    const ownerMap = new Map<string, { id: string; horses: typeof horses }>();
+    horses.forEach((h: any) => {
+      if (h.owner_id) {
+        if (!ownerMap.has(h.owner_id)) ownerMap.set(h.owner_id, { id: h.owner_id, horses: [] });
+        ownerMap.get(h.owner_id)!.horses.push(h);
+      }
+    });
+    return ownerMap;
+  }, [horses]);
+
+  // Fetch contacts for owner names
+  const { data: contacts = [] } = useQuery({
+    queryKey: ["contacts-for-appointment"],
+    queryFn: async () => {
+      const { data } = await supabase.from("contacts").select("id, full_name").limit(500);
+      return data || [];
+    },
+  });
+
+  const contactMap = useMemo(() => {
+    const m = new Map<string, string>();
+    contacts.forEach((c: any) => m.set(c.id, c.full_name));
+    return m;
+  }, [contacts]);
+
+  // Filtered horses when in owner mode
+  const filteredHorses = useMemo(() => {
+    if (selectionMode === "owner" && selectedOwnerId) {
+      return horses.filter((h: any) => h.owner_id === selectedOwnerId);
+    }
+    return horses;
+  }, [horses, selectionMode, selectedOwnerId]);
+
+  // Fetch client locations for the first selected horse's owner
+  const firstSelectedHorse = horses.find((h: any) => formData.horseIds.includes(h.id));
+  const selectedHorseOwnerId = firstSelectedHorse?.owner_id;
   const { data: clientLocations = [] } = useQuery({
     queryKey: ["client-locations", selectedHorseOwnerId, user?.id],
     queryFn: async () => {
@@ -175,17 +211,37 @@ export function AppointmentFormModal({
     enabled: !!selectedHorseOwnerId && !!user?.id,
   });
 
-  // Auto-select default location when horse changes
-  const prevHorseRef = useRef(formData.horseId);
+  // Auto-select default location when horse selection changes
+  const prevHorseRef = useRef(formData.horseIds.join(","));
   useEffect(() => {
-    if (formData.horseId !== prevHorseRef.current) {
-      prevHorseRef.current = formData.horseId;
+    const key = formData.horseIds.join(",");
+    if (key !== prevHorseRef.current) {
+      prevHorseRef.current = key;
       const defaultLoc = clientLocations.find((l: any) => l.is_default);
       if (defaultLoc) {
         setFormData(prev => ({ ...prev, location: defaultLoc.name + (defaultLoc.address ? `, ${defaultLoc.address}` : "") }));
       }
     }
-  }, [formData.horseId, clientLocations]);
+  }, [formData.horseIds, clientLocations]);
+
+  // Toggle horse in multi-select
+  const toggleHorse = useCallback((horseId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      horseIds: prev.horseIds.includes(horseId)
+        ? prev.horseIds.filter(id => id !== horseId)
+        : [...prev.horseIds, horseId],
+    }));
+  }, []);
+
+  // Select all horses for an owner
+  const selectAllOwnerHorses = useCallback((ownerId: string) => {
+    const ownerHorses = horses.filter((h: any) => h.owner_id === ownerId);
+    setFormData(prev => ({
+      ...prev,
+      horseIds: [...new Set([...prev.horseIds, ...ownerHorses.map((h: any) => h.id)])],
+    }));
+  }, [horses]);
 
   // Fetch service price overrides for the current service
   const { data: priceOverrides = [] } = useQuery({
