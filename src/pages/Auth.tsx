@@ -220,7 +220,7 @@ export default function Auth() {
   }
 
   if (!authLoading && user && role && !isSwitchingAccount) {
-    if (role === "provider" && !onboardingChecked && !isPortalBusinessEmail(user.email)) {
+    if (role === "provider" && !onboardingChecked && !isPortalBusinessEmail(user.email) && !isStallbetreiberDemoEmail(user.email)) {
       // Show loading while checking onboarding status
       return (
         <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
