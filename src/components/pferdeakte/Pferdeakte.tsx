@@ -214,6 +214,15 @@ export function Pferdeakte({ horseId, userRole, horse: horseProp, initialTab }: 
         {activeTab === "berichte" && (
           <PferdeakteBerichte horseId={horseId} userRole={userRole} />
         )}
+        {activeTab === "futter" && (
+          <PferdeakteFutter horseId={horseId} userRole={userRole} horseName={horse?.name} />
+        )}
+        {activeTab === "bewegung" && (
+          <PferdeakteBewegung horseId={horseId} userRole={userRole} />
+        )}
+        {activeTab === "medikamente" && (
+          <PferdeakteMedikamente horseId={horseId} userRole={userRole} />
+        )}
         {activeTab === "tresor" && (
           <PferdeakteTresor horseId={horseId} horse={horse} userRole={userRole} />
         )}
