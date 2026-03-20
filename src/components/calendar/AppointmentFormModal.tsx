@@ -106,8 +106,11 @@ export function AppointmentFormModal({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0, fileName: "" });
 
+  const [selectionMode, setSelectionMode] = useState<"horse" | "owner">("horse");
+  const [selectedOwnerId, setSelectedOwnerId] = useState<string>("");
+
   const [formData, setFormData] = useState({
-    horseId: "",
+    horseIds: [] as string[],
     time: "09:00",
     serviceType: "Barhuf",
     notes: "",
