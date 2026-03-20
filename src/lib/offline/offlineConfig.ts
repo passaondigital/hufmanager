@@ -17,6 +17,9 @@ export const STATIC_QUERY_KEYS = [
   "horse-vaccinations",
   "horse-diary-entries",
   "horse-documents",
+  "horse-feed-plans",
+  "horse-exercise-log",
+  "horse-medication-reminders",
   "pferdeakte-horse",
   "pferdeakte-status",
 ] as const;
