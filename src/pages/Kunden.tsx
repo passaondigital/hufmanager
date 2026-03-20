@@ -117,11 +117,13 @@ const Kunden = () => {
     setSavingNewClient(true);
     try {
       const fullName = `${newClient.first_name.trim()} ${newClient.last_name.trim()}`;
+      const newId = crypto.randomUUID();
 
       // Create ghost profile
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .insert({
+          id: newId,
           full_name: fullName,
           email: newClient.email.trim() || null,
           phone: newClient.phone.trim() || null,
@@ -679,7 +681,7 @@ const Kunden = () => {
 
       {/* New Client Modal */}
       <Dialog open={showNewClientModal} onOpenChange={(open) => { setShowNewClientModal(open); if (!open) resetNewClientForm(); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Neuen Kunden anlegen</DialogTitle>
           </DialogHeader>
