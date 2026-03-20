@@ -220,6 +220,7 @@ function ClientDesktopHeader() {
         </div>
 
         <div className="flex items-center gap-2">
+          <WhatsAppInviteButton size="sm" className="hidden lg:flex" />
           {canInstall && !isInstalled && (
             <Button
               variant="outline"
