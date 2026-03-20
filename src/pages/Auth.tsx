@@ -229,7 +229,7 @@ export default function Auth() {
         </div>
       );
     }
-    if (role === "provider" && needsOnboarding && !isPortalBusinessEmail(user.email)) {
+    if (role === "provider" && needsOnboarding && !isPortalBusinessEmail(user.email) && !isStallbetreiberDemoEmail(user.email)) {
       return <Navigate to="/welcome" replace />;
     }
 
