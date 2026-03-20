@@ -161,3 +161,6 @@ verify_jwt = true
 
 [functions.send-system-update]
 verify_jwt = true
+
+[functions.create-demo-stallbetreiber-user]
+verify_jwt = false
