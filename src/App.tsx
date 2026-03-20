@@ -222,6 +222,11 @@ const PreviewLanding = lazy(() => import("@/pages/PreviewLanding"));
 const EmployeeAppLayout = lazy(() => import("@/components/employee/EmployeeAppLayout").then(m => ({ default: m.EmployeeAppLayout })));
 const PartnerAppLayout = lazy(() => import("@/components/partner/PartnerAppLayout").then(m => ({ default: m.PartnerAppLayout })));
 const ClientAppLayout = lazy(() => import("@/components/client/ClientAppLayout").then(m => ({ default: m.ClientAppLayout })));
+const StallbetreiberAppLayout = lazy(() => import("@/components/stallbetreiber/StallbetreiberAppLayout").then(m => ({ default: m.StallbetreiberAppLayout })));
+
+// Stallbetreiber pages (lazy)
+const StallDashboard = lazy(() => import("@/pages/stallbetreiber/StallDashboard"));
+const StallPlaceholder = lazy(() => import("@/pages/stallbetreiber/StallPlaceholder"));
 
 // Components
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
