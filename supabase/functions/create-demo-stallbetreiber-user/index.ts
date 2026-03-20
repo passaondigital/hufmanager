@@ -14,22 +14,48 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Use the Auth Admin API directly via fetch
-    const response = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${serviceRoleKey}`,
-        "apikey": serviceRoleKey,
-      },
-      body: JSON.stringify({
-        email: "hufmanagerstallbetreiber@gmail.com",
-        password: "HufManagerDemo2030",
-        email_confirm: true,
-        user_metadata: { full_name: "Demo-Stallbetreiber", role: "client" },
-      }),
+    // Use signUp via the regular auth endpoint (not admin) to bypass potential admin API issues
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false }
     });
 
+    // Try admin API with minimal metadata
+    const { data, error } = await supabase.auth.admin.createUser({
+      email: "hufmanagerstallbetreiber@gmail.com",
+      password: "HufManagerDemo2030!",
+      email_confirm: true,
+      user_metadata: { full_name: "Demo-Stallbetreiber" },
+    });
+
+    if (error) {
+      console.error("Admin create error:", JSON.stringify(error));
+      return new Response(JSON.stringify({ error: error.message, code: error.status }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Set role on profile
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ role: "client" })
+      .eq("id", data.user.id);
+
+    if (profileError) {
+      console.error("Profile update error:", JSON.stringify(profileError));
+    }
+
+    return new Response(JSON.stringify({ ok: true, id: data.user.id }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (e) {
+    console.error("Exception:", String(e));
+    return new Response(JSON.stringify({ error: String(e) }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
     const result = await response.json();
     
     if (!response.ok) {
