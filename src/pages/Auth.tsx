@@ -624,6 +624,7 @@ export default function Auth() {
                 "partner.hufmanager@gmail.com": "/partner-home",
                 "mitarbeiter.hufmanager@gmail.com": "/employee",
                 "hufmanagerbusiness@gmail.com": "/portal/galerie",
+                "hufmanagerstallbetreiber@gmail.com": "/client-home",
               };
               const target = roleMap[email.toLowerCase()] || "/home";
               window.location.replace(target);
