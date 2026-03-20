@@ -477,8 +477,8 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
   const isLastStep = currentStep === totalSteps - 1;
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="fixed inset-0 z-50 bg-background flex items-start justify-center p-4 overflow-y-auto pb-24">
+      <div className="w-full max-w-md my-auto">
         {/* Progress Bar */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
