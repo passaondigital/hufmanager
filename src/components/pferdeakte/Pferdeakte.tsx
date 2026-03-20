@@ -137,7 +137,10 @@ export function Pferdeakte({ horseId, userRole, horse: horseProp, initialTab }: 
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <h2 className="text-lg font-bold text-foreground truncate">{horse.name}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-bold text-foreground truncate">{horse.name}</h2>
+            <PferdeakteShareDialog horseId={horseId} horseName={horse.name || "Pferd"} />
+          </div>
           <p className="text-sm text-muted-foreground">
             {[horse.breed, horse.gender, age ? `${age} J.` : null].filter(Boolean).join(" · ")}
           </p>
