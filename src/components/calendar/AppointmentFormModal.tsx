@@ -194,7 +194,7 @@ export function AppointmentFormModal({
   }, [horses, selectionMode, selectedOwnerId]);
 
   // Fetch client locations for the first selected horse's owner
-  const firstSelectedHorse = horses.find((h: any) => formData.horseIds[0]s.includes(h.id));
+  const firstSelectedHorse = horses.find((h: any) => formData.horseIds.includes(h.id));
   const selectedHorseOwnerId = firstSelectedHorse?.owner_id;
   const { data: clientLocations = [] } = useQuery({
     queryKey: ["client-locations", selectedHorseOwnerId, user?.id],
@@ -212,9 +212,9 @@ export function AppointmentFormModal({
   });
 
   // Auto-select default location when horse selection changes
-  const prevHorseRef = useRef(formData.horseIds[0]s.join(","));
+  const prevHorseRef = useRef(formData.horseIds.join(","));
   useEffect(() => {
-    const key = formData.horseIds[0]s.join(",");
+    const key = formData.horseIds.join(",");
     if (key !== prevHorseRef.current) {
       prevHorseRef.current = key;
       const defaultLoc = clientLocations.find((l: any) => l.is_default);
@@ -222,7 +222,7 @@ export function AppointmentFormModal({
         setFormData(prev => ({ ...prev, location: defaultLoc.name + (defaultLoc.address ? `, ${defaultLoc.address}` : "") }));
       }
     }
-  }, [formData.horseIds[0]s, clientLocations]);
+  }, [formData.horseIds, clientLocations]);
 
   // Toggle horse in multi-select
   const toggleHorse = useCallback((horseId: string) => {
@@ -566,14 +566,14 @@ export function AppointmentFormModal({
       const occurrenceIsPast = appointmentDate < today;
       
       // Resolve price group override
-      const selectedHorse = horses.find((h: any) => h.id === validated.horseId);
+      const selectedHorse = horses.find((h: any) => h.id === validated.horseIds[0]);
       const ownerPriceGroup = selectedHorse?.owner?.price_group || "standard";
       const override = priceOverrides.find((o: any) => o.price_group === ownerPriceGroup);
       const resolvedPrice = isFlatRate ? 0 : (override ? override.price : (currentService?.base_price || 0));
       const appliedGroup = override ? ownerPriceGroup : (ownerPriceGroup !== "standard" ? ownerPriceGroup : null);
 
       appointments.push({
-        horse_id: validated.horseId,
+        horse_id: validated.horseIds[0],
         date: format(appointmentDate, "yyyy-MM-dd"),
         time: validated.time,
         service_type: validated.serviceType,
@@ -678,7 +678,7 @@ export function AppointmentFormModal({
             <Label>Pferd auswählen *</Label>
             <Select
               value={formData.horseIds[0]}
-              onValueChange={(value) => setFormData({ ...formData, horseId: value })}
+              onValueChange={(value) => setFormData({ ...formData, horseIds: [value] })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Pferd auswählen..." />
