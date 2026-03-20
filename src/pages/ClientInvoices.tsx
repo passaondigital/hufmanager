@@ -303,131 +303,129 @@ export default function ClientInvoices() {
       </header>
 
       <main className="px-4 py-6 max-w-lg mx-auto space-y-4">
-        {/* Search */}
-        {invoices.length > 0 && (
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Suche nach Rechnung, Pferd..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        )}
+        <Tabs defaultValue="invoices" className="w-full">
+          <TabsList className="w-full grid grid-cols-2">
+            <TabsTrigger value="invoices" className="gap-1.5">
+              <FileText className="h-4 w-4" /> Rechnungen
+            </TabsTrigger>
+            <TabsTrigger value="expenses" className="gap-1.5">
+              <PiggyBank className="h-4 w-4" /> Ausgaben
+            </TabsTrigger>
+          </TabsList>
 
-        {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <Card key={i}>
-                <CardContent className="p-4 space-y-3">
-                  <Skeleton className="h-5 w-32" />
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-4 w-20" />
+          <TabsContent value="invoices" className="mt-4 space-y-4">
+            {/* Search */}
+            {invoices.length > 0 && (
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Suche nach Rechnung, Pferd..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            )}
+
+            {loading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i}>
+                    <CardContent className="p-4 space-y-3">
+                      <Skeleton className="h-5 w-32" />
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-4 w-20" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : filteredInvoices.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-muted-foreground">
+                    {searchQuery ? "Keine Rechnungen gefunden" : "Keine Rechnungen vorhanden"}
+                  </p>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        ) : filteredInvoices.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">
-                {searchQuery ? "Keine Rechnungen gefunden" : "Keine Rechnungen vorhanden"}
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {filteredInvoices.map((invoice) => (
-              <Card key={invoice.id} className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-primary flex-shrink-0" />
-                        <span className="font-semibold text-foreground truncate">
-                          {invoice.invoice_number || `Rechnung`}
-                        </span>
+            ) : (
+              <div className="space-y-3">
+                {filteredInvoices.map((invoice) => (
+                  <Card key={invoice.id} className="overflow-hidden">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+                            <span className="font-semibold text-foreground truncate">
+                              {invoice.invoice_number || `Rechnung`}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(invoice.issue_date), "dd. MMMM yyyy", { locale: de })}
+                          </p>
+                          {userProfile && (
+                            <p className="text-sm text-muted-foreground">
+                              Kunde: {userProfile.full_name || "Unbekannt"}
+                              {userProfile.readable_id && ` (${userProfile.readable_id})`}
+                            </p>
+                          )}
+                          {invoice.horse && (
+                            <p className="text-sm text-muted-foreground">
+                              🐴 {invoice.horse.name}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-2 pt-1 flex-wrap">
+                            <span className="font-bold text-foreground">
+                              {formatCurrency(invoice.total_amount)}
+                            </span>
+                            {getStatusBadge(invoice.status)}
+                            {invoice.payment_link && invoice.payment_method === "CopeCart" && invoice.status !== "paid" && (
+                              <Badge className="bg-[#F47B20]/10 text-[#F47B20] border-[#F47B20]/20">
+                                CopeCart
+                              </Badge>
+                            )}
+                          </div>
+                          
+                          {invoice.payment_link && invoice.status !== "paid" && invoice.payment_status !== "paid" && (
+                            <Button
+                              className="w-full mt-2 bg-[#F47B20] hover:bg-[#F47B20]/90 text-white"
+                              onClick={() => window.open(invoice.payment_link!, "_blank")}
+                            >
+                              <CreditCard className="h-4 w-4 mr-2" />
+                              Jetzt bezahlen
+                            </Button>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          {generatingPdfFor === invoice.id || sendingEmailFor === invoice.id ? (
+                            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                          ) : (
+                            <>
+                              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleViewPdf(invoice)} title="Vorschau">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleDownloadPdf(invoice)} title="Herunterladen">
+                                <Download className="h-4 w-4" />
+                              </Button>
+                              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleSendEmail(invoice)} title="Per E-Mail senden">
+                                <Mail className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {format(new Date(invoice.issue_date), "dd. MMMM yyyy", { locale: de })}
-                      </p>
-                      {userProfile && (
-                        <p className="text-sm text-muted-foreground">
-                          Kunde: {userProfile.full_name || "Unbekannt"}
-                          {userProfile.readable_id && ` (${userProfile.readable_id})`}
-                        </p>
-                      )}
-                      {invoice.horse && (
-                        <p className="text-sm text-muted-foreground">
-                          🐴 {invoice.horse.name}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-2 pt-1 flex-wrap">
-                        <span className="font-bold text-foreground">
-                          {formatCurrency(invoice.total_amount)}
-                        </span>
-                        {getStatusBadge(invoice.status)}
-                        {invoice.payment_link && invoice.payment_method === "CopeCart" && invoice.status !== "paid" && (
-                          <Badge className="bg-[#F47B20]/10 text-[#F47B20] border-[#F47B20]/20">
-                            CopeCart
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      {/* Prominent "Jetzt bezahlen" button for CopeCart unpaid invoices */}
-                      {invoice.payment_link && invoice.status !== "paid" && invoice.payment_status !== "paid" && (
-                        <Button
-                          className="w-full mt-2 bg-[#F47B20] hover:bg-[#F47B20]/90 text-white"
-                          onClick={() => window.open(invoice.payment_link!, "_blank")}
-                        >
-                          <CreditCard className="h-4 w-4 mr-2" />
-                          Jetzt bezahlen
-                        </Button>
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      {generatingPdfFor === invoice.id || sendingEmailFor === invoice.id ? (
-                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                      ) : (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleViewPdf(invoice)}
-                            title="Vorschau"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleDownloadPdf(invoice)}
-                            title="Herunterladen"
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleSendEmail(invoice)}
-                            title="Per E-Mail senden"
-                          >
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="expenses" className="mt-4">
+            <ClientExpenseTracker />
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* PDF Preview Dialog */}
