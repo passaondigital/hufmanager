@@ -186,8 +186,7 @@ export default function Auth() {
 
   useEffect(() => {
     if (!user || !role || authLoading || isSwitchingAccount || signingOut) return;
-    // Portal/business accounts skip onboarding entirely
-    if (isPortalBusinessEmail(user.email)) {
+    if (isPortalBusinessEmail(user.email) || isStallbetreiberDemoEmail(user.email)) {
       setOnboardingChecked(true);
       return;
     }
