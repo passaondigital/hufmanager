@@ -681,7 +681,7 @@ const Kunden = () => {
 
       {/* New Client Modal */}
       <Dialog open={showNewClientModal} onOpenChange={(open) => { setShowNewClientModal(open); if (!open) resetNewClientForm(); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Neuen Kunden anlegen</DialogTitle>
           </DialogHeader>
