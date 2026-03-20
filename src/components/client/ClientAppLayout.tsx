@@ -25,7 +25,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, Download, Copy, Check, Building2, Warehouse as WarehouseIcon } from "lucide-react";
+import { LogOut, Settings, Download, Copy, Check, Building2, Warehouse as WarehouseIcon, Share2 } from "lucide-react";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
