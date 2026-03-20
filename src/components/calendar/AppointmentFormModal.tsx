@@ -463,6 +463,8 @@ export function AppointmentFormModal({
     setRecurrence("none");
     setCustomWeeks(4);
     setConflictWarning(null);
+    setSelectionMode("horse");
+    setSelectedOwnerId("");
     setPendingEvidence([]);
   };
 
