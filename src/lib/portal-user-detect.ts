@@ -29,7 +29,7 @@ export function getPostLoginPath(
   }
 
   if (isStallbetreiberDemoEmail(email)) {
-    return "/client-home";
+    return "/stall/dashboard";
   }
 
   const roleToPath: Record<string, string> = {

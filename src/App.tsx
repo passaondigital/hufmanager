@@ -222,6 +222,11 @@ const PreviewLanding = lazy(() => import("@/pages/PreviewLanding"));
 const EmployeeAppLayout = lazy(() => import("@/components/employee/EmployeeAppLayout").then(m => ({ default: m.EmployeeAppLayout })));
 const PartnerAppLayout = lazy(() => import("@/components/partner/PartnerAppLayout").then(m => ({ default: m.PartnerAppLayout })));
 const ClientAppLayout = lazy(() => import("@/components/client/ClientAppLayout").then(m => ({ default: m.ClientAppLayout })));
+const StallbetreiberAppLayout = lazy(() => import("@/components/stallbetreiber/StallbetreiberAppLayout").then(m => ({ default: m.StallbetreiberAppLayout })));
+
+// Stallbetreiber pages (lazy)
+const StallDashboard = lazy(() => import("@/pages/stallbetreiber/StallDashboard"));
+const StallPlaceholder = lazy(() => import("@/pages/stallbetreiber/StallPlaceholder"));
 
 // Components
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
@@ -748,6 +753,38 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client-marketplace" element={<ClientMarketplace />} />
               <Route path="/client-marketplace/create" element={<ClientMarketplaceCreate />} />
               <Route path="/client-marketplace/mine" element={<ClientMyListings />} />
+            </Route>
+
+            {/* --- 3b. STALLBETREIBER ROUTES --- */}
+            <Route
+              element={
+                <ProtectedRoute allowedRoles={["client"]}>
+                  <StallbetreiberAppLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/stall/dashboard" element={<StallDashboard />} />
+              <Route path="/stall/anfragen" element={<StallPlaceholder />} />
+              <Route path="/stall/buchungsportal" element={<StallPlaceholder />} />
+              <Route path="/stall/angebote" element={<StallPlaceholder />} />
+              <Route path="/stall/leistungen" element={<StallPlaceholder />} />
+              <Route path="/stall/boarders" element={<ClientStallBoarders />} />
+              <Route path="/stall/pferde" element={<ClientHorses />} />
+              <Route path="/stall/overview" element={<ClientStallOverview />} />
+              <Route path="/stall/cockpit" element={<StallPlaceholder />} />
+              <Route path="/stall/kalender" element={<StallPlaceholder />} />
+              <Route path="/stall/staff" element={<ClientStallStaff />} />
+              <Route path="/stall/lager" element={<StallPlaceholder />} />
+              <Route path="/stall/rechnungen" element={<ClientInvoices />} />
+              <Route path="/stall/betrieb" element={<ClientStallOverview />} />
+              <Route path="/stall/reports" element={<ClientStallReports />} />
+              <Route path="/stall/experts" element={<ClientStallExperts />} />
+              <Route path="/stall/connect" element={<HMConnect />} />
+              <Route path="/stall/chat" element={<ClientChat />} />
+              <Route path="/stall/marketplace" element={<ClientMarketplace />} />
+              <Route path="/stall/settings" element={<StallPlaceholder />} />
+              <Route path="/stall/profil" element={<ClientProfile />} />
+              <Route path="/stall/support" element={<Support />} />
             </Route>
 
             {/* --- 4. EMPLOYEE (MITARBEITER) ROUTES --- */}
