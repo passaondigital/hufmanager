@@ -124,6 +124,7 @@ export function DemoAccessCards({ onSelectAccount }: DemoAccessCardsProps) {
                   </div>
                   <span className="text-xs font-semibold text-foreground">{account.label}</span>
                   <span className="text-[10px] text-muted-foreground">{account.description}</span>
+                  <span className="text-[9px] text-primary font-medium mt-0.5">{account.trial}</span>
                   <div className="flex items-center gap-1 mt-0.5">
                     <span className="text-[9px] text-muted-foreground/70 truncate max-w-[120px]">
                       {account.email.split("@")[0]}
