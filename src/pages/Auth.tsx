@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { isDemoEmail } from "@/lib/demo-accounts";
-import { isPortalBusinessEmail, getPostLoginPath } from "@/lib/portal-user-detect";
+import { isPortalBusinessEmail, isStallbetreiberDemoEmail, getPostLoginPath } from "@/lib/portal-user-detect";
 import { Navigate, useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
