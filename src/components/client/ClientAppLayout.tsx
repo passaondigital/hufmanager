@@ -86,17 +86,37 @@ function getClientNavigationConfig(mode: ClientModeType, isVerified: boolean): N
       },
       // --- Stallbetreiber-Bereich ---
       ...(isStall
-        ? [{
+        ? [
+          {
             label: "🏇 Stallbetrieb",
             items: [
               { id: "stall-mgmt", label: "Stallverwaltung", iconName: "Building2", path: "/client-stall-management" },
-              { id: "stall-overview", label: "Betriebsübersicht", iconName: "BarChart3", path: "/client-stall/overview" },
-              { id: "stall-boarders", label: "Einsteller", iconName: "Users", path: "/client-stall/boarders" },
-              { id: "stall-experts", label: "Stall-Experten", iconName: "Award", path: "/client-stall/experts" },
-              { id: "stall-staff", label: "Mitarbeiter", iconName: "UserPlus", path: "/client-stall/staff" },
-              { id: "stall-reports", label: "Berichte & Behörden", iconName: "FileText", path: "/client-stall/reports" },
+              { id: "stall-cockpit", label: "Tages-Cockpit", iconName: "LayoutDashboard", path: "/client-stall/cockpit" },
+              { id: "stall-kalender", label: "Kalender", iconName: "CalendarDays", path: "/client-stall/kalender" },
             ],
-          }]
+          },
+          {
+            label: "📋 Anfrage & Aufnahme",
+            items: [
+              { id: "stall-anfragen", label: "Anfragen & Leads", iconName: "Search", path: "/client-stall/anfragen" },
+              { id: "stall-buchung", label: "Buchungsportal", iconName: "Send", path: "/client-stall/buchungsportal" },
+              { id: "stall-angebote", label: "Angebote & Verträge", iconName: "FileText", path: "/client-stall/angebote" },
+              { id: "stall-leistungen", label: "Leistungskatalog", iconName: "ClipboardList", path: "/client-stall/leistungen" },
+              { id: "stall-boarders", label: "Einsteller", iconName: "Users", path: "/client-stall/boarders" },
+            ],
+          },
+          {
+            label: "📊 Analyse & Betrieb",
+            items: [
+              { id: "stall-overview", label: "Betriebsübersicht", iconName: "BarChart3", path: "/client-stall/overview" },
+              { id: "stall-staff", label: "Mitarbeiter", iconName: "UserPlus", path: "/client-stall/staff" },
+              { id: "stall-lager", label: "Lager & Futter", iconName: "Package", path: "/client-stall/lager" },
+              { id: "stall-experts", label: "Stall-Experten", iconName: "Award", path: "/client-stall/experts" },
+              { id: "stall-reports", label: "Berichte & Behörden", iconName: "FileText", path: "/client-stall/reports" },
+              { id: "stall-settings", label: "Stall-Einstellungen", iconName: "Settings", path: "/client-stall/settings" },
+            ],
+          },
+        ]
         : []),
       // --- Gewerblich-Bereich ---
       ...(isCommercial
