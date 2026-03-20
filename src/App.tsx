@@ -755,6 +755,38 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client-marketplace/mine" element={<ClientMyListings />} />
             </Route>
 
+            {/* --- 3b. STALLBETREIBER ROUTES --- */}
+            <Route
+              element={
+                <ProtectedRoute allowedRoles={["client"]}>
+                  <StallbetreiberAppLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/stall/dashboard" element={<StallDashboard />} />
+              <Route path="/stall/anfragen" element={<StallPlaceholder />} />
+              <Route path="/stall/buchungsportal" element={<StallPlaceholder />} />
+              <Route path="/stall/angebote" element={<StallPlaceholder />} />
+              <Route path="/stall/leistungen" element={<StallPlaceholder />} />
+              <Route path="/stall/boarders" element={<ClientStallBoarders />} />
+              <Route path="/stall/pferde" element={<ClientHorses />} />
+              <Route path="/stall/overview" element={<ClientStallOverview />} />
+              <Route path="/stall/cockpit" element={<StallPlaceholder />} />
+              <Route path="/stall/kalender" element={<StallPlaceholder />} />
+              <Route path="/stall/staff" element={<ClientStallStaff />} />
+              <Route path="/stall/lager" element={<StallPlaceholder />} />
+              <Route path="/stall/rechnungen" element={<ClientInvoices />} />
+              <Route path="/stall/betrieb" element={<ClientStallOverview />} />
+              <Route path="/stall/reports" element={<ClientStallReports />} />
+              <Route path="/stall/experts" element={<ClientStallExperts />} />
+              <Route path="/stall/connect" element={<HMConnect />} />
+              <Route path="/stall/chat" element={<ClientChat />} />
+              <Route path="/stall/marketplace" element={<ClientMarketplace />} />
+              <Route path="/stall/settings" element={<StallPlaceholder />} />
+              <Route path="/stall/profil" element={<ClientProfile />} />
+              <Route path="/stall/support" element={<Support />} />
+            </Route>
+
             {/* --- 4. EMPLOYEE (MITARBEITER) ROUTES --- */}
             {/* Employee invite - public route */}
             <Route path="/employee-invite" element={<EmployeeInvite />} />
