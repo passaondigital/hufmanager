@@ -25,7 +25,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, Download, Copy, Check, Building2, Warehouse as WarehouseIcon } from "lucide-react";
+import { LogOut, Settings, Download, Copy, Check, Building2, Warehouse as WarehouseIcon, Share2 } from "lucide-react";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/sheet";
 import { useEffect } from "react";
 import { useClientMode } from "@/hooks/useClientMode";
+import { WhatsAppInviteButton } from "@/components/client/WhatsAppInviteButton";
 
 // ── Navigation Config (dynamic based on client mode) ──────────────────────────────────
 
@@ -219,6 +220,7 @@ function ClientDesktopHeader() {
         </div>
 
         <div className="flex items-center gap-2">
+          <WhatsAppInviteButton size="sm" className="hidden lg:flex" />
           {canInstall && !isInstalled && (
             <Button
               variant="outline"

@@ -8,7 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Loader2, Save, Bell, Globe } from "lucide-react";
+import {
+  User, Loader2, Save, Bell, Globe, Heart, Shield, MapPin,
+  Phone, Mail, Camera, Users, FileText, Award, Calendar,
+} from "lucide-react";
 import { HelpTip } from "@/components/ui/HelpTip";
 import { toast } from "sonner";
 import { StableLocationCard } from "@/components/client/StableLocationCard";
@@ -21,6 +24,8 @@ import { ProviderReferral } from "@/components/client/ProviderReferral";
 import { ClientLocationsManager } from "@/components/client/ClientLocationsManager";
 import { NotificationPreferences } from "@/components/client/NotificationPreferences";
 import { PrimaryEmergencyContact } from "@/components/client/PrimaryEmergencyContact";
+import { WhatsAppInviteButton } from "@/components/client/WhatsAppInviteButton";
+import { cn } from "@/lib/utils";
 
 interface Profile {
   id: string;
@@ -36,6 +41,16 @@ interface Profile {
   stable_longitude: number | null;
   emergency_contacts: Array<{ role: string; name: string; phone: string }>;
 }
+
+// Profile quick-info tiles
+const PROFILE_TILES = [
+  { id: "horses", icon: Heart, label: "Meine Pferde", desc: "Pferdeakten verwalten", path: "/client-horses", color: "text-rose-500" },
+  { id: "appointments", icon: Calendar, label: "Termine", desc: "Nächste Termine einsehen", path: "/client-booking", color: "text-blue-500" },
+  { id: "team", icon: Users, label: "Netzwerk", desc: "Kontakte & Stallkollegen", path: "/client-network", color: "text-emerald-500" },
+  { id: "experts", icon: Award, label: "Experten", desc: "Fachpartner finden", path: "/client/search-providers", color: "text-amber-500" },
+  { id: "permissions", icon: Shield, label: "Berechtigungen", desc: "Wer darf was sehen", path: "/client-permissions", color: "text-purple-500" },
+  { id: "documents", icon: FileText, label: "Dokumente", desc: "Rechnungen & Belege", path: "/client-invoices", color: "text-cyan-500" },
+];
 
 export default function ClientProfile() {
   const { user, loading: authLoading } = useAuth();
@@ -61,7 +76,6 @@ export default function ClientProfile() {
       .maybeSingle();
 
     if (!error && data) {
-      // Parse emergency_contacts safely
       let parsedContacts: Array<{ role: string; name: string; phone: string }> = [];
       if (data.emergency_contacts) {
         if (Array.isArray(data.emergency_contacts)) {
@@ -135,17 +149,18 @@ export default function ClientProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 pb-24 lg:pb-8">
       {/* Page Title */}
-      <div className="px-4 py-4 lg:px-6 lg:py-6">
+      <div className="px-4 py-4 lg:px-6 lg:py-6 flex items-center justify-between">
         <h1 className="font-semibold text-lg flex items-center gap-2">
           <User className="h-5 w-5 text-primary" />
           Mein Profil
           <HelpTip id="kunden.profil" />
         </h1>
+        <WhatsAppInviteButton size="sm" label="Einladen" />
       </div>
 
-      <main className="px-4 py-6 max-w-lg mx-auto space-y-4">
+      <main className="px-4 py-2 max-w-lg mx-auto space-y-4">
         {/* Avatar */}
         <ClientAvatarUpload
           userId={profile.id}
@@ -153,6 +168,23 @@ export default function ClientProfile() {
           fullName={profile.full_name}
           onUploaded={(url) => setProfile(prev => prev ? { ...prev, avatar_url: url } : prev)}
         />
+
+        {/* Quick Navigation Tiles */}
+        <div className="grid grid-cols-3 gap-2">
+          {PROFILE_TILES.map((tile) => (
+            <button
+              key={tile.id}
+              onClick={() => navigate(tile.path)}
+              className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-border bg-card hover:bg-accent/50 hover:border-primary/30 transition-all text-center group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                <tile.icon className={cn("h-5 w-5", tile.color)} />
+              </div>
+              <span className="text-xs font-medium text-foreground">{tile.label}</span>
+              <span className="text-[10px] text-muted-foreground leading-tight">{tile.desc}</span>
+            </button>
+          ))}
+        </div>
 
         {/* Basic Info */}
         <Card>
@@ -209,7 +241,7 @@ export default function ClientProfile() {
           </CardContent>
         </Card>
 
-        {/* Stable Location (legacy single location) */}
+        {/* Stable Location */}
         <StableLocationCard
           userId={profile.id}
           stableStreet={profile.stable_street}
@@ -233,7 +265,7 @@ export default function ClientProfile() {
           onUpdate={fetchProfile}
         />
 
-        {/* Notification Preferences (Push + Language) */}
+        {/* Notification Preferences */}
         <NotificationPreferences />
 
         {/* DACH Region Settings */}
@@ -279,12 +311,11 @@ export default function ClientProfile() {
         {/* Provider Referral */}
         <ProviderReferral />
 
-        {/* DSGVO: Datenexport (Art. 15/20) */}
+        {/* DSGVO: Datenexport */}
         <DataExportSection />
 
-        {/* DSGVO: Account Deletion (Art. 17) */}
+        {/* DSGVO: Account Deletion */}
         <DeleteAccountSection />
-
       </main>
     </div>
   );

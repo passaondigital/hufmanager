@@ -1,19 +1,13 @@
 import { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Search, MapPin, Tag, Plus, Eye, MessageSquare,
+  Search, MapPin, Tag, Eye, MessageSquare,
   Store, Home as HomeIcon, GraduationCap, Wrench, Package, HelpCircle,
+  Sparkles, Lock,
 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
-import { ClientInquiryDialog } from "@/components/client/marketplace/ClientInquiryDialog";
 
 const LISTING_TYPE_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   einstellplatz: { label: "Einstellplatz", icon: HomeIcon, color: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" },
@@ -29,65 +23,62 @@ const TYPE_FILTERS = [
   { value: "einstellplatz", label: "Einstellplätze" },
   { value: "kurs", label: "Kurse" },
   { value: "dienstleistung", label: "Dienstleistungen" },
-  { value: "produkt", label: "Produkte" },
   { value: "gesuch", label: "Gesuche" },
 ];
 
+// Demo listings for preview
+const DEMO_LISTINGS = [
+  { id: "d1", listing_type: "einstellplatz", title: "Offenstall-Platz mit Weide", description: "Artgerechte Haltung in kleiner Gruppe, 24/7 Weidegang, Heufütterung ad lib. Waschplatz, Sattelkammer.", location_plz: "53721", location_name: "Siegburg", price_amount: 380, price_unit: "€", price_label: "/Monat", tags: ["Offenstall", "Weide", "Waschplatz"], view_count: 142, capacity: "2 frei", is_featured: true },
+  { id: "d2", listing_type: "kurs", title: "Bodenarbeit-Kurs für Einsteiger", description: "Lerne die Grundlagen der Bodenarbeit. Jedes Level willkommen. Max. 6 Teilnehmer.", location_plz: "50667", location_name: "Köln", price_amount: 89, price_unit: "€", price_label: "/Person", tags: ["Bodenarbeit", "Anfänger"], view_count: 67 },
+  { id: "d3", listing_type: "dienstleistung", title: "Mobile Pferdephysiotherapie", description: "Professionelle Physiotherapie für Pferde. Akupunktur, Massage, Lasertherapie. DIPO-zertifiziert.", location_plz: "40210", location_name: "Düsseldorf", price_amount: 95, price_unit: "€", price_label: "/Behandlung", tags: ["Physiotherapie", "Mobil", "DIPO"], view_count: 203 },
+  { id: "d4", listing_type: "gesuch", title: "Suche Reitbeteiligung (Dressurlevel A-L)", description: "Suche zuverlässige Reitbeteiligung für 14j. Holsteiner Wallach. 2-3x/Woche.", location_plz: "51067", location_name: "Köln-Holweide", tags: ["Reitbeteiligung", "Dressur", "Wallach"], view_count: 89 },
+  { id: "d5", listing_type: "einstellplatz", title: "Box mit Paddock, Reithalle & Reitplatz", description: "4x4m Box mit angrenzender Paddock. Reithalle 20x40m, Dressurviereck. Futtermittelberatung inklusive.", location_plz: "42699", location_name: "Solingen", price_amount: 520, price_unit: "€", price_label: "/Monat", tags: ["Box", "Paddock", "Reithalle"], view_count: 231, capacity: "1 frei" },
+  { id: "d6", listing_type: "kurs", title: "Gelassenheitstraining am Wochenende", description: "Zwei Tage intensives Gelassenheitstraining mit Trail-Parcours, Plane, Flatterband u.v.m.", location_plz: "53840", location_name: "Troisdorf", price_amount: 169, price_unit: "€", price_label: "/Wochenende", tags: ["Gelassenheit", "Trail", "Wochenende"], view_count: 45 },
+];
+
 export default function ClientMarketplace() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [plzFilter, setPlzFilter] = useState("");
-  const [inquiryListing, setInquiryListing] = useState<string | null>(null);
-
-  const { data: listings = [], isLoading } = useQuery({
-    queryKey: ["client-marketplace-listings", typeFilter],
-    queryFn: async () => {
-      let query = supabase
-        .from("client_marketplace_listings")
-        .select("*")
-        .eq("status", "active" as any)
-        .order("is_featured", { ascending: false })
-        .order("created_at", { ascending: false });
-
-      if (typeFilter !== "all") {
-        query = query.eq("listing_type", typeFilter as any);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data || [];
-    },
-  });
 
   const filtered = useMemo(() => {
-    return listings.filter((l: any) => {
+    return DEMO_LISTINGS.filter((l) => {
+      const matchType = typeFilter === "all" || l.listing_type === typeFilter;
       const matchSearch =
         !search ||
-        l.title?.toLowerCase().includes(search.toLowerCase()) ||
+        l.title.toLowerCase().includes(search.toLowerCase()) ||
         l.description?.toLowerCase().includes(search.toLowerCase()) ||
-        l.tags?.some((t: string) => t.toLowerCase().includes(search.toLowerCase()));
+        l.tags?.some((t) => t.toLowerCase().includes(search.toLowerCase()));
       const matchPlz = !plzFilter || l.location_plz?.startsWith(plzFilter);
-      return matchSearch && matchPlz;
+      return matchType && matchSearch && matchPlz;
     });
-  }, [listings, search, plzFilter]);
+  }, [search, typeFilter, plzFilter]);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Store className="h-6 w-6 text-primary" /> Pferdemarkt
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Einstellplätze, Kurse, Dienstleistungen & mehr finden
-          </p>
+    <div className="space-y-6 p-4 sm:p-6 pb-24 lg:pb-8">
+      {/* Coming Soon Banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-6">
+        <div className="absolute top-3 right-3">
+          <Badge className="bg-amber-500 text-white border-0 gap-1">
+            <Sparkles className="h-3 w-3" />
+            Coming Soon
+          </Badge>
         </div>
-        <Button onClick={() => navigate("/client-marketplace/create")}>
-          <Plus className="h-4 w-4 mr-1" /> Inserat erstellen
-        </Button>
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <Store className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Pferdemarkt</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Einstellplätze, Kurse, Dienstleistungen & Gesuche – alles an einem Ort.
+              Der Marktplatz wird bald für alle freigeschaltet.
+            </p>
+            <p className="text-xs text-primary mt-2 font-medium">
+              🔍 Du kannst schon jetzt die Demo-Inserate durchstöbern und testen!
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
@@ -127,110 +118,88 @@ export default function ClientMarketplace() {
         ))}
       </div>
 
-      {/* Results */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-56 rounded-2xl" />
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-16">
-          <Store className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-          <p className="text-muted-foreground">Keine Inserate gefunden</p>
-          <p className="text-xs text-muted-foreground mt-1">Versuche andere Filter oder erstelle ein eigenes Inserat</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((listing: any) => {
-            const cfg = LISTING_TYPE_CONFIG[listing.listing_type] || LISTING_TYPE_CONFIG.sonstiges;
-            const TypeIcon = cfg.icon;
-            const isOwn = listing.owner_id === user?.id;
+      {/* Demo Badge */}
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Lock className="h-3 w-3" />
+        Demo-Modus – Inserate sind Beispieldaten zum Testen
+      </div>
 
-            return (
-              <Card key={listing.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                {/* Image or placeholder */}
-                <div className="h-32 bg-muted flex items-center justify-center relative">
-                  {listing.images?.[0] ? (
-                    <img src={listing.images[0]} alt={listing.title} className="w-full h-full object-cover" />
-                  ) : (
-                    <TypeIcon className="h-10 w-10 text-muted-foreground/20" />
-                  )}
-                  <Badge className={`absolute top-2 left-2 ${cfg.color} border-0 text-xs`}>
-                    <TypeIcon className="h-3 w-3 mr-1" />
-                    {cfg.label}
+      {/* Results */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filtered.map((listing) => {
+          const cfg = LISTING_TYPE_CONFIG[listing.listing_type] || LISTING_TYPE_CONFIG.sonstiges;
+          const TypeIcon = cfg.icon;
+
+          return (
+            <Card key={listing.id} className="overflow-hidden hover:shadow-md transition-shadow opacity-90">
+              <div className="h-32 bg-muted flex items-center justify-center relative">
+                <TypeIcon className="h-10 w-10 text-muted-foreground/20" />
+                <Badge className={`absolute top-2 left-2 ${cfg.color} border-0 text-xs`}>
+                  <TypeIcon className="h-3 w-3 mr-1" />
+                  {cfg.label}
+                </Badge>
+                {listing.is_featured && (
+                  <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs">⭐ Top</Badge>
+                )}
+                <div className="absolute bottom-2 right-2">
+                  <Badge variant="secondary" className="text-[10px] gap-1">
+                    <Lock className="h-2.5 w-2.5" /> Demo
                   </Badge>
-                  {listing.is_featured && (
-                    <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs">⭐ Top</Badge>
+                </div>
+              </div>
+
+              <CardContent className="p-4 space-y-2">
+                <h3 className="font-semibold line-clamp-1">{listing.title}</h3>
+                {listing.description && (
+                  <p className="text-xs text-muted-foreground line-clamp-2">{listing.description}</p>
+                )}
+
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  {listing.location_plz && (
+                    <span className="flex items-center gap-1">
+                      <MapPin className="h-3 w-3" /> {listing.location_plz} {listing.location_name}
+                    </span>
                   )}
                 </div>
 
-                <CardContent className="p-4 space-y-2">
-                  <h3 className="font-semibold line-clamp-1">{listing.title}</h3>
-                  {listing.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-2">{listing.description}</p>
-                  )}
+                {listing.tags?.length > 0 && (
+                  <div className="flex gap-1 flex-wrap">
+                    {listing.tags.slice(0, 3).map((tag) => (
+                      <Badge key={tag} variant="outline" className="text-[10px] px-1.5 py-0">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
 
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    {listing.location_plz && (
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" /> {listing.location_plz} {listing.location_name}
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-sm font-bold text-primary">
+                    {listing.price_amount != null
+                      ? `${Number(listing.price_amount).toFixed(2)} ${listing.price_unit}`
+                      : "Preis auf Anfrage"}
+                    {listing.price_label && (
+                      <span className="text-xs font-normal text-muted-foreground ml-1">
+                        {listing.price_label}
                       </span>
                     )}
-                  </div>
+                  </span>
 
-                  {listing.tags?.length > 0 && (
-                    <div className="flex gap-1 flex-wrap">
-                      {listing.tags.slice(0, 3).map((tag: string) => (
-                        <Badge key={tag} variant="outline" className="text-[10px] px-1.5 py-0">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
+                  <Button size="sm" variant="outline" disabled className="gap-1 opacity-60">
+                    <MessageSquare className="h-3 w-3" /> Anfragen
+                  </Button>
+                </div>
+
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <Eye className="h-3 w-3" /> {listing.view_count || 0} Aufrufe
+                  {listing.capacity && (
+                    <span className="ml-2">· {listing.capacity}</span>
                   )}
-
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="text-sm font-bold text-primary">
-                      {listing.price_amount != null
-                        ? `${Number(listing.price_amount).toFixed(2)} ${listing.price_unit}`
-                        : "Preis auf Anfrage"}
-                      {listing.price_label && (
-                        <span className="text-xs font-normal text-muted-foreground ml-1">
-                          {listing.price_label}
-                        </span>
-                      )}
-                    </span>
-
-                    {!isOwn && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setInquiryListing(listing.id)}
-                      >
-                        <MessageSquare className="h-3 w-3 mr-1" /> Anfragen
-                      </Button>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                    <Eye className="h-3 w-3" /> {listing.view_count || 0} Aufrufe
-                    {listing.capacity && (
-                      <span className="ml-2">· {listing.capacity} verfügbar</span>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Inquiry Dialog */}
-      <ClientInquiryDialog
-        listingId={inquiryListing}
-        open={!!inquiryListing}
-        onOpenChange={(open) => !open && setInquiryListing(null)}
-      />
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
 }
