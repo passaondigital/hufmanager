@@ -11,51 +11,45 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Try to create the user
-    const { data, error } = await supabaseAdmin.auth.admin.createUser({
-      email: "hufmanagerstallbetreiber@gmail.com",
-      password: "HufManagerDemo2030",
-      email_confirm: true,
-      user_metadata: { full_name: "Demo-Stallbetreiber", role: "client" },
+    // Use the Auth Admin API directly via fetch
+    const response = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${serviceRoleKey}`,
+        "apikey": serviceRoleKey,
+      },
+      body: JSON.stringify({
+        email: "hufmanagerstallbetreiber@gmail.com",
+        password: "HufManagerDemo2030",
+        email_confirm: true,
+        user_metadata: { full_name: "Demo-Stallbetreiber", role: "client" },
+      }),
     });
 
-    if (error) {
-      // If user already exists, update password instead
-      if (error.message?.includes("already") || error.message?.includes("duplicate")) {
-        const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
-        const existing = listData?.users?.find(
-          (u) => u.email === "hufmanagerstallbetreiber@gmail.com"
-        );
-        if (existing) {
-          await supabaseAdmin.auth.admin.updateUserById(existing.id, {
-            password: "HufManagerDemo2030",
-          });
-          return new Response(JSON.stringify({ ok: true, id: existing.id, action: "password_reset" }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
+    const result = await response.json();
+    
+    if (!response.ok) {
+      console.error("Auth API error:", JSON.stringify(result));
+      
+      // If user exists, try updating password
+      if (result.msg?.includes("already") || result.code === 422) {
+        return new Response(JSON.stringify({ error: "User may already exist", details: result }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
-      console.error("Create error:", JSON.stringify(error));
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 400,
+      
+      return new Response(JSON.stringify({ error: result.msg || "Unknown error", details: result }), {
+        status: response.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Ensure profile exists
-    await supabaseAdmin.from("profiles").upsert({
-      id: data.user.id,
-      email: "hufmanagerstallbetreiber@gmail.com",
-      full_name: "Demo-Stallbetreiber",
-      role: "client",
-    }, { onConflict: "id" });
-
-    return new Response(JSON.stringify({ ok: true, id: data.user.id, action: "created" }), {
+    return new Response(JSON.stringify({ ok: true, id: result.id, action: "created" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
