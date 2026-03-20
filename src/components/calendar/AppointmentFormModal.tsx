@@ -194,7 +194,7 @@ export function AppointmentFormModal({
   }, [horses, selectionMode, selectedOwnerId]);
 
   // Fetch client locations for the first selected horse's owner
-  const firstSelectedHorse = horses.find((h: any) => formData.horseIds.includes(h.id));
+  const firstSelectedHorse = horses.find((h: any) => formData.horseIds[0]s.includes(h.id));
   const selectedHorseOwnerId = firstSelectedHorse?.owner_id;
   const { data: clientLocations = [] } = useQuery({
     queryKey: ["client-locations", selectedHorseOwnerId, user?.id],
@@ -212,9 +212,9 @@ export function AppointmentFormModal({
   });
 
   // Auto-select default location when horse selection changes
-  const prevHorseRef = useRef(formData.horseIds.join(","));
+  const prevHorseRef = useRef(formData.horseIds[0]s.join(","));
   useEffect(() => {
-    const key = formData.horseIds.join(",");
+    const key = formData.horseIds[0]s.join(",");
     if (key !== prevHorseRef.current) {
       prevHorseRef.current = key;
       const defaultLoc = clientLocations.find((l: any) => l.is_default);
@@ -222,7 +222,7 @@ export function AppointmentFormModal({
         setFormData(prev => ({ ...prev, location: defaultLoc.name + (defaultLoc.address ? `, ${defaultLoc.address}` : "") }));
       }
     }
-  }, [formData.horseIds, clientLocations]);
+  }, [formData.horseIds[0]s, clientLocations]);
 
   // Toggle horse in multi-select
   const toggleHorse = useCallback((horseId: string) => {
@@ -333,7 +333,7 @@ export function AppointmentFormModal({
             
             const fileExt = evidence.file.name.split('.').pop();
             const fileName = `${crypto.randomUUID()}.${fileExt}`;
-            const filePath = `evidence/${formData.horseId}/${fileName}`;
+            const filePath = `evidence/${formData.horseIds[0]}/${fileName}`;
 
             let fileType = "document";
             if (evidence.file.type.startsWith("image/")) fileType = "image";
@@ -354,7 +354,7 @@ export function AppointmentFormModal({
               : new Date().toISOString();
               
             const { error: assetError } = await supabase.from("media_assets").insert({
-              horse_id: formData.horseId,
+              horse_id: formData.horseIds[0],
               appointment_id: firstAppointment.id,
               file_url: filePath,
               file_type: fileType,
@@ -450,7 +450,7 @@ export function AppointmentFormModal({
 
   const resetForm = () => {
     setFormData({
-      horseId: "",
+      horseIds: [] as string[],
       time: "09:00",
       serviceType: "Barhuf",
       notes: "",
@@ -530,7 +530,7 @@ export function AppointmentFormModal({
     }
 
     const validationResult = appointmentSchema.safeParse({
-      horseId: formData.horseId,
+      horseIds: formData.horseIds,
       time: formData.time,
       serviceType: formData.serviceType,
       notes: formData.notes || undefined,
@@ -677,7 +677,7 @@ export function AppointmentFormModal({
           <div className="space-y-2">
             <Label>Pferd auswählen *</Label>
             <Select
-              value={formData.horseId}
+              value={formData.horseIds[0]}
               onValueChange={(value) => setFormData({ ...formData, horseId: value })}
             >
               <SelectTrigger>
@@ -692,8 +692,8 @@ export function AppointmentFormModal({
               </SelectContent>
             </Select>
             {/* Price group warning */}
-            {formData.horseId && (() => {
-              const h = horses.find((ho: any) => ho.id === formData.horseId);
+            {formData.horseIds[0] && (() => {
+              const h = horses.find((ho: any) => ho.id === formData.horseIds[0]);
               const pg = h?.owner?.price_group;
               if (!pg || pg === "standard") {
                 return (
@@ -836,7 +836,7 @@ export function AppointmentFormModal({
                   size="sm" 
                   variant="default"
                   onClick={() => cameraInputRef.current?.click()}
-                  disabled={!formData.horseId}
+                  disabled={!formData.horseIds[0]}
                   className="gap-1"
                 >
                   <Camera className="h-4 w-4" />
@@ -847,7 +847,7 @@ export function AppointmentFormModal({
                   size="sm" 
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={!formData.horseId}
+                  disabled={!formData.horseIds[0]}
                 >
                   <Upload className="h-4 w-4 mr-1" />
                   Datei
@@ -855,7 +855,7 @@ export function AppointmentFormModal({
               </div>
             </div>
             
-            {!formData.horseId && (
+            {!formData.horseIds[0] && (
               <p className="text-xs text-muted-foreground">
                 Bitte zuerst ein Pferd auswählen
               </p>
@@ -941,7 +941,7 @@ export function AppointmentFormModal({
               </div>
             )}
             
-            {pendingEvidence.length === 0 && formData.horseId && (
+            {pendingEvidence.length === 0 && formData.horseIds[0] && (
               <p className="text-xs text-muted-foreground text-center py-2">
                 Chat-Screenshots, Fotos vom Zustand, Befunde...
               </p>
