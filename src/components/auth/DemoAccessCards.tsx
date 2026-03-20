@@ -21,6 +21,7 @@ interface DemoAccount {
   email: string;
   icon: React.ElementType;
   description: string;
+  trial: string;
 }
 
 const DEMO_ACCOUNTS: DemoAccount[] = [
@@ -29,24 +30,28 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     email: DEMO_EMAILS.provider,
     icon: Hammer,
     description: "Betrieb & Verwaltung",
+    trial: "30 Tage kostenlos",
   },
   {
     label: "Pferdebesitzer",
     email: DEMO_EMAILS.client,
     icon: Heart,
     description: "Pferdeakte & Termine",
+    trial: "Kostenlos",
   },
   {
     label: "Mitarbeiter",
     email: DEMO_EMAILS.employee,
     icon: Users,
     description: "Tour & Aufträge",
+    trial: "In allen Paketen inklusive",
   },
   {
     label: "Fachpartner",
     email: DEMO_EMAILS.partner,
     icon: Stethoscope,
     description: "Tierarzt / Therapeut",
+    trial: "30 Tage kostenlos",
   },
 ];
 
