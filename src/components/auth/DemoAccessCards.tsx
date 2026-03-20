@@ -21,6 +21,7 @@ interface DemoAccount {
   email: string;
   icon: React.ElementType;
   description: string;
+  trial: string;
 }
 
 const DEMO_ACCOUNTS: DemoAccount[] = [
@@ -29,24 +30,28 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     email: DEMO_EMAILS.provider,
     icon: Hammer,
     description: "Betrieb & Verwaltung",
+    trial: "30 Tage kostenlos",
   },
   {
     label: "Pferdebesitzer",
     email: DEMO_EMAILS.client,
     icon: Heart,
     description: "Pferdeakte & Termine",
+    trial: "Kostenlos",
   },
   {
     label: "Mitarbeiter",
     email: DEMO_EMAILS.employee,
     icon: Users,
     description: "Tour & Aufträge",
+    trial: "In allen Paketen inklusive",
   },
   {
     label: "Fachpartner",
     email: DEMO_EMAILS.partner,
     icon: Stethoscope,
     description: "Tierarzt / Therapeut",
+    trial: "30 Tage kostenlos",
   },
 ];
 
@@ -119,6 +124,7 @@ export function DemoAccessCards({ onSelectAccount }: DemoAccessCardsProps) {
                   </div>
                   <span className="text-xs font-semibold text-foreground">{account.label}</span>
                   <span className="text-[10px] text-muted-foreground">{account.description}</span>
+                  <span className="text-[9px] text-primary font-medium mt-0.5">{account.trial}</span>
                   <div className="flex items-center gap-1 mt-0.5">
                     <span className="text-[9px] text-muted-foreground/70 truncate max-w-[120px]">
                       {account.email.split("@")[0]}
@@ -161,6 +167,7 @@ export function DemoAccessCards({ onSelectAccount }: DemoAccessCardsProps) {
                 <span className="text-[10px] text-muted-foreground block">
                   Pension · Reitschule · Mischbetrieb · Zucht
                 </span>
+                <span className="text-[9px] text-primary font-medium mt-0.5 block">90 Tage kostenlos</span>
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 <span className="text-[9px] text-muted-foreground/70 truncate max-w-[100px] hidden sm:inline">
@@ -202,6 +209,7 @@ export function DemoAccessCards({ onSelectAccount }: DemoAccessCardsProps) {
                 <span className="text-[10px] text-muted-foreground block">
                   Versicherungen · Hersteller · Verbände · Kliniken · Ausbildung · Lieferanten
                 </span>
+                <span className="text-[9px] text-primary font-medium mt-0.5 block">30 Tage kostenlos · danach auf Anfrage</span>
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 <span className="text-[9px] text-muted-foreground/70 truncate max-w-[100px] hidden sm:inline">
