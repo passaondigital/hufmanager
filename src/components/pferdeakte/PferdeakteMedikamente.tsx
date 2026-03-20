@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Pill, Plus, Trash2, Bell, BellOff, CheckCircle, AlertTriangle, X, Calendar } from "lucide-react";
+import { Pill, Plus, Trash2, Bell, CheckCircle, AlertTriangle, X, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format, differenceInDays } from "date-fns";
@@ -57,21 +57,21 @@ export function PferdeakteMedikamente({ horseId, userRole }: Props) {
   const { data: reminders = [], isLoading } = useQuery({
     queryKey: ["horse-medication-reminders", horseId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("horse_medication_reminders")
         .select("*")
         .eq("horse_id", horseId)
         .is("deleted_at", null)
         .order("next_due_date", { ascending: true });
       if (error) throw error;
-      return data as MedReminder[];
+      return (data || []) as MedReminder[];
     },
     staleTime: 5 * 60_000,
   });
 
   const addMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("horse_medication_reminders").insert({
+      const { error } = await (supabase as any).from("horse_medication_reminders").insert({
         horse_id: horseId,
         created_by: user!.id,
         medication_type: form.medication_type,
@@ -96,7 +96,7 @@ export function PferdeakteMedikamente({ horseId, userRole }: Props) {
   const markGiven = useMutation({
     mutationFn: async (id: string) => {
       const today = new Date().toISOString().split("T")[0];
-      const { error } = await supabase.from("horse_medication_reminders").update({ last_given_date: today }).eq("id", id);
+      const { error } = await (supabase as any).from("horse_medication_reminders").update({ last_given_date: today }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -107,7 +107,7 @@ export function PferdeakteMedikamente({ horseId, userRole }: Props) {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("horse_medication_reminders").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      const { error } = await (supabase as any).from("horse_medication_reminders").update({ deleted_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -116,7 +116,7 @@ export function PferdeakteMedikamente({ horseId, userRole }: Props) {
     },
   });
 
-  const canEdit = userRole === "owner" || userRole === "client";
+  const canEdit = userRole === "client" || userRole === "provider";
 
   const active = reminders.filter(r => r.is_active);
   const overdue = active.filter(r => r.next_due_date && new Date(r.next_due_date) < new Date());
@@ -135,7 +135,7 @@ export function PferdeakteMedikamente({ horseId, userRole }: Props) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Pill className="h-5 w-5 text-purple-600" />
+          <Pill className="h-5 w-5 text-primary" />
           <h3 className="text-base font-semibold text-foreground">Medikamente & Erinnerungen</h3>
         </div>
         {canEdit && (
@@ -145,7 +145,6 @@ export function PferdeakteMedikamente({ horseId, userRole }: Props) {
         )}
       </div>
 
-      {/* Alert banner */}
       {overdue.length > 0 && (
         <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
           <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
@@ -155,7 +154,7 @@ export function PferdeakteMedikamente({ horseId, userRole }: Props) {
       {upcoming.length > 0 && overdue.length === 0 && (
         <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
           <Bell className="h-4 w-4 text-amber-600 flex-shrink-0" />
-          <span className="text-sm text-amber-700 font-medium">{upcoming.length} demnächst fällig</span>
+          <span className="text-sm font-medium" style={{ color: "hsl(var(--accent-foreground))" }}>{upcoming.length} demnächst fällig</span>
         </div>
       )}
 
@@ -207,7 +206,7 @@ export function PferdeakteMedikamente({ horseId, userRole }: Props) {
         {active.map(item => {
           const status = getDueStatus(item);
           return (
-            <Card key={item.id} className={cn("border-border/50", status === "overdue" && "border-destructive/30 bg-destructive/5", status === "soon" && "border-amber-500/30 bg-amber-500/5")}>
+            <Card key={item.id} className={cn("border-border/50", status === "overdue" && "border-destructive/30 bg-destructive/5", status === "soon" && "border-amber-500/30")}>
               <CardContent className="py-3 px-4">
                 <div className="flex items-center gap-3">
                   <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",

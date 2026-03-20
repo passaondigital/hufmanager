@@ -2,14 +2,13 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wheat, Plus, Trash2, GripVertical, Share2, X } from "lucide-react";
+import { Wheat, Plus, Trash2, Share2, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { PferdeakteUserRole } from "./types";
@@ -44,21 +43,21 @@ export function PferdeakteFutter({ horseId, userRole, horseName }: Props) {
   const { data: plans = [], isLoading } = useQuery({
     queryKey: ["horse-feed-plans", horseId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("horse_feed_plans")
         .select("*")
         .eq("horse_id", horseId)
         .is("deleted_at", null)
         .order("sort_order", { ascending: true });
       if (error) throw error;
-      return data as FeedPlan[];
+      return (data || []) as FeedPlan[];
     },
     staleTime: 5 * 60_000,
   });
 
   const addMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("horse_feed_plans").insert({
+      const { error } = await (supabase as any).from("horse_feed_plans").insert({
         horse_id: horseId,
         created_by: user!.id,
         meal_name: form.meal_name,
@@ -81,7 +80,7 @@ export function PferdeakteFutter({ horseId, userRole, horseName }: Props) {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("horse_feed_plans").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      const { error } = await (supabase as any).from("horse_feed_plans").update({ deleted_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -92,7 +91,7 @@ export function PferdeakteFutter({ horseId, userRole, horseName }: Props) {
 
   const toggleShare = useMutation({
     mutationFn: async ({ id, shared }: { id: string; shared: boolean }) => {
-      const { error } = await supabase.from("horse_feed_plans").update({ shared_with_stall: shared }).eq("id", id);
+      const { error } = await (supabase as any).from("horse_feed_plans").update({ shared_with_stall: shared }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -106,7 +105,7 @@ export function PferdeakteFutter({ horseId, userRole, horseName }: Props) {
     return acc;
   }, {} as Record<string, FeedPlan[]>);
 
-  const canEdit = userRole === "owner" || userRole === "client";
+  const canEdit = userRole === "client" || userRole === "provider";
 
   return (
     <div className="space-y-4">

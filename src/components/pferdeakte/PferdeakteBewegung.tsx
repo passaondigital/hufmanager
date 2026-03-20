@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Bike, Plus, Trash2, Share2, X, Smile, Meh, Frown, Clock } from "lucide-react";
+import { Bike, Plus, Trash2, X, Smile, Meh, Frown, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -27,11 +27,11 @@ const INTENSITIES = [
   { value: "intensiv", label: "Intensiv", color: "text-red-600" },
 ] as const;
 const MOODS = [
-  { value: "super", label: "Super 🤩", icon: Smile },
-  { value: "gut", label: "Gut 😊", icon: Smile },
-  { value: "ok", label: "OK 😐", icon: Meh },
-  { value: "unwillig", label: "Unwillig 😤", icon: Frown },
-  { value: "lahm", label: "Lahm ⚠️", icon: Frown },
+  { value: "super", label: "Super 🤩" },
+  { value: "gut", label: "Gut 😊" },
+  { value: "ok", label: "OK 😐" },
+  { value: "unwillig", label: "Unwillig 😤" },
+  { value: "lahm", label: "Lahm ⚠️" },
 ] as const;
 
 interface ExerciseEntry {
@@ -58,7 +58,7 @@ export function PferdeakteBewegung({ horseId, userRole }: Props) {
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ["horse-exercise-log", horseId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("horse_exercise_log")
         .select("*")
         .eq("horse_id", horseId)
@@ -67,14 +67,14 @@ export function PferdeakteBewegung({ horseId, userRole }: Props) {
         .order("created_at", { ascending: false })
         .limit(30);
       if (error) throw error;
-      return data as ExerciseEntry[];
+      return (data || []) as ExerciseEntry[];
     },
     staleTime: 5 * 60_000,
   });
 
   const addMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("horse_exercise_log").insert({
+      const { error } = await (supabase as any).from("horse_exercise_log").insert({
         horse_id: horseId,
         created_by: user!.id,
         activity_type: form.activity_type,
@@ -97,7 +97,7 @@ export function PferdeakteBewegung({ horseId, userRole }: Props) {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("horse_exercise_log").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      const { error } = await (supabase as any).from("horse_exercise_log").update({ deleted_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -106,9 +106,8 @@ export function PferdeakteBewegung({ horseId, userRole }: Props) {
     },
   });
 
-  const canEdit = userRole === "owner" || userRole === "client";
+  const canEdit = userRole === "client" || userRole === "provider";
 
-  // Group by date
   const grouped = entries.reduce((acc, e) => {
     const key = e.date;
     if (!acc[key]) acc[key] = [];
@@ -123,7 +122,7 @@ export function PferdeakteBewegung({ horseId, userRole }: Props) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Bike className="h-5 w-5 text-blue-600" />
+          <Bike className="h-5 w-5 text-primary" />
           <h3 className="text-base font-semibold text-foreground">Bewegungstagebuch</h3>
           <Badge variant="secondary" className="text-xs">{entries.length}</Badge>
         </div>
@@ -204,7 +203,7 @@ export function PferdeakteBewegung({ horseId, userRole }: Props) {
                               <Clock className="h-3 w-3" />{item.duration_minutes} Min
                             </Badge>
                           )}
-                          {ii && <Badge variant="secondary" className={cn("text-xs", ii.color)}>{ii.label}</Badge>}
+                          {ii && <Badge variant="secondary" className="text-xs">{ii.label}</Badge>}
                           {mi && <span className="text-xs">{mi.label}</span>}
                         </div>
                         {item.performed_by && <p className="text-xs text-muted-foreground mt-0.5">von {item.performed_by}</p>}
