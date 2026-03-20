@@ -6766,6 +6766,163 @@ export type Database = {
           },
         ]
       }
+      horse_exercise_log: {
+        Row: {
+          activity_type: string
+          created_at: string | null
+          created_by: string | null
+          date: string
+          deleted_at: string | null
+          duration_minutes: number | null
+          horse_id: string
+          id: string
+          intensity: string | null
+          mood: string | null
+          notes: string | null
+          performed_by: string | null
+          shared_with_stall: boolean | null
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string | null
+          created_by?: string | null
+          date?: string
+          deleted_at?: string | null
+          duration_minutes?: number | null
+          horse_id: string
+          id?: string
+          intensity?: string | null
+          mood?: string | null
+          notes?: string | null
+          performed_by?: string | null
+          shared_with_stall?: boolean | null
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string | null
+          created_by?: string | null
+          date?: string
+          deleted_at?: string | null
+          duration_minutes?: number | null
+          horse_id?: string
+          id?: string
+          intensity?: string | null
+          mood?: string | null
+          notes?: string | null
+          performed_by?: string | null
+          shared_with_stall?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horse_exercise_log_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_exercise_log_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_exercise_log_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_exercise_log_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      horse_feed_plans: {
+        Row: {
+          amount: string | null
+          created_at: string | null
+          created_by: string | null
+          deleted_at: string | null
+          feed_type: string
+          horse_id: string
+          id: string
+          is_active: boolean | null
+          meal_name: string
+          notes: string | null
+          product_name: string | null
+          shared_with_stall: boolean | null
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          deleted_at?: string | null
+          feed_type: string
+          horse_id: string
+          id?: string
+          is_active?: boolean | null
+          meal_name: string
+          notes?: string | null
+          product_name?: string | null
+          shared_with_stall?: boolean | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          deleted_at?: string | null
+          feed_type?: string
+          horse_id?: string
+          id?: string
+          is_active?: boolean | null
+          meal_name?: string
+          notes?: string | null
+          product_name?: string | null
+          shared_with_stall?: boolean | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horse_feed_plans_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_feed_plans_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_feed_plans_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_feed_plans_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       horse_health_logs: {
         Row: {
           ate_normally: boolean | null
@@ -7031,6 +7188,95 @@ export type Database = {
           },
           {
             foreignKeyName: "horse_lab_results_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      horse_medication_reminders: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          deleted_at: string | null
+          dosage: string | null
+          end_date: string | null
+          frequency: string | null
+          horse_id: string
+          id: string
+          is_active: boolean | null
+          last_given_date: string | null
+          medication_name: string
+          medication_type: string
+          next_due_date: string | null
+          notes: string | null
+          reminder_days_before: number | null
+          start_date: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          deleted_at?: string | null
+          dosage?: string | null
+          end_date?: string | null
+          frequency?: string | null
+          horse_id: string
+          id?: string
+          is_active?: boolean | null
+          last_given_date?: string | null
+          medication_name: string
+          medication_type: string
+          next_due_date?: string | null
+          notes?: string | null
+          reminder_days_before?: number | null
+          start_date?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          deleted_at?: string | null
+          dosage?: string | null
+          end_date?: string | null
+          frequency?: string | null
+          horse_id?: string
+          id?: string
+          is_active?: boolean | null
+          last_given_date?: string | null
+          medication_name?: string
+          medication_type?: string
+          next_due_date?: string | null
+          notes?: string | null
+          reminder_days_before?: number | null
+          start_date?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horse_medication_reminders_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_medication_reminders_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_medication_reminders_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_medication_reminders_horse_id_fkey"
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "safe_horses"

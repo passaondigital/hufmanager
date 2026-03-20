@@ -19,6 +19,10 @@ import { PferdeakteVet } from "./PferdeakteVet";
 import { PferdeakteTherapie } from "./PferdeakteTherapie";
 import { PferdeakteBerichte } from "./PferdeakteBerichte";
 import { PferdeakteTresor } from "./PferdeakteTresor";
+import { PferdeakteFutter } from "./PferdeakteFutter";
+import { PferdeakteBewegung } from "./PferdeakteBewegung";
+import { PferdeakteMedikamente } from "./PferdeakteMedikamente";
+import { PferdeakteShareDialog } from "./PferdeakteShareDialog";
 
 interface PferdeakteProps {
   horseId: string;
@@ -133,7 +137,10 @@ export function Pferdeakte({ horseId, userRole, horse: horseProp, initialTab }: 
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <h2 className="text-lg font-bold text-foreground truncate">{horse.name}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-bold text-foreground truncate">{horse.name}</h2>
+            <PferdeakteShareDialog horseId={horseId} horseName={horse.name || "Pferd"} />
+          </div>
           <p className="text-sm text-muted-foreground">
             {[horse.breed, horse.gender, age ? `${age} J.` : null].filter(Boolean).join(" · ")}
           </p>
@@ -206,6 +213,15 @@ export function Pferdeakte({ horseId, userRole, horse: horseProp, initialTab }: 
         )}
         {activeTab === "berichte" && (
           <PferdeakteBerichte horseId={horseId} userRole={userRole} />
+        )}
+        {activeTab === "futter" && (
+          <PferdeakteFutter horseId={horseId} userRole={userRole} horseName={horse?.name} />
+        )}
+        {activeTab === "bewegung" && (
+          <PferdeakteBewegung horseId={horseId} userRole={userRole} />
+        )}
+        {activeTab === "medikamente" && (
+          <PferdeakteMedikamente horseId={horseId} userRole={userRole} />
         )}
         {activeTab === "tresor" && (
           <PferdeakteTresor horseId={horseId} horse={horse} userRole={userRole} />

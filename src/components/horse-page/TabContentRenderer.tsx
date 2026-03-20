@@ -12,6 +12,9 @@ import { PferdeakteVet } from "@/components/pferdeakte/PferdeakteVet";
 import { PferdeakteTherapie } from "@/components/pferdeakte/PferdeakteTherapie";
 import { PferdeakteBerichte } from "@/components/pferdeakte/PferdeakteBerichte";
 import { PferdeakteTresor } from "@/components/pferdeakte/PferdeakteTresor";
+import { PferdeakteFutter } from "@/components/pferdeakte/PferdeakteFutter";
+import { PferdeakteBewegung } from "@/components/pferdeakte/PferdeakteBewegung";
+import { PferdeakteMedikamente } from "@/components/pferdeakte/PferdeakteMedikamente";
 
 // Error boundary to prevent tab crashes from redirecting
 class TabErrorBoundary extends Component<
@@ -88,6 +91,12 @@ export function TabContentRenderer({ activeTab, horse, hoofPhotos, documents, la
             ownerId={horse.owner_id}
           />
         );
+      case "futter":
+        return <PferdeakteFutter horseId={horse.id} userRole="client" horseName={horse.name} />;
+      case "bewegung":
+        return <PferdeakteBewegung horseId={horse.id} userRole="client" />;
+      case "medikamente":
+        return <PferdeakteMedikamente horseId={horse.id} userRole="client" />;
       case "berichte":
         return <PferdeakteBerichte horseId={horse.id} userRole="client" />;
       case "tresor":
