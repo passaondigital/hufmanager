@@ -24,6 +24,8 @@ import { de } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
 import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
 import { PdfPreviewDialog } from "@/components/invoices/PdfPreviewDialog";
+import { ClientExpenseTracker } from "@/components/client/ClientExpenseTracker";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ProviderInfo {
   business_name: string | null;
