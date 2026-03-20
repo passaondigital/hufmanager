@@ -117,11 +117,13 @@ const Kunden = () => {
     setSavingNewClient(true);
     try {
       const fullName = `${newClient.first_name.trim()} ${newClient.last_name.trim()}`;
+      const newId = crypto.randomUUID();
 
       // Create ghost profile
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .insert({
+          id: newId,
           full_name: fullName,
           email: newClient.email.trim() || null,
           phone: newClient.phone.trim() || null,
