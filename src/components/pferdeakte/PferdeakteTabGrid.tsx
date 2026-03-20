@@ -23,6 +23,7 @@ export type PferdeakteTabValue = typeof PFERDEAKTE_TABS[number]["value"];
 const CATEGORIES = [
   { key: "overview", label: "Übersicht" },
   { key: "medical", label: "Medizin & Pflege" },
+  { key: "care", label: "Haltung & Pflege" },
   { key: "docs", label: "Dokumente" },
 ] as const;
 
