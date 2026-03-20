@@ -284,7 +284,7 @@ export function AppointmentFormModal({
   // Pre-select horse when passed from calendar
   useEffect(() => {
     if (preselectedHorseId && isOpen) {
-      setFormData(prev => ({ ...prev, horseId: preselectedHorseId }));
+      setFormData(prev => ({ ...prev, horseIds: [preselectedHorseId] }));
     }
   }, [preselectedHorseId, isOpen]);
 
