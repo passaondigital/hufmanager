@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -49,7 +49,7 @@ import { useServicePresets } from "@/hooks/useServicePresets";
 import { sendTypedPush, resolveProviderDisplayName } from "@/lib/pushNotificationService";
 
 const appointmentSchema = z.object({
-  horseId: z.string().min(1, "Bitte wählen Sie ein Pferd aus"),
+  horseIds: z.array(z.string()).min(1, "Bitte wählen Sie mindestens ein Pferd aus"),
   time: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Ungültiges Zeitformat"),
   serviceType: z.string().min(1, "Bitte wählen Sie einen Service-Typ"),
   notes: z.string().max(2000, "Notizen dürfen maximal 2000 Zeichen haben").optional(),
@@ -106,8 +106,11 @@ export function AppointmentFormModal({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0, fileName: "" });
 
+  const [selectionMode, setSelectionMode] = useState<"horse" | "owner">("horse");
+  const [selectedOwnerId, setSelectedOwnerId] = useState<string>("");
+
   const [formData, setFormData] = useState({
-    horseId: "",
+    horseIds: [] as string[],
     time: "09:00",
     serviceType: "Barhuf",
     notes: "",
@@ -155,8 +158,44 @@ export function AppointmentFormModal({
     },
   });
 
-  // Fetch client locations for selected horse's owner
-  const selectedHorseOwnerId = horses.find((h: any) => h.id === formData.horseId)?.owner_id;
+  // Unique owners from horses list
+  const owners = useMemo(() => {
+    const ownerMap = new Map<string, { id: string; horses: typeof horses }>();
+    horses.forEach((h: any) => {
+      if (h.owner_id) {
+        if (!ownerMap.has(h.owner_id)) ownerMap.set(h.owner_id, { id: h.owner_id, horses: [] });
+        ownerMap.get(h.owner_id)!.horses.push(h);
+      }
+    });
+    return ownerMap;
+  }, [horses]);
+
+  // Fetch contacts for owner names
+  const { data: contacts = [] } = useQuery({
+    queryKey: ["contacts-for-appointment"],
+    queryFn: async () => {
+      const { data } = await supabase.from("contacts").select("id, full_name").limit(500);
+      return data || [];
+    },
+  });
+
+  const contactMap = useMemo(() => {
+    const m = new Map<string, string>();
+    contacts.forEach((c: any) => m.set(c.id, c.full_name));
+    return m;
+  }, [contacts]);
+
+  // Filtered horses when in owner mode
+  const filteredHorses = useMemo(() => {
+    if (selectionMode === "owner" && selectedOwnerId) {
+      return horses.filter((h: any) => h.owner_id === selectedOwnerId);
+    }
+    return horses;
+  }, [horses, selectionMode, selectedOwnerId]);
+
+  // Fetch client locations for the first selected horse's owner
+  const firstSelectedHorse = horses.find((h: any) => formData.horseIds.includes(h.id));
+  const selectedHorseOwnerId = firstSelectedHorse?.owner_id;
   const { data: clientLocations = [] } = useQuery({
     queryKey: ["client-locations", selectedHorseOwnerId, user?.id],
     queryFn: async () => {
@@ -172,17 +211,37 @@ export function AppointmentFormModal({
     enabled: !!selectedHorseOwnerId && !!user?.id,
   });
 
-  // Auto-select default location when horse changes
-  const prevHorseRef = useRef(formData.horseId);
+  // Auto-select default location when horse selection changes
+  const prevHorseRef = useRef(formData.horseIds.join(","));
   useEffect(() => {
-    if (formData.horseId !== prevHorseRef.current) {
-      prevHorseRef.current = formData.horseId;
+    const key = formData.horseIds.join(",");
+    if (key !== prevHorseRef.current) {
+      prevHorseRef.current = key;
       const defaultLoc = clientLocations.find((l: any) => l.is_default);
       if (defaultLoc) {
         setFormData(prev => ({ ...prev, location: defaultLoc.name + (defaultLoc.address ? `, ${defaultLoc.address}` : "") }));
       }
     }
-  }, [formData.horseId, clientLocations]);
+  }, [formData.horseIds, clientLocations]);
+
+  // Toggle horse in multi-select
+  const toggleHorse = useCallback((horseId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      horseIds: prev.horseIds.includes(horseId)
+        ? prev.horseIds.filter(id => id !== horseId)
+        : [...prev.horseIds, horseId],
+    }));
+  }, []);
+
+  // Select all horses for an owner
+  const selectAllOwnerHorses = useCallback((ownerId: string) => {
+    const ownerHorses = horses.filter((h: any) => h.owner_id === ownerId);
+    setFormData(prev => ({
+      ...prev,
+      horseIds: [...new Set([...prev.horseIds, ...ownerHorses.map((h: any) => h.id)])],
+    }));
+  }, [horses]);
 
   // Fetch service price overrides for the current service
   const { data: priceOverrides = [] } = useQuery({
@@ -225,7 +284,7 @@ export function AppointmentFormModal({
   // Pre-select horse when passed from calendar
   useEffect(() => {
     if (preselectedHorseId && isOpen) {
-      setFormData(prev => ({ ...prev, horseId: preselectedHorseId }));
+      setFormData(prev => ({ ...prev, horseIds: [preselectedHorseId] }));
     }
   }, [preselectedHorseId, isOpen]);
 
@@ -274,7 +333,7 @@ export function AppointmentFormModal({
             
             const fileExt = evidence.file.name.split('.').pop();
             const fileName = `${crypto.randomUUID()}.${fileExt}`;
-            const filePath = `evidence/${formData.horseId}/${fileName}`;
+            const filePath = `evidence/${formData.horseIds[0]}/${fileName}`;
 
             let fileType = "document";
             if (evidence.file.type.startsWith("image/")) fileType = "image";
@@ -295,7 +354,7 @@ export function AppointmentFormModal({
               : new Date().toISOString();
               
             const { error: assetError } = await supabase.from("media_assets").insert({
-              horse_id: formData.horseId,
+              horse_id: formData.horseIds[0],
               appointment_id: firstAppointment.id,
               file_url: filePath,
               file_type: fileType,
@@ -391,7 +450,7 @@ export function AppointmentFormModal({
 
   const resetForm = () => {
     setFormData({
-      horseId: "",
+      horseIds: [] as string[],
       time: "09:00",
       serviceType: "Barhuf",
       notes: "",
@@ -404,6 +463,8 @@ export function AppointmentFormModal({
     setRecurrence("none");
     setCustomWeeks(4);
     setConflictWarning(null);
+    setSelectionMode("horse");
+    setSelectedOwnerId("");
     setPendingEvidence([]);
   };
 
@@ -471,7 +532,7 @@ export function AppointmentFormModal({
     }
 
     const validationResult = appointmentSchema.safeParse({
-      horseId: formData.horseId,
+      horseIds: formData.horseIds,
       time: formData.time,
       serviceType: formData.serviceType,
       notes: formData.notes || undefined,
@@ -500,42 +561,40 @@ export function AppointmentFormModal({
     const weeksInterval = recurrence === "custom" ? customWeeks : (recurrence === "none" ? 1 : parseInt(recurrence) || 4);
     const occurrences = recurrence === "none" ? 1 : Math.floor(52 / weeksInterval) || 1;
 
-    for (let i = 0; i < occurrences; i++) {
-      const appointmentDate = addWeeks(selectedDate, i * weeksInterval);
-      
-      // Check if this specific occurrence is in the past
-      const occurrenceIsPast = appointmentDate < today;
-      
-      // Resolve price group override
-      const selectedHorse = horses.find((h: any) => h.id === validated.horseId);
-      const ownerPriceGroup = selectedHorse?.owner?.price_group || "standard";
-      const override = priceOverrides.find((o: any) => o.price_group === ownerPriceGroup);
-      const resolvedPrice = isFlatRate ? 0 : (override ? override.price : (currentService?.base_price || 0));
-      const appliedGroup = override ? ownerPriceGroup : (ownerPriceGroup !== "standard" ? ownerPriceGroup : null);
+    // Create appointments for EACH selected horse × EACH recurrence
+    for (const horseId of validated.horseIds) {
+      for (let i = 0; i < occurrences; i++) {
+        const appointmentDate = addWeeks(selectedDate, i * weeksInterval);
+        const occurrenceIsPast = appointmentDate < today;
+        
+        const selectedHorse = horses.find((h: any) => h.id === horseId);
+        const ownerPriceGroup = selectedHorse?.owner?.price_group || "standard";
+        const override = priceOverrides.find((o: any) => o.price_group === ownerPriceGroup);
+        const resolvedPrice = isFlatRate ? 0 : (override ? override.price : (currentService?.base_price || 0));
+        const appliedGroup = override ? ownerPriceGroup : (ownerPriceGroup !== "standard" ? ownerPriceGroup : null);
 
-      appointments.push({
-        horse_id: validated.horseId,
-        date: format(appointmentDate, "yyyy-MM-dd"),
-        time: validated.time,
-        service_type: validated.serviceType,
-        notes: validated.notes || "",
-        location: validated.location || "",
-        duration: validated.duration,
-        provider_id: user.id,
-        recurring_group_id: recurringGroupId,
-        // Price group resolution
-        price: resolvedPrice,
-        applied_price: resolvedPrice,
-        price_group_applied: appliedGroup,
-        is_internally_paid: isFlatRate,
-        // Series appointment tracking
-        is_series_appointment: formData.isSeriesAppointment || isSeriesService,
-        series_current: (formData.isSeriesAppointment || isSeriesService) ? formData.seriesCurrent + i : null,
-        series_total: (formData.isSeriesAppointment || isSeriesService) ? formData.seriesTotal : null,
-        // Auto-complete past appointments (Time Travel feature)
-        status: visitStatusLabelToDbStatus(occurrenceIsPast ? "Erledigt" : "Geplant"),
-        completed_at: occurrenceIsPast ? new Date().toISOString() : null,
-      });
+        appointments.push({
+          horse_id: horseId,
+          date: format(appointmentDate, "yyyy-MM-dd"),
+          time: validated.time,
+          service_type: validated.serviceType,
+          notes: validated.notes || "",
+          location: validated.location || "",
+          duration: validated.duration,
+          provider_id: user.id,
+          recurring_group_id: recurringGroupId,
+          price: resolvedPrice,
+          applied_price: resolvedPrice,
+          price_group_applied: appliedGroup,
+          is_internally_paid: isFlatRate,
+          is_series_appointment: formData.isSeriesAppointment || isSeriesService,
+          series_current: (formData.isSeriesAppointment || isSeriesService) ? formData.seriesCurrent + i : null,
+          series_total: (formData.isSeriesAppointment || isSeriesService) ? formData.seriesTotal : null,
+          is_multi_horse: validated.horseIds.length > 1,
+          status: visitStatusLabelToDbStatus(occurrenceIsPast ? "Erledigt" : "Geplant"),
+          completed_at: occurrenceIsPast ? new Date().toISOString() : null,
+        });
+      }
     }
 
     if (import.meta.env.DEV) console.log("[AppointmentFormModal] submitting", appointments.length);
@@ -615,30 +674,116 @@ export function AppointmentFormModal({
             </Alert>
           )}
 
-          <div className="space-y-2">
-            <Label>Pferd auswählen *</Label>
-            <Select
-              value={formData.horseId}
-              onValueChange={(value) => setFormData({ ...formData, horseId: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Pferd auswählen..." />
-              </SelectTrigger>
-              <SelectContent>
-                {horses.map((horse) => (
-                  <SelectItem key={horse.id} value={horse.id}>
-                    {horse.name} ({horse.breed || "Unbekannt"})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {/* Price group warning */}
-            {formData.horseId && (() => {
-              const h = horses.find((ho: any) => ho.id === formData.horseId);
+          {/* Selection Mode Toggle */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Label className="flex-shrink-0">Zuweisen nach:</Label>
+              <div className="flex rounded-lg border border-border overflow-hidden">
+                <button
+                  type="button"
+                  className={cn(
+                    "px-3 py-1.5 text-xs font-medium transition-colors",
+                    selectionMode === "horse" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  )}
+                  onClick={() => { setSelectionMode("horse"); setSelectedOwnerId(""); }}
+                >
+                  Pferd
+                </button>
+                <button
+                  type="button"
+                  className={cn(
+                    "px-3 py-1.5 text-xs font-medium transition-colors",
+                    selectionMode === "owner" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  )}
+                  onClick={() => setSelectionMode("owner")}
+                >
+                  Besitzer
+                </button>
+              </div>
+            </div>
+
+            {/* Owner selector (when in owner mode) */}
+            {selectionMode === "owner" && (
+              <div className="space-y-2">
+                <Label className="text-xs">Besitzer auswählen</Label>
+                <Select value={selectedOwnerId} onValueChange={(v) => {
+                  setSelectedOwnerId(v);
+                  selectAllOwnerHorses(v);
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Besitzer wählen..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from(owners.entries()).map(([ownerId, data]) => (
+                      <SelectItem key={ownerId} value={ownerId}>
+                        {contactMap.get(ownerId) || "Unbekannt"} ({data.horses.length} Pferde)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Horse checkboxes */}
+            <div className="space-y-1.5 max-h-[180px] overflow-y-auto rounded-lg border border-border p-2">
+              <div className="flex items-center justify-between mb-1">
+                <Label className="text-xs text-muted-foreground">
+                  {formData.horseIds.length > 0
+                    ? `${formData.horseIds.length} Pferd(e) ausgewählt`
+                    : "Pferd(e) auswählen *"}
+                </Label>
+                {filteredHorses.length > 1 && (
+                  <button
+                    type="button"
+                    className="text-[10px] text-primary hover:underline"
+                    onClick={() => {
+                      const allIds = filteredHorses.map((h: any) => h.id);
+                      const allSelected = allIds.every(id => formData.horseIds.includes(id));
+                      setFormData(prev => ({
+                        ...prev,
+                        horseIds: allSelected ? prev.horseIds.filter(id => !allIds.includes(id)) : [...new Set([...prev.horseIds, ...allIds])],
+                      }));
+                    }}
+                  >
+                    {filteredHorses.every((h: any) => formData.horseIds.includes(h.id)) ? "Alle abwählen" : "Alle auswählen"}
+                  </button>
+                )}
+              </div>
+              {filteredHorses.map((horse: any) => (
+                <label
+                  key={horse.id}
+                  className={cn(
+                    "flex items-center gap-2.5 p-2 rounded-md cursor-pointer transition-colors",
+                    formData.horseIds.includes(horse.id) ? "bg-primary/10" : "hover:bg-muted"
+                  )}
+                >
+                  <Checkbox
+                    checked={formData.horseIds.includes(horse.id)}
+                    onCheckedChange={() => toggleHorse(horse.id)}
+                  />
+                  <span className="text-sm font-medium">{horse.name}</span>
+                  <span className="text-xs text-muted-foreground">({horse.breed || "Unbekannt"})</span>
+                  {horse.owner_id && contactMap.get(horse.owner_id) && selectionMode === "horse" && (
+                    <span className="text-[10px] text-muted-foreground ml-auto truncate max-w-[100px]">
+                      {contactMap.get(horse.owner_id)}
+                    </span>
+                  )}
+                </label>
+              ))}
+              {filteredHorses.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-4">
+                  {selectionMode === "owner" ? "Bitte zuerst einen Besitzer wählen" : "Keine Pferde gefunden"}
+                </p>
+              )}
+            </div>
+
+            {/* Price group info for first selected horse */}
+            {formData.horseIds.length > 0 && (() => {
+              const h = horses.find((ho: any) => ho.id === formData.horseIds[0]);
               const pg = h?.owner?.price_group;
               if (!pg || pg === "standard") {
                 return (
-                  <p className="text-xs text-amber-600 flex items-center gap-1 mt-1">
+                  <p className="text-xs text-destructive/80 flex items-center gap-1">
                     <AlertTriangle className="h-3 w-3" />
                     Kunde hat keine Preisgruppe → Basispreis wird verwendet
                   </p>
@@ -646,7 +791,7 @@ export function AppointmentFormModal({
               }
               const override = priceOverrides.find((o: any) => o.price_group === pg);
               return (
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground">
                   Preisgruppe: <span className="font-medium">{pg.toUpperCase()}</span>
                   {override ? ` → €${override.price}` : " (kein Override → Basispreis)"}
                 </p>
@@ -777,7 +922,7 @@ export function AppointmentFormModal({
                   size="sm" 
                   variant="default"
                   onClick={() => cameraInputRef.current?.click()}
-                  disabled={!formData.horseId}
+                  disabled={formData.horseIds.length === 0}
                   className="gap-1"
                 >
                   <Camera className="h-4 w-4" />
@@ -788,7 +933,7 @@ export function AppointmentFormModal({
                   size="sm" 
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={!formData.horseId}
+                  disabled={formData.horseIds.length === 0}
                 >
                   <Upload className="h-4 w-4 mr-1" />
                   Datei
@@ -796,7 +941,7 @@ export function AppointmentFormModal({
               </div>
             </div>
             
-            {!formData.horseId && (
+            {formData.horseIds.length === 0 && (
               <p className="text-xs text-muted-foreground">
                 Bitte zuerst ein Pferd auswählen
               </p>
@@ -882,7 +1027,7 @@ export function AppointmentFormModal({
               </div>
             )}
             
-            {pendingEvidence.length === 0 && formData.horseId && (
+            {pendingEvidence.length === 0 && formData.horseIds.length > 0 && (
               <p className="text-xs text-muted-foreground text-center py-2">
                 Chat-Screenshots, Fotos vom Zustand, Befunde...
               </p>
@@ -1029,12 +1174,14 @@ export function AppointmentFormModal({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={createAppointments.isPending || isUploading}
+            disabled={createAppointments.isPending || isUploading || formData.horseIds.length === 0}
           >
             {(createAppointments.isPending || isUploading) ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
             ) : null}
-            {recurrence !== "none" ? "Termine erstellen" : "Speichern"}
+            {formData.horseIds.length > 1
+              ? `${formData.horseIds.length} Termine erstellen`
+              : recurrence !== "none" ? "Termine erstellen" : "Speichern"}
             {pendingEvidence.length > 0 && ` (${pendingEvidence.length} Beweise)`}
           </Button>
         </DialogFooter>
