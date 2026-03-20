@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/sheet";
 import { useEffect } from "react";
 import { useClientMode } from "@/hooks/useClientMode";
+import { WhatsAppInviteButton } from "@/components/client/WhatsAppInviteButton";
 
 // ── Navigation Config (dynamic based on client mode) ──────────────────────────────────
 
