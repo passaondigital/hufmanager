@@ -45,6 +45,10 @@ export function waTextPdfShare(name: string, horse: string, date: string): strin
   return `Hallo ${name}, anbei der Befundbericht für ${horse} vom ${date}. 🐴`;
 }
 
+export function waTextInvite(senderName: string): string {
+  return `Hey! Ich nutze HufManager – das digitale Betriebssystem für die Pferdewelt 🐴\n\nPferdeakte, Termine, Dokumente – alles an einem Ort. Kostenlos starten:\nhttps://hufmanager.lovable.app/auth\n\nViele Grüße, ${senderName}`;
+}
+
 /**
  * Öffnet WhatsApp mit vorausgefülltem Text.
  * Wenn keine Telefonnummer vorhanden, wird null zurückgegeben.
@@ -53,4 +57,11 @@ export function openWhatsApp(phone: string, text: string): void {
   const cleanPhone = phone.replace(/[^\d]/g, "");
   const formatted = cleanPhone.startsWith("0") ? `49${cleanPhone.substring(1)}` : cleanPhone;
   window.open(`https://wa.me/${formatted}?text=${encodeURIComponent(text)}`, "_blank");
+}
+
+/**
+ * Öffnet WhatsApp Share-Dialog ohne spezifische Nummer (zum Weiterleiten an beliebige Kontakte).
+ */
+export function shareViaWhatsApp(text: string): void {
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
 }
