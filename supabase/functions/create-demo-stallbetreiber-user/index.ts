@@ -18,32 +18,49 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false }
     });
 
+    // Test with a completely different email to see if it's a general issue
+    const testEmail = `test-stallbetreiber-${Date.now()}@test.com`;
     const { data, error } = await supabase.auth.admin.createUser({
+      email: testEmail,
+      password: "TestPassword123!",
+      email_confirm: true,
+      user_metadata: { full_name: "Test User" },
+    });
+
+    if (error) {
+      return new Response(JSON.stringify({ 
+        error: error.message, 
+        testEmail,
+        hint: "General user creation is broken" 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Clean up test user
+    await supabase.auth.admin.deleteUser(data.user.id);
+
+    // Now try the real user
+    const { data: realData, error: realError } = await supabase.auth.admin.createUser({
       email: "hufmanagerstallbetreiber@gmail.com",
       password: "HufManagerDemo2030!",
       email_confirm: true,
       user_metadata: { full_name: "Demo-Stallbetreiber" },
     });
 
-    if (error) {
-      console.error("Admin create error:", JSON.stringify(error));
-      return new Response(JSON.stringify({ error: error.message, code: error.status }), {
+    if (realError) {
+      return new Response(JSON.stringify({ 
+        error: realError.message,
+        testWorked: true,
+        hint: "Test user worked but stallbetreiber failed"
+      }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Set role on profile
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .update({ role: "client" })
-      .eq("id", data.user.id);
-
-    if (profileError) {
-      console.error("Profile update error:", JSON.stringify(profileError));
-    }
-
-    return new Response(JSON.stringify({ ok: true, id: data.user.id }), {
+    return new Response(JSON.stringify({ ok: true, id: realData.user.id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
