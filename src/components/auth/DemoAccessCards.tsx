@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 
 const DEMO_PASSWORD = "HufManagerDemo2030";
 const BUSINESS_PASSWORD = "HMBusiness2030Demo!";
-const STALL_PASSWORD = "HufManagerDemo2030";
+const STALL_PASSWORD = "HufManagerDemo2030!";
 
 interface DemoAccount {
   label: string;
