@@ -37,12 +37,12 @@ export function ContactsTab() {
   return (
     <div className="space-y-4 mt-4">
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Kontakte suchen..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-white" />
         </div>
         <Select value={selectedList} onValueChange={setSelectedList}>
-          <SelectTrigger className="w-[200px] bg-white"><SelectValue placeholder="Alle Listen" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-[200px] bg-white"><SelectValue placeholder="Alle Listen" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Alle Listen</SelectItem>
             {lists.map(l => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
