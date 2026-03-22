@@ -63,6 +63,7 @@ const NAV_ITEMS: Record<string, { label: string; icon: React.ElementType; path: 
     { label: "Mitglieder", icon: Users, path: "/mitglieder" },
     { label: "Statistiken", icon: BarChart3, path: "/statistiken" },
     { label: "HM Connect", icon: Link2, path: "/connect" },
+    { label: "Import Center", icon: Upload, path: "/import" },
     { label: "Management", icon: Wrench, path: "/management" },
     { label: "Einstellungen", icon: Settings, path: "/settings" },
   ],
