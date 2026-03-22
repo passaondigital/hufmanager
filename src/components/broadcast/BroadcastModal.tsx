@@ -29,6 +29,13 @@ type TargetAudience = "all" | "this_week" | "overdue";
 
 const TEMPLATES = [
   {
+    id: "import-info",
+    icon: Bell,
+    label: "Datenimport",
+    title: "📦 Neuer Datenimport & Datenschutz-Info",
+    message: "Ab sofort steht euch unser neuer Import-Assistent zur Verfügung! Ihr könnt jetzt Kundendaten (CSV, Excel, vCard, JSON) importieren. Eure Kunden werden DSGVO-konform über die Datenverarbeitung informiert und können selbst entscheiden, ob sie die kostenlose HufManager KundenApp nutzen möchten.\n\n👉 Geht zum Import Center, um loszulegen!",
+  },
+  {
     id: "sick",
     icon: AlertTriangle,
     label: "Krankheit",
