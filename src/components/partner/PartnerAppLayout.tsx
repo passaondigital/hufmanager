@@ -22,6 +22,7 @@ import { DemoStickyBanner } from "@/components/demo";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { FeierabendWaechter } from "@/components/tracking/FeierabendWaechter";
 import { TrialCountdownBanner } from "@/components/subscription/TrialCountdownBanner";
+import { SystemAnnouncementBanner } from "@/components/announcements/SystemAnnouncementBanner";
 import { useAutoflowMode, AutoflowMode } from "@/hooks/useAutoflowMode";
 import {
   DropdownMenu,
