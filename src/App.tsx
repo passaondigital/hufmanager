@@ -538,6 +538,9 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/statistiken" element={<Statistiken />} />
             <Route path="/tierarzt-finder" element={<TierarztFinder />} />
             
+            {/* Öffentliche Newsletter Signup Formulare */}
+            <Route path="/newsletter/:slug" element={<SignupFormPage />} />
+            
             {/* Vet Portal Routes (accessible from main app too) */}
             <Route path="/vet/dashboard" element={<VetDashboard />} />
             <Route path="/vet/soap" element={<VetSOAPForm />} />
