@@ -121,33 +121,33 @@ export function AutoresponderBuilder() {
               </div>
             ) : (
               /* Email Step Card */
-              <Card className="bg-white rounded-xl shadow-sm ml-2">
+              <Card className="bg-white rounded-xl shadow-sm">
                 <CardContent className="pt-4 pb-3">
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <Mail className="w-4 h-4 text-[#F47B20] shrink-0" />
-                        <span className="font-medium text-black truncate">
+                        <span className="font-medium text-black truncate text-sm">
                           {(step as AutomationEmailStep).subject || "Kein Betreff"}
                         </span>
                       </div>
                       {(step as AutomationEmailStep).content_html && (
                         <p className="text-xs text-muted-foreground truncate ml-6">
-                          {(step as AutomationEmailStep).content_html.replace(/<[^>]*>/g, "").slice(0, 80)}
+                          {(step as AutomationEmailStep).content_html.replace(/<[^>]*>/g, "").slice(0, 60)}
                         </p>
                       )}
                     </div>
-                    <div className="flex gap-1 shrink-0">
+                    <div className="flex gap-1 shrink-0 ml-6 sm:ml-0">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setEditingStep(step as AutomationEmailStep)}
-                        className="text-xs"
+                        className="text-xs h-7"
                       >
-                        E-Mail bearbeiten
+                        Bearbeiten
                       </Button>
                       {idx > 0 && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeStep(step.id)}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeStep(step.id)}>
                           <Trash2 className="w-3.5 h-3.5 text-destructive" />
                         </Button>
                       )}
