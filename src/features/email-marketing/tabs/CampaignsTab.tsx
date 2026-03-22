@@ -108,15 +108,15 @@ export function CampaignsTab() {
                       <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
+                  <TableCell className="p-2">
+                    <div className="flex gap-0.5">
                       {c.status === 'sent' && (
-                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setDetailCampaign(c); }}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); setDetailCampaign(c); }}>
                           <Eye className="w-4 h-4" />
                         </Button>
                       )}
                       {c.status === 'draft' && (
-                        <Button variant="ghost" size="icon" onClick={(e) => {
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => {
                           e.stopPropagation();
                           setEditingCampaign(c);
                           setEditorOpen(true);
@@ -124,7 +124,7 @@ export function CampaignsTab() {
                           <Eye className="w-4 h-4" />
                         </Button>
                       )}
-                      <Button variant="ghost" size="icon" onClick={(e) => {
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => {
                         e.stopPropagation();
                         deleteCampaign.mutate(c.id, { onSuccess: () => toast.success("Kampagne gelöscht") });
                       }}>

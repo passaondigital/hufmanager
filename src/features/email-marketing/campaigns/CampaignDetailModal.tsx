@@ -37,7 +37,7 @@ export function CampaignDetailModal({ campaign, onClose }: CampaignDetailModalPr
         </DialogHeader>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           {kpis.map(k => (
             <Card key={k.label} className="bg-white rounded-xl shadow-sm">
               <CardContent className="pt-4 pb-3 text-center">

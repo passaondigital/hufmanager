@@ -75,7 +75,7 @@ export function ContactsTab() {
             <TableBody>
               {filtered.map(s => (
                 <TableRow key={s.id}>
-                  <TableCell className="font-medium text-black">{s.email}</TableCell>
+                  <TableCell className="font-medium text-black text-sm max-w-[160px] truncate">{s.email}</TableCell>
                   <TableCell className="hidden sm:table-cell text-black">
                     {[s.first_name, s.last_name].filter(Boolean).join(" ") || "—"}
                   </TableCell>

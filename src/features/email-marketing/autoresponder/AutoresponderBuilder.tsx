@@ -161,16 +161,16 @@ export function AutoresponderBuilder() {
 
         {/* Add Button */}
         <div className="relative">
-          <div className="absolute -left-6 top-2 w-4 h-4 rounded-full bg-[#F47B20] border-2 border-white shadow flex items-center justify-center">
+          <div className="absolute -left-[17px] sm:-left-[21px] top-2 w-4 h-4 rounded-full bg-[#F47B20] border-2 border-white shadow flex items-center justify-center">
             <Plus className="w-2.5 h-2.5 text-white" />
           </div>
           <Button
             onClick={addStep}
-            className="bg-[#F47B20] hover:bg-[#e06a10] text-white rounded-full ml-2"
+            className="bg-[#F47B20] hover:bg-[#e06a10] text-white rounded-full"
             size="sm"
           >
             <Plus className="w-4 h-4 mr-1" />
-            E-Mail hinzufügen
+            Hinzufügen
           </Button>
         </div>
       </div>
