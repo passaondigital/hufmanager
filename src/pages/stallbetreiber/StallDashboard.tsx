@@ -1,47 +1,43 @@
 import { useAuth } from "@/hooks/useAuth";
-import { DashboardSidebar } from "@/components/dashboard/sidebar/DashboardSidebar";
-import { Calendar, Users, Heart, FileText, Package, BarChart3, ClipboardList, Warehouse } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { DashboardSidebar } from "@/components/dashboard/sidebar/DashboardSidebar";
+import { Calendar, Users, Heart, FileText, Package, BarChart3, Warehouse } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DashboardHero, KpiGrid, QuickActionBar, SectionHeader } from "@/components/dashboard-zones";
 
 function getStallType(): string {
   return sessionStorage.getItem("hm_demo_stall_type") || "pension";
 }
 
 function getStallTypeLabel(): string {
-  const labels: Record<string, string> = {
-    pension: "Pensionsbetrieb",
-    schule: "Schulbetrieb",
-    misch: "Mischbetrieb",
-    zucht: "Zuchtbetrieb",
-  };
+  const labels: Record<string, string> = { pension: "Pensionsbetrieb", schule: "Schulbetrieb", misch: "Mischbetrieb", zucht: "Zuchtbetrieb" };
   return labels[getStallType()] || "Stallbetrieb";
 }
 
-const STALL_STATS = {
+const STALL_STATS: Record<string, { icon: any; label: string; value: string; sub?: string; highlight?: boolean }[]> = {
   pension: [
-    { label: "Boxen belegt", value: "18/24", icon: Warehouse, color: "text-amber-600" },
-    { label: "Einsteller", value: "22", icon: Users, color: "text-blue-500" },
-    { label: "Pferde", value: "26", icon: Heart, color: "text-pink-500" },
-    { label: "Offene Rechnungen", value: "4", icon: FileText, color: "text-orange-500" },
+    { icon: Warehouse, label: "Boxen", value: "18/24", sub: "belegt", highlight: true },
+    { icon: Users, label: "Einsteller", value: "22" },
+    { icon: Heart, label: "Pferde", value: "26" },
+    { icon: FileText, label: "Rechnungen", value: "4", sub: "offen" },
   ],
   schule: [
-    { label: "Schulpferde", value: "12", icon: Heart, color: "text-pink-500" },
-    { label: "Reitschüler", value: "48", icon: Users, color: "text-blue-500" },
-    { label: "Kurse diese Woche", value: "16", icon: Calendar, color: "text-green-500" },
-    { label: "Offene Rechnungen", value: "6", icon: FileText, color: "text-orange-500" },
+    { icon: Heart, label: "Schulpferde", value: "12", highlight: true },
+    { icon: Users, label: "Reitschüler", value: "48" },
+    { icon: Calendar, label: "Kurse/Woche", value: "16" },
+    { icon: FileText, label: "Rechnungen", value: "6", sub: "offen" },
   ],
   misch: [
-    { label: "Boxen belegt", value: "22/30", icon: Warehouse, color: "text-amber-600" },
-    { label: "Einsteller + Schüler", value: "56", icon: Users, color: "text-blue-500" },
-    { label: "Pferde gesamt", value: "34", icon: Heart, color: "text-pink-500" },
-    { label: "Kurse diese Woche", value: "8", icon: Calendar, color: "text-green-500" },
+    { icon: Warehouse, label: "Boxen", value: "22/30", highlight: true },
+    { icon: Users, label: "Einsteller", value: "56" },
+    { icon: Heart, label: "Pferde", value: "34" },
+    { icon: Calendar, label: "Kurse/Woche", value: "8" },
   ],
   zucht: [
-    { label: "Zuchtstuten", value: "8", icon: Heart, color: "text-pink-500" },
-    { label: "Fohlen", value: "5", icon: Heart, color: "text-amber-500" },
-    { label: "Decksprünge", value: "12", icon: ClipboardList, color: "text-blue-500" },
-    { label: "Verkäufe offen", value: "3", icon: FileText, color: "text-orange-500" },
+    { icon: Heart, label: "Zuchtstuten", value: "8", highlight: true },
+    { icon: Heart, label: "Fohlen", value: "5" },
+    { icon: Calendar, label: "Decksprünge", value: "12" },
+    { icon: FileText, label: "Verkäufe", value: "3", sub: "offen" },
   ],
 };
 
@@ -57,90 +53,64 @@ export default function StallDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const stallType = getStallType();
-  const stats = STALL_STATS[stallType as keyof typeof STALL_STATS] || STALL_STATS.pension;
+  const stats = STALL_STATS[stallType] || STALL_STATS.pension;
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Header */}
+    <div className="space-y-4">
+      {/* ZONE 1 — Hero */}
+      <DashboardHero subtitle={`${getStallTypeLabel()} – Dashboard`}>
+        <QuickActionBar actions={[
+          { key: "pferde", label: "Pferde", icon: Heart, primary: true, onClick: () => navigate("/stall/pferde") },
+          { key: "einsteller", label: "Einsteller", icon: Users, onClick: () => navigate("/stall/boarders") },
+          { key: "kalender", label: "Kalender", icon: Calendar, onClick: () => navigate("/stall/kalender") },
+        ]} />
+      </DashboardHero>
+
+      {/* ZONE 2 — KPI Grid */}
+      <KpiGrid columns={4} items={stats} />
+
+      {/* ZONE 3 — Today's Schedule */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">
-          🏇 {getStallTypeLabel()} – Dashboard
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Willkommen zurück! Hier ist dein Überblick für heute.
-        </p>
+        <SectionHeader title="Heute" linkLabel="Kalender" onLinkClick={() => navigate("/stall/kalender")} />
+        <div className="rounded-xl border border-border bg-card divide-y divide-border">
+          {UPCOMING_EVENTS.map((event, i) => (
+            <div key={i} className="flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors">
+              <span className="text-xs font-mono text-muted-foreground w-11">{event.time}</span>
+              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                event.type === "appointment" ? "bg-blue-500" : event.type === "lead" ? "bg-green-500" : "bg-muted-foreground/40"
+              }`} />
+              <span className="text-sm text-foreground">{event.title}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {stats.map((stat) => (
-              <div key={stat.label} className="rounded-xl border border-border bg-card p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
-                  <span className="text-xs text-muted-foreground">{stat.label}</span>
-                </div>
-                <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+      {/* Quick Navigation */}
+      <div>
+        <SectionHeader title="Verwaltung" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {[
+            { label: "Lager & Futter", icon: Package, path: "/stall/lager", color: "text-amber-600 bg-amber-500/10" },
+            { label: "Rechnungen", icon: FileText, path: "/stall/rechnungen", color: "text-orange-600 bg-orange-500/10" },
+            { label: "Berichte", icon: BarChart3, path: "/stall/reports", color: "text-emerald-600 bg-emerald-500/10" },
+            { label: "Stall-Experten", icon: Users, path: "/stall/experts", color: "text-purple-600 bg-purple-500/10" },
+          ].map(item => (
+            <button
+              key={item.label}
+              onClick={() => navigate(item.path)}
+              className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors text-left"
+            >
+              <div className={`w-9 h-9 rounded-lg ${item.color} flex items-center justify-center`}>
+                <item.icon className="h-4 w-4" />
               </div>
-            ))}
-          </div>
-
-          {/* Today's Schedule */}
-          <div className="rounded-xl border border-border bg-card p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-primary" />
-                Heute
-              </h2>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/stall/kalender")} className="text-xs">
-                Kalender öffnen →
-              </Button>
-            </div>
-            <div className="space-y-2">
-              {UPCOMING_EVENTS.map((event, i) => (
-                <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
-                  <span className="text-xs font-mono text-muted-foreground w-12">{event.time}</span>
-                  <div className={`w-1.5 h-1.5 rounded-full ${
-                    event.type === "appointment" ? "bg-blue-500" :
-                    event.type === "lead" ? "bg-green-500" : "bg-muted-foreground"
-                  }`} />
-                  <span className="text-sm text-foreground">{event.title}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Quick Navigation */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {[
-              { label: "Einsteller", icon: Users, path: "/stall/boarders", color: "bg-blue-500/10 text-blue-600" },
-              { label: "Pferde", icon: Heart, path: "/stall/pferde", color: "bg-pink-500/10 text-pink-600" },
-              { label: "Lager & Futter", icon: Package, path: "/stall/lager", color: "bg-amber-500/10 text-amber-600" },
-              { label: "Rechnungen", icon: FileText, path: "/stall/rechnungen", color: "bg-orange-500/10 text-orange-600" },
-              { label: "Berichte", icon: BarChart3, path: "/stall/reports", color: "bg-emerald-500/10 text-emerald-600" },
-              { label: "Stall-Experten", icon: Users, path: "/stall/experts", color: "bg-purple-500/10 text-purple-600" },
-            ].map((item) => (
-              <button
-                key={item.label}
-                onClick={() => navigate(item.path)}
-                className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors text-left"
-              >
-                <div className={`w-10 h-10 rounded-lg ${item.color} flex items-center justify-center`}>
-                  <item.icon className="h-5 w-5" />
-                </div>
-                <span className="text-sm font-medium text-foreground">{item.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-4">
-          <DashboardSidebar variant="provider" />
+              <span className="text-sm font-medium text-foreground">{item.label}</span>
+            </button>
+          ))}
         </div>
       </div>
+
+      {/* Sidebar */}
+      <DashboardSidebar variant="provider" />
     </div>
   );
 }
