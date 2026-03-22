@@ -162,6 +162,8 @@ const Buchhaltung = lazy(() => import("@/pages/Buchhaltung"));
 const Fuhrpark = lazy(() => import("@/pages/Fuhrpark"));
 const AutoFlow = lazy(() => import("@/pages/AutoFlow"));
 const Marketplace = lazy(() => import("@/pages/Marketplace"));
+const EmailMarketing = lazy(() => import("@/features/email-marketing/EmailMarketingPage"));
+const SignupFormPage = lazy(() => import("@/features/email-marketing/public/SignupFormPage"));
 const PortalDashboard = lazy(() => import("@/pages/portal/PortalDashboard"));
 const PortalSettings = lazy(() => import("@/pages/portal/PortalSettings"));
 const PortalCalendar = lazy(() => import("@/pages/portal/PortalCalendar"));
