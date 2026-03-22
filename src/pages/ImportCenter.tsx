@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import MagicLinkSection from "@/components/import/MagicLinkSection";
 import ContactPickerSection from "@/components/import/ContactPickerSection";
-import CSVImportSection from "@/components/import/CSVImportSection";
+import UniversalImportSection from "@/components/import/UniversalImportSection";
 
 const ImportCenter = () => {
   const { user } = useAuth();
@@ -64,8 +64,12 @@ const ImportCenter = () => {
       </Card>
 
       {/* Import Methods */}
-      <Tabs defaultValue="magic-link" className="space-y-6">
+      <Tabs defaultValue="import" className="space-y-6">
         <TabsList className="grid grid-cols-3 w-full max-w-lg">
+          <TabsTrigger value="import" className="gap-2">
+            <FileSpreadsheet className="h-4 w-4" />
+            <span className="hidden sm:inline">Datenimport</span>
+          </TabsTrigger>
           <TabsTrigger value="magic-link" className="gap-2">
             <Link2 className="h-4 w-4" />
             <span className="hidden sm:inline">Magic Link</span>
@@ -74,11 +78,11 @@ const ImportCenter = () => {
             <Contact className="h-4 w-4" />
             <span className="hidden sm:inline">Telefonbuch</span>
           </TabsTrigger>
-          <TabsTrigger value="csv" className="gap-2">
-            <FileSpreadsheet className="h-4 w-4" />
-            <span className="hidden sm:inline">CSV Import</span>
-          </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="import">
+          <UniversalImportSection />
+        </TabsContent>
 
         <TabsContent value="magic-link">
           <MagicLinkSection />
@@ -86,10 +90,6 @@ const ImportCenter = () => {
 
         <TabsContent value="contacts">
           <ContactPickerSection />
-        </TabsContent>
-
-        <TabsContent value="csv">
-          <CSVImportSection />
         </TabsContent>
       </Tabs>
     </div>
