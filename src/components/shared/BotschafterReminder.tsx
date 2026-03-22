@@ -53,6 +53,8 @@ export function BotschafterReminder() {
     if (path.startsWith("/botschafter") || path.startsWith("/pferdeakte")) return;
     if (localStorage.getItem(DISMISS_KEY) === "true") return;
     if (sessionStorage.getItem(SESSION_KEY) === "true") return;
+    const cooldownUntil = localStorage.getItem(COOLDOWN_KEY);
+    if (cooldownUntil && Date.now() < Number(cooldownUntil)) return;
 
     supabase
       .from("pferdeakte_botschafter")
