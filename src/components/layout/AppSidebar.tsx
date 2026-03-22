@@ -218,6 +218,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
     { title: "Mitarbeiter", icon: UsersRound, locked: !isFeatureVisible('module_team'), url: "/team" },
     { title: "HM Connect", icon: Link2, locked: !isFeatureVisible('module_network'), url: "/hm-connect" },
     { title: "AutoFlow", icon: Zap, locked: false, url: "/autoflow" },
+    { title: "E-Mail Marketing", icon: Package, locked: false, url: "/email-marketing" },
   ];
 
   // Check if a submenu contains the active route

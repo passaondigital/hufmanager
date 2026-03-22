@@ -2244,6 +2244,10 @@ export default function MissionControl() {
             <PlatformSuccession />
           </TabsContent>
 
+          <TabsContent value="email-marketing" className="space-y-6">
+            <AdminEmailAnalytics />
+          </TabsContent>
+
           {/* ESCALATIONS TAB */}
           <TabsContent value="escalations" className="space-y-4">
             <Card>
