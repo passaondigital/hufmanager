@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import {
   BarChart3, Package, ShoppingCart, Users, Settings,
   FileText, AlertTriangle, GraduationCap, BookOpen, Award,
-  LayoutDashboard, ClipboardList, CalendarDays, Wrench, Link2,
+  LayoutDashboard, ClipboardList, CalendarDays, Wrench, Link2, Upload,
 } from "lucide-react";
 import type { Organization } from "@/hooks/useOrganization";
 
@@ -16,6 +16,7 @@ const NAV_ITEMS: Record<string, { label: string; icon: React.ElementType; path: 
     { label: "Analytics", icon: BarChart3, path: "/analytics" },
     { label: "Team", icon: Users, path: "/team" },
     { label: "HM Connect", icon: Link2, path: "/connect" },
+    { label: "Import Center", icon: Upload, path: "/import" },
     { label: "Management", icon: Wrench, path: "/management" },
     { label: "Einstellungen", icon: Settings, path: "/settings" },
   ],
@@ -27,6 +28,7 @@ const NAV_ITEMS: Record<string, { label: string; icon: React.ElementType; path: 
     { label: "Schulungen", icon: GraduationCap, path: "/schulungen" },
     { label: "Team", icon: Users, path: "/team" },
     { label: "HM Connect", icon: Link2, path: "/connect" },
+    { label: "Import Center", icon: Upload, path: "/import" },
     { label: "Management", icon: Wrench, path: "/management" },
     { label: "Einstellungen", icon: Settings, path: "/settings" },
   ],
@@ -38,6 +40,7 @@ const NAV_ITEMS: Record<string, { label: string; icon: React.ElementType; path: 
     { label: "Analytics", icon: BarChart3, path: "/analytics" },
     { label: "Team", icon: Users, path: "/team" },
     { label: "HM Connect", icon: Link2, path: "/connect" },
+    { label: "Import Center", icon: Upload, path: "/import" },
     { label: "Management", icon: Wrench, path: "/management" },
     { label: "Einstellungen", icon: Settings, path: "/settings" },
   ],
@@ -49,6 +52,7 @@ const NAV_ITEMS: Record<string, { label: string; icon: React.ElementType; path: 
     { label: "Prüfungen", icon: Award, path: "/pruefungen" },
     { label: "Team", icon: Users, path: "/team" },
     { label: "HM Connect", icon: Link2, path: "/connect" },
+    { label: "Import Center", icon: Upload, path: "/import" },
     { label: "Management", icon: Wrench, path: "/management" },
     { label: "Einstellungen", icon: Settings, path: "/settings" },
   ],
@@ -59,6 +63,7 @@ const NAV_ITEMS: Record<string, { label: string; icon: React.ElementType; path: 
     { label: "Mitglieder", icon: Users, path: "/mitglieder" },
     { label: "Statistiken", icon: BarChart3, path: "/statistiken" },
     { label: "HM Connect", icon: Link2, path: "/connect" },
+    { label: "Import Center", icon: Upload, path: "/import" },
     { label: "Management", icon: Wrench, path: "/management" },
     { label: "Einstellungen", icon: Settings, path: "/settings" },
   ],
@@ -71,6 +76,7 @@ const NAV_ITEMS: Record<string, { label: string; icon: React.ElementType; path: 
     { label: "Analytics", icon: BarChart3, path: "/analytics" },
     { label: "Team", icon: Users, path: "/team" },
     { label: "HM Connect", icon: Link2, path: "/connect" },
+    { label: "Import Center", icon: Upload, path: "/import" },
     { label: "Management", icon: Wrench, path: "/management" },
     { label: "Einstellungen", icon: Settings, path: "/settings" },
   ],

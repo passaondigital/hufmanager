@@ -101,6 +101,7 @@ const STALL_NAV: NavigationConfig = {
     {
       label: "Management",
       items: [
+        { id: "import", label: "Import Center", iconName: "Upload", path: "/stall/import" },
         { id: "settings", label: "Stall-Einstellungen", iconName: "Settings", path: "/stall/settings" },
         { id: "profil", label: "Mein Profil", iconName: "User", path: "/stall/profil" },
         { id: "support", label: "Hilfe & Support", iconName: "LifeBuoy", path: "/stall/support" },
