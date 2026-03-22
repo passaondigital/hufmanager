@@ -107,23 +107,59 @@ interface TemplateSelectorProps {
   onSelect: (template: EmailTemplate) => void;
 }
 
+// Convert system templates to EmailTemplate format
+const SYSTEM_TEMPLATES_AS_EMAIL: EmailTemplate[] = SYSTEM_CAMPAIGN_TEMPLATES.map(t => ({
+  id: t.id,
+  name: t.name,
+  icon: Package,
+  subject: t.subject,
+  content_html: t.contentHtml,
+}));
+
 export function TemplateSelector({ onSelect }: TemplateSelectorProps) {
   return (
-    <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">Starte mit einer Vorlage:</p>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        {EMAIL_TEMPLATES.map(t => (
-          <Card
-            key={t.id}
-            className="bg-white hover:border-[#F47B20] cursor-pointer transition-colors group"
-            onClick={() => onSelect(t)}
-          >
-            <CardContent className="pt-4 pb-3 text-center">
-              <t.icon className="w-6 h-6 mx-auto mb-2 text-muted-foreground group-hover:text-[#F47B20] transition-colors" />
-              <p className="text-xs font-medium text-black">{t.name}</p>
-            </CardContent>
-          </Card>
-        ))}
+    <div className="space-y-4">
+      {/* System-Vorlagen */}
+      {SYSTEM_TEMPLATES_AS_EMAIL.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-[#F47B20] uppercase tracking-wide">📦 System-Vorlagen</p>
+          <div className="grid grid-cols-1 gap-2">
+            {SYSTEM_TEMPLATES_AS_EMAIL.map(t => (
+              <Card
+                key={t.id}
+                className="bg-orange-50 hover:border-[#F47B20] cursor-pointer transition-colors group border-orange-200"
+                onClick={() => onSelect(t)}
+              >
+                <CardContent className="pt-3 pb-3 flex items-center gap-3">
+                  <Package className="w-5 h-5 text-[#F47B20] shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{t.name}</p>
+                    <p className="text-xs text-muted-foreground">{SYSTEM_CAMPAIGN_TEMPLATES.find(s => s.id === t.id)?.description}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Standard-Vorlagen */}
+      <div className="space-y-2">
+        <p className="text-sm text-muted-foreground">Starte mit einer Vorlage:</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {EMAIL_TEMPLATES.map(t => (
+            <Card
+              key={t.id}
+              className="bg-white hover:border-[#F47B20] cursor-pointer transition-colors group"
+              onClick={() => onSelect(t)}
+            >
+              <CardContent className="pt-4 pb-3 text-center">
+                <t.icon className="w-6 h-6 mx-auto mb-2 text-muted-foreground group-hover:text-[#F47B20] transition-colors" />
+                <p className="text-xs font-medium text-black">{t.name}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );
