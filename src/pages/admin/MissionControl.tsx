@@ -1183,6 +1183,10 @@ export default function MissionControl() {
                 <Shield className="w-4 h-4" />
                 <span className="hidden md:inline">Nachfolge</span>
               </TabsTrigger>
+              <TabsTrigger value="email-marketing" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
+                <Megaphone className="w-4 h-4" />
+                <span className="hidden md:inline">E-Mail</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
