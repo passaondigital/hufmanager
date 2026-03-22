@@ -17,6 +17,7 @@ import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { SpeedDialFAB } from "@/components/layout/SpeedDialFAB";
+import { SystemAnnouncementBanner } from "@/components/announcements/SystemAnnouncementBanner";
 import {
   Sheet as QuickSheet,
   SheetContent as QuickSheetContent,
@@ -193,6 +194,9 @@ export function StallbetreiberAppLayout() {
         <div className="hidden lg:block">
           <AppHeader />
         </div>
+
+        {/* System Announcements */}
+        <SystemAnnouncementBanner />
 
         {/* Main content */}
         <main className="flex-1 overflow-auto px-4 py-4 lg:p-6 pb-bottom-nav overflow-x-hidden">

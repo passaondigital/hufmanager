@@ -1005,6 +1005,35 @@ export type Database = {
         }
         Relationships: []
       }
+      announcement_dismissals: {
+        Row: {
+          announcement_id: string
+          dismissed_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          announcement_id: string
+          dismissed_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          announcement_id?: string
+          dismissed_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcement_dismissals_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "system_announcements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointment_groups: {
         Row: {
           created_at: string
@@ -14728,6 +14757,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      system_announcements: {
+        Row: {
+          action_label: string | null
+          action_url: string | null
+          content: string
+          created_at: string | null
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          priority: number | null
+          target_roles: string[] | null
+          title: string
+          type: string
+        }
+        Insert: {
+          action_label?: string | null
+          action_url?: string | null
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          target_roles?: string[] | null
+          title: string
+          type?: string
+        }
+        Update: {
+          action_label?: string | null
+          action_url?: string | null
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          target_roles?: string[] | null
+          title?: string
+          type?: string
+        }
+        Relationships: []
       }
       system_anomaly_baselines: {
         Row: {
