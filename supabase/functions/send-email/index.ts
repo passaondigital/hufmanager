@@ -103,7 +103,7 @@ const TEMPLATES: Record<string, { subject: (vars: Record<string, string>) => str
             <strong>Launch-Datum:</strong> 1. April 2026 — sei bereit! 🚀
           </p>
           <div style="text-align:center;margin:0 0 24px;">
-            <a href="https://hufmanager.de/pferdeakte" style="display:inline-block;background:#f97316;color:#fff;padding:14px 32px;border-radius:50px;text-decoration:none;font-weight:bold;font-size:15px;">Zur Pferdeakte-Seite →</a>
+            <a href="https://hufmanager.de/auth?source=pferdeakte" style="display:inline-block;background:#f97316;color:#fff;padding:14px 32px;border-radius:50px;text-decoration:none;font-weight:bold;font-size:15px;">Pferdeakte anlegen – Kostenlos →</a>
           </div>
           <p style="color:#9ca3af;font-size:12px;text-align:center;margin:24px 0 0;">
             Du erhältst diese E-Mail, weil du dich auf hufmanager.de/pferdeakte angemeldet hast.<br/>
