@@ -464,8 +464,22 @@ export default function Auth() {
       {/* Scrollable content area that fills viewport */}
       <div className="flex-1 flex flex-col items-center justify-start px-4 py-6 sm:justify-center overflow-auto">
       <Card className="w-full max-w-md border-border bg-card shadow-xl">
+        {/* Pferdeakte Source Banner */}
+        {pferdeakteSource && (
+          <div className="bg-orange-50 border-b border-orange-200 p-4 rounded-t-lg dark:bg-orange-950/30 dark:border-orange-800">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">📋</span>
+              <div>
+                <p className="font-semibold text-sm text-foreground">Pferdeakte erstellen</p>
+                <p className="text-xs text-muted-foreground">
+                  Registriere dich kostenlos und erstelle deine erste digitale Pferdeakte.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         {/* HM Connect Invite Banner */}
-        {hmInviteToken && (
+        {hmInviteToken && !pferdeakteSource && (
           <div className="bg-primary/10 border-b border-primary/20 p-4 rounded-t-lg">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
@@ -487,10 +501,14 @@ export default function Auth() {
             className="mx-auto h-16 sm:h-20 w-auto mb-2"
           />
           <CardTitle className="text-2xl font-bold text-foreground sr-only">HufManager</CardTitle>
-          <CardDescription className="text-sm text-muted-foreground">Für alle Rollen – du wirst automatisch weitergeleitet</CardDescription>
+          <CardDescription className="text-sm text-muted-foreground">
+            {pferdeakteSource 
+              ? "Erstelle dein Konto und leg deine erste Pferdeakte an" 
+              : "Für alle Rollen – du wirst automatisch weitergeleitet"}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="login" className="w-full">
+          <Tabs defaultValue={pferdeakteSource ? "signup" : "login"} className="w-full">
             <TabsList className="grid w-full grid-cols-2 h-12 bg-muted">
               <TabsTrigger value="login" className="h-10 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Anmelden</TabsTrigger>
               <TabsTrigger value="signup" className="h-10 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Registrieren</TabsTrigger>
