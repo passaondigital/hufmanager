@@ -76,6 +76,42 @@ const TEMPLATES: Record<string, { subject: (vars: Record<string, string>) => str
         <p style="color:#888;font-size:12px;margin-top:20px;">HufManager – Die Nr. 1 Software für Hufbearbeiter</p>
       </div>`,
   },
+  pferdeakte_news_welcome: {
+    subject: () => `🐴 Du bist dabei – Pferdeakte News gesichert!`,
+    html: (v) => `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:0;background:#ffffff;">
+        <div style="background:#0a0a0a;padding:40px 30px;text-align:center;border-radius:12px 12px 0 0;">
+          <h1 style="color:#f97316;font-size:28px;margin:0 0 8px;">Die Pferdeakte</h1>
+          <p style="color:rgba(255,255,255,0.6);font-size:14px;margin:0;">by HufManager</p>
+        </div>
+        <div style="padding:30px;background:#ffffff;">
+          <h2 style="color:#0a0a0a;font-size:22px;margin:0 0 16px;">Hallo ${v.name || 'Pferdefreund'}! 👋</h2>
+          <p style="color:#4b5563;font-size:15px;line-height:1.6;margin:0 0 20px;">
+            Du hast dich erfolgreich für die <strong style="color:#f97316;">Pferdeakte News</strong> angemeldet.
+            Ab jetzt bekommst du als Erste*r alle Updates rund um die digitale Pferdeakte — direkt von uns.
+          </p>
+          <div style="background:#fff7ed;border-left:4px solid #f97316;padding:16px 20px;border-radius:0 8px 8px 0;margin:0 0 24px;">
+            <p style="color:#0a0a0a;font-size:14px;margin:0 0 8px;font-weight:bold;">Was dich erwartet:</p>
+            <ul style="color:#4b5563;font-size:14px;line-height:1.8;margin:0;padding:0 0 0 20px;">
+              <li>Exklusive Einblicke vor dem Launch</li>
+              <li>Feature-Updates & Roadmap-News</li>
+              <li>Tipps zur digitalen Pferdegesundheit</li>
+              <li>Frühzugang zu neuen Funktionen</li>
+            </ul>
+          </div>
+          <p style="color:#4b5563;font-size:15px;line-height:1.6;margin:0 0 24px;">
+            <strong>Launch-Datum:</strong> 1. April 2026 — sei bereit! 🚀
+          </p>
+          <div style="text-align:center;margin:0 0 24px;">
+            <a href="https://hufmanager.de/pferdeakte" style="display:inline-block;background:#f97316;color:#fff;padding:14px 32px;border-radius:50px;text-decoration:none;font-weight:bold;font-size:15px;">Zur Pferdeakte-Seite →</a>
+          </div>
+          <p style="color:#9ca3af;font-size:12px;text-align:center;margin:24px 0 0;">
+            Du erhältst diese E-Mail, weil du dich auf hufmanager.de/pferdeakte angemeldet hast.<br/>
+            © 2026 HufManager · Barhufservice Schmid
+          </p>
+        </div>
+      </div>`,
+  },
 };
 
 serve(async (req) => {

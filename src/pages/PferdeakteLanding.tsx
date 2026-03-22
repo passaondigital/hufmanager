@@ -150,6 +150,8 @@ export default function PferdeakteLanding() {
       <PferdeakteComparisonTable />
       {/* 7c. TRESOR PRICING */}
       <TresorPricing />
+      {/* 7d. NEWSLETTER */}
+      <NewsletterSection />
       {/* 8. WAITLIST */}
       <WaitlistSection defaultRef={searchParams.get("ref") ?? ""} />
       {/* 9. BOTSCHAFTER */}
