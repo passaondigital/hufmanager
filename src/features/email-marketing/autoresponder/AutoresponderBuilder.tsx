@@ -97,14 +97,14 @@ export function AutoresponderBuilder() {
       </Card>
 
       {/* Timeline */}
-      <div className="relative pl-6">
+      <div className="relative pl-8 sm:pl-10">
         {/* Vertical Line */}
-        <div className="absolute left-[19px] top-0 bottom-0 w-0.5 bg-gray-300" />
+        <div className="absolute left-[15px] sm:left-[19px] top-0 bottom-0 w-0.5 bg-gray-300" />
 
         {steps.map((step, idx) => (
           <div key={step.id} className="relative mb-4">
             {/* Timeline dot */}
-            <div className={`absolute -left-6 top-3 w-4 h-4 rounded-full border-2 border-white shadow ${
+            <div className={`absolute -left-[17px] sm:-left-[21px] top-3 w-4 h-4 rounded-full border-2 border-white shadow ${
               step.type === "email" ? "bg-[#F47B20]" : "bg-gray-400"
             }`} />
 
