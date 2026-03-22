@@ -15,7 +15,7 @@ import { toast } from "sonner";
 export function ContactsTab() {
   const { lists } = useEmailLists();
   const [selectedList, setSelectedList] = useState<string>("");
-  const { subscribers, isLoading, deleteSubscriber } = useEmailSubscribers(selectedList || undefined);
+  const { subscribers, isLoading, deleteSubscriber } = useEmailSubscribers(selectedList && selectedList !== "all" ? selectedList : undefined);
   const [search, setSearch] = useState("");
 
   const filtered = subscribers.filter(s =>
