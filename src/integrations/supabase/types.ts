@@ -11531,6 +11531,39 @@ export type Database = {
         }
         Relationships: []
       }
+      pferdeakte_community_milestones: {
+        Row: {
+          celebration_message: string | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          reached_at: string | null
+          target_count: number
+          title: string
+        }
+        Insert: {
+          celebration_message?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          reached_at?: string | null
+          target_count: number
+          title: string
+        }
+        Update: {
+          celebration_message?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          reached_at?: string | null
+          target_count?: number
+          title?: string
+        }
+        Relationships: []
+      }
       pferdeakte_waitlist: {
         Row: {
           company: string | null
@@ -16267,6 +16300,15 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pferdeakte_global_stats: {
+        Row: {
+          new_last_30_days: number | null
+          new_last_7_days: number | null
+          total_besitzer: number | null
+          total_pferdeakten: number | null
+        }
+        Relationships: []
       }
       safe_appointments: {
         Row: {
