@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Search, Eye, Trash2, Loader2 } from "lucide-react";
+import { Plus, Search, Eye, Trash2, Loader2, Mail } from "lucide-react";
 import { useEmailCampaigns } from "../hooks/useEmailCampaigns";
 import { CampaignEditor } from "../campaigns/CampaignEditor";
 import { CampaignDetailModal } from "../campaigns/CampaignDetailModal";
