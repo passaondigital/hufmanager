@@ -226,6 +226,9 @@ export function AppLayout() {
         {/* Trial Countdown Banner */}
         <TrialCountdownBanner />
 
+        {/* System Announcements */}
+        <SystemAnnouncementBanner />
+
         {/* Offline Banner - shows when offline or syncing */}
         <OfflineBanner />
 

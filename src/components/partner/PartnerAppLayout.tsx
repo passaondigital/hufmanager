@@ -246,6 +246,9 @@ export function PartnerAppLayout() {
         {/* Trial Countdown Banner */}
         <TrialCountdownBanner />
 
+        {/* System Announcements */}
+        <SystemAnnouncementBanner />
+
         {/* Offline Banner */}
         <OfflineBanner />
 
