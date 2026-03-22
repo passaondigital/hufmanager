@@ -1,23 +1,15 @@
 import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { useQueryClient } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Upload,
   FileSpreadsheet,
-  FileText,
   FileJson,
   ContactRound,
   ClipboardPaste,
@@ -28,23 +20,38 @@ import {
   RotateCcw,
   Sparkles,
   CheckCircle2,
-  Circle,
   Loader2,
+  Bot,
+  Wand2,
 } from "lucide-react";
-import type { ContactCategory, ParsedContact, ImportResult, ImportStep } from "./types";
+import type { ContactCategory, ParsedContact, ImportResult } from "./types";
 import { CATEGORY_CONFIG } from "./types";
 import { parseFile, parsePlainText } from "./parsers";
 import ImportDataValidator from "./ImportDataValidator";
 import ImportProgressBar from "./ImportProgressBar";
 import ImportInvitationPanel from "./ImportInvitationPanel";
+import ImportDuplicateCheck, { type DuplicateMatch } from "./ImportDuplicateCheck";
+import AiImportReview, { type AiProcessedContact, type AiImportSummary } from "./AiImportReview";
+import { checkDuplicates } from "./useImportDuplicateCheck";
 
-type WizardStep = "welcome" | "format" | "upload" | "validate" | "importing" | "done";
+type WizardStep = "welcome" | "format" | "upload" | "validate" | "ai-processing" | "ai-review" | "duplicates" | "importing" | "done";
 
-const STEPS: { key: WizardStep; label: string }[] = [
+const STEPS_MANUAL: { key: WizardStep; label: string }[] = [
   { key: "welcome", label: "Start" },
   { key: "format", label: "Format" },
   { key: "upload", label: "Hochladen" },
   { key: "validate", label: "Prüfen" },
+  { key: "duplicates", label: "Duplikate" },
+  { key: "importing", label: "Import" },
+  { key: "done", label: "Fertig" },
+];
+
+const STEPS_AI: { key: WizardStep; label: string }[] = [
+  { key: "welcome", label: "Start" },
+  { key: "format", label: "Format" },
+  { key: "upload", label: "Hochladen" },
+  { key: "ai-processing", label: "KI-Analyse" },
+  { key: "ai-review", label: "Prüfen" },
   { key: "importing", label: "Import" },
   { key: "done", label: "Fertig" },
 ];
@@ -52,16 +59,19 @@ const STEPS: { key: WizardStep; label: string }[] = [
 const ACCEPTED_FORMATS = ".csv,.tsv,.txt,.xlsx,.xls,.vcf,.json";
 
 interface ImportWizardProps {
-  /** Hide the category selector and force a specific category */
   forceCategory?: ContactCategory;
 }
 
 const ImportWizard = ({ forceCategory }: ImportWizardProps) => {
   const { user } = useAuth();
+  const { plan } = useSubscription();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const isProPlus = plan === "pro" || plan === "duo" || plan === "team";
+
   const [step, setStep] = useState<WizardStep>("welcome");
+  const [useAi, setUseAi] = useState(isProPlus);
   const [category, setCategory] = useState<ContactCategory>(forceCategory || "client");
   const [selectedFormat, setSelectedFormat] = useState<string | null>(null);
   const [contacts, setContacts] = useState<ParsedContact[]>([]);
@@ -71,9 +81,18 @@ const ImportWizard = ({ forceCategory }: ImportWizardProps) => {
   const [importResults, setImportResults] = useState<ImportResult[]>([]);
   const [isDragging, setIsDragging] = useState(false);
 
+  // Duplicate state
+  const [duplicateMatches, setDuplicateMatches] = useState<DuplicateMatch[]>([]);
+  const [newContacts, setNewContacts] = useState<ParsedContact[]>([]);
+
+  // AI state
+  const [aiContacts, setAiContacts] = useState<AiProcessedContact[]>([]);
+  const [aiSummary, setAiSummary] = useState<AiImportSummary | null>(null);
+
+  const steps = useAi ? STEPS_AI : STEPS_MANUAL;
   const validCount = contacts.filter(c => c.status !== "error").length;
   const errorCount = contacts.filter(c => c.status === "error").length;
-  const stepIndex = STEPS.findIndex(s => s.key === step);
+  const stepIndex = steps.findIndex(s => s.key === step);
 
   const handleFileRead = useCallback((file: File) => {
     setFileName(file.name);
@@ -89,15 +108,19 @@ const ImportWizard = ({ forceCategory }: ImportWizardProps) => {
           return;
         }
         setContacts(parsed);
-        setStep("validate");
+        if (useAi) {
+          runAiProcessing(parsed);
+        } else {
+          setStep("validate");
+        }
         toast({ title: `${parsed.length} Kontakte erkannt` });
       } catch {
-        toast({ title: "Fehler beim Parsen", description: "Die Datei konnte nicht gelesen werden.", variant: "destructive" });
+        toast({ title: "Fehler beim Parsen", variant: "destructive" });
       }
     };
     if (isExcel) reader.readAsArrayBuffer(file);
     else reader.readAsText(file);
-  }, []);
+  }, [useAi]);
 
   const handleFileDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -115,13 +138,178 @@ const ImportWizard = ({ forceCategory }: ImportWizardProps) => {
     }
     setContacts(parsed);
     setFileName("Eingefügter Text");
-    setStep("validate");
+    if (useAi) {
+      runAiProcessing(parsed);
+    } else {
+      setStep("validate");
+    }
     toast({ title: `${parsed.length} Kontakte erkannt` });
   };
 
-  const startImport = async () => {
+  // AI Processing
+  const runAiProcessing = async (parsedContacts: ParsedContact[]) => {
+    if (!user?.id) return;
+    setStep("ai-processing");
+    try {
+      // Fetch existing contacts for duplicate context
+      const { data: existing } = await supabase
+        .from("contacts")
+        .select("id, full_name, email, phone")
+        .eq("provider_id", user.id)
+        .limit(200);
+
+      const { data: result, error } = await supabase.functions.invoke("ai-import-agent", {
+        body: {
+          contacts: parsedContacts.map(c => ({
+            id: c.id,
+            full_name: c.full_name,
+            email: c.email,
+            phone: c.phone,
+            company_name: c.company_name,
+            street: c.street,
+            notes: c.notes,
+          })),
+          existingContacts: existing || [],
+        },
+      });
+
+      if (error) throw error;
+
+      setAiContacts(result.contacts || []);
+      setAiSummary(result.summary || null);
+      setStep("ai-review");
+    } catch (err: any) {
+      console.error("AI processing failed:", err);
+      toast({
+        title: "KI-Analyse fehlgeschlagen",
+        description: "Wechsle zum manuellen Modus.",
+        variant: "destructive",
+      });
+      setUseAi(false);
+      setStep("validate");
+    }
+  };
+
+  // Handle AI review accept
+  const handleAiAccept = async (accepted: AiProcessedContact[]) => {
+    if (!user?.id) return;
+    setStep("importing");
+    setImportProgress({ current: 0, total: accepted.length });
+    const results: ImportResult[] = [];
+
+    const BATCH = 20;
+    for (let i = 0; i < accepted.length; i += BATCH) {
+      const batch = accepted.slice(i, i + BATCH);
+      const rows = batch.map(c => ({
+        provider_id: user.id,
+        category: c.suggested_category || category,
+        full_name: c.full_name,
+        email: c.email || null,
+        phone: c.phone || null,
+        company_name: c.company_name || null,
+        street: c.street || null,
+        notes: c.notes || null,
+        source: "ai_import",
+      }));
+
+      const { error } = await supabase.from("contacts").insert(rows);
+      batch.forEach(c => {
+        results.push({
+          contact: {
+            id: c.id,
+            full_name: c.full_name,
+            email: c.email,
+            phone: c.phone,
+            company_name: c.company_name,
+            street: c.street,
+            notes: c.notes,
+            status: c.status as any,
+            errors: [],
+          },
+          success: !error,
+          error: error?.message,
+        });
+      });
+      setImportProgress({ current: Math.min(i + BATCH, accepted.length), total: accepted.length });
+    }
+
+    setImportResults(results);
+    setStep("done");
+    queryClient.invalidateQueries({ queryKey: ["contacts"] });
+    toast({
+      title: "Import abgeschlossen",
+      description: `${results.filter(r => r.success).length} Kontakte importiert`,
+    });
+  };
+
+  // Manual flow: check duplicates before import
+  const checkAndImport = async () => {
     if (!user?.id) return;
     const toImport = contacts.filter(c => c.status !== "error");
+
+    const { duplicates, newContacts: freshContacts } = await checkDuplicates(toImport, user.id);
+
+    if (duplicates.length > 0) {
+      setDuplicateMatches(duplicates);
+      setNewContacts(freshContacts);
+      setStep("duplicates");
+    } else {
+      await executeImport(toImport);
+    }
+  };
+
+  // Resolve duplicates and import
+  const handleDuplicateResolve = async (resolved: DuplicateMatch[]) => {
+    if (!user?.id) return;
+
+    const toImport: ParsedContact[] = [...newContacts];
+    const toUpdate: { id: string; data: Partial<ParsedContact> }[] = [];
+
+    for (const m of resolved) {
+      if (m.action === "import") {
+        toImport.push(m.importContact);
+      } else if (m.action === "update") {
+        toUpdate.push({
+          id: m.existingContact.id,
+          data: {
+            full_name: m.importContact.full_name,
+            email: m.importContact.email,
+            phone: m.importContact.phone,
+            company_name: m.importContact.company_name,
+            street: m.importContact.street,
+          },
+        });
+      }
+      // skip = do nothing
+    }
+
+    // Update existing contacts
+    for (const u of toUpdate) {
+      await supabase.from("contacts").update({
+        full_name: u.data.full_name,
+        email: u.data.email || null,
+        phone: u.data.phone || null,
+        company_name: u.data.company_name || null,
+        street: u.data.street || null,
+      }).eq("id", u.id);
+    }
+
+    if (toImport.length > 0) {
+      await executeImport(toImport);
+    } else {
+      const skipped = resolved.filter(m => m.action === "skip").length;
+      const updated = toUpdate.length;
+      setImportResults([]);
+      setStep("done");
+      toast({
+        title: "Import abgeschlossen",
+        description: `${updated} aktualisiert, ${skipped} übersprungen`,
+      });
+    }
+  };
+
+  const executeImport = async (toImport: ParsedContact[]) => {
+    if (!user?.id) return;
     setStep("importing");
     setImportProgress({ current: 0, total: toImport.length });
     const results: ImportResult[] = [];
@@ -167,6 +355,11 @@ const ImportWizard = ({ forceCategory }: ImportWizardProps) => {
     setSelectedFormat(null);
     setImportResults([]);
     setImportProgress({ current: 0, total: 0 });
+    setDuplicateMatches([]);
+    setNewContacts([]);
+    setAiContacts([]);
+    setAiSummary(null);
+    setUseAi(isProPlus);
   };
 
   const downloadTemplate = () => {
@@ -181,7 +374,7 @@ const ImportWizard = ({ forceCategory }: ImportWizardProps) => {
   // Stepper
   const Stepper = () => (
     <div className="flex items-center gap-1 overflow-x-auto pb-2">
-      {STEPS.map((s, i) => {
+      {steps.map((s, i) => {
         const isCompleted = i < stepIndex;
         const isCurrent = i === stepIndex;
         return (
@@ -196,7 +389,7 @@ const ImportWizard = ({ forceCategory }: ImportWizardProps) => {
                 {s.label}
               </span>
             </div>
-            {i < STEPS.length - 1 && (
+            {i < steps.length - 1 && (
               <div className={`w-4 h-0.5 mx-1 ${isCompleted ? "bg-emerald-500" : "bg-muted"}`} />
             )}
           </div>
@@ -215,7 +408,6 @@ const ImportWizard = ({ forceCategory }: ImportWizardProps) => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Stepper */}
       <Stepper />
 
       {/* STEP 1: Welcome */}
@@ -227,12 +419,50 @@ const ImportWizard = ({ forceCategory }: ImportWizardProps) => {
             </div>
             <h2 className="text-xl font-bold text-foreground">Import-Assistent</h2>
             <p className="text-muted-foreground max-w-sm mx-auto">
-              Ich führe dich Schritt für Schritt durch den Import deiner Kontakte. Keine Sorge – du kannst jederzeit zurückgehen.
+              Ich führe dich Schritt für Schritt durch den Import deiner Kontakte.
             </p>
           </div>
 
+          {/* AI Toggle for Pro+ */}
+          {isProPlus && (
+            <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 space-y-2">
+              <div className="flex items-center gap-3">
+                <Bot className="h-6 w-6 text-primary" />
+                <div className="flex-1">
+                  <p className="font-semibold text-sm text-foreground">KI-Import-Agent</p>
+                  <p className="text-xs text-muted-foreground">
+                    Automatische Kategorisierung, Bereinigung, Duplikat-Erkennung
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant={useAi ? "default" : "outline"}
+                  onClick={() => setUseAi(!useAi)}
+                  className="gap-1.5"
+                >
+                  {useAi ? <><Check className="h-3.5 w-3.5" /> Aktiv</> : "Aktivieren"}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {!isProPlus && (
+            <div className="rounded-xl border border-border bg-muted/30 p-4">
+              <div className="flex items-center gap-3">
+                <Bot className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="font-medium text-sm text-foreground">KI-Import-Agent</p>
+                  <p className="text-xs text-muted-foreground">
+                    Ab Pro-Plan verfügbar – automatische Analyse deiner Importdaten
+                  </p>
+                </div>
+                <Badge variant="secondary" className="text-xs shrink-0">Pro</Badge>
+              </div>
+            </div>
+          )}
+
           {/* Category Selection */}
-          {!forceCategory && (
+          {!forceCategory && !useAi && (
             <div className="space-y-2">
               <label className="text-sm font-medium">Was möchtest du importieren?</label>
               <div className="grid grid-cols-2 gap-2">
@@ -254,6 +484,13 @@ const ImportWizard = ({ forceCategory }: ImportWizardProps) => {
             </div>
           )}
 
+          {useAi && !forceCategory && (
+            <p className="text-xs text-muted-foreground text-center">
+              <Sparkles className="h-3 w-3 inline mr-1" />
+              Die KI erkennt automatisch die passende Kategorie pro Kontakt.
+            </p>
+          )}
+
           <Button onClick={() => setStep("format")} className="w-full gap-2" size="lg">
             Los geht's <ArrowRight className="h-4 w-4" />
           </Button>
@@ -265,7 +502,7 @@ const ImportWizard = ({ forceCategory }: ImportWizardProps) => {
         <div className="space-y-4">
           <div>
             <h3 className="font-semibold text-foreground">In welchem Format liegen deine Daten vor?</h3>
-            <p className="text-sm text-muted-foreground mt-1">Wähle das passende Format aus – wir kümmern uns um den Rest.</p>
+            <p className="text-sm text-muted-foreground mt-1">Wähle das passende Format aus.</p>
           </div>
 
           <div className="grid gap-2">
@@ -293,11 +530,7 @@ const ImportWizard = ({ forceCategory }: ImportWizardProps) => {
             <Button variant="outline" onClick={() => setStep("welcome")} className="gap-1.5">
               <ArrowLeft className="h-4 w-4" /> Zurück
             </Button>
-            <Button
-              onClick={() => setStep("upload")}
-              disabled={!selectedFormat}
-              className="flex-1 gap-1.5"
-            >
+            <Button onClick={() => setStep("upload")} disabled={!selectedFormat} className="flex-1 gap-1.5">
               Weiter <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
@@ -339,7 +572,7 @@ const ImportWizard = ({ forceCategory }: ImportWizardProps) => {
                   <ArrowLeft className="h-4 w-4" /> Zurück
                 </Button>
                 <Button onClick={handlePaste} disabled={!pasteText.trim()} className="flex-1 gap-1.5">
-                  Kontakte erkennen <ArrowRight className="h-4 w-4" />
+                  {useAi ? <><Wand2 className="h-4 w-4" /> KI analysieren</> : <>Kontakte erkennen <ArrowRight className="h-4 w-4" /></>}
                 </Button>
               </div>
             </div>
@@ -348,7 +581,7 @@ const ImportWizard = ({ forceCategory }: ImportWizardProps) => {
               <div>
                 <h3 className="font-semibold text-foreground">Datei hochladen</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Ziehe deine {formatOptions.find(f => f.id === selectedFormat)?.label}-Datei hierher oder klicke zum Auswählen.
+                  Ziehe deine Datei hierher oder klicke zum Auswählen.
                 </p>
               </div>
 
@@ -361,9 +594,15 @@ const ImportWizard = ({ forceCategory }: ImportWizardProps) => {
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleFileDrop}
               >
-                <Upload className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+                {useAi ? (
+                  <Bot className="h-12 w-12 mx-auto mb-3 text-primary" />
+                ) : (
+                  <Upload className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+                )}
                 <p className="font-medium text-foreground">Datei hierher ziehen</p>
-                <p className="text-sm text-muted-foreground mt-1">oder klicken zum Auswählen</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {useAi ? "KI übernimmt nach dem Upload alles weitere" : "oder klicken zum Auswählen"}
+                </p>
               </div>
 
               <Button variant="outline" onClick={() => setStep("format")} className="gap-1.5">
@@ -374,7 +613,39 @@ const ImportWizard = ({ forceCategory }: ImportWizardProps) => {
         </div>
       )}
 
-      {/* STEP 4: Validate */}
+      {/* STEP: AI Processing */}
+      {step === "ai-processing" && (
+        <div className="space-y-4 py-8">
+          <div className="text-center">
+            <div className="relative inline-flex items-center justify-center h-20 w-20 mb-4">
+              <div className="absolute inset-0 rounded-full bg-primary/10 animate-ping" />
+              <Bot className="h-10 w-10 text-primary animate-pulse" />
+            </div>
+            <h3 className="font-semibold text-foreground text-lg">KI analysiert deine Daten...</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Kategorisierung · Bereinigung · Duplikat-Erkennung
+            </p>
+          </div>
+          <div className="flex justify-center gap-2 text-xs text-muted-foreground">
+            <span className="animate-pulse">⏳ {contacts.length} Kontakte werden analysiert</span>
+          </div>
+        </div>
+      )}
+
+      {/* STEP: AI Review */}
+      {step === "ai-review" && aiSummary && (
+        <AiImportReview
+          processedContacts={aiContacts}
+          summary={aiSummary}
+          onAccept={handleAiAccept}
+          onFallbackManual={() => {
+            setUseAi(false);
+            setStep("validate");
+          }}
+        />
+      )}
+
+      {/* STEP 4: Manual Validate */}
       {step === "validate" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -392,15 +663,20 @@ const ImportWizard = ({ forceCategory }: ImportWizardProps) => {
             <Button variant="outline" onClick={() => { setContacts([]); setStep("upload"); }} className="gap-1.5">
               <ArrowLeft className="h-4 w-4" /> Zurück
             </Button>
-            <Button
-              onClick={startImport}
-              disabled={validCount === 0}
-              className="flex-1 gap-2"
-            >
+            <Button onClick={checkAndImport} disabled={validCount === 0} className="flex-1 gap-2">
               {validCount} importieren <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
+      )}
+
+      {/* STEP: Duplicate Resolution */}
+      {step === "duplicates" && (
+        <ImportDuplicateCheck
+          duplicates={duplicateMatches}
+          onResolve={handleDuplicateResolve}
+          newContacts={newContacts}
+        />
       )}
 
       {/* STEP 5: Importing */}
@@ -411,11 +687,7 @@ const ImportWizard = ({ forceCategory }: ImportWizardProps) => {
             <h3 className="font-semibold text-foreground">Daten werden importiert...</h3>
             <p className="text-sm text-muted-foreground">Bitte Fenster nicht schließen.</p>
           </div>
-          <ImportProgressBar
-            current={importProgress.current}
-            total={importProgress.total}
-            phase="importing"
-          />
+          <ImportProgressBar current={importProgress.current} total={importProgress.total} phase="importing" />
         </div>
       )}
 
@@ -430,13 +702,8 @@ const ImportWizard = ({ forceCategory }: ImportWizardProps) => {
             </p>
           </div>
 
-          <ImportProgressBar
-            current={importProgress.total}
-            total={importProgress.total}
-            phase="done"
-          />
+          <ImportProgressBar current={importProgress.total} total={importProgress.total} phase="done" />
 
-          {/* Invitation panel */}
           {importResults.filter(r => r.success).length > 0 && (
             <ImportInvitationPanel results={importResults} />
           )}
