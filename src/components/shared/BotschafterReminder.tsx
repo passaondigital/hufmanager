@@ -78,6 +78,8 @@ export function BotschafterReminder() {
 
   const handleClose = useCallback(() => {
     sessionStorage.setItem(SESSION_KEY, "true");
+    const cooldownUntil = Date.now() + COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
+    localStorage.setItem(COOLDOWN_KEY, String(cooldownUntil));
     setAnimateOut(true);
     setTimeout(() => setVisible(false), 300);
   }, []);
