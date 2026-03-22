@@ -719,6 +719,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               {/* Meine Website - Provider Website Editor */}
               <Route path="/meine-website" element={<MeineWebsite />} />
               <Route path="/landing-editor" element={<LandingEditor />} />
+              <Route path="/email-marketing" element={<EmailMarketing />} />
             </Route>
 
             {/* --- 3. CLIENT (PFERDEBESITZER) ROUTES --- */}
