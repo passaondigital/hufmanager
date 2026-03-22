@@ -124,6 +124,7 @@ export default function Auth() {
   // Check for admin redirect parameter
   const redirectTo = searchParams.get("redirect");
   const forceLogin = searchParams.get("force") === "login";
+  const pferdeakteSource = searchParams.get("source") === "pferdeakte";
   const currentEntryPath = window.location.pathname === "/audit" ? "/audit" : "/auth";
   const pendingSwitchTarget = sessionStorage.getItem(SWITCH_ACCOUNT_STORAGE_KEY);
   const isSwitchingAccount = forceLogin || pendingSwitchTarget === currentEntryPath;
