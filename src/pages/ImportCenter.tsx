@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import MagicLinkSection from "@/components/import/MagicLinkSection";
 import ContactPickerSection from "@/components/import/ContactPickerSection";
-import CSVImportSection from "@/components/import/CSVImportSection";
+import UniversalImportSection from "@/components/import/UniversalImportSection";
 
 const ImportCenter = () => {
   const { user } = useAuth();
