@@ -1,86 +1,136 @@
 
 
-## Analyse: Client-App vs. andere Instanzen
+## Kampagnen-Tab + Admin-Analytics + Komplettes E-Mail-Marketing-Modul
 
-### Ist-Zustand
+### Kontext
 
-| Feature | Provider | Employee | Partner | **Client** |
-|---|---|---|---|---|
-| Desktop-Sidebar | `AppSidebar` | `AppSidebar` | `AppSidebar` | **Keine** |
-| Mobile-Sidebar (Sheet) | ✅ | ✅ | ✅ | **Keine** |
-| Desktop-Header mit Suche/Theme | `AppHeader` | `AppHeader` | `AppHeader` | **Kein Header** |
-| Bottom-Nav (mobil) | ✅ | ✅ mit Plus-FAB | ✅ | ✅ (`ClientBottomNav`) |
-| Logout-Button sichtbar | Sidebar + Management | Sidebar + Profil | Sidebar | **Nur tief in `/client-profile` versteckt** |
-| 5A-Navigation (gruppiert) | ✅ | ✅ | ✅ | **Flat, 5 Tabs** |
+Das E-Mail-Marketing-Modul existiert noch nicht im Code (kein `src/features/` Ordner, keine DB-Tabellen). Dieser Plan baut **alle vier Grundpfeiler** in einem Schritt:
 
-**Kernprobleme:**
-1. Client hat **kein Layout-System** — `ClientLayout` ist nur ein `<div>` + `<Outlet>`
-2. **Kein Logout** in der Navigation — nur am Ende der Profilseite als destructive Button
-3. **Keine Sidebar** auf Desktop — Client sieht eine mobile-only App auch auf 1920px
-4. Navigation ist **flat** statt gruppiert wie bei den anderen 3 Instanzen
+1. **Datenbank-Schema** (alle E-Mail-Marketing-Tabellen)
+2. **Kampagnen-Tab** mit Editor, Listenansicht und Einzel-Analytics
+3. **Leads-Tab** (Formular-Builder + Landingpage-Sync)
+4. **Autoresponder-Tab** (Timeline-Builder)
+5. **Kontakte-Tab** (Abonnenten-Tabelle)
+6. **Mission Control Admin-Analytics** (globales Dashboard + System-Broadcast)
+7. **Navigation + Routing**
 
-### Plan: Client-App auf Instanz-Level bringen
+---
 
-#### Schritt 1 — Client NavigationConfig definieren
-Neue Datei mit der 5A-Struktur, angepasst auf Client-Funktionen:
+### 1. Datenbank-Migration
+
+Sechs neue Tabellen, alle mit RLS (`owner_id = auth.uid()`):
+
+| Tabelle | Zweck |
+|---|---|
+| `email_lists` | Kontaktlisten (name, owner_id, subscriber_count) |
+| `email_subscribers` | Abonnenten (list_id, email, name, status, source, tags) |
+| `email_campaigns` | Kampagnen (subject, content_html, status, list_id, stats: sent/opened/clicked/bounced/unsubscribed) |
+| `email_automations` | Autoresponder-Ketten (name, trigger_type, list_id, is_active) |
+| `email_automation_steps` | Einzelschritte (automation_id, delay_days, subject, content_html, sort_order) |
+| `email_signup_forms` | Lead-Formulare (slug, fields_config, list_id) |
+
+Öffentlicher INSERT auf `email_subscribers` für Signup-Formulare. Admin-Leserechte auf alle Tabellen für Mission Control.
+
+---
+
+### 2. Neue Dateien
+
+Alle unter `src/features/email-marketing/`:
 
 ```text
-directItems:
-  - Dashboard → /client-home
-
-groups:
-  "Meine Pferde"
-    - Pferde → /client-horses
-    - Pferdeakte (dynamisch pro Pferd)
-    - Stallboard → /client-stall
-
-  "Termine & Aufträge"
-    - Buchen → /client-booking
-    - Aufträge → /client-orders
-    - Rechnungen → /client-invoices
-
-  "Kommunikation"
-    - Chat → /client-chat
-    - Benachrichtigungen → /client-notifications
-    - HM Connect → /client-connect
-
-  "Verwaltung"
-    - Berechtigungen → /client-permissions
-    - Standorte → /client-locations
-    - Notfall → /client-notfall
-
-  "Konto"
-    - Profil → /client-profile
-    - Botschafter → /client/botschafter
-    - Hilfe & Support (HelpCenter)
+src/features/email-marketing/
+├── EmailMarketingPage.tsx        ← Hauptseite mit 4 Tabs
+├── tabs/
+│   ├── CampaignsTab.tsx          ← Tabelle + "Neue Kampagne" Button
+│   ├── LeadsTab.tsx              ← Formular-Builder + Sync-Toggle
+│   ├── AutoresponderTab.tsx      ← Timeline-Builder Wrapper
+│   └── ContactsTab.tsx           ← Abonnenten-Tabelle
+├── campaigns/
+│   ├── CampaignEditor.tsx        ← E-Mail-Editor (Subject, HTML, Vorschau)
+│   ├── CampaignDetailModal.tsx   ← Detail-Analytics (4 KPI-Cards + Donut-Chart)
+│   └── CampaignRow.tsx           ← Tabellenzeile mit Mini-Badges
+├── autoresponder/
+│   ├── AutoresponderBuilder.tsx  ← Vertikale Timeline
+│   ├── TriggerCard.tsx           ← Sequenz-Name + Trigger-Dropdown
+│   ├── EmailStepCard.tsx         ← E-Mail-Box auf der Timeline
+│   ├── DelayBlock.tsx            ← Verzögerungs-Badge
+│   ├── EmailEditorModal.tsx      ← Modal für E-Mail-Inhalt
+│   └── types.ts                  ← Interfaces
+├── lead-gen/
+│   ├── LandingpageSyncCard.tsx   ← Toggle + Listen-Dropdown
+│   ├── FormBuilderCard.tsx       ← Feld-Checkboxen + Erstellen-Button
+│   └── FormPreviewCard.tsx       ← Vorschau + Share-Link + Embed-Code
+├── contacts/
+│   └── SubscribersTable.tsx      ← Sortierbare Tabelle mit Filter
+├── public/
+│   └── SignupFormPage.tsx        ← /newsletter/:slug (öffentlich)
+├── admin/
+│   └── AdminEmailAnalytics.tsx   ← Mission Control Tab
+└── hooks/
+    ├── useEmailLists.ts
+    ├── useEmailCampaigns.ts
+    ├── useEmailSubscribers.ts
+    └── useSignupForms.ts
 ```
 
-#### Schritt 2 — ClientAppLayout erstellen
-Neuer Layout-Wrapper analog zu `EmployeeAppLayout`:
-- **Desktop (lg+):** `AppSidebar` links (w-64) + `AppHeader` oben + Content
-- **Mobil:** Hamburger-Header + Bottom-Nav + Sheet-Sidebar
-- **Logout** im Sidebar-Footer (über `AppSidebar`, das `useLogout` bereits integriert hat)
-- Theme-Toggle, Suche, Notification-Bell im Header
+---
 
-#### Schritt 3 — ClientBottomNav erweitern
-- 5 Tabs behalten, aber Logout-Indikator nicht nötig (ist jetzt im Sidebar/Header)
-- Optional: Plus-FAB in der Mitte wie Employee (Quick Actions: Termin buchen, Pferd hinzufügen, Chat)
+### 3. Kampagnen-Tab (Nutzer-Ansicht)
 
-#### Schritt 4 — ClientLayout in App.tsx austauschen
-- `ClientLayout()` (Zeile 826-846) durch `<ClientAppLayout />` ersetzen
-- Alle `/client-*` Routen bleiben gleich, nur das Layout-Wrapper ändert sich
+- **Kopfbereich**: `bg-[#F47B20]` Button "Neue Kampagne erstellen" + Suchfeld
+- **Tabelle**: Name, Status-Badge (Entwurf/Geplant/Gesendet), Datum, Performance (zwei Mini-Badges: Öffnungsrate + Klickrate)
+- **Detail-Modal** bei Klick auf gesendete Kampagne:
+  - 4 KPI-Cards: Gesendet, Geöffnet, Geklickt, Abgemeldet (große schwarze Zahlen)
+  - Donut-Chart in `#F47B20` für Öffnungsrate (Recharts)
+- **Kampagnen-Editor**: Betreff, Absendername, Textarea für HTML-Inhalt, Live-Vorschau, Ziel-Liste wählen
 
-#### Schritt 5 — ClientProfile bereinigen
-- Logout-Card am Ende entfernen (ist jetzt im Sidebar)
-- Header mit ArrowLeft entfernen (Sidebar-Navigation übernimmt)
+---
 
-### Technische Details
+### 4. Mission Control Admin-Analytics
 
-- Wiederverwendung von `AppSidebar` + `MobileAppSidebar` + `AppHeader` — gleiche Shared-Components wie Employee/Partner
-- `useLogout` Hook ist bereits vorhanden und wird vom `AppSidebar` Footer-Button aufgerufen
-- DemoBanner, AIChatWidget, HelpCenterFAB werden in das neue Layout integriert
-- Responsive Breakpoint: `lg:` (1024px) für Sidebar-Sichtbarkeit, konsistent mit allen anderen Instanzen
+Neuer Tab "E-Mail Marketing" in der bestehenden `MissionControl.tsx` TabsList:
 
-### Ergebnis
-Der Client bekommt exakt dieselbe Layout-Architektur wie Provider/Employee/Partner: Desktop-Sidebar mit gruppierten Menüs, mobiler Hamburger + Bottom-Nav, und einen **jederzeit sichtbaren Logout-Button**.
+- **3 Top-KPI-Cards**: Aktive E-Mail-Nutzer, Versendete E-Mails (Gesamt/Monat), Durchschnittliche Öffnungsrate
+- **System-Broadcasts-Tabelle**: Kürzlich gesendete Broadcasts mit Reichweite
+- **System-Broadcast-Formular**: Betreff + Inhalt + Zielgruppen-Auswahl (Provider/Partner/Stallbetreiber) + Senden-Button
+
+---
+
+### 5. Routing-Ergänzungen (App.tsx)
+
+- `/email-marketing` → `EmailMarketingPage` (Provider/Partner/Stallbetreiber)
+- `/newsletter/:slug` → `SignupFormPage` (öffentlich)
+- Mission Control: Neuer Tab in bestehender Route `/admin/mission-control`
+
+---
+
+### 6. Navigation
+
+- **AppSidebar.tsx**: Neuer Eintrag "E-Mail Marketing" (Mail-Icon) im Erweiterungen-Bereich
+- **MissionControl.tsx**: Neuer TabsTrigger "E-Mail" in der TabsList
+
+---
+
+### 7. Design (durchgängig)
+
+- Hintergrund: `bg-[#F5F5F5]`
+- Karten: `bg-white rounded-xl shadow-sm`
+- Text: `text-black`
+- CTA-Buttons: `bg-[#F47B20] hover:bg-[#e06a10] text-white`
+- Charts/Progress: `#F47B20`
+
+---
+
+### Umsetzungsreihenfolge
+
+1. DB-Migration (6 Tabellen + RLS)
+2. Hooks (CRUD für alle Tabellen)
+3. EmailMarketingPage mit 4 Tabs
+4. Kampagnen-Tab + Editor + Detail-Analytics
+5. Leads-Tab (Sync + Formular-Builder)
+6. Autoresponder-Tab (Timeline-Builder)
+7. Kontakte-Tab
+8. Admin-Analytics in Mission Control
+9. Öffentliche Signup-Route
+10. Navigation + Routing
 
