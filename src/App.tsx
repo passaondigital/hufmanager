@@ -881,8 +881,6 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner-support" element={<Support />} />
               <Route path="/partner-rechtliches" element={<PartnerRechtliches />} />
             </Route>
-              <Route path="/partner-rechtliches" element={<PartnerRechtliches />} />
-            </Route>
 
             {/* Fallback für alles andere */}
             <Route path="*" element={<NotFound />} />
