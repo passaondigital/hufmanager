@@ -11,9 +11,12 @@ import { Plus, Mail, Clock, Trash2, GripVertical } from "lucide-react";
 import { useEmailLists } from "../hooks/useEmailLists";
 import type { AutomationStep, AutomationEmailStep, AutomationDelayStep, TriggerType, DelayUnit } from "./types";
 import { TRIGGER_LABELS, DELAY_UNIT_LABELS } from "./types";
+import { TemplatePickerCard } from "./TemplatePickerCard";
+import type { AutomationTemplate } from "./automationTemplates";
 
 export function AutoresponderBuilder() {
   const { lists } = useEmailLists();
+  const [showTemplates, setShowTemplates] = useState(true);
   const [name, setName] = useState("Willkommens-Serie");
   const [triggerType, setTriggerType] = useState<TriggerType>("list_add");
   const [listId, setListId] = useState("");
@@ -25,6 +28,14 @@ export function AutoresponderBuilder() {
   ]);
   const [editingStep, setEditingStep] = useState<AutomationEmailStep | null>(null);
   const [editingDelayId, setEditingDelayId] = useState<string | null>(null);
+
+  const loadTemplate = (template: AutomationTemplate) => {
+    setName(template.name);
+    setTriggerType(template.trigger_type);
+    setSteps(template.steps);
+    setIsActive(false);
+    setShowTemplates(false);
+  };
 
   const addStep = () => {
     const delayId = Date.now().toString() + "-d";
@@ -59,6 +70,15 @@ export function AutoresponderBuilder() {
 
   return (
     <div className="space-y-4">
+      {/* Template Picker */}
+      {showTemplates && (
+        <TemplatePickerCard onSelect={loadTemplate} />
+      )}
+      {!showTemplates && (
+        <Button variant="outline" size="sm" onClick={() => setShowTemplates(true)} className="text-xs">
+          📋 Vorlage wählen
+        </Button>
+      )}
       {/* Trigger Card */}
       <Card className="bg-white rounded-xl shadow-sm">
         <CardContent className="pt-6 space-y-4">
