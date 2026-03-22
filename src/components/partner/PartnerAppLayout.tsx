@@ -105,6 +105,7 @@ const PARTNER_NAV: NavigationConfig = {
     {
       label: "Management",
       items: [
+        { id: "import", label: "Import Center", iconName: "Upload", path: "/partner-import" },
         { id: "management", label: "Management", iconName: "Settings", path: "/partner-management" },
         { id: "support", label: "Hilfe & Support", iconName: "LifeBuoy", path: "/partner-support" },
       ],
