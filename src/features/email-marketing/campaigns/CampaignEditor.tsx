@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2 } from "lucide-react";
 import { useEmailCampaigns } from "../hooks/useEmailCampaigns";
 import { useEmailLists } from "../hooks/useEmailLists";
+import { TemplateSelector, type EmailTemplate } from "./EmailTemplates";
 import { toast } from "sonner";
 
 interface CampaignEditorProps {
@@ -23,6 +24,14 @@ export function CampaignEditor({ campaign, onClose }: CampaignEditorProps) {
   const [listId, setListId] = useState(campaign?.list_id || "");
   const [contentHtml, setContentHtml] = useState(campaign?.content_html || "");
   const [saving, setSaving] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(!campaign && !contentHtml);
+
+  const handleTemplateSelect = (template: EmailTemplate) => {
+    setSubject(template.subject);
+    setContentHtml(template.content_html);
+    if (!name) setName(template.name + " Kampagne");
+    setShowTemplates(false);
+  };
 
   const handleSave = async () => {
     if (!name.trim() || !subject.trim()) return toast.error("Name und Betreff sind Pflichtfelder");
@@ -44,49 +53,64 @@ export function CampaignEditor({ campaign, onClose }: CampaignEditorProps) {
 
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <Label className="text-black">Kampagnen-Name</Label>
-        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="z.B. Sommer-Newsletter" className="bg-white" />
-      </div>
-      <div className="space-y-2">
-        <Label className="text-black">Betreffzeile</Label>
-        <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="z.B. Neuigkeiten aus dem Stall" className="bg-white" />
-      </div>
-      <div className="space-y-2">
-        <Label className="text-black">Absendername</Label>
-        <Input value={senderName} onChange={(e) => setSenderName(e.target.value)} placeholder="z.B. Max Mustermann" className="bg-white" />
-      </div>
-      <div className="space-y-2">
-        <Label className="text-black">Ziel-Liste</Label>
-        <Select value={listId} onValueChange={setListId}>
-          <SelectTrigger className="bg-white"><SelectValue placeholder="Liste auswählen (optional)" /></SelectTrigger>
-          <SelectContent>
-            {lists.map(l => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-2">
-        <Label className="text-black">E-Mail Inhalt (HTML)</Label>
-        <Textarea
-          value={contentHtml}
-          onChange={(e) => setContentHtml(e.target.value)}
-          placeholder="<h1>Hallo!</h1><p>Dein Newsletter...</p>"
-          className="bg-white min-h-[200px] font-mono text-sm"
-        />
-      </div>
-      {contentHtml && (
-        <div className="space-y-2">
-          <Label className="text-black">Vorschau</Label>
-          <div className="border rounded-lg p-4 bg-white max-h-[200px] overflow-y-auto" dangerouslySetInnerHTML={{ __html: contentHtml }} />
-        </div>
+      {/* Template Selector for new campaigns */}
+      {showTemplates && (
+        <TemplateSelector onSelect={handleTemplateSelect} />
       )}
-      <div className="flex gap-2 justify-end pt-2">
-        <Button variant="outline" onClick={onClose}>Abbrechen</Button>
-        <Button className="bg-[#F47B20] hover:bg-[#e06a10] text-white" onClick={handleSave} disabled={saving}>
-          {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-          {campaign ? "Speichern" : "Erstellen"}
-        </Button>
-      </div>
+
+      {!showTemplates && (
+        <>
+          {!campaign && (
+            <Button variant="link" className="text-xs text-muted-foreground p-0 h-auto" onClick={() => setShowTemplates(true)}>
+              ← Vorlage wechseln
+            </Button>
+          )}
+
+          <div className="space-y-2">
+            <Label className="text-black">Kampagnen-Name</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="z.B. Sommer-Newsletter" className="bg-white" />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-black">Betreffzeile</Label>
+            <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="z.B. Neuigkeiten aus dem Stall" className="bg-white" />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-black">Absendername</Label>
+            <Input value={senderName} onChange={(e) => setSenderName(e.target.value)} placeholder="z.B. Max Mustermann" className="bg-white" />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-black">Ziel-Liste</Label>
+            <Select value={listId} onValueChange={setListId}>
+              <SelectTrigger className="bg-white"><SelectValue placeholder="Liste auswählen (optional)" /></SelectTrigger>
+              <SelectContent>
+                {lists.map(l => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-black">E-Mail Inhalt (HTML)</Label>
+            <Textarea
+              value={contentHtml}
+              onChange={(e) => setContentHtml(e.target.value)}
+              placeholder="<h1>Hallo!</h1><p>Dein Newsletter...</p>"
+              className="bg-white min-h-[200px] font-mono text-sm"
+            />
+          </div>
+          {contentHtml && (
+            <div className="space-y-2">
+              <Label className="text-black">Vorschau</Label>
+              <div className="border rounded-lg p-4 bg-white max-h-[200px] overflow-y-auto" dangerouslySetInnerHTML={{ __html: contentHtml }} />
+            </div>
+          )}
+          <div className="flex gap-2 justify-end pt-2">
+            <Button variant="outline" onClick={onClose}>Abbrechen</Button>
+            <Button className="bg-[#F47B20] hover:bg-[#e06a10] text-white" onClick={handleSave} disabled={saving}>
+              {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              {campaign ? "Speichern" : "Erstellen"}
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
