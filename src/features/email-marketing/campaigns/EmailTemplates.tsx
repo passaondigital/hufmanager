@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Mail, Gift, Bell, Sparkles, FileText, Megaphone } from "lucide-react";
+import { Mail, Gift, Bell, Sparkles, FileText, Megaphone, Package } from "lucide-react";
+import { SYSTEM_CAMPAIGN_TEMPLATES } from "./SystemCampaignTemplates";
 
 export interface EmailTemplate {
   id: string;
