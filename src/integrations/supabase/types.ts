@@ -3969,6 +3969,289 @@ export type Database = {
           },
         ]
       }
+      email_automation_steps: {
+        Row: {
+          automation_id: string
+          content_html: string | null
+          created_at: string
+          delay_unit: string | null
+          delay_value: number | null
+          id: string
+          sort_order: number
+          step_type: string
+          subject: string | null
+        }
+        Insert: {
+          automation_id: string
+          content_html?: string | null
+          created_at?: string
+          delay_unit?: string | null
+          delay_value?: number | null
+          id?: string
+          sort_order?: number
+          step_type?: string
+          subject?: string | null
+        }
+        Update: {
+          automation_id?: string
+          content_html?: string | null
+          created_at?: string
+          delay_unit?: string | null
+          delay_value?: number | null
+          id?: string
+          sort_order?: number
+          step_type?: string
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_automation_steps_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "email_automations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_automations: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          list_id: string | null
+          name: string
+          owner_id: string
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          list_id?: string | null
+          name: string
+          owner_id: string
+          trigger_type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          list_id?: string | null
+          name?: string
+          owner_id?: string
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_automations_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "email_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_campaigns: {
+        Row: {
+          content_html: string | null
+          created_at: string
+          id: string
+          list_id: string | null
+          name: string
+          owner_id: string
+          scheduled_at: string | null
+          sender_name: string | null
+          sent_at: string | null
+          stats_bounced: number | null
+          stats_clicked: number | null
+          stats_opened: number | null
+          stats_sent: number | null
+          stats_unsubscribed: number | null
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          content_html?: string | null
+          created_at?: string
+          id?: string
+          list_id?: string | null
+          name: string
+          owner_id: string
+          scheduled_at?: string | null
+          sender_name?: string | null
+          sent_at?: string | null
+          stats_bounced?: number | null
+          stats_clicked?: number | null
+          stats_opened?: number | null
+          stats_sent?: number | null
+          stats_unsubscribed?: number | null
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Update: {
+          content_html?: string | null
+          created_at?: string
+          id?: string
+          list_id?: string | null
+          name?: string
+          owner_id?: string
+          scheduled_at?: string | null
+          sender_name?: string | null
+          sent_at?: string | null
+          stats_bounced?: number | null
+          stats_clicked?: number | null
+          stats_opened?: number | null
+          stats_sent?: number | null
+          stats_unsubscribed?: number | null
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaigns_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "email_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_lists: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          owner_id: string
+          subscriber_count: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          owner_id: string
+          subscriber_count?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+          subscriber_count?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      email_signup_forms: {
+        Row: {
+          button_text: string | null
+          created_at: string
+          fields_config: Json
+          heading_text: string | null
+          id: string
+          list_id: string
+          name: string
+          owner_id: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          button_text?: string | null
+          created_at?: string
+          fields_config?: Json
+          heading_text?: string | null
+          id?: string
+          list_id: string
+          name?: string
+          owner_id: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          button_text?: string | null
+          created_at?: string
+          fields_config?: Json
+          heading_text?: string | null
+          id?: string
+          list_id?: string
+          name?: string
+          owner_id?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_signup_forms_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "email_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          list_id: string
+          postal_code: string | null
+          source: string | null
+          status: string
+          subscribed_at: string
+          tags: string[] | null
+          unsubscribed_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          list_id: string
+          postal_code?: string | null
+          source?: string | null
+          status?: string
+          subscribed_at?: string
+          tags?: string[] | null
+          unsubscribed_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          list_id?: string
+          postal_code?: string | null
+          source?: string | null
+          status?: string
+          subscribed_at?: string
+          tags?: string[] | null
+          unsubscribed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_subscribers_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "email_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       emergency_audit_log: {
         Row: {
           action_type: string
