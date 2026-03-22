@@ -27,6 +27,7 @@ import { FeierabendWaechter } from "@/components/tracking/FeierabendWaechter";
 import { DemoStickyBanner } from "@/components/demo/DemoStickyBanner";
 import { DemoPresentationBanner } from "@/components/demo/DemoPresentationBanner";
 import { TrialCountdownBanner } from "@/components/subscription/TrialCountdownBanner";
+import { SystemAnnouncementBanner } from "@/components/announcements/SystemAnnouncementBanner";
 import { useDemoActivityTracker } from "@/hooks/useDemoActivityTracker";
 import { useAutoflowMode, AutoflowMode } from "@/hooks/useAutoflowMode";
 import { useCockpitFullscreen } from "@/components/day-cockpit/CockpitFullscreenContext";
