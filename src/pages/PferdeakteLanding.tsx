@@ -723,6 +723,127 @@ function SupportersSection() {
 }
 
 /* ═════════════════════════════════════════════════════════════
+   SECTION — NEWSLETTER / NEWS SICHERN
+   ═════════════════════════════════════════════════════════════ */
+function NewsletterSection() {
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+  const r = useReveal();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    const trimmedEmail = email.trim();
+    const trimmedName = name.trim();
+    if (!trimmedEmail) { setError("Bitte gib deine E-Mail ein."); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) { setError("Bitte gib eine gültige E-Mail ein."); return; }
+    setSubmitting(true);
+
+    // 1. Insert into pferdeakte_waitlist (reuse existing table)
+    const { error: dbErr } = await supabase.from("pferdeakte_waitlist").insert({
+      name: trimmedName.substring(0, 80) || "Interessent",
+      email: trimmedEmail.substring(0, 255),
+      role: "news_subscriber",
+      referral_code: generateRef(),
+    });
+
+    if (dbErr) {
+      setSubmitting(false);
+      if (dbErr.code === "23505") { setError("Du bist bereits angemeldet! 🎉"); return; }
+      setError("Ein Fehler ist aufgetreten. Bitte versuche es erneut.");
+      return;
+    }
+
+    // 2. Send confirmation email (fire & forget)
+    supabase.functions.invoke("send-email", {
+      body: {
+        to: trimmedEmail,
+        template: "pferdeakte_news_welcome",
+        variables: { name: trimmedName || "Pferdefreund" },
+      },
+    }).catch(() => {});
+
+    // 3. Notify Mission Control (fire & forget)
+    supabase.functions.invoke("funnel-lead-notify", {
+      body: {
+        lead: {
+          full_name: trimmedName || "Newsletter-Interessent",
+          email: trimmedEmail,
+          topic: "pferdeakte_news",
+          contact_preference: "email",
+          source: "Pferdeakte Landingpage – Newsletter",
+        },
+      },
+    }).catch(() => {});
+
+    setSubmitting(false);
+    setSuccess(true);
+  };
+
+  return (
+    <section className="py-20 md:py-28" style={{ backgroundColor: "#fff7ed" }}>
+      <div ref={r.ref} className={`max-w-lg mx-auto px-6 text-center ${rc(r.visible)}`}>
+        <span className="inline-flex items-center rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider mx-auto mb-4" style={{ backgroundColor: "rgba(249,115,22,.15)", color: "#f97316" }}>
+          ✉️ Pferdeakte News
+        </span>
+        <h2 className="text-3xl md:text-4xl font-extrabold mb-3 leading-tight" style={{ color: "#0a0a0a" }}>
+          Erste News sichern.
+        </h2>
+        <p className="mb-8" style={{ color: "#6b7280" }}>
+          Erhalte exklusive Updates, Feature-Previews und Launch-Infos direkt in dein Postfach — noch vor allen anderen.
+        </p>
+
+        {!success ? (
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <Input
+              placeholder="Vorname (optional)"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="h-12 border-2 bg-white focus-visible:ring-[#f97316] focus-visible:border-[#f97316]"
+              style={{ borderColor: "#e5e7eb" }}
+              maxLength={80}
+            />
+            <Input
+              type="email"
+              placeholder="Deine E-Mail-Adresse *"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="h-12 border-2 bg-white focus-visible:ring-[#f97316] focus-visible:border-[#f97316]"
+              style={{ borderColor: "#e5e7eb" }}
+              maxLength={255}
+            />
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full h-14 rounded-full text-lg font-bold text-white transition-all duration-200 hover:brightness-110 hover:scale-[1.02] hover:shadow-lg disabled:opacity-50"
+              style={{ backgroundColor: "#f97316" }}
+            >
+              {submitting ? "Wird gespeichert..." : "🔔 News sichern – kostenlos"}
+            </button>
+            <p className="text-xs" style={{ color: "#9ca3af" }}>
+              Kein Spam. Jederzeit abmeldbar. Deine Daten bleiben sicher.
+            </p>
+          </form>
+        ) : (
+          <div className="rounded-2xl p-8 border-2 text-center" style={{ borderColor: "#f97316", backgroundColor: "#ffffff" }}>
+            <p className="text-4xl mb-3">🎉</p>
+            <p className="text-xl font-bold mb-2" style={{ color: "#0a0a0a" }}>Du bist dabei!</p>
+            <p style={{ color: "#6b7280" }}>
+              Wir haben dir eine Bestätigung geschickt. Du bekommst ab jetzt alle Pferdeakte-News als Erste*r!
+            </p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/* ═════════════════════════════════════════════════════════════
    SECTION 7 — WAITLIST
    ═════════════════════════════════════════════════════════════ */
 function WaitlistSection({ defaultRef }: { defaultRef: string }) {
