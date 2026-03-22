@@ -103,12 +103,12 @@ export function Mission1MillionWidget() {
             <p className="text-[9px] text-muted-foreground leading-tight">Besitzer</p>
           </div>
           <div className="rounded-lg border border-border bg-muted/20 p-2 text-center">
-            <TrendingUp className="h-3.5 w-3.5 mx-auto mb-0.5 text-green-500" />
+            <TrendingUp className="h-3.5 w-3.5 mx-auto mb-0.5 text-primary" />
             <p className="text-sm font-bold text-foreground">+{stats.new_last_7_days}</p>
             <p className="text-[9px] text-muted-foreground leading-tight">7 Tage</p>
           </div>
           <div className="rounded-lg border border-border bg-muted/20 p-2 text-center">
-            <Target className="h-3.5 w-3.5 mx-auto mb-0.5 text-blue-500" />
+            <Target className="h-3.5 w-3.5 mx-auto mb-0.5 text-accent-foreground" />
             <p className="text-sm font-bold text-foreground">+{stats.new_last_30_days}</p>
             <p className="text-[9px] text-muted-foreground leading-tight">30 Tage</p>
           </div>
