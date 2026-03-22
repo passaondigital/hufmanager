@@ -45,6 +45,7 @@ import {
   Zap,
   DollarSign,
   AlertTriangle,
+  Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -218,6 +219,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
     { title: "Mitarbeiter", icon: UsersRound, locked: !isFeatureVisible('module_team'), url: "/team" },
     { title: "HM Connect", icon: Link2, locked: !isFeatureVisible('module_network'), url: "/hm-connect" },
     { title: "AutoFlow", icon: Zap, locked: false, url: "/autoflow" },
+    { title: "E-Mail Marketing", icon: Mail, locked: false, url: "/email-marketing" },
   ];
 
   // Check if a submenu contains the active route

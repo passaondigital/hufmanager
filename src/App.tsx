@@ -162,6 +162,8 @@ const Buchhaltung = lazy(() => import("@/pages/Buchhaltung"));
 const Fuhrpark = lazy(() => import("@/pages/Fuhrpark"));
 const AutoFlow = lazy(() => import("@/pages/AutoFlow"));
 const Marketplace = lazy(() => import("@/pages/Marketplace"));
+const EmailMarketing = lazy(() => import("@/features/email-marketing/EmailMarketingPage"));
+const SignupFormPage = lazy(() => import("@/features/email-marketing/public/SignupFormPage"));
 const PortalDashboard = lazy(() => import("@/pages/portal/PortalDashboard"));
 const PortalSettings = lazy(() => import("@/pages/portal/PortalSettings"));
 const PortalCalendar = lazy(() => import("@/pages/portal/PortalCalendar"));
@@ -536,6 +538,9 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/statistiken" element={<Statistiken />} />
             <Route path="/tierarzt-finder" element={<TierarztFinder />} />
             
+            {/* Öffentliche Newsletter Signup Formulare */}
+            <Route path="/newsletter/:slug" element={<SignupFormPage />} />
+            
             {/* Vet Portal Routes (accessible from main app too) */}
             <Route path="/vet/dashboard" element={<VetDashboard />} />
             <Route path="/vet/soap" element={<VetSOAPForm />} />
@@ -714,6 +719,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               {/* Meine Website - Provider Website Editor */}
               <Route path="/meine-website" element={<MeineWebsite />} />
               <Route path="/landing-editor" element={<LandingEditor />} />
+              <Route path="/email-marketing" element={<EmailMarketing />} />
             </Route>
 
             {/* --- 3. CLIENT (PFERDEBESITZER) ROUTES --- */}

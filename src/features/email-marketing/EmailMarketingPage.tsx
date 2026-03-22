@@ -1,0 +1,51 @@
+import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Mail, Users, Zap, BookOpen } from "lucide-react";
+import { CampaignsTab } from "./tabs/CampaignsTab";
+import { LeadsTab } from "./tabs/LeadsTab";
+import { AutoresponderTab } from "./tabs/AutoresponderTab";
+import { ContactsTab } from "./tabs/ContactsTab";
+
+export default function EmailMarketingPage() {
+  const [activeTab, setActiveTab] = useState("campaigns");
+
+  return (
+    <div className="min-h-screen bg-[#F5F5F5]">
+      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl font-bold text-black">E-Mail Marketing</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Newsletter, Autoresponder & Lead-Generierung
+          </p>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="bg-white shadow-sm rounded-xl p-1 h-auto flex-wrap">
+            <TabsTrigger value="campaigns" className="gap-2 data-[state=active]:bg-[#F47B20] data-[state=active]:text-white min-h-[40px]">
+              <Mail className="w-4 h-4" />
+              Kampagnen
+            </TabsTrigger>
+            <TabsTrigger value="leads" className="gap-2 data-[state=active]:bg-[#F47B20] data-[state=active]:text-white min-h-[40px]">
+              <Users className="w-4 h-4" />
+              Leads sammeln
+            </TabsTrigger>
+            <TabsTrigger value="autoresponder" className="gap-2 data-[state=active]:bg-[#F47B20] data-[state=active]:text-white min-h-[40px]">
+              <Zap className="w-4 h-4" />
+              Autoresponder
+            </TabsTrigger>
+            <TabsTrigger value="contacts" className="gap-2 data-[state=active]:bg-[#F47B20] data-[state=active]:text-white min-h-[40px]">
+              <BookOpen className="w-4 h-4" />
+              Kontakte
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="campaigns"><CampaignsTab /></TabsContent>
+          <TabsContent value="leads"><LeadsTab /></TabsContent>
+          <TabsContent value="autoresponder"><AutoresponderTab /></TabsContent>
+          <TabsContent value="contacts"><ContactsTab /></TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+}
