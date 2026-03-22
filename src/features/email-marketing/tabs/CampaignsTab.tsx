@@ -141,7 +141,7 @@ export function CampaignsTab() {
 
       {/* Editor Dialog */}
       <Dialog open={editorOpen} onOpenChange={setEditorOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingCampaign ? "Kampagne bearbeiten" : "Neue Kampagne"}</DialogTitle>
           </DialogHeader>
