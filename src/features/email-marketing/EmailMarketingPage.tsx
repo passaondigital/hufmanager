@@ -21,24 +21,29 @@ export default function EmailMarketingPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="bg-white shadow-sm rounded-xl p-1 h-auto flex-wrap">
-            <TabsTrigger value="campaigns" className="gap-2 data-[state=active]:bg-[#F47B20] data-[state=active]:text-white min-h-[40px]">
-              <Mail className="w-4 h-4" />
-              Kampagnen
-            </TabsTrigger>
-            <TabsTrigger value="leads" className="gap-2 data-[state=active]:bg-[#F47B20] data-[state=active]:text-white min-h-[40px]">
-              <Users className="w-4 h-4" />
-              Leads sammeln
-            </TabsTrigger>
-            <TabsTrigger value="autoresponder" className="gap-2 data-[state=active]:bg-[#F47B20] data-[state=active]:text-white min-h-[40px]">
-              <Zap className="w-4 h-4" />
-              Autoresponder
-            </TabsTrigger>
-            <TabsTrigger value="contacts" className="gap-2 data-[state=active]:bg-[#F47B20] data-[state=active]:text-white min-h-[40px]">
-              <BookOpen className="w-4 h-4" />
-              Kontakte
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4 pb-1">
+            <TabsList className="bg-white shadow-sm rounded-xl p-1 h-auto inline-flex min-w-max">
+              <TabsTrigger value="campaigns" className="gap-1.5 data-[state=active]:bg-[#F47B20] data-[state=active]:text-white min-h-[40px] text-xs sm:text-sm px-2.5 sm:px-3">
+                <Mail className="w-4 h-4 shrink-0" />
+                <span className="hidden xs:inline">Kampagnen</span>
+                <span className="xs:hidden">Mails</span>
+              </TabsTrigger>
+              <TabsTrigger value="leads" className="gap-1.5 data-[state=active]:bg-[#F47B20] data-[state=active]:text-white min-h-[40px] text-xs sm:text-sm px-2.5 sm:px-3">
+                <Users className="w-4 h-4 shrink-0" />
+                <span className="hidden xs:inline">Leads sammeln</span>
+                <span className="xs:hidden">Leads</span>
+              </TabsTrigger>
+              <TabsTrigger value="autoresponder" className="gap-1.5 data-[state=active]:bg-[#F47B20] data-[state=active]:text-white min-h-[40px] text-xs sm:text-sm px-2.5 sm:px-3">
+                <Zap className="w-4 h-4 shrink-0" />
+                <span className="hidden sm:inline">Autoresponder</span>
+                <span className="sm:hidden">Auto</span>
+              </TabsTrigger>
+              <TabsTrigger value="contacts" className="gap-1.5 data-[state=active]:bg-[#F47B20] data-[state=active]:text-white min-h-[40px] text-xs sm:text-sm px-2.5 sm:px-3">
+                <BookOpen className="w-4 h-4 shrink-0" />
+                Kontakte
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="campaigns"><CampaignsTab /></TabsContent>
           <TabsContent value="leads"><LeadsTab /></TabsContent>

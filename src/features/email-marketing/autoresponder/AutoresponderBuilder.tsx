@@ -97,14 +97,14 @@ export function AutoresponderBuilder() {
       </Card>
 
       {/* Timeline */}
-      <div className="relative pl-6">
+      <div className="relative pl-8 sm:pl-10">
         {/* Vertical Line */}
-        <div className="absolute left-[19px] top-0 bottom-0 w-0.5 bg-gray-300" />
+        <div className="absolute left-[15px] sm:left-[19px] top-0 bottom-0 w-0.5 bg-gray-300" />
 
         {steps.map((step, idx) => (
           <div key={step.id} className="relative mb-4">
             {/* Timeline dot */}
-            <div className={`absolute -left-6 top-3 w-4 h-4 rounded-full border-2 border-white shadow ${
+            <div className={`absolute -left-[17px] sm:-left-[21px] top-3 w-4 h-4 rounded-full border-2 border-white shadow ${
               step.type === "email" ? "bg-[#F47B20]" : "bg-gray-400"
             }`} />
 
@@ -121,33 +121,33 @@ export function AutoresponderBuilder() {
               </div>
             ) : (
               /* Email Step Card */
-              <Card className="bg-white rounded-xl shadow-sm ml-2">
+              <Card className="bg-white rounded-xl shadow-sm">
                 <CardContent className="pt-4 pb-3">
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <Mail className="w-4 h-4 text-[#F47B20] shrink-0" />
-                        <span className="font-medium text-black truncate">
+                        <span className="font-medium text-black truncate text-sm">
                           {(step as AutomationEmailStep).subject || "Kein Betreff"}
                         </span>
                       </div>
                       {(step as AutomationEmailStep).content_html && (
                         <p className="text-xs text-muted-foreground truncate ml-6">
-                          {(step as AutomationEmailStep).content_html.replace(/<[^>]*>/g, "").slice(0, 80)}
+                          {(step as AutomationEmailStep).content_html.replace(/<[^>]*>/g, "").slice(0, 60)}
                         </p>
                       )}
                     </div>
-                    <div className="flex gap-1 shrink-0">
+                    <div className="flex gap-1 shrink-0 ml-6 sm:ml-0">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setEditingStep(step as AutomationEmailStep)}
-                        className="text-xs"
+                        className="text-xs h-7"
                       >
-                        E-Mail bearbeiten
+                        Bearbeiten
                       </Button>
                       {idx > 0 && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeStep(step.id)}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeStep(step.id)}>
                           <Trash2 className="w-3.5 h-3.5 text-destructive" />
                         </Button>
                       )}
@@ -161,16 +161,16 @@ export function AutoresponderBuilder() {
 
         {/* Add Button */}
         <div className="relative">
-          <div className="absolute -left-6 top-2 w-4 h-4 rounded-full bg-[#F47B20] border-2 border-white shadow flex items-center justify-center">
+          <div className="absolute -left-[17px] sm:-left-[21px] top-2 w-4 h-4 rounded-full bg-[#F47B20] border-2 border-white shadow flex items-center justify-center">
             <Plus className="w-2.5 h-2.5 text-white" />
           </div>
           <Button
             onClick={addStep}
-            className="bg-[#F47B20] hover:bg-[#e06a10] text-white rounded-full ml-2"
+            className="bg-[#F47B20] hover:bg-[#e06a10] text-white rounded-full"
             size="sm"
           >
             <Plus className="w-4 h-4 mr-1" />
-            E-Mail hinzufügen
+            Hinzufügen
           </Button>
         </div>
       </div>

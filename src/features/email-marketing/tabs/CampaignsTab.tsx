@@ -84,10 +84,10 @@ export function CampaignsTab() {
             <TableBody>
               {filtered.map((c) => (
                 <TableRow key={c.id} className="cursor-pointer hover:bg-gray-50" onClick={() => c.status === 'sent' && setDetailCampaign(c)}>
-                  <TableCell>
+                  <TableCell className="max-w-[140px] sm:max-w-none">
                     <div>
-                      <p className="font-medium text-black">{c.name}</p>
-                      <p className="text-xs text-muted-foreground">{c.subject}</p>
+                      <p className="font-medium text-black text-sm truncate">{c.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{c.subject}</p>
                     </div>
                   </TableCell>
                   <TableCell>{statusBadge(c.status)}</TableCell>
@@ -108,15 +108,15 @@ export function CampaignsTab() {
                       <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
+                  <TableCell className="p-2">
+                    <div className="flex gap-0.5">
                       {c.status === 'sent' && (
-                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setDetailCampaign(c); }}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); setDetailCampaign(c); }}>
                           <Eye className="w-4 h-4" />
                         </Button>
                       )}
                       {c.status === 'draft' && (
-                        <Button variant="ghost" size="icon" onClick={(e) => {
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => {
                           e.stopPropagation();
                           setEditingCampaign(c);
                           setEditorOpen(true);
@@ -124,7 +124,7 @@ export function CampaignsTab() {
                           <Eye className="w-4 h-4" />
                         </Button>
                       )}
-                      <Button variant="ghost" size="icon" onClick={(e) => {
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => {
                         e.stopPropagation();
                         deleteCampaign.mutate(c.id, { onSuccess: () => toast.success("Kampagne gelöscht") });
                       }}>
