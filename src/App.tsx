@@ -789,6 +789,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/stall/chat" element={<ClientChat />} />
               <Route path="/stall/marketplace" element={<ClientMarketplace />} />
               <Route path="/stall/settings" element={<StallPlaceholder />} />
+              <Route path="/stall/import" element={<ImportCenter />} />
               <Route path="/stall/profil" element={<ClientProfile />} />
               <Route path="/stall/support" element={<Support />} />
             </Route>
