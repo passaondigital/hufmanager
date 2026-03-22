@@ -1,40 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  History, Image, Activity, FileText, Camera, Clock, Users, Syringe, Footprints, 
-  ChevronDown, ChevronUp, Info, FolderOpen
-} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Card, CardContent } from "@/components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { cn } from "@/lib/utils";
-
-import { TabSteckbrief } from "@/components/horse-detail/TabSteckbrief";
-import { TabHistorie } from "@/components/horse-detail/TabHistorie";
-import { TabMediaVault } from "@/components/horse-detail/TabMediaVault";
-import { TabGesundheit } from "@/components/horse-detail/TabGesundheit";
-import { TabDokumente } from "@/components/horse-detail/TabDokumente";
-import { TabHufHistorie } from "@/components/horse-detail/TabHufHistorie";
-import { TabImpfungEntwurmung } from "@/components/horse-detail/TabImpfungEntwurmung";
-import { TabAktivitaeten } from "@/components/horse-detail/TabAktivitaeten";
-import { EditHorseModal } from "@/components/horse-detail/EditHorseModal";
-import { LTZAnalysisHistory } from "@/components/hoof-analysis/LTZAnalysisHistory";
-import { HufCamPro } from "@/components/hufcam/HufCamPro";
-import { HoofStatusGrid } from "@/components/horse-detail/HoofStatusGrid";
-import { HoofPhotoTimeline } from "@/components/horse-detail/HoofPhotoTimeline";
-import { HorsePartnerPanel } from "@/components/horse-detail/HorsePartnerPanel";
-import { HorseDetailHero } from "@/components/horse-detail/HorseDetailHero";
-import { HorseDetailStats } from "@/components/horse-detail/HorseDetailStats";
 import { logHorseAction } from "@/utils/auditLog";
-import type { Horse, Appointment, HoofPhoto, HorseDocument, HoofDetails } from "@/components/horse-detail/types";
-import { HorseProfileCompleteness } from "@/components/horse-detail/HorseProfileCompleteness";
-import { HorseMaterialHistory } from "@/components/horse-detail/HorseMaterialHistory";
+import { EditHorseModal } from "@/components/horse-detail/EditHorseModal";
+import { HorseProfileDashboard } from "@/components/horse-profile";
 import { Pferdeakte } from "@/components/pferdeakte";
-import { BookOpen } from "lucide-react";
+import { HufCamPro } from "@/components/hufcam/HufCamPro";
+import type { Horse, Appointment, HoofPhoto, HorseDocument } from "@/components/horse-detail/types";
 
 interface OwnerProfile {
   id: string;
@@ -43,28 +19,12 @@ interface OwnerProfile {
   phone: string | null;
 }
 
-const TABS = [
-  { value: "historie", label: "Historie", icon: Clock },
-  { value: "pferdeakte", label: "Akte", icon: BookOpen },
-  { value: "steckbrief", label: "Steckbrief", icon: FileText },
-  { value: "foto-timeline", label: "Fotos", icon: Camera },
-  { value: "huf-doku", label: "HufCam", icon: Camera },
-  { value: "huf-historie", label: "Huf", icon: Footprints },
-  { value: "medien", label: "Medien", icon: Image },
-  { value: "gesundheit", label: "Gesundheit", icon: Activity },
-  { value: "impfung-entwurmung", label: "Impfung", icon: Syringe },
-  { value: "dokumente", label: "Doku", icon: FolderOpen },
-  { value: "partner", label: "Partner", icon: Users },
-  { value: "material", label: "Material", icon: Activity },
-  { value: "aktivitaeten", label: "Aktivitäten", icon: Activity },
-] as const;
-
 export default function ProviderHorseDetail() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  
+
   const [horse, setHorse] = useState<Horse | null>(null);
   const [owner, setOwner] = useState<OwnerProfile | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -72,108 +32,17 @@ export default function ProviderHorseDetail() {
   const [documents, setDocuments] = useState<HorseDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
-  
-  const defaultTab = searchParams.get("tab") || "pferdeakte";
-  const [activeTab, setActiveTab] = useState(defaultTab);
-  const [latestVisitExpanded, setLatestVisitExpanded] = useState(true);
-
-  // Audit logging on tab change
-  useEffect(() => {
-    if (!id) return;
-    const auditMap: Record<string, string> = {
-      steckbrief: "view_basic",
-      gesundheit: "view_medical",
-      "huf-historie": "view_hoof_history",
-      medien: "view_documents",
-      dokumente: "view_documents",
-      "impfung-entwurmung": "view_vaccinations",
-    };
-    const actionType = auditMap[activeTab];
-    if (actionType) {
-      logHorseAction(id, actionType);
-    }
-  }, [activeTab, id]);
-
-  const fetchHorseData = async () => {
-    if (!user || !id) return;
-    setLoading(true);
-
-    try {
-      const { data: horseData, error: horseError } = await supabase
-        .from("horses")
-        .select("*")
-        .eq("id", id)
-        .is("deleted_at", null)
-        .maybeSingle();
-
-      if (horseError) throw horseError;
-      if (!horseData) {
-        toast.error("Pferd nicht gefunden");
-        navigate("/");
-        return;
-      }
-
-      const hasAccess = await verifyProviderAccess(horseData.owner_id);
-      if (!hasAccess) {
-        toast.error("Keine Berechtigung für dieses Pferd");
-        navigate("/");
-        return;
-      }
-
-      setHorse(horseData as unknown as Horse);
-
-      const { data: ownerData } = await supabase
-        .from("profiles")
-        .select("id, full_name, email, phone")
-        .eq("id", horseData.owner_id)
-        .single();
-      
-      setOwner(ownerData);
-
-      const { data: appointmentsData } = await supabase
-        .from("appointments")
-        .select("*")
-        .eq("horse_id", id)
-        .eq("provider_id", user.id)
-        .order("date", { ascending: false });
-
-      setAppointments((appointmentsData || []) as Appointment[]);
-
-      const { data: hoofPhotosData } = await supabase
-        .from("hoof_photos")
-        .select("*")
-        .eq("horse_id", id)
-        .order("taken_at", { ascending: false });
-
-      setHoofPhotos((hoofPhotosData || []) as HoofPhoto[]);
-
-      const { data: documentsData } = await supabase
-        .from("horse_documents")
-        .select("*")
-        .eq("horse_id", id)
-        .order("created_at", { ascending: false });
-
-      setDocuments((documentsData || []) as HorseDocument[]);
-
-    } catch (error: any) {
-      console.error("Error fetching horse data:", error);
-      toast.error("Fehler beim Laden der Daten");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [showAkte, setShowAkte] = useState(false);
+  const [showHufCam, setShowHufCam] = useState(false);
 
   const verifyProviderAccess = async (ownerId: string): Promise<boolean> => {
     if (!user) return false;
-
     const { data: profile } = await supabase
       .from("profiles")
       .select("created_by_provider_id")
       .eq("id", ownerId)
       .single();
-
     if (profile?.created_by_provider_id === user.id) return true;
-
     const { data: grant } = await supabase
       .from("access_grants")
       .select("id")
@@ -182,47 +51,88 @@ export default function ProviderHorseDetail() {
       .eq("is_active", true)
       .in("status", ["active", "pending"])
       .maybeSingle();
-
     return !!grant;
   };
 
-  useEffect(() => {
-    if (user && id) {
-      fetchHorseData();
+  const fetchHorseData = async () => {
+    if (!user || !id) return;
+    setLoading(true);
+    try {
+      const { data: horseData, error } = await supabase
+        .from("horses")
+        .select("*")
+        .eq("id", id)
+        .is("deleted_at", null)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!horseData) { toast.error("Pferd nicht gefunden"); navigate("/"); return; }
+
+      const hasAccess = await verifyProviderAccess(horseData.owner_id);
+      if (!hasAccess) { toast.error("Keine Berechtigung"); navigate("/"); return; }
+
+      setHorse(horseData as unknown as Horse);
+
+      const { data: ownerData } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, phone")
+        .eq("id", horseData.owner_id)
+        .single();
+      setOwner(ownerData);
+
+      const [apptRes, photoRes, docRes] = await Promise.all([
+        supabase.from("appointments").select("*").eq("horse_id", id).eq("provider_id", user.id).order("date", { ascending: false }),
+        supabase.from("hoof_photos").select("*").eq("horse_id", id).order("taken_at", { ascending: false }),
+        supabase.from("horse_documents").select("*").eq("horse_id", id).order("created_at", { ascending: false }),
+      ]);
+
+      setAppointments((apptRes.data || []) as Appointment[]);
+      setHoofPhotos((photoRes.data || []) as HoofPhoto[]);
+      setDocuments((docRes.data || []) as HorseDocument[]);
+    } catch (err: any) {
+      console.error("Error fetching horse data:", err);
+      toast.error("Fehler beim Laden");
+    } finally {
+      setLoading(false);
     }
-  }, [user, id]);
+  };
+
+  useEffect(() => { if (user && id) fetchHorseData(); }, [user, id]);
 
   useEffect(() => {
-    const tabParam = searchParams.get("tab");
-    if (tabParam) {
-      setActiveTab(tabParam);
-    }
+    if (id) logHorseAction(id, "view_basic");
+  }, [id]);
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "pferdeakte") setShowAkte(true);
+    if (tab === "huf-doku") setShowHufCam(true);
   }, [searchParams]);
+
+  const handleHorseUpdate = useCallback((updated: Horse) => setHorse(updated), []);
+
+  const handleAction = useCallback((action: string) => {
+    switch (action) {
+      case "hufcam": setShowHufCam(true); break;
+      case "befund": case "new-befund": setShowAkte(true); break;
+      case "termin": navigate("/calendar"); break;
+      case "show-photos": setShowAkte(true); break;
+      case "show-docs": setShowAkte(true); break;
+      case "compare-health": setShowAkte(true); break;
+      default: break;
+    }
+  }, [navigate]);
 
   if (authLoading || loading) {
     return (
       <div className="space-y-4 animate-fade-in">
-        <div className="rounded-2xl bg-card p-5 space-y-4">
-          <Skeleton className="h-5 w-20" />
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-[72px] w-[72px] rounded-full" />
-            <div className="space-y-2 flex-1">
-              <Skeleton className="h-7 w-40" />
-              <Skeleton className="h-4 w-56" />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Skeleton className="h-6 w-16 rounded-full" />
-            <Skeleton className="h-6 w-20 rounded-full" />
-          </div>
-        </div>
+        <Skeleton className="h-40 w-full rounded-2xl" />
         <div className="grid grid-cols-3 gap-2">
-          <Skeleton className="h-20 rounded-xl" />
-          <Skeleton className="h-20 rounded-xl" />
-          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-16 rounded-xl" />
+          <Skeleton className="h-16 rounded-xl" />
+          <Skeleton className="h-16 rounded-xl" />
         </div>
-        <Skeleton className="h-10 w-full rounded-lg" />
-        <Skeleton className="h-64 w-full rounded-xl" />
+        <Skeleton className="h-32 rounded-xl" />
       </div>
     );
   }
@@ -232,177 +142,77 @@ export default function ProviderHorseDetail() {
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">Pferd nicht gefunden</p>
-          <Button onClick={() => navigate("/")}>Zurück zum Dashboard</Button>
+          <Button onClick={() => navigate("/")}>Zurück</Button>
         </div>
       </div>
     );
   }
 
-  const latestAppointment = appointments[0];
+  // HufCam sub-view
+  if (showHufCam) {
+    return (
+      <div className="space-y-4 animate-fade-in">
+        <button onClick={() => setShowHufCam(false)} className="text-xs text-muted-foreground hover:text-primary">
+          ← Zurück zur Übersicht
+        </button>
+        <h3 className="text-lg font-semibold text-foreground">HufCam Pro</h3>
+        <HufCamPro
+          horseName={horse.name}
+          horseId={horse.id}
+          onCollageGenerated={() => toast.success("Collage erstellt")}
+        />
+      </div>
+    );
+  }
+
+  // Full Akte sub-view
+  if (showAkte) {
+    return (
+      <div className="space-y-4 animate-fade-in">
+        <button onClick={() => setShowAkte(false)} className="text-xs text-muted-foreground hover:text-primary">
+          ← Zurück zur Übersicht
+        </button>
+        <Pferdeakte horseId={horse.id} userRole="provider" horse={horse as any} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Hero Banner */}
-      <HorseDetailHero horse={horse} />
-
-      {/* Stats Row - overlaps hero */}
-      <HorseDetailStats
-        appointmentsCount={appointments.length}
-        hoofPhotosCount={hoofPhotos.length}
-        documentsCount={documents.length}
-      />
-      {/* Profile Completeness */}
-      <HorseProfileCompleteness horse={horse} onEditClick={() => setShowEditModal(true)} />
-
-      {/* Hoof Status Grid */}
-      <HoofStatusGrid
-        hoofDetails={horse.hoof_details as HoofDetails}
-        lastAppointmentDate={horse.last_appointment_date || latestAppointment?.date}
-        shoeingInterval={horse.shoeing_interval}
-        horseName={horse.name}
+      <HorseProfileDashboard
+        horse={horse}
         horseId={horse.id}
-      />
-
-      {/* Latest Visit Quick View */}
-      {activeTab === "historie" && latestAppointment && (
-        <Collapsible open={latestVisitExpanded} onOpenChange={setLatestVisitExpanded}>
-          <Card className="border-primary/30 bg-primary/5">
-            <CollapsibleTrigger asChild>
-              <CardContent className="p-4 cursor-pointer hover:bg-primary/10 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-primary font-medium uppercase tracking-wide">Letzter Besuch</p>
-                    <p className="font-semibold text-foreground">
-                      {new Date(latestAppointment.date).toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" })}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{latestAppointment.service_type || "Allgemeiner Termin"}</p>
-                  </div>
-                  {latestVisitExpanded ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
-                </div>
-              </CardContent>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="pt-0 px-4 pb-4 border-t border-border/50">
-                {latestAppointment.notes ? (
-                  <div className="mt-3">
-                    <p className="text-xs text-muted-foreground mb-1">Notizen:</p>
-                    <p className="text-sm text-foreground">{latestAppointment.notes}</p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground mt-3 italic">Keine Notizen vorhanden</p>
-                )}
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-      )}
-
-      {/* Scrollable Tab Navigation */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border -mx-4 px-4 sm:-mx-6 sm:px-6">
-        <div className="flex overflow-x-auto gap-1 py-3 scrollbar-hide">
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.value;
-            return (
-              <button
-                key={tab.value}
-                onClick={() => setActiveTab(tab.value)}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors flex-shrink-0",
-                  isActive
-                    ? "bg-primary/15 text-primary border border-primary/30 font-medium"
-                    : "text-muted-foreground hover:bg-secondary"
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Tab Contents */}
-      <div className="min-h-[200px]">
-        {activeTab === "historie" && (
-          <TabHistorie appointments={appointments} horseId={horse.id} />
-        )}
-        {activeTab === "steckbrief" && (
-          <TabSteckbrief horse={horse} onEdit={() => setShowEditModal(true)} />
-        )}
-        {activeTab === "foto-timeline" && (
-          <HoofPhotoTimeline horseId={horse.id} horseName={horse.name} />
-        )}
-        {activeTab === "huf-doku" && (
-          <div className="space-y-4">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-foreground">HufCam Pro</h3>
-              <p className="text-sm text-muted-foreground">Fotografiere alle 4 Hufe mit dem geführten Wizard</p>
-            </div>
-            <HufCamPro 
-              horseName={horse.name}
-              horseId={horse.id}
-              onCollageGenerated={() => toast.success("Collage erfolgreich erstellt")}
-            />
+        role="provider"
+        appointments={appointments}
+        hoofPhotos={hoofPhotos}
+        documents={documents}
+        onHorseUpdate={handleHorseUpdate}
+        onAction={handleAction}
+      >
+        {/* Besitzer-Info */}
+        {owner && (
+          <div className="rounded-xl border border-border bg-card p-3">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Besitzer</p>
+            <p className="text-sm font-medium text-foreground">{owner.full_name || owner.email}</p>
+            {owner.phone && <p className="text-xs text-muted-foreground">{owner.phone}</p>}
           </div>
         )}
-        {activeTab === "huf-historie" && (
-          <TabHufHistorie horseId={horse.id} horseName={horse.name} />
-        )}
-        {activeTab === "medien" && (
-          <TabMediaVault horseId={horse.id} />
-        )}
-        {activeTab === "gesundheit" && (
-          <>
-            <TabGesundheit horse={horse} onEdit={() => setShowEditModal(true)} />
-            <div className="mt-6">
-              <LTZAnalysisHistory 
-                horseId={horse.id} 
-                horseName={horse.name}
-                ownerName={owner?.full_name || undefined}
-              />
-            </div>
-          </>
-        )}
-        {activeTab === "impfung-entwurmung" && (
-          <TabImpfungEntwurmung horseId={horse.id} />
-        )}
-        {activeTab === "dokumente" && (
-          <TabDokumente 
-            horseId={horse.id} 
-            documents={documents} 
-            hoofPhotos={hoofPhotos}
-            onRefresh={fetchHorseData}
-          />
-        )}
-        {activeTab === "partner" && (
-          <HorsePartnerPanel
-            horseId={horse.id}
-            horseName={horse.name}
-            inviterRole="provider"
-          />
-        )}
-        {activeTab === "material" && (
-          <HorseMaterialHistory horseId={horse.id} />
-        )}
-        {activeTab === "pferdeakte" && (
-          <Pferdeakte horseId={horse.id} userRole="provider" horse={horse as any} />
-        )}
-        {activeTab === "aktivitaeten" && (
-          <TabAktivitaeten horseId={horse.id} />
-        )}
-      </div>
 
-      {/* Edit Modal */}
+        {/* Akte Quick-Access */}
+        <button
+          onClick={() => setShowAkte(true)}
+          className="w-full py-3 rounded-xl bg-primary/10 border border-primary/20 text-primary text-sm font-semibold hover:bg-primary/15 transition-colors"
+        >
+          📋 Vollständige Pferdeakte öffnen
+        </button>
+      </HorseProfileDashboard>
+
       {showEditModal && (
         <EditHorseModal
           horse={horse}
           open={showEditModal}
           onClose={() => setShowEditModal(false)}
-          onSaved={() => {
-            setShowEditModal(false);
-            fetchHorseData();
-          }}
+          onSaved={() => { setShowEditModal(false); fetchHorseData(); }}
         />
       )}
     </div>
