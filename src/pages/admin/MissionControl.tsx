@@ -87,6 +87,7 @@ import { AdminContractManager } from "@/components/admin/AdminContractManager";
 import { AdminTransfersOverview } from "@/components/admin/AdminTransfersOverview";
 import { isDemoEmail } from "@/lib/demo-accounts";
 import { PlatformSuccession } from "@/components/admin/PlatformSuccession";
+import { AdminEmailAnalytics } from "@/features/email-marketing/admin/AdminEmailAnalytics";
 
 // Horse icon fallback since lucide doesn't have it
 const Horse = () => (
