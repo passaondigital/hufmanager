@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 const LAUNCH_DATE = new Date("2026-04-01T00:00:00");
 const DISMISS_KEY = "hm_botschafter_dismissed";
 const SESSION_KEY = "hm_botschafter_reminder_shown";
+const COOLDOWN_KEY = "hm_botschafter_reminder_cooldown";
+const COOLDOWN_DAYS = 3;
 
 function getDaysUntilLaunch(): number {
   const now = new Date();
@@ -51,6 +53,8 @@ export function BotschafterReminder() {
     if (path.startsWith("/botschafter") || path.startsWith("/pferdeakte")) return;
     if (localStorage.getItem(DISMISS_KEY) === "true") return;
     if (sessionStorage.getItem(SESSION_KEY) === "true") return;
+    const cooldownUntil = localStorage.getItem(COOLDOWN_KEY);
+    if (cooldownUntil && Date.now() < Number(cooldownUntil)) return;
 
     supabase
       .from("pferdeakte_botschafter")
@@ -74,6 +78,8 @@ export function BotschafterReminder() {
 
   const handleClose = useCallback(() => {
     sessionStorage.setItem(SESSION_KEY, "true");
+    const cooldownUntil = Date.now() + COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
+    localStorage.setItem(COOLDOWN_KEY, String(cooldownUntil));
     setAnimateOut(true);
     setTimeout(() => setVisible(false), 300);
   }, []);
@@ -252,6 +258,8 @@ export function useBotschafterReminderVisible(): boolean {
     if (path.startsWith("/botschafter") || path.startsWith("/pferdeakte")) return;
     if (localStorage.getItem(DISMISS_KEY) === "true") return;
     if (sessionStorage.getItem(SESSION_KEY) === "true") return;
+    const cooldownUntil = localStorage.getItem(COOLDOWN_KEY);
+    if (cooldownUntil && Date.now() < Number(cooldownUntil)) return;
 
     supabase
       .from("pferdeakte_botschafter")
