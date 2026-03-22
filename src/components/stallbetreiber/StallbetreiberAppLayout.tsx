@@ -17,6 +17,7 @@ import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { SpeedDialFAB } from "@/components/layout/SpeedDialFAB";
+import { SystemAnnouncementBanner } from "@/components/announcements/SystemAnnouncementBanner";
 import {
   Sheet as QuickSheet,
   SheetContent as QuickSheetContent,
