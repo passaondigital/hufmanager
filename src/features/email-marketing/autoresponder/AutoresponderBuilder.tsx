@@ -70,6 +70,15 @@ export function AutoresponderBuilder() {
 
   return (
     <div className="space-y-4">
+      {/* Template Picker */}
+      {showTemplates && (
+        <TemplatePickerCard onSelect={loadTemplate} />
+      )}
+      {!showTemplates && (
+        <Button variant="outline" size="sm" onClick={() => setShowTemplates(true)} className="text-xs">
+          📋 Vorlage wählen
+        </Button>
+      )}
       {/* Trigger Card */}
       <Card className="bg-white rounded-xl shadow-sm">
         <CardContent className="pt-6 space-y-4">
