@@ -76,6 +76,7 @@ const NAV_ITEMS: Record<string, { label: string; icon: React.ElementType; path: 
     { label: "Analytics", icon: BarChart3, path: "/analytics" },
     { label: "Team", icon: Users, path: "/team" },
     { label: "HM Connect", icon: Link2, path: "/connect" },
+    { label: "Import Center", icon: Upload, path: "/import" },
     { label: "Management", icon: Wrench, path: "/management" },
     { label: "Einstellungen", icon: Settings, path: "/settings" },
   ],
