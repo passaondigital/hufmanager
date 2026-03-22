@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,10 +22,12 @@ import {
   Briefcase,
   Truck,
   UserPlus,
+  Wand2,
 } from "lucide-react";
 import MagicLinkSection from "@/components/import/MagicLinkSection";
 import ContactPickerSection from "@/components/import/ContactPickerSection";
 import UniversalImportSection from "@/components/import/UniversalImportSection";
+import ImportWizard from "@/components/import/ImportWizard";
 
 const ImportCenter = () => {
   const { user } = useAuth();
@@ -64,11 +66,15 @@ const ImportCenter = () => {
       </Card>
 
       {/* Import Methods */}
-      <Tabs defaultValue="import" className="space-y-6">
-        <TabsList className="grid grid-cols-3 w-full max-w-lg">
+      <Tabs defaultValue="wizard" className="space-y-6">
+        <TabsList className="grid grid-cols-4 w-full max-w-xl">
+          <TabsTrigger value="wizard" className="gap-2">
+            <Wand2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Assistent</span>
+          </TabsTrigger>
           <TabsTrigger value="import" className="gap-2">
             <FileSpreadsheet className="h-4 w-4" />
-            <span className="hidden sm:inline">Datenimport</span>
+            <span className="hidden sm:inline">Direkt</span>
           </TabsTrigger>
           <TabsTrigger value="magic-link" className="gap-2">
             <Link2 className="h-4 w-4" />
@@ -79,6 +85,14 @@ const ImportCenter = () => {
             <span className="hidden sm:inline">Telefonbuch</span>
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="wizard">
+          <Card>
+            <CardContent className="pt-6">
+              <ImportWizard />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="import">
           <UniversalImportSection />
