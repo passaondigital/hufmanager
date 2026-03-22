@@ -195,6 +195,9 @@ export function StallbetreiberAppLayout() {
           <AppHeader />
         </div>
 
+        {/* System Announcements */}
+        <SystemAnnouncementBanner />
+
         {/* Main content */}
         <main className="flex-1 overflow-auto px-4 py-4 lg:p-6 pb-bottom-nav overflow-x-hidden">
           <ErrorBoundary name="StallbetreiberApp">
