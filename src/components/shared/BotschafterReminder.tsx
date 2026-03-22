@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 const LAUNCH_DATE = new Date("2026-04-01T00:00:00");
 const DISMISS_KEY = "hm_botschafter_dismissed";
 const SESSION_KEY = "hm_botschafter_reminder_shown";
+const COOLDOWN_KEY = "hm_botschafter_reminder_cooldown";
+const COOLDOWN_DAYS = 3;
 
 function getDaysUntilLaunch(): number {
   const now = new Date();
