@@ -142,7 +142,7 @@ const PartnerKunden = () => {
       return;
     }
     if (!newClient.email.trim()) {
-      toast({ title: "E-Mail ist ein Pflichtfeld", variant: "destructive" });
+      toast.error("E-Mail ist ein Pflichtfeld");
       return;
     }
     // Basic email validation
