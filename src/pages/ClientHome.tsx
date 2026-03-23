@@ -9,8 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  LogOut, Plus, MessageSquare, Moon, Sun, Scissors, Phone,
-  Camera, Calendar, ChevronRight, Sparkles,
+  Plus, MessageSquare, Camera, Calendar, ChevronRight, Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
