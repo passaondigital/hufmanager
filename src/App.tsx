@@ -584,10 +584,10 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="settings" element={<PortalSettings />} />
               <Route path="policen" element={<PortalPlaceholder />} />
               <Route path="claims" element={<PortalPlaceholder />} />
-              <Route path="analytics" element={<PortalPlaceholder />} />
-              <Route path="team" element={<PortalPlaceholder />} />
-              <Route path="connect" element={<PortalPlaceholder />} />
-              <Route path="import" element={<PortalPlaceholder />} />
+              <Route path="analytics" element={<PortalAnalytics />} />
+              <Route path="team" element={<PortalTeam />} />
+              <Route path="connect" element={<PortalConnect />} />
+              <Route path="import" element={<PortalImport />} />
               <Route path="produkte" element={<PortalPlaceholder />} />
               <Route path="schulungen" element={<PortalPlaceholder />} />
               <Route path="orders" element={<PortalPlaceholder />} />
@@ -595,8 +595,8 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="schueler" element={<PortalPlaceholder />} />
               <Route path="pruefungen" element={<PortalPlaceholder />} />
               <Route path="standards" element={<PortalPlaceholder />} />
-              <Route path="mitglieder" element={<PortalPlaceholder />} />
-              <Route path="statistiken" element={<PortalPlaceholder />} />
+              <Route path="mitglieder" element={<PortalTeam />} />
+              <Route path="statistiken" element={<PortalAnalytics />} />
               <Route path="patienten" element={<PortalPlaceholder />} />
               <Route path="befunde" element={<PortalPlaceholder />} />
               <Route path="impfungen" element={<PortalPlaceholder />} />
