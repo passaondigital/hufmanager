@@ -62,7 +62,7 @@ const EmployeeMaterial = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employee-materials"] });
-      toast({ title: "Verbrauch aktualisiert" });
+      toast.success("Verbrauch aktualisiert");
     },
   });
 
