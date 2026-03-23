@@ -92,10 +92,10 @@ export default function PartnerHome() {
 
       {/* ZONE 2 */}
       <KpiGrid items={[
-        { icon: Heart, label: "Betreute Pferde", value: horseCount, highlight: true },
-        { icon: Calendar, label: "Termine", value: "–", sub: "Anstehend" },
-        { icon: Users, label: "Empfehlungen", value: "–", sub: "Aktiv" },
-        { icon: FileText, label: "Aktivität", value: "–", sub: "Diesen Monat" },
+        { icon: Heart, label: "Pferde", value: horseCount, sub: "zugewiesen", highlight: true },
+        { icon: Calendar, label: "Termine", value: partnerAppointments, sub: "anstehend" },
+        { icon: Users, label: "Empfehlungen", value: "–", sub: "Botschafter" },
+        { icon: Clock, label: "Letzte Aktivität", value: lastActivity ? formatDistanceToNow(new Date(lastActivity), { locale: de, addSuffix: true }) : "–", sub: "" },
       ]} />
 
       {/* ZONE 3 — Widget Grid */}

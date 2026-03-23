@@ -33,7 +33,7 @@ export function NextAppointmentCard({ userId, role, employeeProfileId, onNavigat
         q = q.eq("client_id", userId);
       } else if (role === "provider") {
         q = q.eq("provider_id", userId);
-      } else if (role === "employee" && employeeProfileId) {
+      } else if (role === "employee") {
         q = q.eq("assigned_to_user_id", userId);
       }
 
