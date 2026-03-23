@@ -369,7 +369,7 @@ export default function ClientHome() {
           {user && <ServiceHistoryWidget userId={user.id} />}
         </main>
 
-        <ClientBottomNav />
+        
 
         {/* Modals */}
         <CreateHorseModal open={showCreateModal} onClose={() => setShowCreateModal(false)} onCreated={handleHorseCreated} />
