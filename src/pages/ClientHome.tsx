@@ -239,32 +239,6 @@ export default function ClientHome() {
       {showOnboarding && <ClientOnboarding onComplete={completeOnboarding} />}
 
       <div className="min-h-[100dvh] bg-gradient-to-b from-background via-background to-muted/20 overflow-safe">
-        {/* Header */}
-        <header
-          className="sticky top-0 z-20 bg-background/70 backdrop-blur-xl border-b border-border/50"
-          style={{ paddingTop: "max(env(safe-area-inset-top), 0.5rem)" }}
-        >
-          <div className="px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src="/hufmanager-logo.png" alt="HufManager" className="h-9 w-auto" />
-              <Badge variant="secondary" className="text-xs font-medium hidden sm:flex">
-                <Sparkles className="h-3 w-3 mr-1" />
-                Pferdeportal
-              </Badge>
-            </div>
-            <div className="flex items-center gap-1">
-              <DemoModeIndicator />
-              <DemoTourButton />
-              <NotificationBell />
-              <Button variant="ghost" size="icon" className="h-10 w-10" onClick={toggleTheme}>
-                {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </Button>
-              <Button variant="ghost" size="icon" className="h-10 w-10" onClick={handleLogout}>
-                <LogOut className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-        </header>
 
         {/* Main Content */}
         <main className="px-4 py-6 max-w-lg mx-auto space-y-5 pb-safe" style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom, 0px))" }}>
