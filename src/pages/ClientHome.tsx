@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Plus, MessageSquare, Camera, Calendar, ChevronRight, Sparkles,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+
 import { motion } from "framer-motion";
 
 // Existing components (preserved)
