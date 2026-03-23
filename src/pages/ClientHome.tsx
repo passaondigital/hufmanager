@@ -148,7 +148,7 @@ function ClientKpiGrid({ horses, userId }: { horses: Horse[]; userId?: string })
 }
 
 export default function ClientHome() {
-  const { user, signOut, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { showOnboarding, completeOnboarding } = useOnboarding();
   
   const navigate = useNavigate();
