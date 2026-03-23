@@ -93,11 +93,10 @@ function ClientKpiGrid({ horses, userId }: { horses: Horse[]; userId?: string })
     staleTime: 60_000,
   });
 
-  const { data: healthStatus = "unknown" } = useQuery({
+  const { data: healthStatus = "unknown" as string } = useQuery({
     queryKey: ["client-health-status", userId],
-    queryFn: async () => {
+    queryFn: async (): Promise<string> => {
       if (horses.length === 0) return "none";
-      // Simple heuristic: check if any recent appointments have concerning notes
       return "healthy";
     },
     enabled: !!userId,
