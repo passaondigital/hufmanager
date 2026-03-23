@@ -235,6 +235,16 @@ const StallbetreiberAppLayout = lazy(() => import("@/components/stallbetreiber/S
 // Stallbetreiber pages (lazy)
 const StallDashboard = lazy(() => import("@/pages/stallbetreiber/StallDashboard"));
 const StallPlaceholder = lazy(() => import("@/pages/stallbetreiber/StallPlaceholder"));
+const StallKalender = lazy(() => import("@/pages/stallbetreiber/StallKalender"));
+const StallCockpit = lazy(() => import("@/pages/stallbetreiber/StallCockpit"));
+const StallLager = lazy(() => import("@/pages/stallbetreiber/StallLager"));
+const StallAnfragen = lazy(() => import("@/pages/stallbetreiber/StallAnfragen"));
+const StallAngebote = lazy(() => import("@/pages/stallbetreiber/StallAngebote"));
+const StallLeistungen = lazy(() => import("@/pages/stallbetreiber/StallLeistungen"));
+const StallSettings = lazy(() => import("@/pages/stallbetreiber/StallSettings"));
+const ClientKalender = lazy(() => import("@/pages/client/ClientKalender"));
+const ClientHistorie = lazy(() => import("@/pages/client/ClientHistorie"));
+const ClientDokumente = lazy(() => import("@/pages/client/ClientDokumente"));
 
 // Components
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
