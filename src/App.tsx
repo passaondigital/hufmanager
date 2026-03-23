@@ -319,6 +319,10 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
               <Route path="kalender" element={<PortalCalendar />} />
               <Route path="management" element={<PortalManagementHub />} />
               <Route path="settings" element={<PortalSettings />} />
+              <Route path="analytics" element={<PortalAnalytics />} />
+              <Route path="team" element={<PortalTeam />} />
+              <Route path="connect" element={<PortalConnect />} />
+              <Route path="import" element={<PortalImport />} />
               <Route path="*" element={<PortalPlaceholder />} />
             </Route>
             <Route path="*" element={<PortalLogin mode={portalMode.mode} />} />
