@@ -131,12 +131,20 @@ export function EquidPermissionManager() {
   });
 
   const updatePermission = useMutation({
-    mutationFn: async ({ accessId, key, value }: { accessId: string; key: string; value: boolean }) => {
+    mutationFn: async ({ accessId, key, value, horseId, partnerName }: { accessId: string; key: string; value: boolean; horseId: string; partnerName: string }) => {
       const { error } = await supabase
         .from("horse_partner_access")
         .update({ [key]: value, updated_at: new Date().toISOString() })
         .eq("id", accessId);
       if (error) throw error;
+
+      // DSGVO Audit: Log permission change
+      await logHorseAction(horseId, "permission_changed", {
+        partner_name: partnerName,
+        permission: key,
+        new_value: value,
+        access_id: accessId,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["equid-permissions"] });

@@ -37,21 +37,21 @@ export function EquidChat() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
-  // Load horses the user has access to
+  // Load horses the user has access to — filtered by has_horse_chat_access (DSGVO)
   const { data: horses = [], isLoading: horsesLoading } = useQuery({
     queryKey: ["equid-chat-horses", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
       const allHorses: Horse[] = [];
 
-      // Owned horses
+      // Owned horses (owner always has chat access)
       const { data: owned } = await supabase
         .from("horses")
         .select("id, name, readable_id")
         .eq("owner_id", user.id);
       if (owned) allHorses.push(...owned.map(h => ({ ...h, avatar_url: undefined })));
 
-      // Provider horses (via appointments)
+      // Provider horses (via appointments — provider has implicit access)
       const { data: providerAppts } = await supabase
         .from("appointments")
         .select("horse_id, horses!inner(id, name, readable_id)")
@@ -59,6 +59,40 @@ export function EquidChat() {
         .limit(50);
       if (providerAppts) {
         providerAppts.forEach((a: any) => {
+          const h = a.horses as any;
+          if (h && !allHorses.find(x => x.id === h.id)) {
+            allHorses.push({ id: h.id, name: h.name, readable_id: h.readable_id });
+          }
+        });
+      }
+
+      // Partner horses — ONLY if can_view_chat = true (granular Equid-Rights)
+      const { data: partnerAccess } = await supabase
+        .from("horse_partner_access")
+        .select("horse_id, horses:horse_id (id, name, readable_id)")
+        .eq("partner_profile_id", user.id)
+        .eq("status", "active")
+        .eq("is_active", true)
+        .eq("can_view_chat", true);
+
+      if (partnerAccess) {
+        partnerAccess.forEach((a: any) => {
+          const h = a.horses as any;
+          if (h && !allHorses.find(x => x.id === h.id)) {
+            allHorses.push({ id: h.id, name: h.name, readable_id: h.readable_id });
+          }
+        });
+      }
+
+      // Employee horses — ONLY if can_view = true
+      const { data: empAccess } = await supabase
+        .from("employee_horse_access")
+        .select("horse_id, horses:horse_id (id, name, readable_id)")
+        .eq("employee_id", user.id)
+        .eq("can_view", true);
+
+      if (empAccess) {
+        empAccess.forEach((a: any) => {
           const h = a.horses as any;
           if (h && !allHorses.find(x => x.id === h.id)) {
             allHorses.push({ id: h.id, name: h.name, readable_id: h.readable_id });

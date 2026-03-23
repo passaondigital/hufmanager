@@ -31,28 +31,68 @@ export function DeleteAccountSection() {
 
     setDeleting(true);
     try {
-      // 1. Delete all horses owned by this client (cascades to appointments, hoof_analyses etc.)
+      // ── DSGVO Art. 17 – vollständige Datenlöschung ──
+
+      // 1. Revoke partner/employee access to user's horses (notify stakeholders)
+      const { data: ownedHorses } = await supabase
+        .from("horses").select("id, name").eq("owner_id", user.id);
+      
+      for (const horse of ownedHorses || []) {
+        // Revoke horse_partner_access
+        await supabase.from("horse_partner_access")
+          .update({ is_active: false, status: "revoked", revoked_at: new Date().toISOString() } as any)
+          .eq("horse_id", horse.id).eq("status", "active");
+        // Revoke employee_horse_access
+        await supabase.from("employee_horse_access")
+          .update({ can_view: false, can_edit: false, can_add_notes: false } as any)
+          .eq("horse_id", horse.id);
+        // Delete horse chat channels & messages
+        const { data: channels } = await supabase
+          .from("horse_chat_channels").select("id").eq("horse_id", horse.id);
+        for (const ch of channels || []) {
+          await supabase.from("horse_chat_messages").delete().eq("channel_id", ch.id);
+        }
+        await supabase.from("horse_chat_channels").delete().eq("horse_id", horse.id);
+        // Delete stall_horse_access
+        await (supabase.from("stall_horse_access" as any).delete().eq("horse_owner_id", user.id));
+      }
+
+      // 2. Delete horse_audit_log for owned horses
+      for (const horse of ownedHorses || []) {
+        await supabase.from("horse_audit_log").delete().eq("horse_id", horse.id);
+      }
+
+      // 3. Delete all horses (cascades appointments, hoof_analyses etc.)
       await supabase.from("horses").delete().eq("owner_id", user.id);
 
-      // 2. Delete all access_grants where client
+      // 4. Delete access_grants (both as client AND as provider)
       await supabase.from("access_grants").delete().eq("client_id", user.id);
+      await supabase.from("access_grants").delete().eq("provider_id", user.id);
 
-      // 3. Delete conversations
+      // 5. Delete conversations (both roles)
       await supabase.from("conversations").delete().eq("client_id", user.id);
+      await supabase.from("conversations").delete().eq("provider_id", user.id);
 
-      // 4. Delete client consents
+      // 6. Delete client consents
       await supabase.from("client_consents").delete().eq("client_id", user.id);
 
-      // 5. Delete push subscriptions
+      // 7. Delete push subscriptions
       await supabase.from("push_subscriptions").delete().eq("user_id", user.id);
 
-      // 6. Delete AI chat messages
+      // 8. Delete AI chat messages
       await supabase.from("ai_chat_messages").delete().eq("user_id", user.id);
 
-      // 7. Delete notifications
+      // 9. Delete notifications
       await supabase.from("notifications").delete().eq("user_id", user.id);
 
-      // 8. Soft-delete profile (mark as deleted)
+      // 10. Delete consent_log entries
+      await supabase.from("consent_log" as any).delete().eq("user_id", user.id);
+
+      // 11. Delete client_connections
+      await supabase.from("client_connections").delete().eq("requester_id", user.id);
+      await supabase.from("client_connections").delete().eq("target_id", user.id);
+
+      // 12. Soft-delete profile (anonymize PII, retain structure for referential integrity)
       await supabase
         .from("profiles")
         .update({
@@ -66,6 +106,8 @@ export function DeleteAccountSection() {
           stable_latitude: null,
           stable_longitude: null,
           emergency_contacts: null,
+          avatar_url: null,
+          bio: null,
         })
         .eq("id", user.id);
 

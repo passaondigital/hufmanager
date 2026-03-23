@@ -119,7 +119,17 @@ async function collectStakeholders(horseId: string, excludeUserId: string): Prom
     if (c.owner_id) userIds.add(c.owner_id);
   });
 
-  // 5. Add horse owner if not the trigger
+  // 5. Stallbetreiber with stall_horse_access
+  const { data: stallAccess } = await supabase
+    .from("stall_horse_access" as any)
+    .select("stall_owner_id")
+    .eq("horse_id", horseId);
+
+  (stallAccess as any[])?.forEach((s) => {
+    if (s.stall_owner_id) userIds.add(s.stall_owner_id);
+  });
+
+  // 6. Add horse owner if not the trigger
   if (horse?.owner_id) userIds.add(horse.owner_id);
 
   // Remove the triggering user
