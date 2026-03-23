@@ -153,7 +153,7 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
 
   const handlePasswordChange = async () => {
     if (newPassword.length < 6) {
-      toast({ title: "Fehler", description: "Mindestens 6 Zeichen erforderlich.", variant: "destructive" });
+      toast.error("Mindestens 6 Zeichen erforderlich.");
       return;
     }
     if (newPassword !== confirmPassword) {
