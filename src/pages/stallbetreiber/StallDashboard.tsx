@@ -109,8 +109,6 @@ export default function StallDashboard() {
         </div>
       </div>
 
-      {/* Sidebar */}
-      <DashboardSidebar variant="provider" />
     </div>
   );
 }
