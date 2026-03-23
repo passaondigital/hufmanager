@@ -168,6 +168,8 @@ const PortalDashboard = lazy(() => import("@/pages/portal/PortalDashboard"));
 const PortalSettings = lazy(() => import("@/pages/portal/PortalSettings"));
 const PortalCalendar = lazy(() => import("@/pages/portal/PortalCalendar"));
 const PortalManagementHub = lazy(() => import("@/pages/portal/PortalManagementHub"));
+const PortalAppLayout = lazy(() => import("@/components/portal/PortalAppLayout"));
+const PortalPlaceholder = lazy(() => import("@/pages/portal/PortalPlaceholder"));
 const PortalGallery = lazy(() => import("@/pages/portal/PortalGallery"));
 const PortalApplication = lazy(() => import("@/pages/portal/PortalApplication"));
 const PortalDemo = lazy(() => import("@/pages/portal/PortalDemo"));
