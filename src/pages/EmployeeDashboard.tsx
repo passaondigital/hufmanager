@@ -166,7 +166,7 @@ const EmployeeDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ["my-assignments"] });
       toast.success("Eingecheckt — Du bist jetzt vor Ort eingetragen.");
     },
-    onError: (e: Error) => toast({ title: "Fehler", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast.error(`Fehler: ${e.message}`),
   });
 
   const checkOut = useMutation({
