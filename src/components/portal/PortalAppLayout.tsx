@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Outlet, useParams, Navigate, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useParams, Navigate, NavLink, useLocation, useOutletContext } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrganizationBySlug, useOrgMembership } from "@/hooks/useOrganization";
 import { PortalSidebar } from "./PortalSidebar";
