@@ -192,11 +192,7 @@ export default function ClientBooking() {
 
     // Validate notes length
     if (notes && notes.length > MAX_NOTES_LENGTH) {
-      toast({
-        title: "Notizen zu lang",
-        description: `Notizen dürfen maximal ${MAX_NOTES_LENGTH} Zeichen lang sein.`,
-        variant: "destructive",
-      });
+      toast.error(`Notizen zu lang: Notizen dürfen maximal ${MAX_NOTES_LENGTH} Zeichen lang sein.`);
       return;
     }
 
@@ -221,8 +217,7 @@ export default function ClientBooking() {
 
         if (error) throw error;
 
-        toast.success("Termin gebucht!")} um ${selectedTime} Uhr`,
-        });
+        toast.success(`Termin gebucht! ${format(selectedDate, "EEEE, d. MMMM", { locale: de })} um ${selectedTime} Uhr`);
       } else {
         // Request only: Create a lead
         const { error } = await supabase.from("leads").insert({
