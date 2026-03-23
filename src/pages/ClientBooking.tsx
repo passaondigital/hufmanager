@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Scissors, Check, Loader2, Calendar, Clock, FileText, Heart, ChevronDown } from "lucide-react";
 import { HelpTip } from "@/components/ui/HelpTip";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { TimeSlotPicker } from "@/components/booking/TimeSlotPicker";
@@ -192,11 +192,7 @@ export default function ClientBooking() {
 
     // Validate notes length
     if (notes && notes.length > MAX_NOTES_LENGTH) {
-      toast({
-        title: "Notizen zu lang",
-        description: `Notizen dürfen maximal ${MAX_NOTES_LENGTH} Zeichen lang sein.`,
-        variant: "destructive",
-      });
+      toast.error(`Notizen zu lang: Notizen dürfen maximal ${MAX_NOTES_LENGTH} Zeichen lang sein.`);
       return;
     }
 
@@ -221,10 +217,7 @@ export default function ClientBooking() {
 
         if (error) throw error;
 
-        toast({
-          title: "Termin gebucht!",
-          description: `${format(selectedDate, "EEEE, d. MMMM", { locale: de })} um ${selectedTime} Uhr`,
-        });
+        toast.success(`Termin gebucht! ${format(selectedDate, "EEEE, d. MMMM", { locale: de })} um ${selectedTime} Uhr`);
       } else {
         // Request only: Create a lead
         const { error } = await supabase.from("leads").insert({
@@ -241,10 +234,7 @@ export default function ClientBooking() {
 
         if (error) throw error;
 
-        toast({
-          title: "Anfrage gesendet!",
-          description: "Dein Hufbearbeiter wird sich bald bei dir melden.",
-        });
+        toast.success("Anfrage gesendet!: Dein Hufbearbeiter wird sich bald bei dir melden.");
       }
 
       // Save additional health info as diary entry if provided
@@ -266,11 +256,7 @@ export default function ClientBooking() {
 
       setShowSuccess(true);
     } catch (error: any) {
-      toast({
-        title: "Fehler",
-        description: "Die Buchung konnte nicht durchgeführt werden.",
-        variant: "destructive",
-      });
+      toast.error("Fehler: Die Buchung konnte nicht durchgeführt werden.");
     } finally {
       setSubmitting(false);
     }

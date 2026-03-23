@@ -13,7 +13,7 @@ import { ChatAttachment, getFileType, getFileEmoji } from "@/components/chat/Cha
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { ClientPrivateChat } from "@/components/client/chat/ClientPrivateChat";
 import { ClientExpertenChat } from "@/components/client/chat/ClientExpertenChat";
 import { ClientGruppenChat } from "@/components/client/chat/ClientGruppenChat";

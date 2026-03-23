@@ -2,17 +2,16 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
-import { useTheme } from "@/components/ThemeProvider";
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  LogOut, Plus, MessageSquare, Moon, Sun, Scissors, Phone,
-  Camera, Calendar, ChevronRight, Sparkles,
+  Plus, MessageSquare, Camera, Calendar, ChevronRight, Sparkles,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+
 import { motion } from "framer-motion";
 
 // Existing components (preserved)
@@ -32,10 +31,7 @@ import { CreateHorseModal } from "@/components/horse-detail/CreateHorseModal";
 import { ClientOnboarding } from "@/components/client/ClientOnboarding";
 import { MandatoryHorseModal } from "@/components/onboarding/MandatoryHorseModal";
 import { HMCamModal } from "@/components/hufcam";
-import { ClientBottomNav } from "@/components/client/ClientBottomNav";
-import { NotificationBell } from "@/components/notifications/NotificationBell";
-import { DemoTourButton } from "@/components/demo/DemoTourButton";
-import { DemoModeIndicator } from "@/components/demo/DemoModeIndicator";
+
 import { useBusinessUpgradeHint } from "@/hooks/useBusinessUpgradeHint";
 import { BusinessUpgradeHint } from "@/components/client/BusinessUpgradeHint";
 import { BusinessRegistrationForm } from "@/components/auth/BusinessRegistrationForm";
@@ -94,12 +90,22 @@ function ClientKpiGrid({ horses, userId }: { horses: Horse[]; userId?: string })
   });
 
   const { data: healthStatus = "unknown" as string } = useQuery({
-    queryKey: ["client-health-status", userId],
+    queryKey: ["client-health-status", userId, horses.map(h => h.id).join(",")],
     queryFn: async (): Promise<string> => {
       if (horses.length === 0) return "none";
-      return "healthy";
+      const horseIds = horses.map(h => h.id);
+      // Check horse_health_logs for any warning/critical entries
+      const { data: logs } = await supabase
+        .from("horse_health_logs")
+        .select("wellbeing")
+        .in("horse_id", horseIds)
+        .order("date", { ascending: false })
+        .limit(horseIds.length);
+      if (!logs || logs.length === 0) return "healthy";
+      const hasWarning = logs.some(l => (l.wellbeing ?? 100) < 70);
+      return hasWarning ? "warning" : "healthy";
     },
-    enabled: !!userId,
+    enabled: !!userId && horses.length > 0,
     staleTime: 120_000,
   });
 
@@ -142,9 +148,9 @@ function ClientKpiGrid({ horses, userId }: { horses: Horse[]; userId?: string })
 }
 
 export default function ClientHome() {
-  const { user, signOut, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { showOnboarding, completeOnboarding } = useOnboarding();
-  const { theme, toggleTheme } = useTheme();
+  
   const navigate = useNavigate();
   const [horses, setHorses] = useState<Horse[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -212,7 +218,7 @@ export default function ClientHome() {
     }
   }, [loading, isFirstLogin, horses.length, showOnboarding]);
 
-  const handleLogout = async () => { await signOut(); navigate("/auth"); };
+  
   const handleHorseCreated = (horseId: string) => {
     setShowMandatoryHorseModal(false);
     fetchData();
@@ -239,32 +245,6 @@ export default function ClientHome() {
       {showOnboarding && <ClientOnboarding onComplete={completeOnboarding} />}
 
       <div className="min-h-[100dvh] bg-gradient-to-b from-background via-background to-muted/20 overflow-safe">
-        {/* Header */}
-        <header
-          className="sticky top-0 z-20 bg-background/70 backdrop-blur-xl border-b border-border/50"
-          style={{ paddingTop: "max(env(safe-area-inset-top), 0.5rem)" }}
-        >
-          <div className="px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src="/hufmanager-logo.png" alt="HufManager" className="h-9 w-auto" />
-              <Badge variant="secondary" className="text-xs font-medium hidden sm:flex">
-                <Sparkles className="h-3 w-3 mr-1" />
-                Pferdeportal
-              </Badge>
-            </div>
-            <div className="flex items-center gap-1">
-              <DemoModeIndicator />
-              <DemoTourButton />
-              <NotificationBell />
-              <Button variant="ghost" size="icon" className="h-10 w-10" onClick={toggleTheme}>
-                {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </Button>
-              <Button variant="ghost" size="icon" className="h-10 w-10" onClick={handleLogout}>
-                <LogOut className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-        </header>
 
         {/* Main Content */}
         <main className="px-4 py-6 max-w-lg mx-auto space-y-5 pb-safe" style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom, 0px))" }}>
@@ -395,7 +375,7 @@ export default function ClientHome() {
           {user && <ServiceHistoryWidget userId={user.id} />}
         </main>
 
-        <ClientBottomNav />
+        
 
         {/* Modals */}
         <CreateHorseModal open={showCreateModal} onClose={() => setShowCreateModal(false)} onCreated={handleHorseCreated} />

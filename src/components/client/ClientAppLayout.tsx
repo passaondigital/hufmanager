@@ -28,7 +28,7 @@ import {
 import { LogOut, Settings, Download, Copy, Check, Building2, Warehouse as WarehouseIcon, Share2 } from "lucide-react";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   Sheet as QuickSheet,
   SheetContent as QuickSheetContent,
@@ -210,14 +210,14 @@ function ClientDesktopHeader() {
     if (readableId) {
       navigator.clipboard.writeText(`#${readableId}`);
       setCopied(true);
-      toast({ title: "ID kopiert!", description: `#${readableId}` });
+      toast.success(`ID kopiert: #${readableId}`);
       setTimeout(() => setCopied(false), 2000);
     }
   };
 
   const handleLogout = async () => {
     await logout();
-    toast({ title: "Abgemeldet", description: "Sie wurden erfolgreich abgemeldet." });
+    toast.success("Erfolgreich abgemeldet");
   };
 
   const userInitials = user?.email?.substring(0, 2).toUpperCase() || "PB";

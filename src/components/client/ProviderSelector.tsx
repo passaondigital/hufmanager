@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { UserPlus, Check, Loader2 } from "lucide-react";
 import { DataProcessingConsentDialog } from "./DataProcessingConsentDialog";
 
@@ -136,19 +136,12 @@ export function ProviderSelector({ onProviderConnected }: ProviderSelectorProps)
 
       setConnectedProviders(prev => [...prev, providerId]);
       
-      toast({
-        title: "Verbunden!",
-        description: "Du bist jetzt mit diesem Hufbearbeiter verbunden.",
-      });
+      toast.success("Verbunden!: Du bist jetzt mit diesem Hufbearbeiter verbunden.");
 
       onProviderConnected?.(providerId);
     } catch (error) {
       console.error("Error connecting to provider:", error);
-      toast({
-        title: "Fehler",
-        description: "Verbindung konnte nicht hergestellt werden.",
-        variant: "destructive",
-      });
+      toast.error("Fehler: Verbindung konnte nicht hergestellt werden.");
     }
 
     setConnecting(null);

@@ -12,7 +12,7 @@ import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { ClientBottomNav } from "@/components/client/ClientBottomNav";
+
 
 interface StallPost {
   id: string;
@@ -242,7 +242,6 @@ export default function ClientStallBoard() {
         })}
       </main>
 
-      <ClientBottomNav />
     </div>
   );
 }
