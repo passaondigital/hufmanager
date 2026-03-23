@@ -93,7 +93,7 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
     try {
       // Validate phone for DACH
       if (editPhone && !/^(\+49|\+43|\+41|0)[0-9\s\-\/]{6,15}$/.test(editPhone.replace(/\s/g, ""))) {
-        toast({ title: "Ungültige Telefonnummer", description: "Bitte DACH-Format verwenden (+49, +43, +41 oder 0...)", variant: "destructive" });
+        toast.error("Ungültige Telefonnummer — Bitte DACH-Format verwenden (+49, +43, +41 oder 0...)");
         setSaving(false);
         return;
       }
