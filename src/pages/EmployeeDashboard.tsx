@@ -33,7 +33,7 @@ const SECTION_ORDER: Section[] = ["profil", "zeiten"];
 
 const EmployeeDashboard = () => {
   const { user, signOut } = useAuth();
-  const { toast } = useToast();
+  
   const queryClient = useQueryClient();
   const { data: profile, isLoading: profileLoading } = useEmployeeProfile();
   const [docAssignment, setDocAssignment] = useState<any>(null);
