@@ -83,7 +83,7 @@ const EmployeeAbwesenheiten = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employee-absences"] });
-      toast({ title: "Antrag eingereicht", description: "Dein Provider wird benachrichtigt." });
+      toast.success("Antrag eingereicht — Dein Provider wird benachrichtigt.");
       setShowNew(false);
       setType("vacation");
       setStartDate("");
