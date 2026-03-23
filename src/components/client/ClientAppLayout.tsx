@@ -210,7 +210,7 @@ function ClientDesktopHeader() {
     if (readableId) {
       navigator.clipboard.writeText(`#${readableId}`);
       setCopied(true);
-      toast({ title: "ID kopiert!", description: `#${readableId}` });
+      toast.success(`ID kopiert: #${readableId}`);
       setTimeout(() => setCopied(false), 2000);
     }
   };
