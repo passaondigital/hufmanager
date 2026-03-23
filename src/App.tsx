@@ -871,6 +871,11 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/employee/support" element={<Support />} />
               <Route path="/employee/pferde" element={<EmployeePferde />} />
               <Route path="/employee/connect" element={<HMConnect />} />
+              <Route path="/employee/work-mode" element={<WorkMode />} />
+              <Route path="/employee/lager" element={<Lager />} />
+              <Route path="/employee/fuhrpark" element={<Fuhrpark />} />
+              <Route path="/employee/marketplace" element={<Marketplace />} />
+              <Route path="/employee/notfall" element={<EmergencyDashboard />} />
             </Route>
 
             {/* --- 5. PARTNER (FACHPARTNER) ROUTES --- */}
