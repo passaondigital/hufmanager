@@ -174,7 +174,7 @@ const PartnerKunden = () => {
       setShowNewClientModal(false);
       resetNewClientForm();
     } catch (err: any) {
-      toast({ title: "Fehler beim Anlegen", description: err.message, variant: "destructive" });
+      toast.error(`Fehler beim Anlegen: ${err.message}`);
     } finally {
       setSaving(false);
     }
