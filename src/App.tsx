@@ -799,6 +799,10 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client-marketplace" element={<ClientMarketplace />} />
               <Route path="/client-marketplace/create" element={<ClientMarketplaceCreate />} />
               <Route path="/client-marketplace/mine" element={<ClientMyListings />} />
+              <Route path="/client-kalender" element={<ClientKalender />} />
+              <Route path="/client-historie" element={<ClientHistorie />} />
+              <Route path="/client-dokumente" element={<ClientDokumente />} />
+              <Route path="/client-support" element={<Support />} />
             </Route>
 
             {/* --- 3b. STALLBETREIBER ROUTES --- */}
