@@ -94,7 +94,7 @@ const EmployeeMaterial = () => {
       setReqQty(1);
       setReqNote("");
     },
-    onError: () => toast({ title: "Fehler", variant: "destructive" }),
+    onError: () => toast.error("Fehler beim Senden"),
   });
 
   return (

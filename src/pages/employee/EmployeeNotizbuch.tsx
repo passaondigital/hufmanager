@@ -106,7 +106,7 @@ const EmployeeNotizbuch = () => {
 
   const handleDelete = (id: string) => {
     setEntries((prev) => prev.filter((e) => e.id !== id));
-    toast({ title: "Gelöscht" });
+    toast("Gelöscht");
   };
 
   const resetForm = () => {

@@ -105,7 +105,7 @@ const EmployeeAbwesenheiten = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employee-absences"] });
-      toast({ title: "Antrag storniert" });
+      toast("Antrag storniert");
     },
   });
 
