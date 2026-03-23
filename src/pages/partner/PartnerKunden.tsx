@@ -148,7 +148,7 @@ const PartnerKunden = () => {
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(newClient.email.trim())) {
-      toast({ title: "Bitte eine gültige E-Mail-Adresse eingeben", variant: "destructive" });
+      toast.error("Bitte eine gültige E-Mail-Adresse eingeben");
       return;
     }
 
