@@ -36,7 +36,7 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: profile } = useEmployeeProfile();
-  const { toast } = useToast();
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Edit state
