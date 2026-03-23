@@ -8,9 +8,10 @@ import { WidgetGrid } from "@/components/dashboard/widgets/WidgetGrid";
 import { DashboardSidebar } from "@/components/dashboard/sidebar/DashboardSidebar";
 import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Heart, Calendar, FileText, Users, Clock } from "lucide-react";
+import { Heart, Calendar, FileText, Users, Clock, Upload } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
+import { NextAppointmentCard } from "@/components/dashboard-zones/NextAppointmentCard";
 
 import { DashboardHero, KpiGrid, QuickActionBar } from "@/components/dashboard-zones";
 
