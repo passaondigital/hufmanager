@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
 import { PdfPreviewDialog } from "@/components/invoices/PdfPreviewDialog";
 import { ClientExpenseTracker } from "@/components/client/ClientExpenseTracker";

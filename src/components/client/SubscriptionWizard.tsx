@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Sparkles, TrendingDown, ExternalLink, Check, Gift, Loader2, Mail, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface SubscriptionSettings {
   price_4_weeks_zone1: number;

@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Shield, Eye, Heart, Calendar, UserX, AlertTriangle, Stethoscope, Footprints, FileText } from "lucide-react";
 import { HelpTip } from "@/components/ui/HelpTip";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { getPartnerTypeConfig } from "@/lib/partnerTypes";
 import {
   AlertDialog,

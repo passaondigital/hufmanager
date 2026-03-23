@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Scissors, Check, Loader2, Calendar, Clock, FileText, Heart, ChevronDown } from "lucide-react";
 import { HelpTip } from "@/components/ui/HelpTip";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { TimeSlotPicker } from "@/components/booking/TimeSlotPicker";
