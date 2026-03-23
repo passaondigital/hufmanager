@@ -45,7 +45,7 @@ const statusColors: Record<string, "default" | "secondary" | "destructive" | "ou
 
 const EmployeeAbwesenheiten = () => {
   const { data: profile } = useEmployeeProfile();
-  const { toast } = useToast();
+  
   const queryClient = useQueryClient();
   const [showNew, setShowNew] = useState(false);
   const [type, setType] = useState("vacation");
