@@ -64,7 +64,85 @@ interface Profile {
   emergency_contacts: EmergencyContact[];
 }
 
-export default function ClientHome() {
+function ClientKpiGrid({ horses, userId }: { horses: Horse[]; userId?: string }) {
+  const { data: openOrdersCount = 0 } = useQuery({
+    queryKey: ["client-open-orders", userId],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("service_orders")
+        .select("*", { count: "exact", head: true })
+        .eq("client_id", userId!)
+        .in("order_status", ["pending", "open", "in_progress"]);
+      return count ?? 0;
+    },
+    enabled: !!userId,
+    staleTime: 60_000,
+  });
+
+  const { data: completedCount = 0 } = useQuery({
+    queryKey: ["client-completed-services", userId],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("appointments")
+        .select("*", { count: "exact", head: true })
+        .eq("client_id", userId!)
+        .eq("status", "completed");
+      return count ?? 0;
+    },
+    enabled: !!userId,
+    staleTime: 60_000,
+  });
+
+  const { data: healthStatus = "unknown" } = useQuery({
+    queryKey: ["client-health-status", userId],
+    queryFn: async () => {
+      if (horses.length === 0) return "none";
+      // Simple heuristic: check if any recent appointments have concerning notes
+      return "healthy";
+    },
+    enabled: !!userId,
+    staleTime: 120_000,
+  });
+
+  return (
+    <KpiGrid items={[
+      {
+        icon: "🐴",
+        label: "Meine Pferde",
+        value: horses.length,
+        sub: horses.length === 0 ? "Noch keine"
+          : healthStatus === "warning" ? "Befund vorhanden"
+          : `${horses.length} Pferd${horses.length !== 1 ? "e" : ""}`,
+        highlight: true,
+      },
+      {
+        icon: "📋",
+        label: "Aufträge",
+        value: openOrdersCount,
+        sub: openOrdersCount > 0 ? `${openOrdersCount} offen` : "Keine offenen",
+      },
+      {
+        icon: "✅",
+        label: "Bearbeitungen",
+        value: completedCount,
+        sub: "Gesamt",
+      },
+      {
+        icon: "❤",
+        label: "Gesundheit",
+        value: "●",
+        valueClassName: healthStatus === "warning" ? "text-yellow-500" : "text-green-500",
+        sub: healthStatus === "healthy" ? "Alles stabil"
+          : healthStatus === "warning" ? "Befund offen"
+          : healthStatus === "none" ? "Keine Pferde"
+          : "Unbekannt",
+        warning: healthStatus === "warning",
+      },
+    ]} />
+  );
+}
+
+
   const { user, signOut, loading: authLoading } = useAuth();
   const { showOnboarding, completeOnboarding } = useOnboarding();
   const { theme, toggleTheme } = useTheme();

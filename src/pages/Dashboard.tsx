@@ -118,7 +118,7 @@ const Dashboard = () => {
           { icon: Calendar, label: "Heute", value: todayCount, sub: `${todayCount} Termine` },
           { icon: Users, label: "Kunden", value: clientsCount, sub: "aktiv" },
           { icon: Inbox, label: "Anfragen", value: leadsCount, sub: "offen", warning: leadsCount > 0 },
-          { icon: FileText, label: "Aufträge", value: "–", sub: "offen" },
+          { icon: FileText, label: "Aufträge", value: openOrdersCount, sub: openOrdersCount > 0 ? "offen" : "keine offenen", warning: openOrdersCount > 3 },
         ]} />
 
         {/* ══════ ZONE 3 — DETAILS ══════ */}
