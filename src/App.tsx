@@ -174,6 +174,20 @@ const PortalTeam = lazy(() => import("@/pages/portal/PortalTeam"));
 const PortalAnalytics = lazy(() => import("@/pages/portal/PortalAnalytics"));
 const PortalConnect = lazy(() => import("@/pages/portal/PortalConnect"));
 const PortalImport = lazy(() => import("@/pages/portal/PortalImport"));
+const PortalPolicen = lazy(() => import("@/pages/portal/modules/PortalPolicen"));
+const PortalClaims = lazy(() => import("@/pages/portal/modules/PortalClaims"));
+const PortalProdukte = lazy(() => import("@/pages/portal/modules/PortalProdukte"));
+const PortalOrders = lazy(() => import("@/pages/portal/modules/PortalOrders"));
+const PortalSchulungen = lazy(() => import("@/pages/portal/modules/PortalSchulungen"));
+const PortalKurse = lazy(() => import("@/pages/portal/modules/PortalKurse"));
+const PortalSchueler = lazy(() => import("@/pages/portal/modules/PortalSchueler"));
+const PortalPruefungen = lazy(() => import("@/pages/portal/modules/PortalPruefungen"));
+const PortalStandards = lazy(() => import("@/pages/portal/modules/PortalStandards"));
+const PortalMitglieder = lazy(() => import("@/pages/portal/modules/PortalMitglieder"));
+const PortalStatistiken = lazy(() => import("@/pages/portal/modules/PortalStatistiken"));
+const PortalPatienten = lazy(() => import("@/pages/portal/modules/PortalPatienten"));
+const PortalBefunde = lazy(() => import("@/pages/portal/modules/PortalBefunde"));
+const PortalImpfungen = lazy(() => import("@/pages/portal/modules/PortalImpfungen"));
 const PortalGallery = lazy(() => import("@/pages/portal/PortalGallery"));
 const PortalApplication = lazy(() => import("@/pages/portal/PortalApplication"));
 const PortalDemo = lazy(() => import("@/pages/portal/PortalDemo"));
@@ -323,6 +337,20 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
               <Route path="team" element={<PortalTeam />} />
               <Route path="connect" element={<PortalConnect />} />
               <Route path="import" element={<PortalImport />} />
+              <Route path="policen" element={<PortalPolicen />} />
+              <Route path="claims" element={<PortalClaims />} />
+              <Route path="produkte" element={<PortalProdukte />} />
+              <Route path="orders" element={<PortalOrders />} />
+              <Route path="schulungen" element={<PortalSchulungen />} />
+              <Route path="kurse" element={<PortalKurse />} />
+              <Route path="schueler" element={<PortalSchueler />} />
+              <Route path="pruefungen" element={<PortalPruefungen />} />
+              <Route path="standards" element={<PortalStandards />} />
+              <Route path="mitglieder" element={<PortalMitglieder />} />
+              <Route path="statistiken" element={<PortalStatistiken />} />
+              <Route path="patienten" element={<PortalPatienten />} />
+              <Route path="befunde" element={<PortalBefunde />} />
+              <Route path="impfungen" element={<PortalImpfungen />} />
               <Route path="*" element={<PortalPlaceholder />} />
             </Route>
             <Route path="*" element={<PortalLogin mode={portalMode.mode} />} />
@@ -586,24 +614,25 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="kalender" element={<PortalCalendar />} />
               <Route path="management" element={<PortalManagementHub />} />
               <Route path="settings" element={<PortalSettings />} />
-              <Route path="policen" element={<PortalPlaceholder />} />
-              <Route path="claims" element={<PortalPlaceholder />} />
+              <Route path="policen" element={<PortalPolicen />} />
+              <Route path="claims" element={<PortalClaims />} />
               <Route path="analytics" element={<PortalAnalytics />} />
               <Route path="team" element={<PortalTeam />} />
               <Route path="connect" element={<PortalConnect />} />
               <Route path="import" element={<PortalImport />} />
-              <Route path="produkte" element={<PortalPlaceholder />} />
-              <Route path="schulungen" element={<PortalPlaceholder />} />
-              <Route path="orders" element={<PortalPlaceholder />} />
-              <Route path="kurse" element={<PortalPlaceholder />} />
-              <Route path="schueler" element={<PortalPlaceholder />} />
-              <Route path="pruefungen" element={<PortalPlaceholder />} />
-              <Route path="standards" element={<PortalPlaceholder />} />
-              <Route path="mitglieder" element={<PortalTeam />} />
-              <Route path="statistiken" element={<PortalAnalytics />} />
-              <Route path="patienten" element={<PortalPlaceholder />} />
-              <Route path="befunde" element={<PortalPlaceholder />} />
-              <Route path="impfungen" element={<PortalPlaceholder />} />
+              <Route path="produkte" element={<PortalProdukte />} />
+              <Route path="schulungen" element={<PortalSchulungen />} />
+              <Route path="orders" element={<PortalOrders />} />
+              <Route path="kurse" element={<PortalKurse />} />
+              <Route path="schueler" element={<PortalSchueler />} />
+              <Route path="pruefungen" element={<PortalPruefungen />} />
+              <Route path="standards" element={<PortalStandards />} />
+              <Route path="mitglieder" element={<PortalMitglieder />} />
+              <Route path="statistiken" element={<PortalStatistiken />} />
+              <Route path="patienten" element={<PortalPatienten />} />
+              <Route path="befunde" element={<PortalBefunde />} />
+              <Route path="impfungen" element={<PortalImpfungen />} />
+              <Route path="*" element={<PortalPlaceholder />} />
               <Route path="*" element={<PortalPlaceholder />} />
             </Route>
             
