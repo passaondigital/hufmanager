@@ -143,7 +143,7 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
       await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("id", user.id);
 
       queryClient.invalidateQueries({ queryKey: ["employee-profile"] });
-      toast({ title: "Profilbild aktualisiert ✓" });
+      toast.success("Profilbild aktualisiert ✓");
     } catch (err: any) {
       toast({ title: "Upload fehlgeschlagen", description: err.message, variant: "destructive" });
     } finally {
