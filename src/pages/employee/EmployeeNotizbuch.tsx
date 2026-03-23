@@ -69,7 +69,7 @@ const EmployeeNotizbuch = () => {
     if (!files) return;
     Array.from(files).forEach((file) => {
       if (file.size > 5 * 1024 * 1024) {
-        toast({ title: "Zu groß", description: "Max. 5 MB pro Bild", variant: "destructive" });
+        toast.error("Max. 5 MB pro Bild");
         return;
       }
       const reader = new FileReader();
