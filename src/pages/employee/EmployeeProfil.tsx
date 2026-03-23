@@ -164,9 +164,9 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     setChangingPw(false);
     if (error) {
-      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+      toast.error(`Fehler: ${error.message}`);
     } else {
-      toast({ title: "Passwort geändert" });
+      toast.success("Passwort geändert");
       setShowPwDialog(false);
       setNewPassword("");
       setConfirmPassword("");
