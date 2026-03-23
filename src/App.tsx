@@ -168,6 +168,8 @@ const PortalDashboard = lazy(() => import("@/pages/portal/PortalDashboard"));
 const PortalSettings = lazy(() => import("@/pages/portal/PortalSettings"));
 const PortalCalendar = lazy(() => import("@/pages/portal/PortalCalendar"));
 const PortalManagementHub = lazy(() => import("@/pages/portal/PortalManagementHub"));
+const PortalAppLayout = lazy(() => import("@/components/portal/PortalAppLayout"));
+const PortalPlaceholder = lazy(() => import("@/pages/portal/PortalPlaceholder"));
 const PortalGallery = lazy(() => import("@/pages/portal/PortalGallery"));
 const PortalApplication = lazy(() => import("@/pages/portal/PortalApplication"));
 const PortalDemo = lazy(() => import("@/pages/portal/PortalDemo"));
@@ -298,10 +300,13 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
       <AuthProvider>
         <Suspense fallback={<LazyFallback />}>
           <Routes>
-            <Route path="/portal/:slug" element={<PortalDashboard />} />
-            <Route path="/portal/:slug/kalender" element={<PortalCalendar />} />
-            <Route path="/portal/:slug/management" element={<PortalManagementHub />} />
-            <Route path="/portal/:slug/settings" element={<PortalSettings />} />
+            <Route path="/portal/:slug" element={<PortalAppLayout />}>
+              <Route index element={<PortalDashboard />} />
+              <Route path="kalender" element={<PortalCalendar />} />
+              <Route path="management" element={<PortalManagementHub />} />
+              <Route path="settings" element={<PortalSettings />} />
+              <Route path="*" element={<PortalPlaceholder />} />
+            </Route>
             <Route path="*" element={<PortalLogin mode={portalMode.mode} />} />
           </Routes>
         </Suspense>
@@ -558,10 +563,31 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/portal/lieferant" element={<SupplierPortalDemo />} />
             <Route path="/portal/ausbildung" element={<EducationPortalDemo />} />
             <Route path="/portal/verband" element={<AssociationPortalDemo />} />
-            <Route path="/portal/:slug" element={<PortalDashboard />} />
-            <Route path="/portal/:slug/kalender" element={<PortalCalendar />} />
-            <Route path="/portal/:slug/management" element={<PortalManagementHub />} />
-            <Route path="/portal/:slug/settings" element={<PortalSettings />} />
+            <Route path="/portal/:slug" element={<PortalAppLayout />}>
+              <Route index element={<PortalDashboard />} />
+              <Route path="kalender" element={<PortalCalendar />} />
+              <Route path="management" element={<PortalManagementHub />} />
+              <Route path="settings" element={<PortalSettings />} />
+              <Route path="policen" element={<PortalPlaceholder />} />
+              <Route path="claims" element={<PortalPlaceholder />} />
+              <Route path="analytics" element={<PortalPlaceholder />} />
+              <Route path="team" element={<PortalPlaceholder />} />
+              <Route path="connect" element={<PortalPlaceholder />} />
+              <Route path="import" element={<PortalPlaceholder />} />
+              <Route path="produkte" element={<PortalPlaceholder />} />
+              <Route path="schulungen" element={<PortalPlaceholder />} />
+              <Route path="orders" element={<PortalPlaceholder />} />
+              <Route path="kurse" element={<PortalPlaceholder />} />
+              <Route path="schueler" element={<PortalPlaceholder />} />
+              <Route path="pruefungen" element={<PortalPlaceholder />} />
+              <Route path="standards" element={<PortalPlaceholder />} />
+              <Route path="mitglieder" element={<PortalPlaceholder />} />
+              <Route path="statistiken" element={<PortalPlaceholder />} />
+              <Route path="patienten" element={<PortalPlaceholder />} />
+              <Route path="befunde" element={<PortalPlaceholder />} />
+              <Route path="impfungen" element={<PortalPlaceholder />} />
+              <Route path="*" element={<PortalPlaceholder />} />
+            </Route>
             
             {/* Pferdeakte is handled by PferdeakteRouteGuard above AppContent */}
             
