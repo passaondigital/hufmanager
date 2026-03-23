@@ -273,6 +273,8 @@ export function EquidPermissionManager() {
                                     accessId: access.id,
                                     key: pt.key,
                                     value: checked,
+                                    horseId: access.horse_id,
+                                    partnerName: access.partner_name,
                                   });
                                 }}
                                 className="flex-shrink-0"
