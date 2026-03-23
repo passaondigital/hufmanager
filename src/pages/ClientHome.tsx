@@ -226,34 +226,7 @@ export default function ClientHome() {
           {/* ══════════════════════════════════════ */}
           {/* ZONE 2 — KPI GRID                     */}
           {/* ══════════════════════════════════════ */}
-          <KpiGrid items={[
-            {
-              icon: "🐴",
-              label: "Meine Pferde",
-              value: horses.length,
-              sub: horses.length > 0 ? "Alle gesund" : "Noch keine",
-              highlight: true,
-              navigateTo: horses.length > 0 ? undefined : undefined,
-            },
-            {
-              icon: "📋",
-              label: "Aufträge",
-              value: "–",
-              sub: "Keine offenen",
-            },
-            {
-              icon: "✅",
-              label: "Bearbeitungen",
-              value: "–",
-              sub: "Gesamt",
-            },
-            {
-              icon: "❤",
-              label: "Gesundheit",
-              value: "🟢",
-              sub: "Alles stabil",
-            },
-          ]} />
+          <ClientKpiGrid horses={horses} userId={user?.id} />
 
           {/* ══════════════════════════════════════ */}
           {/* ZONE 3 — DETAIL SECTIONS              */}
