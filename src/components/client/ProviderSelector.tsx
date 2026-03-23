@@ -136,19 +136,12 @@ export function ProviderSelector({ onProviderConnected }: ProviderSelectorProps)
 
       setConnectedProviders(prev => [...prev, providerId]);
       
-      toast({
-        title: "Verbunden!",
-        description: "Du bist jetzt mit diesem Hufbearbeiter verbunden.",
-      });
+      toast.success("Verbunden!: Du bist jetzt mit diesem Hufbearbeiter verbunden.");
 
       onProviderConnected?.(providerId);
     } catch (error) {
       console.error("Error connecting to provider:", error);
-      toast({
-        title: "Fehler",
-        description: "Verbindung konnte nicht hergestellt werden.",
-        variant: "destructive",
-      });
+      toast.error("Fehler: Verbindung konnte nicht hergestellt werden.");
     }
 
     setConnecting(null);

@@ -196,11 +196,7 @@ export default function ClientInvoices() {
       return blob;
     } catch (error) {
       console.error("PDF generation failed:", error);
-      toast({
-        title: "PDF-Generierung fehlgeschlagen",
-        description: "Bitte versuchen Sie es erneut.",
-        variant: "destructive",
-      });
+      toast.error("PDF-Generierung fehlgeschlagen: Bitte versuchen Sie es erneut.");
       return null;
     } finally {
       setGeneratingPdfFor(null);
@@ -228,7 +224,7 @@ export default function ClientInvoices() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast({ title: "PDF heruntergeladen" });
+      toast.success("PDF heruntergeladen");
     }
   };
 
@@ -239,11 +235,7 @@ export default function ClientInvoices() {
 
   const handleSendEmail = async (invoice: Invoice) => {
     if (!userProfile?.email) {
-      toast({
-        title: "Keine E-Mail-Adresse",
-        description: "Bitte hinterlegen Sie Ihre E-Mail-Adresse in Ihrem Profil.",
-        variant: "destructive",
-      });
+      toast.error("Keine E-Mail-Adresse: Bitte hinterlegen Sie Ihre E-Mail-Adresse in Ihrem Profil.");
       return;
     }
 
@@ -269,14 +261,10 @@ export default function ClientInvoices() {
         throw new Error(response.error.message);
       }
 
-      toast({ title: "E-Mail gesendet", description: "Die Rechnung wurde an Ihre E-Mail-Adresse gesendet." });
+      toast.success("E-Mail gesendet: Die Rechnung wurde an Ihre E-Mail-Adresse gesendet.");
     } catch (error) {
       console.error("Failed to send email:", error);
-      toast({
-        title: "E-Mail-Versand fehlgeschlagen",
-        description: "Bitte versuchen Sie es erneut.",
-        variant: "destructive",
-      });
+      toast.error("E-Mail-Versand fehlgeschlagen: Bitte versuchen Sie es erneut.");
     } finally {
       setSendingEmailFor(null);
     }

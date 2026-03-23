@@ -156,27 +156,17 @@ export function SubscriptionWizard({ settings, providerId, onSwitchToStandard }:
       // Open checkout URL
       window.open(matchingLink.copecart_url, "_blank");
 
-      toast({
-        title: "Zustimmung gespeichert",
-        description: "Du wirst zum Checkout weitergeleitet.",
-      });
+      toast.success("Zustimmung gespeichert: Du wirst zum Checkout weitergeleitet.");
     } catch (error) {
       console.error("Error saving consent:", error);
-      toast({
-        title: "Fehler",
-        description: "Zustimmung konnte nicht gespeichert werden.",
-        variant: "destructive",
-      });
+      toast.error("Fehler: Zustimmung konnte nicht gespeichert werden.");
     } finally {
       setSavingConsent(false);
     }
   };
 
   const handleContactRequest = () => {
-    toast({
-      title: "Anfrage gesendet",
-      description: "Dein Hufbearbeiter wird sich bei dir melden.",
-    });
+    toast.success("Anfrage gesendet: Dein Hufbearbeiter wird sich bei dir melden.");
   };
 
   const intervalLabels = {

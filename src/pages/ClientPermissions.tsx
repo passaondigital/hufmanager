@@ -131,9 +131,9 @@ export default function ClientPermissions() {
       .eq("id", revokePartnerId);
 
     if (error) {
-      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+      toast.error("Fehler");
     } else {
-      toast({ title: "Fachpartner-Zugriff entzogen" });
+      toast.success("Fachpartner-Zugriff entzogen");
       setPartnerAccess(prev => prev.filter(p => p.id !== revokePartnerId));
     }
     setRevokePartnerId(null);
@@ -150,14 +150,14 @@ export default function ClientPermissions() {
       .eq("id", accessId);
 
     if (error) {
-      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+      toast.error("Fehler");
       return;
     }
 
     setPartnerAccess(prev => prev.map(p =>
       p.id === accessId ? { ...p, [field]: value } : p
     ));
-    toast({ title: "Berechtigung aktualisiert" });
+    toast.success("Berechtigung aktualisiert");
   };
 
   const updatePermission = async (
@@ -171,11 +171,7 @@ export default function ClientPermissions() {
       .eq('id', grantId);
 
     if (error) {
-      toast({
-        title: "Fehler beim Aktualisieren",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error("Fehler beim Aktualisieren");
       return;
     }
 
@@ -183,7 +179,7 @@ export default function ClientPermissions() {
       g.id === grantId ? { ...g, [field]: value } : g
     ));
     
-    toast({ title: "Berechtigung aktualisiert" });
+    toast.success("Berechtigung aktualisiert");
   };
 
   const handleRevoke = async () => {
@@ -198,13 +194,9 @@ export default function ClientPermissions() {
       .eq('id', revokeGrant.id);
 
     if (error) {
-      toast({
-        title: "Fehler",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error("Fehler");
     } else {
-      toast({ title: "Zugriff entzogen" });
+      toast.success("Zugriff entzogen");
       setGrants(prev => prev.filter(g => g.id !== revokeGrant.id));
     }
 

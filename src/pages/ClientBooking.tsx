@@ -221,9 +221,7 @@ export default function ClientBooking() {
 
         if (error) throw error;
 
-        toast({
-          title: "Termin gebucht!",
-          description: `${format(selectedDate, "EEEE, d. MMMM", { locale: de })} um ${selectedTime} Uhr`,
+        toast.success("Termin gebucht!")} um ${selectedTime} Uhr`,
         });
       } else {
         // Request only: Create a lead
@@ -241,10 +239,7 @@ export default function ClientBooking() {
 
         if (error) throw error;
 
-        toast({
-          title: "Anfrage gesendet!",
-          description: "Dein Hufbearbeiter wird sich bald bei dir melden.",
-        });
+        toast.success("Anfrage gesendet!: Dein Hufbearbeiter wird sich bald bei dir melden.");
       }
 
       // Save additional health info as diary entry if provided
@@ -266,11 +261,7 @@ export default function ClientBooking() {
 
       setShowSuccess(true);
     } catch (error: any) {
-      toast({
-        title: "Fehler",
-        description: "Die Buchung konnte nicht durchgeführt werden.",
-        variant: "destructive",
-      });
+      toast.error("Fehler: Die Buchung konnte nicht durchgeführt werden.");
     } finally {
       setSubmitting(false);
     }
