@@ -91,7 +91,7 @@ const EmployeeAbwesenheiten = () => {
       setNotes("");
     },
     onError: (err: Error) => {
-      toast({ title: "Fehler", description: err.message, variant: "destructive" });
+      toast.error(`Fehler: ${err.message}`);
     },
   });
 
