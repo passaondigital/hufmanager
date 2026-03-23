@@ -124,7 +124,7 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
     const file = e.target.files?.[0];
     if (!file || !user?.id) return;
     if (file.size > 2 * 1024 * 1024) {
-      toast({ title: "Datei zu groß", description: "Max. 2 MB erlaubt.", variant: "destructive" });
+      toast.error("Datei zu groß — Max. 2 MB erlaubt.");
       return;
     }
     setUploadingAvatar(true);
