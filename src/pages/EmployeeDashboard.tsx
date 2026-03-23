@@ -190,7 +190,7 @@ const EmployeeDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ["my-assignments"] });
       toast.success("Ausgecheckt — Arbeit abgeschlossen.");
     },
-    onError: (e: Error) => toast({ title: "Fehler", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast.error(`Fehler: ${e.message}`),
   });
 
   // Compute work hours
