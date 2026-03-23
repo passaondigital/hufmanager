@@ -217,7 +217,7 @@ function ClientDesktopHeader() {
 
   const handleLogout = async () => {
     await logout();
-    toast({ title: "Abgemeldet", description: "Sie wurden erfolgreich abgemeldet." });
+    toast.success("Erfolgreich abgemeldet");
   };
 
   const userInitials = user?.email?.substring(0, 2).toUpperCase() || "PB";
