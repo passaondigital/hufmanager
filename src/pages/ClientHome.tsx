@@ -32,9 +32,6 @@ import { ClientOnboarding } from "@/components/client/ClientOnboarding";
 import { MandatoryHorseModal } from "@/components/onboarding/MandatoryHorseModal";
 import { HMCamModal } from "@/components/hufcam";
 
-import { NotificationBell } from "@/components/notifications/NotificationBell";
-import { DemoTourButton } from "@/components/demo/DemoTourButton";
-import { DemoModeIndicator } from "@/components/demo/DemoModeIndicator";
 import { useBusinessUpgradeHint } from "@/hooks/useBusinessUpgradeHint";
 import { BusinessUpgradeHint } from "@/components/client/BusinessUpgradeHint";
 import { BusinessRegistrationForm } from "@/components/auth/BusinessRegistrationForm";
