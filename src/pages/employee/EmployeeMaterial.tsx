@@ -16,7 +16,7 @@ import {
 
 const EmployeeMaterial = () => {
   const { data: profile } = useEmployeeProfile();
-  const { toast } = useToast();
+  
   const queryClient = useQueryClient();
   const [requestDialog, setRequestDialog] = useState<any>(null);
   const [reqQty, setReqQty] = useState(1);
