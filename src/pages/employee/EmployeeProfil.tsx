@@ -157,7 +157,7 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast({ title: "Fehler", description: "Passwörter stimmen nicht überein.", variant: "destructive" });
+      toast.error("Passwörter stimmen nicht überein.");
       return;
     }
     setChangingPw(true);
