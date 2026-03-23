@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { HelpTip } from "@/components/ui/HelpTip";
-import { ClientBottomNav } from "@/components/client/ClientBottomNav";
+
 import { PushNotificationToggle } from "@/components/notifications/PushNotificationToggle";
 import { Bell, Globe, Loader2 } from "lucide-react";
 import { toast } from "sonner";
