@@ -41,7 +41,7 @@ export default function PortalPolicen() {
   return (
     <div className="space-y-4 max-w-4xl">
       <div className="flex items-center justify-between">
-        <div><h1 className="text-xl font-bold">Policen-Verwaltung</h1><p className="text-sm text-muted-foreground">{`${org.name}</p></div>
+        <div><h1 className="text-xl font-bold">Policen-Verwaltung</h1><p className="text-sm text-muted-foreground">{`${org.name}`}</p></div>
         <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" /> Neue Police</Button>
       </div>
 

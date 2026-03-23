@@ -29,7 +29,7 @@ export default function PortalStatistiken() {
 
   return (
     <div className="space-y-4 max-w-4xl">
-      <div><h1 className="text-xl font-bold">Statistiken</h1><p className="text-sm text-muted-foreground">{`${org.name}</p></div>
+      <div><h1 className="text-xl font-bold">Statistiken</h1><p className="text-sm text-muted-foreground">{`${org.name}`}</p></div>
 
       <KpiGrid columns={4} items={stats} />
 
