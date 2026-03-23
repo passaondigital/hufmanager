@@ -130,8 +130,5 @@ export default function PortalAppLayout() {
 
 /** Hook for portal child pages to access org context */
 export function usePortalContext() {
-  // Dynamically import to avoid circular deps
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const ctx = (await import("react-router-dom")).useOutletContext as any;
-  return ctx() as { org: Organization; membership: any; basePath: string };
+  return useOutletContext<{ org: Organization; membership: any; basePath: string }>();
 }
