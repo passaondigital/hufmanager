@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Shield, Factory, Stethoscope, Package, GraduationCap, Landmark, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -130,7 +131,10 @@ export default function PortalGallery() {
 
         {/* Back */}
         <div className="mt-6 text-center">
-          <Button variant="ghost" onClick={() => navigate("/auth")} className="text-muted-foreground">
+          <Button variant="ghost" onClick={async () => {
+            await supabase.auth.signOut();
+            navigate("/auth");
+          }} className="text-muted-foreground">
             ← Zurück zum Login
           </Button>
         </div>
