@@ -32,7 +32,7 @@ import { CreateHorseModal } from "@/components/horse-detail/CreateHorseModal";
 import { ClientOnboarding } from "@/components/client/ClientOnboarding";
 import { MandatoryHorseModal } from "@/components/onboarding/MandatoryHorseModal";
 import { HMCamModal } from "@/components/hufcam";
-import { ClientBottomNav } from "@/components/client/ClientBottomNav";
+
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { DemoTourButton } from "@/components/demo/DemoTourButton";
 import { DemoModeIndicator } from "@/components/demo/DemoModeIndicator";
