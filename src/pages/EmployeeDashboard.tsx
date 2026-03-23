@@ -164,7 +164,7 @@ const EmployeeDashboard = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-assignments"] });
-      toast({ title: "Eingecheckt", description: "Du bist jetzt vor Ort eingetragen." });
+      toast.success("Eingecheckt — Du bist jetzt vor Ort eingetragen.");
     },
     onError: (e: Error) => toast({ title: "Fehler", description: e.message, variant: "destructive" }),
   });
