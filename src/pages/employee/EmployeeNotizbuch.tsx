@@ -101,7 +101,7 @@ const EmployeeNotizbuch = () => {
       setEntries((prev) => [newEntry, ...prev]);
     }
     resetForm();
-    toast({ title: "Gespeichert", description: "Notiz wurde lokal gespeichert." });
+    toast.success("Notiz wurde lokal gespeichert.");
   };
 
   const handleDelete = (id: string) => {
