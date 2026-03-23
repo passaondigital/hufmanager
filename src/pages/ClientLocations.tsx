@@ -305,7 +305,6 @@ export default function ClientLocations() {
         </DialogContent>
       </Dialog>
 
-      <ClientBottomNav />
     </div>
   );
 }

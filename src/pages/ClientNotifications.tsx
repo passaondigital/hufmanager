@@ -126,7 +126,6 @@ export default function ClientNotifications() {
         </Card>
       </div>
 
-      <ClientBottomNav />
     </div>
   );
 }

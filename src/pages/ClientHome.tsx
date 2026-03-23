@@ -94,12 +94,22 @@ function ClientKpiGrid({ horses, userId }: { horses: Horse[]; userId?: string })
   });
 
   const { data: healthStatus = "unknown" as string } = useQuery({
-    queryKey: ["client-health-status", userId],
+    queryKey: ["client-health-status", userId, horses.map(h => h.id).join(",")],
     queryFn: async (): Promise<string> => {
       if (horses.length === 0) return "none";
-      return "healthy";
+      const horseIds = horses.map(h => h.id);
+      // Check horse_health_logs for any warning/critical entries
+      const { data: logs } = await supabase
+        .from("horse_health_logs")
+        .select("wellbeing_score")
+        .in("horse_id", horseIds)
+        .order("logged_at", { ascending: false })
+        .limit(horseIds.length);
+      if (!logs || logs.length === 0) return "healthy";
+      const hasWarning = logs.some(l => (l.wellbeing_score ?? 100) < 70);
+      return hasWarning ? "warning" : "healthy";
     },
-    enabled: !!userId,
+    enabled: !!userId && horses.length > 0,
     staleTime: 120_000,
   });
 
