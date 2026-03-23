@@ -78,13 +78,33 @@ export default function PartnerHome() {
     enabled: !!user, staleTime: 60_000,
   });
 
+  const { data: referralCount = 0 } = useQuery({
+    queryKey: ["partner-referrals-kpi", user?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("pferdeakte_botschafter")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user!.id);
+      return count ?? 0;
+    },
+    enabled: !!user, staleTime: 120_000,
+  });
+
   return (
     <div className="space-y-4 pb-4">
       {/* ZONE 1 */}
       <DashboardHero name={profileData?.full_name} subtitle="Partner-Dashboard">
+        {user && (
+          <NextAppointmentCard
+            userId={user.id}
+            role="provider"
+            onNavigate={() => navigate("/partner-horses")}
+            onDetails={() => navigate("/partner-horses")}
+          />
+        )}
         <QuickActionBar actions={[
           { key: "pferde", label: "Betreute Pferde", icon: Heart, primary: true, onClick: () => navigate("/partner-horses") },
-          { key: "import", label: "Import Center", icon: FileText, onClick: () => navigate("/import-center") },
+          { key: "import", label: "Import Center", icon: Upload, onClick: () => navigate("/partner-import") },
         ]} />
       </DashboardHero>
 
@@ -95,10 +115,9 @@ export default function PartnerHome() {
       <KpiGrid items={[
         { icon: Heart, label: "Pferde", value: horseCount, sub: "zugewiesen", highlight: true },
         { icon: Calendar, label: "Termine", value: partnerAppointments, sub: "anstehend" },
-        { icon: Users, label: "Empfehlungen", value: "–", sub: "Botschafter" },
+        { icon: Users, label: "Empfehlungen", value: referralCount, sub: "Botschafter" },
         { icon: Clock, label: "Letzte Aktivität", value: lastActivity ? formatDistanceToNow(new Date(lastActivity), { locale: de, addSuffix: true }) : "–", sub: "" },
       ]} />
-
       {/* ZONE 3 — Widget Grid */}
       {isMobile ? (
         <div className="space-y-4">
