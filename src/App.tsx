@@ -337,6 +337,20 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
               <Route path="team" element={<PortalTeam />} />
               <Route path="connect" element={<PortalConnect />} />
               <Route path="import" element={<PortalImport />} />
+              <Route path="policen" element={<PortalPolicen />} />
+              <Route path="claims" element={<PortalClaims />} />
+              <Route path="produkte" element={<PortalProdukte />} />
+              <Route path="orders" element={<PortalOrders />} />
+              <Route path="schulungen" element={<PortalSchulungen />} />
+              <Route path="kurse" element={<PortalKurse />} />
+              <Route path="schueler" element={<PortalSchueler />} />
+              <Route path="pruefungen" element={<PortalPruefungen />} />
+              <Route path="standards" element={<PortalStandards />} />
+              <Route path="mitglieder" element={<PortalMitglieder />} />
+              <Route path="statistiken" element={<PortalStatistiken />} />
+              <Route path="patienten" element={<PortalPatienten />} />
+              <Route path="befunde" element={<PortalBefunde />} />
+              <Route path="impfungen" element={<PortalImpfungen />} />
               <Route path="*" element={<PortalPlaceholder />} />
             </Route>
             <Route path="*" element={<PortalLogin mode={portalMode.mode} />} />
