@@ -89,7 +89,7 @@ const EmployeeMaterial = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employee-material-requests"] });
-      toast({ title: "Anfrage gesendet ✓" });
+      toast.success("Anfrage gesendet ✓");
       setRequestDialog(null);
       setReqQty(1);
       setReqNote("");
