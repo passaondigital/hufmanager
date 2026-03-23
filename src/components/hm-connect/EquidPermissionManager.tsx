@@ -18,6 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { logHorseAction } from "@/utils/auditLog";
 
 interface PermissionToggle {
   key: string;
