@@ -18,6 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { logHorseAction } from "@/utils/auditLog";
 
 interface PermissionToggle {
   key: string;
@@ -130,12 +131,20 @@ export function EquidPermissionManager() {
   });
 
   const updatePermission = useMutation({
-    mutationFn: async ({ accessId, key, value }: { accessId: string; key: string; value: boolean }) => {
+    mutationFn: async ({ accessId, key, value, horseId, partnerName }: { accessId: string; key: string; value: boolean; horseId: string; partnerName: string }) => {
       const { error } = await supabase
         .from("horse_partner_access")
         .update({ [key]: value, updated_at: new Date().toISOString() })
         .eq("id", accessId);
       if (error) throw error;
+
+      // DSGVO Audit: Log permission change
+      await logHorseAction(horseId, "permission_changed", {
+        partner_name: partnerName,
+        permission: key,
+        new_value: value,
+        access_id: accessId,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["equid-permissions"] });
@@ -264,6 +273,8 @@ export function EquidPermissionManager() {
                                     accessId: access.id,
                                     key: pt.key,
                                     value: checked,
+                                    horseId: access.horse_id,
+                                    partnerName: access.partner_name,
                                   });
                                 }}
                                 className="flex-shrink-0"
