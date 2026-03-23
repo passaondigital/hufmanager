@@ -349,7 +349,7 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
               onValueChange={async (val) => {
                 await supabase.from("employee_profiles").update({ country: val }).eq("id", profile.id);
                 queryClient.invalidateQueries({ queryKey: ["employee-profile"] });
-                toast({ title: "Land aktualisiert" });
+                toast.success("Land aktualisiert");
               }}
             >
               <SelectTrigger><SelectValue /></SelectTrigger>
