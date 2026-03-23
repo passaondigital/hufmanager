@@ -145,7 +145,7 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
       queryClient.invalidateQueries({ queryKey: ["employee-profile"] });
       toast.success("Profilbild aktualisiert ✓");
     } catch (err: any) {
-      toast({ title: "Upload fehlgeschlagen", description: err.message, variant: "destructive" });
+      toast.error(`Upload fehlgeschlagen: ${err.message}`);
     } finally {
       setUploadingAvatar(false);
     }
