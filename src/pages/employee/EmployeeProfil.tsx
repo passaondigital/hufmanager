@@ -183,7 +183,7 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
       await signOut();
       navigate("/");
     } catch (err: any) {
-      toast({ title: "Fehler", description: err.message, variant: "destructive" });
+      toast.error(`Fehler: ${err.message}`);
     } finally {
       setDeleting(false);
     }
