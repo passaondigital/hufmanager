@@ -1,68 +1,36 @@
-import { useParams, Navigate } from "react-router-dom";
-import { useOrganizationBySlug, useOrgMembership } from "@/hooks/useOrganization";
-import { useAuth } from "@/hooks/useAuth";
-import { PortalSidebar } from "@/components/portal/PortalSidebar";
+import { useOutletContext } from "react-router-dom";
 import { PortalWidgets } from "@/components/portal/PortalWidgets";
-import { Loader2 } from "lucide-react";
+import { DashboardHero, KpiGrid } from "@/components/dashboard-zones";
+import { Users, Calendar, TrendingUp } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import type { Organization } from "@/hooks/useOrganization";
 
 export default function PortalDashboard() {
-  const { slug } = useParams<{ slug: string }>();
-  const { user, loading: authLoading } = useAuth();
-  const { data: org, isLoading: orgLoading } = useOrganizationBySlug(slug);
-  const { data: membership, isLoading: memLoading } = useOrgMembership(org?.id);
+  const { org, basePath } = useOutletContext<{ org: Organization; membership: any; basePath: string }>();
 
-  if (authLoading || orgLoading || memLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  if (!org) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-2">
-          <h1 className="text-xl font-bold">Portal nicht gefunden</h1>
-          <p className="text-sm text-muted-foreground">Die Organisation „{slug}" existiert nicht oder ist deaktiviert.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!membership) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-2">
-          <h1 className="text-xl font-bold">Zugang nicht autorisiert</h1>
-          <p className="text-sm text-muted-foreground">Du bist kein Mitglied von {org.name}.</p>
-        </div>
-      </div>
-    );
-  }
-
-  const basePath = `/portal/${slug}`;
+  const { data: memberCount = 0 } = useQuery({
+    queryKey: ["portal-members", org.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("organization_members")
+        .select("id", { count: "exact", head: true })
+        .eq("org_id", org.id)
+        .eq("is_active", true);
+      return count ?? 0;
+    },
+  });
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <PortalSidebar org={org} basePath={basePath} />
-      <main className="flex-1 p-6 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Willkommen im {org.name} Portal</p>
-        </div>
-        <PortalWidgets orgId={org.id} orgType={org.type || "other"} />
+    <div className="space-y-4 max-w-4xl">
+      <DashboardHero subtitle={`${org.name} — ${org.type || "Portal"} Dashboard`} />
 
-        {/* TODO: Add recent activity list, charts per org type */}
-        <div className="rounded-2xl border bg-card p-6">
-          <h2 className="text-lg font-semibold mb-2">Letzte Aktivitäten</h2>
-          <p className="text-sm text-muted-foreground">Hier erscheinen bald die neuesten Ereignisse in deinem Portal.</p>
-        </div>
-      </main>
+      <PortalWidgets orgId={org.id} orgType={org.type || "other"} />
+
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h2 className="text-lg font-semibold mb-2">Letzte Aktivitäten</h2>
+        <p className="text-sm text-muted-foreground">Hier erscheinen bald die neuesten Ereignisse in deinem Portal.</p>
+      </div>
     </div>
   );
 }
