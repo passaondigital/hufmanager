@@ -614,24 +614,25 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="kalender" element={<PortalCalendar />} />
               <Route path="management" element={<PortalManagementHub />} />
               <Route path="settings" element={<PortalSettings />} />
-              <Route path="policen" element={<PortalPlaceholder />} />
-              <Route path="claims" element={<PortalPlaceholder />} />
+              <Route path="policen" element={<PortalPolicen />} />
+              <Route path="claims" element={<PortalClaims />} />
               <Route path="analytics" element={<PortalAnalytics />} />
               <Route path="team" element={<PortalTeam />} />
               <Route path="connect" element={<PortalConnect />} />
               <Route path="import" element={<PortalImport />} />
-              <Route path="produkte" element={<PortalPlaceholder />} />
-              <Route path="schulungen" element={<PortalPlaceholder />} />
-              <Route path="orders" element={<PortalPlaceholder />} />
-              <Route path="kurse" element={<PortalPlaceholder />} />
-              <Route path="schueler" element={<PortalPlaceholder />} />
-              <Route path="pruefungen" element={<PortalPlaceholder />} />
-              <Route path="standards" element={<PortalPlaceholder />} />
-              <Route path="mitglieder" element={<PortalTeam />} />
-              <Route path="statistiken" element={<PortalAnalytics />} />
-              <Route path="patienten" element={<PortalPlaceholder />} />
-              <Route path="befunde" element={<PortalPlaceholder />} />
-              <Route path="impfungen" element={<PortalPlaceholder />} />
+              <Route path="produkte" element={<PortalProdukte />} />
+              <Route path="schulungen" element={<PortalSchulungen />} />
+              <Route path="orders" element={<PortalOrders />} />
+              <Route path="kurse" element={<PortalKurse />} />
+              <Route path="schueler" element={<PortalSchueler />} />
+              <Route path="pruefungen" element={<PortalPruefungen />} />
+              <Route path="standards" element={<PortalStandards />} />
+              <Route path="mitglieder" element={<PortalMitglieder />} />
+              <Route path="statistiken" element={<PortalStatistiken />} />
+              <Route path="patienten" element={<PortalPatienten />} />
+              <Route path="befunde" element={<PortalBefunde />} />
+              <Route path="impfungen" element={<PortalImpfungen />} />
+              <Route path="*" element={<PortalPlaceholder />} />
               <Route path="*" element={<PortalPlaceholder />} />
             </Route>
             
