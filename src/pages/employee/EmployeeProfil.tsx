@@ -114,7 +114,7 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
       toast.success("Profil gespeichert ✓");
       setEditing(false);
     } catch (err: any) {
-      toast({ title: "Fehler", description: err.message, variant: "destructive" });
+      toast.error(`Fehler: ${err.message}`);
     } finally {
       setSaving(false);
     }
