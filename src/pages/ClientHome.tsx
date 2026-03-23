@@ -101,12 +101,12 @@ function ClientKpiGrid({ horses, userId }: { horses: Horse[]; userId?: string })
       // Check horse_health_logs for any warning/critical entries
       const { data: logs } = await supabase
         .from("horse_health_logs")
-        .select("wellbeing_score")
+        .select("wellbeing")
         .in("horse_id", horseIds)
-        .order("logged_at", { ascending: false })
+        .order("date", { ascending: false })
         .limit(horseIds.length);
       if (!logs || logs.length === 0) return "healthy";
-      const hasWarning = logs.some(l => (l.wellbeing_score ?? 100) < 70);
+      const hasWarning = logs.some(l => (l.wellbeing ?? 100) < 70);
       return hasWarning ? "warning" : "healthy";
     },
     enabled: !!userId && horses.length > 0,
