@@ -218,7 +218,7 @@ export default function ClientHome() {
     }
   }, [loading, isFirstLogin, horses.length, showOnboarding]);
 
-  const handleLogout = async () => { await signOut(); navigate("/auth"); };
+  
   const handleHorseCreated = (horseId: string) => {
     setShowMandatoryHorseModal(false);
     fetchData();
