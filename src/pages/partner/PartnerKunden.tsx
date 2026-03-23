@@ -169,7 +169,7 @@ const PartnerKunden = () => {
 
       if (error) throw error;
 
-      toast({ title: "Kunde angelegt", description: fullName });
+      toast.success(`Kunde angelegt: ${fullName}`);
       queryClient.invalidateQueries({ queryKey: ["partner-clients"] });
       setShowNewClientModal(false);
       resetNewClientForm();
