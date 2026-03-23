@@ -51,7 +51,7 @@ function saveEntries(entries: NotebookEntry[]) {
 }
 
 const EmployeeNotizbuch = () => {
-  const { toast } = useToast();
+  
   const [entries, setEntries] = useState<NotebookEntry[]>(loadEntries);
   const [search, setSearch] = useState("");
   const [editEntry, setEditEntry] = useState<NotebookEntry | null>(null);
