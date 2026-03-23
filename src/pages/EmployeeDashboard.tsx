@@ -8,7 +8,7 @@ import { DashboardWelcomeHeader } from "@/components/dashboard/DashboardWelcomeH
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { EmployeeDocumentationForm } from "@/components/team/EmployeeDocumentationForm";
 import { EmployeeAvailabilityManager } from "@/components/team/EmployeeAvailabilityManager";
 import { EmployeeOnboarding } from "@/components/employee/EmployeeOnboarding";
