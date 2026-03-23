@@ -170,6 +170,10 @@ const PortalCalendar = lazy(() => import("@/pages/portal/PortalCalendar"));
 const PortalManagementHub = lazy(() => import("@/pages/portal/PortalManagementHub"));
 const PortalAppLayout = lazy(() => import("@/components/portal/PortalAppLayout"));
 const PortalPlaceholder = lazy(() => import("@/pages/portal/PortalPlaceholder"));
+const PortalTeam = lazy(() => import("@/pages/portal/PortalTeam"));
+const PortalAnalytics = lazy(() => import("@/pages/portal/PortalAnalytics"));
+const PortalConnect = lazy(() => import("@/pages/portal/PortalConnect"));
+const PortalImport = lazy(() => import("@/pages/portal/PortalImport"));
 const PortalGallery = lazy(() => import("@/pages/portal/PortalGallery"));
 const PortalApplication = lazy(() => import("@/pages/portal/PortalApplication"));
 const PortalDemo = lazy(() => import("@/pages/portal/PortalDemo"));
@@ -231,6 +235,16 @@ const StallbetreiberAppLayout = lazy(() => import("@/components/stallbetreiber/S
 // Stallbetreiber pages (lazy)
 const StallDashboard = lazy(() => import("@/pages/stallbetreiber/StallDashboard"));
 const StallPlaceholder = lazy(() => import("@/pages/stallbetreiber/StallPlaceholder"));
+const StallKalender = lazy(() => import("@/pages/stallbetreiber/StallKalender"));
+const StallCockpit = lazy(() => import("@/pages/stallbetreiber/StallCockpit"));
+const StallLager = lazy(() => import("@/pages/stallbetreiber/StallLager"));
+const StallAnfragen = lazy(() => import("@/pages/stallbetreiber/StallAnfragen"));
+const StallAngebote = lazy(() => import("@/pages/stallbetreiber/StallAngebote"));
+const StallLeistungen = lazy(() => import("@/pages/stallbetreiber/StallLeistungen"));
+const StallSettings = lazy(() => import("@/pages/stallbetreiber/StallSettings"));
+const ClientKalender = lazy(() => import("@/pages/client/ClientKalender"));
+const ClientHistorie = lazy(() => import("@/pages/client/ClientHistorie"));
+const ClientDokumente = lazy(() => import("@/pages/client/ClientDokumente"));
 
 // Components
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
@@ -305,6 +319,10 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
               <Route path="kalender" element={<PortalCalendar />} />
               <Route path="management" element={<PortalManagementHub />} />
               <Route path="settings" element={<PortalSettings />} />
+              <Route path="analytics" element={<PortalAnalytics />} />
+              <Route path="team" element={<PortalTeam />} />
+              <Route path="connect" element={<PortalConnect />} />
+              <Route path="import" element={<PortalImport />} />
               <Route path="*" element={<PortalPlaceholder />} />
             </Route>
             <Route path="*" element={<PortalLogin mode={portalMode.mode} />} />
@@ -570,10 +588,10 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="settings" element={<PortalSettings />} />
               <Route path="policen" element={<PortalPlaceholder />} />
               <Route path="claims" element={<PortalPlaceholder />} />
-              <Route path="analytics" element={<PortalPlaceholder />} />
-              <Route path="team" element={<PortalPlaceholder />} />
-              <Route path="connect" element={<PortalPlaceholder />} />
-              <Route path="import" element={<PortalPlaceholder />} />
+              <Route path="analytics" element={<PortalAnalytics />} />
+              <Route path="team" element={<PortalTeam />} />
+              <Route path="connect" element={<PortalConnect />} />
+              <Route path="import" element={<PortalImport />} />
               <Route path="produkte" element={<PortalPlaceholder />} />
               <Route path="schulungen" element={<PortalPlaceholder />} />
               <Route path="orders" element={<PortalPlaceholder />} />
@@ -581,8 +599,8 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="schueler" element={<PortalPlaceholder />} />
               <Route path="pruefungen" element={<PortalPlaceholder />} />
               <Route path="standards" element={<PortalPlaceholder />} />
-              <Route path="mitglieder" element={<PortalPlaceholder />} />
-              <Route path="statistiken" element={<PortalPlaceholder />} />
+              <Route path="mitglieder" element={<PortalTeam />} />
+              <Route path="statistiken" element={<PortalAnalytics />} />
               <Route path="patienten" element={<PortalPlaceholder />} />
               <Route path="befunde" element={<PortalPlaceholder />} />
               <Route path="impfungen" element={<PortalPlaceholder />} />
@@ -785,6 +803,10 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client-marketplace" element={<ClientMarketplace />} />
               <Route path="/client-marketplace/create" element={<ClientMarketplaceCreate />} />
               <Route path="/client-marketplace/mine" element={<ClientMyListings />} />
+              <Route path="/client-kalender" element={<ClientKalender />} />
+              <Route path="/client-historie" element={<ClientHistorie />} />
+              <Route path="/client-dokumente" element={<ClientDokumente />} />
+              <Route path="/client-support" element={<Support />} />
             </Route>
 
             {/* --- 3b. STALLBETREIBER ROUTES --- */}
@@ -796,17 +818,17 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               }
             >
               <Route path="/stall/dashboard" element={<StallDashboard />} />
-              <Route path="/stall/anfragen" element={<StallPlaceholder />} />
+              <Route path="/stall/anfragen" element={<StallAnfragen />} />
               <Route path="/stall/buchungsportal" element={<StallPlaceholder />} />
-              <Route path="/stall/angebote" element={<StallPlaceholder />} />
-              <Route path="/stall/leistungen" element={<StallPlaceholder />} />
+              <Route path="/stall/angebote" element={<StallAngebote />} />
+              <Route path="/stall/leistungen" element={<StallLeistungen />} />
               <Route path="/stall/boarders" element={<ClientStallBoarders />} />
               <Route path="/stall/pferde" element={<ClientHorses />} />
               <Route path="/stall/overview" element={<ClientStallOverview />} />
-              <Route path="/stall/cockpit" element={<StallPlaceholder />} />
-              <Route path="/stall/kalender" element={<StallPlaceholder />} />
+              <Route path="/stall/cockpit" element={<StallCockpit />} />
+              <Route path="/stall/kalender" element={<StallKalender />} />
               <Route path="/stall/staff" element={<ClientStallStaff />} />
-              <Route path="/stall/lager" element={<StallPlaceholder />} />
+              <Route path="/stall/lager" element={<StallLager />} />
               <Route path="/stall/rechnungen" element={<ClientInvoices />} />
               <Route path="/stall/betrieb" element={<ClientStallOverview />} />
               <Route path="/stall/reports" element={<ClientStallReports />} />
@@ -814,7 +836,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/stall/connect" element={<HMConnect />} />
               <Route path="/stall/chat" element={<ClientChat />} />
               <Route path="/stall/marketplace" element={<ClientMarketplace />} />
-              <Route path="/stall/settings" element={<StallPlaceholder />} />
+              <Route path="/stall/settings" element={<StallSettings />} />
               <Route path="/stall/import" element={<ImportCenter />} />
               <Route path="/stall/profil" element={<ClientProfile />} />
               <Route path="/stall/support" element={<Support />} />
@@ -853,6 +875,11 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/employee/support" element={<Support />} />
               <Route path="/employee/pferde" element={<EmployeePferde />} />
               <Route path="/employee/connect" element={<HMConnect />} />
+              <Route path="/employee/work-mode" element={<WorkMode />} />
+              <Route path="/employee/lager" element={<Lager />} />
+              <Route path="/employee/fuhrpark" element={<Fuhrpark />} />
+              <Route path="/employee/marketplace" element={<Marketplace />} />
+              <Route path="/employee/notfall" element={<EmergencyDashboard />} />
             </Route>
 
             {/* --- 5. PARTNER (FACHPARTNER) ROUTES --- */}
