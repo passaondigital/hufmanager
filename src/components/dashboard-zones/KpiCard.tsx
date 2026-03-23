@@ -14,7 +14,7 @@ interface KpiCardProps {
   valueClassName?: string;
 }
 
-export function KpiCard({ icon, label, value, sub, highlight, warning, onClick, navigateTo }: KpiCardProps) {
+export function KpiCard({ icon, label, value, sub, highlight, warning, onClick, navigateTo, valueClassName }: KpiCardProps) {
   const navigate = useNavigate();
   const handleClick = () => {
     if (onClick) onClick();
