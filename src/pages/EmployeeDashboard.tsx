@@ -8,7 +8,7 @@ import { DashboardWelcomeHeader } from "@/components/dashboard/DashboardWelcomeH
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { EmployeeDocumentationForm } from "@/components/team/EmployeeDocumentationForm";
 import { EmployeeAvailabilityManager } from "@/components/team/EmployeeAvailabilityManager";
 import { EmployeeOnboarding } from "@/components/employee/EmployeeOnboarding";
@@ -33,7 +33,7 @@ const SECTION_ORDER: Section[] = ["profil", "zeiten"];
 
 const EmployeeDashboard = () => {
   const { user, signOut } = useAuth();
-  const { toast } = useToast();
+  
   const queryClient = useQueryClient();
   const { data: profile, isLoading: profileLoading } = useEmployeeProfile();
   const [docAssignment, setDocAssignment] = useState<any>(null);
@@ -164,9 +164,9 @@ const EmployeeDashboard = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-assignments"] });
-      toast({ title: "Eingecheckt", description: "Du bist jetzt vor Ort eingetragen." });
+      toast.success("Eingecheckt — Du bist jetzt vor Ort eingetragen.");
     },
-    onError: (e: Error) => toast({ title: "Fehler", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast.error(`Fehler: ${e.message}`),
   });
 
   const checkOut = useMutation({
@@ -188,9 +188,9 @@ const EmployeeDashboard = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-assignments"] });
-      toast({ title: "Ausgecheckt", description: "Arbeit abgeschlossen." });
+      toast.success("Ausgecheckt — Arbeit abgeschlossen.");
     },
-    onError: (e: Error) => toast({ title: "Fehler", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast.error(`Fehler: ${e.message}`),
   });
 
   // Compute work hours

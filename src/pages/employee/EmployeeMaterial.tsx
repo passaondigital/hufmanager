@@ -9,14 +9,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Package, Minus, Plus, ShoppingCart, Loader2 } from "lucide-react";
 import { HelpTip } from "@/components/ui/HelpTip";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 
 const EmployeeMaterial = () => {
   const { data: profile } = useEmployeeProfile();
-  const { toast } = useToast();
+  
   const queryClient = useQueryClient();
   const [requestDialog, setRequestDialog] = useState<any>(null);
   const [reqQty, setReqQty] = useState(1);
@@ -62,7 +62,7 @@ const EmployeeMaterial = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employee-materials"] });
-      toast({ title: "Verbrauch aktualisiert" });
+      toast.success("Verbrauch aktualisiert");
     },
   });
 
@@ -89,12 +89,12 @@ const EmployeeMaterial = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employee-material-requests"] });
-      toast({ title: "Anfrage gesendet ✓" });
+      toast.success("Anfrage gesendet ✓");
       setRequestDialog(null);
       setReqQty(1);
       setReqNote("");
     },
-    onError: () => toast({ title: "Fehler", variant: "destructive" }),
+    onError: () => toast.error("Fehler beim Senden"),
   });
 
   return (

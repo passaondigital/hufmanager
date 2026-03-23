@@ -24,7 +24,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface NotebookEntry {
   id: string;
@@ -51,7 +51,7 @@ function saveEntries(entries: NotebookEntry[]) {
 }
 
 const EmployeeNotizbuch = () => {
-  const { toast } = useToast();
+  
   const [entries, setEntries] = useState<NotebookEntry[]>(loadEntries);
   const [search, setSearch] = useState("");
   const [editEntry, setEditEntry] = useState<NotebookEntry | null>(null);
@@ -69,7 +69,7 @@ const EmployeeNotizbuch = () => {
     if (!files) return;
     Array.from(files).forEach((file) => {
       if (file.size > 5 * 1024 * 1024) {
-        toast({ title: "Zu groß", description: "Max. 5 MB pro Bild", variant: "destructive" });
+        toast.error("Max. 5 MB pro Bild");
         return;
       }
       const reader = new FileReader();
@@ -101,12 +101,12 @@ const EmployeeNotizbuch = () => {
       setEntries((prev) => [newEntry, ...prev]);
     }
     resetForm();
-    toast({ title: "Gespeichert", description: "Notiz wurde lokal gespeichert." });
+    toast.success("Notiz wurde lokal gespeichert.");
   };
 
   const handleDelete = (id: string) => {
     setEntries((prev) => prev.filter((e) => e.id !== id));
-    toast({ title: "Gelöscht" });
+    toast("Gelöscht");
   };
 
   const resetForm = () => {

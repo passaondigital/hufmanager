@@ -12,7 +12,7 @@ import { CalendarOff, Plus, X } from "lucide-react";
 import { HelpTip } from "@/components/ui/HelpTip";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -45,7 +45,7 @@ const statusColors: Record<string, "default" | "secondary" | "destructive" | "ou
 
 const EmployeeAbwesenheiten = () => {
   const { data: profile } = useEmployeeProfile();
-  const { toast } = useToast();
+  
   const queryClient = useQueryClient();
   const [showNew, setShowNew] = useState(false);
   const [type, setType] = useState("vacation");
@@ -83,7 +83,7 @@ const EmployeeAbwesenheiten = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employee-absences"] });
-      toast({ title: "Antrag eingereicht", description: "Dein Provider wird benachrichtigt." });
+      toast.success("Antrag eingereicht — Dein Provider wird benachrichtigt.");
       setShowNew(false);
       setType("vacation");
       setStartDate("");
@@ -91,7 +91,7 @@ const EmployeeAbwesenheiten = () => {
       setNotes("");
     },
     onError: (err: Error) => {
-      toast({ title: "Fehler", description: err.message, variant: "destructive" });
+      toast.error(`Fehler: ${err.message}`);
     },
   });
 
@@ -105,7 +105,7 @@ const EmployeeAbwesenheiten = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employee-absences"] });
-      toast({ title: "Antrag storniert" });
+      toast("Antrag storniert");
     },
   });
 

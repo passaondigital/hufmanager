@@ -20,7 +20,7 @@ import { HelpTip } from "@/components/ui/HelpTip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
@@ -36,7 +36,7 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: profile } = useEmployeeProfile();
-  const { toast } = useToast();
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Edit state
@@ -93,7 +93,7 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
     try {
       // Validate phone for DACH
       if (editPhone && !/^(\+49|\+43|\+41|0)[0-9\s\-\/]{6,15}$/.test(editPhone.replace(/\s/g, ""))) {
-        toast({ title: "Ungültige Telefonnummer", description: "Bitte DACH-Format verwenden (+49, +43, +41 oder 0...)", variant: "destructive" });
+        toast.error("Ungültige Telefonnummer — Bitte DACH-Format verwenden (+49, +43, +41 oder 0...)");
         setSaving(false);
         return;
       }
@@ -111,10 +111,10 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
         .eq("id", user.id);
 
       queryClient.invalidateQueries({ queryKey: ["employee-profile"] });
-      toast({ title: "Profil gespeichert ✓" });
+      toast.success("Profil gespeichert ✓");
       setEditing(false);
     } catch (err: any) {
-      toast({ title: "Fehler", description: err.message, variant: "destructive" });
+      toast.error(`Fehler: ${err.message}`);
     } finally {
       setSaving(false);
     }
@@ -124,7 +124,7 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
     const file = e.target.files?.[0];
     if (!file || !user?.id) return;
     if (file.size > 2 * 1024 * 1024) {
-      toast({ title: "Datei zu groß", description: "Max. 2 MB erlaubt.", variant: "destructive" });
+      toast.error("Datei zu groß — Max. 2 MB erlaubt.");
       return;
     }
     setUploadingAvatar(true);
@@ -143,9 +143,9 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
       await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("id", user.id);
 
       queryClient.invalidateQueries({ queryKey: ["employee-profile"] });
-      toast({ title: "Profilbild aktualisiert ✓" });
+      toast.success("Profilbild aktualisiert ✓");
     } catch (err: any) {
-      toast({ title: "Upload fehlgeschlagen", description: err.message, variant: "destructive" });
+      toast.error(`Upload fehlgeschlagen: ${err.message}`);
     } finally {
       setUploadingAvatar(false);
     }
@@ -153,20 +153,20 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
 
   const handlePasswordChange = async () => {
     if (newPassword.length < 6) {
-      toast({ title: "Fehler", description: "Mindestens 6 Zeichen erforderlich.", variant: "destructive" });
+      toast.error("Mindestens 6 Zeichen erforderlich.");
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast({ title: "Fehler", description: "Passwörter stimmen nicht überein.", variant: "destructive" });
+      toast.error("Passwörter stimmen nicht überein.");
       return;
     }
     setChangingPw(true);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     setChangingPw(false);
     if (error) {
-      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+      toast.error(`Fehler: ${error.message}`);
     } else {
-      toast({ title: "Passwort geändert" });
+      toast.success("Passwort geändert");
       setShowPwDialog(false);
       setNewPassword("");
       setConfirmPassword("");
@@ -179,11 +179,11 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
     try {
       const { error } = await supabase.rpc("delete_employee_account", { _employee_user_id: user.id });
       if (error) throw error;
-      toast({ title: "Konto gelöscht" });
+      toast.success("Konto gelöscht");
       await signOut();
       navigate("/");
     } catch (err: any) {
-      toast({ title: "Fehler", description: err.message, variant: "destructive" });
+      toast.error(`Fehler: ${err.message}`);
     } finally {
       setDeleting(false);
     }
@@ -349,7 +349,7 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
               onValueChange={async (val) => {
                 await supabase.from("employee_profiles").update({ country: val }).eq("id", profile.id);
                 queryClient.invalidateQueries({ queryKey: ["employee-profile"] });
-                toast({ title: "Land aktualisiert" });
+                toast.success("Land aktualisiert");
               }}
             >
               <SelectTrigger><SelectValue /></SelectTrigger>
