@@ -250,9 +250,9 @@ export function useEmployeeAssignments(employeeId?: string) {
 
 // Hook for employee's own profile (for employee view)
 export function useEmployeeProfile() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ["employee-profile", user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
@@ -269,4 +269,11 @@ export function useEmployeeProfile() {
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 10, // 10 minutes - profile rarely changes
   });
+
+  // Include auth loading in isLoading so consumers don't show
+  // "no profile" while auth is still resolving
+  return {
+    ...query,
+    isLoading: authLoading || query.isLoading,
+  };
 }
