@@ -188,7 +188,7 @@ const EmployeeDashboard = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-assignments"] });
-      toast({ title: "Ausgecheckt", description: "Arbeit abgeschlossen." });
+      toast.success("Ausgecheckt — Arbeit abgeschlossen.");
     },
     onError: (e: Error) => toast({ title: "Fehler", description: e.message, variant: "destructive" }),
   });
