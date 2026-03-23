@@ -11,6 +11,7 @@ interface KpiCardProps {
   warning?: boolean;
   onClick?: () => void;
   navigateTo?: string;
+  valueClassName?: string;
 }
 
 export function KpiCard({ icon, label, value, sub, highlight, warning, onClick, navigateTo }: KpiCardProps) {
