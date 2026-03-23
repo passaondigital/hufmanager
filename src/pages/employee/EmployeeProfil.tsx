@@ -111,7 +111,7 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
         .eq("id", user.id);
 
       queryClient.invalidateQueries({ queryKey: ["employee-profile"] });
-      toast({ title: "Profil gespeichert ✓" });
+      toast.success("Profil gespeichert ✓");
       setEditing(false);
     } catch (err: any) {
       toast({ title: "Fehler", description: err.message, variant: "destructive" });
