@@ -39,7 +39,7 @@ export default function PortalPatienten() {
   return (
     <div className="space-y-4 max-w-4xl">
       <div className="flex items-center justify-between">
-        <div><h1 class="text-xl font-bold">Patienten</h1><p class="text-sm text-muted-foreground">Patientenverwaltung und Behandlungsübersicht</p></div>
+        <div><h1 className="text-xl font-bold">Patienten</h1><p className="text-sm text-muted-foreground">Patientenverwaltung und Behandlungsübersicht</p></div>
         <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" /> Neuer Patient</Button>
       </div>
 

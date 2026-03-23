@@ -40,7 +40,7 @@ export default function PortalClaims() {
   return (
     <div className="space-y-4 max-w-4xl">
       <div className="flex items-center justify-between">
-        <div><h1 class="text-xl font-bold">Schadensfälle</h1><p class="text-sm text-muted-foreground">Schadensmeldungen und Regulierungen</p></div>
+        <div><h1 className="text-xl font-bold">Schadensfälle</h1><p className="text-sm text-muted-foreground">Schadensmeldungen und Regulierungen</p></div>
         <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" /> Neuer Schaden</Button>
       </div>
 

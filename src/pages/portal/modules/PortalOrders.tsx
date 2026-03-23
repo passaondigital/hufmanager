@@ -38,7 +38,7 @@ export default function PortalOrders() {
   return (
     <div className="space-y-4 max-w-4xl">
       <div className="flex items-center justify-between">
-        <div><h1 class="text-xl font-bold">Bestellungen</h1><p class="text-sm text-muted-foreground">Eingehende Bestellungen verwalten</p></div>
+        <div><h1 className="text-xl font-bold">Bestellungen</h1><p className="text-sm text-muted-foreground">Eingehende Bestellungen verwalten</p></div>
         <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" /> Neue Bestellung</Button>
       </div>
 
