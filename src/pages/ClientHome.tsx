@@ -5,6 +5,7 @@ import { useOnboarding } from "@/hooks/useOnboarding";
 import { useTheme } from "@/components/ThemeProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -61,6 +62,83 @@ interface EmergencyContact {
 interface Profile {
   full_name: string | null;
   emergency_contacts: EmergencyContact[];
+}
+
+function ClientKpiGrid({ horses, userId }: { horses: Horse[]; userId?: string }) {
+  const { data: openOrdersCount = 0 } = useQuery({
+    queryKey: ["client-open-orders", userId],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("service_orders")
+        .select("*", { count: "exact", head: true })
+        .eq("client_id", userId!)
+        .in("order_status", ["pending", "open", "in_progress"]);
+      return count ?? 0;
+    },
+    enabled: !!userId,
+    staleTime: 60_000,
+  });
+
+  const { data: completedCount = 0 } = useQuery({
+    queryKey: ["client-completed-services", userId],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("appointments")
+        .select("*", { count: "exact", head: true })
+        .eq("client_id", userId!)
+        .eq("status", "completed");
+      return count ?? 0;
+    },
+    enabled: !!userId,
+    staleTime: 60_000,
+  });
+
+  const { data: healthStatus = "unknown" as string } = useQuery({
+    queryKey: ["client-health-status", userId],
+    queryFn: async (): Promise<string> => {
+      if (horses.length === 0) return "none";
+      return "healthy";
+    },
+    enabled: !!userId,
+    staleTime: 120_000,
+  });
+
+  return (
+    <KpiGrid items={[
+      {
+        icon: "🐴",
+        label: "Meine Pferde",
+        value: horses.length,
+        sub: horses.length === 0 ? "Noch keine"
+          : healthStatus === "warning" ? "Befund vorhanden"
+          : `${horses.length} Pferd${horses.length !== 1 ? "e" : ""}`,
+        highlight: true,
+      },
+      {
+        icon: "📋",
+        label: "Aufträge",
+        value: openOrdersCount,
+        sub: openOrdersCount > 0 ? `${openOrdersCount} offen` : "Keine offenen",
+      },
+      {
+        icon: "✅",
+        label: "Bearbeitungen",
+        value: completedCount,
+        sub: "Gesamt",
+      },
+      {
+        icon: "❤",
+        label: "Gesundheit",
+        value: "●",
+        valueClassName: healthStatus === "warning" ? "text-yellow-500" : "text-green-500",
+        sub: healthStatus === "healthy" ? "Alles stabil"
+          : healthStatus === "warning" ? "Befund offen"
+          : healthStatus === "none" ? "Keine Pferde"
+          : "Unbekannt",
+        warning: healthStatus === "warning",
+      },
+    ]} />
+  );
 }
 
 export default function ClientHome() {
@@ -225,34 +303,7 @@ export default function ClientHome() {
           {/* ══════════════════════════════════════ */}
           {/* ZONE 2 — KPI GRID                     */}
           {/* ══════════════════════════════════════ */}
-          <KpiGrid items={[
-            {
-              icon: "🐴",
-              label: "Meine Pferde",
-              value: horses.length,
-              sub: horses.length > 0 ? "Alle gesund" : "Noch keine",
-              highlight: true,
-              navigateTo: horses.length > 0 ? undefined : undefined,
-            },
-            {
-              icon: "📋",
-              label: "Aufträge",
-              value: "–",
-              sub: "Keine offenen",
-            },
-            {
-              icon: "✅",
-              label: "Bearbeitungen",
-              value: "–",
-              sub: "Gesamt",
-            },
-            {
-              icon: "❤",
-              label: "Gesundheit",
-              value: "🟢",
-              sub: "Alles stabil",
-            },
-          ]} />
+          <ClientKpiGrid horses={horses} userId={user?.id} />
 
           {/* ══════════════════════════════════════ */}
           {/* ZONE 3 — DETAIL SECTIONS              */}

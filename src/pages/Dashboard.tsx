@@ -70,6 +70,19 @@ const Dashboard = () => {
     enabled: !!user, staleTime: 60_000,
   });
 
+  const { data: openOrdersCount = 0 } = useQuery({
+    queryKey: ["prov-open-orders", user?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("service_orders")
+        .select("*", { count: "exact", head: true })
+        .eq("provider_id", user!.id)
+        .in("order_status", ["pending", "open", "in_progress"]);
+      return count ?? 0;
+    },
+    enabled: !!user, staleTime: 60_000,
+  });
+
   const displayName = profileData?.full_name || null;
 
   return (
@@ -104,7 +117,7 @@ const Dashboard = () => {
           { icon: Calendar, label: "Heute", value: todayCount, sub: `${todayCount} Termine` },
           { icon: Users, label: "Kunden", value: clientsCount, sub: "aktiv" },
           { icon: Inbox, label: "Anfragen", value: leadsCount, sub: "offen", warning: leadsCount > 0 },
-          { icon: FileText, label: "Aufträge", value: "–", sub: "offen" },
+          { icon: FileText, label: "Aufträge", value: openOrdersCount, sub: openOrdersCount > 0 ? "offen" : "keine offenen", warning: openOrdersCount > 3 },
         ]} />
 
         {/* ══════ ZONE 3 — DETAILS ══════ */}

@@ -10,6 +10,7 @@ interface KpiItem {
   warning?: boolean;
   onClick?: () => void;
   navigateTo?: string;
+  valueClassName?: string;
 }
 
 interface KpiGridProps {

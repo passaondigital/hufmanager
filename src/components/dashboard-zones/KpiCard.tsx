@@ -11,9 +11,10 @@ interface KpiCardProps {
   warning?: boolean;
   onClick?: () => void;
   navigateTo?: string;
+  valueClassName?: string;
 }
 
-export function KpiCard({ icon, label, value, sub, highlight, warning, onClick, navigateTo }: KpiCardProps) {
+export function KpiCard({ icon, label, value, sub, highlight, warning, onClick, navigateTo, valueClassName }: KpiCardProps) {
   const navigate = useNavigate();
   const handleClick = () => {
     if (onClick) onClick();
@@ -45,7 +46,7 @@ export function KpiCard({ icon, label, value, sub, highlight, warning, onClick, 
       </div>
       <p className={cn(
         "text-lg font-semibold",
-        warning ? "text-destructive" : "text-foreground"
+        valueClassName ? valueClassName : warning ? "text-destructive" : "text-foreground"
       )}>
         {value}
       </p>
