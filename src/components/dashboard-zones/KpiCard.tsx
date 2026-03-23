@@ -46,7 +46,7 @@ export function KpiCard({ icon, label, value, sub, highlight, warning, onClick, 
       </div>
       <p className={cn(
         "text-lg font-semibold",
-        warning ? "text-destructive" : "text-foreground"
+        valueClassName ? valueClassName : warning ? "text-destructive" : "text-foreground"
       )}>
         {value}
       </p>
