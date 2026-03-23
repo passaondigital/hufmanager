@@ -2,7 +2,7 @@ import { useOutletContext } from "react-router-dom";
 import { GraduationCap, Plus, Search, Star, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SectionHeader } from "@/components/dashboard-zones";
+import { KpiGrid } from "@/components/dashboard-zones";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Organization } from "@/hooks/useOrganization";
@@ -23,7 +23,7 @@ export default function PortalSchueler() {
   return (
     <div className="space-y-4 max-w-4xl">
       <div className="flex items-center justify-between">
-        <SectionHeader icon="👩‍🎓" title="Schüler" subtitle="Auszubildende verwalten" />
+        <div><h1 class="text-xl font-bold">Schüler</h1><p class="text-sm text-muted-foreground">Auszubildende verwalten</p></div>
         <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" /> Neuer Schüler</Button>
       </div>
 

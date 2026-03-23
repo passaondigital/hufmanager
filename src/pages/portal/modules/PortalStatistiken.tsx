@@ -2,7 +2,7 @@ import { useOutletContext } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart3, Users, TrendingUp, Activity } from "lucide-react";
-import { KpiGrid, SectionHeader } from "@/components/dashboard-zones";
+import { KpiGrid } from "@/components/dashboard-zones";
 import type { Organization } from "@/hooks/useOrganization";
 
 export default function PortalStatistiken() {
@@ -29,7 +29,7 @@ export default function PortalStatistiken() {
 
   return (
     <div className="space-y-4 max-w-4xl">
-      <SectionHeader icon="📊" title="Statistiken" subtitle={`${org.name} — Verbands-Statistiken`} />
+      <div><h1 class="text-xl font-bold">Statistiken</h1><p class="text-sm text-muted-foreground">{`${org.name}</p></div>
 
       <KpiGrid columns={4} items={stats} />
 

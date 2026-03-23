@@ -1,7 +1,7 @@
 import { useOutletContext } from "react-router-dom";
 import { GraduationCap, Plus, Users, Calendar, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { KpiGrid, SectionHeader } from "@/components/dashboard-zones";
+import { KpiGrid } from "@/components/dashboard-zones";
 import { cn } from "@/lib/utils";
 import type { Organization } from "@/hooks/useOrganization";
 
@@ -24,7 +24,7 @@ export default function PortalSchulungen() {
   return (
     <div className="space-y-4 max-w-4xl">
       <div className="flex items-center justify-between">
-        <SectionHeader icon="🎓" title="Schulungen" subtitle="Kurse und Weiterbildungen verwalten" />
+        <div><h1 class="text-xl font-bold">Schulungen</h1><p class="text-sm text-muted-foreground">Kurse und Weiterbildungen verwalten</p></div>
         <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" /> Neue Schulung</Button>
       </div>
 

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { FileText, Plus, Search, Filter, Shield, AlertTriangle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { KpiGrid, SectionHeader } from "@/components/dashboard-zones";
+import { KpiGrid } from "@/components/dashboard-zones";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Organization } from "@/hooks/useOrganization";
@@ -41,7 +41,7 @@ export default function PortalPolicen() {
   return (
     <div className="space-y-4 max-w-4xl">
       <div className="flex items-center justify-between">
-        <SectionHeader icon="📋" title="Policen-Verwaltung" subtitle={`${org.name} — Versicherungsportfolio`} />
+        <div><h1 class="text-xl font-bold">Policen-Verwaltung</h1><p class="text-sm text-muted-foreground">{`${org.name}</p></div>
         <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" /> Neue Police</Button>
       </div>
 

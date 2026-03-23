@@ -2,7 +2,7 @@ import { useOutletContext } from "react-router-dom";
 import { AlertTriangle, Clock, CheckCircle, XCircle, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { KpiGrid, SectionHeader } from "@/components/dashboard-zones";
+import { KpiGrid } from "@/components/dashboard-zones";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Organization } from "@/hooks/useOrganization";
@@ -40,7 +40,7 @@ export default function PortalClaims() {
   return (
     <div className="space-y-4 max-w-4xl">
       <div className="flex items-center justify-between">
-        <SectionHeader icon="⚠️" title="Schadensfälle" subtitle="Schadensmeldungen und Regulierungen" />
+        <div><h1 class="text-xl font-bold">Schadensfälle</h1><p class="text-sm text-muted-foreground">Schadensmeldungen und Regulierungen</p></div>
         <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" /> Neuer Schaden</Button>
       </div>
 

@@ -2,7 +2,7 @@ import { useOutletContext } from "react-router-dom";
 import { FileText, Plus, Search, CheckCircle, Clock, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { KpiGrid, SectionHeader } from "@/components/dashboard-zones";
+import { KpiGrid } from "@/components/dashboard-zones";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Organization } from "@/hooks/useOrganization";
@@ -39,7 +39,7 @@ export default function PortalBefunde() {
   return (
     <div className="space-y-4 max-w-4xl">
       <div className="flex items-center justify-between">
-        <SectionHeader icon="📋" title="Befunde" subtitle="Medizinische Befunde und Untersuchungen" />
+        <div><h1 class="text-xl font-bold">Befunde</h1><p class="text-sm text-muted-foreground">Medizinische Befunde und Untersuchungen</p></div>
         <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" /> Neuer Befund</Button>
       </div>
 

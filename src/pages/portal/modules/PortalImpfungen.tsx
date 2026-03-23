@@ -2,7 +2,7 @@ import { useOutletContext } from "react-router-dom";
 import { ClipboardList, Plus, Search, CheckCircle, AlertTriangle, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { KpiGrid, SectionHeader } from "@/components/dashboard-zones";
+import { KpiGrid } from "@/components/dashboard-zones";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Organization } from "@/hooks/useOrganization";
@@ -37,7 +37,7 @@ export default function PortalImpfungen() {
   return (
     <div className="space-y-4 max-w-4xl">
       <div className="flex items-center justify-between">
-        <SectionHeader icon="💉" title="Impfungen" subtitle="Impfstatus und Auffrischungstermine" />
+        <div><h1 class="text-xl font-bold">Impfungen</h1><p class="text-sm text-muted-foreground">Impfstatus und Auffrischungstermine</p></div>
         <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" /> Impfung eintragen</Button>
       </div>
 

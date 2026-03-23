@@ -1,7 +1,7 @@
 import { useOutletContext } from "react-router-dom";
 import { ClipboardList, Plus, CheckCircle, AlertTriangle, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { KpiGrid, SectionHeader } from "@/components/dashboard-zones";
+import { KpiGrid } from "@/components/dashboard-zones";
 import { cn } from "@/lib/utils";
 import type { Organization } from "@/hooks/useOrganization";
 
@@ -25,7 +25,7 @@ export default function PortalStandards() {
   return (
     <div className="space-y-4 max-w-4xl">
       <div className="flex items-center justify-between">
-        <SectionHeader icon="📏" title="Standards & Richtlinien" subtitle="Qualitäts- und Branchenstandards" />
+        <div><h1 class="text-xl font-bold">Standards & Richtlinien</h1><p class="text-sm text-muted-foreground">Qualitäts- und Branchenstandards</p></div>
         <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" /> Neuer Standard</Button>
       </div>
 
