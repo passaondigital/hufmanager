@@ -36,7 +36,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -138,17 +138,17 @@ const PartnerKunden = () => {
   const handleCreateClient = async () => {
     if (!user?.id) return;
     if (!newClient.first_name.trim() || !newClient.last_name.trim()) {
-      toast({ title: "Vor- und Nachname sind Pflichtfelder", variant: "destructive" });
+      toast.error("Vor- und Nachname sind Pflichtfelder");
       return;
     }
     if (!newClient.email.trim()) {
-      toast({ title: "E-Mail ist ein Pflichtfeld", variant: "destructive" });
+      toast.error("E-Mail ist ein Pflichtfeld");
       return;
     }
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(newClient.email.trim())) {
-      toast({ title: "Bitte eine gültige E-Mail-Adresse eingeben", variant: "destructive" });
+      toast.error("Bitte eine gültige E-Mail-Adresse eingeben");
       return;
     }
 
@@ -169,12 +169,12 @@ const PartnerKunden = () => {
 
       if (error) throw error;
 
-      toast({ title: "Kunde angelegt", description: fullName });
+      toast.success(`Kunde angelegt: ${fullName}`);
       queryClient.invalidateQueries({ queryKey: ["partner-clients"] });
       setShowNewClientModal(false);
       resetNewClientForm();
     } catch (err: any) {
-      toast({ title: "Fehler beim Anlegen", description: err.message, variant: "destructive" });
+      toast.error(`Fehler beim Anlegen: ${err.message}`);
     } finally {
       setSaving(false);
     }
