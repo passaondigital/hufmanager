@@ -138,7 +138,7 @@ const PartnerKunden = () => {
   const handleCreateClient = async () => {
     if (!user?.id) return;
     if (!newClient.first_name.trim() || !newClient.last_name.trim()) {
-      toast({ title: "Vor- und Nachname sind Pflichtfelder", variant: "destructive" });
+      toast.error("Vor- und Nachname sind Pflichtfelder");
       return;
     }
     if (!newClient.email.trim()) {
