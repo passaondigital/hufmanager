@@ -35,7 +35,7 @@ export default function PortalSettings() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["organization", slug] });
-      toast({ title: "Einstellungen gespeichert" });
+      toast.success("Einstellungen gespeichert");
     },
   });
 

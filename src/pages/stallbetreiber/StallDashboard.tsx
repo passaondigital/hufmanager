@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { DashboardSidebar } from "@/components/dashboard/sidebar/DashboardSidebar";
+
 import { Calendar, Users, Heart, FileText, Package, BarChart3, Warehouse } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardHero, KpiGrid, QuickActionBar, SectionHeader } from "@/components/dashboard-zones";
