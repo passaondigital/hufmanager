@@ -71,6 +71,19 @@ const Dashboard = () => {
     enabled: !!user, staleTime: 60_000,
   });
 
+  const { data: openOrdersCount = 0 } = useQuery({
+    queryKey: ["prov-open-orders", user?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("service_orders")
+        .select("*", { count: "exact", head: true })
+        .eq("provider_id", user!.id)
+        .in("order_status", ["pending", "open", "in_progress"]);
+      return count ?? 0;
+    },
+    enabled: !!user, staleTime: 60_000,
+  });
+
   const displayName = profileData?.full_name || null;
 
   return (
