@@ -6,7 +6,7 @@ import { useLogout } from "@/hooks/useLogout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Shield, Users, Database, Bug, Activity, Crown, Plus, Zap, Package, BookOpen, Brain, AlertTriangle, PiggyBank, Link2, Globe, ScrollText, Mic } from "lucide-react";
+import { Loader2, Shield, Users, Database, Bug, Activity, Crown, Plus, Zap, Package, BookOpen, Brain, AlertTriangle, PiggyBank, Link2, Globe, ScrollText, Mic, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 // Admin Views
@@ -39,11 +39,13 @@ import { HeartPulse, FileText, Handshake, Building2, UsersRound, GraduationCap, 
 import { AdminVerifications } from "@/components/admin/AdminVerifications";
 import { AdminPortalApplications } from "@/components/admin/AdminPortalApplications";
 import { AdminPortalCustomers } from "@/components/admin/AdminPortalCustomers";
+import { AdminRegistrations } from "@/components/admin/AdminRegistrations";
 
-type AdminView = "users" | "user-mgmt" | "verifications" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "invoices" | "contracts" | "connections" | "domains" | "self-healing" | "affiliates" | "cooperations" | "hm_team" | "education" | "botschafter" | "botschafter-conversions" | "botschafter-abrechnungen" | "botschafter-werbemittel" | "botschafter-rangliste" | "botschafter-kommunikation" | "portal-applications" | "portal-customers";
+type AdminView = "users" | "user-mgmt" | "verifications" | "registrations" | "horses" | "dev" | "health" | "catalog" | "docs" | "ki-hub" | "revenue" | "invoices" | "contracts" | "connections" | "domains" | "self-healing" | "affiliates" | "cooperations" | "hm_team" | "education" | "botschafter" | "botschafter-conversions" | "botschafter-abrechnungen" | "botschafter-werbemittel" | "botschafter-rangliste" | "botschafter-kommunikation" | "portal-applications" | "portal-customers";
 
 const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "user-mgmt", label: "Nutzer-Verwaltung", icon: Shield },
+  { id: "registrations", label: "Registrierungen", icon: UserPlus },
   { id: "verifications", label: "Gewerbe-Verifizierung", icon: ShieldCheck },
   { id: "users", label: "User-DB", icon: Users },
   { id: "horses", label: "Pferde-DB", icon: Database },
@@ -235,6 +237,7 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         {activeView === "user-mgmt" && <AdminUserManagement />}
+        {activeView === "registrations" && <AdminRegistrations />}
         {activeView === "verifications" && <AdminVerifications />}
         {activeView === "users" && <AdminUserDB isMasterAdmin={isMasterAdmin} />}
         {activeView === "horses" && <AdminHorseDB isMasterAdmin={isMasterAdmin} />}
