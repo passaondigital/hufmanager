@@ -222,7 +222,7 @@ const EmployeeDashboard = () => {
             <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h2 className="text-xl font-semibold mb-2">Kein Mitarbeiterprofil</h2>
             <p className="text-muted-foreground mb-4">Dein Konto ist nicht als Mitarbeiter registriert.</p>
-            <Button variant="outline" onClick={() => signOut()}>Abmelden</Button>
+            <Button variant="outline" onClick={() => logout()}>Abmelden</Button>
           </CardContent>
         </Card>
       </div>

@@ -132,8 +132,7 @@ export default function PortalGallery() {
         {/* Back */}
         <div className="mt-6 text-center">
           <Button variant="ghost" onClick={async () => {
-            await supabase.auth.signOut();
-            navigate("/auth");
+            await logout();
           }} className="text-muted-foreground">
             ← Zurück zum Login
           </Button>

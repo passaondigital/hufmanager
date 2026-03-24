@@ -92,7 +92,7 @@ export default function BotschafterDashboard() {
         <Button onClick={() => navigate("/botschafter/login")} style={{ backgroundColor: "#F5970A", color: "#0a0700" }}>
           Jetzt Botschafter werden
         </Button>
-        <Button variant="outline" onClick={async () => { await supabase.auth.signOut(); navigate("/botschafter/login", { replace: true }); }} style={{ borderColor: "#2a2a1f" }}>
+        <Button variant="outline" onClick={async () => { await logout(); }} style={{ borderColor: "#2a2a1f" }}>
           Abmelden
         </Button>
       </div>

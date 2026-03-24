@@ -189,7 +189,7 @@ export default function PartnerSettings({ tabs: tabFilter, hideChrome }: Partner
         details: { self_service: true, timestamp: new Date().toISOString() },
       });
       toast.success("Dein Account wurde gelöscht. Du wirst abgemeldet.");
-      setTimeout(async () => { await signOut(); navigate("/"); }, 1500);
+      setTimeout(async () => { await logout(); }, 1500);
     } catch (error) {
       console.error("Account deletion error:", error);
       toast.error("Fehler beim Löschen des Accounts. Bitte kontaktiere den Support.");

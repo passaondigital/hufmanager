@@ -376,7 +376,7 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
             <Key className="h-4 w-4" />Passwort ändern
           </Button>
 
-          <Button variant="destructive" className="w-full gap-2" onClick={() => signOut()}>
+          <Button variant="destructive" className="w-full gap-2" onClick={() => logout()}>
             <LogOut className="h-4 w-4" />Abmelden
           </Button>
 
