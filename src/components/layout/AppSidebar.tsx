@@ -252,14 +252,9 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
     });
   };
 
+  const logout = useLogout();
   const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      toast({ title: "Abgemeldet", description: "Bis bald!" });
-      navigate("/auth");
-    } catch (error) {
-      toast({ title: "Fehler", description: "Abmeldung fehlgeschlagen.", variant: "destructive" });
-    }
+    await logout();
   };
 
   // Sub-menu item component
