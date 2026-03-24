@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useLogout } from "@/hooks/useLogout";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,7 +40,8 @@ interface PartnerSettingsProps {
 }
 
 export default function PartnerSettings({ tabs: tabFilter, hideChrome }: PartnerSettingsProps = {}) {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
+  const logout = useLogout();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -188,7 +190,7 @@ export default function PartnerSettings({ tabs: tabFilter, hideChrome }: Partner
         details: { self_service: true, timestamp: new Date().toISOString() },
       });
       toast.success("Dein Account wurde gelöscht. Du wirst abgemeldet.");
-      setTimeout(async () => { await signOut(); navigate("/"); }, 1500);
+      setTimeout(async () => { await logout(); }, 1500);
     } catch (error) {
       console.error("Account deletion error:", error);
       toast.error("Fehler beim Löschen des Accounts. Bitte kontaktiere den Support.");

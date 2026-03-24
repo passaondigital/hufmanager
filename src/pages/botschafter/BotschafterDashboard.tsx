@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useLogout } from "@/hooks/useLogout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -55,6 +56,7 @@ const TRESOR_PLANS = [
 export default function BotschafterDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const logout = useLogout();
   const [data, setData] = useState<BotschafterData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCalculator, setShowCalculator] = useState(false);
@@ -91,7 +93,7 @@ export default function BotschafterDashboard() {
         <Button onClick={() => navigate("/botschafter/login")} style={{ backgroundColor: "#F5970A", color: "#0a0700" }}>
           Jetzt Botschafter werden
         </Button>
-        <Button variant="outline" onClick={async () => { await supabase.auth.signOut(); navigate("/botschafter/login", { replace: true }); }} style={{ borderColor: "#2a2a1f" }}>
+        <Button variant="outline" onClick={async () => { await logout(); }} style={{ borderColor: "#2a2a1f" }}>
           Abmelden
         </Button>
       </div>

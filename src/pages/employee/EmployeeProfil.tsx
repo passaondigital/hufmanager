@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useEmployeeProfile } from "@/hooks/useEmployees";
 import { useAuth } from "@/hooks/useAuth";
+import { useLogout } from "@/hooks/useLogout";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,8 +33,9 @@ interface EmployeeProfilProps {
 }
 
 const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const logout = useLogout();
   const queryClient = useQueryClient();
   const { data: profile } = useEmployeeProfile();
   
@@ -180,8 +182,7 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
       const { error } = await supabase.rpc("delete_employee_account", { _employee_user_id: user.id });
       if (error) throw error;
       toast.success("Konto gelöscht");
-      await signOut();
-      navigate("/");
+      await logout();
     } catch (err: any) {
       toast.error(`Fehler: ${err.message}`);
     } finally {
@@ -375,7 +376,7 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
             <Key className="h-4 w-4" />Passwort ändern
           </Button>
 
-          <Button variant="destructive" className="w-full gap-2" onClick={() => signOut()}>
+          <Button variant="destructive" className="w-full gap-2" onClick={() => logout()}>
             <LogOut className="h-4 w-4" />Abmelden
           </Button>
 

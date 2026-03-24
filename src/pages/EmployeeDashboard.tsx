@@ -3,6 +3,7 @@ import { useEmployeeProfile } from "@/hooks/useEmployees";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useLogout } from "@/hooks/useLogout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardWelcomeHeader } from "@/components/dashboard/DashboardWelcomeHeader";
 import { Button } from "@/components/ui/button";
@@ -32,7 +33,8 @@ const SECTION_LABELS: Record<Section, string> = {
 const SECTION_ORDER: Section[] = ["profil", "zeiten"];
 
 const EmployeeDashboard = () => {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
+  const logout = useLogout();
   
   const queryClient = useQueryClient();
   const { data: profile, isLoading: profileLoading } = useEmployeeProfile();
@@ -220,7 +222,7 @@ const EmployeeDashboard = () => {
             <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h2 className="text-xl font-semibold mb-2">Kein Mitarbeiterprofil</h2>
             <p className="text-muted-foreground mb-4">Dein Konto ist nicht als Mitarbeiter registriert.</p>
-            <Button variant="outline" onClick={() => signOut()}>Abmelden</Button>
+            <Button variant="outline" onClick={() => logout()}>Abmelden</Button>
           </CardContent>
         </Card>
       </div>

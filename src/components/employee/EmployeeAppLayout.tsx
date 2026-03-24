@@ -133,7 +133,6 @@ const quickActions = [
 export function EmployeeAppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut } = useAuth();
   const logout = useLogout();
   const { data: profile, isLoading } = useEmployeeProfile();
   const { theme, toggleTheme } = useTheme();
