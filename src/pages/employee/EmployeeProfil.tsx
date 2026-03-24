@@ -33,8 +33,9 @@ interface EmployeeProfilProps {
 }
 
 const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const logout = useLogout();
   const queryClient = useQueryClient();
   const { data: profile } = useEmployeeProfile();
   
