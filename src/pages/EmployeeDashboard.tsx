@@ -33,7 +33,8 @@ const SECTION_LABELS: Record<Section, string> = {
 const SECTION_ORDER: Section[] = ["profil", "zeiten"];
 
 const EmployeeDashboard = () => {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
+  const logout = useLogout();
   
   const queryClient = useQueryClient();
   const { data: profile, isLoading: profileLoading } = useEmployeeProfile();
