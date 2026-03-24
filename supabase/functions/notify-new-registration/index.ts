@@ -25,13 +25,14 @@ Deno.serve(async (req) => {
 
   try {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const resendKey = Deno.env.get("RESEND_API_KEY");
 
-    // Validate caller
+    // Validate caller (allow service_role or anon key from pg_net trigger)
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.startsWith("Bearer ") ? authHeader.replace("Bearer ", "") : null;
-    if (token !== serviceKey) {
+    if (token !== serviceKey && token !== anonKey) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
