@@ -66,7 +66,10 @@ export default function ResetPassword() {
       
       // Sign out and redirect to login after 2 seconds
       setTimeout(async () => {
+        const { clear } = await import("idb-keyval");
         await supabase.auth.signOut();
+        localStorage.clear();
+        try { await clear(); } catch (_) {}
         navigate("/auth");
       }, 2000);
     }
