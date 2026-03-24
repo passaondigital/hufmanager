@@ -182,8 +182,7 @@ const EmployeeProfil = ({ section, hideChrome }: EmployeeProfilProps = {}) => {
       const { error } = await supabase.rpc("delete_employee_account", { _employee_user_id: user.id });
       if (error) throw error;
       toast.success("Konto gelöscht");
-      await signOut();
-      navigate("/");
+      await logout();
     } catch (err: any) {
       toast.error(`Fehler: ${err.message}`);
     } finally {
