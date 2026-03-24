@@ -53,6 +53,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { useLogout } from "@/hooks/useLogout";
 import { UsageMeter } from "@/components/subscription/UsageMeter";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";

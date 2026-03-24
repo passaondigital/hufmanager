@@ -140,15 +140,8 @@ const Kunden = () => {
       if (profileError) throw profileError;
 
       if (profile) {
-        // Create access grant
-        await supabase.from("access_grants").insert({
-          provider_id: user.id,
-          client_id: profile.id,
-          is_active: true,
-          can_view_basic: true,
-          can_view_medical: true,
-          can_create_appointments: true,
-        });
+        // access_grant is auto-created by trigger auto_create_access_grant_for_client
+        // when created_by_provider_id is set on the profile
 
         // Create contact entry
         await supabase.from("contacts").insert({

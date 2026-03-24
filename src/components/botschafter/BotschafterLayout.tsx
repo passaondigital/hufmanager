@@ -33,15 +33,11 @@ const MOBILE_TABS = [
 export function BotschafterLayout() {
   const { user } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const logout = useLogout();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = async () => {
-    try { await supabase.auth.signOut(); } catch (e) { /* proceed */ }
-    queryClient.clear();
-    sessionStorage.removeItem("botschafter_login_source");
-    navigate("/botschafter/login", { replace: true });
+    await logout();
   };
 
   const isActive = (path: string) => location.pathname === path;

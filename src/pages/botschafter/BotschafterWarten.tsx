@@ -50,9 +50,9 @@ export default function BotschafterWarten() {
     load();
   }, [navigate]);
 
+  const logout = useLogout();
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/botschafter/login", { replace: true });
+    await logout();
   };
 
   const bidDisplay = data ? (data.bid || data.id).slice(0, 8).toUpperCase() : "";
