@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { useLogout } from "@/hooks/useLogout";
 import { Shield, Factory, Stethoscope, Package, GraduationCap, Landmark, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
