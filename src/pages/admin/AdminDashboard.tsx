@@ -237,6 +237,7 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         {activeView === "user-mgmt" && <AdminUserManagement />}
+        {activeView === "registrations" && <AdminRegistrations />}
         {activeView === "verifications" && <AdminVerifications />}
         {activeView === "users" && <AdminUserDB isMasterAdmin={isMasterAdmin} />}
         {activeView === "horses" && <AdminHorseDB isMasterAdmin={isMasterAdmin} />}
