@@ -40,7 +40,8 @@ interface PartnerSettingsProps {
 }
 
 export default function PartnerSettings({ tabs: tabFilter, hideChrome }: PartnerSettingsProps = {}) {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
+  const logout = useLogout();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
