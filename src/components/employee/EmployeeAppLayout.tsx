@@ -15,6 +15,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { EmployeeNotificationBell } from "@/components/employee/EmployeeNotificationBell";
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
 import { AppSidebar, MobileAppSidebar, NavigationConfig } from "@/components/shared/AppSidebar";
+import { useLogout } from "@/hooks/useLogout";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { OfflineBanner } from "@/components/offline/OfflineBanner";
