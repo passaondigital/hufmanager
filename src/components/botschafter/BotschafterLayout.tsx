@@ -7,8 +7,7 @@ import {
   LayoutDashboard, Link2, Users, Coins, Globe, Newspaper,
   Palette, Trophy, User, LogOut, Menu, X, ChevronRight
 } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useLogout } from "@/hooks/useLogout";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -34,15 +33,11 @@ const MOBILE_TABS = [
 export function BotschafterLayout() {
   const { user } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const logout = useLogout();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = async () => {
-    try { await supabase.auth.signOut(); } catch (e) { /* proceed */ }
-    queryClient.clear();
-    sessionStorage.removeItem("botschafter_login_source");
-    navigate("/botschafter/login", { replace: true });
+    await logout();
   };
 
   const isActive = (path: string) => location.pathname === path;

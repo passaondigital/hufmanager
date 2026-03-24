@@ -15,6 +15,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { EmployeeNotificationBell } from "@/components/employee/EmployeeNotificationBell";
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
 import { AppSidebar, MobileAppSidebar, NavigationConfig } from "@/components/shared/AppSidebar";
+import { useLogout } from "@/hooks/useLogout";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { OfflineBanner } from "@/components/offline/OfflineBanner";
@@ -133,6 +134,7 @@ export function EmployeeAppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const logout = useLogout();
   const { data: profile, isLoading } = useEmployeeProfile();
   const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -167,7 +169,7 @@ export function EmployeeAppLayout() {
           <User className="h-12 w-12 mx-auto text-muted-foreground" />
           <h2 className="text-xl font-semibold">Kein Mitarbeiterprofil</h2>
           <p className="text-muted-foreground">Dein Konto ist nicht als Mitarbeiter registriert.</p>
-          <Button variant="outline" onClick={() => signOut()}>Abmelden</Button>
+          <Button variant="outline" onClick={() => logout()}>Abmelden</Button>
         </div>
       </div>
     );

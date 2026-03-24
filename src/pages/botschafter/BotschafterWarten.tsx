@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
+import { useLogout } from "@/hooks/useLogout";
 
 type BotschafterInfo = {
   id: string;
@@ -49,9 +50,9 @@ export default function BotschafterWarten() {
     load();
   }, [navigate]);
 
+  const logout = useLogout();
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/botschafter/login", { replace: true });
+    await logout();
   };
 
   const bidDisplay = data ? (data.bid || data.id).slice(0, 8).toUpperCase() : "";
