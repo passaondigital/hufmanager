@@ -58,6 +58,7 @@ const PORTALS = [
 export default function PortalGallery() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const logout = useLogout();
 
   return (
     <div className="min-h-screen bg-background">

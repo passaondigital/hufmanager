@@ -56,6 +56,7 @@ const TRESOR_PLANS = [
 export default function BotschafterDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const logout = useLogout();
   const [data, setData] = useState<BotschafterData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCalculator, setShowCalculator] = useState(false);
