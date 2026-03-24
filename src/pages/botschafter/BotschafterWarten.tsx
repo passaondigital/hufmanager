@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
+import { useLogout } from "@/hooks/useLogout";
 
 type BotschafterInfo = {
   id: string;
