@@ -30,6 +30,7 @@ import { ExitIntentPopup } from "@/components/landing/ExitIntentPopup";
 import { WebsiteTrustBadges } from "@/components/landing/WebsiteTrustBadges";
 import { BookingSheet } from "@/components/landing/BookingSheet";
 import { StickyMobileCTA } from "@/components/landing/StickyMobileCTA";
+import { PricingCalculatorSection } from "@/components/landing/PricingCalculatorSection";
 import { toast } from "@/hooks/use-toast";
 import DOMPurify from "dompurify";
 import { format } from "date-fns";
@@ -125,7 +126,7 @@ interface FAQ {
   answer: string;
 }
 
-const DEFAULT_SECTION_ORDER = ["hero", "trust_counters", "about", "services", "highlights", "list_items", "shop_grid", "before_after", "gallery", "instagram", "faq", "service_area", "qualifications", "reviews", "contact"];
+const DEFAULT_SECTION_ORDER = ["hero", "trust_counters", "about", "services", "highlights", "pricing_calculator", "list_items", "shop_grid", "before_after", "gallery", "instagram", "faq", "service_area", "qualifications", "reviews", "contact"];
 
 const ProviderLanding = () => {
   const { slug, page } = useParams<{ slug: string; page?: string }>();
@@ -180,8 +181,7 @@ const ProviderLanding = () => {
 
         if (offersRes.data) setOffers(offersRes.data);
         if (servicesRes.data) {
-          const publicServices = servicesRes.data.filter((s: any) => !s.name.toUpperCase().includes('BALANCE'));
-          setServices(publicServices.slice(0, 6) as Service[]);
+          setServices(servicesRes.data.slice(0, 6) as Service[]);
         }
         if (feedbackRes.data) setFeedbacks(feedbackRes.data);
         if (reviewsRes.data) setReviews(reviewsRes.data as Review[]);
@@ -406,7 +406,7 @@ const ProviderLanding = () => {
     trust_counters: (settings.horses_treated || settings.years_experience || settings.service_area_km) ? <LandingTrustCounters key="trust_counters" horsesTreated={settings.horses_treated || 0} yearsExperience={settings.years_experience || 0} serviceAreaKm={settings.service_area_km || 0} primaryColor={primaryColor} /> : null,
     about: settings.about_text ? <LandingAbout key="about" aboutText={settings.about_text} /> : null,
     services: services.length > 0 ? <LandingServices key="services" services={services} primaryColor={primaryColor} onBook={handleServiceBook} onRequest={handleServiceRequest} /> : null,
-    highlights: offers.filter(o => o.display_mode === 'highlight_card' || !o.display_mode).length > 0 ? <LandingHighlights key="highlights" offers={offers.filter(o => (o.display_mode === 'highlight_card' || !o.display_mode) && !o.title.toUpperCase().includes('BALANCE'))} primaryColor={primaryColor} /> : null,
+    highlights: offers.filter(o => o.display_mode === 'highlight_card' || !o.display_mode).length > 0 ? <LandingHighlights key="highlights" offers={offers.filter(o => (o.display_mode === 'highlight_card' || !o.display_mode))} primaryColor={primaryColor} /> : null,
     list_items: offers.filter(o => o.display_mode === 'list_item').length > 0 ? <LandingListItems key="list_items" offers={offers.filter(o => o.display_mode === 'list_item')} primaryColor={primaryColor} /> : null,
     shop_grid: offers.filter(o => o.display_mode === 'shop_grid').length > 0 ? <LandingShopGrid key="shop_grid" offers={offers.filter(o => o.display_mode === 'shop_grid')} primaryColor={primaryColor} /> : null,
     before_after: galleryImages.length > 0 ? <LandingBeforeAfter key="before_after" galleryImages={galleryImages} primaryColor={primaryColor} /> : null,
@@ -416,6 +416,7 @@ const ProviderLanding = () => {
     service_area: settings.service_area_text ? <LandingServiceArea key="service_area" serviceAreaText={settings.service_area_text} primaryColor={primaryColor} /> : null,
     qualifications: Array.isArray(qualifications) && qualifications.length > 0 ? <LandingQualifications key="qualifications" qualifications={qualifications} primaryColor={primaryColor} /> : null,
     reviews: reviews.length > 0 ? <ReviewsSection key="reviews" reviews={reviews} primaryColor={primaryColor} layout={templateClasses.reviewsLayout} /> : feedbacks.length > 0 ? <ReviewsSection key="reviews-legacy" reviews={feedbacks.map(f => ({ id: f.id, reviewer_name: f.customer_name, rating: f.rating, text: f.text, created_at: '' }))} primaryColor={primaryColor} layout="grid" /> : null,
+    pricing_calculator: <PricingCalculatorSection key="pricing_calculator" providerId={settings.user_id} primaryColor={primaryColor} providerWhatsApp={settings.whatsapp_number} />,
     contact: intakeStatus !== 'closed' ? <LandingContact key="contact" providerId={settings.user_id} providerName={providerName} primaryColor={primaryColor} /> : null,
   };
 

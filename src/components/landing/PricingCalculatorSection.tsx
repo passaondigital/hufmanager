@@ -5,9 +5,15 @@ import { CalculatorInputs } from "@/components/kalkulator/CalculatorInputs";
 import { PlanCard } from "@/components/kalkulator/PlanCard";
 import { LeadCaptureForm } from "@/components/kalkulator/LeadCaptureForm";
 import { Loader2 } from "lucide-react";
-import { PROVIDER_ID, type Plan, calcGO, calcBalance, calcSavings } from "@/lib/calculatorUtils";
+import { type Plan, calcGO, calcBalance, calcSavings } from "@/lib/calculatorUtils";
 
-export default function Kalkulator() {
+interface PricingCalculatorSectionProps {
+  providerId: string;
+  primaryColor?: string;
+  providerWhatsApp?: string | null;
+}
+
+export function PricingCalculatorSection({ providerId, primaryColor = "#F47B20", providerWhatsApp }: PricingCalculatorSectionProps) {
   const [horses, setHorses] = useState(2);
   const [zone, setZone] = useState<1 | 2>(1);
   const [intervalWeeks, setIntervalWeeks] = useState(6);
@@ -15,31 +21,16 @@ export default function Kalkulator() {
   const formRef = useRef<HTMLDivElement>(null);
 
   const { data: plans, isLoading } = useQuery({
-    queryKey: ["public-bhs-plans"],
+    queryKey: ["landing-bhs-plans", providerId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("subscription_plans")
         .select("*")
         .eq("is_active", true)
-        .eq("provider_id", PROVIDER_ID)
+        .eq("provider_id", providerId)
         .order("created_at");
       if (error) throw error;
       return data as Plan[];
-    },
-  });
-
-  const { data: provider } = useQuery({
-    queryKey: ["provider-contact"],
-    queryFn: async () => {
-      const [profileRes, settingsRes] = await Promise.all([
-        supabase.from("profiles").select("phone, full_name").eq("id", PROVIDER_ID).single(),
-        supabase.from("business_settings").select("whatsapp_number").eq("user_id", PROVIDER_ID).single(),
-      ]);
-      return {
-        phone: profileRes.data?.phone ?? null,
-        full_name: profileRes.data?.full_name ?? null,
-        whatsapp_number: settingsRes.data?.whatsapp_number ?? null,
-      };
     },
   });
 
@@ -58,25 +49,23 @@ export default function Kalkulator() {
   const balanceCalc = balancePlan ? calcBalance(horses, zone, intervalWeeks, balancePlan) : null;
   const savings = goCalc && balanceCalc ? calcSavings(goCalc.perYear, balanceCalc.perYear) : 0;
 
-  return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-background/95 backdrop-blur sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <span className="font-bold text-lg">Barhufserviceschmid</span>
-          <a href="/datenschutz" className="text-xs text-muted-foreground hover:underline">Datenschutz</a>
-        </div>
-      </header>
+  // Don't render if no plans exist for this provider
+  if (!isLoading && (!plans || plans.length === 0)) return null;
 
-      <main className="max-w-6xl mx-auto px-4 py-8 sm:py-12 space-y-10">
+  return (
+    <section id="preisrechner" className="py-16 px-4 scroll-mt-16">
+      <div className="max-w-6xl mx-auto space-y-10">
+        {/* Section Header */}
         <div className="text-center space-y-3 max-w-2xl mx-auto">
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Was kostet professionelle Hufpflege?
-          </h1>
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+            Was kostet deine Hufpflege?
+          </h2>
           <p className="text-muted-foreground text-lg">
             Berechne deinen individuellen Monatsbeitrag — transparent, fair, verbindlich.
           </p>
         </div>
 
+        {/* Calculator Inputs */}
         <div className="bg-muted/30 rounded-2xl p-6 border">
           <CalculatorInputs
             horses={horses} setHorses={setHorses}
@@ -85,9 +74,10 @@ export default function Kalkulator() {
           />
         </div>
 
+        {/* Plan Cards */}
         {isLoading ? (
           <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <Loader2 className="h-8 w-8 animate-spin" style={{ color: primaryColor }} />
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -100,7 +90,7 @@ export default function Kalkulator() {
                   appointmentsPerYear={balanceCalc.appointmentsPerYear} savings={savings}
                   isRecommended includes={balancePlan.includes || []}
                   notIncluded={balancePlan.not_included || []}
-                  badgeColor={balancePlan.badge_color || "#F47B20"}
+                  badgeColor={balancePlan.badge_color || primaryColor}
                   onSelect={() => scrollToForm(balancePlan.name)}
                 />
               </div>
@@ -135,28 +125,21 @@ export default function Kalkulator() {
           </div>
         )}
 
+        {/* Lead Capture */}
         <div ref={formRef} className="space-y-4 scroll-mt-24">
           <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold">Interesse? Lass uns sprechen.</h2>
+            <h3 className="text-2xl font-bold text-foreground">Interesse? Lass uns sprechen.</h3>
             <p className="text-muted-foreground">
               Schick mir eine Anfrage oder schreib mir direkt per WhatsApp.
             </p>
           </div>
           <LeadCaptureForm
             selectedPlan={selectedPlan} horses={horses} zone={zone}
-            intervalWeeks={intervalWeeks} providerId={PROVIDER_ID}
-            providerWhatsApp={provider?.whatsapp_number || provider?.phone}
+            intervalWeeks={intervalWeeks} providerId={providerId}
+            providerWhatsApp={providerWhatsApp}
           />
         </div>
-      </main>
-
-      <footer className="border-t mt-12 py-6 text-center text-xs text-muted-foreground">
-        <p>© 2026 Barhufserviceschmid — Pascal Schmid</p>
-        <div className="mt-1 space-x-3">
-          <a href="/impressum" className="hover:underline">Impressum</a>
-          <a href="/datenschutz" className="hover:underline">Datenschutz</a>
-        </div>
-      </footer>
-    </div>
+      </div>
+    </section>
   );
 }

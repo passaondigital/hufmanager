@@ -21,6 +21,7 @@ const DEFAULT_SECTIONS: Section[] = [
   { id: "trust_counters", label: "Vertrauens-Zähler", description: "Pferde, Jahre, Gebiet", enabled: false },
   { id: "about", label: "Über mich", description: "Persönliche Vorstellung", enabled: true },
   { id: "highlights", label: "Angebote (Highlight)", description: "Große Preis-Karten (max. 3)", enabled: true },
+  { id: "pricing_calculator", label: "Preisrechner", description: "Interaktiver Kalkulator mit Plan-Vergleich", enabled: true },
   { id: "services", label: "Service-Liste", description: "Kompakte Preisliste", enabled: true },
   { id: "list_items", label: "Preisliste (Liste)", description: "Services als kompakte Liste", enabled: true },
   { id: "shop_grid", label: "Shop / Produkte", description: "Produkte im Grid-Layout", enabled: false },
