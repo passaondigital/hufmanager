@@ -3,9 +3,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { HelpTip } from "@/components/ui/HelpTip";
+import { CreateHorseModal } from "@/components/horse-detail/CreateHorseModal";
 
-import { Loader2, Footprints, MapPin, Calendar, ChevronRight } from "lucide-react";
+import { Loader2, Footprints, MapPin, Calendar, ChevronRight, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
@@ -33,6 +35,7 @@ export default function ClientHorses() {
   const [horses, setHorses] = useState<ClientHorse[]>([]);
   const [nextAppts, setNextAppts] = useState<Record<string, NextAppointment>>({});
   const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -93,11 +96,18 @@ export default function ClientHorses() {
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-xl border-b border-border/50 px-4 py-4">
-        <div className="flex items-center gap-2">
-          <Footprints className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-bold">Meine Pferde</h1>
-          <HelpTip id="client.horses" />
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-xl border-b border-border/50 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Footprints className="h-5 w-5 text-primary" />
+            <h1 className="text-lg font-bold">Meine Pferde</h1>
+            <HelpTip id="client.horses" />
+          </div>
+          <Button size="sm" onClick={() => setShowCreateModal(true)} className="gap-1.5">
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Pferd anlegen</span>
+            <span className="sm:hidden">Neu</span>
+          </Button>
         </div>
       </div>
 
@@ -105,7 +115,11 @@ export default function ClientHorses() {
         {horses.length === 0 ? (
           <div className="text-center py-12">
             <Footprints className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-muted-foreground text-sm">Noch keine Pferde angelegt.</p>
+            <p className="text-muted-foreground text-sm mb-4">Noch keine Pferde angelegt.</p>
+            <Button onClick={() => setShowCreateModal(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Erstes Pferd anlegen
+            </Button>
           </div>
         ) : (
           horses.map((horse) => {
@@ -178,6 +192,14 @@ export default function ClientHorses() {
         )}
       </div>
 
+      <CreateHorseModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreated={(horseId) => {
+          setShowCreateModal(false);
+          navigate(`/client-horse/${horseId}`);
+        }}
+      />
     </div>
   );
 }

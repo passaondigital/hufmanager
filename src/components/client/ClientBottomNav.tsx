@@ -25,7 +25,7 @@ export function ClientBottomNav() {
       className="fixed bottom-0 left-0 right-0 z-30 bg-background/90 backdrop-blur-xl border-t border-border/50"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
-      <div className="flex items-center justify-around h-[72px] max-w-lg mx-auto">
+      <div className="flex items-center justify-around h-14 max-w-lg mx-auto">
         {tabs.map((tab) => {
           const active = isActive(tab);
           return (
@@ -37,8 +37,8 @@ export function ClientBottomNav() {
                 active ? "text-primary" : "text-muted-foreground"
               )}
             >
-              <tab.icon className="h-7 w-7" strokeWidth={active ? 2.5 : 1.8} />
-              <span className={cn("text-xs", active && "font-semibold")}>{tab.label}</span>
+              <tab.icon className="h-5 w-5" strokeWidth={active ? 2.5 : 1.8} />
+              <span className={cn("text-[10px]", active && "font-semibold")}>{tab.label}</span>
             </button>
           );
         })}

@@ -411,25 +411,25 @@ export function ClientAppLayout() {
         className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
-        <div className="flex items-center justify-around h-[72px] px-1">
+        <div className="flex items-center justify-around h-14 px-1 max-w-lg mx-auto">
           {bottomNavItems.slice(0, 2).map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
               className={cn(
-                "flex flex-col items-center justify-center flex-1 h-full py-2 transition-colors",
+                "flex flex-col items-center justify-center flex-1 h-full py-1 transition-colors",
                 isActive(item.path, (item as any).match) ? "text-primary" : "text-muted-foreground"
               )}
             >
-              <item.Icon className={cn("h-7 w-7 mb-1 transition-transform", isActive(item.path, (item as any).match) && "scale-110")} />
-              <span className={cn("text-xs font-medium", isActive(item.path, (item as any).match) && "font-bold")}>{item.label}</span>
+              <item.Icon className={cn("h-5 w-5 mb-0.5 transition-transform", isActive(item.path, (item as any).match) && "scale-110")} />
+              <span className={cn("text-[10px] font-medium", isActive(item.path, (item as any).match) && "font-bold")}>{item.label}</span>
             </NavLink>
           ))}
 
           {/* Center Plus Button */}
-          <button onClick={() => setShowQuickActions(true)} className="flex items-center justify-center -mt-6 z-10">
-            <div className="w-16 h-16 rounded-full bg-primary shadow-lg shadow-primary/30 flex items-center justify-center">
-              <Plus className="h-8 w-8 text-primary-foreground" />
+          <button onClick={() => setShowQuickActions(true)} className="flex items-center justify-center -mt-4 z-10">
+            <div className="w-12 h-12 rounded-full bg-primary shadow-lg shadow-primary/30 flex items-center justify-center">
+              <Plus className="h-6 w-6 text-primary-foreground" />
             </div>
           </button>
 
@@ -438,12 +438,12 @@ export function ClientAppLayout() {
               key={item.path}
               to={item.path}
               className={cn(
-                "flex flex-col items-center justify-center flex-1 h-full py-2 transition-colors",
+                "flex flex-col items-center justify-center flex-1 h-full py-1 transition-colors",
                 isActive(item.path) ? "text-primary" : "text-muted-foreground"
               )}
             >
-              <item.Icon className={cn("h-7 w-7 mb-1 transition-transform", isActive(item.path) && "scale-110")} />
-              <span className={cn("text-xs font-medium", isActive(item.path) && "font-bold")}>{item.label}</span>
+              <item.Icon className={cn("h-5 w-5 mb-0.5 transition-transform", isActive(item.path) && "scale-110")} />
+              <span className={cn("text-[10px] font-medium", isActive(item.path) && "font-bold")}>{item.label}</span>
             </NavLink>
           ))}
         </div>
