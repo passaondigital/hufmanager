@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UniversalSearch } from "@/components/hm-connect/UniversalSearch";
-import { InviteToHufManager } from "@/components/hm-connect/InviteToHufManager";
+import { InviteWithGuidedFlow } from "@/components/hm-connect/InviteWithGuidedFlow";
 import { MyQRCode } from "@/components/hm-connect/MyQRCode";
 import { ConnectionPermissions } from "@/components/hm-connect/ConnectionPermissions";
 import { EquidPermissionManager } from "@/components/hm-connect/EquidPermissionManager";
@@ -434,7 +434,7 @@ export default function HMConnect() {
         </TabsContent>
 
         <TabsContent value="invite" className="mt-6">
-          <InviteToHufManager />
+          <InviteWithGuidedFlow />
         </TabsContent>
 
         <TabsContent value="equid" className="mt-6">
