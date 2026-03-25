@@ -47,6 +47,7 @@ const NAV_SECTIONS: NavSection[] = [
       { value: "revenue", label: "Einnahmen", icon: <PiggyBank className="w-4 h-4" /> },
       { value: "payments", label: "Zahlungen", icon: <Euro className="w-4 h-4" /> },
       { value: "invoices", label: "Rechnungen", icon: <FileText className="w-4 h-4" /> },
+      { value: "copecart", label: "CopeCart Abgleich", icon: <ArrowLeftRight className="w-4 h-4" /> },
       { value: "contracts", label: "Verträge", icon: <ScrollText className="w-4 h-4" /> },
       { value: "hufrente", label: "Hufrente", icon: <Shield className="w-4 h-4" /> },
     ],
