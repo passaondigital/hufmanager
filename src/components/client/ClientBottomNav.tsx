@@ -37,8 +37,8 @@ export function ClientBottomNav() {
                 active ? "text-primary" : "text-muted-foreground"
               )}
             >
-              <tab.icon className="h-7 w-7" strokeWidth={active ? 2.5 : 1.8} />
-              <span className={cn("text-xs", active && "font-semibold")}>{tab.label}</span>
+              <tab.icon className="h-5 w-5" strokeWidth={active ? 2.5 : 1.8} />
+              <span className={cn("text-[10px]", active && "font-semibold")}>{tab.label}</span>
             </button>
           );
         })}
