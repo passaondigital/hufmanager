@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import {
   Users, AlertTriangle, Globe, Building2, Settings, FileText,
   ClipboardList, Megaphone, Shield, Sparkles, Eye, Target,
-  PiggyBank, Clock, Euro, ScrollText, BarChart3,
+  PiggyBank, Clock, Euro, ScrollText, BarChart3, ArrowLeftRight,
 } from "lucide-react";
 import { useState } from "react";
 
