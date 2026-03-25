@@ -250,8 +250,9 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
       toast({ title: "Kunde aktualisiert" });
       setIsEditing(false);
     },
-    onError: () => {
-      toast({ title: "Fehler beim Speichern", variant: "destructive" });
+    onError: (err: any) => {
+      console.error("Customer update error:", err);
+      toast({ title: "Fehler beim Speichern", description: err?.message || "Unbekannter Fehler", variant: "destructive" });
     },
   });
 
