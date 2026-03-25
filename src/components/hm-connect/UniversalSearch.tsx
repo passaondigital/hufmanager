@@ -145,9 +145,18 @@ export function UniversalSearch({ onConnectionRequested }: { onConnectionRequest
           revoked_at: null,
         }).eq("id", existing.id);
       } else {
-        const { error } = await supabase.from("access_grants").insert(grantData as any);
+      const { error } = await supabase.from("access_grants").insert(grantData as any);
         if (error) throw error;
       }
+
+      // Send notification to the target user
+      await supabase.from("notifications").insert({
+        user_id: selectedResult.id,
+        title: "🔗 Neue Verbindungsanfrage",
+        message: `${(await supabase.from("profiles").select("full_name").eq("id", user.id).single()).data?.full_name || "Jemand"} möchte sich mit dir vernetzen.${requestMessage ? ` Nachricht: "${requestMessage}"` : ""}`,
+        type: "connection_request",
+        link: "/hm-connect",
+      } as any);
 
       toast.success("Verbindungsanfrage gesendet!");
       setSelectedResult(null);

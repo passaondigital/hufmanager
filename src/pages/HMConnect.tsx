@@ -363,39 +363,41 @@ export default function HMConnect() {
       </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
-          <TabsTrigger value="connections" className="gap-1.5 text-xs">
-            <Users className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Verbindungen</span>
-            <span className="sm:hidden">Netzwerk</span>
-          </TabsTrigger>
-          <TabsTrigger value="search" className="gap-1.5 text-xs">
-            <Search className="h-3.5 w-3.5" />
-            Suchen
-          </TabsTrigger>
-          <TabsTrigger value="qr" className="gap-1.5 text-xs">
-            <QrCode className="h-3.5 w-3.5" />
-            QR
-          </TabsTrigger>
-          <TabsTrigger value="invite" className="gap-1.5 text-xs">
-            <UserPlus className="h-3.5 w-3.5" />
-            Einladen
-          </TabsTrigger>
-          <TabsTrigger value="equid" className="gap-1.5 text-xs">
-            🐴
-            <span className="hidden sm:inline">Equid-Rechte</span>
-            <span className="sm:hidden">Rechte</span>
-          </TabsTrigger>
-          <TabsTrigger value="equid-chat" className="gap-1.5 text-xs">
-            <MessageCircle className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Equid-Chat</span>
-            <span className="sm:hidden">Chat</span>
-          </TabsTrigger>
-          <TabsTrigger value="permissions" className="gap-1.5 text-xs">
-            <Eye className="h-3.5 w-3.5" />
-            Info
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-1 px-1">
+          <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-7 gap-1">
+            <TabsTrigger value="connections" className="gap-1.5 text-xs whitespace-nowrap px-2.5">
+              <Users className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Verbindungen</span>
+              <span className="sm:hidden">Netzwerk</span>
+            </TabsTrigger>
+            <TabsTrigger value="search" className="gap-1.5 text-xs whitespace-nowrap px-2.5">
+              <Search className="h-3.5 w-3.5" />
+              Suchen
+            </TabsTrigger>
+            <TabsTrigger value="qr" className="gap-1.5 text-xs whitespace-nowrap px-2.5">
+              <QrCode className="h-3.5 w-3.5" />
+              QR
+            </TabsTrigger>
+            <TabsTrigger value="invite" className="gap-1.5 text-xs whitespace-nowrap px-2.5">
+              <UserPlus className="h-3.5 w-3.5" />
+              Einladen
+            </TabsTrigger>
+            <TabsTrigger value="equid" className="gap-1.5 text-xs whitespace-nowrap px-2.5">
+              🐴
+              <span className="hidden sm:inline">Equid-Rechte</span>
+              <span className="sm:hidden">Rechte</span>
+            </TabsTrigger>
+            <TabsTrigger value="equid-chat" className="gap-1.5 text-xs whitespace-nowrap px-2.5">
+              <MessageCircle className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Equid-Chat</span>
+              <span className="sm:hidden">Chat</span>
+            </TabsTrigger>
+            <TabsTrigger value="permissions" className="gap-1.5 text-xs whitespace-nowrap px-2.5">
+              <Eye className="h-3.5 w-3.5" />
+              Info
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="connections" className="mt-6">
           <MyConnections />
