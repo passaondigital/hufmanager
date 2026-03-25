@@ -153,6 +153,7 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [horseToDelete, setHorseToDelete] = useState<Horse | null>(null);
   const [horseToEditId, setHorseToEditId] = useState<string | null>(null);
+  const [contactData, setContactData] = useState<{ is_business: boolean; vat_id: string } | null>(null);
   const [businessInfoOpen, setBusinessInfoOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     full_name: "",
