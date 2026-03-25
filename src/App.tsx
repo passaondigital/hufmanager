@@ -92,6 +92,7 @@ const Verarbeitungsverzeichnis = lazy(() => import("@/pages/admin/Verarbeitungsv
 const AdminRoles = lazy(() => import("@/pages/admin/AdminRoles"));
 const SubmitReview = lazy(() => import("@/pages/SubmitReview"));
 const AboMatrix = lazy(() => import("@/pages/AboMatrix"));
+const Kalkulator = lazy(() => import("@/pages/Kalkulator"));
 const Blog = lazy(() => import("@/pages/Blog"));
 const BlogPost = lazy(() => import("@/pages/BlogPost"));
 const WebsiteHome = lazy(() => import("@/pages/website/WebsiteHome"));
@@ -394,7 +395,7 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
   }
 
   // Intercept public routes that don't need AuthProvider
-  if (path.startsWith('/pferdeakte') || path.startsWith('/notfall/') || path === '/botschafter/login' || path === '/botschafter/warten' || path.startsWith('/ref/')) {
+  if (path.startsWith('/pferdeakte') || path.startsWith('/notfall/') || path === '/botschafter/login' || path === '/botschafter/warten' || path.startsWith('/ref/') || path === '/kalkulator') {
     return (
       <Suspense fallback={<LazyFallback />}>
         <Routes>
@@ -404,7 +405,8 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
           <Route path="/notfall/:eqid/:token" element={<NotfallZugang />} />
           <Route path="/botschafter/login" element={<BotschafterAuth />} />
           <Route path="/botschafter/warten" element={<BotschafterWarten />} />
-          <Route path="/ref/:code" element={<SponsoringPublic />} />
+           <Route path="/ref/:code" element={<SponsoringPublic />} />
+           <Route path="/kalkulator" element={<Kalkulator />} />
         </Routes>
       </Suspense>
     );
