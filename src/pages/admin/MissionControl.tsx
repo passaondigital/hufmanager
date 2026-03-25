@@ -59,6 +59,7 @@ import { GlobalFeatureFlagsManager } from "@/components/admin/GlobalFeatureFlags
 import { FeatureRolloutDashboard } from "@/components/admin/FeatureRolloutDashboard";
 import { AdminProviderTab, ProviderData, PLAN_OVERRIDE_OPTIONS } from "@/components/admin/AdminProviderTab";
 import { AdminStatsTab } from "@/components/admin/AdminStatsTab";
+import { AdminPlatformOverview } from "@/components/admin/AdminPlatformOverview";
 import { Switch } from "@/components/ui/switch";
 
 const DEFAULT_FEATURE_STATUSES: FeatureStatuses = {
