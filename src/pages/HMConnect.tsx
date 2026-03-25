@@ -226,7 +226,7 @@ function MyConnections() {
                   </div>
                   {conn.is_incoming ? (
                     <div className="flex gap-2">
-                      <Button size="sm" onClick={() => handleAccept(conn.id)}>
+                      <Button size="sm" onClick={() => handleAccept(conn.id, conn.other_name)}>
                         <Check className="h-4 w-4 mr-1" /> Annehmen
                       </Button>
                       <Button size="sm" variant="outline" onClick={() => handleReject(conn.id)}>
