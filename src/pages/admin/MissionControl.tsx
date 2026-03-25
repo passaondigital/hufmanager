@@ -1028,75 +1028,61 @@ export default function MissionControl() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-4 md:py-8 px-4">
-        {/* Header - Mobile optimized */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 md:mb-8">
-          <div>
-            <h1 className="text-responsive-h2 flex items-center gap-2 md:gap-3">
-              <Shield className="w-6 h-6 md:w-8 md:h-8 text-primary" />
-              Mission Control
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Provider-Management & Marktforschung
-            </p>
+      <div className="container mx-auto py-4 md:py-6 px-4">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-primary/10">
+              <Shield className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight">Mission Control</h1>
+              <p className="text-xs text-muted-foreground">Provider · Finanzen · Plattform</p>
+            </div>
           </div>
-          <div className="flex gap-2 w-full md:w-auto">
-            <Button variant="outline" className="min-h-[44px] flex-1 md:flex-none" onClick={() => navigate("/home")}>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate("/home")}>
               ← Dashboard
             </Button>
-            <Button variant="destructive" className="min-h-[44px] flex-1 md:flex-none" onClick={logout}>
-              Ausloggen
+            <Button variant="ghost" size="sm" className="text-destructive" onClick={logout}>
+              Logout
             </Button>
           </div>
         </div>
 
-        {/* Password Setup Card */}
-        <Card className="mb-6 border-primary/30 bg-primary/5">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <KeyRound className="w-5 h-5 text-primary" />
-              Permanentes Passwort setzen
-            </CardTitle>
-            <CardDescription>
-              Setze ein permanentes Passwort für deinen Admin-Account.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4 items-end">
-              <div className="flex-1 space-y-2">
-                <Label htmlFor="newPassword">Neues Passwort</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  placeholder="Mindestens 6 Zeichen"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                />
+        {/* Password Card - Collapsible */}
+        <Collapsible className="mb-4">
+          <CollapsibleTrigger asChild>
+            <button className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors px-1 mb-1">
+              <KeyRound className="w-3.5 h-3.5" />
+              Passwort verwalten
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="flex flex-col sm:flex-row gap-3 items-end p-4 rounded-xl border bg-card mb-2">
+              <div className="flex-1 space-y-1">
+                <Label htmlFor="newPassword" className="text-xs">Neues Passwort</Label>
+                <Input id="newPassword" type="password" placeholder="Min. 6 Zeichen" className="h-9"
+                  value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
               </div>
-              <div className="flex-1 space-y-2">
-                <Label htmlFor="confirmPassword">Passwort bestätigen</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="Passwort wiederholen"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
+              <div className="flex-1 space-y-1">
+                <Label htmlFor="confirmPassword" className="text-xs">Bestätigen</Label>
+                <Input id="confirmPassword" type="password" placeholder="Wiederholen" className="h-9"
+                  value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
               </div>
-              <Button 
-                onClick={handleSetPassword} 
-                disabled={passwordSaving || !newPassword || !confirmPassword}
-                className="sm:w-auto w-full"
-              >
-                {passwordSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              <Button size="sm" onClick={handleSetPassword} disabled={passwordSaving || !newPassword || !confirmPassword}>
+                {passwordSaving && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
                 Speichern
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </CollapsibleContent>
+        </Collapsible>
 
-        {/* KPI Dashboard */}
-        <MissionControlKPIs />
+        {/* KPIs */}
+        <MissionControlKPIsV2 />
 
         <Tabs defaultValue="providers" className="space-y-4 md:space-y-6">
           {/* Tabs - Horizontally scrollable on mobile */}
