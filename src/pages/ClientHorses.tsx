@@ -115,7 +115,11 @@ export default function ClientHorses() {
         {horses.length === 0 ? (
           <div className="text-center py-12">
             <Footprints className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-muted-foreground text-sm">Noch keine Pferde angelegt.</p>
+            <p className="text-muted-foreground text-sm mb-4">Noch keine Pferde angelegt.</p>
+            <Button onClick={() => setShowCreateModal(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Erstes Pferd anlegen
+            </Button>
           </div>
         ) : (
           horses.map((horse) => {
