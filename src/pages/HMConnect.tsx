@@ -356,7 +356,7 @@ export default function HMConnect() {
   }
 
   return (
-    <div className="container max-w-4xl py-6 space-y-6 animate-fade-in">
+    <div className="container max-w-4xl py-4 sm:py-6 px-3 sm:px-6 space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight flex items-center gap-3">
