@@ -126,7 +126,7 @@ interface FAQ {
   answer: string;
 }
 
-const DEFAULT_SECTION_ORDER = ["hero", "trust_counters", "about", "services", "highlights", "list_items", "shop_grid", "before_after", "gallery", "instagram", "faq", "service_area", "qualifications", "reviews", "contact"];
+const DEFAULT_SECTION_ORDER = ["hero", "trust_counters", "about", "services", "highlights", "pricing_calculator", "list_items", "shop_grid", "before_after", "gallery", "instagram", "faq", "service_area", "qualifications", "reviews", "contact"];
 
 const ProviderLanding = () => {
   const { slug, page } = useParams<{ slug: string; page?: string }>();
