@@ -35,6 +35,7 @@ export default function ClientHorses() {
   const [horses, setHorses] = useState<ClientHorse[]>([]);
   const [nextAppts, setNextAppts] = useState<Record<string, NextAppointment>>({});
   const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     if (!user) return;
