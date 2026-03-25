@@ -182,6 +182,20 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
     price_group: "standard",
   });
 
+  // Load contact business info when modal opens
+  useEffect(() => {
+    if (open && customer?.id) {
+      supabase
+        .from("contacts")
+        .select("is_business, vat_id")
+        .eq("profile_id", customer.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          setContactData(data ? { is_business: data.is_business || false, vat_id: data.vat_id || "" } : null);
+        });
+    }
+  }, [open, customer?.id]);
+
   // Initialize edit form when customer changes
   const initEditForm = async () => {
     if (customer) {
