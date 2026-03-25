@@ -88,6 +88,9 @@ import { AdminTransfersOverview } from "@/components/admin/AdminTransfersOvervie
 import { isDemoEmail } from "@/lib/demo-accounts";
 import { PlatformSuccession } from "@/components/admin/PlatformSuccession";
 import { AdminEmailAnalytics } from "@/features/email-marketing/admin/AdminEmailAnalytics";
+import { MissionControlNav, MissionControlNavMobile } from "@/components/admin/MissionControlNav";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 // Horse icon fallback since lucide doesn't have it
 const Horse = () => (
