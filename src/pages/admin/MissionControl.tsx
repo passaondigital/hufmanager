@@ -62,7 +62,7 @@ import {
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import AdminBlogManager from "@/components/admin/AdminBlogManager";
-import MissionControlKPIs from "@/components/admin/MissionControlKPIs";
+import MissionControlKPIsV2 from "@/components/admin/MissionControlKPIsV2";
 import BulkActionsBar from "@/components/admin/BulkActionsBar";
 import AdminActivityLogViewer from "@/components/admin/AdminActivityLogViewer";
 import AdminBroadcastCard from "@/components/admin/AdminBroadcastCard";
