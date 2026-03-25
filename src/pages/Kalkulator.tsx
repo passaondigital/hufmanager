@@ -83,7 +83,7 @@ export default function Kalkulator() {
         .select("whatsapp_number, phone, full_name")
         .eq("id", PROVIDER_ID)
         .single();
-      return data;
+      return data as { whatsapp_number: string | null; phone: string | null; full_name: string | null } | null;
     },
   });
 
