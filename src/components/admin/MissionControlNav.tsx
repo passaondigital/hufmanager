@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import {
   Users, AlertTriangle, Globe, Building2, Settings, FileText,
   ClipboardList, Megaphone, Shield, Sparkles, Eye, Target,
-  PiggyBank, Clock, Euro, ScrollText, BarChart3,
+  PiggyBank, Clock, Euro, ScrollText, BarChart3, ArrowLeftRight,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -47,6 +47,7 @@ const NAV_SECTIONS: NavSection[] = [
       { value: "revenue", label: "Einnahmen", icon: <PiggyBank className="w-4 h-4" /> },
       { value: "payments", label: "Zahlungen", icon: <Euro className="w-4 h-4" /> },
       { value: "invoices", label: "Rechnungen", icon: <FileText className="w-4 h-4" /> },
+      { value: "copecart", label: "CopeCart Abgleich", icon: <ArrowLeftRight className="w-4 h-4" /> },
       { value: "contracts", label: "Verträge", icon: <ScrollText className="w-4 h-4" /> },
       { value: "hufrente", label: "Hufrente", icon: <Shield className="w-4 h-4" /> },
     ],

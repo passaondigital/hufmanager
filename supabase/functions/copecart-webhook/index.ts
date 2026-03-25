@@ -797,11 +797,12 @@ const handler = async (req: Request): Promise<Response> => {
 
         // Log to admin_revenue_log
         const amount = payload.amount || payload.total || payload.price || 0;
+        const parsedAmount = typeof amount === "string" ? parseFloat(amount) : amount;
         const { error: logError } = await supabase
           .from("admin_revenue_log")
           .insert({
             event_type: eventType,
-            amount: typeof amount === "string" ? parseFloat(amount) : amount,
+            amount: parsedAmount,
             currency: "EUR",
             plan_name: subscriptionPlan,
             provider_id: profile.id,
@@ -815,6 +816,81 @@ const handler = async (req: Request): Promise<Response> => {
           console.error("[copecart] Revenue log failed:", logError.message);
         } else {
           console.log("[copecart] Revenue logged successfully");
+        }
+
+        // Auto-create admin_invoice for subscription payment
+        if (updateData.subscription_status === "active" && parsedAmount > 0) {
+          const now = new Date();
+          const periodStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+          const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0];
+          const dueDate = new Date(now.getFullYear(), now.getMonth(), 15).toISOString().split("T")[0];
+
+          // Check if admin_invoice already exists for this period+provider
+          const { data: existingInv } = await supabase
+            .from("admin_invoices")
+            .select("id")
+            .eq("provider_id", profile.id)
+            .gte("period_start", periodStart)
+            .lte("period_end", periodEnd)
+            .limit(1);
+
+          if (!existingInv || existingInv.length === 0) {
+            const PLAN_ITEMS: Record<string, { description: string; price: number }> = {
+              starter: { description: "HufManager Starter – Monatslizenz", price: 9.90 },
+              pro: { description: "HufManager Pro – Monatslizenz", price: 29.00 },
+              duo: { description: "HufManager Duo – Monatslizenz", price: 49.00 },
+              team: { description: "HufManager Team – Monatslizenz", price: 79.00 },
+            };
+            const planItem = PLAN_ITEMS[subscriptionPlan] || PLAN_ITEMS.starter;
+
+            // Fetch readable_id for provider_pid
+            const { data: provProfile } = await supabase
+              .from("profiles")
+              .select("full_name, email, readable_id")
+              .eq("id", profile.id)
+              .maybeSingle();
+
+            const { data: adminInv, error: adminInvErr } = await supabase
+              .from("admin_invoices")
+              .insert({
+                invoice_number: "",
+                provider_id: profile.id,
+                provider_pid: provProfile?.readable_id || null,
+                provider_name: provProfile?.full_name || customerName || "Unbekannt",
+                provider_email: provProfile?.email || customerEmail,
+                plan: subscriptionPlan,
+                period_start: periodStart,
+                period_end: periodEnd,
+                subtotal: parsedAmount,
+                total: parsedAmount,
+                kleinunternehmer: true,
+                payment_method: "copecart",
+                payment_source: "copecart_webhook",
+                status: "paid",
+                paid_at: now.toISOString(),
+                due_date: dueDate,
+              })
+              .select("id, invoice_number")
+              .single();
+
+            if (adminInvErr) {
+              console.error("[copecart] Admin invoice creation failed:", adminInvErr.message);
+            } else {
+              console.log("[copecart] Admin invoice created:", adminInv.invoice_number);
+              // Create invoice line item
+              await supabase.from("admin_invoice_items").insert({
+                invoice_id: adminInv.id,
+                position: 1,
+                description: planItem.description,
+                quantity: 1,
+                unit: "Monat",
+                unit_price: parsedAmount,
+                total: parsedAmount,
+              });
+            }
+          } else {
+            console.log("[copecart] Admin invoice already exists for this period, skipping");
+          }
         }
       }
     }

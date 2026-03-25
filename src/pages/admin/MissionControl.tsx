@@ -60,6 +60,7 @@ import { FeatureRolloutDashboard } from "@/components/admin/FeatureRolloutDashbo
 import { AdminProviderTab, ProviderData, PLAN_OVERRIDE_OPTIONS } from "@/components/admin/AdminProviderTab";
 import { AdminStatsTab } from "@/components/admin/AdminStatsTab";
 import { AdminPlatformOverview } from "@/components/admin/AdminPlatformOverview";
+import { AdminCopecartReconciliation } from "@/components/admin/AdminCopecartReconciliation";
 import { Switch } from "@/components/ui/switch";
 
 const DEFAULT_FEATURE_STATUSES: FeatureStatuses = {
@@ -446,6 +447,7 @@ export default function MissionControl() {
             {activeTab === "email-marketing" && <AdminEmailAnalytics />}
             {activeTab === "partners" && <AdminPartnerOverview />}
             {activeTab === "employees" && <AdminEmployeeOverview />}
+            {activeTab === "copecart" && <AdminCopecartReconciliation />}
 
             {activeTab === "escalations" && (
               <Card>
