@@ -97,6 +97,17 @@ export const WebsiteNavbar = ({ slug, businessName, logoUrl, primaryColor, activ
               {item.label}
             </Link>
           ))}
+          <a
+            href="#preisrechner"
+            onClick={(e) => {
+              e.preventDefault();
+              setMobileOpen(false);
+              document.getElementById("preisrechner")?.scrollIntoView({ behavior: "smooth" });
+            }}
+            className="block px-3 py-2 text-sm rounded-md text-foreground hover:bg-muted"
+          >
+            💰 Preise
+          </a>
           {phone && (
             <a href={`tel:${phone}`} className="block px-3 py-2 text-sm text-primary font-medium">
               📞 {phone}
