@@ -192,6 +192,14 @@ export default function ClientHorses() {
         )}
       </div>
 
+      <CreateHorseModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreated={(horseId) => {
+          setShowCreateModal(false);
+          navigate(`/client-horse/${horseId}`);
+        }}
+      />
     </div>
   );
 }
