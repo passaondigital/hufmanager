@@ -182,8 +182,21 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
   });
 
   // Initialize edit form when customer changes
-  const initEditForm = () => {
+  const initEditForm = async () => {
     if (customer) {
+      // Fetch is_business + vat_id from contacts table
+      let contactBiz = false;
+      let contactVat = "";
+      const { data: contactRow } = await supabase
+        .from("contacts")
+        .select("is_business, vat_id")
+        .eq("profile_id", customer.id)
+        .maybeSingle();
+      if (contactRow) {
+        contactBiz = contactRow.is_business || false;
+        contactVat = contactRow.vat_id || "";
+      }
+
       setEditForm({
         full_name: customer.full_name || "",
         first_name: customer.first_name || "",
@@ -199,8 +212,8 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
         state: customer.state || "",
         geo_lat: customer.geo_lat || null,
         geo_lng: customer.geo_lng || null,
-        is_business: customer.is_business || false,
-        vat_id: customer.vat_id || "",
+        is_business: contactBiz,
+        vat_id: contactVat,
         client_type: customer.client_type || "",
         lifecycle_status: customer.lifecycle_status || "",
         payment_rating: customer.payment_rating || "",
