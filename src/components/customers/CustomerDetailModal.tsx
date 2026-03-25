@@ -797,11 +797,11 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                         Auftragserteilung
                       </Badge>
                     )}
-                    {customer.is_business && (
+                    {contactData?.is_business && (
                       <Badge variant="secondary" className="flex items-center gap-1">
                         <Building2 className="h-3 w-3" />
                         B2B
-                        {customer.vat_id && <span className="ml-1 font-mono text-xs">({customer.vat_id})</span>}
+                        {contactData.vat_id && <span className="ml-1 font-mono text-xs">({contactData.vat_id})</span>}
                       </Badge>
                     )}
                   </div>
