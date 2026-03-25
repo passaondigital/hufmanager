@@ -32,6 +32,7 @@ const NAV_SECTIONS: NavSection[] = [
     label: "Nutzer",
     icon: <Users className="w-4 h-4" />,
     items: [
+      { value: "platform", label: "Plattform-Übersicht", icon: <BarChart3 className="w-4 h-4" /> },
       { value: "providers", label: "Provider", icon: <Users className="w-4 h-4" /> },
       { value: "partners", label: "Partner", icon: <Globe className="w-4 h-4" /> },
       { value: "employees", label: "Mitarbeiter", icon: <Building2 className="w-4 h-4" /> },
