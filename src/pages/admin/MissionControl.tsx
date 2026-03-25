@@ -414,6 +414,7 @@ export default function MissionControl() {
               />
             )}
 
+            {activeTab === "platform" && <AdminPlatformOverview />}
             {activeTab === "stats" && <AdminStatsTab providers={providers} />}
             {activeTab === "blog" && <AdminBlogManager />}
             {activeTab === "activity" && <AdminActivityLogViewer limit={100} />}
