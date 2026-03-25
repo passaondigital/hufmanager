@@ -434,7 +434,7 @@ export default function HMConnect() {
         </TabsContent>
 
         <TabsContent value="invite" className="mt-6">
-          <InviteToHufManager />
+          <InviteWithGuidedFlow />
         </TabsContent>
 
         <TabsContent value="equid" className="mt-6">
