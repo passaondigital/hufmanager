@@ -92,6 +92,7 @@ const Verarbeitungsverzeichnis = lazy(() => import("@/pages/admin/Verarbeitungsv
 const AdminRoles = lazy(() => import("@/pages/admin/AdminRoles"));
 const SubmitReview = lazy(() => import("@/pages/SubmitReview"));
 const AboMatrix = lazy(() => import("@/pages/AboMatrix"));
+const Kalkulator = lazy(() => import("@/pages/Kalkulator"));
 const Blog = lazy(() => import("@/pages/Blog"));
 const BlogPost = lazy(() => import("@/pages/BlogPost"));
 const WebsiteHome = lazy(() => import("@/pages/website/WebsiteHome"));
