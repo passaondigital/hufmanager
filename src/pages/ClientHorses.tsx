@@ -96,11 +96,18 @@ export default function ClientHorses() {
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-xl border-b border-border/50 px-4 py-4">
-        <div className="flex items-center gap-2">
-          <Footprints className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-bold">Meine Pferde</h1>
-          <HelpTip id="client.horses" />
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-xl border-b border-border/50 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Footprints className="h-5 w-5 text-primary" />
+            <h1 className="text-lg font-bold">Meine Pferde</h1>
+            <HelpTip id="client.horses" />
+          </div>
+          <Button size="sm" onClick={() => setShowCreateModal(true)} className="gap-1.5">
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Pferd anlegen</span>
+            <span className="sm:hidden">Neu</span>
+          </Button>
         </div>
       </div>
 
