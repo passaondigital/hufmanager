@@ -395,7 +395,7 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
   }
 
   // Intercept public routes that don't need AuthProvider
-  if (path.startsWith('/pferdeakte') || path.startsWith('/notfall/') || path === '/botschafter/login' || path === '/botschafter/warten' || path.startsWith('/ref/')) {
+  if (path.startsWith('/pferdeakte') || path.startsWith('/notfall/') || path === '/botschafter/login' || path === '/botschafter/warten' || path.startsWith('/ref/') || path === '/kalkulator') {
     return (
       <Suspense fallback={<LazyFallback />}>
         <Routes>
