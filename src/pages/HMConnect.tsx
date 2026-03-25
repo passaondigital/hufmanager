@@ -87,7 +87,7 @@ function MyConnections() {
     enabled: !!user?.id,
   });
 
-  const handleAccept = async (grantId: string) => {
+  const handleAccept = async (grantId: string, otherName: string) => {
     const { error } = await supabase
       .from("access_grants")
       .update({
@@ -100,6 +100,17 @@ function MyConnections() {
     if (error) {
       toast({ title: "Fehler", variant: "destructive" });
     } else {
+      // Notify the requester that their connection was accepted
+      const grant = connections.find(c => c.id === grantId);
+      if (grant && user) {
+        await supabase.from("notifications").insert({
+          user_id: grant.other_id,
+          title: "✅ Verbindung angenommen",
+          message: `${otherName || "Dein Kontakt"} hat deine Verbindungsanfrage angenommen.`,
+          type: "connection_accepted",
+          link: "/hm-connect",
+        } as any);
+      }
       toast({ title: "Verbindung angenommen!" });
       refetch();
     }
@@ -118,6 +129,17 @@ function MyConnections() {
     if (error) {
       toast({ title: "Fehler", variant: "destructive" });
     } else {
+      // Notify the requester
+      const grant = connections.find(c => c.id === grantId);
+      if (grant && user) {
+        await supabase.from("notifications").insert({
+          user_id: grant.other_id,
+          title: "❌ Verbindung abgelehnt",
+          message: `Deine Verbindungsanfrage wurde leider abgelehnt.`,
+          type: "connection_rejected",
+          link: "/hm-connect",
+        } as any);
+      }
       toast({ title: "Anfrage abgelehnt" });
       refetch();
     }
@@ -204,7 +226,7 @@ function MyConnections() {
                   </div>
                   {conn.is_incoming ? (
                     <div className="flex gap-2">
-                      <Button size="sm" onClick={() => handleAccept(conn.id)}>
+                      <Button size="sm" onClick={() => handleAccept(conn.id, conn.other_name)}>
                         <Check className="h-4 w-4 mr-1" /> Annehmen
                       </Button>
                       <Button size="sm" variant="outline" onClick={() => handleReject(conn.id)}>
@@ -334,7 +356,7 @@ export default function HMConnect() {
   }
 
   return (
-    <div className="container max-w-4xl py-6 space-y-6 animate-fade-in">
+    <div className="container max-w-4xl py-4 sm:py-6 px-3 sm:px-6 space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight flex items-center gap-3">
@@ -363,39 +385,41 @@ export default function HMConnect() {
       </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
-          <TabsTrigger value="connections" className="gap-1.5 text-xs">
-            <Users className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Verbindungen</span>
-            <span className="sm:hidden">Netzwerk</span>
-          </TabsTrigger>
-          <TabsTrigger value="search" className="gap-1.5 text-xs">
-            <Search className="h-3.5 w-3.5" />
-            Suchen
-          </TabsTrigger>
-          <TabsTrigger value="qr" className="gap-1.5 text-xs">
-            <QrCode className="h-3.5 w-3.5" />
-            QR
-          </TabsTrigger>
-          <TabsTrigger value="invite" className="gap-1.5 text-xs">
-            <UserPlus className="h-3.5 w-3.5" />
-            Einladen
-          </TabsTrigger>
-          <TabsTrigger value="equid" className="gap-1.5 text-xs">
-            🐴
-            <span className="hidden sm:inline">Equid-Rechte</span>
-            <span className="sm:hidden">Rechte</span>
-          </TabsTrigger>
-          <TabsTrigger value="equid-chat" className="gap-1.5 text-xs">
-            <MessageCircle className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Equid-Chat</span>
-            <span className="sm:hidden">Chat</span>
-          </TabsTrigger>
-          <TabsTrigger value="permissions" className="gap-1.5 text-xs">
-            <Eye className="h-3.5 w-3.5" />
-            Info
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-1 px-1">
+          <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-7 gap-1">
+            <TabsTrigger value="connections" className="gap-1.5 text-xs whitespace-nowrap px-2.5">
+              <Users className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Verbindungen</span>
+              <span className="sm:hidden">Netzwerk</span>
+            </TabsTrigger>
+            <TabsTrigger value="search" className="gap-1.5 text-xs whitespace-nowrap px-2.5">
+              <Search className="h-3.5 w-3.5" />
+              Suchen
+            </TabsTrigger>
+            <TabsTrigger value="qr" className="gap-1.5 text-xs whitespace-nowrap px-2.5">
+              <QrCode className="h-3.5 w-3.5" />
+              QR
+            </TabsTrigger>
+            <TabsTrigger value="invite" className="gap-1.5 text-xs whitespace-nowrap px-2.5">
+              <UserPlus className="h-3.5 w-3.5" />
+              Einladen
+            </TabsTrigger>
+            <TabsTrigger value="equid" className="gap-1.5 text-xs whitespace-nowrap px-2.5">
+              🐴
+              <span className="hidden sm:inline">Equid-Rechte</span>
+              <span className="sm:hidden">Rechte</span>
+            </TabsTrigger>
+            <TabsTrigger value="equid-chat" className="gap-1.5 text-xs whitespace-nowrap px-2.5">
+              <MessageCircle className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Equid-Chat</span>
+              <span className="sm:hidden">Chat</span>
+            </TabsTrigger>
+            <TabsTrigger value="permissions" className="gap-1.5 text-xs whitespace-nowrap px-2.5">
+              <Eye className="h-3.5 w-3.5" />
+              Info
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="connections" className="mt-6">
           <MyConnections />
