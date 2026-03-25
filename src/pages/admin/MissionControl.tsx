@@ -1084,126 +1084,54 @@ export default function MissionControl() {
         {/* KPIs */}
         <MissionControlKPIsV2 />
 
-        <Tabs defaultValue="providers" className="space-y-4 md:space-y-6">
-          {/* Tabs - Horizontally scrollable on mobile */}
-          <div className="overflow-x-auto -mx-4 px-4 pb-2">
-            <TabsList className="inline-flex min-w-max">
-              <TabsTrigger value="providers" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Users className="w-4 h-4" />
-                <span className="hidden md:inline">Provider</span> ({providers.length})
-              </TabsTrigger>
-              <TabsTrigger value="escalations" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <AlertTriangle className="w-4 h-4" />
-                <span className="hidden md:inline">Eskalationen</span>
-              </TabsTrigger>
-              <TabsTrigger value="partners" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Globe className="w-4 h-4" />
-                <span className="hidden md:inline">Partner</span>
-              </TabsTrigger>
-              <TabsTrigger value="employees" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Building2 className="w-4 h-4" />
-                <span className="hidden md:inline">Mitarbeiter</span>
-              </TabsTrigger>
-              <TabsTrigger value="stats" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Settings className="w-4 h-4" />
-                <span className="hidden md:inline">Statistiken</span>
-              </TabsTrigger>
-              <TabsTrigger value="blog" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <FileText className="w-4 h-4" />
-                <span className="hidden md:inline">Blog</span>
-              </TabsTrigger>
-              <TabsTrigger value="activity" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <ClipboardList className="w-4 h-4" />
-                <span className="hidden md:inline">Aktivität</span>
-              </TabsTrigger>
-              <TabsTrigger value="tools" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Megaphone className="w-4 h-4" />
-                <span className="hidden md:inline">Tools</span>
-              </TabsTrigger>
-              <TabsTrigger value="versions" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Shield className="w-4 h-4" />
-                <span className="hidden md:inline">Release Control</span>
-              </TabsTrigger>
-              <TabsTrigger value="rollout" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Sparkles className="w-4 h-4" />
-                <span className="hidden md:inline">Rollout</span>
-              </TabsTrigger>
-              <TabsTrigger value="demo" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Eye className="w-4 h-4" />
-                <span className="hidden md:inline">Demo</span>
-              </TabsTrigger>
-              <TabsTrigger value="glossary" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <FileText className="w-4 h-4" />
-                <span className="hidden md:inline">Glossar</span>
-              </TabsTrigger>
-              <TabsTrigger value="funnel" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Target className="w-4 h-4" />
-                <span className="hidden md:inline">Funnel</span>
-              </TabsTrigger>
-              <TabsTrigger value="revenue" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <PiggyBank className="w-4 h-4" />
-                <span className="hidden md:inline">Einnahmen</span>
-              </TabsTrigger>
-              <TabsTrigger value="retention" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Clock className="w-4 h-4" />
-                <span className="hidden md:inline">Fristen</span>
-              </TabsTrigger>
-              <TabsTrigger value="hufrente" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Shield className="w-4 h-4" />
-                <span className="hidden md:inline">Hufrente</span>
-              </TabsTrigger>
-              <TabsTrigger value="payments" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Euro className="w-4 h-4" />
-                <span className="hidden md:inline">Zahlungen</span>
-              </TabsTrigger>
-              <TabsTrigger value="invoices" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <FileText className="w-4 h-4" />
-                <span className="hidden md:inline">Rechnungen</span>
-              </TabsTrigger>
-              <TabsTrigger value="contracts" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <ScrollText className="w-4 h-4" />
-                <span className="hidden md:inline">Verträge</span>
-              </TabsTrigger>
-              <TabsTrigger value="compliance" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Shield className="w-4 h-4" />
-                <span className="hidden md:inline">Compliance</span>
-              </TabsTrigger>
-              <TabsTrigger value="browsers" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Globe className="w-4 h-4" />
-                <span className="hidden md:inline">Browser</span>
-              </TabsTrigger>
-              <TabsTrigger value="succession" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Shield className="w-4 h-4" />
-                <span className="hidden md:inline">Nachfolge</span>
-              </TabsTrigger>
-              <TabsTrigger value="email-marketing" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Megaphone className="w-4 h-4" />
-                <span className="hidden md:inline">E-Mail</span>
-              </TabsTrigger>
-            </TabsList>
-          </div>
+        {/* Layout: Sidebar + Content */}
+        <div className="flex gap-6 mt-6">
+          {/* Sidebar Navigation - Desktop */}
+          {!isMobile && (
+            <aside className="w-56 flex-shrink-0 sticky top-4 self-start">
+              <MissionControlNav
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                providerCount={providers.length}
+              />
+              <div className="mt-4 space-y-1.5">
+                <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-xs text-muted-foreground"
+                  onClick={() => navigate("/admin/module-access-logs")}>
+                  <AlertTriangle className="w-3.5 h-3.5" /> Zugriffs-Logs
+                </Button>
+                <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-xs text-muted-foreground"
+                  onClick={() => navigate("/admin/feature-usage")}>
+                  <BarChart3 className="w-3.5 h-3.5" /> Feature-Nutzung
+                </Button>
+              </div>
+            </aside>
+          )}
 
-          {/* Quick Links - Hidden on mobile, show in dropdown or collapsed */}
-          <div className="hidden md:flex ml-auto gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => navigate("/admin/module-access-logs")}
-              className="gap-2"
-            >
-              <AlertTriangle className="w-4 h-4" />
-              Zugriffs-Logs
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => navigate("/admin/feature-usage")}
-              className="gap-2"
-            >
-              <BarChart3 className="w-4 h-4" />
-              Feature-Nutzung
-            </Button>
-          </div>
+          {/* Main Content */}
+          <div className="flex-1 min-w-0">
+            {/* Mobile Navigation */}
+            {isMobile && (
+              <Collapsible open={navOpen} onOpenChange={setNavOpen} className="mb-4">
+                <CollapsibleTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-full justify-between mb-2">
+                    <span className="text-sm">📂 {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</span>
+                    <svg className={cn("w-4 h-4 transition-transform", navOpen && "rotate-180")}
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="p-3 rounded-xl border bg-card mb-4">
+                    <MissionControlNavMobile
+                      activeTab={activeTab}
+                      onTabChange={(tab) => { setActiveTab(tab); setNavOpen(false); }}
+                      providerCount={providers.length}
+                    />
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
 
           <TabsContent value="providers" className="space-y-4">
             {/* Bulk Actions Bar */}
