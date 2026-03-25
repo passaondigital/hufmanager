@@ -218,7 +218,7 @@ export default function MissionControl() {
       const { error: profileError } = await supabase.from("profiles").update({
         plan_override: editPlanOverride === "standard" ? null : editPlanOverride,
         access_valid_until: editAccessValidUntil ? new Date(editAccessValidUntil).toISOString() : null,
-        feature_flags: editFeatureFlags, feature_statuses: editFeatureStatuses,
+        feature_flags: editFeatureFlags, feature_statuses: editFeatureStatuses as unknown as Record<string, string>,
         zip_code: editZipCode || null, city: editCity || null, phone: editPhone || null,
       }).eq("id", selectedProvider.id);
       if (profileError) throw profileError;
