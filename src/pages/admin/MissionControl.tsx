@@ -62,7 +62,7 @@ import {
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import AdminBlogManager from "@/components/admin/AdminBlogManager";
-import MissionControlKPIs from "@/components/admin/MissionControlKPIs";
+import MissionControlKPIsV2 from "@/components/admin/MissionControlKPIsV2";
 import BulkActionsBar from "@/components/admin/BulkActionsBar";
 import AdminActivityLogViewer from "@/components/admin/AdminActivityLogViewer";
 import AdminBroadcastCard from "@/components/admin/AdminBroadcastCard";
@@ -88,6 +88,9 @@ import { AdminTransfersOverview } from "@/components/admin/AdminTransfersOvervie
 import { isDemoEmail } from "@/lib/demo-accounts";
 import { PlatformSuccession } from "@/components/admin/PlatformSuccession";
 import { AdminEmailAnalytics } from "@/features/email-marketing/admin/AdminEmailAnalytics";
+import { MissionControlNav, MissionControlNavMobile } from "@/components/admin/MissionControlNav";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 // Horse icon fallback since lucide doesn't have it
 const Horse = () => (
@@ -193,6 +196,9 @@ export default function MissionControl() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const logout = useLogout();
+  const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState("providers");
+  const [navOpen, setNavOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [providers, setProviders] = useState<ProviderData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1022,198 +1028,112 @@ export default function MissionControl() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-4 md:py-8 px-4">
-        {/* Header - Mobile optimized */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 md:mb-8">
-          <div>
-            <h1 className="text-responsive-h2 flex items-center gap-2 md:gap-3">
-              <Shield className="w-6 h-6 md:w-8 md:h-8 text-primary" />
-              Mission Control
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Provider-Management & Marktforschung
-            </p>
+      <div className="container mx-auto py-4 md:py-6 px-4">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-primary/10">
+              <Shield className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight">Mission Control</h1>
+              <p className="text-xs text-muted-foreground">Provider · Finanzen · Plattform</p>
+            </div>
           </div>
-          <div className="flex gap-2 w-full md:w-auto">
-            <Button variant="outline" className="min-h-[44px] flex-1 md:flex-none" onClick={() => navigate("/home")}>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate("/home")}>
               ← Dashboard
             </Button>
-            <Button variant="destructive" className="min-h-[44px] flex-1 md:flex-none" onClick={logout}>
-              Ausloggen
+            <Button variant="ghost" size="sm" className="text-destructive" onClick={logout}>
+              Logout
             </Button>
           </div>
         </div>
 
-        {/* Password Setup Card */}
-        <Card className="mb-6 border-primary/30 bg-primary/5">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <KeyRound className="w-5 h-5 text-primary" />
-              Permanentes Passwort setzen
-            </CardTitle>
-            <CardDescription>
-              Setze ein permanentes Passwort für deinen Admin-Account.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4 items-end">
-              <div className="flex-1 space-y-2">
-                <Label htmlFor="newPassword">Neues Passwort</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  placeholder="Mindestens 6 Zeichen"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                />
+        {/* Password Card - Collapsible */}
+        <Collapsible className="mb-4">
+          <CollapsibleTrigger asChild>
+            <button className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors px-1 mb-1">
+              <KeyRound className="w-3.5 h-3.5" />
+              Passwort verwalten
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="flex flex-col sm:flex-row gap-3 items-end p-4 rounded-xl border bg-card mb-2">
+              <div className="flex-1 space-y-1">
+                <Label htmlFor="newPassword" className="text-xs">Neues Passwort</Label>
+                <Input id="newPassword" type="password" placeholder="Min. 6 Zeichen" className="h-9"
+                  value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
               </div>
-              <div className="flex-1 space-y-2">
-                <Label htmlFor="confirmPassword">Passwort bestätigen</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="Passwort wiederholen"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
+              <div className="flex-1 space-y-1">
+                <Label htmlFor="confirmPassword" className="text-xs">Bestätigen</Label>
+                <Input id="confirmPassword" type="password" placeholder="Wiederholen" className="h-9"
+                  value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
               </div>
-              <Button 
-                onClick={handleSetPassword} 
-                disabled={passwordSaving || !newPassword || !confirmPassword}
-                className="sm:w-auto w-full"
-              >
-                {passwordSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              <Button size="sm" onClick={handleSetPassword} disabled={passwordSaving || !newPassword || !confirmPassword}>
+                {passwordSaving && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
                 Speichern
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </CollapsibleContent>
+        </Collapsible>
 
-        {/* KPI Dashboard */}
-        <MissionControlKPIs />
+        {/* KPIs */}
+        <MissionControlKPIsV2 />
 
-        <Tabs defaultValue="providers" className="space-y-4 md:space-y-6">
-          {/* Tabs - Horizontally scrollable on mobile */}
-          <div className="overflow-x-auto -mx-4 px-4 pb-2">
-            <TabsList className="inline-flex min-w-max">
-              <TabsTrigger value="providers" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Users className="w-4 h-4" />
-                <span className="hidden md:inline">Provider</span> ({providers.length})
-              </TabsTrigger>
-              <TabsTrigger value="escalations" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <AlertTriangle className="w-4 h-4" />
-                <span className="hidden md:inline">Eskalationen</span>
-              </TabsTrigger>
-              <TabsTrigger value="partners" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Globe className="w-4 h-4" />
-                <span className="hidden md:inline">Partner</span>
-              </TabsTrigger>
-              <TabsTrigger value="employees" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Building2 className="w-4 h-4" />
-                <span className="hidden md:inline">Mitarbeiter</span>
-              </TabsTrigger>
-              <TabsTrigger value="stats" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Settings className="w-4 h-4" />
-                <span className="hidden md:inline">Statistiken</span>
-              </TabsTrigger>
-              <TabsTrigger value="blog" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <FileText className="w-4 h-4" />
-                <span className="hidden md:inline">Blog</span>
-              </TabsTrigger>
-              <TabsTrigger value="activity" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <ClipboardList className="w-4 h-4" />
-                <span className="hidden md:inline">Aktivität</span>
-              </TabsTrigger>
-              <TabsTrigger value="tools" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Megaphone className="w-4 h-4" />
-                <span className="hidden md:inline">Tools</span>
-              </TabsTrigger>
-              <TabsTrigger value="versions" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Shield className="w-4 h-4" />
-                <span className="hidden md:inline">Release Control</span>
-              </TabsTrigger>
-              <TabsTrigger value="rollout" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Sparkles className="w-4 h-4" />
-                <span className="hidden md:inline">Rollout</span>
-              </TabsTrigger>
-              <TabsTrigger value="demo" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Eye className="w-4 h-4" />
-                <span className="hidden md:inline">Demo</span>
-              </TabsTrigger>
-              <TabsTrigger value="glossary" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <FileText className="w-4 h-4" />
-                <span className="hidden md:inline">Glossar</span>
-              </TabsTrigger>
-              <TabsTrigger value="funnel" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Target className="w-4 h-4" />
-                <span className="hidden md:inline">Funnel</span>
-              </TabsTrigger>
-              <TabsTrigger value="revenue" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <PiggyBank className="w-4 h-4" />
-                <span className="hidden md:inline">Einnahmen</span>
-              </TabsTrigger>
-              <TabsTrigger value="retention" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Clock className="w-4 h-4" />
-                <span className="hidden md:inline">Fristen</span>
-              </TabsTrigger>
-              <TabsTrigger value="hufrente" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Shield className="w-4 h-4" />
-                <span className="hidden md:inline">Hufrente</span>
-              </TabsTrigger>
-              <TabsTrigger value="payments" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Euro className="w-4 h-4" />
-                <span className="hidden md:inline">Zahlungen</span>
-              </TabsTrigger>
-              <TabsTrigger value="invoices" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <FileText className="w-4 h-4" />
-                <span className="hidden md:inline">Rechnungen</span>
-              </TabsTrigger>
-              <TabsTrigger value="contracts" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <ScrollText className="w-4 h-4" />
-                <span className="hidden md:inline">Verträge</span>
-              </TabsTrigger>
-              <TabsTrigger value="compliance" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Shield className="w-4 h-4" />
-                <span className="hidden md:inline">Compliance</span>
-              </TabsTrigger>
-              <TabsTrigger value="browsers" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Globe className="w-4 h-4" />
-                <span className="hidden md:inline">Browser</span>
-              </TabsTrigger>
-              <TabsTrigger value="succession" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Shield className="w-4 h-4" />
-                <span className="hidden md:inline">Nachfolge</span>
-              </TabsTrigger>
-              <TabsTrigger value="email-marketing" className="gap-1.5 min-h-[44px] text-xs md:text-sm">
-                <Megaphone className="w-4 h-4" />
-                <span className="hidden md:inline">E-Mail</span>
-              </TabsTrigger>
-            </TabsList>
-          </div>
+        {/* Layout: Sidebar + Content */}
+        <div className="flex gap-6 mt-6">
+          {/* Sidebar Navigation - Desktop */}
+          {!isMobile && (
+            <aside className="w-56 flex-shrink-0 sticky top-4 self-start">
+              <MissionControlNav
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                providerCount={providers.length}
+              />
+              <div className="mt-4 space-y-1.5">
+                <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-xs text-muted-foreground"
+                  onClick={() => navigate("/admin/module-access-logs")}>
+                  <AlertTriangle className="w-3.5 h-3.5" /> Zugriffs-Logs
+                </Button>
+                <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-xs text-muted-foreground"
+                  onClick={() => navigate("/admin/feature-usage")}>
+                  <BarChart3 className="w-3.5 h-3.5" /> Feature-Nutzung
+                </Button>
+              </div>
+            </aside>
+          )}
 
-          {/* Quick Links - Hidden on mobile, show in dropdown or collapsed */}
-          <div className="hidden md:flex ml-auto gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => navigate("/admin/module-access-logs")}
-              className="gap-2"
-            >
-              <AlertTriangle className="w-4 h-4" />
-              Zugriffs-Logs
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => navigate("/admin/feature-usage")}
-              className="gap-2"
-            >
-              <BarChart3 className="w-4 h-4" />
-              Feature-Nutzung
-            </Button>
-          </div>
+          {/* Main Content */}
+          <div className="flex-1 min-w-0">
+            {/* Mobile Navigation */}
+            {isMobile && (
+              <Collapsible open={navOpen} onOpenChange={setNavOpen} className="mb-4">
+                <CollapsibleTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-full justify-between mb-2">
+                    <span className="text-sm">📂 {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</span>
+                    <svg className={cn("w-4 h-4 transition-transform", navOpen && "rotate-180")}
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="p-3 rounded-xl border bg-card mb-4">
+                    <MissionControlNavMobile
+                      activeTab={activeTab}
+                      onTabChange={(tab) => { setActiveTab(tab); setNavOpen(false); }}
+                      providerCount={providers.length}
+                    />
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
 
-          <TabsContent value="providers" className="space-y-4">
+          {activeTab === "providers" && (<div className="space-y-4">
             {/* Bulk Actions Bar */}
             <BulkActionsBar
               selectedIds={selectedProviderIds}
@@ -1798,9 +1718,9 @@ export default function MissionControl() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="stats" className="space-y-6">
+          {activeTab === "stats" && (<div className="space-y-6">
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card>
@@ -2161,28 +2081,28 @@ export default function MissionControl() {
                 })()}
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="blog" className="space-y-6">
+          {activeTab === "blog" && (<div className="space-y-6">
             <AdminBlogManager />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="activity" className="space-y-6">
+          {activeTab === "activity" && (<div className="space-y-6">
             <AdminActivityLogViewer limit={100} />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="tools" className="space-y-6">
+          {activeTab === "tools" && (<div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <AdminBroadcastCard />
               <AdminFeedbackViewer />
             </div>
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="versions" className="space-y-6">
+          {activeTab === "versions" && (<div className="space-y-6">
             <ReleaseControlCenter />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="rollout" className="space-y-6">
+          {activeTab === "rollout" && (<div className="space-y-6">
             <GlobalFeatureFlagsManager />
             <FeatureRolloutDashboard 
               providers={providers}
@@ -2193,64 +2113,64 @@ export default function MissionControl() {
                 }
               }}
             />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="demo" className="space-y-6">
+          {activeTab === "demo" && (<div className="space-y-6">
             <DemoAccountsManager />
             <DemoAnalyticsDashboard />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="glossary" className="space-y-6">
+          {activeTab === "glossary" && (<div className="space-y-6">
             <AdminGlossaryManager />
-          </TabsContent>
+          </div>)}
 
-           <TabsContent value="funnel" className="space-y-6">
+           {activeTab === "funnel" && (<div className="space-y-6">
             <FunnelCockpit />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="revenue" className="space-y-6">
+          {activeTab === "revenue" && (<div className="space-y-6">
             <AdminRevenue />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="retention" className="space-y-6">
+          {activeTab === "retention" && (<div className="space-y-6">
             <RetentionDashboard />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="hufrente" className="space-y-6">
+          {activeTab === "hufrente" && (<div className="space-y-6">
             <AdminHufrenteOverview />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="payments" className="space-y-6">
+          {activeTab === "payments" && (<div className="space-y-6">
             <AdminManualPayments />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="invoices" className="space-y-6">
+          {activeTab === "invoices" && (<div className="space-y-6">
             <AdminInvoices />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="contracts" className="space-y-6">
+          {activeTab === "contracts" && (<div className="space-y-6">
             <AdminContractManager />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="compliance" className="space-y-6">
+          {activeTab === "compliance" && (<div className="space-y-6">
             <AdminContractTracking />
             <AdminTransfersOverview />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="browsers" className="space-y-6">
+          {activeTab === "browsers" && (<div className="space-y-6">
             <AdminBrowserAnalytics />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="succession" className="space-y-6">
+          {activeTab === "succession" && (<div className="space-y-6">
             <PlatformSuccession />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="email-marketing" className="space-y-6">
+          {activeTab === "email-marketing" && (<div className="space-y-6">
             <AdminEmailAnalytics />
-          </TabsContent>
+          </div>)}
 
           {/* ESCALATIONS TAB */}
-          <TabsContent value="escalations" className="space-y-4">
+          {activeTab === "escalations" && (<div className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -2308,16 +2228,17 @@ export default function MissionControl() {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="partners" className="space-y-6">
+          {activeTab === "partners" && (<div className="space-y-6">
             <AdminPartnerOverview />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="employees" className="space-y-6">
+          {activeTab === "employees" && (<div className="space-y-6">
             <AdminEmployeeOverview />
-          </TabsContent>
-        </Tabs>
+          </div>)}
+          </div>
+        </div>
 
         {/* Quick-View Drawer */}
         <Sheet open={quickViewOpen} onOpenChange={setQuickViewOpen}>
