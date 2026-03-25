@@ -67,7 +67,7 @@ import {
 } from "@/components/ui/collapsible";
 
 // Stealth feature: Only these emails can see Abo-Matrix
-const STEALTH_EMAILS = ["support@hufmanager.de"];
+const STEALTH_EMAILS = ["support@hufmanager.de", "barhufserviceschmid@gmail.com"];
 
 // Hook to get count of new leads
 function useNewLeadsCount() {
