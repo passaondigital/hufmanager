@@ -14496,40 +14496,88 @@ export type Database = {
       }
       subscription_plans: {
         Row: {
+          badge_color: string | null
+          cancellation_notice: string | null
           created_at: string | null
           description: string | null
+          discount_per_extra_horse: number | null
+          duration_minutes: number | null
+          duration_weeks: number | null
+          flat_price: number | null
           id: string
           includes: string[] | null
           interval_weeks: number | null
           is_active: boolean | null
+          max_appointments: number | null
           max_horses: number | null
           name: string
+          not_included: string[] | null
+          payment_split: string | null
+          plan_type: string | null
           price_monthly: number
+          price_per_appointment: number | null
           provider_id: string
+          requires_application: boolean | null
+          surcharge_per_30min: number | null
+          tier: string | null
+          travel_fee_zone1: number | null
+          travel_fee_zone2: number | null
         }
         Insert: {
+          badge_color?: string | null
+          cancellation_notice?: string | null
           created_at?: string | null
           description?: string | null
+          discount_per_extra_horse?: number | null
+          duration_minutes?: number | null
+          duration_weeks?: number | null
+          flat_price?: number | null
           id?: string
           includes?: string[] | null
           interval_weeks?: number | null
           is_active?: boolean | null
+          max_appointments?: number | null
           max_horses?: number | null
           name: string
+          not_included?: string[] | null
+          payment_split?: string | null
+          plan_type?: string | null
           price_monthly: number
+          price_per_appointment?: number | null
           provider_id: string
+          requires_application?: boolean | null
+          surcharge_per_30min?: number | null
+          tier?: string | null
+          travel_fee_zone1?: number | null
+          travel_fee_zone2?: number | null
         }
         Update: {
+          badge_color?: string | null
+          cancellation_notice?: string | null
           created_at?: string | null
           description?: string | null
+          discount_per_extra_horse?: number | null
+          duration_minutes?: number | null
+          duration_weeks?: number | null
+          flat_price?: number | null
           id?: string
           includes?: string[] | null
           interval_weeks?: number | null
           is_active?: boolean | null
+          max_appointments?: number | null
           max_horses?: number | null
           name?: string
+          not_included?: string[] | null
+          payment_split?: string | null
+          plan_type?: string | null
           price_monthly?: number
+          price_per_appointment?: number | null
           provider_id?: string
+          requires_application?: boolean | null
+          surcharge_per_30min?: number | null
+          tier?: string | null
+          travel_fee_zone1?: number | null
+          travel_fee_zone2?: number | null
         }
         Relationships: []
       }
