@@ -416,6 +416,7 @@ const ProviderLanding = () => {
     service_area: settings.service_area_text ? <LandingServiceArea key="service_area" serviceAreaText={settings.service_area_text} primaryColor={primaryColor} /> : null,
     qualifications: Array.isArray(qualifications) && qualifications.length > 0 ? <LandingQualifications key="qualifications" qualifications={qualifications} primaryColor={primaryColor} /> : null,
     reviews: reviews.length > 0 ? <ReviewsSection key="reviews" reviews={reviews} primaryColor={primaryColor} layout={templateClasses.reviewsLayout} /> : feedbacks.length > 0 ? <ReviewsSection key="reviews-legacy" reviews={feedbacks.map(f => ({ id: f.id, reviewer_name: f.customer_name, rating: f.rating, text: f.text, created_at: '' }))} primaryColor={primaryColor} layout="grid" /> : null,
+    pricing_calculator: <PricingCalculatorSection key="pricing_calculator" providerId={settings.user_id} primaryColor={primaryColor} providerWhatsApp={settings.whatsapp_number} />,
     contact: intakeStatus !== 'closed' ? <LandingContact key="contact" providerId={settings.user_id} providerName={providerName} primaryColor={primaryColor} /> : null,
   };
 
