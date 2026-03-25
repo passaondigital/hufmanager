@@ -405,7 +405,8 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
           <Route path="/notfall/:eqid/:token" element={<NotfallZugang />} />
           <Route path="/botschafter/login" element={<BotschafterAuth />} />
           <Route path="/botschafter/warten" element={<BotschafterWarten />} />
-          <Route path="/ref/:code" element={<SponsoringPublic />} />
+           <Route path="/ref/:code" element={<SponsoringPublic />} />
+           <Route path="/kalkulator" element={<Kalkulator />} />
         </Routes>
       </Suspense>
     );
