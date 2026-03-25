@@ -940,19 +940,38 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-destructive" />
-              Wirklich löschen?
+              Kunde löschen?
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p>
-                Der Kunde <strong>{customer.full_name}</strong> wird gelöscht.
-              </p>
-              <p className="text-destructive font-medium">
-                Die ID #{customer.readable_id} wird für 30 Tage gesperrt und kann nicht wiederverwendet werden.
-              </p>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  Der Kunde <strong className="text-foreground">{customer.full_name}</strong> wird gelöscht (Soft-Delete).
+                </p>
+                <div className="bg-muted/60 rounded-lg p-3 space-y-2 text-sm">
+                  <p className="font-medium text-foreground">Was passiert beim Löschen?</p>
+                  <ul className="list-disc pl-4 space-y-1 text-muted-foreground">
+                    <li>Alle Pferde des Kunden werden archiviert (Soft-Delete)</li>
+                    <li>Zukünftige Termine werden automatisch storniert</li>
+                    <li>Zugangsberechtigungen werden deaktiviert</li>
+                    <li>Vergangene Termine & Rechnungen bleiben erhalten</li>
+                    <li>Daten können 90 Tage lang wiederhergestellt werden</li>
+                  </ul>
+                </div>
+                <p className="text-destructive font-medium text-sm">
+                  Die ID #{customer.readable_id} wird für 30 Tage gesperrt.
+                </p>
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-sm">
+                  <p className="text-foreground font-medium mb-1">💡 Alternativen zum Löschen:</p>
+                  <ul className="list-disc pl-4 space-y-1 text-muted-foreground">
+                    <li><strong>Archivieren:</strong> Kundenstatus auf „Inaktiv" setzen</li>
+                    <li><strong>Übergeben:</strong> Kunde an Kollegen übertragen (per #PID oder E-Mail)</li>
+                  </ul>
+                </div>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -961,7 +980,7 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Ja, löschen
+              Ja, endgültig löschen
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
