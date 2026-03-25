@@ -153,6 +153,7 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [horseToDelete, setHorseToDelete] = useState<Horse | null>(null);
   const [horseToEditId, setHorseToEditId] = useState<string | null>(null);
+  const [contactData, setContactData] = useState<{ is_business: boolean; vat_id: string } | null>(null);
   const [businessInfoOpen, setBusinessInfoOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     full_name: "",
@@ -181,9 +182,36 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
     price_group: "standard",
   });
 
+  // Load contact business info when modal opens
+  useEffect(() => {
+    if (open && customer?.id) {
+      supabase
+        .from("contacts")
+        .select("is_business, vat_id")
+        .eq("profile_id", customer.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          setContactData(data ? { is_business: data.is_business || false, vat_id: data.vat_id || "" } : null);
+        });
+    }
+  }, [open, customer?.id]);
+
   // Initialize edit form when customer changes
-  const initEditForm = () => {
+  const initEditForm = async () => {
     if (customer) {
+      // Fetch is_business + vat_id from contacts table
+      let contactBiz = false;
+      let contactVat = "";
+      const { data: contactRow } = await supabase
+        .from("contacts")
+        .select("is_business, vat_id")
+        .eq("profile_id", customer.id)
+        .maybeSingle();
+      if (contactRow) {
+        contactBiz = contactRow.is_business || false;
+        contactVat = contactRow.vat_id || "";
+      }
+
       setEditForm({
         full_name: customer.full_name || "",
         first_name: customer.first_name || "",
@@ -199,8 +227,8 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
         state: customer.state || "",
         geo_lat: customer.geo_lat || null,
         geo_lng: customer.geo_lng || null,
-        is_business: customer.is_business || false,
-        vat_id: customer.vat_id || "",
+        is_business: contactBiz,
+        vat_id: contactVat,
         client_type: customer.client_type || "",
         lifecycle_status: customer.lifecycle_status || "",
         payment_rating: customer.payment_rating || "",
@@ -215,6 +243,7 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
   // Update customer mutation
   const updateCustomer = useMutation({
     mutationFn: async (data: typeof editForm & { id: string }) => {
+      // Update profile (without is_business/vat_id — those live on contacts)
       const { error } = await supabase
         .from("profiles")
         .update({
@@ -232,8 +261,6 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
           state: data.state || null,
           latitude: data.geo_lat,
           longitude: data.geo_lng,
-          is_business: data.is_business,
-          vat_id: data.vat_id || null,
           client_type: data.client_type || null,
           lifecycle_status: data.lifecycle_status || null,
           payment_rating: data.payment_rating || null,
@@ -244,6 +271,23 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
         })
         .eq("id", data.id);
       if (error) throw error;
+
+      // Update is_business + vat_id on contacts table (if a contact record exists)
+      const { data: contactRow } = await supabase
+        .from("contacts")
+        .select("id")
+        .eq("profile_id", data.id)
+        .maybeSingle();
+
+      if (contactRow) {
+        await supabase
+          .from("contacts")
+          .update({
+            is_business: data.is_business,
+            vat_id: data.vat_id || null,
+          })
+          .eq("id", contactRow.id);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["provider-clients"] });
@@ -753,11 +797,11 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                         Auftragserteilung
                       </Badge>
                     )}
-                    {customer.is_business && (
+                    {contactData?.is_business && (
                       <Badge variant="secondary" className="flex items-center gap-1">
                         <Building2 className="h-3 w-3" />
                         B2B
-                        {customer.vat_id && <span className="ml-1 font-mono text-xs">({customer.vat_id})</span>}
+                        {contactData.vat_id && <span className="ml-1 font-mono text-xs">({contactData.vat_id})</span>}
                       </Badge>
                     )}
                   </div>
