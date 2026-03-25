@@ -58,6 +58,16 @@ export const WebsiteNavbar = ({ slug, businessName, logoUrl, primaryColor, activ
               {item.label}
             </Link>
           ))}
+          <a
+            href="#preisrechner"
+            className="px-3 py-2 text-sm rounded-md transition-colors text-muted-foreground hover:text-foreground"
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById("preisrechner")?.scrollIntoView({ behavior: "smooth" });
+            }}
+          >
+            Preise
+          </a>
           {phone && (
             <a href={`tel:${phone}`} className="ml-2">
               <Button size="sm" variant="outline" className="gap-1.5">
