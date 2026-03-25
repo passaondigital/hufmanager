@@ -1133,7 +1133,7 @@ export default function MissionControl() {
               </Collapsible>
             )}
 
-          <TabsContent value="providers" className="space-y-4">
+          {activeTab === "providers" && (<div className="space-y-4">
             {/* Bulk Actions Bar */}
             <BulkActionsBar
               selectedIds={selectedProviderIds}
@@ -1718,9 +1718,9 @@ export default function MissionControl() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="stats" className="space-y-6">
+          {activeTab === "stats" && (<div className="space-y-6">
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card>
@@ -2081,28 +2081,28 @@ export default function MissionControl() {
                 })()}
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="blog" className="space-y-6">
+          {activeTab === "blog" && (<div className="space-y-6">
             <AdminBlogManager />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="activity" className="space-y-6">
+          {activeTab === "activity" && (<div className="space-y-6">
             <AdminActivityLogViewer limit={100} />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="tools" className="space-y-6">
+          {activeTab === "tools" && (<div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <AdminBroadcastCard />
               <AdminFeedbackViewer />
             </div>
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="versions" className="space-y-6">
+          {activeTab === "versions" && (<div className="space-y-6">
             <ReleaseControlCenter />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="rollout" className="space-y-6">
+          {activeTab === "rollout" && (<div className="space-y-6">
             <GlobalFeatureFlagsManager />
             <FeatureRolloutDashboard 
               providers={providers}
@@ -2113,64 +2113,64 @@ export default function MissionControl() {
                 }
               }}
             />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="demo" className="space-y-6">
+          {activeTab === "demo" && (<div className="space-y-6">
             <DemoAccountsManager />
             <DemoAnalyticsDashboard />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="glossary" className="space-y-6">
+          {activeTab === "glossary" && (<div className="space-y-6">
             <AdminGlossaryManager />
-          </TabsContent>
+          </div>)}
 
-           <TabsContent value="funnel" className="space-y-6">
+           {activeTab === "funnel" && (<div className="space-y-6">
             <FunnelCockpit />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="revenue" className="space-y-6">
+          {activeTab === "revenue" && (<div className="space-y-6">
             <AdminRevenue />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="retention" className="space-y-6">
+          {activeTab === "retention" && (<div className="space-y-6">
             <RetentionDashboard />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="hufrente" className="space-y-6">
+          {activeTab === "hufrente" && (<div className="space-y-6">
             <AdminHufrenteOverview />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="payments" className="space-y-6">
+          {activeTab === "payments" && (<div className="space-y-6">
             <AdminManualPayments />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="invoices" className="space-y-6">
+          {activeTab === "invoices" && (<div className="space-y-6">
             <AdminInvoices />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="contracts" className="space-y-6">
+          {activeTab === "contracts" && (<div className="space-y-6">
             <AdminContractManager />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="compliance" className="space-y-6">
+          {activeTab === "compliance" && (<div className="space-y-6">
             <AdminContractTracking />
             <AdminTransfersOverview />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="browsers" className="space-y-6">
+          {activeTab === "browsers" && (<div className="space-y-6">
             <AdminBrowserAnalytics />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="succession" className="space-y-6">
+          {activeTab === "succession" && (<div className="space-y-6">
             <PlatformSuccession />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="email-marketing" className="space-y-6">
+          {activeTab === "email-marketing" && (<div className="space-y-6">
             <AdminEmailAnalytics />
-          </TabsContent>
+          </div>)}
 
           {/* ESCALATIONS TAB */}
-          <TabsContent value="escalations" className="space-y-4">
+          {activeTab === "escalations" && (<div className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -2228,16 +2228,17 @@ export default function MissionControl() {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="partners" className="space-y-6">
+          {activeTab === "partners" && (<div className="space-y-6">
             <AdminPartnerOverview />
-          </TabsContent>
+          </div>)}
 
-          <TabsContent value="employees" className="space-y-6">
+          {activeTab === "employees" && (<div className="space-y-6">
             <AdminEmployeeOverview />
-          </TabsContent>
-        </Tabs>
+          </div>)}
+          </div>
+        </div>
 
         {/* Quick-View Drawer */}
         <Sheet open={quickViewOpen} onOpenChange={setQuickViewOpen}>
