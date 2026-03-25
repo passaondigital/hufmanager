@@ -447,6 +447,7 @@ export default function MissionControl() {
             {activeTab === "email-marketing" && <AdminEmailAnalytics />}
             {activeTab === "partners" && <AdminPartnerOverview />}
             {activeTab === "employees" && <AdminEmployeeOverview />}
+            {activeTab === "copecart" && <AdminCopecartReconciliation />}
 
             {activeTab === "escalations" && (
               <Card>
