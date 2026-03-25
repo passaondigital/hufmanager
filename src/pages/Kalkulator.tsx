@@ -78,12 +78,15 @@ export default function Kalkulator() {
   const { data: provider } = useQuery({
     queryKey: ["provider-contact"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("whatsapp_number, phone, full_name")
-        .eq("id", PROVIDER_ID)
-        .single();
-      return data as { whatsapp_number: string | null; phone: string | null; full_name: string | null } | null;
+      const [profileRes, settingsRes] = await Promise.all([
+        supabase.from("profiles").select("phone, full_name").eq("id", PROVIDER_ID).single(),
+        supabase.from("business_settings").select("whatsapp_number").eq("user_id", PROVIDER_ID).single(),
+      ]);
+      return {
+        phone: profileRes.data?.phone ?? null,
+        full_name: profileRes.data?.full_name ?? null,
+        whatsapp_number: settingsRes.data?.whatsapp_number ?? null,
+      };
     },
   });
 
