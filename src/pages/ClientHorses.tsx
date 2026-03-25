@@ -3,9 +3,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { HelpTip } from "@/components/ui/HelpTip";
+import { CreateHorseModal } from "@/components/horse-detail/CreateHorseModal";
 
-import { Loader2, Footprints, MapPin, Calendar, ChevronRight } from "lucide-react";
+import { Loader2, Footprints, MapPin, Calendar, ChevronRight, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
