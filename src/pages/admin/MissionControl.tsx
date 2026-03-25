@@ -196,6 +196,9 @@ export default function MissionControl() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const logout = useLogout();
+  const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState("providers");
+  const [navOpen, setNavOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [providers, setProviders] = useState<ProviderData[]>([]);
   const [loading, setLoading] = useState(true);
