@@ -30,6 +30,7 @@ import { ExitIntentPopup } from "@/components/landing/ExitIntentPopup";
 import { WebsiteTrustBadges } from "@/components/landing/WebsiteTrustBadges";
 import { BookingSheet } from "@/components/landing/BookingSheet";
 import { StickyMobileCTA } from "@/components/landing/StickyMobileCTA";
+import { PricingCalculatorSection } from "@/components/landing/PricingCalculatorSection";
 import { toast } from "@/hooks/use-toast";
 import DOMPurify from "dompurify";
 import { format } from "date-fns";
