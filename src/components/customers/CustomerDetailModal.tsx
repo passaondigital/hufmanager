@@ -994,13 +994,23 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
               <AlertTriangle className="h-5 w-5 text-destructive" />
               Pferd löschen?
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p>
-                Das Pferd <strong>{horseToDelete?.name}</strong> wird gelöscht.
-              </p>
-              <p className="text-destructive font-medium">
-                Die ID #{horseToDelete?.readable_id} wird für 90 Tage gesperrt.
-              </p>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  Das Pferd <strong className="text-foreground">{horseToDelete?.name}</strong> wird gelöscht (Soft-Delete).
+                </p>
+                <div className="bg-muted/60 rounded-lg p-3 space-y-2 text-sm">
+                  <p className="font-medium text-foreground">Was passiert?</p>
+                  <ul className="list-disc pl-4 space-y-1 text-muted-foreground">
+                    <li>Zukünftige Termine werden storniert</li>
+                    <li>Behandlungshistorie bleibt erhalten</li>
+                    <li>Daten können 90 Tage lang wiederhergestellt werden</li>
+                  </ul>
+                </div>
+                <p className="text-destructive font-medium text-sm">
+                  Die ID #{horseToDelete?.readable_id} wird für 90 Tage gesperrt.
+                </p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
