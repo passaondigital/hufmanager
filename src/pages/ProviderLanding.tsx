@@ -180,8 +180,7 @@ const ProviderLanding = () => {
 
         if (offersRes.data) setOffers(offersRes.data);
         if (servicesRes.data) {
-          const publicServices = servicesRes.data.filter((s: any) => !s.name.toUpperCase().includes('BALANCE'));
-          setServices(publicServices.slice(0, 6) as Service[]);
+          setServices(servicesRes.data.slice(0, 6) as Service[]);
         }
         if (feedbackRes.data) setFeedbacks(feedbackRes.data);
         if (reviewsRes.data) setReviews(reviewsRes.data as Review[]);
