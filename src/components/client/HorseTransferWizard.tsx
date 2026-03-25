@@ -31,6 +31,7 @@ export function HorseTransferWizard({ horseId, horseName, onComplete, onCancel }
   const [step, setStep] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [buyer, setBuyer] = useState<BuyerProfile | null>(null);
+  const [searchResults, setSearchResults] = useState<BuyerProfile[]>([]);
   const [searching, setSearching] = useState(false);
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
@@ -42,26 +43,36 @@ export function HorseTransferWizard({ horseId, horseName, onComplete, onCancel }
   const searchBuyer = async () => {
     if (!searchQuery.trim()) return;
     setSearching(true);
+    setSearchResults([]);
+    setBuyer(null);
     try {
       const q = searchQuery.trim();
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, email, readable_id")
-        .or(`email.ilike.%${q}%,readable_id.ilike.%${q}%,full_name.ilike.%${q}%`)
-        .limit(5);
+      // Use universal search RPC for consistent results
+      const { data, error } = await supabase.rpc("search_profiles_universal", {
+        search_term: q,
+        search_limit: 10,
+      });
 
       if (error) throw error;
-      if (!data || data.length === 0) {
+      const results = (data as unknown as Array<{ id: string; name: string; readable_id: string; avatar_url: string | null; role: string }>) || [];
+      
+      if (results.length === 0) {
         toast.error("Kein HufManager Account gefunden. Bitte den Käufer bitten sich kostenlos zu registrieren.");
         return;
       }
-      // If single result, auto-select
-      if (data.length === 1) {
-        setBuyer(data[0]);
-      } else {
-        // Show first match for now, could be expanded to selection list
-        setBuyer(data[0]);
+      
+      // Map to BuyerProfile format
+      const mapped: BuyerProfile[] = results.map(r => ({
+        id: r.id,
+        full_name: r.name,
+        email: null,
+        readable_id: r.readable_id,
+      }));
+      
+      if (mapped.length === 1) {
+        setBuyer(mapped[0]);
       }
+      setSearchResults(mapped);
     } catch (err) {
       console.error(err);
       toast.error("Fehler bei der Suche");

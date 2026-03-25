@@ -87,7 +87,7 @@ function MyConnections() {
     enabled: !!user?.id,
   });
 
-  const handleAccept = async (grantId: string) => {
+  const handleAccept = async (grantId: string, otherName: string) => {
     const { error } = await supabase
       .from("access_grants")
       .update({
@@ -100,6 +100,17 @@ function MyConnections() {
     if (error) {
       toast({ title: "Fehler", variant: "destructive" });
     } else {
+      // Notify the requester that their connection was accepted
+      const grant = connections.find(c => c.id === grantId);
+      if (grant && user) {
+        await supabase.from("notifications").insert({
+          user_id: grant.other_id,
+          title: "✅ Verbindung angenommen",
+          message: `${otherName || "Dein Kontakt"} hat deine Verbindungsanfrage angenommen.`,
+          type: "connection_accepted",
+          link: "/hm-connect",
+        } as any);
+      }
       toast({ title: "Verbindung angenommen!" });
       refetch();
     }
@@ -118,6 +129,17 @@ function MyConnections() {
     if (error) {
       toast({ title: "Fehler", variant: "destructive" });
     } else {
+      // Notify the requester
+      const grant = connections.find(c => c.id === grantId);
+      if (grant && user) {
+        await supabase.from("notifications").insert({
+          user_id: grant.other_id,
+          title: "❌ Verbindung abgelehnt",
+          message: `Deine Verbindungsanfrage wurde leider abgelehnt.`,
+          type: "connection_rejected",
+          link: "/hm-connect",
+        } as any);
+      }
       toast({ title: "Anfrage abgelehnt" });
       refetch();
     }
