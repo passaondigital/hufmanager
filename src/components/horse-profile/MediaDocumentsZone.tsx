@@ -29,6 +29,24 @@ export function MediaDocumentsZone({
   const { user } = useAuth();
   const photoInputRef = useRef<HTMLInputElement>(null);
   const docInputRef = useRef<HTMLInputElement>(null);
+  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
+
+  // Resolve signed URLs for photo thumbnails
+  useEffect(() => {
+    const resolve = async () => {
+      const urls: Record<string, string> = {};
+      for (const photo of hoofPhotos.slice(0, 4)) {
+        if (photo.photo_url?.startsWith("http")) {
+          urls[photo.id] = photo.photo_url;
+        } else {
+          const url = await getStorageUrl("hoof_photos", photo.photo_url);
+          if (url) urls[photo.id] = url;
+        }
+      }
+      setPhotoUrls(urls);
+    };
+    if (hoofPhotos.length > 0) resolve();
+  }, [hoofPhotos]);
 
   const canUploadPhotos = role === "provider" || role === "employee" || role === "client";
   const canUploadDocs = role === "provider" || role === "employee" || role === "client";
