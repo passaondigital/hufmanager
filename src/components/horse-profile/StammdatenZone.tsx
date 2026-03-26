@@ -1,10 +1,23 @@
 import { useState } from "react";
-import { ChevronDown, Pencil, Check, X, Loader2 } from "lucide-react";
+import { ChevronDown, Pencil, Check, X, Loader2, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 import type { Horse } from "@/components/horse-detail/types";
 import { HOLDING_TYPE_OPTIONS, USAGE_TYPE_OPTIONS, HOOF_PROTECTION_OPTIONS } from "@/components/horse-detail/types";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 type Role = "client" | "provider" | "employee" | "partner" | "portal";
 
