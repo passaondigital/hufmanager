@@ -37,10 +37,12 @@ interface FieldDef {
 }
 
 export function StammdatenZone({ horse, role, onHorseUpdate }: StammdatenZoneProps) {
+  const navigate = useNavigate();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [saving, setSaving] = useState(false);
+  const [archiving, setArchiving] = useState(false);
 
   const canEdit = role === "provider" || role === "employee" || role === "client";
   const toggle = (i: number) => setOpenIndex(openIndex === i ? null : i);
