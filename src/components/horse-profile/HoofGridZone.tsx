@@ -111,13 +111,6 @@ export function HoofGridZone({ hoofDetails, lastAppointmentDate, role, onHoofCli
               </div>
             )}
 
-            {selectedData?.notes && (
-              <div className="py-1">
-                <span className="text-muted-foreground">Notizen</span>
-                <p className="text-foreground mt-0.5">{selectedData.notes}</p>
-              </div>
-            )}
-
             {!selectedData && (
               <p className="text-muted-foreground text-center py-2">Noch keine Daten für diesen Huf</p>
             )}
