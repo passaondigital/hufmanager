@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import type { Horse } from "@/components/horse-detail/types";
@@ -14,9 +14,15 @@ interface HorseHeroZoneProps {
   hoofPhotosCount: number;
   documentsCount: number;
   backPath?: string;
+  ownerName?: string | null;
+  latestWellbeing?: number | null;
+  onEdit?: () => void;
 }
 
-export function HorseHeroZone({ horse, role, appointmentsCount, hoofPhotosCount, documentsCount, backPath }: HorseHeroZoneProps) {
+export function HorseHeroZone({
+  horse, role, appointmentsCount, hoofPhotosCount, documentsCount,
+  backPath, ownerName, latestWellbeing, onEdit,
+}: HorseHeroZoneProps) {
   const navigate = useNavigate();
 
   const age = horse.birth_year ? new Date().getFullYear() - horse.birth_year : null;
@@ -26,20 +32,52 @@ export function HorseHeroZone({ horse, role, appointmentsCount, hoofPhotosCount,
   const hoofProt = HOOF_PROTECTION_OPTIONS.find(p => p.value === horse.hoof_protection);
   const hoofLabel = hoofProt?.label || "Barhuf";
 
-  const healthStatus = (horse as any).health_status || "healthy";
-  const statusOk = healthStatus === "healthy";
-  const statusLabel = statusOk ? "Gesund" : healthStatus === "acute" ? "Akut" : healthStatus === "chronic" ? "Chronisch" : "Reha";
+  // Derive health status from DB field or wellbeing score
+  const getHealthInfo = () => {
+    const dbStatus = (horse as any).health_status as string | null;
+    if (dbStatus && dbStatus !== "healthy") {
+      const map: Record<string, { label: string; ok: boolean }> = {
+        acute: { label: "Akut", ok: false },
+        chronic: { label: "Chronisch", ok: false },
+        rehab: { label: "Reha", ok: false },
+        lame: { label: "Lahm", ok: false },
+      };
+      return map[dbStatus] || { label: dbStatus, ok: false };
+    }
+    if (latestWellbeing !== null && latestWellbeing !== undefined) {
+      if (latestWellbeing >= 4) return { label: "Gut", ok: true };
+      if (latestWellbeing >= 3) return { label: "Beobachten", ok: false };
+      return { label: "Achtung", ok: false };
+    }
+    if (dbStatus === "healthy") return { label: "Gesund", ok: true };
+    return null; // no data → don't show badge
+  };
+
+  const healthInfo = getHealthInfo();
 
   const defaultBack = role === "client" ? "/client-home" : role === "partner" ? "/partner-home" : role === "employee" ? "/employee/tour" : "/";
 
   const stats = [
     { value: appointmentsCount, label: "Termine" },
-    { value: hoofPhotosCount, label: "Befunde" },
-    { value: documentsCount, label: "Fotos" },
+    { value: hoofPhotosCount, label: "Fotos" },
+    { value: documentsCount, label: "Dokumente" },
   ];
 
+  const canEdit = role === "provider" || role === "employee" || role === "client";
+
   return (
-    <div className="rounded-2xl bg-gradient-to-b from-background to-card/80 p-5 pb-4">
+    <div className="relative rounded-2xl bg-gradient-to-b from-background to-card/80 p-5 pb-4">
+      {/* Edit button */}
+      {canEdit && onEdit && (
+        <button
+          onClick={onEdit}
+          className="absolute top-3 right-3 p-2 rounded-lg bg-muted hover:bg-accent border border-border transition-colors"
+          aria-label="Pferd bearbeiten"
+        >
+          <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+        </button>
+      )}
+
       {/* Back */}
       <button
         onClick={() => {
@@ -66,6 +104,11 @@ export function HorseHeroZone({ horse, role, appointmentsCount, hoofPhotosCount,
           <p className="text-[13px] text-muted-foreground mt-0.5">
             {[horse.breed, age ? `${age} J.` : null, genderLabel].filter(Boolean).join(" · ")}
           </p>
+          {ownerName && (
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Besitzer: {ownerName}
+            </p>
+          )}
           {horse.readable_id && (
             <span className="text-[10px] font-mono text-muted-foreground">#{horse.readable_id}</span>
           )}
@@ -74,21 +117,20 @@ export function HorseHeroZone({ horse, role, appointmentsCount, hoofPhotosCount,
 
       {/* Status Badges */}
       <div className="flex flex-wrap gap-2 mt-3">
-        <span className={cn(
-          "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
-          statusOk ? "bg-green-500/10 text-green-600 border border-green-500/20" : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
-        )}>
-          <span className="w-1.5 h-1.5 rounded-full bg-current" />
-          {statusLabel}
-        </span>
+        {healthInfo && (
+          <span className={cn(
+            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
+            healthInfo.ok
+              ? "bg-green-500/10 text-green-600 border border-green-500/20"
+              : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+          )}>
+            <span className="w-1.5 h-1.5 rounded-full bg-current" />
+            {healthInfo.label}
+          </span>
+        )}
         <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
           {hoofLabel}
         </span>
-        {horse.birth_year && (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
-            seit {horse.birth_year}
-          </span>
-        )}
       </div>
 
       {/* Quick Stats */}

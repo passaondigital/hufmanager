@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { HorseStatusModal } from "@/components/client/HorseStatusModal";
 import { EditHorseModal } from "@/components/horse-detail/EditHorseModal";
 import { HorseProfileDashboard } from "@/components/horse-profile";
 import { Pferdeakte } from "@/components/pferdeakte";
@@ -23,8 +22,6 @@ export default function ClientHorseDetail() {
   const [documents, setDocuments] = useState<HorseDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showStatusModal, setShowStatusModal] = useState(false);
-  // Whether to show the full Pferdeakte sub-view
   const [showAkte, setShowAkte] = useState(false);
 
   const fetchHorseData = async () => {
@@ -69,7 +66,6 @@ export default function ClientHorseDetail() {
     if (user && id) fetchHorseData();
   }, [user, id]);
 
-  // Check if we should open the Akte sub-view from URL
   useEffect(() => {
     if (searchParams.get("tab") === "pferdeakte") setShowAkte(true);
   }, [searchParams]);
@@ -83,13 +79,14 @@ export default function ClientHorseDetail() {
       case "show-photos": setShowAkte(true); break;
       case "show-docs": setShowAkte(true); break;
       case "compare-health": setShowAkte(true); break;
+      case "upload-photo": case "upload-doc": break; // handled by MediaDocumentsZone
       default: break;
     }
   }, [navigate]);
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background px-4 py-6 max-w-2xl mx-auto space-y-4">
+      <div className="min-h-screen bg-background px-4 py-6 max-w-3xl mx-auto space-y-4">
         <Skeleton className="h-40 w-full rounded-2xl" />
         <div className="grid grid-cols-3 gap-2">
           <Skeleton className="h-16 rounded-xl" />
@@ -113,11 +110,10 @@ export default function ClientHorseDetail() {
     );
   }
 
-  // If the Akte sub-view is active, show full Pferdeakte
   if (showAkte) {
     return (
       <div className="min-h-screen bg-background pb-20">
-        <main className="px-4 py-6 max-w-2xl mx-auto space-y-4">
+        <main className="px-4 py-6 max-w-3xl mx-auto space-y-4">
           <button
             onClick={() => setShowAkte(false)}
             className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 mb-2"
@@ -137,7 +133,7 @@ export default function ClientHorseDetail() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-20">
-      <main className="px-4 py-6 max-w-2xl mx-auto">
+      <main className="px-4 py-6">
         <HorseProfileDashboard
           horse={horse}
           horseId={horse.id}
@@ -148,8 +144,10 @@ export default function ClientHorseDetail() {
           backPath="/client-home"
           onHorseUpdate={handleHorseUpdate}
           onAction={handleAction}
+          onEdit={() => setShowEditModal(true)}
+          onPhotosChanged={fetchHorseData}
+          onDocsChanged={fetchHorseData}
         >
-          {/* Pferdeakte Quick-Access Button */}
           <button
             onClick={() => setShowAkte(true)}
             className="w-full py-3 rounded-xl bg-primary/10 border border-primary/20 text-primary text-sm font-semibold hover:bg-primary/15 transition-colors"
@@ -167,13 +165,6 @@ export default function ClientHorseDetail() {
           onSaved={() => { setShowEditModal(false); fetchHorseData(); }}
         />
       )}
-      <HorseStatusModal
-        open={showStatusModal}
-        onClose={() => setShowStatusModal(false)}
-        horseId={horse.id}
-        horseName={horse.name}
-        onStatusChanged={fetchHorseData}
-      />
     </div>
   );
 }

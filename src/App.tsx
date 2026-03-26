@@ -63,7 +63,7 @@ const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 const Welcome = lazy(() => import("@/pages/Welcome"));
 const UpdatePassword = lazy(() => import("@/pages/UpdatePassword"));
 const ClientHome = lazy(() => import("@/pages/ClientHome"));
-const ClientHorseDetail = lazy(() => import("@/components/horse-page/index"));
+const ClientHorseDetail = lazy(() => import("@/pages/ClientHorseDetail"));
 const ClientInvoices = lazy(() => import("@/pages/ClientInvoices"));
 const ClientPermissions = lazy(() => import("@/pages/ClientPermissions"));
 const ClientBooking = lazy(() => import("@/pages/ClientBooking"));
@@ -166,6 +166,7 @@ const Marketplace = lazy(() => import("@/pages/Marketplace"));
 const EmailMarketing = lazy(() => import("@/features/email-marketing/EmailMarketingPage"));
 const SignupFormPage = lazy(() => import("@/features/email-marketing/public/SignupFormPage"));
 const PortalDashboard = lazy(() => import("@/pages/portal/PortalDashboard"));
+const PortalHorseDetail = lazy(() => import("@/pages/portal/PortalHorseDetail"));
 const PortalSettings = lazy(() => import("@/pages/portal/PortalSettings"));
 const PortalCalendar = lazy(() => import("@/pages/portal/PortalCalendar"));
 const PortalManagementHub = lazy(() => import("@/pages/portal/PortalManagementHub"));
@@ -634,7 +635,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="patienten" element={<PortalPatienten />} />
               <Route path="befunde" element={<PortalBefunde />} />
               <Route path="impfungen" element={<PortalImpfungen />} />
-              <Route path="*" element={<PortalPlaceholder />} />
+              <Route path="horse/:id" element={<PortalHorseDetail />} />
               <Route path="*" element={<PortalPlaceholder />} />
             </Route>
             

@@ -116,6 +116,7 @@ export default function ProviderHorseDetail() {
       case "hufcam": setShowHufCam(true); break;
       case "befund": case "new-befund": setShowAkte(true); break;
       case "termin": navigate("/calendar"); break;
+      case "notiz": setShowAkte(true); break;
       case "show-photos": setShowAkte(true); break;
       case "show-docs": setShowAkte(true); break;
       case "compare-health": setShowAkte(true); break;
@@ -148,7 +149,6 @@ export default function ProviderHorseDetail() {
     );
   }
 
-  // HufCam sub-view
   if (showHufCam) {
     return (
       <div className="space-y-4 animate-fade-in">
@@ -165,7 +165,6 @@ export default function ProviderHorseDetail() {
     );
   }
 
-  // Full Akte sub-view
   if (showAkte) {
     return (
       <div className="space-y-4 animate-fade-in">
@@ -186,8 +185,12 @@ export default function ProviderHorseDetail() {
         appointments={appointments}
         hoofPhotos={hoofPhotos}
         documents={documents}
+        ownerName={owner?.full_name || owner?.email}
         onHorseUpdate={handleHorseUpdate}
         onAction={handleAction}
+        onEdit={() => setShowEditModal(true)}
+        onPhotosChanged={fetchHorseData}
+        onDocsChanged={fetchHorseData}
       >
         {/* Besitzer-Info */}
         {owner && (

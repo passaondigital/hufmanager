@@ -29,7 +29,7 @@ export function StammdatenZone({ horse, role, onHorseUpdate }: StammdatenZonePro
   const [editValue, setEditValue] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const canEdit = role === "provider" || role === "employee";
+  const canEdit = role === "provider" || role === "employee" || role === "client";
   const toggle = (i: number) => setOpenIndex(openIndex === i ? null : i);
 
   const age = horse.birth_year ? new Date().getFullYear() - horse.birth_year : null;
@@ -37,6 +37,8 @@ export function StammdatenZone({ horse, role, onHorseUpdate }: StammdatenZonePro
   const holdingType = HOLDING_TYPE_OPTIONS.find(h => h.value === horse.holding_type);
   const usageType = USAGE_TYPE_OPTIONS.find(u => u.value === horse.usage_type);
   const hoofProt = HOOF_PROTECTION_OPTIONS.find(p => p.value === horse.hoof_protection);
+
+  const h = horse as any;
 
   const sections = [
     {
@@ -49,6 +51,26 @@ export function StammdatenZone({ horse, role, onHorseUpdate }: StammdatenZonePro
         { label: "Geschlecht", value: genderLabel, field: "gender", type: "select" as const, options: [{ value: "gelding", label: "Wallach" }, { value: "mare", label: "Stute" }, { value: "stallion", label: "Hengst" }] as any },
         { label: "Farbe", value: horse.color, field: "color", type: "text" as const },
         { label: "Standort", value: horse.location_name, field: "location_name", type: "text" as const },
+      ],
+    },
+    {
+      title: "Identifikation",
+      fields: [
+        { label: "Chip-Nr.", value: horse.chip_number, field: "chip_number", type: "text" as const },
+        { label: "UELN", value: h.ueln, field: "ueln", type: "text" as const },
+        { label: "Pass-Nr.", value: h.passport_number, field: "passport_number", type: "text" as const },
+        { label: "FN-Nr.", value: h.fn_number, field: "fn_number", type: "text" as const },
+        { label: "Zuchtbuch", value: h.studbook, field: "studbook", type: "text" as const },
+        { label: "Vater", value: h.sire_name, field: "sire_name", type: "text" as const },
+        { label: "Mutter", value: h.dam_name, field: "dam_name", type: "text" as const },
+      ],
+    },
+    {
+      title: "Körpermaße",
+      fields: [
+        { label: "Stockmaß", value: h.height_cm ? `${h.height_cm} cm` : h.height, field: "height_cm", type: "text" as const },
+        { label: "Gewicht", value: h.weight_kg ? `${h.weight_kg} kg` : null, field: "weight_kg", type: "text" as const },
+        { label: "Brandzeichen", value: h.brand_marks, field: "brand_marks", type: "text" as const },
       ],
     },
     {
@@ -67,7 +89,14 @@ export function StammdatenZone({ horse, role, onHorseUpdate }: StammdatenZonePro
         { label: "TA Telefon", value: horse.contacts?.vet_phone, field: "contacts", type: "text" as const, nested: "vet_phone" },
         { label: "Trainer", value: horse.contacts?.trainer, field: "contacts", type: "text" as const, nested: "trainer" },
         { label: "Stall", value: horse.contacts?.stable, field: "contacts", type: "text" as const, nested: "stable" },
-        { label: "Chip-Nr.", value: horse.chip_number, field: "chip_number", type: "text" as const },
+      ],
+    },
+    {
+      title: "Versicherung",
+      fields: [
+        { label: "Versicherung", value: h.insurance_company, field: "insurance_company", type: "text" as const },
+        { label: "Policen-Nr.", value: h.insurance_policy_number, field: "insurance_policy_number", type: "text" as const },
+        { label: "Gültig bis", value: h.insurance_valid_until, field: "insurance_valid_until", type: "text" as const },
       ],
     },
   ];
@@ -77,7 +106,9 @@ export function StammdatenZone({ horse, role, onHorseUpdate }: StammdatenZonePro
     if (f.nested) return (horse.contacts as any)?.[f.nested] || "";
     if (f.field === "birth_year") return horse.birth_year?.toString() || "";
     if (f.field === "shoeing_interval") return horse.shoeing_interval?.toString() || "";
-    return (horse as any)[f.field] || "";
+    if (f.field === "height_cm") return h.height_cm?.toString() || "";
+    if (f.field === "weight_kg") return h.weight_kg?.toString() || "";
+    return h[f.field] || "";
   };
 
   const saveField = async (fieldDef: FieldDef) => {
@@ -88,13 +119,10 @@ export function StammdatenZone({ horse, role, onHorseUpdate }: StammdatenZonePro
         const contacts = { ...(horse.contacts || {}) };
         contacts[fieldDef.nested] = editValue || undefined;
         updateData = { contacts };
-      } else if (fieldDef.field === "birth_year") {
-        const parsed = parseInt(editValue);
-        if (isNaN(parsed)) { toast.error("Ungültiges Geburtsjahr"); setSaving(false); return; }
-        updateData = { birth_year: parsed };
-      } else if (fieldDef.field === "shoeing_interval") {
-        const parsed = parseInt(editValue);
-        updateData = { shoeing_interval: isNaN(parsed) ? null : parsed };
+      } else if (["birth_year", "shoeing_interval", "height_cm", "weight_kg"].includes(fieldDef.field)) {
+        const parsed = parseFloat(editValue);
+        if (editValue && isNaN(parsed)) { toast.error("Ungültige Zahl"); setSaving(false); return; }
+        updateData = { [fieldDef.field]: editValue ? parsed : null };
       } else {
         updateData = { [fieldDef.field]: editValue || null };
       }
@@ -121,6 +149,8 @@ export function StammdatenZone({ horse, role, onHorseUpdate }: StammdatenZonePro
       <div className="flex flex-col gap-2">
         {sections.map((section, i) => {
           const isOpen = openIndex === i;
+          // Count filled fields
+          const filledCount = section.fields.filter(f => f.value).length;
           return (
             <div key={section.title} className="rounded-xl border border-border bg-card overflow-hidden">
               <button
@@ -128,7 +158,12 @@ export function StammdatenZone({ horse, role, onHorseUpdate }: StammdatenZonePro
                 className="w-full flex items-center justify-between px-4 py-3 hover:bg-accent/50 transition-colors"
                 aria-expanded={isOpen}
               >
-                <span className="text-sm font-medium text-foreground">{section.title}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-foreground">{section.title}</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {filledCount}/{section.fields.length}
+                  </span>
+                </div>
                 <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
               </button>
 
@@ -170,7 +205,9 @@ export function StammdatenZone({ horse, role, onHorseUpdate }: StammdatenZonePro
                           </div>
                         ) : (
                           <div className="flex items-center gap-1.5">
-                            <span className="text-xs text-foreground">{fieldDef.value || "—"}</span>
+                            <span className={cn("text-xs", fieldDef.value ? "text-foreground" : "text-muted-foreground/50 italic")}>
+                              {fieldDef.value || "Nicht hinterlegt"}
+                            </span>
                             {canEdit && (
                               <button
                                 onClick={() => { setEditingField(fieldKey); setEditValue(getRawValue(fieldDef)); }}

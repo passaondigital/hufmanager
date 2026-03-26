@@ -1,10 +1,14 @@
+import { useRef } from "react";
 import { Camera, FileText, Upload } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 import type { HoofPhoto, HorseDocument } from "@/components/horse-detail/types";
 
 type Role = "client" | "provider" | "employee" | "partner" | "portal";
 
 interface MediaDocumentsZoneProps {
+  horseId: string;
   hoofPhotos: HoofPhoto[];
   documents: HorseDocument[];
   role: Role;
@@ -12,17 +16,100 @@ interface MediaDocumentsZoneProps {
   onShowAllDocs?: () => void;
   onUploadPhoto?: () => void;
   onUploadDoc?: () => void;
+  onPhotosChanged?: () => void;
+  onDocsChanged?: () => void;
 }
 
-export function MediaDocumentsZone({ hoofPhotos, documents, role, onShowAllPhotos, onShowAllDocs, onUploadPhoto, onUploadDoc }: MediaDocumentsZoneProps) {
-  const canUploadPhotos = role === "provider" || role === "employee";
+export function MediaDocumentsZone({
+  horseId, hoofPhotos, documents, role,
+  onShowAllPhotos, onShowAllDocs, onUploadPhoto, onUploadDoc,
+  onPhotosChanged, onDocsChanged,
+}: MediaDocumentsZoneProps) {
+  const { user } = useAuth();
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const docInputRef = useRef<HTMLInputElement>(null);
+
+  const canUploadPhotos = role === "provider" || role === "employee" || role === "client";
   const canUploadDocs = role === "provider" || role === "employee" || role === "client";
 
   const categoryCount = (cat: string) => documents.filter(d => d.category === cat).length;
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    try {
+      const filePath = `${horseId}/${Date.now()}_${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("hoof-photos")
+        .upload(filePath, file);
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from("hoof-photos").getPublicUrl(filePath);
+
+      const { error: insertError } = await supabase.from("hoof_photos").insert({
+        horse_id: horseId,
+        photo_url: urlData.publicUrl,
+        taken_at: new Date().toISOString(),
+      } as any);
+      if (insertError) throw insertError;
+
+      toast.success("Foto hochgeladen");
+      onPhotosChanged?.();
+    } catch (err: any) {
+      console.error("Photo upload error:", err);
+      toast.error("Upload fehlgeschlagen");
+    }
+    e.target.value = "";
+  };
+
+  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    try {
+      const filePath = `${horseId}/${Date.now()}_${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("horse-documents")
+        .upload(filePath, file);
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from("horse-documents").getPublicUrl(filePath);
+
+      const { error: insertError } = await supabase.from("horse_documents").insert({
+        horse_id: horseId,
+        file_name: file.name,
+        file_url: urlData.publicUrl,
+        file_type: file.type,
+        uploaded_by: user.id,
+      } as any);
+      if (insertError) throw insertError;
+
+      toast.success("Dokument hochgeladen");
+      onDocsChanged?.();
+    } catch (err: any) {
+      console.error("Doc upload error:", err);
+      toast.error("Upload fehlgeschlagen");
+    }
+    e.target.value = "";
+  };
+
+  const triggerPhotoUpload = () => {
+    if (onUploadPhoto) { onUploadPhoto(); return; }
+    photoInputRef.current?.click();
+  };
+
+  const triggerDocUpload = () => {
+    if (onUploadDoc) { onUploadDoc(); return; }
+    docInputRef.current?.click();
+  };
+
   return (
     <div>
       <h3 className="text-sm font-semibold text-foreground mb-3">Fotos & Dokumente</h3>
+
+      {/* Hidden file inputs */}
+      <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+      <input ref={docInputRef} type="file" accept=".pdf,.doc,.docx,.jpg,.png" className="hidden" onChange={handleDocUpload} />
+
       <div className="grid grid-cols-2 gap-2.5">
         {/* Photos */}
         <div className="rounded-xl border border-border bg-card p-3">
@@ -31,8 +118,8 @@ export function MediaDocumentsZone({ hoofPhotos, documents, role, onShowAllPhoto
               <Camera className="h-3.5 w-3.5 text-primary" />
               <span className="text-xs font-medium text-foreground">Fotos</span>
             </div>
-            {canUploadPhotos && onUploadPhoto && (
-              <button onClick={onUploadPhoto} className="p-1 rounded hover:bg-accent">
+            {canUploadPhotos && (
+              <button onClick={triggerPhotoUpload} className="p-1 rounded hover:bg-accent">
                 <Upload className="h-3 w-3 text-muted-foreground" />
               </button>
             )}
@@ -61,8 +148,8 @@ export function MediaDocumentsZone({ hoofPhotos, documents, role, onShowAllPhoto
               <FileText className="h-3.5 w-3.5 text-primary" />
               <span className="text-xs font-medium text-foreground">Dokumente</span>
             </div>
-            {canUploadDocs && onUploadDoc && (
-              <button onClick={onUploadDoc} className="p-1 rounded hover:bg-accent">
+            {canUploadDocs && (
+              <button onClick={triggerDocUpload} className="p-1 rounded hover:bg-accent">
                 <Upload className="h-3 w-3 text-muted-foreground" />
               </button>
             )}
