@@ -1,6 +1,7 @@
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Camera, FileText, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getStorageUrl } from "@/lib/storage";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import type { HoofPhoto, HorseDocument } from "@/components/horse-detail/types";
@@ -28,6 +29,24 @@ export function MediaDocumentsZone({
   const { user } = useAuth();
   const photoInputRef = useRef<HTMLInputElement>(null);
   const docInputRef = useRef<HTMLInputElement>(null);
+  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
+
+  // Resolve signed URLs for photo thumbnails
+  useEffect(() => {
+    const resolve = async () => {
+      const urls: Record<string, string> = {};
+      for (const photo of hoofPhotos.slice(0, 4)) {
+        if (photo.photo_url?.startsWith("http")) {
+          urls[photo.id] = photo.photo_url;
+        } else {
+          const url = await getStorageUrl("hoof_photos", photo.photo_url);
+          if (url) urls[photo.id] = url;
+        }
+      }
+      setPhotoUrls(urls);
+    };
+    if (hoofPhotos.length > 0) resolve();
+  }, [hoofPhotos]);
 
   const canUploadPhotos = role === "provider" || role === "employee" || role === "client";
   const canUploadDocs = role === "provider" || role === "employee" || role === "client";
@@ -40,15 +59,13 @@ export function MediaDocumentsZone({
     try {
       const filePath = `${horseId}/${Date.now()}_${file.name}`;
       const { error: uploadError } = await supabase.storage
-        .from("hoof-photos")
+        .from("hoof_photos")
         .upload(filePath, file);
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage.from("hoof-photos").getPublicUrl(filePath);
-
       const { error: insertError } = await supabase.from("hoof_photos").insert({
         horse_id: horseId,
-        photo_url: urlData.publicUrl,
+        photo_url: filePath,
         taken_at: new Date().toISOString(),
       } as any);
       if (insertError) throw insertError;
@@ -72,12 +89,10 @@ export function MediaDocumentsZone({
         .upload(filePath, file);
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage.from("horse-documents").getPublicUrl(filePath);
-
       const { error: insertError } = await supabase.from("horse_documents").insert({
         horse_id: horseId,
         file_name: file.name,
-        file_url: urlData.publicUrl,
+        file_url: filePath,
         file_type: file.type,
         uploaded_by: user.id,
       } as any);
@@ -128,7 +143,11 @@ export function MediaDocumentsZone({
           <div className="grid grid-cols-4 gap-1">
             {hoofPhotos.slice(0, 4).map(photo => (
               <div key={photo.id} className="aspect-square rounded-md overflow-hidden bg-muted">
-                <img src={photo.photo_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                {photoUrls[photo.id] ? (
+                  <img src={photoUrls[photo.id]} alt="" className="w-full h-full object-cover" loading="lazy" />
+                ) : (
+                  <div className="w-full h-full bg-muted animate-pulse" />
+                )}
               </div>
             ))}
             {Array.from({ length: Math.max(0, 4 - hoofPhotos.length) }).map((_, i) => (
