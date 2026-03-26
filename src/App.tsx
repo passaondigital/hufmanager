@@ -63,7 +63,7 @@ const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 const Welcome = lazy(() => import("@/pages/Welcome"));
 const UpdatePassword = lazy(() => import("@/pages/UpdatePassword"));
 const ClientHome = lazy(() => import("@/pages/ClientHome"));
-const ClientHorseDetail = lazy(() => import("@/components/horse-page/index"));
+const ClientHorseDetail = lazy(() => import("@/pages/ClientHorseDetail"));
 const ClientInvoices = lazy(() => import("@/pages/ClientInvoices"));
 const ClientPermissions = lazy(() => import("@/pages/ClientPermissions"));
 const ClientBooking = lazy(() => import("@/pages/ClientBooking"));
