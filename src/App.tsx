@@ -635,7 +635,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="patienten" element={<PortalPatienten />} />
               <Route path="befunde" element={<PortalBefunde />} />
               <Route path="impfungen" element={<PortalImpfungen />} />
-              <Route path="*" element={<PortalPlaceholder />} />
+              <Route path="horse/:id" element={<PortalHorseDetail />} />
               <Route path="*" element={<PortalPlaceholder />} />
             </Route>
             
