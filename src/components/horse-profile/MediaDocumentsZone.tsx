@@ -1,6 +1,7 @@
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Camera, FileText, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getStorageUrl } from "@/lib/storage";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import type { HoofPhoto, HorseDocument } from "@/components/horse-detail/types";
