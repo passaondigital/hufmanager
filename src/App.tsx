@@ -166,6 +166,7 @@ const Marketplace = lazy(() => import("@/pages/Marketplace"));
 const EmailMarketing = lazy(() => import("@/features/email-marketing/EmailMarketingPage"));
 const SignupFormPage = lazy(() => import("@/features/email-marketing/public/SignupFormPage"));
 const PortalDashboard = lazy(() => import("@/pages/portal/PortalDashboard"));
+const PortalHorseDetail = lazy(() => import("@/pages/portal/PortalHorseDetail"));
 const PortalSettings = lazy(() => import("@/pages/portal/PortalSettings"));
 const PortalCalendar = lazy(() => import("@/pages/portal/PortalCalendar"));
 const PortalManagementHub = lazy(() => import("@/pages/portal/PortalManagementHub"));
