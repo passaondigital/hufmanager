@@ -40,11 +40,9 @@ export function MediaDocumentsZone({
     try {
       const filePath = `${horseId}/${Date.now()}_${file.name}`;
       const { error: uploadError } = await supabase.storage
-        .from("hoof-photos")
+        .from("hoof_photos")
         .upload(filePath, file);
       if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage.from("hoof-photos").getPublicUrl(filePath);
 
       const { error: insertError } = await supabase.from("hoof_photos").insert({
         horse_id: horseId,
