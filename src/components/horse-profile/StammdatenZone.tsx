@@ -242,6 +242,54 @@ export function StammdatenZone({ horse, role, onHorseUpdate }: StammdatenZonePro
           );
         })}
       </div>
+
+      {/* Archive / Soft-Delete */}
+      {(role === "client" || role === "provider") && (
+        <div className="mt-6 pt-4 border-t border-border">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 gap-2">
+                <Trash2 className="h-4 w-4" />
+                Pferd archivieren
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Pferd archivieren?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {horse.name || "Dieses Pferd"} wird aus deiner Liste entfernt. Alle Daten bleiben erhalten und können wiederhergestellt werden.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={archiving}
+                  onClick={async () => {
+                    setArchiving(true);
+                    try {
+                      const { error } = await supabase
+                        .from("horses")
+                        .update({ deleted_at: new Date().toISOString() })
+                        .eq("id", horse.id);
+                      if (error) throw error;
+                      toast.success("Pferd archiviert");
+                      navigate(-1);
+                    } catch {
+                      toast.error("Fehler beim Archivieren");
+                    } finally {
+                      setArchiving(false);
+                    }
+                  }}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {archiving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Archivieren
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
     </div>
   );
 }
