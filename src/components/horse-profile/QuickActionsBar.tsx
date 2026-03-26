@@ -1,4 +1,4 @@
-import { Camera, FileText, CalendarPlus, MessageCircle, Phone, PenLine } from "lucide-react";
+import { Camera, FileText, CalendarPlus, MessageCircle, Phone, PenLine, Upload, ClipboardList } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -12,45 +12,43 @@ interface QuickActionsBarProps {
 
 const PROVIDER_ACTIONS = [
   { key: "hufcam", label: "HufCam", icon: Camera, primary: true },
-  { key: "befund", label: "Befund", icon: FileText, primary: false },
+  { key: "befund", label: "Befund", icon: ClipboardList, primary: false },
   { key: "termin", label: "Termin", icon: CalendarPlus, primary: false },
   { key: "notiz", label: "Notiz", icon: PenLine, primary: false },
 ];
 
 const CLIENT_ACTIONS = [
   { key: "chat", label: "Chat", icon: MessageCircle, primary: true },
-  { key: "anrufen", label: "Anrufen", icon: Phone, primary: false },
   { key: "termin", label: "Termin buchen", icon: CalendarPlus, primary: false },
+  { key: "upload-photo", label: "Foto", icon: Camera, primary: false },
+  { key: "upload-doc", label: "Dokument", icon: Upload, primary: false },
+];
+
+const PARTNER_ACTIONS = [
+  { key: "anrufen", label: "Kontakt", icon: Phone, primary: false },
 ];
 
 export function QuickActionsBar({ horseId, role, onAction }: QuickActionsBarProps) {
   const navigate = useNavigate();
 
-  if (role === "partner" || role === "portal") return null;
+  if (role === "portal") return null;
 
-  const actions = role === "client" ? CLIENT_ACTIONS : PROVIDER_ACTIONS;
+  const actions = role === "client" ? CLIENT_ACTIONS
+    : role === "partner" ? PARTNER_ACTIONS
+    : PROVIDER_ACTIONS;
 
   const handleAction = (key: string) => {
     if (onAction) {
       onAction(key);
       return;
     }
+    // Fallback navigation for actions without custom handler
     switch (key) {
-      case "hufcam":
-      case "befund":
-        navigate(`/horse/${horseId}?tab=huf-doku`);
-        break;
       case "termin":
-        navigate(role === "client" ? "/client-booking" : `/calendar`);
+        navigate(role === "client" ? "/client-booking" : "/calendar");
         break;
       case "chat":
         navigate("/client-chat");
-        break;
-      case "anrufen":
-        // Could open phone dialer
-        break;
-      case "notiz":
-        // Could open note dialog
         break;
     }
   };
