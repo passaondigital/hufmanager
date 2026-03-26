@@ -46,7 +46,7 @@ export function MediaDocumentsZone({
 
       const { error: insertError } = await supabase.from("hoof_photos").insert({
         horse_id: horseId,
-        photo_url: urlData.publicUrl,
+        photo_url: filePath,
         taken_at: new Date().toISOString(),
       } as any);
       if (insertError) throw insertError;
