@@ -70,12 +70,10 @@ export function MediaDocumentsZone({
         .upload(filePath, file);
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage.from("horse-documents").getPublicUrl(filePath);
-
       const { error: insertError } = await supabase.from("horse_documents").insert({
         horse_id: horseId,
         file_name: file.name,
-        file_url: urlData.publicUrl,
+        file_url: filePath,
         file_type: file.type,
         uploaded_by: user.id,
       } as any);
