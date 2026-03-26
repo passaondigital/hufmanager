@@ -143,7 +143,11 @@ export function MediaDocumentsZone({
           <div className="grid grid-cols-4 gap-1">
             {hoofPhotos.slice(0, 4).map(photo => (
               <div key={photo.id} className="aspect-square rounded-md overflow-hidden bg-muted">
-                <img src={photo.photo_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                {photoUrls[photo.id] ? (
+                  <img src={photoUrls[photo.id]} alt="" className="w-full h-full object-cover" loading="lazy" />
+                ) : (
+                  <div className="w-full h-full bg-muted animate-pulse" />
+                )}
               </div>
             ))}
             {Array.from({ length: Math.max(0, 4 - hoofPhotos.length) }).map((_, i) => (
