@@ -1,10 +1,23 @@
 import { useState } from "react";
-import { ChevronDown, Pencil, Check, X, Loader2 } from "lucide-react";
+import { ChevronDown, Pencil, Check, X, Loader2, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 import type { Horse } from "@/components/horse-detail/types";
 import { HOLDING_TYPE_OPTIONS, USAGE_TYPE_OPTIONS, HOOF_PROTECTION_OPTIONS } from "@/components/horse-detail/types";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 type Role = "client" | "provider" | "employee" | "partner" | "portal";
 
@@ -24,10 +37,12 @@ interface FieldDef {
 }
 
 export function StammdatenZone({ horse, role, onHorseUpdate }: StammdatenZoneProps) {
+  const navigate = useNavigate();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [saving, setSaving] = useState(false);
+  const [archiving, setArchiving] = useState(false);
 
   const canEdit = role === "provider" || role === "employee" || role === "client";
   const toggle = (i: number) => setOpenIndex(openIndex === i ? null : i);
@@ -227,6 +242,54 @@ export function StammdatenZone({ horse, role, onHorseUpdate }: StammdatenZonePro
           );
         })}
       </div>
+
+      {/* Archive / Soft-Delete */}
+      {(role === "client" || role === "provider") && (
+        <div className="mt-6 pt-4 border-t border-border">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 gap-2">
+                <Trash2 className="h-4 w-4" />
+                Pferd archivieren
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Pferd archivieren?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {horse.name || "Dieses Pferd"} wird aus deiner Liste entfernt. Alle Daten bleiben erhalten und können wiederhergestellt werden.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={archiving}
+                  onClick={async () => {
+                    setArchiving(true);
+                    try {
+                      const { error } = await supabase
+                        .from("horses")
+                        .update({ deleted_at: new Date().toISOString() })
+                        .eq("id", horse.id);
+                      if (error) throw error;
+                      toast.success("Pferd archiviert");
+                      navigate(-1);
+                    } catch {
+                      toast.error("Fehler beim Archivieren");
+                    } finally {
+                      setArchiving(false);
+                    }
+                  }}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {archiving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Archivieren
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
     </div>
   );
 }
