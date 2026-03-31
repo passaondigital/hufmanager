@@ -67,11 +67,25 @@ export function AdminInvoices() {
   };
 
   const markPaid = async (id: string) => {
+    const inv = invoices.find(i => i.id === id);
     await supabase
       .from("admin_invoices")
       .update({ status: "paid", paid_at: new Date().toISOString() })
       .eq("id", id);
     toast.success("Als bezahlt markiert ✓");
+    if (inv) {
+      await createAccountNote({
+        accountId: inv.provider_id,
+        accountType: "provider",
+        noteText: `Zahlung eingegangen für Rechnung ${inv.invoice_number}`,
+        isSystem: true,
+      });
+      await logDocumentEvent({
+        documentId: id,
+        documentType: "invoice",
+        eventType: "paid",
+      });
+    }
     fetchInvoices();
   };
 
