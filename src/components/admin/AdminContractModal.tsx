@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { mergeContractTemplate } from "@/lib/contractMerge";
+import { useIssuerProfile } from "@/hooks/useIssuerProfile";
 
 const PLAN_PRICES: Record<string, { monthly: number; yearly: number }> = {
   starter: { monthly: 9.90, yearly: 99 },
