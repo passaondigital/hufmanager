@@ -18,7 +18,11 @@ const DEMO_EMAIL_SET = new Set<string>(Object.values(DEMO_EMAILS));
 /** Prüft ob eine E-Mail zu einem Demo-Account gehört */
 export function isDemoEmail(email: string | undefined | null): boolean {
   if (!email) return false;
-  return DEMO_EMAIL_SET.has(email.toLowerCase());
+  const lower = email.toLowerCase();
+  if (DEMO_EMAIL_SET.has(lower)) return true;
+  // Also exclude test/demo patterns and internal domain
+  if (lower.includes("demo") || lower.includes("test@") || lower.endsWith("@hufmanager.de")) return true;
+  return false;
 }
 
 /** Prüft ob eine E-Mail der Provider-Demo-Account ist */

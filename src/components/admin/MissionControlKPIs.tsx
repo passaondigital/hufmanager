@@ -120,8 +120,10 @@ export default function MissionControlKPIs() {
         .lte("period_start", todayStr)
         .gte("period_end", todayStr);
       
-      // Filter out demo provider payments & normalize annual payments to monthly
-      const realPayments = (payments || []).filter(p => !allDemoIds.includes(p.provider_id));
+      // Exclude demo AND lifetime/employee providers from MRR
+      const lifetimeIds = realProviders.filter(p => p.plan_override === "lifetime_grant" || p.plan_override === "employee").map(p => p.id);
+      const excludeFromMRR = new Set([...allDemoIds, ...lifetimeIds]);
+      const realPayments = (payments || []).filter(p => !excludeFromMRR.has(p.provider_id));
       const mrrCents = realPayments.reduce((s, p) => s + normalizeToMonthlyMRR(p.amount || 0, p.period_start ?? null, p.period_end ?? null), 0);
       const payingProviders = new Set(realPayments.map(p => p.provider_id)).size;
 

@@ -35,6 +35,8 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { isDemoEmail } from "@/lib/demo-accounts";
+import { normalizeToMonthlyMRR } from "@/lib/plan-features";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend, PieChart, Pie, Cell } from "recharts";
 import { format, startOfMonth, endOfMonth, subMonths, parseISO, isWithinInterval } from "date-fns";
 import { de } from "date-fns/locale";
@@ -106,6 +108,15 @@ interface RevenueLogEntry {
 }
 
 // ── Component ──
+// Real MRR data from verified payments
+interface RealMRRData {
+  verifiedMRR: number;
+  annualContracts: { name: string; pid: string; amount: number; monthlyEquiv: number; validUntil: string }[];
+  monthlySubscribers: { name: string; pid: string; amount: number; plan: string }[];
+  trialUsers: number;
+  freeUsers: number;
+}
+
 export function AdminRevenue() {
   const [counts, setCounts] = useState<PlanCounts>({ starter: 0, pro: 0, duo: 0, team: 0 });
   const [dbCounts, setDbCounts] = useState<PlanCounts | null>(null);
@@ -119,11 +130,14 @@ export function AdminRevenue() {
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), "yyyy-MM"));
   const [expenseSearch, setExpenseSearch] = useState("");
   const [expenseCategoryFilter, setExpenseCategoryFilter] = useState("all");
+  const [realMRR, setRealMRR] = useState<RealMRRData>({ verifiedMRR: 0, annualContracts: [], monthlySubscribers: [], trialUsers: 0, freeUsers: 0 });
+  const [loadingRealMRR, setLoadingRealMRR] = useState(true);
 
   useEffect(() => {
     fetchSubscriptionCounts();
     fetchExpenses();
     fetchRevenueLog();
+    fetchRealMRR();
   }, []);
 
   // ── Data Fetching ──
@@ -206,6 +220,97 @@ export function AdminRevenue() {
       console.error("Error fetching revenue log:", err);
     } finally {
       setLoadingRevLog(false);
+    }
+  };
+
+  // ── Real MRR from verified payments ──
+  const fetchRealMRR = async () => {
+    setLoadingRealMRR(true);
+    try {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      
+      // Get active payments with provider details
+      const { data: payments } = await supabase
+        .from("admin_provider_payments")
+        .select("amount, provider_id, period_start, period_end, plan_name, payment_method")
+        .lte("period_start", todayStr)
+        .gte("period_end", todayStr);
+
+      // Get provider profiles to exclude demo/lifetime/admin
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, email, full_name, readable_id, plan_override, subscription_plan, subscription_status, access_valid_until")
+        .is("deleted_at", null);
+
+      const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+      
+      // Filter: exclude demo, lifetime, employee accounts
+      const validPayments = (payments || []).filter(p => {
+        const profile = profileMap.get(p.provider_id);
+        if (!profile) return false;
+        if (isDemoEmail(profile.email)) return false;
+        if (profile.plan_override === "lifetime_grant" || profile.plan_override === "employee") return false;
+        return true;
+      });
+
+      const annualContracts: RealMRRData["annualContracts"] = [];
+      const monthlySubscribers: RealMRRData["monthlySubscribers"] = [];
+      let verifiedMRR = 0;
+
+      validPayments.forEach(p => {
+        const profile = profileMap.get(p.provider_id);
+        if (!profile) return;
+        const monthlyEquiv = normalizeToMonthlyMRR(p.amount || 0, p.period_start ?? null, p.period_end ?? null);
+        verifiedMRR += monthlyEquiv;
+
+        // Determine if annual or monthly
+        const start = p.period_start ? new Date(p.period_start) : null;
+        const end = p.period_end ? new Date(p.period_end) : null;
+        const diffDays = start && end ? (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24) : 0;
+
+        if (diffDays > 60) {
+          annualContracts.push({
+            name: profile.full_name || "Unbekannt",
+            pid: profile.readable_id || profile.id.slice(0, 8),
+            amount: p.amount || 0,
+            monthlyEquiv,
+            validUntil: p.period_end || "",
+          });
+        } else {
+          monthlySubscribers.push({
+            name: profile.full_name || "Unbekannt",
+            pid: profile.readable_id || profile.id.slice(0, 8),
+            amount: p.amount || 0,
+            plan: p.plan_name || profile.subscription_plan || "unknown",
+          });
+        }
+      });
+
+      // Count trial/free users (no active payment, not lifetime, not demo)
+      const payingIds = new Set(validPayments.map(p => p.provider_id));
+      const nonPayingProfiles = (profiles || []).filter(p => {
+        if (isDemoEmail(p.email)) return false;
+        if (p.plan_override === "lifetime_grant" || p.plan_override === "employee") return false;
+        if (payingIds.has(p.id)) return false;
+        // Only count providers (those with a subscription_plan or plan_override)
+        return p.subscription_plan || p.plan_override;
+      });
+      
+      const trialUsers = nonPayingProfiles.filter(p => 
+        p.subscription_status === "trialing" || !p.subscription_status
+      ).length;
+
+      setRealMRR({
+        verifiedMRR: Math.round(verifiedMRR * 100) / 100,
+        annualContracts,
+        monthlySubscribers,
+        trialUsers,
+        freeUsers: nonPayingProfiles.length - trialUsers,
+      });
+    } catch (err) {
+      console.error("Error fetching real MRR:", err);
+    } finally {
+      setLoadingRealMRR(false);
     }
   };
 
@@ -477,7 +582,7 @@ export function AdminRevenue() {
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" size="sm" onClick={() => { fetchSubscriptionCounts(); fetchExpenses(); fetchRevenueLog(); }} className="gap-2">
+          <Button variant="outline" size="sm" onClick={() => { fetchSubscriptionCounts(); fetchExpenses(); fetchRevenueLog(); fetchRealMRR(); }} className="gap-2">
             <RefreshCw className="w-4 h-4" />
             Aktualisieren
           </Button>
@@ -492,7 +597,64 @@ export function AdminRevenue() {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* Verifizierte MRR/ARR */}
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="pt-5 pb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <CheckCircle className="w-4 h-4 text-primary" />
+            <span className="text-sm font-semibold">Verifizierte Einnahmen (nur bestätigte Zahlungen)</span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className="text-xs text-muted-foreground">MRR (verifiziert)</p>
+              <p className="text-2xl font-bold text-primary">{loadingRealMRR ? <Loader2 className="w-5 h-5 animate-spin" /> : `${realMRR.verifiedMRR.toFixed(2)} €`}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">ARR (verifiziert)</p>
+              <p className="text-2xl font-bold text-primary">
+                {loadingRealMRR ? <Loader2 className="w-5 h-5 animate-spin" /> : 
+                  `${((realMRR.monthlySubscribers.reduce((s, m) => s + m.amount, 0) * 12) + realMRR.annualContracts.reduce((s, a) => s + a.amount, 0)).toFixed(2)} €`
+                }
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Jahresverträge aktiv</p>
+              <p className="text-2xl font-bold">{realMRR.annualContracts.length}</p>
+              <p className="text-[10px] text-muted-foreground">Wert: {realMRR.annualContracts.reduce((s, a) => s + a.amount, 0).toFixed(0)} €</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Starter ohne Zahlung</p>
+              <p className="text-2xl font-bold">{realMRR.trialUsers}</p>
+              <p className="text-[10px] text-muted-foreground">(Trial)</p>
+            </div>
+          </div>
+          {!loadingRealMRR && realMRR.annualContracts.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-border/50 space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">Jahresverträge:</p>
+              {realMRR.annualContracts.map((c, i) => (
+                <div key={i} className="flex items-center justify-between text-xs">
+                  <span>{c.name} <span className="text-muted-foreground">({c.pid})</span></span>
+                  <span className="font-mono">{c.amount.toFixed(0)} €/Jahr = <span className="text-primary">{c.monthlyEquiv.toFixed(2)} €/Mo.</span> · bis {c.validUntil ? format(parseISO(c.validUntil), "dd.MM.yyyy") : "–"}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {!loadingRealMRR && realMRR.monthlySubscribers.length > 0 && (
+            <div className="mt-2 pt-2 border-t border-border/50 space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">Monatsabos:</p>
+              {realMRR.monthlySubscribers.map((m, i) => (
+                <div key={i} className="flex items-center justify-between text-xs">
+                  <span>{m.name} <span className="text-muted-foreground">({m.pid})</span></span>
+                  <span className="font-mono">{m.amount.toFixed(2)} €/Mo. · {m.plan}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="text-[10px] text-muted-foreground/50 mt-2">Demo-, Lifetime- und Admin-Accounts ausgeschlossen</p>
+        </CardContent>
+      </Card>
+
+      {/* Theoretical KPI Cards (plan × count) */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <Card>
           <CardContent className="pt-5 pb-4">
@@ -501,7 +663,7 @@ export function AdminRevenue() {
                 <Users className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Abos</p>
+                <p className="text-xs text-muted-foreground">Abos (Plan-basiert)</p>
                 <p className="text-2xl font-bold">{loadingCounts ? <Loader2 className="w-5 h-5 animate-spin" /> : totalSubs}</p>
               </div>
             </div>
@@ -510,12 +672,12 @@ export function AdminRevenue() {
         <Card>
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-500/10">
-                <Euro className="w-5 h-5 text-emerald-500" />
+              <div className="p-2 rounded-lg bg-muted">
+                <Euro className="w-5 h-5 text-muted-foreground" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">MRR</p>
-                <p className="text-2xl font-bold">{monthlyRevenue.toFixed(0)} €</p>
+                <p className="text-xs text-muted-foreground">MRR (theoretisch)</p>
+                <p className="text-2xl font-bold text-muted-foreground">{monthlyRevenue.toFixed(0)} €</p>
               </div>
             </div>
           </CardContent>
@@ -523,12 +685,12 @@ export function AdminRevenue() {
         <Card>
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <TrendingUp className="w-5 h-5 text-blue-500" />
+              <div className="p-2 rounded-lg bg-muted">
+                <TrendingUp className="w-5 h-5 text-muted-foreground" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">ARR</p>
-                <p className="text-2xl font-bold">{yearlyRevenue.toFixed(0)} €</p>
+                <p className="text-xs text-muted-foreground">ARR (theoretisch)</p>
+                <p className="text-2xl font-bold text-muted-foreground">{yearlyRevenue.toFixed(0)} €</p>
               </div>
             </div>
           </CardContent>
