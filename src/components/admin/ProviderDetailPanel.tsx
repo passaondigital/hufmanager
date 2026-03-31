@@ -21,6 +21,7 @@ import {
 import { ProviderTimeline } from "./ProviderTimeline";
 import { ProviderManualActions } from "./ProviderManualActions";
 import { ProviderDocumentsSection } from "./ProviderDocumentsSection";
+import { AccountNotesPanel } from "./AccountNotesPanel";
 
 interface ProviderDetailPanelProps {
   providerId: string;
