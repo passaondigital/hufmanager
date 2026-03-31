@@ -797,6 +797,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/meine-website" element={<MeineWebsite />} />
               <Route path="/landing-editor" element={<LandingEditor />} />
               <Route path="/email-marketing" element={<EmailMarketing />} />
+              <Route path="/admin-nachrichten" element={<AdminNachrichten />} />
             </Route>
 
             {/* --- 3. CLIENT (PFERDEBESITZER) ROUTES --- */}
