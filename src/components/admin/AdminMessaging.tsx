@@ -287,6 +287,33 @@ function ComposeModal({ open, onClose }: { open: boolean; onClose: () => void })
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Template Selector */}
+          {templates.length > 0 && (
+            <div>
+              <Label className="text-xs">Schnellbaustein (optional)</Label>
+              <Select onValueChange={(id) => {
+                const t = templates.find((t: any) => t.id === id);
+                if (t) {
+                  setSubject(t.subject_template);
+                  setBody(t.body_template);
+                  setPriority(t.default_priority);
+                  setMessageType(t.category);
+                  if (t.default_action_options?.length) {
+                    setRequiresAction(true);
+                    setActionButtons(t.default_action_options);
+                  }
+                }
+              }}>
+                <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="Baustein wählen..." /></SelectTrigger>
+                <SelectContent>
+                  {templates.map((t: any) => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {/* Recipient */}
           <div>
             <Label className="text-xs">Empfänger</Label>
