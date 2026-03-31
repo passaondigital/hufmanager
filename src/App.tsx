@@ -969,6 +969,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner-import" element={<ImportCenter />} />
               <Route path="/partner-support" element={<Support />} />
               <Route path="/partner-rechtliches" element={<PartnerRechtliches />} />
+              <Route path="/admin-nachrichten" element={<AdminNachrichten />} />
             </Route>
 
             {/* Fallback für alles andere */}
