@@ -3,6 +3,7 @@ import {
   Users, AlertTriangle, Globe, Building2, Settings, FileText,
   ClipboardList, Megaphone, Shield, Sparkles, Eye, Target,
   PiggyBank, Clock, Euro, ScrollText, BarChart3, ArrowLeftRight,
+  Mail,
 } from "lucide-react";
 import { useState } from "react";
 
