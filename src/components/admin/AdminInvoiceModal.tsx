@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { generateAdminInvoicePdf, generateAdminInvoicePdfBlob, type AdminInvoiceData, type IssuerData } from "@/lib/adminInvoicePdf";
 import { useIssuerProfile } from "@/hooks/useIssuerProfile";
 import { createAccountNote, logDocumentEvent } from "@/services/accountNotesService";
+import { DocumentHistory } from "./DocumentHistory";
 
 const PLAN_DEFAULTS: Record<string, { label: string; monthly: number; yearly: number }> = {
   starter: { label: "Starter", monthly: 9.9, yearly: 99 },
