@@ -451,6 +451,7 @@ export default function MissionControl() {
             {activeTab === "employees" && <AdminEmployeeOverview />}
             {activeTab === "copecart" && <AdminCopecartReconciliation />}
             {activeTab === "issuer" && <AdminIssuerSettings />}
+            {activeTab === "messaging" && <AdminMessaging />}
 
             {activeTab === "escalations" && (
               <Card>
