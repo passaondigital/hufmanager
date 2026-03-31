@@ -112,7 +112,7 @@ function MessageDetail({ messageId, onBack }: { messageId: string; onBack: () =>
   const [replyText, setReplyText] = useState("");
 
   // Mark as read on open
-  useEffectOnce(() => {
+  useEffect(() => {
     if (msg && !msg.read_at) {
       markRead.mutate(messageId);
     }
