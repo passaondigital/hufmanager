@@ -448,6 +448,17 @@ export function AdminPlatformOverview() {
               </Card>
             )}
           </div>
+
+          {/* Activity Feed */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Aktivitäts-Feed</CardTitle>
+              <CardDescription className="text-xs">Letzte System-Aktionen über alle Accounts</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AdminActivityFeed />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* ─── ALL USERS TAB ─── */}
