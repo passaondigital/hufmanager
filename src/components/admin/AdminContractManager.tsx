@@ -35,6 +35,8 @@ export function AdminContractManager() {
   const [showModal, setShowModal] = useState(false);
   const [editContract, setEditContract] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("contracts");
+  const [amendmentContract, setAmendmentContract] = useState<any>(null);
+  const [showAmendment, setShowAmendment] = useState(false);
 
   const fetchContracts = async () => {
     setLoading(true);
