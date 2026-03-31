@@ -4,17 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
-  Loader2,
-  AlertTriangle,
-  AlertCircle,
-  Mail,
-  StickyNote,
-  ChevronRight,
-  Users,
-  PawPrint,
-  ShieldCheck,
-  Save,
-  Clock,
+  Loader2, AlertTriangle, AlertCircle, Mail,
+  ChevronRight, Users, ShieldCheck, Clock,
 } from "lucide-react";
 import { ProviderTimeline } from "./ProviderTimeline";
 import { ProviderManualActions } from "./ProviderManualActions";
