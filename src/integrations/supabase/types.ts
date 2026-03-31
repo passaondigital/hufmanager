@@ -196,6 +196,8 @@ export type Database = {
         Row: {
           admin_signature: string | null
           admin_signed_at: string | null
+          amendment_of_id: string | null
+          amendment_text: string | null
           auto_renew: boolean | null
           cancellation_effective_date: string | null
           cancellation_reason: string | null
@@ -205,6 +207,7 @@ export type Database = {
           created_at: string | null
           custom_price: number | null
           id: string
+          is_amendment: boolean | null
           notes: string | null
           payment_method: string | null
           pdf_url: string | null
@@ -226,6 +229,8 @@ export type Database = {
         Insert: {
           admin_signature?: string | null
           admin_signed_at?: string | null
+          amendment_of_id?: string | null
+          amendment_text?: string | null
           auto_renew?: boolean | null
           cancellation_effective_date?: string | null
           cancellation_reason?: string | null
@@ -235,6 +240,7 @@ export type Database = {
           created_at?: string | null
           custom_price?: number | null
           id?: string
+          is_amendment?: boolean | null
           notes?: string | null
           payment_method?: string | null
           pdf_url?: string | null
@@ -256,6 +262,8 @@ export type Database = {
         Update: {
           admin_signature?: string | null
           admin_signed_at?: string | null
+          amendment_of_id?: string | null
+          amendment_text?: string | null
           auto_renew?: boolean | null
           cancellation_effective_date?: string | null
           cancellation_reason?: string | null
@@ -265,6 +273,7 @@ export type Database = {
           created_at?: string | null
           custom_price?: number | null
           id?: string
+          is_amendment?: boolean | null
           notes?: string | null
           payment_method?: string | null
           pdf_url?: string | null
@@ -284,6 +293,13 @@ export type Database = {
           variables_used?: Json | null
         }
         Relationships: [
+          {
+            foreignKeyName: "admin_contracts_amendment_of_id_fkey"
+            columns: ["amendment_of_id"]
+            isOneToOne: false
+            referencedRelation: "admin_contracts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "admin_contracts_provider_id_fkey"
             columns: ["provider_id"]
@@ -477,6 +493,7 @@ export type Database = {
           due_date: string | null
           id: string
           invoice_number: string
+          is_storno: boolean | null
           kleinunternehmer: boolean | null
           notes: string | null
           paid_at: string | null
@@ -493,6 +510,8 @@ export type Database = {
           provider_pid: string | null
           sent_at: string | null
           status: string | null
+          storno_of_id: string | null
+          storno_reason: string | null
           subtotal: number
           total: number
           updated_at: string | null
@@ -506,6 +525,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           invoice_number?: string
+          is_storno?: boolean | null
           kleinunternehmer?: boolean | null
           notes?: string | null
           paid_at?: string | null
@@ -522,6 +542,8 @@ export type Database = {
           provider_pid?: string | null
           sent_at?: string | null
           status?: string | null
+          storno_of_id?: string | null
+          storno_reason?: string | null
           subtotal: number
           total: number
           updated_at?: string | null
@@ -535,6 +557,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           invoice_number?: string
+          is_storno?: boolean | null
           kleinunternehmer?: boolean | null
           notes?: string | null
           paid_at?: string | null
@@ -551,6 +574,8 @@ export type Database = {
           provider_pid?: string | null
           sent_at?: string | null
           status?: string | null
+          storno_of_id?: string | null
+          storno_reason?: string | null
           subtotal?: number
           total?: number
           updated_at?: string | null
@@ -584,6 +609,13 @@ export type Database = {
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_invoices_storno_of_id_fkey"
+            columns: ["storno_of_id"]
+            isOneToOne: false
+            referencedRelation: "admin_invoices"
             referencedColumns: ["id"]
           },
         ]
