@@ -61,6 +61,7 @@ import { AdminProviderTab, ProviderData, PLAN_OVERRIDE_OPTIONS } from "@/compone
 import { AdminStatsTab } from "@/components/admin/AdminStatsTab";
 import { AdminPlatformOverview } from "@/components/admin/AdminPlatformOverview";
 import { AdminCopecartReconciliation } from "@/components/admin/AdminCopecartReconciliation";
+import { AdminIssuerSettings } from "@/components/admin/AdminIssuerSettings";
 import { Switch } from "@/components/ui/switch";
 
 const DEFAULT_FEATURE_STATUSES: FeatureStatuses = {
