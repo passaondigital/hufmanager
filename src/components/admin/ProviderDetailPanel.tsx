@@ -120,45 +120,12 @@ export function ProviderDetailPanel({ providerId, providerEmail }: ProviderDetai
         };
       });
 
-      // 4. Load existing admin notes for this provider
-      const { data: notes } = await supabase
-        .from("admin_notes")
-        .select("content, created_at")
-        .eq("title", `provider:${providerId}`)
-        .eq("type", "task")
-        .order("created_at", { ascending: false })
-        .limit(5);
-
       setClients(clientList);
       setHorses(horseList);
-      setExistingNotes(notes || []);
     } catch (err) {
       console.error("Error loading provider details:", err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const saveNote = async () => {
-    if (!note.trim()) return;
-    setSavingNote(true);
-    try {
-      const { error } = await supabase.from("admin_notes").insert({
-        title: `provider:${providerId}`,
-        content: note.trim(),
-        type: "task",
-        priority: "normal",
-        status: "inbox",
-        created_by: user?.id,
-      });
-      if (error) throw error;
-      toast.success("Notiz gespeichert");
-      setNote("");
-      setExistingNotes(prev => [{ content: note.trim(), created_at: new Date().toISOString() }, ...prev]);
-    } catch (e: any) {
-      toast.error(e.message || "Fehler");
-    } finally {
-      setSavingNote(false);
     }
   };
 
