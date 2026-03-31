@@ -176,7 +176,16 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
     const periodEnd = form.period_end || (form.period_start ? new Date(new Date(form.period_start).setFullYear(new Date(form.period_start).getFullYear() + 1)).toISOString().split("T")[0] : "");
 
     return {
-      ANBIETER_ADRESSE: "Pascal Schmid (Barhufservice Schmid)\nc/o Postflex #10643\nEmsdettener Str. 10\n48268 Greven",
+      // Issuer (from central settings)
+      ANBIETER_NAME: issuerProfile.name,
+      ANBIETER_FIRMA: issuerProfile.company,
+      ANBIETER_ADRESSE: issuerProfile.address,
+      ANBIETER_EMAIL: issuerProfile.email,
+      ANBIETER_TEL: issuerProfile.phone,
+      IBAN: issuerProfile.iban,
+      BIC: issuerProfile.bic,
+      KONTOINHABER: issuerProfile.account_holder,
+      // Provider
       PLAN_NAME: planName,
       PLAN_PREIS_MONAT: monthlyStr,
       PLAN_PREIS_JAHR: yearlyStr,
@@ -186,6 +195,7 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
       NUTZER_ADRESSE: "",
       NUTZER_EMAIL: provider?.email || "",
       NUTZER_TELEFON: "",
+      PREIS_SONDER: form.custom_price ? (parseFloat(form.custom_price).toFixed(2).replace(".", ",") + " €") : "–",
       PREIS_JAHR_1: bonusYearStr,
       VERTRAG_START: form.period_start,
       VERTRAG_ENDE: periodEnd,
@@ -193,6 +203,7 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
       ZAHLUNG_DATUM: "",
       PLAN_PFERDE_LIMIT: limits.pferde,
       PLAN_NUTZER_LIMIT: limits.nutzer,
+      NOTIZ: form.notes || "",
       ...features,
       VERTRAG_NR: "",
       DATUM: today,
