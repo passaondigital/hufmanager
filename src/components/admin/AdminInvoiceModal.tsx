@@ -18,6 +18,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { generateAdminInvoicePdf, generateAdminInvoicePdfBlob, type AdminInvoiceData, type IssuerData } from "@/lib/adminInvoicePdf";
 import { useIssuerProfile } from "@/hooks/useIssuerProfile";
+import { createAccountNote, logDocumentEvent } from "@/services/accountNotesService";
+import { DocumentHistory } from "./DocumentHistory";
 
 const PLAN_DEFAULTS: Record<string, { label: string; monthly: number; yearly: number }> = {
   starter: { label: "Starter", monthly: 9.9, yearly: 99 },
@@ -367,15 +369,36 @@ export function AdminInvoiceModal({ open, onOpenChange, editInvoice, onSaved }: 
         toast.success("Rechnung gespeichert");
       }
 
-      // Auto-log admin note for document tracking
+      // Auto-log: account note + document events
       if (!editInvoice) {
-        await supabase.from("admin_notes").insert({
-          title: `provider:${selectedProvider.id}`,
-          content: `Rechnung ${pdfData.invoiceNumber || invoiceId.slice(0, 8)} erstellt und hinterlegt. ${format(new Date(), "dd.MM.yyyy")}`,
-          type: "task",
-          priority: "normal",
-          status: "inbox",
-        }).then(({ error }) => { if (error) console.warn("Auto-note failed:", error); });
+        const invNum = pdfData.invoiceNumber || invoiceId.slice(0, 8);
+        await createAccountNote({
+          accountId: selectedProvider.id,
+          accountType: "provider",
+          noteText: `Rechnung ${invNum} über ${total.toFixed(2)} € erstellt`,
+          isSystem: true,
+        });
+        await logDocumentEvent({
+          documentId: invoiceId,
+          documentType: "invoice",
+          eventType: "created",
+          eventData: { invoice_number: invNum, total },
+        });
+      }
+      if (!uploadError) {
+        await logDocumentEvent({
+          documentId: invoiceId,
+          documentType: "invoice",
+          eventType: "pdf_generated",
+        });
+      }
+      if (andSend) {
+        await logDocumentEvent({
+          documentId: invoiceId,
+          documentType: "invoice",
+          eventType: "sent",
+          eventData: { email: selectedProvider.email },
+        });
       }
 
       onSaved();
@@ -659,6 +682,13 @@ export function AdminInvoiceModal({ open, onOpenChange, editInvoice, onSaved }: 
                 Speichern & Versenden
               </Button>
             </div>
+
+            {/* Document History (only when editing) */}
+            {editInvoice?.id && (
+              <div className="pt-2 border-t">
+                <DocumentHistory documentId={editInvoice.id} documentType="invoice" />
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>

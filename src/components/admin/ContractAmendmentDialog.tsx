@@ -10,6 +10,7 @@ import { Loader2, FilePlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { createAccountNote, logDocumentEvent } from "@/services/accountNotesService";
 
 interface ContractAmendmentDialogProps {
   contract: any;
@@ -59,12 +60,17 @@ export function ContractAmendmentDialog({ contract, open, onOpenChange, onSaved 
       if (error) throw error;
 
       // Log admin note
-      await supabase.from("admin_notes").insert({
-        title: `provider:${contract.provider_id}`,
-        content: `Nachtrag zu Vertrag ${contract.contract_number} erstellt. ${format(new Date(), "dd.MM.yyyy")}`,
-        type: "task",
-        priority: "normal",
-        status: "inbox",
+      await createAccountNote({
+        accountId: contract.provider_id,
+        accountType: "provider",
+        noteText: `Nachtrag zu Vertrag ${contract.contract_number} erstellt`,
+        isSystem: true,
+      });
+      await logDocumentEvent({
+        documentId: contract.id,
+        documentType: "contract",
+        eventType: "amendment",
+        eventData: { amendment_text: text.trim().substring(0, 200) },
       });
 
       toast.success("Nachtrag erstellt");

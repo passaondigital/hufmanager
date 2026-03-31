@@ -13,6 +13,7 @@ import { Loader2, Ban } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { createAccountNote, logDocumentEvent } from "@/services/accountNotesService";
 
 interface StornoDialogProps {
   invoice: any;
@@ -73,13 +74,18 @@ export function StornoDialog({ invoice, open, onOpenChange, onCompleted }: Storn
         .eq("id", invoice.id);
       if (updateError) throw updateError;
 
-      // 3. Log admin note
-      await supabase.from("admin_notes").insert({
-        title: `provider:${invoice.provider_id}`,
-        content: `Rechnung ${invoice.invoice_number} storniert. Grund: ${reason.trim()}. ${format(new Date(), "dd.MM.yyyy")}`,
-        type: "task",
-        priority: "high",
-        status: "inbox",
+      // 3. Log to new account_notes + document_events
+      await createAccountNote({
+        accountId: invoice.provider_id,
+        accountType: "provider",
+        noteText: `Rechnung ${invoice.invoice_number} storniert. Grund: ${reason.trim()}`,
+        isSystem: true,
+      });
+      await logDocumentEvent({
+        documentId: invoice.id,
+        documentType: "invoice",
+        eventType: "cancelled",
+        eventData: { reason: reason.trim() },
       });
 
       toast.success("Stornorechnung erstellt & Original storniert");

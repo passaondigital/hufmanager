@@ -1,26 +1,16 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
-  Loader2,
-  AlertTriangle,
-  AlertCircle,
-  Mail,
-  StickyNote,
-  ChevronRight,
-  Users,
-  PawPrint,
-  ShieldCheck,
-  Save,
-  Clock,
+  Loader2, AlertTriangle, AlertCircle, Mail,
+  ChevronRight, Users, ShieldCheck, Clock,
 } from "lucide-react";
 import { ProviderTimeline } from "./ProviderTimeline";
 import { ProviderManualActions } from "./ProviderManualActions";
 import { ProviderDocumentsSection } from "./ProviderDocumentsSection";
+import { AccountNotesPanel } from "./AccountNotesPanel";
 
 interface ProviderDetailPanelProps {
   providerId: string;
@@ -46,13 +36,9 @@ interface HorseInfo {
 }
 
 export function ProviderDetailPanel({ providerId, providerEmail }: ProviderDetailPanelProps) {
-  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<ClientInfo[]>([]);
   const [horses, setHorses] = useState<HorseInfo[]>([]);
-  const [note, setNote] = useState("");
-  const [savingNote, setSavingNote] = useState(false);
-  const [existingNotes, setExistingNotes] = useState<{ content: string; created_at: string }[]>([]);
 
   useEffect(() => {
     loadData();
@@ -123,45 +109,12 @@ export function ProviderDetailPanel({ providerId, providerEmail }: ProviderDetai
         };
       });
 
-      // 4. Load existing admin notes for this provider
-      const { data: notes } = await supabase
-        .from("admin_notes")
-        .select("content, created_at")
-        .eq("title", `provider:${providerId}`)
-        .eq("type", "task")
-        .order("created_at", { ascending: false })
-        .limit(5);
-
       setClients(clientList);
       setHorses(horseList);
-      setExistingNotes(notes || []);
     } catch (err) {
       console.error("Error loading provider details:", err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const saveNote = async () => {
-    if (!note.trim()) return;
-    setSavingNote(true);
-    try {
-      const { error } = await supabase.from("admin_notes").insert({
-        title: `provider:${providerId}`,
-        content: note.trim(),
-        type: "task",
-        priority: "normal",
-        status: "inbox",
-        created_by: user?.id,
-      });
-      if (error) throw error;
-      toast.success("Notiz gespeichert");
-      setNote("");
-      setExistingNotes(prev => [{ content: note.trim(), created_at: new Date().toISOString() }, ...prev]);
-    } catch (e: any) {
-      toast.error(e.message || "Fehler");
-    } finally {
-      setSavingNote(false);
     }
   };
 
@@ -276,47 +229,18 @@ export function ProviderDetailPanel({ providerId, providerEmail }: ProviderDetai
         </div>
       </div>
 
+      {/* Account Notes (new system) */}
+      <AccountNotesPanel accountId={providerId} accountType="provider" />
+
       {/* Support Quick Actions */}
       <div className="space-y-3 pt-2 border-t">
         <div className="flex items-center gap-2 text-sm font-semibold">
           <ShieldCheck className="w-4 h-4 text-primary" />
           Support-Schnellaktionen
         </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Internal Note */}
-          <div className="flex-1 space-y-2">
-            <div className="flex gap-2">
-              <Textarea
-                placeholder="Interne Admin-Notiz…"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                rows={2}
-                className="text-xs"
-              />
-              <Button size="sm" onClick={saveNote} disabled={savingNote || !note.trim()} className="shrink-0 self-end">
-                {savingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              </Button>
-            </div>
-            {existingNotes.length > 0 && (
-              <div className="space-y-1 max-h-24 overflow-y-auto">
-                {existingNotes.map((n, i) => (
-                  <div key={i} className="flex items-start gap-1.5 text-[11px] text-muted-foreground bg-muted/50 rounded px-2 py-1">
-                    <StickyNote className="w-3 h-3 mt-0.5 shrink-0" />
-                    <div>
-                      <span>{n.content}</span>
-                      <span className="ml-1 opacity-60">
-                        ({new Date(n.created_at).toLocaleDateString("de-DE")})
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Direct Email */}
+        <div className="flex gap-3">
           {providerEmail && (
-            <Button variant="outline" size="sm" className="shrink-0 self-start" asChild>
+            <Button variant="outline" size="sm" className="shrink-0" asChild>
               <a href={`mailto:${providerEmail}`}>
                 <Mail className="w-4 h-4 mr-1" />
                 E-Mail senden

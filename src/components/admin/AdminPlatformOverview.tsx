@@ -19,6 +19,7 @@ import {
   Link2, TrendingUp, UserPlus, Crown, Ban, CheckCircle, Clock, Shield,
   Loader2, Eye, MessageSquare, BarChart3, Briefcase,
 } from "lucide-react";
+import { AdminActivityFeed } from "./AdminActivityFeed";
 import {
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell, Legend,
   LineChart, Line, CartesianGrid, AreaChart, Area,
@@ -447,6 +448,17 @@ export function AdminPlatformOverview() {
               </Card>
             )}
           </div>
+
+          {/* Activity Feed */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Aktivitäts-Feed</CardTitle>
+              <CardDescription className="text-xs">Letzte System-Aktionen über alle Accounts</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AdminActivityFeed />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* ─── ALL USERS TAB ─── */}
