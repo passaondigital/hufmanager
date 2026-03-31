@@ -29,6 +29,7 @@ interface AdminContractModalProps {
 
 export function AdminContractModal({ open, onOpenChange, contract, onSaved }: AdminContractModalProps) {
   const { user } = useAuth();
+  const { profile: issuerProfile } = useIssuerProfile();
   const isEdit = !!contract;
 
   const [providers, setProviders] = useState<any[]>([]);
