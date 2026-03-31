@@ -13,6 +13,7 @@ import { Loader2, Ban } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { createAccountNote, logDocumentEvent } from "@/services/accountNotesService";
 
 interface StornoDialogProps {
   invoice: any;
