@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   FileText, Plus, Send, MoreHorizontal, Loader2, Download, Eye, Ban,
-  Clock, AlertTriangle, BookOpen, Shield, Radio, Settings,
+  Clock, AlertTriangle, BookOpen, Shield, Radio, Settings, FilePlus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ import { AdminDunningManager } from "./AdminDunningManager";
 import { AdminComplianceManager } from "./AdminComplianceManager";
 import { AdminBroadcastManager } from "./AdminBroadcastManager";
 import { AdminAutomationSettings } from "./AdminAutomationSettings";
+import { ContractAmendmentDialog } from "./ContractAmendmentDialog";
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   draft: { label: "Entwurf", className: "bg-muted text-muted-foreground" },
