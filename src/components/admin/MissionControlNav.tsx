@@ -41,6 +41,15 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    id: "communication",
+    label: "Kommunikation",
+    icon: <MessageCircle className="w-4 h-4" />,
+    items: [
+      { value: "messaging", label: "Admin-Chat", icon: <Send className="w-4 h-4" /> },
+      { value: "tools", label: "Broadcast & Feedback", icon: <Megaphone className="w-4 h-4" /> },
+    ],
+  },
+  {
     id: "finance",
     label: "Finanzen",
     icon: <Euro className="w-4 h-4" />,
