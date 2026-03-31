@@ -10,12 +10,14 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import {
   Mail, Plus, Search, Send, Paperclip, ArrowLeft, FileText, Image as ImageIcon,
-  Download, AlertTriangle, Info, Gift, ShieldAlert, Clock, Eye, X, Check,
+  Download, AlertTriangle, Info, Gift, ShieldAlert, Clock, Eye, X, Check, Megaphone,
 } from "lucide-react";
+import AdminMessageTemplates from "./AdminMessageTemplates";
+import AdminBroadcastMessaging from "./AdminBroadcastMessaging";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { toast } from "sonner";
