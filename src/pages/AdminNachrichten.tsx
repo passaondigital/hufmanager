@@ -256,7 +256,7 @@ function UserThread({ messageId, onBack }: { messageId: string; onBack: () => vo
               />
             ))}
           </div>
-        </ScrollArea>
+        </div>
 
         {/* Reply input */}
         <div className="border-t border-border p-3">

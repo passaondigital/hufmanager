@@ -518,7 +518,7 @@ function AdminThread({ messageId, onBack }: { messageId: string; onBack: () => v
               />
             ))}
           </div>
-        </ScrollArea>
+        </div>
 
         {/* Reply input */}
         <div className="border-t border-border p-3">
