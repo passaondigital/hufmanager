@@ -295,6 +295,15 @@ export function AdminContractManager() {
         contract={editContract}
         onSaved={fetchContracts}
       />
+
+      {amendmentContract && (
+        <ContractAmendmentDialog
+          contract={amendmentContract}
+          open={showAmendment}
+          onOpenChange={setShowAmendment}
+          onSaved={fetchContracts}
+        />
+      )}
     </div>
   );
 }
