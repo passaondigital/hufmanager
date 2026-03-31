@@ -106,6 +106,15 @@ interface RevenueLogEntry {
 }
 
 // ── Component ──
+// Real MRR data from verified payments
+interface RealMRRData {
+  verifiedMRR: number;
+  annualContracts: { name: string; pid: string; amount: number; monthlyEquiv: number; validUntil: string }[];
+  monthlySubscribers: { name: string; pid: string; amount: number; plan: string }[];
+  trialUsers: number;
+  freeUsers: number;
+}
+
 export function AdminRevenue() {
   const [counts, setCounts] = useState<PlanCounts>({ starter: 0, pro: 0, duo: 0, team: 0 });
   const [dbCounts, setDbCounts] = useState<PlanCounts | null>(null);
@@ -119,11 +128,14 @@ export function AdminRevenue() {
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), "yyyy-MM"));
   const [expenseSearch, setExpenseSearch] = useState("");
   const [expenseCategoryFilter, setExpenseCategoryFilter] = useState("all");
+  const [realMRR, setRealMRR] = useState<RealMRRData>({ verifiedMRR: 0, annualContracts: [], monthlySubscribers: [], trialUsers: 0, freeUsers: 0 });
+  const [loadingRealMRR, setLoadingRealMRR] = useState(true);
 
   useEffect(() => {
     fetchSubscriptionCounts();
     fetchExpenses();
     fetchRevenueLog();
+    fetchRealMRR();
   }, []);
 
   // ── Data Fetching ──
