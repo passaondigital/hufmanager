@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { mergeContractTemplate } from "@/lib/contractMerge";
 import { useIssuerProfile } from "@/hooks/useIssuerProfile";
+import { createAccountNote, logDocumentEvent } from "@/services/accountNotesService";
 
 const PLAN_PRICES: Record<string, { monthly: number; yearly: number }> = {
   starter: { monthly: 9.90, yearly: 99 },
