@@ -277,47 +277,18 @@ export function ProviderDetailPanel({ providerId, providerEmail }: ProviderDetai
         </div>
       </div>
 
+      {/* Account Notes (new system) */}
+      <AccountNotesPanel accountId={providerId} accountType="provider" />
+
       {/* Support Quick Actions */}
       <div className="space-y-3 pt-2 border-t">
         <div className="flex items-center gap-2 text-sm font-semibold">
           <ShieldCheck className="w-4 h-4 text-primary" />
           Support-Schnellaktionen
         </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Internal Note */}
-          <div className="flex-1 space-y-2">
-            <div className="flex gap-2">
-              <Textarea
-                placeholder="Interne Admin-Notiz…"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                rows={2}
-                className="text-xs"
-              />
-              <Button size="sm" onClick={saveNote} disabled={savingNote || !note.trim()} className="shrink-0 self-end">
-                {savingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              </Button>
-            </div>
-            {existingNotes.length > 0 && (
-              <div className="space-y-1 max-h-24 overflow-y-auto">
-                {existingNotes.map((n, i) => (
-                  <div key={i} className="flex items-start gap-1.5 text-[11px] text-muted-foreground bg-muted/50 rounded px-2 py-1">
-                    <StickyNote className="w-3 h-3 mt-0.5 shrink-0" />
-                    <div>
-                      <span>{n.content}</span>
-                      <span className="ml-1 opacity-60">
-                        ({new Date(n.created_at).toLocaleDateString("de-DE")})
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Direct Email */}
+        <div className="flex gap-3">
           {providerEmail && (
-            <Button variant="outline" size="sm" className="shrink-0 self-start" asChild>
+            <Button variant="outline" size="sm" className="shrink-0" asChild>
               <a href={`mailto:${providerEmail}`}>
                 <Mail className="w-4 h-4 mr-1" />
                 E-Mail senden
