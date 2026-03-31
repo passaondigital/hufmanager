@@ -47,13 +47,9 @@ interface HorseInfo {
 }
 
 export function ProviderDetailPanel({ providerId, providerEmail }: ProviderDetailPanelProps) {
-  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<ClientInfo[]>([]);
   const [horses, setHorses] = useState<HorseInfo[]>([]);
-  const [note, setNote] = useState("");
-  const [savingNote, setSavingNote] = useState(false);
-  const [existingNotes, setExistingNotes] = useState<{ content: string; created_at: string }[]>([]);
 
   useEffect(() => {
     loadData();
