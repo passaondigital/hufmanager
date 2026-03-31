@@ -143,7 +143,7 @@ export default function AdminBroadcastMessaging() {
 
       // Create individual messages with variable replacement
       const messages = roles.map(r => {
-        const profile = profileMap.get(r.user_id);
+        const profile = profileMap.get(r.user_id) as any;
         const vars: Record<string, string> = {
           "{{NUTZER_NAME}}": profile?.full_name || "Nutzer",
           "{{PLAN_NAME}}": profile?.plan_name || "Starter",
