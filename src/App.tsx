@@ -841,6 +841,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client-historie" element={<ClientHistorie />} />
               <Route path="/client-dokumente" element={<ClientDokumente />} />
               <Route path="/client-support" element={<Support />} />
+              <Route path="/admin-nachrichten" element={<AdminNachrichten />} />
             </Route>
 
             {/* --- 3b. STALLBETREIBER ROUTES --- */}
