@@ -39,13 +39,31 @@ const PRIORITY_STYLES: Record<string, string> = {
 };
 
 export default function AdminMessaging() {
+  const [mainTab, setMainTab] = useState("inbox");
+
+  return (
+    <div className="space-y-4">
+      <Tabs value={mainTab} onValueChange={setMainTab}>
+        <TabsList>
+          <TabsTrigger value="inbox" className="gap-1.5"><Mail className="h-3.5 w-3.5" /> Posteingang</TabsTrigger>
+          <TabsTrigger value="templates" className="gap-1.5"><FileText className="h-3.5 w-3.5" /> Schnellbausteine</TabsTrigger>
+          <TabsTrigger value="broadcast" className="gap-1.5"><Megaphone className="h-3.5 w-3.5" /> Broadcast</TabsTrigger>
+        </TabsList>
+        <TabsContent value="inbox"><InboxView /></TabsContent>
+        <TabsContent value="templates"><AdminMessageTemplates /></TabsContent>
+        <TabsContent value="broadcast"><AdminBroadcastMessaging /></TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+function InboxView() {
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [composeOpen, setComposeOpen] = useState(false);
   const { data: messages = [], isLoading } = useAdminAllMessages(filter === "all" ? undefined : filter);
 
-  // Enrich messages with recipient info
   const [recipientMap, setRecipientMap] = useState<Record<string, any>>({});
 
   useEffect(() => {
@@ -80,7 +98,7 @@ export default function AdminMessaging() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <Mail className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-bold text-foreground">Nachrichten / Posteingang</h2>
+          <h2 className="text-lg font-bold text-foreground">Posteingang</h2>
           <Badge variant="secondary" className="text-xs">{messages.length}</Badge>
         </div>
         <Button size="sm" onClick={() => setComposeOpen(true)} className="gap-1.5">
@@ -88,7 +106,6 @@ export default function AdminMessaging() {
         </Button>
       </div>
 
-      {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
         <Tabs value={filter} onValueChange={setFilter} className="flex-1">
           <TabsList className="h-9">
@@ -110,7 +127,6 @@ export default function AdminMessaging() {
         </div>
       </div>
 
-      {/* Table */}
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
@@ -166,7 +182,6 @@ export default function AdminMessaging() {
         </CardContent>
       </Card>
 
-      {/* Compose Modal */}
       <ComposeModal open={composeOpen} onClose={() => setComposeOpen(false)} />
     </div>
   );
