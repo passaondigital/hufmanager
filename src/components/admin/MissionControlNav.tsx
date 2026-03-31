@@ -3,7 +3,7 @@ import {
   Users, AlertTriangle, Globe, Building2, Settings, FileText,
   ClipboardList, Megaphone, Shield, Sparkles, Eye, Target,
   PiggyBank, Clock, Euro, ScrollText, BarChart3, ArrowLeftRight,
-  Mail,
+  Mail, MessageCircle, Send,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -38,6 +38,15 @@ const NAV_SECTIONS: NavSection[] = [
       { value: "partners", label: "Partner", icon: <Globe className="w-4 h-4" /> },
       { value: "employees", label: "Mitarbeiter", icon: <Building2 className="w-4 h-4" /> },
       { value: "escalations", label: "Eskalationen", icon: <AlertTriangle className="w-4 h-4" /> },
+    ],
+  },
+  {
+    id: "communication",
+    label: "Kommunikation",
+    icon: <MessageCircle className="w-4 h-4" />,
+    items: [
+      { value: "messaging", label: "Admin-Chat", icon: <Send className="w-4 h-4" /> },
+      { value: "tools", label: "Broadcast & Feedback", icon: <Megaphone className="w-4 h-4" /> },
     ],
   },
   {
@@ -82,8 +91,6 @@ const NAV_SECTIONS: NavSection[] = [
     label: "Content & Tools",
     icon: <Megaphone className="w-4 h-4" />,
     items: [
-      { value: "tools", label: "Broadcast & Feedback", icon: <Megaphone className="w-4 h-4" /> },
-      { value: "messaging", label: "Nachrichten", icon: <Mail className="w-4 h-4" /> },
       { value: "blog", label: "Blog", icon: <FileText className="w-4 h-4" /> },
       { value: "glossary", label: "Glossar", icon: <FileText className="w-4 h-4" /> },
       { value: "email-marketing", label: "E-Mail Marketing", icon: <Megaphone className="w-4 h-4" /> },
