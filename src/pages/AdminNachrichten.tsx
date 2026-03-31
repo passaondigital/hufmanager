@@ -241,7 +241,7 @@ function UserThread({ messageId, onBack }: { messageId: string; onBack: () => vo
 
       {/* Chat Thread */}
       <Card>
-        <ScrollArea className="h-[350px]" ref={scrollRef}>
+        <div className="h-[350px] overflow-y-auto" ref={scrollRef}>
           <div className="p-4 space-y-3">
             {/* Original message — admin is left side for user view */}
             <ChatBubble body={msg.body} time={msg.created_at} isAdmin attachments={msg.attachments} />

@@ -497,7 +497,7 @@ function AdminThread({ messageId, onBack }: { messageId: string; onBack: () => v
 
       {/* Chat Thread */}
       <Card>
-        <ScrollArea className="h-[400px]" ref={scrollRef}>
+        <div className="h-[400px] overflow-y-auto" ref={scrollRef}>
           <div className="p-4 space-y-3">
             {/* Original message */}
             <ChatBubble
