@@ -223,6 +223,97 @@ export function AdminRevenue() {
     }
   };
 
+  // ── Real MRR from verified payments ──
+  const fetchRealMRR = async () => {
+    setLoadingRealMRR(true);
+    try {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      
+      // Get active payments with provider details
+      const { data: payments } = await supabase
+        .from("admin_provider_payments")
+        .select("amount, provider_id, period_start, period_end, plan_name, payment_method")
+        .lte("period_start", todayStr)
+        .gte("period_end", todayStr);
+
+      // Get provider profiles to exclude demo/lifetime/admin
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, email, full_name, readable_id, plan_override, subscription_plan, subscription_status, access_valid_until")
+        .is("deleted_at", null);
+
+      const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+      
+      // Filter: exclude demo, lifetime, employee accounts
+      const validPayments = (payments || []).filter(p => {
+        const profile = profileMap.get(p.provider_id);
+        if (!profile) return false;
+        if (isDemoEmail(profile.email)) return false;
+        if (profile.plan_override === "lifetime_grant" || profile.plan_override === "employee") return false;
+        return true;
+      });
+
+      const annualContracts: RealMRRData["annualContracts"] = [];
+      const monthlySubscribers: RealMRRData["monthlySubscribers"] = [];
+      let verifiedMRR = 0;
+
+      validPayments.forEach(p => {
+        const profile = profileMap.get(p.provider_id);
+        if (!profile) return;
+        const monthlyEquiv = normalizeToMonthlyMRR(p.amount || 0, p.period_start ?? null, p.period_end ?? null);
+        verifiedMRR += monthlyEquiv;
+
+        // Determine if annual or monthly
+        const start = p.period_start ? new Date(p.period_start) : null;
+        const end = p.period_end ? new Date(p.period_end) : null;
+        const diffDays = start && end ? (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24) : 0;
+
+        if (diffDays > 60) {
+          annualContracts.push({
+            name: profile.full_name || "Unbekannt",
+            pid: profile.readable_id || profile.id.slice(0, 8),
+            amount: p.amount || 0,
+            monthlyEquiv,
+            validUntil: p.period_end || "",
+          });
+        } else {
+          monthlySubscribers.push({
+            name: profile.full_name || "Unbekannt",
+            pid: profile.readable_id || profile.id.slice(0, 8),
+            amount: p.amount || 0,
+            plan: p.plan_name || profile.subscription_plan || "unknown",
+          });
+        }
+      });
+
+      // Count trial/free users (no active payment, not lifetime, not demo)
+      const payingIds = new Set(validPayments.map(p => p.provider_id));
+      const nonPayingProfiles = (profiles || []).filter(p => {
+        if (isDemoEmail(p.email)) return false;
+        if (p.plan_override === "lifetime_grant" || p.plan_override === "employee") return false;
+        if (payingIds.has(p.id)) return false;
+        // Only count providers (those with a subscription_plan or plan_override)
+        return p.subscription_plan || p.plan_override;
+      });
+      
+      const trialUsers = nonPayingProfiles.filter(p => 
+        p.subscription_status === "trialing" || !p.subscription_status
+      ).length;
+
+      setRealMRR({
+        verifiedMRR: Math.round(verifiedMRR * 100) / 100,
+        annualContracts,
+        monthlySubscribers,
+        trialUsers,
+        freeUsers: nonPayingProfiles.length - trialUsers,
+      });
+    } catch (err) {
+      console.error("Error fetching real MRR:", err);
+    } finally {
+      setLoadingRealMRR(false);
+    }
+  };
+
   // ── CRUD ──
   const addExpense = async () => {
     if (!newExpense.title || !newExpense.amount) {
