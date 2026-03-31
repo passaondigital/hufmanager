@@ -102,7 +102,7 @@ function MessageListItem({ message: msg, onClick }: { message: AdminMessage; onC
   );
 }
 
-import { useEffect as useEffectOnce } from "react";
+
 
 function MessageDetail({ messageId, onBack }: { messageId: string; onBack: () => void }) {
   const { message: msg, replies, isLoading } = useAdminMessageDetail(messageId);
