@@ -144,11 +144,19 @@ export function AdminContractManager() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {contracts.map((c) => {
+                  {contracts.filter(c => !(c as any).is_amendment).map((c) => {
                     const status = STATUS_CONFIG[c.status] || STATUS_CONFIG.draft;
+                    const amendmentCount = contracts.filter(a => (a as any).amendment_of_id === c.id).length;
                     return (
                       <TableRow key={c.id}>
-                        <TableCell className="font-mono text-sm">{c.contract_number}</TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {c.contract_number}
+                          {amendmentCount > 0 && (
+                            <Badge variant="outline" className="ml-1.5 text-[10px] px-1 py-0">
+                              {amendmentCount} Nachtrag{amendmentCount > 1 ? "e" : ""}
+                            </Badge>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <span className="font-medium">{c.provider_pid || "–"}</span>
                         </TableCell>
@@ -190,16 +198,19 @@ export function AdminContractManager() {
                                   <Download className="h-4 w-4 mr-2" /> PDF
                                 </DropdownMenuItem>
                               )}
+                              {(c.status === "active" || c.status === "expired") && (
+                                <DropdownMenuItem onClick={() => { setAmendmentContract(c); setShowAmendment(true); }}>
+                                  <FilePlus className="h-4 w-4 mr-2" /> Nachtrag erstellen
+                                </DropdownMenuItem>
+                              )}
                               {c.status === "active" && c.cancellation_requested_at && (
-                                <>
-                                  <DropdownMenuItem onClick={async () => {
-                                    await supabase.from("admin_contracts").update({ status: "cancelled", cancellation_effective_date: new Date().toISOString().split("T")[0] }).eq("id", c.id);
-                                    toast.success("Kündigung bestätigt");
-                                    fetchContracts();
-                                  }}>
-                                    <Ban className="h-4 w-4 mr-2" /> Kündigung bestätigen
-                                  </DropdownMenuItem>
-                                </>
+                                <DropdownMenuItem onClick={async () => {
+                                  await supabase.from("admin_contracts").update({ status: "cancelled", cancellation_effective_date: new Date().toISOString().split("T")[0] }).eq("id", c.id);
+                                  toast.success("Kündigung bestätigt");
+                                  fetchContracts();
+                                }}>
+                                  <Ban className="h-4 w-4 mr-2" /> Kündigung bestätigen
+                                </DropdownMenuItem>
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>
