@@ -228,6 +228,7 @@ export function AdminInvoiceModal({ open, onOpenChange, editInvoice, onSaved }: 
     total,
     paymentMethod,
     notes: notes || undefined,
+    issuer: issuerProfile as IssuerData,
   });
 
   const previewPdf = () => {
