@@ -133,10 +133,10 @@ export default function AdminBroadcastMessaging() {
 
       // Get profile names for variable replacement
       const userIds = roles.map(r => r.user_id);
-      const { data: profiles } = await supabase.from("profiles")
-        .select("id, full_name, readable_id, plan_name")
+      const { data: profiles } = await (supabase as any).from("profiles")
+        .select("id, full_name, readable_id")
         .in("id", userIds);
-      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
 
       const today = format(new Date(), "dd.MM.yyyy");
       const expiryDate = expiresAt ? format(new Date(expiresAt), "dd.MM.yyyy") : "";
