@@ -156,6 +156,42 @@ export type Database = {
           },
         ]
       }
+      account_notes: {
+        Row: {
+          account_id: string
+          account_type: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_system: boolean
+          note_text: string
+          reminder_at: string | null
+          resolved_at: string | null
+        }
+        Insert: {
+          account_id: string
+          account_type?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_system?: boolean
+          note_text: string
+          reminder_at?: string | null
+          resolved_at?: string | null
+        }
+        Update: {
+          account_id?: string
+          account_type?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_system?: boolean
+          note_text?: string
+          reminder_at?: string | null
+          resolved_at?: string | null
+        }
+        Relationships: []
+      }
       admin_activity_log: {
         Row: {
           action_type: string
@@ -3457,6 +3493,36 @@ export type Database = {
           metadata?: Json | null
           page_path?: string | null
           user_email?: string
+        }
+        Relationships: []
+      }
+      document_events: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          document_id: string
+          document_type: string
+          event_data: Json | null
+          event_type: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          document_id: string
+          document_type: string
+          event_data?: Json | null
+          event_type: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          document_id?: string
+          document_type?: string
+          event_data?: Json | null
+          event_type?: string
+          id?: string
         }
         Relationships: []
       }
