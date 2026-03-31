@@ -156,7 +156,8 @@ export function AdminRevenue() {
         if (p.plan_override && OVERRIDE_MAP[p.plan_override]) {
           plan = OVERRIDE_MAP[p.plan_override];
         } else if (p.plan_override === "lifetime_grant" || p.plan_override === "employee") {
-          plan = "team";
+          // Skip lifetime/employee from plan counts — they don't generate revenue
+          return;
         } else if (p.subscription_plan) {
           const sp = p.subscription_plan.toLowerCase();
           if (sp in planCounts) plan = sp as keyof PlanCounts;
