@@ -50,6 +50,7 @@ const NAV_SECTIONS: NavSection[] = [
       { value: "copecart", label: "CopeCart Abgleich", icon: <ArrowLeftRight className="w-4 h-4" /> },
       { value: "contracts", label: "Verträge", icon: <ScrollText className="w-4 h-4" /> },
       { value: "hufrente", label: "Hufrente", icon: <Shield className="w-4 h-4" /> },
+      { value: "issuer", label: "Anbieter-Profil", icon: <Building2 className="w-4 h-4" /> },
     ],
   },
   {

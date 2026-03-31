@@ -135,6 +135,7 @@ export function AdminContractManager() {
                     <TableHead>Provider</TableHead>
                     <TableHead>Plan</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Anbieter-Adresse</TableHead>
                     <TableHead>Laufzeit</TableHead>
                     <TableHead className="text-right">Aktionen</TableHead>
                   </TableRow>
@@ -158,6 +159,15 @@ export function AdminContractManager() {
                               <AlertTriangle className="h-3 w-3 ml-1" />
                             )}
                           </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate" title={
+                          c.variables_used && typeof c.variables_used === 'object' && 'ANBIETER_ADRESSE' in (c.variables_used as Record<string, unknown>)
+                            ? String((c.variables_used as Record<string, string>).ANBIETER_ADRESSE)
+                            : "–"
+                        }>
+                          {c.variables_used && typeof c.variables_used === 'object' && 'ANBIETER_ADRESSE' in (c.variables_used as Record<string, unknown>)
+                            ? String((c.variables_used as Record<string, string>).ANBIETER_ADRESSE).substring(0, 40) + (String((c.variables_used as Record<string, string>).ANBIETER_ADRESSE).length > 40 ? "…" : "")
+                            : "–"}
                         </TableCell>
                         <TableCell className="text-sm">
                           {format(new Date(c.period_start), "MM/yyyy")}

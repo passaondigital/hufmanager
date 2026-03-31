@@ -1,6 +1,19 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
+export interface IssuerData {
+  name: string;
+  company: string;
+  address: string;
+  email: string;
+  phone: string;
+  iban: string;
+  bic: string;
+  account_holder: string;
+  tax_note: string;
+  tax_id: string;
+}
+
 export interface AdminInvoiceData {
   invoiceNumber: string;
   invoiceDate: string; // DD.MM.YYYY
@@ -22,9 +35,23 @@ export interface AdminInvoiceData {
   subtotal: number;
   discount: number;
   total: number;
-  paymentMethod: string; // bank_transfer | copecart | cash
+  paymentMethod: string;
   notes?: string;
+  issuer?: IssuerData;
 }
+
+const DEFAULT_ISSUER: IssuerData = {
+  name: "Pascal Christian Schmid",
+  company: "HufManager",
+  address: "Pascal Schmid c/o Postflex #10643, Emsdettener Str. 10, 48268 Greven",
+  email: "support@hufmanager.de",
+  phone: "0152 0900 7017",
+  iban: "DE66 2020 2080 0002 8383 704",
+  bic: "SXPYDEHH",
+  account_holder: "Pascal Christian Schmid",
+  tax_note: "Gemäß §19 UStG wird keine Umsatzsteuer berechnet und ausgewiesen.",
+  tax_id: "",
+};
 
 const formatCurrency = (val: number) =>
   val.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
@@ -34,19 +61,23 @@ export function generateAdminInvoicePdf(data: AdminInvoiceData): jsPDF {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 20;
   let y = 20;
+  const issuer = data.issuer || DEFAULT_ISSUER;
 
-  // ── Header Left: HufManager ──
+  // ── Header Left: Company ──
   doc.setFontSize(20);
   doc.setFont("helvetica", "bold");
-  doc.text("HufManager", margin, y);
+  doc.text(issuer.company, margin, y);
   y += 7;
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(100);
-  doc.text("support@hufmanager.de | hufmanager.de", margin, y);
+  doc.text(`${issuer.email} | ${issuer.phone}`, margin, y);
   y += 4;
-  doc.text("Steuernummer: 43/150/40518", margin, y);
+  // Only show tax_id if provided
+  if (issuer.tax_id) {
+    doc.text(`Steuernummer: ${issuer.tax_id}`, margin, y);
+  }
   doc.setTextColor(0);
 
   // ── Header Right: RECHNUNG ──
@@ -62,8 +93,15 @@ export function generateAdminInvoicePdf(data: AdminInvoiceData): jsPDF {
   doc.text(`Zahlungsziel: ${data.dueDate}`, rightX, 40, { align: "right" });
   doc.text(`Zeitraum: ${data.periodStart} – ${data.periodEnd}`, rightX, 45, { align: "right" });
 
+  // ── Absender (klein) ──
+  y = 55;
+  doc.setFontSize(7);
+  doc.setTextColor(140);
+  doc.text(`${issuer.name} · ${issuer.address}`, margin, y);
+  doc.setTextColor(0);
+
   // ── Empfänger ──
-  y = 58;
+  y = 62;
   doc.setFontSize(8);
   doc.setTextColor(120);
   doc.text("Empfänger:", margin, y);
@@ -104,7 +142,7 @@ export function generateAdminInvoicePdf(data: AdminInvoiceData): jsPDF {
     theme: "striped",
     styles: { fontSize: 9, cellPadding: 3 },
     headStyles: {
-      fillColor: [41, 37, 36], // stone-800
+      fillColor: [41, 37, 36],
       textColor: [255, 255, 255],
       fontStyle: "bold",
     },
@@ -134,7 +172,6 @@ export function generateAdminInvoicePdf(data: AdminInvoiceData): jsPDF {
     y += 5;
   }
 
-  // Separator line
   doc.setDrawColor(180);
   doc.line(sumX, y, rightX, y);
   y += 5;
@@ -145,15 +182,11 @@ export function generateAdminInvoicePdf(data: AdminInvoiceData): jsPDF {
   doc.text(formatCurrency(data.total), rightX, y, { align: "right" });
   y += 10;
 
-  // ── §19 UStG Hinweis (Pflicht) ──
+  // ── §19 UStG Hinweis ──
   doc.setFontSize(8);
   doc.setFont("helvetica", "italic");
   doc.setTextColor(100);
-  doc.text(
-    "Gemäß §19 UStG wird keine Umsatzsteuer berechnet und ausgewiesen.",
-    margin,
-    y
-  );
+  doc.text(issuer.tax_note, margin, y);
   doc.setTextColor(0);
   y += 10;
 
@@ -179,15 +212,14 @@ export function generateAdminInvoicePdf(data: AdminInvoiceData): jsPDF {
     doc.setFontSize(8);
     doc.text(
       "Bitte überweisen Sie den Betrag unter Angabe der Rechnungsnummer auf folgendes Konto:",
-      margin,
-      y
+      margin, y
     );
     y += 5;
-    doc.text("IBAN: DE66 2020 2080 0002 8383 704", margin, y);
+    doc.text(`IBAN: ${issuer.iban}`, margin, y);
     y += 4;
-    doc.text("BIC: SXPYDEHH", margin, y);
+    doc.text(`BIC: ${issuer.bic}`, margin, y);
     y += 4;
-    doc.text("Kontoinhaber: Pascal Christian Schmid", margin, y);
+    doc.text(`Kontoinhaber: ${issuer.account_holder}`, margin, y);
     y += 8;
   }
 
@@ -198,7 +230,7 @@ export function generateAdminInvoicePdf(data: AdminInvoiceData): jsPDF {
   doc.setDrawColor(200);
   doc.line(margin, footerY - 3, pageWidth - margin, footerY - 3);
   doc.text(
-    "HufManager | support@hufmanager.de | hufmanager.de",
+    `${issuer.company} | ${issuer.email} | ${issuer.phone}`,
     pageWidth / 2,
     footerY,
     { align: "center" }

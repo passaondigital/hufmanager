@@ -16,7 +16,8 @@ import { format, addDays } from "date-fns";
 import { de } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { generateAdminInvoicePdf, generateAdminInvoicePdfBlob, type AdminInvoiceData } from "@/lib/adminInvoicePdf";
+import { generateAdminInvoicePdf, generateAdminInvoicePdfBlob, type AdminInvoiceData, type IssuerData } from "@/lib/adminInvoicePdf";
+import { useIssuerProfile } from "@/hooks/useIssuerProfile";
 
 const PLAN_DEFAULTS: Record<string, { label: string; monthly: number; yearly: number }> = {
   starter: { label: "Starter", monthly: 9.9, yearly: 99 },
@@ -53,6 +54,7 @@ interface AdminInvoiceModalProps {
 }
 
 export function AdminInvoiceModal({ open, onOpenChange, editInvoice, onSaved }: AdminInvoiceModalProps) {
+  const { profile: issuerProfile } = useIssuerProfile();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [providerSearch, setProviderSearch] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
@@ -71,6 +73,8 @@ export function AdminInvoiceModal({ open, onOpenChange, editInvoice, onSaved }: 
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+
+  const isNumberLocked = !!editInvoice && editInvoice.status !== "draft";
 
   // Search providers via user_roles join
   useEffect(() => {
@@ -224,6 +228,7 @@ export function AdminInvoiceModal({ open, onOpenChange, editInvoice, onSaved }: 
     total,
     paymentMethod,
     notes: notes || undefined,
+    issuer: issuerProfile as IssuerData,
   });
 
   const previewPdf = () => {
@@ -456,7 +461,12 @@ export function AdminInvoiceModal({ open, onOpenChange, editInvoice, onSaved }: 
                   value={invoiceNumber}
                   onChange={(e) => setInvoiceNumber(e.target.value)}
                   placeholder="Auto (HM-2026-XXXX)"
+                  disabled={isNumberLocked}
+                  className={isNumberLocked ? "bg-muted cursor-not-allowed" : ""}
                 />
+                {isNumberLocked && (
+                  <p className="text-xs text-muted-foreground">Nummer ist nach Versand gesperrt</p>
+                )}
               </div>
               <DateField label="Rechnungsdatum" date={invoiceDate} setDate={setInvoiceDate} />
               <DateField label="Zahlungsziel" date={dueDate} setDate={setDueDate} />
