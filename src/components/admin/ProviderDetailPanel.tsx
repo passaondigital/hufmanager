@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { ProviderTimeline } from "./ProviderTimeline";
 import { ProviderManualActions } from "./ProviderManualActions";
+import { ProviderDocumentsSection } from "./ProviderDocumentsSection";
 
 interface ProviderDetailPanelProps {
   providerId: string;
@@ -324,6 +325,9 @@ export function ProviderDetailPanel({ providerId, providerEmail }: ProviderDetai
           )}
         </div>
       </div>
+
+      {/* Documents Section */}
+      <ProviderDocumentsSection providerId={providerId} />
 
       {/* Timeline */}
       <div className="space-y-2 pt-2 border-t">
