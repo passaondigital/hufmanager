@@ -254,6 +254,9 @@ export function AppLayout() {
       
       {/* Botschafter Reminder Banner */}
       <BotschafterReminder />
+      
+      {/* Admin Message Popup */}
+      <AdminMessagePopup />
       </div>
     </div>
   );
