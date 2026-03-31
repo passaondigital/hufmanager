@@ -160,6 +160,15 @@ export function AdminContractManager() {
                             )}
                           </Badge>
                         </TableCell>
+                        <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate" title={
+                          c.variables_used && typeof c.variables_used === 'object' && 'ANBIETER_ADRESSE' in (c.variables_used as Record<string, unknown>)
+                            ? String((c.variables_used as Record<string, string>).ANBIETER_ADRESSE)
+                            : "–"
+                        }>
+                          {c.variables_used && typeof c.variables_used === 'object' && 'ANBIETER_ADRESSE' in (c.variables_used as Record<string, unknown>)
+                            ? String((c.variables_used as Record<string, string>).ANBIETER_ADRESSE).substring(0, 40) + (String((c.variables_used as Record<string, string>).ANBIETER_ADRESSE).length > 40 ? "…" : "")
+                            : "–"}
+                        </TableCell>
                         <TableCell className="text-sm">
                           {format(new Date(c.period_start), "MM/yyyy")}
                           {c.period_end ? ` – ${format(new Date(c.period_end), "MM/yyyy")}` : " – ∞"}
