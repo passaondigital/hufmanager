@@ -368,15 +368,36 @@ export function AdminInvoiceModal({ open, onOpenChange, editInvoice, onSaved }: 
         toast.success("Rechnung gespeichert");
       }
 
-      // Auto-log admin note for document tracking
+      // Auto-log: account note + document events
       if (!editInvoice) {
-        await supabase.from("admin_notes").insert({
-          title: `provider:${selectedProvider.id}`,
-          content: `Rechnung ${pdfData.invoiceNumber || invoiceId.slice(0, 8)} erstellt und hinterlegt. ${format(new Date(), "dd.MM.yyyy")}`,
-          type: "task",
-          priority: "normal",
-          status: "inbox",
-        }).then(({ error }) => { if (error) console.warn("Auto-note failed:", error); });
+        const invNum = pdfData.invoiceNumber || invoiceId.slice(0, 8);
+        await createAccountNote({
+          accountId: selectedProvider.id,
+          accountType: "provider",
+          noteText: `Rechnung ${invNum} über ${total.toFixed(2)} € erstellt`,
+          isSystem: true,
+        });
+        await logDocumentEvent({
+          documentId: invoiceId,
+          documentType: "invoice",
+          eventType: "created",
+          eventData: { invoice_number: invNum, total },
+        });
+      }
+      if (!uploadError) {
+        await logDocumentEvent({
+          documentId: invoiceId,
+          documentType: "invoice",
+          eventType: "pdf_generated",
+        });
+      }
+      if (andSend) {
+        await logDocumentEvent({
+          documentId: invoiceId,
+          documentType: "invoice",
+          eventType: "sent",
+          eventData: { email: selectedProvider.email },
+        });
       }
 
       onSaved();
