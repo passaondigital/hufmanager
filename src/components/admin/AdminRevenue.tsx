@@ -11,27 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import {
-  TrendingUp,
-  Euro,
-  Users,
-  Calculator,
-  Download,
-  PiggyBank,
-  Plus,
-  Trash2,
-  Receipt,
-  BarChart3,
-  Loader2,
-  Upload,
-  FileText,
-  RefreshCw,
-  CheckCircle,
-  AlertTriangle,
-  ArrowUpDown,
-  Search,
-  Calendar,
-  Banknote,
-  Scale,
+  TrendingUp, Euro, Users, Calculator, Download, PiggyBank, Plus, Trash2, Receipt,
+  BarChart3, Loader2, Upload, RefreshCw, CheckCircle, AlertTriangle, Search, Banknote, Scale,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -41,229 +22,120 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { format, startOfMonth, endOfMonth, subMonths, parseISO, isWithinInterval } from "date-fns";
 import { de } from "date-fns/locale";
 
-// ── Plan Config (single source of truth) ──
-interface PlanCounts {
-  starter: number;
-  pro: number;
-  duo: number;
-  team: number;
-}
-
-const PLAN_PRICES: Record<keyof PlanCounts, number> = {
-  starter: 9.9,
-  pro: 29,
-  duo: 49,
-  team: 79,
-};
-
-const PLAN_LABELS: Record<keyof PlanCounts, string> = {
-  starter: "Starter (9,90 €)",
-  pro: "Pro (29 €)",
-  duo: "Duo (49 €)",
-  team: "Team (79 €)",
-};
-
-const PLAN_COLORS_BADGE: Record<keyof PlanCounts, string> = {
+// ── Plan Config ──
+const PLAN_PRICES: Record<string, number> = { starter: 9.9, pro: 29, duo: 49, team: 79 };
+const PLAN_LABELS: Record<string, string> = { starter: "Starter (9,90 €)", pro: "Pro (29 €)", duo: "Duo (49 €)", team: "Team (79 €)" };
+const PLAN_COLORS_BADGE: Record<string, string> = {
   starter: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
   pro: "bg-primary/10 text-primary border-primary/30",
   duo: "bg-blue-500/10 text-blue-400 border-blue-500/30",
   team: "bg-purple-500/10 text-purple-400 border-purple-500/30",
 };
-
 const PIE_COLORS = ["hsl(var(--primary))", "hsl(142, 76%, 36%)", "hsl(221, 83%, 53%)", "hsl(271, 91%, 65%)"];
 
 const EXPENSE_CATEGORIES = [
-  "Hosting & Infrastruktur",
-  "Software & Lizenzen",
-  "Marketing",
-  "CopeCart Gebühren",
-  "Steuerberater",
-  "Personal",
-  "Büro & Arbeitsmittel",
-  "Versicherungen",
-  "Sonstiges",
+  "Hosting & Infrastruktur", "Software & Lizenzen", "Marketing", "CopeCart Gebühren",
+  "Steuerberater", "Personal", "Büro & Arbeitsmittel", "Versicherungen", "Sonstiges",
 ];
 
-// ── Types ──
 interface Expense {
-  id: string;
-  title: string;
-  amount: number;
-  category: string;
-  expense_date: string;
-  description: string | null;
-  receipt_url: string | null;
+  id: string; title: string; amount: number; category: string;
+  expense_date: string; description: string | null; receipt_url: string | null;
 }
-
 interface RevenueLogEntry {
-  id: string;
-  event_type: string;
-  amount: number;
-  currency: string;
-  customer_name: string | null;
-  customer_email: string | null;
-  plan_name: string | null;
-  transaction_id: string | null;
-  created_at: string;
+  id: string; event_type: string; amount: number; currency: string;
+  customer_name: string | null; customer_email: string | null;
+  plan_name: string | null; transaction_id: string | null; created_at: string;
 }
 
-// ── Component ──
-// Real MRR data from verified payments
-interface RealMRRData {
+// Verified revenue data
+interface VerifiedRevenueData {
   verifiedMRR: number;
+  verifiedARR: number;
+  payingProviders: number;
   annualContracts: { name: string; pid: string; amount: number; monthlyEquiv: number; validUntil: string }[];
   monthlySubscribers: { name: string; pid: string; amount: number; plan: string }[];
-  trialUsers: number;
-  freeUsers: number;
+}
+
+// Provider segmentation
+interface ProviderSegment {
+  totalProviders: number;
+  payingProviders: number;
+  trialProviders: number;
+  expiredProviders: number;
+  lifetimeProviders: number;
+  totalClients: number;
+  totalPartners: number;
+  totalEmployees: number;
+  planBreakdown: Record<string, number>; // only paying providers
 }
 
 export function AdminRevenue() {
-  const [counts, setCounts] = useState<PlanCounts>({ starter: 0, pro: 0, duo: 0, team: 0 });
-  const [dbCounts, setDbCounts] = useState<PlanCounts | null>(null);
-  const [loadingCounts, setLoadingCounts] = useState(true);
+  const [verified, setVerified] = useState<VerifiedRevenueData>({ verifiedMRR: 0, verifiedARR: 0, payingProviders: 0, annualContracts: [], monthlySubscribers: [] });
+  const [segment, setSegment] = useState<ProviderSegment>({ totalProviders: 0, payingProviders: 0, trialProviders: 0, expiredProviders: 0, lifetimeProviders: 0, totalClients: 0, totalPartners: 0, totalEmployees: 0, planBreakdown: {} });
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loadingExpenses, setLoadingExpenses] = useState(true);
   const [revenueLog, setRevenueLog] = useState<RevenueLogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingExpenses, setLoadingExpenses] = useState(true);
   const [loadingRevLog, setLoadingRevLog] = useState(true);
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
   const [newExpense, setNewExpense] = useState({ title: "", amount: "", category: "Sonstiges", description: "", expense_date: new Date().toISOString().slice(0, 10) });
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), "yyyy-MM"));
   const [expenseSearch, setExpenseSearch] = useState("");
   const [expenseCategoryFilter, setExpenseCategoryFilter] = useState("all");
-  const [realMRR, setRealMRR] = useState<RealMRRData>({ verifiedMRR: 0, annualContracts: [], monthlySubscribers: [], trialUsers: 0, freeUsers: 0 });
-  const [loadingRealMRR, setLoadingRealMRR] = useState(true);
 
   useEffect(() => {
-    fetchSubscriptionCounts();
-    fetchExpenses();
-    fetchRevenueLog();
-    fetchRealMRR();
+    fetchAll();
   }, []);
 
-  // ── Data Fetching ──
-  const fetchSubscriptionCounts = async () => {
-    setLoadingCounts(true);
-    try {
-      // Count providers per plan from profiles
-      const { data: allProfiles, error } = await supabase
-        .from("profiles")
-        .select("subscription_plan, plan_override")
-        .is("deleted_at", null);
-      if (error) throw error;
-
-      const planCounts: PlanCounts = { starter: 0, pro: 0, duo: 0, team: 0 };
-      
-      // Map overrides and subscription_plan to the 4-tier model
-      const OVERRIDE_MAP: Record<string, keyof PlanCounts> = {
-        copecart_starter: "starter",
-        copecart_pro: "pro",
-        copecart_duo: "duo",
-        copecart_team: "team",
-        copecart_anfaenger: "starter",
-        copecart_fortgeschritten: "pro",
-        copecart_profi: "duo",
-      };
-
-      (allProfiles || []).forEach((p: any) => {
-        let plan: keyof PlanCounts | null = null;
-        
-        if (p.plan_override && OVERRIDE_MAP[p.plan_override]) {
-          plan = OVERRIDE_MAP[p.plan_override];
-        } else if (p.plan_override === "lifetime_grant" || p.plan_override === "employee") {
-          // Skip lifetime/employee from plan counts — they don't generate revenue
-          return;
-        } else if (p.subscription_plan) {
-          const sp = p.subscription_plan.toLowerCase();
-          if (sp in planCounts) plan = sp as keyof PlanCounts;
-        }
-        
-        if (plan) planCounts[plan]++;
-      });
-
-      setDbCounts(planCounts);
-      setCounts(planCounts);
-    } catch (err) {
-      console.error("Error fetching subscription counts:", err);
-    } finally {
-      setLoadingCounts(false);
-    }
+  const fetchAll = () => {
+    fetchVerifiedRevenue();
+    fetchProviderSegments();
+    fetchExpenses();
+    fetchRevenueLog();
   };
 
-  const fetchExpenses = async () => {
-    setLoadingExpenses(true);
-    try {
-      const { data, error } = await supabase
-        .from("admin_expenses")
-        .select("id, title, amount, category, expense_date, description, receipt_url")
-        .order("expense_date", { ascending: false })
-        .limit(500);
-      if (error) throw error;
-      setExpenses((data || []) as Expense[]);
-    } catch (err) {
-      console.error("Error fetching expenses:", err);
-    } finally {
-      setLoadingExpenses(false);
-    }
-  };
-
-  const fetchRevenueLog = async () => {
-    setLoadingRevLog(true);
-    try {
-      const { data, error } = await supabase
-        .from("admin_revenue_log")
-        .select("id, event_type, amount, currency, customer_name, customer_email, plan_name, transaction_id, created_at")
-        .order("created_at", { ascending: false })
-        .limit(500);
-      if (error) throw error;
-      setRevenueLog((data || []) as RevenueLogEntry[]);
-    } catch (err) {
-      console.error("Error fetching revenue log:", err);
-    } finally {
-      setLoadingRevLog(false);
-    }
-  };
-
-  // ── Real MRR from verified payments ──
-  const fetchRealMRR = async () => {
-    setLoadingRealMRR(true);
+  // ── QUELLE DER WAHRHEIT: admin_provider_payments ──
+  const fetchVerifiedRevenue = async () => {
+    setLoading(true);
     try {
       const todayStr = new Date().toISOString().slice(0, 10);
-      
-      // Get active payments with provider details
+
+      // Quelle A: Manuelle Zahlungen (verifiziert)
       const { data: payments } = await supabase
         .from("admin_provider_payments")
         .select("amount, provider_id, period_start, period_end, plan_name, payment_method")
         .lte("period_start", todayStr)
         .gte("period_end", todayStr);
 
-      // Get provider profiles to exclude demo/lifetime/admin
+      // Get provider profiles to filter
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, email, full_name, readable_id, plan_override, subscription_plan, subscription_status, access_valid_until")
+        .select("id, email, full_name, readable_id, plan_override, subscription_plan, access_valid_until")
         .is("deleted_at", null);
 
       const profileMap = new Map((profiles || []).map(p => [p.id, p]));
-      
-      // Filter: exclude demo, lifetime, employee accounts
+
+      // Strict filtering: only real providers (PID-*), no demo, no lifetime, no admin
       const validPayments = (payments || []).filter(p => {
         const profile = profileMap.get(p.provider_id);
         if (!profile) return false;
         if (isDemoEmail(profile.email)) return false;
         if (profile.plan_override === "lifetime_grant" || profile.plan_override === "employee") return false;
+        // Must be a provider (PID prefix)
+        if (profile.readable_id && !profile.readable_id.startsWith("PID-")) return false;
         return true;
       });
 
-      const annualContracts: RealMRRData["annualContracts"] = [];
-      const monthlySubscribers: RealMRRData["monthlySubscribers"] = [];
+      const annualContracts: VerifiedRevenueData["annualContracts"] = [];
+      const monthlySubscribers: VerifiedRevenueData["monthlySubscribers"] = [];
       let verifiedMRR = 0;
 
       validPayments.forEach(p => {
-        const profile = profileMap.get(p.provider_id);
-        if (!profile) return;
+        const profile = profileMap.get(p.provider_id)!;
         const monthlyEquiv = normalizeToMonthlyMRR(p.amount || 0, p.period_start ?? null, p.period_end ?? null);
         verifiedMRR += monthlyEquiv;
 
-        // Determine if annual or monthly
         const start = p.period_start ? new Date(p.period_start) : null;
         const end = p.period_end ? new Date(p.period_end) : null;
         const diffDays = start && end ? (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24) : 0;
@@ -273,7 +145,7 @@ export function AdminRevenue() {
             name: profile.full_name || "Unbekannt",
             pid: profile.readable_id || profile.id.slice(0, 8),
             amount: p.amount || 0,
-            monthlyEquiv,
+            monthlyEquiv: Math.round(monthlyEquiv * 100) / 100,
             validUntil: p.period_end || "",
           });
         } else {
@@ -286,46 +158,107 @@ export function AdminRevenue() {
         }
       });
 
-      // Count trial/free users (no active payment, not lifetime, not demo)
-      const payingIds = new Set(validPayments.map(p => p.provider_id));
-      const nonPayingProfiles = (profiles || []).filter(p => {
-        if (isDemoEmail(p.email)) return false;
-        if (p.plan_override === "lifetime_grant" || p.plan_override === "employee") return false;
-        if (payingIds.has(p.id)) return false;
-        // Only count providers (those with a subscription_plan or plan_override)
-        return p.subscription_plan || p.plan_override;
-      });
-      
-      const trialUsers = nonPayingProfiles.filter(p => 
-        p.subscription_status === "trialing" || !p.subscription_status
-      ).length;
+      // ARR = monthly subs × 12 + annual contract values
+      const monthlySubTotal = monthlySubscribers.reduce((s, m) => s + m.amount, 0);
+      const annualTotal = annualContracts.reduce((s, a) => s + a.amount, 0);
+      const verifiedARR = (monthlySubTotal * 12) + annualTotal;
 
-      setRealMRR({
+      setVerified({
         verifiedMRR: Math.round(verifiedMRR * 100) / 100,
+        verifiedARR: Math.round(verifiedARR * 100) / 100,
+        payingProviders: new Set(validPayments.map(p => p.provider_id)).size,
         annualContracts,
         monthlySubscribers,
-        trialUsers,
-        freeUsers: nonPayingProfiles.length - trialUsers,
       });
     } catch (err) {
-      console.error("Error fetching real MRR:", err);
+      console.error("Error fetching verified revenue:", err);
     } finally {
-      setLoadingRealMRR(false);
+      setLoading(false);
     }
+  };
+
+  // ── Provider/Client/Partner segmentation ──
+  const fetchProviderSegments = async () => {
+    try {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, email, readable_id, subscription_plan, plan_override, account_status")
+        .is("deleted_at", null);
+
+      const all = (profiles || []).filter(p => !isDemoEmail(p.email));
+      const now = new Date();
+
+      // Segment by readable_id prefix
+      const providers = all.filter(p => p.readable_id?.startsWith("PID-"));
+      const clients = all.filter(p => p.readable_id?.startsWith("KID-"));
+      const partners = all.filter(p => p.readable_id?.startsWith("PRID-"));
+      const employees = all.filter(p => p.readable_id?.startsWith("EID-"));
+
+      const lifetimeProviders = providers.filter(p => p.plan_override === "lifetime_grant").length;
+      const trialProviders = providers.filter(p =>
+        p.plan_override !== "lifetime_grant" && p.plan_override !== "employee" &&
+        (p.account_status === "trial")
+      ).length;
+      const expiredProviders = providers.filter(p =>
+        p.plan_override !== "lifetime_grant" && p.plan_override !== "employee" &&
+        p.account_status === "expired"
+      ).length;
+
+      // Plan breakdown for providers only (excluding lifetime/demo)
+      const planBreakdown: Record<string, number> = {};
+      providers.forEach(p => {
+        if (p.plan_override === "lifetime_grant" || p.plan_override === "employee") return;
+        const plan = p.subscription_plan || "starter";
+        planBreakdown[plan] = (planBreakdown[plan] || 0) + 1;
+      });
+
+      setSegment({
+        totalProviders: providers.length,
+        payingProviders: 0, // will be set from verified data
+        trialProviders,
+        expiredProviders,
+        lifetimeProviders,
+        totalClients: clients.length,
+        totalPartners: partners.length,
+        totalEmployees: employees.length,
+        planBreakdown,
+      });
+    } catch (err) {
+      console.error("Error fetching segments:", err);
+    }
+  };
+
+  const fetchExpenses = async () => {
+    setLoadingExpenses(true);
+    try {
+      const { data, error } = await supabase
+        .from("admin_expenses")
+        .select("id, title, amount, category, expense_date, description, receipt_url")
+        .order("expense_date", { ascending: false }).limit(500);
+      if (error) throw error;
+      setExpenses((data || []) as Expense[]);
+    } catch (err) { console.error(err); } finally { setLoadingExpenses(false); }
+  };
+
+  const fetchRevenueLog = async () => {
+    setLoadingRevLog(true);
+    try {
+      const { data, error } = await supabase
+        .from("admin_revenue_log")
+        .select("id, event_type, amount, currency, customer_name, customer_email, plan_name, transaction_id, created_at")
+        .order("created_at", { ascending: false }).limit(500);
+      if (error) throw error;
+      setRevenueLog((data || []) as RevenueLogEntry[]);
+    } catch (err) { console.error(err); } finally { setLoadingRevLog(false); }
   };
 
   // ── CRUD ──
   const addExpense = async () => {
-    if (!newExpense.title || !newExpense.amount) {
-      toast.error("Titel und Betrag sind Pflicht.");
-      return;
-    }
+    if (!newExpense.title || !newExpense.amount) { toast.error("Titel und Betrag sind Pflicht."); return; }
     try {
       const { error } = await supabase.from("admin_expenses").insert({
-        title: newExpense.title,
-        amount: parseFloat(newExpense.amount),
-        category: newExpense.category,
-        description: newExpense.description || null,
+        title: newExpense.title, amount: parseFloat(newExpense.amount),
+        category: newExpense.category, description: newExpense.description || null,
         expense_date: newExpense.expense_date,
       });
       if (error) throw error;
@@ -333,53 +266,33 @@ export function AdminRevenue() {
       setShowExpenseDialog(false);
       setNewExpense({ title: "", amount: "", category: "Sonstiges", description: "", expense_date: new Date().toISOString().slice(0, 10) });
       fetchExpenses();
-    } catch (err: any) {
-      toast.error(err.message || "Fehler beim Speichern");
-    }
+    } catch (err: any) { toast.error(err.message || "Fehler"); }
   };
 
   const deleteExpense = async (id: string) => {
     try {
       const { error } = await supabase.from("admin_expenses").delete().eq("id", id);
       if (error) throw error;
-      toast.success("Ausgabe gelöscht");
-      fetchExpenses();
-    } catch (err: any) {
-      toast.error(err.message || "Fehler");
-    }
+      toast.success("Ausgabe gelöscht"); fetchExpenses();
+    } catch (err: any) { toast.error(err.message || "Fehler"); }
   };
 
-  // ── Computed Data ──
-  const totalSubs = Object.values(counts).reduce((a, b) => a + b, 0);
-  const monthlyRevenue = Object.entries(counts).reduce(
-    (sum, [plan, count]) => sum + count * PLAN_PRICES[plan as keyof PlanCounts], 0
-  );
-  const yearlyRevenue = monthlyRevenue * 12;
-
-  // Monthly expenses for selected month
+  // ── Computed ──
+  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
   const selectedMonthStart = startOfMonth(parseISO(selectedMonth + "-01"));
   const selectedMonthEnd = endOfMonth(selectedMonthStart);
 
-  const monthlyExpenses = useMemo(() => 
-    expenses.filter(e => {
-      const d = parseISO(e.expense_date);
-      return isWithinInterval(d, { start: selectedMonthStart, end: selectedMonthEnd });
-    }), [expenses, selectedMonth]
+  const monthlyExpenses = useMemo(() =>
+    expenses.filter(e => isWithinInterval(parseISO(e.expense_date), { start: selectedMonthStart, end: selectedMonthEnd })),
+    [expenses, selectedMonth]
   );
 
-  const totalMonthlyExpenses = monthlyExpenses.reduce((s, e) => s + e.amount, 0);
-  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
-
-  // Expenses by category for pie chart
   const expenseByCat = useMemo(() => {
     const catMap: Record<string, number> = {};
-    expenses.forEach(e => {
-      catMap[e.category] = (catMap[e.category] || 0) + e.amount;
-    });
+    expenses.forEach(e => { catMap[e.category] = (catMap[e.category] || 0) + e.amount; });
     return Object.entries(catMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
   }, [expenses]);
 
-  // Filtered expenses
   const filteredExpenses = useMemo(() => {
     return expenses.filter(e => {
       const matchSearch = !expenseSearch || e.title.toLowerCase().includes(expenseSearch.toLowerCase()) || e.description?.toLowerCase().includes(expenseSearch.toLowerCase());
@@ -388,23 +301,19 @@ export function AdminRevenue() {
     });
   }, [expenses, expenseSearch, expenseCategoryFilter]);
 
-  // CopeCart reconciliation: compare webhook log vs expected
+  // CopeCart stats from webhook log
   const copecartStats = useMemo(() => {
     const payments = revenueLog.filter(r => r.event_type === "payment" || r.event_type === "subscription_payment");
     const refunds = revenueLog.filter(r => r.event_type === "refund" || r.event_type === "chargeback");
     const totalWebhookRevenue = payments.reduce((s, r) => s + r.amount, 0);
     const totalRefunds = refunds.reduce((s, r) => s + r.amount, 0);
-    return {
-      totalPayments: payments.length,
-      totalWebhookRevenue,
-      totalRefunds,
-      netRevenue: totalWebhookRevenue - totalRefunds,
-      refundCount: refunds.length,
-      lastEvent: revenueLog[0]?.created_at || null,
-    };
+    return { totalPayments: payments.length, totalWebhookRevenue, totalRefunds, netRevenue: totalWebhookRevenue - totalRefunds, refundCount: refunds.length, lastEvent: revenueLog[0]?.created_at || null };
   }, [revenueLog]);
 
-  // 6-month trend with REAL data from revenue_log + expenses
+  // Verified total revenue = manual payments + copecart webhooks
+  const verifiedTotalRevenue = verified.verifiedARR + copecartStats.netRevenue;
+
+  // 6-month trend (only verified data)
   const trendData = useMemo(() => {
     const months = [];
     const now = new Date();
@@ -414,155 +323,101 @@ export function AdminRevenue() {
       const mEnd = endOfMonth(d);
       const label = format(d, "MMM yy", { locale: de });
 
-      const monthExpenses = expenses.filter(e => {
-        const ed = parseISO(e.expense_date);
-        return isWithinInterval(ed, { start: mStart, end: mEnd });
-      }).reduce((s, e) => s + e.amount, 0);
-
-      const monthPayments = revenueLog.filter(r => {
+      const monthExpenses = expenses.filter(e => isWithinInterval(parseISO(e.expense_date), { start: mStart, end: mEnd })).reduce((s, e) => s + e.amount, 0);
+      const monthWebhookPayments = revenueLog.filter(r => {
         const rd = parseISO(r.created_at);
         return isWithinInterval(rd, { start: mStart, end: mEnd }) && (r.event_type === "payment" || r.event_type === "subscription_payment");
       }).reduce((s, r) => s + r.amount, 0);
 
-      // Only show real data - no estimates
-      const einnahmen = monthPayments;
-
       months.push({
         month: label,
-        einnahmen: Math.round(einnahmen * 100) / 100,
+        einnahmen: Math.round(monthWebhookPayments * 100) / 100,
         ausgaben: monthExpenses,
-        gewinn: Math.round((einnahmen - monthExpenses) * 100) / 100,
+        gewinn: Math.round((monthWebhookPayments - monthExpenses) * 100) / 100,
       });
     }
     return months;
-  }, [monthlyRevenue, expenses, revenueLog]);
-
-  const updateCount = (plan: keyof PlanCounts, value: string) => {
-    const num = parseInt(value) || 0;
-    setCounts(prev => ({ ...prev, [plan]: Math.max(0, num) }));
-  };
+  }, [expenses, revenueLog]);
 
   // ── Exports ──
   const exportCSV = () => {
     const rows = [
-      ["=== HufManager Finanz-Export ===", "", "", "", format(new Date(), "dd.MM.yyyy HH:mm")],
+      ["=== HufManager Finanz-Export (verifiziert) ===", "", "", "", format(new Date(), "dd.MM.yyyy HH:mm")],
       [""],
-      ["=== EINNAHMEN (Abo-basiert) ===", "", "", "", ""],
-      ["Plan", "Preis/Monat", "Anzahl Abos", "Monatlich", "Jährlich"],
-      ...Object.entries(counts).map(([plan, count]) => {
-        const price = PLAN_PRICES[plan as keyof PlanCounts];
-        return [plan.charAt(0).toUpperCase() + plan.slice(1), `${price.toFixed(2)}`, count.toString(), `${(count * price).toFixed(2)}`, `${(count * price * 12).toFixed(2)}`];
-      }),
-      ["Gesamt", "", totalSubs.toString(), `${monthlyRevenue.toFixed(2)}`, `${yearlyRevenue.toFixed(2)}`],
+      ["=== VERIFIZIERTE EINNAHMEN ==="],
+      ["MRR (verifiziert)", `${verified.verifiedMRR.toFixed(2)} €`],
+      ["ARR (verifiziert)", `${verified.verifiedARR.toFixed(2)} €`],
+      ["Zahlende Provider", verified.payingProviders.toString()],
       [""],
-      ["=== COPECART WEBHOOK-LOG ===", "", "", "", ""],
+      ["=== JAHRESVERTRÄGE ==="],
+      ["Name", "PID", "Betrag", "Monatlich", "Gültig bis"],
+      ...verified.annualContracts.map(c => [c.name, c.pid, `${c.amount.toFixed(2)}`, `${c.monthlyEquiv.toFixed(2)}`, c.validUntil]),
+      [""],
+      ["=== MONATSABOS ==="],
+      ["Name", "PID", "Betrag", "Plan"],
+      ...verified.monthlySubscribers.map(m => [m.name, m.pid, `${m.amount.toFixed(2)}`, m.plan]),
+      [""],
+      ["=== COPECART WEBHOOK-LOG ==="],
       ["Datum", "Typ", "Betrag", "Kunde", "Transaktion"],
-      ...revenueLog.map(r => [
-        format(parseISO(r.created_at), "dd.MM.yyyy HH:mm"),
-        r.event_type,
-        r.amount.toFixed(2),
-        r.customer_name || r.customer_email || "-",
-        r.transaction_id || "-",
-      ]),
+      ...revenueLog.map(r => [format(parseISO(r.created_at), "dd.MM.yyyy HH:mm"), r.event_type, r.amount.toFixed(2), r.customer_name || r.customer_email || "-", r.transaction_id || "-"]),
       [""],
-      ["=== AUSGABEN ===", "", "", "", ""],
+      ["=== AUSGABEN ==="],
       ["Titel", "Kategorie", "Betrag", "Datum", "Beschreibung"],
       ...expenses.map(e => [e.title, e.category, e.amount.toFixed(2), e.expense_date, e.description || ""]),
-      ["Gesamt Ausgaben", "", totalExpenses.toFixed(2), "", ""],
+      ["Gesamt Ausgaben", "", totalExpenses.toFixed(2)],
       [""],
-      ["=== EÜR (Vereinfacht) ===", "", "", "", ""],
-      ["Einnahmen (CopeCart netto)", "", copecartStats.netRevenue.toFixed(2), "", ""],
-      ["Einnahmen (MRR-basiert/Monat)", "", monthlyRevenue.toFixed(2), "", ""],
-      ["Ausgaben (Gesamt)", "", totalExpenses.toFixed(2), "", ""],
-      ["Gewinn/Verlust (MRR - Ausgaben)", "", (monthlyRevenue - totalExpenses).toFixed(2), "", ""],
+      ["=== EÜR ==="],
+      ["Einnahmen (verifiziert)", `${verifiedTotalRevenue.toFixed(2)} €`],
+      ["Ausgaben", `${totalExpenses.toFixed(2)} €`],
+      ["Gewinn/Verlust", `${(verifiedTotalRevenue - totalExpenses).toFixed(2)} €`],
       [""],
-      ["Hinweis: § 19 UStG – Keine USt. Alle Beträge brutto = netto.", "", "", "", ""],
+      ["§ 19 UStG – Keine USt. Alle Beträge brutto = netto."],
     ];
     const csv = rows.map(r => r.join(";")).join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = `hufmanager-finanzbericht-${format(new Date(), "yyyy-MM-dd")}.csv`;
-    a.click();
+    a.href = url; a.download = `hufmanager-finanzbericht-${format(new Date(), "yyyy-MM-dd")}.csv`; a.click();
     URL.revokeObjectURL(url);
   };
 
   const exportJSON = () => {
-    const data = {
-      exportDate: new Date().toISOString(),
-      planCounts: counts,
-      mrr: monthlyRevenue,
-      arr: yearlyRevenue,
-      copecartStats,
-      revenueLog,
-      expenses,
-      trendData,
-    };
+    const data = { exportDate: new Date().toISOString(), verified, segment, copecartStats, revenueLog, expenses, trendData };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = `hufmanager-finanzdaten-${format(new Date(), "yyyy-MM-dd")}.json`;
-    a.click();
+    a.href = url; a.download = `hufmanager-finanzdaten-${format(new Date(), "yyyy-MM-dd")}.json`; a.click();
     URL.revokeObjectURL(url);
   };
 
-  // ── CSV Import ──
+  // CSV Import
   const handleExpenseImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
     const reader = new FileReader();
     reader.onload = async (ev) => {
       try {
         const text = ev.target?.result as string;
         const lines = text.split("\n").filter(l => l.trim());
-        if (lines.length < 2) {
-          toast.error("CSV muss mindestens eine Kopfzeile und eine Datenzeile enthalten");
-          return;
-        }
-        
-        // Parse header
+        if (lines.length < 2) { toast.error("CSV muss Kopfzeile + Daten enthalten"); return; }
         const sep = lines[0].includes(";") ? ";" : ",";
         const headers = lines[0].split(sep).map(h => h.trim().toLowerCase());
-        
-        const titleIdx = headers.findIndex(h => h.includes("titel") || h.includes("title") || h.includes("bezeichnung"));
-        const amountIdx = headers.findIndex(h => h.includes("betrag") || h.includes("amount") || h.includes("summe"));
+        const titleIdx = headers.findIndex(h => h.includes("titel") || h.includes("title"));
+        const amountIdx = headers.findIndex(h => h.includes("betrag") || h.includes("amount"));
         const dateIdx = headers.findIndex(h => h.includes("datum") || h.includes("date"));
         const catIdx = headers.findIndex(h => h.includes("kategorie") || h.includes("category"));
-        
-        if (titleIdx === -1 || amountIdx === -1) {
-          toast.error("CSV muss 'Titel' und 'Betrag' Spalten enthalten");
-          return;
-        }
-
+        if (titleIdx === -1 || amountIdx === -1) { toast.error("CSV muss 'Titel' und 'Betrag' enthalten"); return; }
         const rows = [];
         for (let i = 1; i < lines.length; i++) {
           const cols = lines[i].split(sep).map(c => c.trim().replace(/^"|"$/g, ""));
           if (!cols[titleIdx] || !cols[amountIdx]) continue;
-          
-          rows.push({
-            title: cols[titleIdx],
-            amount: parseFloat(cols[amountIdx].replace(",", ".")) || 0,
-            expense_date: dateIdx >= 0 && cols[dateIdx] ? cols[dateIdx] : new Date().toISOString().slice(0, 10),
-            category: catIdx >= 0 && cols[catIdx] ? cols[catIdx] : "Sonstiges",
-          });
+          rows.push({ title: cols[titleIdx], amount: parseFloat(cols[amountIdx].replace(",", ".")) || 0, expense_date: dateIdx >= 0 && cols[dateIdx] ? cols[dateIdx] : new Date().toISOString().slice(0, 10), category: catIdx >= 0 && cols[catIdx] ? cols[catIdx] : "Sonstiges" });
         }
-
-        if (rows.length === 0) {
-          toast.error("Keine gültigen Zeilen gefunden");
-          return;
-        }
-
+        if (rows.length === 0) { toast.error("Keine gültigen Zeilen"); return; }
         const { error } = await supabase.from("admin_expenses").insert(rows);
         if (error) throw error;
-        
-        toast.success(`${rows.length} Ausgaben importiert`);
-        fetchExpenses();
-      } catch (err: any) {
-        toast.error(err.message || "Import fehlgeschlagen");
-      }
+        toast.success(`${rows.length} Ausgaben importiert`); fetchExpenses();
+      } catch (err: any) { toast.error(err.message || "Import fehlgeschlagen"); }
     };
     reader.readAsText(file);
     e.target.value = "";
@@ -578,60 +433,61 @@ export function AdminRevenue() {
             Finanz-Dashboard
           </h2>
           <p className="text-muted-foreground text-sm mt-1">
-            {loadingCounts ? "Lade Abo-Daten..." : `${totalSubs} aktive Abos`} · § 19 UStG · CopeCart-Reconciliation
+            Nur verifizierte Zahlungen · § 19 UStG
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" size="sm" onClick={() => { fetchSubscriptionCounts(); fetchExpenses(); fetchRevenueLog(); fetchRealMRR(); }} className="gap-2">
-            <RefreshCw className="w-4 h-4" />
-            Aktualisieren
+          <Button variant="outline" size="sm" onClick={fetchAll} className="gap-2">
+            <RefreshCw className="w-4 h-4" />Aktualisieren
           </Button>
           <Button variant="outline" size="sm" onClick={exportCSV} className="gap-2">
-            <Download className="w-4 h-4" />
-            CSV
+            <Download className="w-4 h-4" />CSV
           </Button>
           <Button variant="outline" size="sm" onClick={exportJSON} className="gap-2">
-            <Download className="w-4 h-4" />
-            JSON
+            <Download className="w-4 h-4" />JSON
           </Button>
         </div>
       </div>
 
-      {/* Verifizierte MRR/ARR */}
+      {/* ═══ ZEILE 1: Verifizierte Zahlen ═══ */}
       <Card className="border-primary/30 bg-primary/5">
         <CardContent className="pt-5 pb-4">
           <div className="flex items-center gap-2 mb-3">
             <CheckCircle className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold">Verifizierte Einnahmen (nur bestätigte Zahlungen)</span>
+            <span className="text-sm font-semibold">Verifizierte Einnahmen</span>
+            <Badge variant="outline" className="text-[10px] ml-auto">Quelle: Zahlungserfassung</Badge>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <p className="text-xs text-muted-foreground">MRR (verifiziert)</p>
-              <p className="text-2xl font-bold text-primary">{loadingRealMRR ? <Loader2 className="w-5 h-5 animate-spin" /> : `${realMRR.verifiedMRR.toFixed(2)} €`}</p>
+              <p className="text-2xl font-bold text-primary">
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : `${verified.verifiedMRR.toFixed(2)} €`}
+              </p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">ARR (verifiziert)</p>
               <p className="text-2xl font-bold text-primary">
-                {loadingRealMRR ? <Loader2 className="w-5 h-5 animate-spin" /> : 
-                  `${((realMRR.monthlySubscribers.reduce((s, m) => s + m.amount, 0) * 12) + realMRR.annualContracts.reduce((s, a) => s + a.amount, 0)).toFixed(2)} €`
-                }
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : `${verified.verifiedARR.toFixed(2)} €`}
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Jahresverträge aktiv</p>
-              <p className="text-2xl font-bold">{realMRR.annualContracts.length}</p>
-              <p className="text-[10px] text-muted-foreground">Wert: {realMRR.annualContracts.reduce((s, a) => s + a.amount, 0).toFixed(0)} €</p>
+              <p className="text-xs text-muted-foreground">Zahlende Provider</p>
+              <p className="text-2xl font-bold">{verified.payingProviders}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Starter ohne Zahlung</p>
-              <p className="text-2xl font-bold">{realMRR.trialUsers}</p>
-              <p className="text-[10px] text-muted-foreground">(Trial)</p>
+              <p className="text-xs text-muted-foreground">Jahresverträge aktiv</p>
+              <p className="text-2xl font-bold">{verified.annualContracts.length}</p>
+              <p className="text-[10px] text-muted-foreground">
+                Wert: {verified.annualContracts.reduce((s, a) => s + a.amount, 0).toFixed(0)} €
+              </p>
             </div>
           </div>
-          {!loadingRealMRR && realMRR.annualContracts.length > 0 && (
+
+          {/* Annual contract details */}
+          {!loading && verified.annualContracts.length > 0 && (
             <div className="mt-3 pt-3 border-t border-border/50 space-y-1">
               <p className="text-xs font-medium text-muted-foreground">Jahresverträge:</p>
-              {realMRR.annualContracts.map((c, i) => (
+              {verified.annualContracts.map((c, i) => (
                 <div key={i} className="flex items-center justify-between text-xs">
                   <span>{c.name} <span className="text-muted-foreground">({c.pid})</span></span>
                   <span className="font-mono">{c.amount.toFixed(0)} €/Jahr = <span className="text-primary">{c.monthlyEquiv.toFixed(2)} €/Mo.</span> · bis {c.validUntil ? format(parseISO(c.validUntil), "dd.MM.yyyy") : "–"}</span>
@@ -639,10 +495,10 @@ export function AdminRevenue() {
               ))}
             </div>
           )}
-          {!loadingRealMRR && realMRR.monthlySubscribers.length > 0 && (
+          {!loading && verified.monthlySubscribers.length > 0 && (
             <div className="mt-2 pt-2 border-t border-border/50 space-y-1">
               <p className="text-xs font-medium text-muted-foreground">Monatsabos:</p>
-              {realMRR.monthlySubscribers.map((m, i) => (
+              {verified.monthlySubscribers.map((m, i) => (
                 <div key={i} className="flex items-center justify-between text-xs">
                   <span>{m.name} <span className="text-muted-foreground">({m.pid})</span></span>
                   <span className="font-mono">{m.amount.toFixed(2)} €/Mo. · {m.plan}</span>
@@ -650,75 +506,50 @@ export function AdminRevenue() {
               ))}
             </div>
           )}
-          <p className="text-[10px] text-muted-foreground/50 mt-2">Demo-, Lifetime- und Admin-Accounts ausgeschlossen</p>
+          <p className="text-[10px] text-muted-foreground/50 mt-2">Demo-, Lifetime-, Admin- und Client-Accounts ausgeschlossen. Nur PID-Provider mit erfasster Zahlung.</p>
         </CardContent>
       </Card>
 
-      {/* Theoretical KPI Cards (plan × count) */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      {/* ═══ ZEILE 2: Geschätzte / Account-Statistiken ═══ */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
         <Card>
-          <CardContent className="pt-5 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Users className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Abos (Plan-basiert)</p>
-                <p className="text-2xl font-bold">{loadingCounts ? <Loader2 className="w-5 h-5 animate-spin" /> : totalSubs}</p>
-              </div>
-            </div>
+          <CardContent className="pt-4 pb-3 text-center">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Provider gesamt</p>
+            <p className="text-2xl font-bold">{segment.totalProviders}</p>
+            <p className="text-[10px] text-muted-foreground">davon {segment.lifetimeProviders} Lifetime</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-5 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-muted">
-                <Euro className="w-5 h-5 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">MRR (theoretisch)</p>
-                <p className="text-2xl font-bold text-muted-foreground">{monthlyRevenue.toFixed(0)} €</p>
-              </div>
-            </div>
+          <CardContent className="pt-4 pb-3 text-center">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Trial (Provider)</p>
+            <p className="text-2xl font-bold text-amber-500">{segment.trialProviders}</p>
+            <p className="text-[10px] text-muted-foreground">Keine Zahlung</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-5 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-muted">
-                <TrendingUp className="w-5 h-5 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">ARR (theoretisch)</p>
-                <p className="text-2xl font-bold text-muted-foreground">{yearlyRevenue.toFixed(0)} €</p>
-              </div>
-            </div>
+          <CardContent className="pt-4 pb-3 text-center">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Expired (Provider)</p>
+            <p className="text-2xl font-bold text-muted-foreground">{segment.expiredProviders}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-5 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-destructive/10">
-                <Receipt className="w-5 h-5 text-destructive" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Ausgaben</p>
-                <p className="text-2xl font-bold">{totalExpenses.toFixed(0)} €</p>
-              </div>
-            </div>
+          <CardContent className="pt-4 pb-3 text-center">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Pferdebesitzer</p>
+            <p className="text-2xl font-bold">{segment.totalClients}</p>
+            <p className="text-[10px] text-muted-foreground">Immer kostenlos</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-5 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Banknote className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">CopeCart netto</p>
-                <p className="text-2xl font-bold">{copecartStats.netRevenue.toFixed(0)} €</p>
-              </div>
-            </div>
+          <CardContent className="pt-4 pb-3 text-center">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Partner</p>
+            <p className="text-2xl font-bold">{segment.totalPartners}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-3 text-center">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">CopeCart netto</p>
+            <p className="text-2xl font-bold">{copecartStats.netRevenue.toFixed(0)} €</p>
+            <p className="text-[10px] text-muted-foreground">{copecartStats.totalPayments} Events</p>
           </CardContent>
         </Card>
       </div>
@@ -734,213 +565,119 @@ export function AdminRevenue() {
           </TabsList>
         </div>
 
-        {/* ── Overview Tab ── */}
+        {/* ── Overview Tab: Provider Plan Distribution (only providers) ── */}
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Plan Grid */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Calculator className="w-4 h-4" />
-                  Abo-Verteilung
+                  <Users className="w-4 h-4" />
+                  Provider-Plan-Verteilung
                 </CardTitle>
+                <CardDescription>Nur PID-Provider (ohne Lifetime/Demo)</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-3">
-                  {(Object.keys(PLAN_PRICES) as Array<keyof PlanCounts>).map(plan => (
-                    <div key={plan} className="space-y-1.5">
-                      <Label className="flex items-center gap-2 text-xs">
-                        <Badge variant="outline" className={PLAN_COLORS_BADGE[plan]}>
-                          {plan.charAt(0).toUpperCase() + plan.slice(1)}
-                        </Badge>
-                        <span className="text-muted-foreground">{PLAN_PRICES[plan].toFixed(2)} €</span>
-                      </Label>
-                      <Input
-                        type="number"
-                        min={0}
-                        value={counts[plan]}
-                        onChange={e => updateCount(plan, e.target.value)}
-                        className="text-center font-mono h-10"
-                      />
-                      <p className="text-[10px] text-muted-foreground text-center">
-                        = {(counts[plan] * PLAN_PRICES[plan]).toFixed(2)} €/Mo.
-                      </p>
-                    </div>
-                  ))}
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Plan</TableHead>
+                      <TableHead className="text-right">Accounts</TableHead>
+                      <TableHead className="text-right">Potenzial/Mo.</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {Object.entries(segment.planBreakdown).sort(([a], [b]) => a.localeCompare(b)).map(([plan, count]) => (
+                      <TableRow key={plan}>
+                        <TableCell>
+                          <Badge variant="outline" className={PLAN_COLORS_BADGE[plan] || ""}>{plan.charAt(0).toUpperCase() + plan.slice(1)}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-mono">{count}</TableCell>
+                        <TableCell className="text-right font-mono text-muted-foreground">
+                          {((PLAN_PRICES[plan] || 0) * count).toFixed(2)} €
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                <div className="mt-3 p-2 rounded bg-amber-500/10 border border-amber-500/20">
+                  <p className="text-[10px] text-amber-600 dark:text-amber-400">
+                    <AlertTriangle className="w-3 h-3 inline mr-1" />
+                    Potenzial-Werte sind theoretisch. Nur Einträge aus der Zahlungserfassung zählen als verifizierter MRR.
+                  </p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Pie Chart */}
+            {/* Role segmentation */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Plan-Verteilung</CardTitle>
+                <CardTitle className="text-base">Nutzer-Segmentierung</CardTitle>
+                <CardDescription>Alle Rollen (ohne Demo/Test)</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={Object.entries(counts).filter(([, v]) => v > 0).map(([name, value]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), value }))}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={40}
-                        outerRadius={70}
-                        dataKey="value"
-                        label={({ name, value }) => `${name}: ${value}`}
-                      >
-                        {Object.keys(counts).map((_, i) => (
-                          <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Rolle</TableHead>
+                      <TableHead className="text-right">Gesamt</TableHead>
+                      <TableHead className="text-right">MRR-relevant</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell><Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">Provider</Badge></TableCell>
+                      <TableCell className="text-right font-mono">{segment.totalProviders}</TableCell>
+                      <TableCell className="text-right font-mono text-primary">{verified.payingProviders} zahlend</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell><Badge variant="outline">Pferdebesitzer</Badge></TableCell>
+                      <TableCell className="text-right font-mono">{segment.totalClients}</TableCell>
+                      <TableCell className="text-right text-xs text-muted-foreground">Immer kostenlos</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell><Badge variant="outline">Partner</Badge></TableCell>
+                      <TableCell className="text-right font-mono">{segment.totalPartners}</TableCell>
+                      <TableCell className="text-right text-xs text-muted-foreground">Separat</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell><Badge variant="outline">Mitarbeiter</Badge></TableCell>
+                      <TableCell className="text-right font-mono">{segment.totalEmployees}</TableCell>
+                      <TableCell className="text-right text-xs text-muted-foreground">Separat</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </div>
-
-          {/* Breakdown Table */}
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Plan</TableHead>
-                    <TableHead className="text-right">Preis</TableHead>
-                    <TableHead className="text-right">Abos</TableHead>
-                    <TableHead className="text-right">Monatlich</TableHead>
-                    <TableHead className="text-right">Jährlich</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(Object.keys(PLAN_PRICES) as Array<keyof PlanCounts>).map(plan => {
-                    const monthly = counts[plan] * PLAN_PRICES[plan];
-                    return (
-                      <TableRow key={plan}>
-                        <TableCell><Badge variant="outline" className={PLAN_COLORS_BADGE[plan]}>{plan.charAt(0).toUpperCase() + plan.slice(1)}</Badge></TableCell>
-                        <TableCell className="text-right font-mono">{PLAN_PRICES[plan].toFixed(2)} €</TableCell>
-                        <TableCell className="text-right font-mono">{counts[plan]}</TableCell>
-                        <TableCell className="text-right font-mono">{monthly.toFixed(2)} €</TableCell>
-                        <TableCell className="text-right font-mono">{(monthly * 12).toFixed(2)} €</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-              <div className="flex justify-between px-4 py-3 border-t font-bold">
-                <span>Gesamt</span>
-                <div className="flex gap-8">
-                  <span className="font-mono">{totalSubs} Abos</span>
-                  <span className="font-mono text-primary">{monthlyRevenue.toFixed(2)} €/Mo.</span>
-                  <span className="font-mono text-primary">{yearlyRevenue.toFixed(2)} €/Jahr</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
 
-        {/* ── CopeCart Reconciliation Tab ── */}
+        {/* ── CopeCart Tab ── */}
         <TabsContent value="copecart" className="space-y-4">
-          {/* Reconciliation KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Card>
-              <CardContent className="pt-5 pb-4 text-center">
-                <p className="text-xs text-muted-foreground">Zahlungen</p>
-                <p className="text-2xl font-bold">{copecartStats.totalPayments}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-5 pb-4 text-center">
-                <p className="text-xs text-muted-foreground">Brutto-Einnahmen</p>
-                <p className="text-2xl font-bold text-emerald-500">{copecartStats.totalWebhookRevenue.toFixed(2)} €</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-5 pb-4 text-center">
-                <p className="text-xs text-muted-foreground">Erstattungen</p>
-                <p className="text-2xl font-bold text-destructive">{copecartStats.totalRefunds.toFixed(2)} €</p>
-                <p className="text-[10px] text-muted-foreground">{copecartStats.refundCount} Stück</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-5 pb-4 text-center">
-                <p className="text-xs text-muted-foreground">Netto</p>
-                <p className="text-2xl font-bold text-primary">{copecartStats.netRevenue.toFixed(2)} €</p>
-              </CardContent>
-            </Card>
+            <Card><CardContent className="pt-5 pb-4 text-center"><p className="text-xs text-muted-foreground">Zahlungen</p><p className="text-2xl font-bold">{copecartStats.totalPayments}</p></CardContent></Card>
+            <Card><CardContent className="pt-5 pb-4 text-center"><p className="text-xs text-muted-foreground">Brutto</p><p className="text-2xl font-bold text-emerald-500">{copecartStats.totalWebhookRevenue.toFixed(2)} €</p></CardContent></Card>
+            <Card><CardContent className="pt-5 pb-4 text-center"><p className="text-xs text-muted-foreground">Erstattungen</p><p className="text-2xl font-bold text-destructive">{copecartStats.totalRefunds.toFixed(2)} €</p></CardContent></Card>
+            <Card><CardContent className="pt-5 pb-4 text-center"><p className="text-xs text-muted-foreground">Netto</p><p className="text-2xl font-bold text-primary">{copecartStats.netRevenue.toFixed(2)} €</p></CardContent></Card>
           </div>
-
-          {/* Reconciliation Check */}
-          <Card className="border-primary/20">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-primary" />
-                Abgleich: MRR vs. CopeCart
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between py-1.5 border-b">
-                  <span className="text-muted-foreground">Erwarteter MRR (Abo-basiert)</span>
-                  <span className="font-mono font-bold">{monthlyRevenue.toFixed(2)} €</span>
-                </div>
-                <div className="flex justify-between py-1.5 border-b">
-                  <span className="text-muted-foreground">CopeCart Netto-Einnahmen (gesamt)</span>
-                  <span className="font-mono font-bold">{copecartStats.netRevenue.toFixed(2)} €</span>
-                </div>
-                <div className="flex justify-between py-1.5">
-                  <span className="text-muted-foreground">Letztes Webhook-Event</span>
-                  <span className="font-mono text-xs">
-                    {copecartStats.lastEvent ? format(parseISO(copecartStats.lastEvent), "dd.MM.yyyy HH:mm") : "Kein Event"}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Transaction Log */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Transaktionslog</CardTitle>
-              <CardDescription>Alle CopeCart Webhook-Events</CardDescription>
-            </CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-base">Transaktionslog</CardTitle></CardHeader>
             <CardContent className="p-0">
               {loadingRevLog ? (
                 <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin" /></div>
               ) : revenueLog.length === 0 ? (
-                <div className="py-8 text-center text-muted-foreground text-sm">
-                  Noch keine CopeCart-Events erfasst.
-                </div>
+                <div className="py-8 text-center text-muted-foreground text-sm">Noch keine CopeCart-Events erfasst.</div>
               ) : (
                 <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
                   <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Datum</TableHead>
-                        <TableHead>Typ</TableHead>
-                        <TableHead>Kunde</TableHead>
-                        <TableHead>Plan</TableHead>
-                        <TableHead className="text-right">Betrag</TableHead>
-                        <TableHead>Transaktion</TableHead>
-                      </TableRow>
-                    </TableHeader>
+                    <TableHeader><TableRow><TableHead>Datum</TableHead><TableHead>Typ</TableHead><TableHead>Kunde</TableHead><TableHead>Plan</TableHead><TableHead className="text-right">Betrag</TableHead></TableRow></TableHeader>
                     <TableBody>
                       {revenueLog.slice(0, 100).map(r => (
                         <TableRow key={r.id}>
                           <TableCell className="text-xs font-mono">{format(parseISO(r.created_at), "dd.MM.yy HH:mm")}</TableCell>
-                          <TableCell>
-                            <Badge variant={r.event_type.includes("refund") || r.event_type.includes("chargeback") ? "destructive" : "default"} className="text-xs">
-                              {r.event_type}
-                            </Badge>
-                          </TableCell>
+                          <TableCell><Badge variant={r.event_type.includes("refund") ? "destructive" : "default"} className="text-xs">{r.event_type}</Badge></TableCell>
                           <TableCell className="text-xs">{r.customer_name || r.customer_email || "-"}</TableCell>
                           <TableCell className="text-xs">{r.plan_name || "-"}</TableCell>
-                          <TableCell className={`text-right font-mono text-xs ${r.event_type.includes("refund") ? "text-destructive" : ""}`}>
-                            {r.event_type.includes("refund") ? "-" : ""}{r.amount.toFixed(2)} €
-                          </TableCell>
-                          <TableCell className="text-xs font-mono text-muted-foreground">{r.transaction_id?.slice(0, 12) || "-"}</TableCell>
+                          <TableCell className="text-right font-mono text-xs">{r.amount.toFixed(2)} €</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -955,11 +692,8 @@ export function AdminRevenue() {
         <TabsContent value="trend" className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <BarChart3 className="w-4 h-4" />
-                6-Monats-Trend
-              </CardTitle>
-              <CardDescription>Einnahmen vs. Ausgaben (ältere Monate ggf. geschätzt)</CardDescription>
+              <CardTitle className="text-base flex items-center gap-2"><BarChart3 className="w-4 h-4" />6-Monats-Trend</CardTitle>
+              <CardDescription>Nur verifizierte Einnahmen (CopeCart Webhooks)</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-72">
@@ -968,11 +702,7 @@ export function AdminRevenue() {
                     <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                     <XAxis dataKey="month" className="text-xs" />
                     <YAxis className="text-xs" />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }}
-                      labelStyle={{ color: "hsl(var(--foreground))" }}
-                      formatter={(value: number) => `${value.toFixed(2)} €`}
-                    />
+                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} formatter={(value: number) => `${value.toFixed(2)} €`} />
                     <Legend />
                     <Bar dataKey="einnahmen" name="Einnahmen" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="ausgaben" name="Ausgaben" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
@@ -981,22 +711,15 @@ export function AdminRevenue() {
               </div>
             </CardContent>
           </Card>
-
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Gewinn-Verlauf</CardTitle>
-            </CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-base">Gewinn-Verlauf</CardTitle></CardHeader>
             <CardContent>
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={trendData}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                    <XAxis dataKey="month" className="text-xs" />
-                    <YAxis className="text-xs" />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }}
-                      formatter={(value: number) => `${value.toFixed(2)} €`}
-                    />
+                    <XAxis dataKey="month" className="text-xs" /><YAxis className="text-xs" />
+                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} formatter={(value: number) => `${value.toFixed(2)} €`} />
                     <Line type="monotone" dataKey="gewinn" name="Gewinn" stroke="hsl(142, 76%, 36%)" strokeWidth={2} dot={{ r: 4 }} />
                   </LineChart>
                 </ResponsiveContainer>
@@ -1011,39 +734,23 @@ export function AdminRevenue() {
             <div className="flex gap-2 flex-1 w-full sm:w-auto">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Ausgaben durchsuchen..."
-                  value={expenseSearch}
-                  onChange={e => setExpenseSearch(e.target.value)}
-                  className="pl-10 h-10"
-                />
+                <Input placeholder="Ausgaben durchsuchen..." value={expenseSearch} onChange={e => setExpenseSearch(e.target.value)} className="pl-10 h-10" />
               </div>
               <Select value={expenseCategoryFilter} onValueChange={setExpenseCategoryFilter}>
-                <SelectTrigger className="w-[180px] h-10">
-                  <SelectValue placeholder="Kategorie" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Alle Kategorien</SelectItem>
-                  {EXPENSE_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
+                <SelectTrigger className="w-[180px] h-10"><SelectValue placeholder="Kategorie" /></SelectTrigger>
+                <SelectContent><SelectItem value="all">Alle Kategorien</SelectItem>{EXPENSE_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="flex gap-2">
               <label className="cursor-pointer">
                 <input type="file" accept=".csv,.txt" className="hidden" onChange={handleExpenseImport} />
-                <Button variant="outline" size="sm" className="gap-2" asChild>
-                  <span><Upload className="w-4 h-4" />CSV Import</span>
-                </Button>
+                <Button variant="outline" size="sm" className="gap-2" asChild><span><Upload className="w-4 h-4" />CSV Import</span></Button>
               </label>
-              <Button onClick={() => setShowExpenseDialog(true)} size="sm" className="gap-2">
-                <Plus className="w-4 h-4" />
-                Neue Ausgabe
-              </Button>
+              <Button onClick={() => setShowExpenseDialog(true)} size="sm" className="gap-2"><Plus className="w-4 h-4" />Neue Ausgabe</Button>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Expenses Table */}
             <div className="lg:col-span-2">
               {loadingExpenses ? (
                 <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin" /></div>
@@ -1054,15 +761,7 @@ export function AdminRevenue() {
                   <CardContent className="p-0">
                     <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
                       <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Titel</TableHead>
-                            <TableHead>Kategorie</TableHead>
-                            <TableHead className="text-right">Betrag</TableHead>
-                            <TableHead>Datum</TableHead>
-                            <TableHead />
-                          </TableRow>
-                        </TableHeader>
+                        <TableHeader><TableRow><TableHead>Titel</TableHead><TableHead>Kategorie</TableHead><TableHead className="text-right">Betrag</TableHead><TableHead>Datum</TableHead><TableHead /></TableRow></TableHeader>
                         <TableBody>
                           {filteredExpenses.map(e => (
                             <TableRow key={e.id}>
@@ -1070,11 +769,7 @@ export function AdminRevenue() {
                               <TableCell><Badge variant="outline" className="text-xs">{e.category}</Badge></TableCell>
                               <TableCell className="text-right font-mono text-destructive text-sm">{e.amount.toFixed(2)} €</TableCell>
                               <TableCell className="text-xs text-muted-foreground">{new Date(e.expense_date).toLocaleDateString("de-DE")}</TableCell>
-                              <TableCell>
-                                <Button variant="ghost" size="icon" onClick={() => deleteExpense(e.id)} className="h-8 w-8 text-destructive hover:text-destructive">
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </Button>
-                              </TableCell>
+                              <TableCell><Button variant="ghost" size="icon" onClick={() => deleteExpense(e.id)} className="h-8 w-8 text-destructive hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button></TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -1088,79 +783,68 @@ export function AdminRevenue() {
                 </Card>
               )}
             </div>
-
-            {/* Expense Categories Pie */}
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Nach Kategorie</CardTitle>
-              </CardHeader>
+              <CardHeader className="pb-3"><CardTitle className="text-base">Nach Kategorie</CardTitle></CardHeader>
               <CardContent>
                 <div className="h-48">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie
-                        data={expenseByCat}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={60}
-                        dataKey="value"
-                        label={({ name, value }) => `${value.toFixed(0)}€`}
-                      >
-                        {expenseByCat.map((_, i) => (
-                          <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                        ))}
+                      <Pie data={expenseByCat} cx="50%" cy="50%" outerRadius={60} dataKey="value" label={({ value }) => `${value.toFixed(0)}€`}>
+                        {expenseByCat.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                       </Pie>
-                      <Tooltip formatter={(v: number) => `${v.toFixed(2)} €`} />
-                      <Legend />
+                      <Tooltip formatter={(v: number) => `${v.toFixed(2)} €`} /><Legend />
                     </PieChart>
                   </ResponsiveContainer>
-                </div>
-                <div className="mt-3 space-y-1.5">
-                  {expenseByCat.map((cat, i) => (
-                    <div key={cat.name} className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">{cat.name}</span>
-                      <span className="font-mono">{cat.value.toFixed(2)} €</span>
-                    </div>
-                  ))}
                 </div>
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        {/* ── EÜR Tab ── */}
+        {/* ── EÜR Tab (nur verifizierte Zahlen) ── */}
         <TabsContent value="euer" className="space-y-4">
           <Card className="border-primary/20">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Scale className="w-5 h-5" />
-                Einnahmen-Überschuss-Rechnung (EÜR)
-              </CardTitle>
-              <CardDescription>Vereinfachte Gewinnermittlung nach § 4 Abs. 3 EStG · Kleinunternehmerregelung § 19 UStG</CardDescription>
+              <CardTitle className="flex items-center gap-2"><Scale className="w-5 h-5" />EÜR (verifiziert)</CardTitle>
+              <CardDescription>Nur erfasste Zahlungen · § 4 Abs. 3 EStG · § 19 UStG</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Revenue Section */}
               <div>
                 <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Betriebseinnahmen</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between py-2 border-b text-sm">
-                    <span>Abo-Einnahmen (MRR × 12)</span>
-                    <span className="font-mono font-bold text-emerald-500">+ {yearlyRevenue.toFixed(2)} €</span>
+                    <span>Manuelle Zahlungen (Jahresverträge)</span>
+                    <span className="font-mono font-bold text-emerald-500">+ {verified.annualContracts.reduce((s, a) => s + a.amount, 0).toFixed(2)} €</span>
+                  </div>
+                  {verified.annualContracts.map((c, i) => (
+                    <div key={i} className="flex justify-between py-1 text-xs text-muted-foreground pl-4">
+                      <span>{c.name} ({c.pid})</span>
+                      <span className="font-mono">{c.amount.toFixed(2)} €</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between py-2 border-b text-sm">
+                    <span>Monatsabos (erfasst)</span>
+                    <span className="font-mono font-bold text-emerald-500">+ {verified.monthlySubscribers.reduce((s, m) => s + m.amount, 0).toFixed(2)} €</span>
                   </div>
                   <div className="flex justify-between py-2 border-b text-sm">
-                    <span>CopeCart Netto-Einnahmen (Webhook-Log)</span>
+                    <span>CopeCart Netto-Einnahmen (Webhooks)</span>
                     <span className="font-mono font-bold text-emerald-500">+ {copecartStats.netRevenue.toFixed(2)} €</span>
                   </div>
-                  <div className="flex justify-between py-2 border-b text-sm text-muted-foreground">
-                    <span>davon Erstattungen</span>
-                    <span className="font-mono text-destructive">- {copecartStats.totalRefunds.toFixed(2)} €</span>
+                  {copecartStats.totalRefunds > 0 && (
+                    <div className="flex justify-between py-1 text-xs text-muted-foreground pl-4">
+                      <span>davon Erstattungen</span>
+                      <span className="font-mono text-destructive">- {copecartStats.totalRefunds.toFixed(2)} €</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between py-2 border-t font-medium text-sm">
+                    <span>Summe Betriebseinnahmen</span>
+                    <span className="font-mono font-bold text-emerald-500">+ {verifiedTotalRevenue.toFixed(2)} €</span>
                   </div>
                 </div>
               </div>
 
               <Separator />
 
-              {/* Expenses Section */}
               <div>
                 <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Betriebsausgaben</h4>
                 <div className="space-y-2">
@@ -1179,30 +863,26 @@ export function AdminRevenue() {
 
               <Separator />
 
-              {/* Result */}
               <div className="bg-muted/50 rounded-lg p-4">
                 <div className="flex justify-between items-center text-lg">
                   <span className="font-bold">Gewinn / Verlust</span>
-                  <span className={`font-mono font-bold text-xl ${copecartStats.netRevenue - totalExpenses >= 0 ? "text-emerald-500" : "text-destructive"}`}>
-                    {(copecartStats.netRevenue - totalExpenses).toFixed(2)} €
+                  <span className={`font-mono font-bold text-xl ${verifiedTotalRevenue - totalExpenses >= 0 ? "text-emerald-500" : "text-destructive"}`}>
+                    {(verifiedTotalRevenue - totalExpenses).toFixed(2)} €
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Basierend auf CopeCart Netto-Einnahmen ({copecartStats.netRevenue.toFixed(2)} €) minus erfasste Ausgaben ({totalExpenses.toFixed(2)} €).
-                  MRR-basierte Hochrechnung: {(monthlyRevenue * 12 - totalExpenses).toFixed(2)} €/Jahr.
+                  Basierend auf verifizierten Zahlungen ({verifiedTotalRevenue.toFixed(2)} €) minus erfasste Ausgaben ({totalExpenses.toFixed(2)} €).
+                  Keine theoretischen MRR-Hochrechnungen enthalten.
                 </p>
               </div>
             </CardContent>
           </Card>
 
-          {/* Tax Notice */}
           <Card className="border-amber-500/20 bg-amber-500/5">
             <CardContent className="pt-5 pb-4">
               <p className="text-sm text-muted-foreground">
                 <strong className="text-foreground">§ 19 UStG – Kleinunternehmerregelung:</strong>{" "}
-                Es wird keine Umsatzsteuer erhoben. Alle Preise sind Bruttopreise = Nettopreise.
-                CopeCart übernimmt Zahlungsabwicklung & Rechnungsstellung an Endkunden.
-                Diese EÜR dient als Hilfestellung – für steuerliche Pflichten ist ein Steuerberater heranzuziehen.
+                Keine USt. Alle Beträge brutto = netto. Diese EÜR basiert ausschließlich auf erfassten Zahlungen und Webhooks — keine Schätzwerte.
               </p>
             </CardContent>
           </Card>
@@ -1217,33 +897,16 @@ export function AdminRevenue() {
             <DialogDescription>Trage eine Betriebsausgabe für die EÜR ein.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Titel *</Label>
-              <Input value={newExpense.title} onChange={e => setNewExpense(p => ({ ...p, title: e.target.value }))} placeholder="z.B. Supabase Pro Plan" />
-            </div>
+            <div className="space-y-2"><Label>Titel *</Label><Input value={newExpense.title} onChange={e => setNewExpense(p => ({ ...p, title: e.target.value }))} placeholder="z.B. Supabase Pro Plan" /></div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Betrag (€) *</Label>
-                <Input type="number" step="0.01" value={newExpense.amount} onChange={e => setNewExpense(p => ({ ...p, amount: e.target.value }))} placeholder="25.00" />
-              </div>
-              <div className="space-y-2">
-                <Label>Datum</Label>
-                <Input type="date" value={newExpense.expense_date} onChange={e => setNewExpense(p => ({ ...p, expense_date: e.target.value }))} />
-              </div>
+              <div className="space-y-2"><Label>Betrag (€) *</Label><Input type="number" step="0.01" value={newExpense.amount} onChange={e => setNewExpense(p => ({ ...p, amount: e.target.value }))} placeholder="25.00" /></div>
+              <div className="space-y-2"><Label>Datum</Label><Input type="date" value={newExpense.expense_date} onChange={e => setNewExpense(p => ({ ...p, expense_date: e.target.value }))} /></div>
             </div>
             <div className="space-y-2">
               <Label>Kategorie</Label>
-              <Select value={newExpense.category} onValueChange={v => setNewExpense(p => ({ ...p, category: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {EXPENSE_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Select value={newExpense.category} onValueChange={v => setNewExpense(p => ({ ...p, category: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{EXPENSE_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select>
             </div>
-            <div className="space-y-2">
-              <Label>Beschreibung (optional)</Label>
-              <Textarea value={newExpense.description} onChange={e => setNewExpense(p => ({ ...p, description: e.target.value }))} rows={2} />
-            </div>
+            <div className="space-y-2"><Label>Beschreibung (optional)</Label><Textarea value={newExpense.description} onChange={e => setNewExpense(p => ({ ...p, description: e.target.value }))} rows={2} /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowExpenseDialog(false)}>Abbrechen</Button>
