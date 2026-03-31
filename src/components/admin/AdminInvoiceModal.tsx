@@ -681,6 +681,13 @@ export function AdminInvoiceModal({ open, onOpenChange, editInvoice, onSaved }: 
                 Speichern & Versenden
               </Button>
             </div>
+
+            {/* Document History (only when editing) */}
+            {editInvoice?.id && (
+              <div className="pt-2 border-t">
+                <DocumentHistory documentId={editInvoice.id} documentType="invoice" />
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>
