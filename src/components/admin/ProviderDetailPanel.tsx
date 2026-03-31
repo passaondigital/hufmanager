@@ -326,6 +326,9 @@ export function ProviderDetailPanel({ providerId, providerEmail }: ProviderDetai
         </div>
       </div>
 
+      {/* Documents Section */}
+      <ProviderDocumentsSection providerId={providerId} />
+
       {/* Timeline */}
       <div className="space-y-2 pt-2 border-t">
         <div className="flex items-center gap-2 text-sm font-semibold">
