@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
           period_end: periodEnd,
           subtotal: price,
           total: price,
-          kleinunternehmer: true,
+          kleinunternehmer: true,  // §19 UStG
           payment_method: "bank_transfer",
           payment_source: "auto_cron",
           status: "draft",
