@@ -52,6 +52,7 @@ function replaceVariables(text: string, vars: Record<string, string>): string {
 
 export default function AdminBroadcastMessaging() {
   const { user } = useAuth();
+  const [mode, setMode] = useState<"single" | "broadcast">("single");
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [target, setTarget] = useState<TargetFilter>("all_providers");
@@ -66,10 +67,48 @@ export default function AdminBroadcastMessaging() {
   const [recipientCount, setRecipientCount] = useState<number | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
+  // Single recipient search
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<ProfileResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedRecipient, setSelectedRecipient] = useState<ProfileResult | null>(null);
+
   useEffect(() => {
     (supabase as any).from("admin_message_templates").select("*").order("name")
       .then(({ data }: any) => { if (data) setTemplates(data); });
   }, []);
+
+  // Debounced search
+  const searchProfiles = useCallback(async (q: string) => {
+    if (q.length < 2) { setSearchResults([]); return; }
+    setIsSearching(true);
+    try {
+      const term = q.trim();
+      let query = (supabase as any).from("profiles")
+        .select("id, full_name, email, readable_id")
+        .is("deleted_at", null)
+        .limit(10);
+
+      // Check if searching by ID prefix
+      if (term.startsWith("#") || /^(PID|KID|PRID|EID|EQID)/i.test(term)) {
+        const cleanId = term.replace(/^#/, "");
+        query = query.ilike("readable_id", `%${cleanId}%`);
+      } else if (term.includes("@")) {
+        query = query.ilike("email", `%${term}%`);
+      } else {
+        query = query.or(`full_name.ilike.%${term}%,readable_id.ilike.%${term}%,email.ilike.%${term}%`);
+      }
+
+      const { data } = await query;
+      setSearchResults(data || []);
+    } catch { setSearchResults([]); }
+    setIsSearching(false);
+  }, []);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => searchProfiles(searchQuery), 300);
+    return () => clearTimeout(timeout);
+  }, [searchQuery, searchProfiles]);
 
   const applyTemplate = (templateId: string) => {
     setSelectedTemplateId(templateId);
