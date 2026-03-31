@@ -16,7 +16,8 @@ import { format, addDays } from "date-fns";
 import { de } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { generateAdminInvoicePdf, generateAdminInvoicePdfBlob, type AdminInvoiceData } from "@/lib/adminInvoicePdf";
+import { generateAdminInvoicePdf, generateAdminInvoicePdfBlob, type AdminInvoiceData, type IssuerData } from "@/lib/adminInvoicePdf";
+import { useIssuerProfile } from "@/hooks/useIssuerProfile";
 
 const PLAN_DEFAULTS: Record<string, { label: string; monthly: number; yearly: number }> = {
   starter: { label: "Starter", monthly: 9.9, yearly: 99 },
