@@ -597,7 +597,64 @@ export function AdminRevenue() {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* Verifizierte MRR/ARR */}
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="pt-5 pb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <CheckCircle className="w-4 h-4 text-primary" />
+            <span className="text-sm font-semibold">Verifizierte Einnahmen (nur bestätigte Zahlungen)</span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className="text-xs text-muted-foreground">MRR (verifiziert)</p>
+              <p className="text-2xl font-bold text-primary">{loadingRealMRR ? <Loader2 className="w-5 h-5 animate-spin" /> : `${realMRR.verifiedMRR.toFixed(2)} €`}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">ARR (verifiziert)</p>
+              <p className="text-2xl font-bold text-primary">
+                {loadingRealMRR ? <Loader2 className="w-5 h-5 animate-spin" /> : 
+                  `${((realMRR.monthlySubscribers.reduce((s, m) => s + m.amount, 0) * 12) + realMRR.annualContracts.reduce((s, a) => s + a.amount, 0)).toFixed(2)} €`
+                }
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Jahresverträge aktiv</p>
+              <p className="text-2xl font-bold">{realMRR.annualContracts.length}</p>
+              <p className="text-[10px] text-muted-foreground">Wert: {realMRR.annualContracts.reduce((s, a) => s + a.amount, 0).toFixed(0)} €</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Starter ohne Zahlung</p>
+              <p className="text-2xl font-bold">{realMRR.trialUsers}</p>
+              <p className="text-[10px] text-muted-foreground">(Trial)</p>
+            </div>
+          </div>
+          {!loadingRealMRR && realMRR.annualContracts.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-border/50 space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">Jahresverträge:</p>
+              {realMRR.annualContracts.map((c, i) => (
+                <div key={i} className="flex items-center justify-between text-xs">
+                  <span>{c.name} <span className="text-muted-foreground">({c.pid})</span></span>
+                  <span className="font-mono">{c.amount.toFixed(0)} €/Jahr = <span className="text-primary">{c.monthlyEquiv.toFixed(2)} €/Mo.</span> · bis {c.validUntil ? format(parseISO(c.validUntil), "dd.MM.yyyy") : "–"}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {!loadingRealMRR && realMRR.monthlySubscribers.length > 0 && (
+            <div className="mt-2 pt-2 border-t border-border/50 space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">Monatsabos:</p>
+              {realMRR.monthlySubscribers.map((m, i) => (
+                <div key={i} className="flex items-center justify-between text-xs">
+                  <span>{m.name} <span className="text-muted-foreground">({m.pid})</span></span>
+                  <span className="font-mono">{m.amount.toFixed(2)} €/Mo. · {m.plan}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="text-[10px] text-muted-foreground/50 mt-2">Demo-, Lifetime- und Admin-Accounts ausgeschlossen</p>
+        </CardContent>
+      </Card>
+
+      {/* Theoretical KPI Cards (plan × count) */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <Card>
           <CardContent className="pt-5 pb-4">
@@ -606,7 +663,7 @@ export function AdminRevenue() {
                 <Users className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Abos</p>
+                <p className="text-xs text-muted-foreground">Abos (Plan-basiert)</p>
                 <p className="text-2xl font-bold">{loadingCounts ? <Loader2 className="w-5 h-5 animate-spin" /> : totalSubs}</p>
               </div>
             </div>
@@ -615,12 +672,12 @@ export function AdminRevenue() {
         <Card>
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-500/10">
-                <Euro className="w-5 h-5 text-emerald-500" />
+              <div className="p-2 rounded-lg bg-muted">
+                <Euro className="w-5 h-5 text-muted-foreground" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">MRR</p>
-                <p className="text-2xl font-bold">{monthlyRevenue.toFixed(0)} €</p>
+                <p className="text-xs text-muted-foreground">MRR (theoretisch)</p>
+                <p className="text-2xl font-bold text-muted-foreground">{monthlyRevenue.toFixed(0)} €</p>
               </div>
             </div>
           </CardContent>
@@ -628,12 +685,12 @@ export function AdminRevenue() {
         <Card>
           <CardContent className="pt-5 pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <TrendingUp className="w-5 h-5 text-blue-500" />
+              <div className="p-2 rounded-lg bg-muted">
+                <TrendingUp className="w-5 h-5 text-muted-foreground" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">ARR</p>
-                <p className="text-2xl font-bold">{yearlyRevenue.toFixed(0)} €</p>
+                <p className="text-xs text-muted-foreground">ARR (theoretisch)</p>
+                <p className="text-2xl font-bold text-muted-foreground">{yearlyRevenue.toFixed(0)} €</p>
               </div>
             </div>
           </CardContent>
