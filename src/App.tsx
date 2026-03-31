@@ -163,6 +163,7 @@ const Buchhaltung = lazy(() => import("@/pages/Buchhaltung"));
 const Fuhrpark = lazy(() => import("@/pages/Fuhrpark"));
 const AutoFlow = lazy(() => import("@/pages/AutoFlow"));
 const Marketplace = lazy(() => import("@/pages/Marketplace"));
+const AdminNachrichten = lazy(() => import("@/pages/AdminNachrichten"));
 const EmailMarketing = lazy(() => import("@/features/email-marketing/EmailMarketingPage"));
 const SignupFormPage = lazy(() => import("@/features/email-marketing/public/SignupFormPage"));
 const PortalDashboard = lazy(() => import("@/pages/portal/PortalDashboard"));
@@ -796,6 +797,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/meine-website" element={<MeineWebsite />} />
               <Route path="/landing-editor" element={<LandingEditor />} />
               <Route path="/email-marketing" element={<EmailMarketing />} />
+              <Route path="/admin-nachrichten" element={<AdminNachrichten />} />
             </Route>
 
             {/* --- 3. CLIENT (PFERDEBESITZER) ROUTES --- */}
@@ -839,6 +841,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client-historie" element={<ClientHistorie />} />
               <Route path="/client-dokumente" element={<ClientDokumente />} />
               <Route path="/client-support" element={<Support />} />
+              <Route path="/admin-nachrichten" element={<AdminNachrichten />} />
             </Route>
 
             {/* --- 3b. STALLBETREIBER ROUTES --- */}
@@ -912,6 +915,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/employee/fuhrpark" element={<Fuhrpark />} />
               <Route path="/employee/marketplace" element={<Marketplace />} />
               <Route path="/employee/notfall" element={<EmergencyDashboard />} />
+              <Route path="/admin-nachrichten" element={<AdminNachrichten />} />
             </Route>
 
             {/* --- 5. PARTNER (FACHPARTNER) ROUTES --- */}
@@ -965,6 +969,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner-import" element={<ImportCenter />} />
               <Route path="/partner-support" element={<Support />} />
               <Route path="/partner-rechtliches" element={<PartnerRechtliches />} />
+              <Route path="/admin-nachrichten" element={<AdminNachrichten />} />
             </Route>
 
             {/* Fallback für alles andere */}

@@ -656,6 +656,155 @@ export type Database = {
           },
         ]
       }
+      admin_message_replies: {
+        Row: {
+          attachments: Json | null
+          body: string
+          created_at: string
+          id: string
+          message_id: string
+          sender_id: string
+          sender_type: string
+        }
+        Insert: {
+          attachments?: Json | null
+          body: string
+          created_at?: string
+          id?: string
+          message_id: string
+          sender_id: string
+          sender_type?: string
+        }
+        Update: {
+          attachments?: Json | null
+          body?: string
+          created_at?: string
+          id?: string
+          message_id?: string
+          sender_id?: string
+          sender_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_message_replies_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "admin_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_message_templates: {
+        Row: {
+          body_template: string
+          category: string
+          created_at: string
+          default_action_options: Json | null
+          default_priority: string
+          id: string
+          name: string
+          subject_template: string
+        }
+        Insert: {
+          body_template: string
+          category?: string
+          created_at?: string
+          default_action_options?: Json | null
+          default_priority?: string
+          id?: string
+          name: string
+          subject_template: string
+        }
+        Update: {
+          body_template?: string
+          category?: string
+          created_at?: string
+          default_action_options?: Json | null
+          default_priority?: string
+          id?: string
+          name?: string
+          subject_template?: string
+        }
+        Relationships: []
+      }
+      admin_messages: {
+        Row: {
+          action_options: Json | null
+          action_taken: string | null
+          action_taken_at: string | null
+          attachments: Json | null
+          body: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          message_type: string
+          priority: string
+          read_at: string | null
+          recipient_id: string
+          recipient_type: string
+          requires_action: boolean
+          sender_id: string
+          status: string
+          subject: string
+          template_id: string | null
+        }
+        Insert: {
+          action_options?: Json | null
+          action_taken?: string | null
+          action_taken_at?: string | null
+          attachments?: Json | null
+          body: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          message_type?: string
+          priority?: string
+          read_at?: string | null
+          recipient_id: string
+          recipient_type?: string
+          requires_action?: boolean
+          sender_id: string
+          status?: string
+          subject: string
+          template_id?: string | null
+        }
+        Update: {
+          action_options?: Json | null
+          action_taken?: string | null
+          action_taken_at?: string | null
+          attachments?: Json | null
+          body?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          message_type?: string
+          priority?: string
+          read_at?: string | null
+          recipient_id?: string
+          recipient_type?: string
+          requires_action?: boolean
+          sender_id?: string
+          status?: string
+          subject?: string
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_messages_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_messages_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_notes: {
         Row: {
           content: string | null
