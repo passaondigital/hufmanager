@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { ProviderTimeline } from "./ProviderTimeline";
 import { ProviderManualActions } from "./ProviderManualActions";
+import { ProviderDocumentsSection } from "./ProviderDocumentsSection";
 
 interface ProviderDetailPanelProps {
   providerId: string;
