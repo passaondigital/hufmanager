@@ -461,7 +461,12 @@ export function AdminInvoiceModal({ open, onOpenChange, editInvoice, onSaved }: 
                   value={invoiceNumber}
                   onChange={(e) => setInvoiceNumber(e.target.value)}
                   placeholder="Auto (HM-2026-XXXX)"
+                  disabled={isNumberLocked}
+                  className={isNumberLocked ? "bg-muted cursor-not-allowed" : ""}
                 />
+                {isNumberLocked && (
+                  <p className="text-xs text-muted-foreground">Nummer ist nach Versand gesperrt</p>
+                )}
               </div>
               <DateField label="Rechnungsdatum" date={invoiceDate} setDate={setInvoiceDate} />
               <DateField label="Zahlungsziel" date={dueDate} setDate={setDueDate} />
