@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { AdminInvoiceModal } from "./AdminInvoiceModal";
 import { StornoDialog } from "./StornoDialog";
+import { createAccountNote, logDocumentEvent } from "@/services/accountNotesService";
 
 type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "cancelled";
 type FilterMode = "active" | "cancelled" | "all";
