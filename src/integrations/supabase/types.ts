@@ -701,7 +701,9 @@ export type Database = {
           created_at: string
           default_action_options: Json | null
           default_priority: string
+          expires_in_days: number | null
           id: string
+          last_used_at: string | null
           name: string
           subject_template: string
         }
@@ -711,7 +713,9 @@ export type Database = {
           created_at?: string
           default_action_options?: Json | null
           default_priority?: string
+          expires_in_days?: number | null
           id?: string
+          last_used_at?: string | null
           name: string
           subject_template: string
         }
@@ -721,7 +725,9 @@ export type Database = {
           created_at?: string
           default_action_options?: Json | null
           default_priority?: string
+          expires_in_days?: number | null
           id?: string
+          last_used_at?: string | null
           name?: string
           subject_template?: string
         }

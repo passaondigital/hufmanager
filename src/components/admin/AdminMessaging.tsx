@@ -10,12 +10,14 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import {
   Mail, Plus, Search, Send, Paperclip, ArrowLeft, FileText, Image as ImageIcon,
-  Download, AlertTriangle, Info, Gift, ShieldAlert, Clock, Eye, X, Check,
+  Download, AlertTriangle, Info, Gift, ShieldAlert, Clock, Eye, X, Check, Megaphone,
 } from "lucide-react";
+import AdminMessageTemplates from "./AdminMessageTemplates";
+import AdminBroadcastMessaging from "./AdminBroadcastMessaging";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { toast } from "sonner";
@@ -37,13 +39,31 @@ const PRIORITY_STYLES: Record<string, string> = {
 };
 
 export default function AdminMessaging() {
+  const [mainTab, setMainTab] = useState("inbox");
+
+  return (
+    <div className="space-y-4">
+      <Tabs value={mainTab} onValueChange={setMainTab}>
+        <TabsList>
+          <TabsTrigger value="inbox" className="gap-1.5"><Mail className="h-3.5 w-3.5" /> Posteingang</TabsTrigger>
+          <TabsTrigger value="templates" className="gap-1.5"><FileText className="h-3.5 w-3.5" /> Schnellbausteine</TabsTrigger>
+          <TabsTrigger value="broadcast" className="gap-1.5"><Megaphone className="h-3.5 w-3.5" /> Broadcast</TabsTrigger>
+        </TabsList>
+        <TabsContent value="inbox"><InboxView /></TabsContent>
+        <TabsContent value="templates"><AdminMessageTemplates /></TabsContent>
+        <TabsContent value="broadcast"><AdminBroadcastMessaging /></TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+function InboxView() {
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [composeOpen, setComposeOpen] = useState(false);
   const { data: messages = [], isLoading } = useAdminAllMessages(filter === "all" ? undefined : filter);
 
-  // Enrich messages with recipient info
   const [recipientMap, setRecipientMap] = useState<Record<string, any>>({});
 
   useEffect(() => {
@@ -78,7 +98,7 @@ export default function AdminMessaging() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <Mail className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-bold text-foreground">Nachrichten / Posteingang</h2>
+          <h2 className="text-lg font-bold text-foreground">Posteingang</h2>
           <Badge variant="secondary" className="text-xs">{messages.length}</Badge>
         </div>
         <Button size="sm" onClick={() => setComposeOpen(true)} className="gap-1.5">
@@ -86,7 +106,6 @@ export default function AdminMessaging() {
         </Button>
       </div>
 
-      {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
         <Tabs value={filter} onValueChange={setFilter} className="flex-1">
           <TabsList className="h-9">
@@ -108,7 +127,6 @@ export default function AdminMessaging() {
         </div>
       </div>
 
-      {/* Table */}
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
@@ -164,7 +182,6 @@ export default function AdminMessaging() {
         </CardContent>
       </Card>
 
-      {/* Compose Modal */}
       <ComposeModal open={composeOpen} onClose={() => setComposeOpen(false)} />
     </div>
   );
@@ -199,8 +216,16 @@ function ComposeModal({ open, onClose }: { open: boolean; onClose: () => void })
   const [files, setFiles] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [templates, setTemplates] = useState<any[]>([]);
 
   const { data: searchResults = [] } = useProfileSearch(recipientSearch);
+
+  useEffect(() => {
+    if (open) {
+      (supabase as any).from("admin_message_templates").select("*").order("name")
+        .then(({ data }: any) => { if (data) setTemplates(data); });
+    }
+  }, [open]);
   const sendMessage = useAdminSendMessage();
 
   const handleSend = async () => {
@@ -262,6 +287,33 @@ function ComposeModal({ open, onClose }: { open: boolean; onClose: () => void })
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Template Selector */}
+          {templates.length > 0 && (
+            <div>
+              <Label className="text-xs">Schnellbaustein (optional)</Label>
+              <Select onValueChange={(id) => {
+                const t = templates.find((t: any) => t.id === id);
+                if (t) {
+                  setSubject(t.subject_template);
+                  setBody(t.body_template);
+                  setPriority(t.default_priority);
+                  setMessageType(t.category);
+                  if (t.default_action_options?.length) {
+                    setRequiresAction(true);
+                    setActionButtons(t.default_action_options);
+                  }
+                }
+              }}>
+                <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="Baustein wählen..." /></SelectTrigger>
+                <SelectContent>
+                  {templates.map((t: any) => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {/* Recipient */}
           <div>
             <Label className="text-xs">Empfänger</Label>
