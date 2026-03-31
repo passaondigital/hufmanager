@@ -102,6 +102,8 @@ function MessageListItem({ message: msg, onClick }: { message: AdminMessage; onC
   );
 }
 
+import { useEffect as useEffectOnce } from "react";
+
 function MessageDetail({ messageId, onBack }: { messageId: string; onBack: () => void }) {
   const { message: msg, replies, isLoading } = useAdminMessageDetail(messageId);
   const markRead = useMarkMessageRead();
@@ -110,14 +112,11 @@ function MessageDetail({ messageId, onBack }: { messageId: string; onBack: () =>
   const [replyText, setReplyText] = useState("");
 
   // Mark as read on open
-  useState(() => {
-    if (msg && !msg.read_at) markRead.mutate(messageId);
-  });
-
-  // Also mark read when msg loads
-  if (msg && !msg.read_at) {
-    markRead.mutate(messageId);
-  }
+  useEffectOnce(() => {
+    if (msg && !msg.read_at) {
+      markRead.mutate(messageId);
+    }
+  }, [msg?.read_at, messageId]);
 
   const handleAction = (action: string) => {
     takeAction.mutate({ messageId, action });
