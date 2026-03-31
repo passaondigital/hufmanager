@@ -216,8 +216,16 @@ function ComposeModal({ open, onClose }: { open: boolean; onClose: () => void })
   const [files, setFiles] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [templates, setTemplates] = useState<any[]>([]);
 
   const { data: searchResults = [] } = useProfileSearch(recipientSearch);
+
+  useEffect(() => {
+    if (open) {
+      (supabase as any).from("admin_message_templates").select("*").order("name")
+        .then(({ data }: any) => { if (data) setTemplates(data); });
+    }
+  }, [open]);
   const sendMessage = useAdminSendMessage();
 
   const handleSend = async () => {
