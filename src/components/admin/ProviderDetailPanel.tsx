@@ -11,6 +11,7 @@ import { ProviderTimeline } from "./ProviderTimeline";
 import { ProviderManualActions } from "./ProviderManualActions";
 import { ProviderDocumentsSection } from "./ProviderDocumentsSection";
 import { AccountNotesPanel } from "./AccountNotesPanel";
+import { AdminQuickMessage } from "./AdminQuickMessage";
 
 interface ProviderDetailPanelProps {
   providerId: string;
@@ -239,6 +240,11 @@ export function ProviderDetailPanel({ providerId, providerEmail }: ProviderDetai
           Support-Schnellaktionen
         </div>
         <div className="flex gap-3">
+          <AdminQuickMessage
+            recipientId={providerId}
+            recipientName={providerEmail || providerId}
+            recipientEmail={providerEmail}
+          />
           {providerEmail && (
             <Button variant="outline" size="sm" className="shrink-0" asChild>
               <a href={`mailto:${providerEmail}`}>

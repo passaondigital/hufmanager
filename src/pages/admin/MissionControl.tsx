@@ -47,6 +47,7 @@ import { AdminBrowserAnalytics } from "@/components/admin/AdminBrowserAnalytics"
 import { AdminInvoices } from "@/components/admin/AdminInvoices";
 import { AdminContractManager } from "@/components/admin/AdminContractManager";
 import { AdminTransfersOverview } from "@/components/admin/AdminTransfersOverview";
+import { AdminQuickMessage } from "@/components/admin/AdminQuickMessage";
 import { isDemoEmail } from "@/lib/demo-accounts";
 import { PlatformSuccession } from "@/components/admin/PlatformSuccession";
 import { AdminEmailAnalytics } from "@/features/email-marketing/admin/AdminEmailAnalytics";
@@ -535,6 +536,13 @@ export default function MissionControl() {
                 <div className="flex justify-between"><span className="text-muted-foreground">Preis</span><span className="font-medium">{selectedProvider.base_price ? `${selectedProvider.base_price.toFixed(0)} €` : "—"}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Erstellt</span><span>{format(new Date(selectedProvider.created_at), "dd.MM.yyyy", { locale: de })}</span></div>
               </div>
+              <Separator />
+              <AdminQuickMessage
+                recipientId={selectedProvider.id}
+                recipientName={selectedProvider.full_name || "Unbekannt"}
+                recipientEmail={selectedProvider.email}
+                recipientReadableId={selectedProvider.readable_id}
+              />
               <Button className="w-full" onClick={() => { setQuickViewOpen(false); openEditDialog(selectedProvider); }}>Bearbeiten</Button>
             </div>
           )}
