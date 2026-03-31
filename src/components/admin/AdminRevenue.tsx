@@ -582,7 +582,7 @@ export function AdminRevenue() {
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" size="sm" onClick={() => { fetchSubscriptionCounts(); fetchExpenses(); fetchRevenueLog(); }} className="gap-2">
+          <Button variant="outline" size="sm" onClick={() => { fetchSubscriptionCounts(); fetchExpenses(); fetchRevenueLog(); fetchRealMRR(); }} className="gap-2">
             <RefreshCw className="w-4 h-4" />
             Aktualisieren
           </Button>
