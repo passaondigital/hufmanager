@@ -274,18 +274,26 @@ export function AdminContractModal({ open, onOpenChange, contract, onSaved }: Ad
         if (error) throw error;
         toast.success("Vertrag aktualisiert");
       } else {
-        const { data: newContract, error } = await supabase.from("admin_contracts").insert({ ...payload, contract_number: "" }).select("contract_number").single();
+        const { data: newContract, error } = await supabase.from("admin_contracts").insert({ ...payload, contract_number: "" }).select("id, contract_number").single();
         if (error) throw error;
         toast.success("Vertrag erstellt");
 
-        // Auto-log admin note for document tracking
-        await supabase.from("admin_notes").insert({
-          title: `provider:${form.provider_id}`,
-          content: `Vertrag ${newContract?.contract_number || ""} erstellt und hinterlegt. ${new Date().toLocaleDateString("de-DE")}`,
-          type: "task",
-          priority: "normal",
-          status: "inbox",
-        }).then(({ error: noteErr }) => { if (noteErr) console.warn("Auto-note failed:", noteErr); });
+        const cNum = newContract?.contract_number || "";
+        const periodEnd = form.period_end || "∞";
+        await createAccountNote({
+          accountId: form.provider_id,
+          accountType: "provider",
+          noteText: `Vertrag ${cNum} (${form.plan}) erstellt, Laufzeit ${form.period_start}–${periodEnd}`,
+          isSystem: true,
+        });
+        if (newContract?.id) {
+          await logDocumentEvent({
+            documentId: newContract.id,
+            documentType: "contract",
+            eventType: "created",
+            eventData: { contract_number: cNum, plan: form.plan },
+          });
+        }
       }
 
       onOpenChange(false);
