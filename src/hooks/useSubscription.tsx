@@ -177,14 +177,16 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         } else if (override === "lifetime_grant" || override === "employee") {
           setStatus("active");
           setPlan("team");
-        } else if (override === "manual_cash_1y" || override === "beta_tester") {
+      } else if (override === "manual_cash_1y" || override === "beta_tester") {
           const validUntil = data?.access_valid_until ? new Date(data.access_valid_until) : null;
+          // Use the DB subscription_plan instead of hardcoding "pro"
+          const dbPlan = (data?.subscription_plan as SubscriptionPlan) || "pro";
           if (validUntil && validUntil > new Date()) {
             setStatus("active");
-            setPlan("pro");
+            setPlan(dbPlan);
           } else if (!validUntil) {
             setStatus("active");
-            setPlan("pro");
+            setPlan(dbPlan);
           } else {
             setStatus("past_due");
             setPlan("starter");
