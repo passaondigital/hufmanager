@@ -91,8 +91,6 @@ const NAV_SECTIONS: NavSection[] = [
     label: "Content & Tools",
     icon: <Megaphone className="w-4 h-4" />,
     items: [
-      { value: "tools", label: "Broadcast & Feedback", icon: <Megaphone className="w-4 h-4" /> },
-      { value: "messaging", label: "Nachrichten", icon: <Mail className="w-4 h-4" /> },
       { value: "blog", label: "Blog", icon: <FileText className="w-4 h-4" /> },
       { value: "glossary", label: "Glossar", icon: <FileText className="w-4 h-4" /> },
       { value: "email-marketing", label: "E-Mail Marketing", icon: <Megaphone className="w-4 h-4" /> },
