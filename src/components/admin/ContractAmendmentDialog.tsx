@@ -10,6 +10,7 @@ import { Loader2, FilePlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { createAccountNote, logDocumentEvent } from "@/services/accountNotesService";
 
 interface ContractAmendmentDialogProps {
   contract: any;
