@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Megaphone, Send, Loader2, Users, AlertTriangle, X } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Megaphone, Send, Loader2, Users, AlertTriangle, X, User, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,6 +23,13 @@ const FILTER_LABELS: Record<TargetFilter, string> = {
   paying: "Nur zahlende Provider",
   all_clients: "Alle Clients",
 };
+
+interface ProfileResult {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  readable_id: string | null;
+}
 
 interface MessageTemplate {
   id: string;
