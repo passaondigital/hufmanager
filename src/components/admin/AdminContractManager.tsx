@@ -135,6 +135,7 @@ export function AdminContractManager() {
                     <TableHead>Provider</TableHead>
                     <TableHead>Plan</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Anbieter-Adresse</TableHead>
                     <TableHead>Laufzeit</TableHead>
                     <TableHead className="text-right">Aktionen</TableHead>
                   </TableRow>
