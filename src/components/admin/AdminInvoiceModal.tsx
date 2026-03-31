@@ -54,6 +54,7 @@ interface AdminInvoiceModalProps {
 }
 
 export function AdminInvoiceModal({ open, onOpenChange, editInvoice, onSaved }: AdminInvoiceModalProps) {
+  const { profile: issuerProfile } = useIssuerProfile();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [providerSearch, setProviderSearch] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
@@ -72,6 +73,8 @@ export function AdminInvoiceModal({ open, onOpenChange, editInvoice, onSaved }: 
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+
+  const isNumberLocked = !!editInvoice && editInvoice.status !== "draft";
 
   // Search providers via user_roles join
   useEffect(() => {
