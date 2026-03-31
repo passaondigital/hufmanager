@@ -47,6 +47,7 @@ import { AdminBrowserAnalytics } from "@/components/admin/AdminBrowserAnalytics"
 import { AdminInvoices } from "@/components/admin/AdminInvoices";
 import { AdminContractManager } from "@/components/admin/AdminContractManager";
 import { AdminTransfersOverview } from "@/components/admin/AdminTransfersOverview";
+import { AdminQuickMessage } from "@/components/admin/AdminQuickMessage";
 import { isDemoEmail } from "@/lib/demo-accounts";
 import { PlatformSuccession } from "@/components/admin/PlatformSuccession";
 import { AdminEmailAnalytics } from "@/features/email-marketing/admin/AdminEmailAnalytics";
