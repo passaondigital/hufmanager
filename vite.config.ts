@@ -1,7 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
@@ -12,10 +11,9 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "robots.txt", "hufmanager-logo.png"],
+      includeAssets: ["favicon.ico", "robots.txt", "hufmanager-logo.png", "apple-touch-icon.png"],
       workbox: {
         // Limit auf 6 MB erhöht für große Bundles
         maximumFileSizeToCacheInBytes: 6000000,
@@ -91,11 +89,11 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       manifest: {
-        name: "HufManager",
-        short_name: "HufManager",
-        description: "Professionelle Hufpflege-Verwaltung für Hufbearbeiter",
-        theme_color: "#000000",
-        background_color: "#000000",
+        name: "Hufi",
+        short_name: "Hufi",
+        description: "App für mobile Pferdeprofis — Kunden, Pferde, Termine, Navigation & KI",
+        theme_color: "#0a0700",
+        background_color: "#0a0700",
         display: "standalone",
         orientation: "portrait",
         start_url: "/home",
