@@ -52,7 +52,7 @@ export const SettingsPanel = ({ editor }: SettingsPanelProps) => {
         {settings.subdomain && (
           <div className="border rounded-lg p-3 bg-muted/20 space-y-0.5">
             <p className="text-[10px] text-muted-foreground">Google-Vorschau:</p>
-            <p className="text-xs text-green-600 truncate">hufmanager.de/p/{settings.subdomain}</p>
+            <p className="text-xs text-green-600 truncate">hufiapp.de/p/{settings.subdomain}</p>
             <p className="text-sm font-medium text-blue-600 truncate">
               {settings.hero_headline || settings.business_name || "Deine Seite"}
             </p>
@@ -158,7 +158,7 @@ export const SettingsPanel = ({ editor }: SettingsPanelProps) => {
           <div className="border rounded-lg p-3 bg-muted/20">
             <p className="text-xs text-muted-foreground">Deine Adresse:</p>
             <p className="text-sm font-mono text-foreground">
-              hufmanager.de/p/<strong>{settings.subdomain}</strong>
+              hufiapp.de/p/<strong>{settings.subdomain}</strong>
             </p>
           </div>
         </div>

@@ -691,7 +691,7 @@ const Management = ({ tabs: tabFilter, hideChrome }: ManagementProps = {}) => {
                       className="rounded-r-none"
                     />
                     <span className="px-3 py-2 bg-muted border border-l-0 border-border rounded-r-lg text-muted-foreground">
-                      .hufmanager.de
+                      .hufiapp.de
                     </span>
                   </div>
                 </div>

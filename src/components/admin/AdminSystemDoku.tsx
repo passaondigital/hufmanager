@@ -273,7 +273,7 @@ const DATA_FLOW = [
     action: "Generiert",
     to: "Landing Page",
     toIcon: Globe,
-    description: "Öffentliche Website unter subdomain.hufmanager.de"
+    description: "Öffentliche Website unter subdomain.hufiapp.de"
   },
   {
     step: 3,

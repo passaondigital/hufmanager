@@ -7,10 +7,10 @@ const Index = () => {
   const { user, role, loading } = useAuth();
   const hostname = window.location.hostname;
 
-  // www.hufmanager.de or hufmanager.de → always landing page, no auth check
+  // www.hufiapp.de or hufmanager.de → always landing page, no auth check
   const isMainDomain =
-    hostname === "www.hufmanager.de" ||
-    hostname === "hufmanager.de";
+    hostname === "www.hufiapp.de" ||
+    hostname === "hufiapp.de";
 
   if (isMainDomain) {
     return <WebsiteHome />;

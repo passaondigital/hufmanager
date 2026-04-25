@@ -52,7 +52,7 @@ export function DomainWaitlistCard() {
             <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
               Bald kannst du direkt hier eine eigene Domain kaufen und verbinden:
               z.B. <span className="font-mono text-primary">www.hufpflege-mueller.de</span> statt{" "}
-              <span className="font-mono">hufmanager.de/p/mueller</span>
+              <span className="font-mono">hufiapp.de/p/mueller</span>
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               Eine professionelle Adresse die nur dir gehört — ohne extra Hosting, ohne extra Kosten bei einem anderen Anbieter.

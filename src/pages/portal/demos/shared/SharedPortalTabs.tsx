@@ -292,7 +292,7 @@ export function LandingpageTab({ orgName }: { orgName: string }) {
           <CardHeader><CardTitle className="text-base">Ihre Website</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <div className="aspect-video bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-border">
-              <div className="text-center"><Globe className="h-8 w-8 text-muted-foreground mx-auto mb-2" /><p className="text-sm text-muted-foreground">Vorschau: {orgName.toLowerCase().replace(/\s+/g, "-")}.hufmanager.de</p></div>
+              <div className="text-center"><Globe className="h-8 w-8 text-muted-foreground mx-auto mb-2" /><p className="text-sm text-muted-foreground">Vorschau: {orgName.toLowerCase().replace(/\s+/g, "-")}.hufiapp.de</p></div>
             </div>
             <div className="flex gap-2"><Button size="sm">Bearbeiten</Button><Button size="sm" variant="outline">Vorschau</Button><Button size="sm" variant="outline">Veröffentlichen</Button></div>
           </CardContent>

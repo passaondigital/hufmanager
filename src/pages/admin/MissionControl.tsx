@@ -569,7 +569,7 @@ export default function MissionControl() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2 col-span-2"><Label className="flex items-center gap-2"><Building2 className="w-4 h-4" />Firmenname</Label><Input value={editBusinessName} onChange={(e) => setEditBusinessName(e.target.value)} /></div>
                   <div className="space-y-2 col-span-2"><Label className="flex items-center gap-2"><Globe className="w-4 h-4" />Subdomain</Label>
-                    <div className="flex items-center gap-2"><span className="text-sm text-muted-foreground">hufmanager.de/p/</span><Input value={editSubdomain} onChange={(e) => setEditSubdomain(e.target.value)} className="flex-1" /></div>
+                    <div className="flex items-center gap-2"><span className="text-sm text-muted-foreground">hufiapp.de/p/</span><Input value={editSubdomain} onChange={(e) => setEditSubdomain(e.target.value)} className="flex-1" /></div>
                     {editSubdomain && <a href={`/p/${editSubdomain}`} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">Landingpage öffnen →</a>}
                   </div>
                   <div className="space-y-2 col-span-2"><Label>Hero-Headline</Label><Input value={editHeroHeadline} onChange={(e) => setEditHeroHeadline(e.target.value)} /></div>

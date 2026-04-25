@@ -21,7 +21,7 @@ export function isDemoEmail(email: string | undefined | null): boolean {
   const lower = email.toLowerCase();
   if (DEMO_EMAIL_SET.has(lower)) return true;
   // Also exclude test/demo patterns and internal domain
-  if (lower.includes("demo") || lower.includes("test@") || lower.endsWith("@hufmanager.de")) return true;
+  if (lower.includes("demo") || lower.includes("test@") || lower.endsWith("@hufiapp.de")) return true;
   return false;
 }
 
