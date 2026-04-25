@@ -37,11 +37,6 @@ const ID_EXPLANATIONS: Record<string, { label: string; description: string; rela
     description: "Identifiziert eine Organisation (Versicherung, Verband, Hersteller, Klinik etc.).",
     relations: "Verknüpft mit: Mitarbeiter, Nutzer, Pferde (#EQID), Provider (#PID)",
   },
-  "#EDID": {
-    label: "Termin-ID",
-    description: "Identifiziert einen einzelnen Termin / Behandlungseintrag.",
-    relations: "Verknüpft mit: Pferd (#EQID), Provider (#PID), Kunde (#KID)",
-  },
 };
 
 /** Extrahiert das Präfix aus einer ID wie "#EQID-D001" → "#EQID" */
@@ -76,7 +71,6 @@ export function DemoSystemId({ id, compact = false }: DemoSystemIdProps) {
     "#EQID": "border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-400",
     "#PRID": "border-purple-500/30 bg-purple-500/5 text-purple-700 dark:text-purple-400",
     "#OID": "border-rose-500/30 bg-rose-500/5 text-rose-700 dark:text-rose-400",
-    "#EDID": "border-cyan-500/30 bg-cyan-500/5 text-cyan-700 dark:text-cyan-400",
   };
 
   const colorClass = prefixColors[prefix] || "border-muted bg-muted/50 text-muted-foreground";
