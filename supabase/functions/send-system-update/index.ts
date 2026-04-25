@@ -131,7 +131,7 @@ serve(async (req) => {
 
       <!-- CTA -->
       <div style="text-align:center;margin:30px 0 20px;">
-        <a href="https://hufmanager.lovable.app/home" style="display:inline-block;background:#F5970A;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;">
+        <a href="https://hufiapp.de/home" style="display:inline-block;background:#F5970A;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;">
           Jetzt einloggen & Einstellungen prüfen
         </a>
       </div>

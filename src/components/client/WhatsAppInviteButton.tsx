@@ -43,7 +43,7 @@ export function WhatsAppInviteButton({
   }, [user?.id]);
 
   const inviteText = waTextInvite(fullName || "Ein Pferdefreund");
-  const inviteLink = "https://hufmanager.lovable.app/auth";
+  const inviteLink = "https://hufiapp.de/auth";
 
   const handleWhatsAppShare = () => {
     shareViaWhatsApp(inviteText);

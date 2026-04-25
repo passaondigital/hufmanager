@@ -11,19 +11,19 @@ serve(async (req) => {
   }
 
   try {
-    const { 
-      horseName, 
-      horseBreed, 
+    const {
+      horseName,
+      horseBreed,
       ownerName,
       notes,
       photoCount,
       hoofPositions,
       documentationDate
     } = await req.json();
-    
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+
+    const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_KEY) {
+      throw new Error("ANTHROPIC_API_KEY is not configured");
     }
 
     const systemPrompt = `Du bist ein Assistent für Pferdebesitzer und Hufbearbeiter.
@@ -46,52 +46,42 @@ ${notes ? `Notizen des Besitzers:\n${notes}` : "Keine zusätzlichen Notizen."}
 
 Bitte erstelle einen freundlichen E-Mail-Entwurf, der diese Dokumentation ankündigt und anbietet, die Bilder zu teilen.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": ANTHROPIC_KEY,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 500,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userPrompt }],
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("AI Gateway error:", response.status, errorText);
-      
+      console.error("Anthropic API error:", response.status, errorText);
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded" }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Payment required" }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
-      throw new Error(`AI Gateway error: ${response.status}`);
+      throw new Error(`Anthropic API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const emailDraft = data.choices?.[0]?.message?.content || "";
+    const emailDraft = data.content?.[0]?.text || "";
 
     return new Response(JSON.stringify({ emailDraft }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
     console.error("generate-farrier-email error:", error);
-    
-    // Provide a fallback template
+
     const fallbackEmail = `Sehr geehrter Hufbearbeiter,
 
 ich habe heute eine Huf-Dokumentation erstellt und würde Ihnen gerne die Bilder zukommen lassen.
@@ -99,9 +89,9 @@ ich habe heute eine Huf-Dokumentation erstellt und würde Ihnen gerne die Bilder
 Bei Fragen stehe ich gerne zur Verfügung.
 
 Mit freundlichen Grüßen`;
-    
+
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         emailDraft: fallbackEmail,
         error: error instanceof Error ? error.message : "Unknown error"
       }),

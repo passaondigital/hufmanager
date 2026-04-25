@@ -40,7 +40,7 @@ const ECOSYSTEM_APPS: EcosystemApp[] = [
     name: "HufiAi",
     description: "KI-gestützte Hufanalyse",
     idPrefix: "#kid",
-    url: "https://hufiai.lovable.app",
+    url: "https://hufiapp.de",
     icon: "🤖",
   },
   {

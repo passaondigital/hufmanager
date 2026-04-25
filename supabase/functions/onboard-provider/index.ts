@@ -234,7 +234,7 @@ serve(async (req: Request) => {
                   <p>dein Nutzungsvertrag für das <strong>${planName}</strong>-Paket wurde erstellt.</p>
                   <p>Bitte unterzeichne ihn digital in deinem HufManager-Profil.</p>
                   <div style="text-align:center;margin:32px 0;">
-                    <a href="https://hufmanager.lovable.app/management/abo"
+                    <a href="https://hufiapp.de/management/abo"
                        style="display:inline-block;background:#1a1a1a;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;">
                       Jetzt unterzeichnen
                     </a>

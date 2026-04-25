@@ -46,7 +46,7 @@ export function waTextPdfShare(name: string, horse: string, date: string): strin
 }
 
 export function waTextInvite(senderName: string): string {
-  return `Hey! Ich nutze HufManager – das digitale Betriebssystem für die Pferdewelt 🐴\n\nPferdeakte, Termine, Dokumente – alles an einem Ort. Kostenlos starten:\nhttps://hufmanager.lovable.app/auth\n\nViele Grüße, ${senderName}`;
+  return `Hey! Ich nutze HufManager – das digitale Betriebssystem für die Pferdewelt 🐴\n\nPferdeakte, Termine, Dokumente – alles an einem Ort. Kostenlos starten:\nhttps://hufiapp.de/auth\n\nViele Grüße, ${senderName}`;
 }
 
 /**

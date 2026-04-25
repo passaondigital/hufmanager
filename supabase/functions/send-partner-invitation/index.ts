@@ -193,9 +193,9 @@ serve(async (req: Request): Promise<Response> => {
     const inviterName = escapeHtml(inviterProfile?.full_name || "Ein Nutzer");
     const horseName = escapeHtml(horse.name);
     const partnerTypeLabel = PARTNER_TYPE_LABELS[partner_type] || "Fachpartner";
-    const inviteUrl = `${supabaseUrl.replace('.supabase.co', '.lovable.app')}/partner-invite/${grant.invite_token}`;
+    const inviteUrl = `${supabaseUrl.replace('.supabase.co', '.hufiapp.de')}/partner-invite/${grant.invite_token}`;
     // Use the proper app URL
-    const appUrl = Deno.env.get("APP_URL") || "https://hufmanager.lovable.app";
+    const appUrl = Deno.env.get("APP_URL") || "https://hufiapp.de";
     const finalInviteUrl = `${appUrl}/partner-invite/${grant.invite_token}`;
 
     // Build permission list

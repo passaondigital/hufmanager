@@ -28,7 +28,7 @@ import { Link } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-const DOMAIN = "hufmanager.lovable.app";
+const DOMAIN = "hufiapp.de";
 const CONTACT_EMAIL = "kontakt@hufiapp.de";
 
 const securityScores = [

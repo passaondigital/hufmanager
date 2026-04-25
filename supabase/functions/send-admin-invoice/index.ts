@@ -124,7 +124,7 @@ serve(async (req: Request) => {
             </p>
 
             <div style="text-align:center;margin-top:24px;">
-              <a href="https://hufmanager.lovable.app/home" 
+              <a href="https://hufiapp.de/home" 
                  style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
                 Rechnung im Profil einsehen
               </a>

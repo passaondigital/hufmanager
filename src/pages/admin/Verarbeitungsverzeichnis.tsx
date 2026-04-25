@@ -269,7 +269,7 @@ export default function Verarbeitungsverzeichnis() {
         <div className="rounded-lg border bg-muted/50 p-4 text-sm text-muted-foreground">
           <strong>Verantwortlicher:</strong> Pascal Schmid (HufManager) · 
           <strong> Datenschutzbeauftragter:</strong> kontakt@hufiapp.de · 
-          <strong> System:</strong> HufManager (hufmanager.lovable.app) · 
+          <strong> System:</strong> HufManager (hufiapp.de) · 
           <strong> Infrastruktur:</strong> Supabase (eu-central-1, Frankfurt)
         </div>
 
