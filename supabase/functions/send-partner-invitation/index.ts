@@ -211,7 +211,7 @@ serve(async (req: Request): Promise<Response> => {
     // Send email via Resend
     try {
       await resend.emails.send({
-        from: "HufManager <noreply@hufmanager.de>",
+        from: "HufManager <noreply@hufiapp.de>",
         to: [partner_email],
         subject: `Einladung: Zugriff auf ${horseName} im HufManager`,
         html: `

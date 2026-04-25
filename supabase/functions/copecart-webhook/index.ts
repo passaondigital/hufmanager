@@ -595,7 +595,7 @@ const handler = async (req: Request): Promise<Response> => {
             full_name: customerName || `${firstName} ${lastName}`,
             role: "provider",
           },
-          redirectTo: "https://hufmanager.de/auth",
+          redirectTo: "https://hufiapp.de/auth",
         }
       );
 

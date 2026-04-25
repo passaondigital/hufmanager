@@ -112,7 +112,7 @@ serve(async (req: Request): Promise<Response> => {
     console.log("=========================");
 
     // Generate app URL (use origin from request or fallback)
-    const origin = req.headers.get("origin") || "https://hufmanager.de";
+    const origin = req.headers.get("origin") || "https://hufiapp.de";
     const loginUrl = `${origin}/auth`;
 
     // Escape all user-controlled data
@@ -194,7 +194,7 @@ serve(async (req: Request): Promise<Response> => {
     // Send invitation email
     console.log("Sende Email via Resend an:", email);
     const emailResponse = await resend.emails.send({
-      from: `HufManager <info@hufmanager.de>`,
+      from: `HufManager <info@hufiapp.de>`,
       to: [email],
       subject: `🐴 ${safeBusinessName} lädt Sie zur HufManager KundenApp ein`,
       html: emailHtml,

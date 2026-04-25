@@ -193,7 +193,7 @@ serve(async (req) => {
 
     // Send email
     const emailResponse = await resend.emails.send({
-      from: "HufManager <info@hufmanager.de>",
+      from: "HufManager <info@hufiapp.de>",
       to: [ownerProfile.email],
       subject: `📅 Terminänderung für ${horseName}`,
       html: emailHtml,

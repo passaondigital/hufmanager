@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 const NOTIFY_EMAILS = [
-  "support@hufmanager.de",
+  "support@hufiapp.de",
   "teamhufmanager@gmail.com",
 ];
 
@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
             <td style="padding: 8px;">${now}</td>
           </tr>
         </table>
-        <a href="https://app.hufmanager.de/admin/god-mode?view=registrations" 
+        <a href="https://app.hufiapp.de/admin/god-mode?view=registrations" 
            style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: #F5970A; color: #0a0700; text-decoration: none; border-radius: 6px; font-weight: bold;">
           → Im God Mode öffnen
         </a>
@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              from: "HufManager <noreply@hufmanager.de>",
+              from: "HufManager <noreply@hufiapp.de>",
               to: [notifyEmail],
               subject: `🆕 Neue Registrierung: ${full_name || email || "Unbekannt"} (${roleLabel})`,
               html: emailHtml,

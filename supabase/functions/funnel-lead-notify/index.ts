@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const ADMIN_EMAILS = [
-  'support@hufmanager.de',
+  'support@hufiapp.de',
 ];
 
 // Admin user IDs to send push notifications to
@@ -92,7 +92,7 @@ serve(async (req) => {
         <p style="margin-top: 30px; color: #888; font-size: 12px;">
           Quelle: ${lead.source || 'Website'} | Eingegangen: ${new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' })}
         </p>
-        <a href="https://app.hufmanager.de/admin/mission-control" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: #1a1a2e; color: white; text-decoration: none; border-radius: 6px;">
+        <a href="https://app.hufiapp.de/admin/mission-control" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: #1a1a2e; color: white; text-decoration: none; border-radius: 6px;">
           → Im Mission Control öffnen
         </a>
       </div>
@@ -109,7 +109,7 @@ serve(async (req) => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              from: 'HufManager <noreply@hufmanager.de>',
+              from: 'HufManager <noreply@hufiapp.de>',
               to: [email],
               subject: `🎯 Neue Anfrage: ${lead.full_name} – ${topicLabels[lead.topic] || lead.topic}`,
               html: emailHtml,

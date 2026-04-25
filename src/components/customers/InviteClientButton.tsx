@@ -68,7 +68,7 @@ Mit deinem persönlichen Link kannst du ${horseText}:
 ✅ Direkt mit mir chatten
 
 👉 Dein Link:
-https://app.hufmanager.de/connect/${slug}
+https://app.hufiapp.de/connect/${slug}
 
 Einmal tippen – direkt drin.
 Keine App-Installation nötig. 🐴
@@ -211,7 +211,7 @@ export function InviteClientButton({
     setLoading(true);
     try {
       const slug = await getOrCreateMagicLink();
-      const link = `https://app.hufmanager.de/connect/${slug}`;
+      const link = `https://app.hufiapp.de/connect/${slug}`;
       await navigator.clipboard.writeText(link);
       await updateSentTracking(slug, "copy");
       toast.success("Link kopiert!");

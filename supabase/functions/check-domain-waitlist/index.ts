@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 const THRESHOLDS = [10, 25, 50, 100];
-const PASCAL_EMAIL = "support@hufmanager.de";
+const PASCAL_EMAIL = "support@hufiapp.de";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {

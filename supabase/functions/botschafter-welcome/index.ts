@@ -32,7 +32,7 @@ serve(async (req) => {
     }
 
     const bidDisplay = (bid || "").toString().slice(0, 8).toUpperCase() || "PENDING";
-    const referralLink = `https://hufmanager.de/pferdeakte?ref=${referral_code}`;
+    const referralLink = `https://hufiapp.de/pferdeakte?ref=${referral_code}`;
 
     const typeLabels: Record<string, string> = {
       creator: "Creator / Influencer",
@@ -43,7 +43,7 @@ serve(async (req) => {
     const resend = new Resend(RESEND_API_KEY);
 
     const { error: emailError } = await resend.emails.send({
-      from: "HufManager <info@hufmanager.de>",
+      from: "HufManager <info@hufiapp.de>",
       to: [email],
       subject: `Willkommen als HufManager Botschafter, ${first_name}!`,
       html: `

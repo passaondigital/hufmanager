@@ -325,7 +325,7 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
   const path = location.pathname;
   const portalMode = detectPortalMode();
 
-  // Subdomain routing: portal.hufmanager.de or versicherung.hufmanager.de
+  // Subdomain routing: portal.hufiapp.de or versicherung.hufiapp.de
   if (portalMode.mode === 'portal' || portalMode.mode === 'insurance') {
     return (
       <AuthProvider>
@@ -363,7 +363,7 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Subdomain routing: markt.hufmanager.de
+  // Subdomain routing: markt.hufiapp.de
   if (portalMode.mode === 'marketplace') {
     return (
       <AuthProvider>
@@ -376,7 +376,7 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Subdomain routing: tierarzt.hufmanager.de
+  // Subdomain routing: tierarzt.hufiapp.de
   if (portalMode.mode === 'veterinary') {
     return (
       <AuthProvider>
@@ -548,7 +548,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
              {/* Legacy/alias route */}
              <Route path="/dashboard" element={<Navigate to="/home" replace />} />
             
-            {/* Domain-basierte Weiche: www.hufmanager.de → LP, app.hufmanager.de → Dashboard */}
+            {/* Domain-basierte Weiche: www.hufiapp.de → LP, app.hufiapp.de → Dashboard */}
             <Route path="/" element={<Index />} />
             
             {/* Widget Embeds (öffentlich, kein Auth) */}
