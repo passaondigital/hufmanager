@@ -21,16 +21,37 @@ interface MultiStepSignupProps {
     country: DachCountry;
     businessName?: string;
     clientType?: ClientType;
+    professionType?: string;
   }) => Promise<void>;
   onCancel: () => void;
   loading: boolean;
   inviteCode?: string | null;
 }
 
-// Steps: Name → Role → ClientType (if client) → Country → Credentials → Business (provider only)
+interface ProfessionOption {
+  value: string;
+  label: string;
+  emoji: string;
+  description: string;
+}
+
+const PROFESSIONS: ProfessionOption[] = [
+  { value: "hoof_care", label: "Hufbearbeiter", emoji: "🐴", description: "Barhuf, Beschlag, Kleben" },
+  { value: "osteopath", label: "Osteopath", emoji: "🦴", description: "Pferdeosteopathie" },
+  { value: "physiotherapist", label: "Physiotherapeut", emoji: "💆", description: "Pferdephysiotherapie" },
+  { value: "dentist", label: "Equine Dentist", emoji: "🦷", description: "Pferdezahnbehandlung" },
+  { value: "riding_instructor", label: "Reitlehrer", emoji: "🏇", description: "Reitunterricht & Beritt" },
+  { value: "saddler", label: "Sattler", emoji: "🪡", description: "Sattelanpassung & Reparatur" },
+  { value: "massage", label: "Massage", emoji: "💬", description: "Pferdemassage & Wellness" },
+  { value: "vet_mobile", label: "Mobiler Tierarzt", emoji: "🩺", description: "Veterinärmedizin vor Ort" },
+  { value: "other", label: "Sonstiges", emoji: "⚙️", description: "Andere mobile Dienstleistung" },
+];
+
+// Steps: 0=name 1=role 2=profession(provider) 3=client-type(client) 4=country 5=credentials 6=business(provider)
 const STEPS = [
   { id: "name", motivation: "Schön dass du dabei bist." },
-  { id: "role", motivation: "HufManager passt sich deiner Arbeit an." },
+  { id: "role", motivation: "Hufi passt sich deiner Rolle an." },
+  { id: "profession", motivation: "Wir richten deine Service-Presets und Zeitpuffer passend ein." },
   { id: "client-type", motivation: "Damit wir dir die richtigen Features zeigen." },
   { id: "country", motivation: "Steuerrecht, Währung & Sprache — automatisch korrekt." },
   { id: "credentials", motivation: "Deine Daten. Deine Kontrolle. Deutsche Server." },
@@ -41,6 +62,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
   const [step, setStep] = useState(0);
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<"provider" | "client">(inviteCode ? "client" : "provider");
+  const [professionType, setProfessionType] = useState<string>("");
   const [country, setCountry] = useState<DachCountry>("DE");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -54,14 +76,13 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
 
   const firstName = fullName.split(" ")[0] || "";
 
-  // Dynamic step sequence based on role
   const getStepSequence = () => {
     if (role === "provider") {
-      // name → role → country → credentials → business
-      return [0, 1, 3, 4, 5];
+      // name → role → profession → country → credentials → business
+      return [0, 1, 2, 4, 5, 6];
     }
     // client: name → role → client-type → country → credentials
-    return [0, 1, 2, 3, 4];
+    return [0, 1, 3, 4, 5];
   };
 
   const stepSequence = getStepSequence();
@@ -73,10 +94,11 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
     switch (currentLogicalStep) {
       case 0: return fullName.trim().length >= 2;
       case 1: return true;
-      case 2: return true; // client-type always has default
-      case 3: return true; // country always selected
-      case 4: return email.includes("@") && password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password) && agbAccepted && privacyAccepted && widerrufAccepted;
-      case 5: return true; // business name optional
+      case 2: return professionType !== ""; // profession required for providers
+      case 3: return true; // client-type always has default
+      case 4: return true; // country always selected
+      case 5: return email.includes("@") && password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password) && agbAccepted && privacyAccepted && widerrufAccepted;
+      case 6: return true; // business name optional
       default: return false;
     }
   };
@@ -98,6 +120,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
       country,
       businessName: businessName.trim() || undefined,
       clientType: role === "client" ? clientType : undefined,
+      professionType: role === "provider" ? professionType : undefined,
     });
     setShowWelcome(true);
   };
@@ -182,14 +205,15 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
           {currentLogicalStep === 1 && (
             <div className="space-y-4">
               <div className="text-center">
-                <h2 className="text-2xl font-bold text-foreground">Was machst du?</h2>
+                <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider mb-1">Registrieren als</p>
+                <h2 className="text-2xl font-bold text-foreground">Welche Rolle hast du?</h2>
               </div>
               <div className="space-y-3">
                 <button
                   type="button"
                   onClick={() => setRole("provider")}
                   className={cn(
-                    "w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all min-h-[64px]",
+                    "w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all min-h-[80px]",
                     role === "provider" ? "border-primary bg-primary/10 shadow-md" : "border-border hover:border-primary/50"
                   )}
                 >
@@ -197,15 +221,16 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
                     <Hammer className="h-6 w-6" />
                   </div>
                   <div className="text-left">
-                    <p className="font-semibold text-foreground">Hufbearbeiter</p>
+                    <p className="font-semibold text-foreground">Mobiler Pferdeprofi</p>
                     <p className="text-sm text-muted-foreground">Termine, Kunden & Rechnungen verwalten</p>
+                    <p className="text-xs text-primary/70 mt-0.5">Hufbearbeiter · Osteopath · Tierarzt · u.v.m.</p>
                   </div>
                 </button>
                 <button
                   type="button"
                   onClick={() => setRole("client")}
                   className={cn(
-                    "w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all min-h-[64px] relative",
+                    "w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all min-h-[80px] relative",
                     role === "client" ? "border-primary bg-primary/10 shadow-md" : "border-border hover:border-primary/50"
                   )}
                 >
@@ -216,19 +241,59 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
                   <div className="text-left">
                     <p className="font-semibold text-foreground">Pferdebesitzer</p>
                     <p className="text-sm text-muted-foreground">Pferdeakte einsehen & Termine buchen</p>
+                    <p className="text-xs text-muted-foreground/60 mt-0.5">Kostenlos · Keine Kreditkarte nötig</p>
                   </div>
                 </button>
               </div>
             </div>
           )}
 
-          {/* Step 2: Client Type (Privat / Gewerbe) – only for clients */}
+          {/* Step 2: Profession (providers only) */}
           {currentLogicalStep === 2 && (
+            <div className="space-y-4">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-foreground">Was ist dein Beruf?</h2>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {PROFESSIONS.map((p, i) => (
+                  <motion.button
+                    key={p.value}
+                    type="button"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.04 }}
+                    onClick={() => setProfessionType(p.value)}
+                    className={cn(
+                      "flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-center",
+                      professionType === p.value
+                        ? "border-primary bg-primary/10 shadow-md"
+                        : "border-border hover:border-primary/50 hover:bg-muted/50"
+                    )}
+                  >
+                    <span className="text-2xl">{p.emoji}</span>
+                    <span className="text-xs font-medium text-foreground leading-tight">{p.label}</span>
+                  </motion.button>
+                ))}
+              </div>
+              {professionType && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-sm text-muted-foreground text-center"
+                >
+                  {PROFESSIONS.find(p => p.value === professionType)?.description}
+                </motion.p>
+              )}
+            </div>
+          )}
+
+          {/* Step 3: Client Type (Privat / Gewerbe) – only for clients */}
+          {currentLogicalStep === 3 && (
             <ClientTypeSelection value={clientType} onChange={setClientType} />
           )}
 
-          {/* Step 3: Country */}
-          {currentLogicalStep === 3 && (
+          {/* Step 4: Country */}
+          {currentLogicalStep === 4 && (
             <div className="space-y-4">
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-foreground">In welchem Land arbeitest du?</h2>
@@ -263,8 +328,8 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
             </div>
           )}
 
-          {/* Step 4: Email & Password */}
-          {currentLogicalStep === 4 && (
+          {/* Step 5: Email & Password */}
+          {currentLogicalStep === 5 && (
             <div className="space-y-4">
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-foreground">Dein Zugang</h2>
@@ -288,12 +353,12 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
                   />
                   {password.length > 0 && (
                     <div className="space-y-1">
-                      <Progress 
+                      <Progress
                         value={
-                          (password.length >= 8 ? 33 : 0) + 
-                          (/[A-Z]/.test(password) ? 33 : 0) + 
+                          (password.length >= 8 ? 33 : 0) +
+                          (/[A-Z]/.test(password) ? 33 : 0) +
                           (/[0-9]/.test(password) ? 34 : 0)
-                        } 
+                        }
                         className="h-1.5"
                       />
                       <div className="flex flex-wrap gap-2 text-[11px]">
@@ -349,8 +414,8 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
             </div>
           )}
 
-          {/* Step 5: Business Name (providers only) */}
-          {currentLogicalStep === 5 && (
+          {/* Step 6: Business Name (providers only) */}
+          {currentLogicalStep === 6 && (
             <div className="space-y-4">
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-foreground">Dein Betrieb</h2>

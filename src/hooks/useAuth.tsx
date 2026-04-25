@@ -273,6 +273,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   sessionStorage.removeItem("hm_pending_client_type");
                 }
               }
+              // Process pending profession_type from registration (providers only)
+              const pendingProfessionType = sessionStorage.getItem("hm_pending_profession_type");
+              if (pendingProfessionType) {
+                try {
+                  await supabase.from("profiles").update({
+                    profession_type: pendingProfessionType,
+                  } as any).eq("id", session.user.id);
+                  const { data: bsExisting } = await supabase
+                    .from("business_settings")
+                    .select("id")
+                    .eq("user_id", session.user.id)
+                    .maybeSingle();
+                  if (bsExisting) {
+                    await supabase.from("business_settings").update({
+                      profession_type: pendingProfessionType,
+                    } as any).eq("user_id", session.user.id);
+                  }
+                  await supabase.rpc("create_default_service_presets", {
+                    _provider_id: session.user.id,
+                    _profession_type: pendingProfessionType,
+                  });
+                } catch (err) {
+                  console.error("Error setting profession_type:", err);
+                } finally {
+                  sessionStorage.removeItem("hm_pending_profession_type");
+                }
+              }
             }
           }, 0);
         } else {

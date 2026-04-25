@@ -549,6 +549,9 @@ export default function Auth() {
                       if (data.clientType) {
                         sessionStorage.setItem("hm_pending_client_type", data.clientType);
                       }
+                      if (data.professionType) {
+                        sessionStorage.setItem("hm_pending_profession_type", data.professionType);
+                      }
                       // Store country for profile update after email confirmation
                       sessionStorage.setItem("hm_pending_country", data.country);
                       // Store widerrufsausschluss consent for logging after email confirmation

@@ -189,7 +189,7 @@ HÄUFIGE WORKFLOWS:
 7. Abo verwalten: Management → Abo & Zahlung
 8. Website bearbeiten: Management → Meine Website
 9. Impressum hinterlegen: Management → Rechtliches
-6. Fahrtenbuch exportieren: Cockpit → Tour beenden → Zusammenfassung → Export als PDF/CSV
+10. Fahrtenbuch exportieren: Cockpit → Tour beenden → Zusammenfassung → Export als PDF/CSV
 
 GLOSSAR:
 - Tages-Cockpit: Zentrale Steuereinheit für den Arbeitstag (Route + Navigation + Timer + Fahrtenbuch)

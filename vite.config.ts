@@ -174,6 +174,29 @@ export default defineConfig(({ mode }) => ({
       },
     }),
   ].filter(Boolean),
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          // Vendor: heavy UI libs
+          if (id.includes("node_modules/recharts") || id.includes("node_modules/d3")) return "charts";
+          if (id.includes("node_modules/jspdf") || id.includes("node_modules/html2canvas")) return "pdf";
+          if (id.includes("node_modules/@radix-ui")) return "radix";
+          if (id.includes("node_modules/framer-motion")) return "motion";
+          if (id.includes("node_modules/lucide-react")) return "icons";
+          if (id.includes("node_modules/date-fns") || id.includes("node_modules/react-day-picker")) return "dates";
+          if (id.includes("node_modules/@supabase")) return "supabase";
+          if (id.includes("node_modules/react-router-dom") || id.includes("node_modules/react-router")) return "router";
+          // App: heavy page groups
+          if (id.includes("/pages/admin/") || id.includes("MissionControl")) return "AdminDashboard";
+          if (id.includes("/pages/Kalender") || id.includes("/components/calendar")) return "Kalender";
+          if (id.includes("/pages/Buchhaltung") || id.includes("/pages/GuV") || id.includes("/pages/Ausgaben") || id.includes("/pages/Fuhrpark")) return "HufiBusinessPages";
+          if (id.includes("/pages/Netzwerk") || id.includes("/pages/HMConnect") || id.includes("/pages/Marketplace")) return "HufiConnectPages";
+          if (id.includes("/pages/ImportCenter")) return "ImportCenter";
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
