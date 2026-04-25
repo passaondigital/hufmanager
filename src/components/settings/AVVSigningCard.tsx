@@ -139,7 +139,7 @@ Der Auftragnehmer behandelt alle Daten unbefristet vertraulich und verpflichtet 
 
 ANLAGE 1 – Auftragsdetails
 
-Leistung: SaaS-Plattform HufManager
+Leistung: Hufi App-Plattform (hufiapp.de)
 
 Verarbeitete Datenarten:
 - Name und Kontaktdaten der Nutzer

@@ -36,7 +36,7 @@ const securityScores = [
     icon: Lock,
     title: "SSL/TLS Sicherheit",
     badge: "SSL A+ Verschlüsselung",
-    description: "Deine Verbindung zu HufManager ist durch modernste Verschlüsselung geschützt — wie beim Online-Banking.",
+    description: "Deine Verbindung zu Hufi ist durch modernste Verschlüsselung geschützt — wie beim Online-Banking.",
     link: `https://www.ssllabs.com/ssltest/analyze.html?d=${DOMAIN}`,
   },
   {
@@ -274,7 +274,7 @@ const Vertrauen = () => (
           </div>
           <h3 className="text-lg font-bold text-white mb-2">Verarbeitungsverzeichnis (Art. 30 DSGVO)</h3>
           <p className="text-white/50 text-sm max-w-lg mx-auto mb-6">
-            HufManager führt ein vollständiges, strukturiertes Verarbeitungsverzeichnis aller personenbezogenen Daten gemäß Art. 30 DSGVO. Behörden können dieses auf Anfrage einsehen.
+            Hufi führt ein vollständiges, strukturiertes Verarbeitungsverzeichnis aller personenbezogenen Daten gemäß Art. 30 DSGVO. Behörden können dieses auf Anfrage einsehen.
           </p>
           <Button variant="outline" size="sm" className="border-white/10 text-white hover:bg-white/5 gap-2" asChild>
             <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Anfrage Verarbeitungsverzeichnis Art. 30")}`}>
@@ -352,7 +352,7 @@ const Vertrauen = () => (
             <div>
               <h3 className="text-white font-bold mb-4">Unser Versprechen</h3>
               <p className="text-white/50 text-sm leading-relaxed">
-                Alle KI-Funktionen in HufManager sind als solche gekennzeichnet. Nutzer können KI-Features jederzeit deaktivieren. Ihre Daten werden niemals zum Training von KI-Modellen verwendet.
+                Alle KI-Funktionen in Hufi sind als solche gekennzeichnet. Nutzer können KI-Features jederzeit deaktivieren. Ihre Daten werden niemals zum Training von KI-Modellen verwendet.
               </p>
             </div>
           </div>
@@ -406,7 +406,7 @@ const Vertrauen = () => (
               <Building2 className="w-6 h-6 text-primary" />
             </div>
           </div>
-          <h3 className="text-white font-bold text-lg mb-1">HufManager</h3>
+          <h3 className="text-white font-bold text-lg mb-1">Hufi</h3>
           <p className="text-white/50 text-sm mb-6">Pascal Schmid – Betreiber</p>
           <div className="grid sm:grid-cols-2 gap-4 text-left max-w-md mx-auto">
             <div>

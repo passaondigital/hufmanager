@@ -25,7 +25,7 @@ const AGB = () => (
           <section className="space-y-4">
             <h2 className="text-xl font-semibold text-white">2. Vertragsgegenstand und Leistungsumfang</h2>
             <p>2.1 Der Auftragnehmer erbringt als selbständiger Unternehmer folgende Leistungen gegenüber dem Auftraggeber:</p>
-            <p>HufManager ist eine webbasierte SaaS-Plattform für das Hufpflegemanagement. Die Plattform ermöglicht Hufbearbeitern, Tierärzten, Physiotherapeuten und Pferdebesitzern die digitale Verwaltung von Terminen, Behandlungen, Pferdeakten und Kundendaten.</p>
+            <p>Hufi (hufiapp.de) ist eine webbasierte App-Plattform für mobile Pferdeprofis. Die Plattform ermöglicht Hufbearbeitern, Tierärzten, Physiotherapeuten und Pferdebesitzern die digitale Verwaltung von Terminen, Behandlungen, Pferdeakten und Kundendaten.</p>
             <p>2.2 Der spezifische Leistungsumfang ist Gegenstand von Individualvereinbarungen zwischen Auftragnehmer und dem Auftraggeber.</p>
             <p>2.3 Der Auftragnehmer erbringt die vertragsgemäßen Leistungen mit größtmöglicher Sorgfalt und Gewissenhaftigkeit nach dem jeweils neuesten Stand, neuesten Regeln und Erkenntnissen.</p>
             <p>2.4 Der Auftragnehmer ist zur Erbringung der vertragsgemäß geschuldeten Leistungen verpflichtet. Bei der Durchführung seiner Tätigkeit ist er jedoch etwaigen Weisungen im Hinblick auf die Art der Erbringung seiner Leistungen nicht unterworfen. Die Leistungserbringung durch den Auftragnehmer erfolgt lediglich in Abstimmung und in Koordination mit dem Auftraggeber.</p>

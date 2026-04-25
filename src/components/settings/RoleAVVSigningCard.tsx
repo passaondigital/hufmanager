@@ -19,9 +19,9 @@ import { getStorageUrl } from "@/lib/storage";
 type AVVRole = "provider" | "partner" | "employee";
 
 const ROLE_INTRO: Record<AVVRole, string> = {
-  provider: "für die Nutzung der SaaS-Plattform HufManager als Hufbearbeiter/Dienstleister",
-  partner: "für die Tätigkeit als Fachpartner auf der Plattform HufManager",
-  employee: "für die Tätigkeit als Mitarbeiter auf der Plattform HufManager",
+  provider: "für die Nutzung der Hufi App-Plattform (hufiapp.de) als Hufbearbeiter/Dienstleister",
+  partner: "für die Tätigkeit als Fachpartner auf der Hufi App-Plattform (hufiapp.de)",
+  employee: "für die Tätigkeit als Mitarbeiter auf der Hufi App-Plattform (hufiapp.de)",
 };
 
 const getAvvText = (name: string, street: string, zipCity: string, role: AVVRole) => {
@@ -148,7 +148,7 @@ Der Auftragnehmer behandelt alle Daten unbefristet vertraulich und verpflichtet 
 
 ANLAGE 1 – Auftragsdetails
 
-Leistung: SaaS-Plattform HufManager
+Leistung: Hufi App-Plattform (hufiapp.de)
 
 Verarbeitete Datenarten:
 - Name und Kontaktdaten der Nutzer

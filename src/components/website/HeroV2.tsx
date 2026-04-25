@@ -67,7 +67,7 @@ const HeroV2 = () => {
           <div className="relative animate-fade-up lg:pl-8" style={{ animationDelay: "300ms" }}>
             <div className="relative mx-auto max-w-[420px] lg:max-w-[500px]">
               <div className="absolute inset-0 bg-[#F5970A]/20 blur-[80px] scale-75" />
-              <img src={heroHorse} alt="HufManager – Schluss mit Zetteln und WhatsApp-Chaos" className="relative w-full h-auto drop-shadow-2xl" />
+              <img src={heroHorse} alt="Hufi – Schluss mit Zetteln und WhatsApp-Chaos" className="relative w-full h-auto drop-shadow-2xl" />
             </div>
           </div>
         </div>

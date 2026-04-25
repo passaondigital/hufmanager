@@ -33,7 +33,7 @@ const EcosystemSection = () => (
                 <div className="flex-1 bg-zinc-700 rounded h-5 mx-8" />
               </div>
               <div className="bg-zinc-900 p-1 rounded-b-xl border border-zinc-700">
-                <img src={dashboardImg} alt="HufManager Dashboard" className="w-full rounded-lg" loading="lazy" />
+                <img src={dashboardImg} alt="Hufi Dashboard" className="w-full rounded-lg" loading="lazy" />
               </div>
             </div>
           </div>
@@ -60,7 +60,7 @@ const EcosystemSection = () => (
                 <div className="bg-zinc-900 rounded-[2.5rem] p-2 shadow-2xl">
                   <div className="absolute top-4 left-1/2 -translate-x-1/2 w-20 h-5 bg-zinc-900 rounded-full z-10" />
                   <div className="bg-zinc-800 rounded-[2rem] overflow-hidden">
-                    <img src={customerAppImg} alt="HufManager Kunden App" className="w-full" loading="lazy" />
+                    <img src={customerAppImg} alt="Hufi Kunden App" className="w-full" loading="lazy" />
                   </div>
                 </div>
               </div>

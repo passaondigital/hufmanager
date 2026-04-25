@@ -19,7 +19,7 @@ const WebsiteHome = () => {
   useGA4();
 
   useEffect(() => {
-    document.title = "HufManager – Software für Hufpflegeprofis";
+    document.title = "Hufi – Software für Hufpflegeprofis";
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
       metaDesc.setAttribute("content", "Die Praxissoftware für Barhufpfleger & Hufschmiede. Termine, Befunde, Rechnungen, Website – alles in einem. Jetzt 14 Tage kostenlos.");
@@ -41,7 +41,7 @@ const WebsiteHome = () => {
       ldScript.textContent = JSON.stringify({
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
-        "name": "HufManager",
+        "name": "Hufi",
         "description": "Die Praxissoftware für Hufpflegeprofis",
         "url": "https://hufiapp.de",
         "applicationCategory": "BusinessApplication",
@@ -73,7 +73,7 @@ const WebsiteHome = () => {
       <HeroMinimal />
       {/* 2. Drei Schmerzen */}
       <PainCardsSection />
-      {/* 2b. Was ist HufManager */}
+      {/* 2b. Was ist Hufi */}
       <WhatIsHufManagerSection />
       {/* 3. Ökosystem */}
       <EcosystemHeader />

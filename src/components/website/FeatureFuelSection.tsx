@@ -11,7 +11,7 @@ export default function FeatureFuelSection() {
               Immer die günstigste Tankstelle <span className="text-primary">auf deiner Route.</span>
             </h2>
             <p className="text-white/60 text-lg leading-relaxed">
-              Tankerkönig-Daten in Echtzeit, DSGVO-konform. HufManager zeigt dir automatisch die billigste Tankstelle auf deinem Weg – und rechnet die Fahrtkosten direkt in deine Rechnung ein.
+              Tankerkönig-Daten in Echtzeit, DSGVO-konform. Hufi zeigt dir automatisch die billigste Tankstelle auf deinem Weg – und rechnet die Fahrtkosten direkt in deine Rechnung ein.
             </p>
             <div className="space-y-4">
               {[

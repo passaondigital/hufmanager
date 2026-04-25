@@ -33,7 +33,7 @@ const Widerruf = () => {
 
     const subject = encodeURIComponent(`Widerruf – ${firstName} ${lastName}`);
     const body = encodeURIComponent(
-      `Hiermit widerrufe ich meinen mit HufManager geschlossenen Vertrag über die Nutzung der digitalen Plattform.\n\n` +
+      `Hiermit widerrufe ich meinen mit Hufi geschlossenen Vertrag über die Nutzung der digitalen Plattform.\n\n` +
       `Vorname: ${firstName}\nNachname: ${lastName}\nE-Mail: ${email}\n` +
       `Kundennummer: ${customerId || "–"}\nVertragsdatum: ${contractDate}\n` +
       `Plan: ${plan}\nGrund: ${reason || "–"}`
@@ -50,7 +50,7 @@ const Widerruf = () => {
         <div className="max-w-2xl mx-auto">
           <h1 className="text-4xl font-bold mb-4 text-white">Widerrufsbelehrung</h1>
           <p className="text-white/50 mb-10">
-            Nutzen Sie dieses Formular, um Ihren Vertrag mit HufManager fristgerecht zu widerrufen.
+            Nutzen Sie dieses Formular, um Ihren Vertrag mit Hufi fristgerecht zu widerrufen.
           </p>
 
           {/* Widerrufsbelehrung */}
@@ -156,7 +156,7 @@ const Widerruf = () => {
               </div>
 
               <p className="text-white/60 text-sm border-l-2 border-[#F5970A]/60 pl-4">
-                Hiermit widerrufe ich meinen mit HufManager geschlossenen Vertrag über die Nutzung der digitalen Plattform.
+                Hiermit widerrufe ich meinen mit Hufi geschlossenen Vertrag über die Nutzung der digitalen Plattform.
               </p>
 
               <Button type="submit" size="lg" className="w-full bg-[#F5970A] hover:bg-[#F5970A]/90 text-black font-bold">
