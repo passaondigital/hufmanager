@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/tooltip";
 import type { TourAppointment } from "@/components/tour-manager/TourCard";
 import { TeamOverviewSection } from "./TeamOverviewSection";
+import { HeyHufi } from "@/components/voice/HeyHufi";
+import { useAuth } from "@/hooks/useAuth";
 
 interface CockpitReadyProps {
   appointments: TourAppointment[];
@@ -35,6 +37,7 @@ export function CockpitReady({
   geocodeProgress,
   onStartTour,
 }: CockpitReadyProps) {
+  const { user } = useAuth();
   const fmt = (v: number) =>
     new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(v);
 
@@ -60,11 +63,17 @@ export function CockpitReady({
       )}
 
       {/* Header */}
-      <div className="pl-14 pr-5 pt-5 pb-1">
-        <h1 className="text-2xl font-bold text-white">Tages-Cockpit</h1>
-        <p className="text-sm mt-0.5" style={{ color: "#999" }}>
-          {new Date().toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}
-        </p>
+      <div className="pl-14 pr-5 pt-5 pb-1 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Tages-Cockpit</h1>
+          <p className="text-sm mt-0.5" style={{ color: "#999" }}>
+            {new Date().toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}
+          </p>
+        </div>
+        <HeyHufi
+          userName={user?.user_metadata?.full_name || ""}
+          appointmentCount={appointments.length}
+        />
       </div>
 
       {/* Stats */}
