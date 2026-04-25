@@ -23,7 +23,7 @@ const NAV = [
   { id: "sync", label: "PMS-Sync", icon: RefreshCw },
   { id: "finder", label: "Klinik-Finder", icon: MapPin },
   { id: "nachrichten", label: "Nachrichten", icon: MessageSquare },
-  { id: "connect", label: "HM Connect", icon: Link2 },
+  { id: "connect", label: "Hufi Connect", icon: Link2 },
   { id: "mitarbeiter", label: "Mitarbeiter", icon: Briefcase },
   { id: "nutzer", label: "Nutzer", icon: Users },
   { id: "landingpage", label: "Website", icon: Globe },

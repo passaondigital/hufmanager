@@ -19,7 +19,7 @@ export function DemoStickyBanner() {
     <>
       {!isDismissed ? (
         <div className={cn(
-          "fixed bottom-0 left-0 right-0 z-50",
+          "fixed bottom-16 left-0 right-0 z-[49]",
           "bg-card",
           "border-t border-border"
         )}>
@@ -60,7 +60,7 @@ export function DemoStickyBanner() {
       ) : (
         <Button
           onClick={() => setIsPricingOpen(true)}
-          className="fixed bottom-4 right-4 z-50 shadow-lg gap-2"
+          className="fixed bottom-20 right-4 z-[49] shadow-lg gap-2"
           size="sm"
         >
           <Gem className="h-4 w-4" />
@@ -71,7 +71,7 @@ export function DemoStickyBanner() {
       <PricingModal
         open={isPricingOpen}
         onOpenChange={setIsPricingOpen}
-        title="Bereit für deinen eigenen HufManager?"
+        title="Bereit für deinen eigenen Hufi?"
         description="Übernimm deine Daten aus der Demo und arbeite im eigenen Account."
         showTrialBadge={true}
         isDemoContext={true}

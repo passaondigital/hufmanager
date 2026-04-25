@@ -11,6 +11,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   role: UserRole;
+  userType: "pro" | "owner" | null;
   loading: boolean;
   isPasswordRecovery: boolean;
   clearPasswordRecovery: () => void;
@@ -28,8 +29,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<UserRole>(null);
+  const [userType, setUserType] = useState<"pro" | "owner" | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+
+  const fetchUserProfile = async (userId: string) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('user_type')
+      .eq('id', userId)
+      .maybeSingle();
+    return data?.user_type as 'pro' | 'owner' | null;
+  };
 
   const fetchUserRole = async (userId: string): Promise<UserRole> => {
     const { data, error } = await supabase
@@ -125,7 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Process HM Connect invite token after successful login
+  // Process Hufi Connect invite token after successful login
   const processHmConnectInvite = async (userId: string) => {
     const token = sessionStorage.getItem("hm_connect_invite");
     if (!token) return;
@@ -165,10 +176,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             requested_by: data.invited_by,
           });
         }
-        console.log("HM Connect invite accepted, connected to:", data.invited_by);
+        console.log("Hufi Connect invite accepted, connected to:", data.invited_by);
       }
     } catch (error) {
-      console.error("Error processing HM Connect invite:", error);
+      console.error("Error processing Hufi Connect invite:", error);
     } finally {
       sessionStorage.removeItem("hm_connect_invite");
     }
@@ -205,8 +216,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setTimeout(async () => {
             if (!isMounted) return;
             const fetchedRole = await fetchRoleGuarded(session.user.id);
+            const fetchedType = await fetchUserProfile(session.user.id);
             if (isMounted && fetchedRole !== null) {
               setRole(fetchedRole);
+              setUserType(fetchedType);
               setLoading(false);
             }
             // Process invite code on sign in
@@ -277,6 +290,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }, 0);
         } else {
           setRole(null);
+    setUserType(null);
           // No session means not authenticated - stop loading
           if (isMounted) setLoading(false);
         }
@@ -292,9 +306,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchRoleGuarded(session.user.id).then((r) => {
-          if (isMounted && r !== null) {
-            setRole(r);
+        Promise.all([fetchRoleGuarded(session.user.id), fetchUserProfile(session.user.id)]).then(([r, type]) => {
+          if (isMounted) {
+            if (r !== null) setRole(r);
+            setUserType(type);
             setLoading(false);
           }
         });
@@ -349,13 +364,13 @@ const signIn = async (email: string, password: string) => {
         }
       })();
 
-      // If we have a meta role, use it immediately for fast redirect
+      // Optimistically set role from metadata for any intermediate UI,
+      // but do NOT set loading=false yet — wait for DB to confirm the true role
       if (metaRole) {
         setRole(metaRole);
-        setLoading(false);
       }
 
-      // Still fetch the authoritative role from DB in parallel
+      // Fetch authoritative role from DB (must complete before navigation)
       const [profileResult, dbRole] = await Promise.all([
         profilePromise,
         fetchUserRole(data.user.id),
@@ -371,6 +386,8 @@ const signIn = async (email: string, password: string) => {
 
       // Update with authoritative DB role (may differ from metadata)
       setRole(dbRole);
+      const type = await fetchUserProfile(data.user.id);
+      setUserType(type);
       setLoading(false);
     }
 
@@ -430,16 +447,17 @@ const signIn = async (email: string, password: string) => {
     navigate("/auth", { replace: true });
   };
 
-  const value = { 
-    user, 
-    session, 
-    role, 
-    loading, 
-    isPasswordRecovery, 
-    clearPasswordRecovery, 
-    signIn, 
-    signUp, 
-    signOut 
+  const value = {
+    user,
+    session,
+    role,
+    userType,
+    loading,
+    isPasswordRecovery,
+    clearPasswordRecovery,
+    signIn,
+    signUp,
+    signOut
   };
 
   return (

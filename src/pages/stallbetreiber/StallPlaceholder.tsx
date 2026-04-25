@@ -21,7 +21,7 @@ export default function StallPlaceholder() {
     betrieb: "Betriebsübersicht",
     reports: "Berichte & Behörden",
     experts: "Stall-Experten",
-    connect: "HM Connect",
+    connect: "Hufi Connect",
     chat: "Nachrichten",
     marketplace: "Pferdemarkt",
     settings: "Stall-Einstellungen",

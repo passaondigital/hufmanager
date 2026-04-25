@@ -51,7 +51,7 @@ export function ClientPrivateChat() {
           <div className="text-center py-12 text-muted-foreground">
             <Users className="h-10 w-10 mx-auto mb-3 opacity-50" />
             <p className="text-sm font-medium">Keine Kontakte</p>
-            <p className="text-xs">Verbinde dich über HM Connect mit anderen Pferdebesitzern.</p>
+            <p className="text-xs">Verbinde dich über Hufi Connect mit anderen Pferdebesitzern.</p>
           </div>
         ) : (
           <div className="space-y-1">

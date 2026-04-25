@@ -161,12 +161,12 @@ export function ChatTab() {
   );
 }
 
-// ─── HM Connect Tab ────────────────────────────
+// ─── Hufi Connect Tab ────────────────────────────
 export function HMConnectTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div><h1 className="text-2xl font-bold">HM Connect</h1><p className="text-sm text-muted-foreground">Netzwerk-Verbindungen verwalten (Demo-Daten)</p></div>
+        <div><h1 className="text-2xl font-bold">Hufi Connect</h1><p className="text-sm text-muted-foreground">Netzwerk-Verbindungen verwalten (Demo-Daten)</p></div>
         <Button><Link2 className="h-4 w-4 mr-1" /> Verbindung anfragen</Button>
       </div>
       <div className="grid gap-3">

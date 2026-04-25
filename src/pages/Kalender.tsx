@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { Calendar, dateFnsLocalizer, Views, SlotInfo } from "react-big-calendar";
 import withDragAndDrop, { EventInteractionArgs } from "react-big-calendar/lib/addons/dragAndDrop";
-import { format, parse, startOfWeek, getDay, addMinutes, subMonths, addMonths, startOfDay, addDays, isSameDay, endOfWeek, eachDayOfInterval } from "date-fns";
+import { format, parse, startOfWeek, getDay, addMinutes, subMonths, addMonths, startOfDay, addDays, isSameDay, endOfWeek, eachDayOfInterval, startOfMonth, endOfMonth } from "date-fns";
 import { de } from "date-fns/locale";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -96,6 +96,234 @@ const messages = {
   noEventsInRange: "Keine Termine in diesem Zeitraum.",
   showMore: (total: number) => `+${total} weitere`,
 };
+
+// --- Hufi Mobile Month Calendar (Apple Calendar Style) ---
+interface HufiMobileCalendarProps {
+  currentDate: Date;
+  events: CalendarEvent[];
+  isLoading: boolean;
+  onCreateNew: () => void;
+  onSelectEvent: (event: CalendarEvent) => void;
+}
+
+const STATUS_DOT: Record<string, string> = {
+  completed: "#10B981",
+  confirmed:  "#3B82F6",
+  cancelled:  "#EF4444",
+  no_show:    "#9CA3AF",
+};
+
+function HufiMobileCalendar({ currentDate, events, isLoading, onCreateNew, onSelectEvent }: HufiMobileCalendarProps) {
+  const [viewMonth, setViewMonth] = useState(() => startOfMonth(currentDate));
+  const [selectedDay, setSelectedDay] = useState(currentDate);
+  const today = startOfDay(new Date());
+
+  const gridStart = startOfWeek(startOfMonth(viewMonth), { weekStartsOn: 1 });
+  const gridEnd   = endOfWeek(endOfMonth(viewMonth),     { weekStartsOn: 1 });
+  const days      = eachDayOfInterval({ start: gridStart, end: gridEnd });
+
+  const eventsForDay = (d: Date) => events.filter((e) => isSameDay(e.start, d));
+  const selectedEvents = eventsForDay(selectedDay).sort((a, b) =>
+    (a.resource.time ?? "").localeCompare(b.resource.time ?? "")
+  );
+
+  const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+
+  return (
+    <div style={{ background: "#F5F5F5", minHeight: "calc(100dvh - 56px - 68px)", paddingBottom: 88 }}>
+      {/* Month header */}
+      <div style={{ background: "#FFFFFF", padding: "14px 16px 10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <button
+          onClick={() => setViewMonth((m) => subMonths(m, 1))}
+          style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "#F3F4F6", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <div style={{ textAlign: "center" }}>
+          <span style={{ fontSize: 17, fontWeight: 800, color: "#1A1A1A", letterSpacing: "-0.3px" }}>
+            {format(viewMonth, "MMMM yyyy", { locale: de })}
+          </span>
+        </div>
+        <button
+          onClick={() => setViewMonth((m) => addMonths(m, 1))}
+          style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "#F3F4F6", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      </div>
+
+      {/* Weekday labels */}
+      <div style={{ background: "#FFFFFF", display: "grid", gridTemplateColumns: "repeat(7, 1fr)", paddingBottom: 6, paddingLeft: 8, paddingRight: 8 }}>
+        {WEEKDAYS.map((d) => (
+          <div key={d} style={{ textAlign: "center", fontSize: 11, fontWeight: 600, color: "#9CA3AF", padding: "4px 0" }}>{d}</div>
+        ))}
+      </div>
+
+      {/* Day grid */}
+      <div style={{ background: "#FFFFFF", display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, padding: "4px 8px 12px", marginBottom: 12 }}>
+        {days.map((day) => {
+          const isThisMonth  = day.getMonth() === viewMonth.getMonth();
+          const isToday      = isSameDay(day, today);
+          const isSelected   = isSameDay(day, selectedDay);
+          const dayEvents    = eventsForDay(day);
+          const hasDots      = dayEvents.length > 0 && isThisMonth;
+
+          return (
+            <button
+              key={day.toISOString()}
+              onClick={() => { setSelectedDay(day); setViewMonth(startOfMonth(day)); }}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 3,
+                padding: "6px 0",
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+              }}
+            >
+              <div style={{
+                width: 34,
+                height: 34,
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: isSelected
+                  ? "#F97316"
+                  : isToday
+                  ? "rgba(249,115,22,0.12)"
+                  : "transparent",
+                border: isToday && !isSelected ? "1.5px solid #F97316" : "none",
+              }}>
+                <span style={{
+                  fontSize: 15,
+                  fontWeight: isToday || isSelected ? 700 : 400,
+                  color: isSelected
+                    ? "#FFFFFF"
+                    : isToday
+                    ? "#F97316"
+                    : isThisMonth
+                    ? "#1A1A1A"
+                    : "#D1D5DB",
+                }}>{format(day, "d")}</span>
+              </div>
+              {hasDots && (
+                <div style={{ display: "flex", gap: 2 }}>
+                  {dayEvents.slice(0, 3).map((e, i) => (
+                    <div key={i} style={{
+                      width: 5,
+                      height: 5,
+                      borderRadius: "50%",
+                      background: isSelected ? "#FFFFFF" : (STATUS_DOT[e.resource.status ?? ""] ?? "#F97316"),
+                    }} />
+                  ))}
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Selected day header */}
+      <div style={{ padding: "0 16px 10px" }}>
+        <p style={{ fontSize: 13, fontWeight: 700, color: "#6B7280", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>
+          {format(selectedDay, "EEEE, d. MMMM", { locale: de })}
+        </p>
+      </div>
+
+      {/* Appointments for selected day */}
+      {isLoading ? (
+        <div style={{ display: "flex", justifyContent: "center", padding: 32 }}>
+          <div style={{ width: 24, height: 24, borderRadius: "50%", border: "3px solid #F97316", borderTopColor: "transparent", animation: "spin 0.8s linear infinite" }} />
+        </div>
+      ) : selectedEvents.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "32px 16px" }}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>📅</div>
+          <p style={{ fontSize: 14, color: "#9CA3AF", marginBottom: 16 }}>Keine Termine an diesem Tag</p>
+          <button
+            onClick={onCreateNew}
+            style={{ background: "rgba(249,115,22,0.1)", border: "none", color: "#F97316", borderRadius: 12, padding: "10px 20px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}
+          >
+            + Termin erstellen
+          </button>
+        </div>
+      ) : (
+        <div style={{ padding: "0 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+          {selectedEvents.map((event) => {
+            const statusColor = STATUS_DOT[event.resource.status ?? ""] ?? "#F97316";
+            const horseName = event.resource.horses ? (Array.isArray(event.resource.horses) ? event.resource.horses[0]?.name : event.resource.horses?.name) : null;
+            const clientName = event.resource.clients
+              ? `${event.resource.clients.first_name ?? ""} ${event.resource.clients.last_name ?? ""}`.trim()
+              : null;
+            return (
+              <button
+                key={event.id}
+                onClick={() => onSelectEvent(event)}
+                style={{
+                  background: "#FFFFFF",
+                  border: "none",
+                  borderRadius: 16,
+                  padding: "14px 16px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  cursor: "pointer",
+                  textAlign: "left" as const,
+                  boxShadow: "0 1px 6px rgba(0,0,0,0.07)",
+                  transition: "transform 0.1s",
+                }}
+                onTouchStart={(e) => (e.currentTarget.style.transform = "scale(0.98)")}
+                onTouchEnd={(e) => (e.currentTarget.style.transform = "scale(1)")}
+              >
+                {/* Status stripe */}
+                <div style={{ width: 4, alignSelf: "stretch", borderRadius: 4, background: statusColor, flexShrink: 0 }} />
+                {/* Time */}
+                <div style={{ minWidth: 44, textAlign: "center" as const }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: "#1A1A1A" }}>{event.resource.time?.slice(0, 5) ?? "–"}</div>
+                  <div style={{ fontSize: 10, color: "#9CA3AF" }}>{event.resource.duration ?? 60}min</div>
+                </div>
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{event.title}</div>
+                  {horseName && <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>🐴 {horseName}</div>}
+                  {clientName && <div style={{ fontSize: 12, color: "#9CA3AF" }}>{clientName}</div>}
+                </div>
+                {/* Status badge */}
+                <div style={{ width: 10, height: 10, borderRadius: "50%", background: statusColor, flexShrink: 0 }} />
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* FAB */}
+      <button
+        onClick={onCreateNew}
+        style={{
+          position: "fixed",
+          bottom: 88,
+          right: 20,
+          width: 52,
+          height: 52,
+          borderRadius: "50%",
+          background: "#F97316",
+          border: "none",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: "0 4px 16px rgba(249,115,22,0.5)",
+          zIndex: 30,
+        }}
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>
+  );
+}
 
 // --- Mobile Day List View ---
 function MobileDayList({
@@ -396,16 +624,15 @@ const Kalender = () => {
         date: apt.date,
         time: apt.time,
         status: apt.status,
+        service_type: apt.service_type ?? null,
         horses: apt.horses,
         clients: apt.contacts
           ? {
               first_name: apt.contacts.full_name?.split(" ")[0] || null,
               last_name: apt.contacts.full_name?.split(" ").slice(1).join(" ") || null,
-              location_lat: null,
-              location_lng: null,
-              street: apt.contacts.street,
-              zip: apt.contacts.zip_code,
-              city: apt.contacts.city,
+              geo_lat: apt.contacts.geo_lat ?? null,
+              geo_lng: apt.contacts.geo_lng ?? null,
+              zip: apt.contacts.zip_code ?? null,
             }
           : null,
       }));
@@ -573,25 +800,13 @@ const Kalender = () => {
 
         <TabsContent value="calendar" className="mt-4">
           {isMobile ? (
-            /* Mobile: Day list view with swipe */
-            <Card>
-              <CardContent className="p-3">
-                {isLoading ? (
-                  <div className="flex items-center justify-center h-[300px]">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                  </div>
-                ) : (
-                  <MobileDayList
-                    currentDate={currentDate}
-                    events={events}
-                    onSelectEvent={handleMobileSelectEvent}
-                    onDateChange={setCurrentDate}
-                    onCreateNew={handleCreateNew}
-                    presetColors={presetColors}
-                  />
-                )}
-              </CardContent>
-            </Card>
+            <HufiMobileCalendar
+              currentDate={currentDate}
+              events={events}
+              isLoading={isLoading}
+              onCreateNew={handleCreateNew}
+              onSelectEvent={handleMobileSelectEvent}
+            />
           ) : (
             /* Desktop: react-big-calendar with DnD */
             <div className={cn("flex gap-4", showStats ? "flex-col lg:flex-row" : "")}>
@@ -666,7 +881,7 @@ const Kalender = () => {
 
         <TabsContent value="map" className="mt-4">
           <TourMapView
-            appointments={appointmentsForMap as any}
+            appointments={appointmentsForMap}
             selectedDate={currentDate}
             isLoading={isLoading}
           />

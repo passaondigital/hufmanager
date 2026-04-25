@@ -182,14 +182,15 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
           {currentLogicalStep === 1 && (
             <div className="space-y-4">
               <div className="text-center">
-                <h2 className="text-2xl font-bold text-foreground">Was machst du?</h2>
+                <h2 className="text-2xl font-bold text-foreground">Was trifft auf dich zu?</h2>
+                <p className="text-sm text-muted-foreground mt-1">Wähle deine Hauptrolle — das bestimmt deine Ansicht.</p>
               </div>
               <div className="space-y-3">
                 <button
                   type="button"
                   onClick={() => setRole("provider")}
                   className={cn(
-                    "w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all min-h-[64px]",
+                    "w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all min-h-[72px]",
                     role === "provider" ? "border-primary bg-primary/10 shadow-md" : "border-border hover:border-primary/50"
                   )}
                 >
@@ -197,15 +198,16 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
                     <Hammer className="h-6 w-6" />
                   </div>
                   <div className="text-left">
-                    <p className="font-semibold text-foreground">Hufbearbeiter</p>
-                    <p className="text-sm text-muted-foreground">Termine, Kunden & Rechnungen verwalten</p>
+                    <p className="font-semibold text-foreground">Ich arbeite professionell an Pferden</p>
+                    <p className="text-sm text-muted-foreground">Hufpfleger, Hufschmied, Osteopath, Physiotherapeut, Trainer</p>
+                    <p className="text-xs text-primary font-medium mt-0.5">Termine · Kunden · Rechnungen · KI</p>
                   </div>
                 </button>
                 <button
                   type="button"
                   onClick={() => setRole("client")}
                   className={cn(
-                    "w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all min-h-[64px] relative",
+                    "w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all min-h-[72px] relative",
                     role === "client" ? "border-primary bg-primary/10 shadow-md" : "border-border hover:border-primary/50"
                   )}
                 >
@@ -214,11 +216,15 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
                     <Heart className="h-6 w-6" />
                   </div>
                   <div className="text-left">
-                    <p className="font-semibold text-foreground">Pferdebesitzer</p>
-                    <p className="text-sm text-muted-foreground">Pferdeakte einsehen & Termine buchen</p>
+                    <p className="font-semibold text-foreground">Ich besitze Pferde</p>
+                    <p className="text-sm text-muted-foreground">Pferdebesitzer, Stallbetreiber — kein eigener Betrieb</p>
+                    <p className="text-xs text-green-600 font-medium mt-0.5">Pferdeakte · Befunde einsehen · Termine</p>
                   </div>
                 </button>
               </div>
+              <p className="text-xs text-center text-muted-foreground px-2">
+                💡 Bist du selbst Hufpfleger/in aber hast auch eigene Pferde? → Wähle <strong>Ich arbeite professionell</strong>.
+              </p>
             </div>
           )}
 

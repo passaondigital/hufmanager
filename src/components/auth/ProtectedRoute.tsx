@@ -82,6 +82,11 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
 
   // Check if user has allowed role
   if (allowedRoles && role && !allowedRoles.includes(role)) {
+    // Allow providers in "privat" mode to access client-only routes
+    if (role === "provider" && allowedRoles.includes("client")) {
+      const viewMode = localStorage.getItem("hufi_view_mode");
+      if (viewMode === "privat") return <>{children}</>;
+    }
     // Redirect based on role
     if (role === "client") {
       return <Navigate to="/client-home" replace />;

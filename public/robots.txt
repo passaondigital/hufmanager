@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://hufmanager.de/sitemap.xml
+Sitemap: https://hufiapp.de/sitemap.xml

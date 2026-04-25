@@ -38,7 +38,7 @@ export default function ClientStallBoarders() {
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-2">Noch keine Einsteller</h3>
             <p className="text-sm text-muted-foreground max-w-md">
-              Füge deine Einsteller hinzu oder lade sie per HM Connect ein. Du kannst dann deren Pferde,
+              Füge deine Einsteller hinzu oder lade sie per Hufi Connect ein. Du kannst dann deren Pferde,
               Verträge und Zahlungen hier verwalten.
             </p>
             <Button className="mt-4 gap-2">

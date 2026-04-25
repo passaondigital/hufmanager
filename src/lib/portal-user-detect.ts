@@ -22,7 +22,8 @@ export function isStallbetreiberDemoEmail(email: string | undefined | null): boo
  */
 export function getPostLoginPath(
   role: string,
-  email: string | undefined | null
+  email: string | undefined | null,
+  userType?: string | null
 ): string {
   if (isPortalBusinessEmail(email)) {
     return "/portal/galerie";

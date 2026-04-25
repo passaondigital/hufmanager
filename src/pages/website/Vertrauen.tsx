@@ -29,7 +29,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const DOMAIN = "hufmanager.lovable.app";
-const CONTACT_EMAIL = "support@hufmanager.de";
+const CONTACT_EMAIL = "support@hufiapp.de";
 
 const securityScores = [
   {

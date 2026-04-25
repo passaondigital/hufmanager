@@ -94,7 +94,7 @@ const STALL_NAV: NavigationConfig = {
       label: "Erweiterungen",
       items: [
         { id: "experts", label: "Stall-Experten", iconName: "Award", path: "/stall/experts" },
-        { id: "connect", label: "HM Connect", iconName: "Link2", path: "/stall/connect" },
+        { id: "connect", label: "Hufi Connect", iconName: "Link2", path: "/stall/connect" },
         { id: "chat", label: "Nachrichten", iconName: "MessageSquare", path: "/stall/chat" },
         { id: "marketplace", label: "Pferdemarkt", iconName: "Store", path: "/stall/marketplace" },
       ],

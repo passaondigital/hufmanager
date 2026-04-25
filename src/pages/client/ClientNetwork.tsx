@@ -114,12 +114,12 @@ export default function ClientNetwork() {
                 <h3 className="text-lg font-semibold text-foreground mb-2">Noch keine Verbindungen</h3>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
                   Vernetze dich mit anderen Pferdebesitzern, Stallbetreibern oder Geschäftspartnern 
-                  über HM Connect oder lade sie per E-Mail ein.
+                  über Hufi Connect oder lade sie per E-Mail ein.
                 </p>
                 <div className="flex gap-2 justify-center mt-4">
                   <Button className="gap-2">
                     <Link2 className="h-4 w-4" />
-                    HM Connect
+                    Hufi Connect
                   </Button>
                   <Button variant="outline" className="gap-2">
                     <UserPlus className="h-4 w-4" />

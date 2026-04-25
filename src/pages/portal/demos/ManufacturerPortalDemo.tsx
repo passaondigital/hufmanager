@@ -24,7 +24,7 @@ const NAV = [
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "pferdeakten", label: "Pferdeakten", icon: Heart },
   { id: "nachrichten", label: "Nachrichten", icon: MessageSquare },
-  { id: "connect", label: "HM Connect", icon: Link2 },
+  { id: "connect", label: "Hufi Connect", icon: Link2 },
   { id: "mitarbeiter", label: "Mitarbeiter", icon: Briefcase },
   { id: "nutzer", label: "Nutzer", icon: Users },
   { id: "landingpage", label: "Website", icon: Globe },

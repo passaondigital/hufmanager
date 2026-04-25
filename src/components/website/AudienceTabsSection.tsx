@@ -51,7 +51,7 @@ const TABS: AudienceTab[] = [
       "Mein Office & Lager / Material",
       "Meine Website — eigener Webauftritt",
       "Zeit-Tracking & km-Tracker (Work-Mode)",
-      "HM Connect — vernetzt im Ökosystem",
+      "Hufi Connect — vernetzt im Ökosystem",
       "Fach-Templates & Behandlungspläne",
       "Befunde & Dokumente erstellen",
       "KI-Assistent & DSGVO-konform",

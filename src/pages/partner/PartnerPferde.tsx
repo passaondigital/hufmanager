@@ -206,7 +206,7 @@ const PartnerPferde = () => {
             <Card><CardContent className="p-8 text-center">
               <Share2 className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
               <p className="text-muted-foreground">{searchTerm ? "Keine freigegebenen Pferde gefunden." : "Noch keine Pferde freigegeben."}</p>
-              <p className="text-xs text-muted-foreground mt-2">Pferdebesitzer können dir über HM Connect Pferde freigeben.</p>
+              <p className="text-xs text-muted-foreground mt-2">Pferdebesitzer können dir über Hufi Connect Pferde freigeben.</p>
             </CardContent></Card>
           ) : filterHorses(sharedHorses).map((h, i) => (
             <div key={h.id} style={{ animationDelay: `${i * 30}ms` }}><HorseCard horse={h} showAccess /></div>

@@ -236,7 +236,7 @@ export default function BotschafterNachrichten() {
           <Card className="flex flex-col" style={{ height: "calc(100vh - 280px)", minHeight: 400 }}>
             {/* Info banner */}
             <div className="px-4 py-2.5 bg-muted/50 text-xs text-muted-foreground rounded-t-lg border-b">
-              💬 Nachrichten werden in der Regel innerhalb von 24h beantwortet. Bei dringenden Fragen: support@hufmanager.de
+              💬 Nachrichten werden in der Regel innerhalb von 24h beantwortet. Bei dringenden Fragen: support@hufiapp.de
             </div>
 
             {/* Chat messages */}

@@ -710,7 +710,7 @@ function SupportersSection() {
             Als Verband, Unternehmen oder bekannte Persönlichkeit im Pferdesport kannst du Teil dieser Bewegung werden — und auf dieser Seite namentlich genannt werden.
           </p>
           <a
-            href="mailto:support@hufmanager.de"
+            href="mailto:support@hufiapp.de"
             className="inline-flex items-center justify-center h-12 px-8 rounded-full font-bold text-white transition-all hover:brightness-110 hover:scale-[1.03] hover:shadow-md"
             style={{ backgroundColor: "#f97316" }}
           >
@@ -1210,11 +1210,11 @@ function FooterSection() {
           ))}
         </div>
         <a
-          href="mailto:support@hufmanager.de"
+          href="mailto:support@hufiapp.de"
           className="flex items-center gap-1 transition-colors hover:text-[#f97316]"
           style={{ color: "rgba(255,255,255,0.4)" }}
         >
-          <Mail className="w-3.5 h-3.5" /> support@hufmanager.de
+          <Mail className="w-3.5 h-3.5" /> support@hufiapp.de
         </a>
       </div>
     </footer>

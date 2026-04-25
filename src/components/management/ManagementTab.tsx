@@ -226,7 +226,7 @@ export function ManagementTab() {
                 Ihr Abonnement wird über CopeCart abgewickelt.
                 Ihre Rechnungen erhalten Sie direkt per E-Mail von CopeCart nach jeder Zahlung.
                 <br />
-                Fragen zur Abrechnung? → <a href="mailto:support@hufmanager.de" className="underline font-medium">support@hufmanager.de</a>
+                Fragen zur Abrechnung? → <a href="mailto:support@hufiapp.de" className="underline font-medium">support@hufiapp.de</a>
               </AlertDescription>
             </Alert>
           ) : invoices.length === 0 ? (
@@ -343,7 +343,7 @@ export function ManagementTab() {
               <Info className="h-4 w-4" />
               <AlertDescription>
                 Ihr Vertrag wird nach Vertragsabschluss hier angezeigt.
-                Bei Fragen: <a href="mailto:support@hufmanager.de" className="underline font-medium">support@hufmanager.de</a>
+                Bei Fragen: <a href="mailto:support@hufiapp.de" className="underline font-medium">support@hufiapp.de</a>
               </AlertDescription>
             </Alert>
           )}

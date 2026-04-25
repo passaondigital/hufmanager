@@ -13,7 +13,11 @@ export default function Welcome() {
 
   useEffect(() => {
     if (!user) return;
-    const dest = role === "client" ? "/client-home" : "/home";
+    let dest = "/home";
+    if (role === "client") dest = "/client-home";
+    else if (role === "admin") dest = "/admin/mission-control";
+    else if (role === "employee") dest = "/employee";
+    else if (role === "partner") dest = "/partner-home";
     navigate(dest, { replace: true });
   }, [user, role, navigate]);
 

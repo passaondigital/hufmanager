@@ -61,7 +61,7 @@ export default function ClientStallExperts() {
               </Button>
               <Button variant="outline" className="gap-2">
                 <ExternalLink className="h-4 w-4" />
-                Per HM Connect
+                Per Hufi Connect
               </Button>
             </div>
           </div>

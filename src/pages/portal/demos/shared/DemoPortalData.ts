@@ -56,7 +56,7 @@ export const DEMO_CHAT_KONTAKTE = [
   { id: "k4", name: "Demo-Tierärztin", visibleId: "#PRID-D001", rolle: "Partner", letzteNachricht: "Befund ist in der Akte hinterlegt.", zeit: "Mo", ungelesen: 2 },
 ];
 
-// ─── HM Connect Kontakte ────────────────────────────
+// ─── Hufi Connect Kontakte ────────────────────────────
 export const DEMO_HM_CONNECT = [
   { id: "hmc-1", name: "Demo-Hufbearbeiter", visibleId: "#PID-D001", typ: "Provider", status: "verbunden", seit: "Jan 2024", pferde: 3 },
   { id: "hmc-2", name: "Demo-Tierarztpraxis", visibleId: "#PRID-D001", typ: "Partner (Vet)", status: "verbunden", seit: "Mär 2024", pferde: 5 },

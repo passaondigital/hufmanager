@@ -47,6 +47,7 @@ import { uploadFile } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { useServicePresets } from "@/hooks/useServicePresets";
 import { sendTypedPush, resolveProviderDisplayName } from "@/lib/pushNotificationService";
+import { sendBothConfirmations } from "@/lib/appointment-confirmation";
 
 const appointmentSchema = z.object({
   horseIds: z.array(z.string()).min(1, "Bitte wählen Sie mindestens ein Pferd aus"),
@@ -433,13 +434,23 @@ export function AppointmentFormModal({
 
       // Step D: Show success toast and close modal
       const count = createdAppointments.length;
+
+      // Send appointment confirmation (non-blocking)
+      if (createdAppointments.length > 0) {
+        sendBothConfirmations(
+          createdAppointments[0].id,
+          createdAppointments[0].client_id ?? undefined,
+          user?.id,
+        ).catch(console.error);
+      }
+
       toast({
         title: count > 1 ? `${count} Termine erstellt` : "Termin erstellt",
-        description: pendingEvidence.length > 0 
+        description: pendingEvidence.length > 0
           ? `Termin mit ${pendingEvidence.length} Beweis(en) gespeichert.`
-          : count > 1 
+          : count > 1
             ? `${count} wiederkehrende Termine wurden gespeichert.`
-            : "Der Termin wurde erfolgreich gespeichert.",
+            : "Termin gespeichert · Bestätigung wird gesendet.",
       });
       
       resetForm();

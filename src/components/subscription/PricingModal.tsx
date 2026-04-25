@@ -52,7 +52,7 @@ const PRICING_PLANS = [
       "Alles aus Starter",
       "Bis zu 75 Pferde",
       "AutoFlow-Automatisierung",
-      "HM Connect & Netzwerk",
+      "Hufi Connect & Netzwerk",
       "GPS-Navigation & Karten",
       "Prioritäts-Support",
     ],

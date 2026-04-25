@@ -119,7 +119,7 @@ export const PERMISSION_SECTIONS: PermissionSection[] = [
       { feature: "HufCam", client: "yes", provider: "yes", partner: "yes", employee: "yes", admin: "yes" },
       { feature: "Hufanalyse", client: "no", provider: "yes", partner: "own", employee: "assigned", admin: "yes" },
       { feature: "AutoFlow", client: "no", provider: "yes", partner: "no", employee: "no", admin: "yes" },
-      { feature: "HM Connect", client: "no", provider: "yes", partner: "yes", employee: "no", admin: "yes" },
+      { feature: "Hufi Connect", client: "no", provider: "yes", partner: "yes", employee: "no", admin: "yes" },
     ],
   },
 ];

@@ -179,7 +179,7 @@ const legalDocs: DocSection[] = [
   {
     id: "behoerden-kontakt",
     title: "Kontakt für Behördenanfragen",
-    content: "Anfragen von Datenschutzbehörden, Aufsichtsbehörden oder Strafverfolgungsbehörden richten Sie bitte an:\n\n**E-Mail:** support@hufmanager.de\n\n**Postadresse:**\nPascal Schmid (Barhufserviceschmid)\nc/o Postflex #10643\nEmsdettener Str. 10\n48268 Greven\n\n**Reaktionszeit:** Wir antworten auf Behördenanfragen innerhalb von 72 Stunden.\n\n**Zuständige Aufsichtsbehörde:**\nLandesbeauftragte(r) für Datenschutz und Informationsfreiheit des jeweiligen Bundeslandes.",
+    content: "Anfragen von Datenschutzbehörden, Aufsichtsbehörden oder Strafverfolgungsbehörden richten Sie bitte an:\n\n**E-Mail:** support@hufiapp.de\n\n**Postadresse:**\nPascal Schmid (Barhufserviceschmid)\nc/o Postflex #10643\nEmsdettener Str. 10\n48268 Greven\n\n**Reaktionszeit:** Wir antworten auf Behördenanfragen innerhalb von 72 Stunden.\n\n**Zuständige Aufsichtsbehörde:**\nLandesbeauftragte(r) für Datenschutz und Informationsfreiheit des jeweiligen Bundeslandes.",
   },
 ];
 
@@ -202,12 +202,12 @@ const devDocs: DocSection[] = [
   {
     id: "edge-functions",
     title: "Edge Functions",
-    content: "Alle Edge Functions laufen auf Deno (Supabase Edge Runtime) und werden automatisch deployed.\n\n| Function | Beschreibung | Auth |\n|---|---|---|\n| `ai-chat` | Hufi AI-Assistent (Gemini) | JWT |\n| `morning-briefing` | Tägliche Zusammenfassung per E-Mail | Service-Role only |\n| `autoflow` | Automatische Termin/Rechnungs-Logik | Service-Role only |\n| `check_retention_deadlines` | Prüfung der Aufbewahrungsfristen | Service-Role only |\n| `ecosystem-webhook` | HM Connect Sync (HMAC-signiert) | HMAC / JWT |\n| `send-appointment-reminder` | Terminerinnerungen | Service-Role only |\n| `process-receipt` | KI-Belegerfassung (Gemini Vision) | JWT |\n\n**Sicherheit:** Sensitive Functions akzeptieren nur den `service_role` Key und lehnen den öffentlichen `anon` Key ab. Cron-Jobs verwenden ebenfalls `service_role`.",
+    content: "Alle Edge Functions laufen auf Deno (Supabase Edge Runtime) und werden automatisch deployed.\n\n| Function | Beschreibung | Auth |\n|---|---|---|\n| `ai-chat` | Hufi AI-Assistent (Gemini) | JWT |\n| `morning-briefing` | Tägliche Zusammenfassung per E-Mail | Service-Role only |\n| `autoflow` | Automatische Termin/Rechnungs-Logik | Service-Role only |\n| `check_retention_deadlines` | Prüfung der Aufbewahrungsfristen | Service-Role only |\n| `ecosystem-webhook` | Hufi Connect Sync (HMAC-signiert) | HMAC / JWT |\n| `send-appointment-reminder` | Terminerinnerungen | Service-Role only |\n| `process-receipt` | KI-Belegerfassung (Gemini Vision) | JWT |\n\n**Sicherheit:** Sensitive Functions akzeptieren nur den `service_role` Key und lehnen den öffentlichen `anon` Key ab. Cron-Jobs verwenden ebenfalls `service_role`.",
   },
   {
     id: "webhooks",
     title: "Webhooks & Integrationen",
-    content: "**CopeCart Webhook:**\nAbonnement-Events (Kauf, Kündigung, Upgrade) werden per Webhook empfangen und aktualisieren Feature-Flags in der Datenbank.\n\n**HM Connect (Ecosystem Webhook):**\nSynchronisation zwischen HufManager-Instanzen und Partnersystemen. Dual-Auth: Interne Calls verwenden JWT, externe verwenden HMAC-Signatur (`x-ecosystem-signature`) validiert gegen `ECOSYSTEM_WEBHOOK_SECRET`.\n\n**Supabase Realtime:**\nÄnderungen an Terminen, Nachrichten und Benachrichtigungen werden in Echtzeit an verbundene Clients gepusht (WebSocket).",
+    content: "**CopeCart Webhook:**\nAbonnement-Events (Kauf, Kündigung, Upgrade) werden per Webhook empfangen und aktualisieren Feature-Flags in der Datenbank.\n\n**Hufi Connect (Ecosystem Webhook):**\nSynchronisation zwischen HufManager-Instanzen und Partnersystemen. Dual-Auth: Interne Calls verwenden JWT, externe verwenden HMAC-Signatur (`x-ecosystem-signature`) validiert gegen `ECOSYSTEM_WEBHOOK_SECRET`.\n\n**Supabase Realtime:**\nÄnderungen an Terminen, Nachrichten und Benachrichtigungen werden in Echtzeit an verbundene Clients gepusht (WebSocket).",
   },
   {
     id: "offline-architektur",
@@ -251,7 +251,7 @@ const changelogEntries = [
     "Preisgruppen und individuelle Kundenpreise",
   ]},
   { date: "2026-02-10", entries: [
-    "HM Connect: Verbindungen zu Tierärzten und Partnern",
+    "Hufi Connect: Verbindungen zu Tierärzten und Partnern",
     "Partner können Pferdeakten einsehen (mit Freigabe)",
     "Vertrauen & Sicherheit Seite unter /vertrauen",
   ]},

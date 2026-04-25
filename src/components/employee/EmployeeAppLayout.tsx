@@ -83,7 +83,7 @@ const getEmployeeNav = (permissions: Record<string, boolean>): NavigationConfig 
               { label: "Chat", path: "/employee/chat" },
             ],
           },
-          { id: "connect", label: "HM Connect", iconName: "Link2", path: "/employee/connect" },
+          { id: "connect", label: "Hufi Connect", iconName: "Link2", path: "/employee/connect" },
         ],
       },
       {

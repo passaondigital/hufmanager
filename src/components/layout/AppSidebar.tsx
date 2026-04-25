@@ -67,7 +67,7 @@ import {
 } from "@/components/ui/collapsible";
 
 // Stealth feature: Only these emails can see Abo-Matrix
-const STEALTH_EMAILS = ["support@hufmanager.de", "barhufserviceschmid@gmail.com"];
+const STEALTH_EMAILS = ["support@hufiapp.de", "barhufserviceschmid@gmail.com"];
 
 // Hook to get count of new leads
 function useNewLeadsCount() {
@@ -218,7 +218,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
     { title: "Mein Office", icon: FileText, locked: !isFeatureVisible('module_office'), url: "/mein-office" },
     { title: "Lager", icon: Warehouse, locked: !isFeatureVisible('beta_features'), url: "/lager" },
     { title: "Mitarbeiter", icon: UsersRound, locked: !isFeatureVisible('module_team'), url: "/team" },
-    { title: "HM Connect", icon: Link2, locked: !isFeatureVisible('module_network'), url: "/hm-connect" },
+    { title: "Hufi Connect", icon: Link2, locked: !isFeatureVisible('module_network'), url: "/hm-connect" },
     { title: "AutoFlow", icon: Zap, locked: false, url: "/autoflow" },
     { title: "E-Mail Marketing", icon: Mail, locked: false, url: "/email-marketing" },
   ];

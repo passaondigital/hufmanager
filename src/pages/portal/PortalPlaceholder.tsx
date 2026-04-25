@@ -8,7 +8,7 @@ export default function PortalPlaceholder() {
     claims: "Schadensfälle",
     analytics: "Analytics",
     team: "Team-Verwaltung",
-    connect: "HM Connect",
+    connect: "Hufi Connect",
     import: "Import Center",
     produkte: "Produkt-Katalog",
     schulungen: "Schulungen",

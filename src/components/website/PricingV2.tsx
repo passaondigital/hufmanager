@@ -58,7 +58,7 @@ const plans = [
       "1. Hilfe Kunden Center",
     ],
     excludes: [
-      "HM Connect & Netzwerk",
+      "Hufi Connect & Netzwerk",
       "KI-Features & AutoFlow",
       "Vorlagen & PDF/Export",
       "2. Benutzer",
@@ -74,7 +74,7 @@ const plans = [
     checkoutUrl: "https://www.copecart.com/products/1996da6f/checkout?utm_source=landingpage&utm_medium=pricing&utm_campaign=direktkauf",
     includes: [
       "Alle 5 Workflow-Stufen",
-      "HM Connect & Netzwerk",
+      "Hufi Connect & Netzwerk",
       "KI-Features & AutoFlow",
       "Vorlagen & PDF/Export",
       "Prioritäts-Support",

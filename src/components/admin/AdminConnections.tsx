@@ -202,7 +202,7 @@ export function AdminConnections() {
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <Link2 className="w-6 h-6 text-primary" />
-            HM Connect · Netzwerk-Übersicht
+            Hufi Connect · Netzwerk-Übersicht
           </h2>
           <p className="text-muted-foreground text-sm mt-1">
             Alle Verbindungen und Einladungen plattformweit

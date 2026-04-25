@@ -62,9 +62,9 @@ const Datenschutz = () => (
               Emsdettener Str. 10<br />
               48268 Greven<br />
               <a href="https://www.hufmanager.de" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">www.hufmanager.de</a><br />
-              <a href="mailto:support@hufmanager.de" className="text-primary hover:underline">support@hufmanager.de</a><br />
+              <a href="mailto:support@hufiapp.de" className="text-primary hover:underline">support@hufiapp.de</a><br />
               Telefon: 015209007017<br />
-              E-Mail: <a href="mailto:support@hufmanager.de" className="text-primary hover:underline">support@hufmanager.de</a>
+              E-Mail: <a href="mailto:support@hufiapp.de" className="text-primary hover:underline">support@hufiapp.de</a>
             </p>
 
             <h3 className="text-xl font-semibold mb-2">SSL- bzw. TLS-Verschlüsselung</h3>

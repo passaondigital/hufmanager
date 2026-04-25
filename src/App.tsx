@@ -10,12 +10,15 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useProfileGuardian } from "@/hooks/useProfileGuardian";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { RoleThemeProvider } from "@/components/RoleThemeProvider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PasswordRecoveryRedirect } from "@/components/auth/PasswordRecoveryRedirect";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { MobileShell } from "@/components/layout/MobileShell";
 import { BotschafterLayout } from "@/components/botschafter/BotschafterLayout";
 import { CockpitFullscreenProvider } from "@/components/day-cockpit/CockpitFullscreenContext";
 import { AuthLoadingScreen } from "@/components/auth/AuthLoadingScreen";
+import { SplashScreen } from "@/components/pwa/SplashScreen";
 import { ProfileGuardianScreen } from "@/components/auth/ProfileGuardianScreen";
 import { createIDBPersister, initImageSyncManager, QUERY_CACHE_MAX_AGE, STATIC_QUERY_KEYS } from "@/lib/offline";
 import { initSyncManager } from "@/lib/offline/syncManager";
@@ -160,8 +163,18 @@ const Docs = lazy(() => import("@/pages/Docs"));
 const Status = lazy(() => import("@/pages/Status"));
 const HMConnect = lazy(() => import("@/pages/HMConnect"));
 const Buchhaltung = lazy(() => import("@/pages/Buchhaltung"));
+const Archiv = lazy(() => import("@/pages/Archiv"));
+const Credits = lazy(() => import("@/pages/Credits"));
+const HufiEinstellungen = lazy(() => import("@/pages/HufiEinstellungen"));
+const HufiDatenschutz = lazy(() => import("@/pages/HufiDatenschutz"));
+const BusinessEinstellungen = lazy(() => import("@/pages/BusinessEinstellungen"));
+const DayCockpitPage = lazy(() => import("@/pages/DayCockpitPage"));
+const Notizen = lazy(() => import("@/pages/Notizen"));
+const MeinHufi = lazy(() => import("@/pages/MeinHufi"));
+const MeineZentrale = lazy(() => import("@/pages/MeineZentrale"));
 const Fuhrpark = lazy(() => import("@/pages/Fuhrpark"));
 const AutoFlow = lazy(() => import("@/pages/AutoFlow"));
+const HufCamPro = lazy(() => import("@/pages/HufCamPro"));
 const Marketplace = lazy(() => import("@/pages/Marketplace"));
 const AdminNachrichten = lazy(() => import("@/pages/AdminNachrichten"));
 const EmailMarketing = lazy(() => import("@/features/email-marketing/EmailMarketingPage"));
@@ -329,6 +342,7 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
   if (portalMode.mode === 'portal' || portalMode.mode === 'insurance') {
     return (
       <AuthProvider>
+          <RoleThemeProvider>
         <Suspense fallback={<LazyFallback />}>
           <Routes>
             <Route path="/portal/:slug" element={<PortalAppLayout />}>
@@ -359,7 +373,8 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
             <Route path="*" element={<PortalLogin mode={portalMode.mode} />} />
           </Routes>
         </Suspense>
-      </AuthProvider>
+                </RoleThemeProvider>
+        </AuthProvider>
     );
   }
 
@@ -417,6 +432,7 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  const [splashDone, setSplashDone] = useState(false);
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -497,6 +513,9 @@ function App() {
           </BrowserRouter>
         </ThemeProvider>
       </ErrorBoundary>
+      {!splashDone && (
+        <SplashScreen onDone={() => setSplashDone(true)} />
+      )}
     </PersistQueryClientProvider>
   );
 }
@@ -519,6 +538,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
 
   return (
     <SubscriptionProvider>
+      <RoleThemeProvider>
       <CockpitFullscreenProvider>
       <TourProvider>
       <TooltipProvider>
@@ -726,6 +746,15 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             } />
 
             {/* --- 2. PROVIDER (PROFI) ROUTES --- */}
+            {/* /home uses standalone MobileShell (no AppLayout wrapper) */}
+            <Route
+              path="/home"
+              element={
+                <ProtectedRoute allowedRoles={["provider", "admin"]}>
+                  <MobileShell />
+                </ProtectedRoute>
+              }
+            />
             <Route
               element={
                 <ProtectedRoute allowedRoles={["provider", "admin"]}>
@@ -733,7 +762,6 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
                 </ProtectedRoute>
               }
             >
-              <Route path="/home" element={<Dashboard />} />
               <Route path="/anfragen" element={<Anfragen />} />
               <Route path="/angebote" element={<Angebote />} />
               <Route path="/aufnahme" element={<Aufnahme />} />
@@ -785,6 +813,16 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/ecosystem" element={<Navigate to="/hm-connect" replace />} />
               <Route path="/hm-connect" element={<HMConnect />} />
               <Route path="/autoflow" element={<AutoFlow />} />
+              <Route path="/hufcam" element={<HufCamPro />} />
+              <Route path="/archiv" element={<Archiv />} />
+              <Route path="/credits" element={<Credits />} />
+              <Route path="/einstellungen" element={<HufiEinstellungen />} />
+              <Route path="/datenschutz-einstellungen" element={<HufiDatenschutz />} />
+              <Route path="/business-einstellungen" element={<BusinessEinstellungen />} />
+              <Route path="/cockpit" element={<DayCockpitPage />} />
+              <Route path="/notizen" element={<Notizen />} />
+              <Route path="/mein-hufi" element={<MeinHufi />} />
+              <Route path="/meine-zentrale" element={<MeineZentrale />} />
               <Route path="/abo-matrix" element={<AboMatrix />} />
               <Route path="/marketplace" element={<Marketplace />} />
               {/* neu: Notfall-Dashboard für Provider */}
@@ -980,6 +1018,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
       </TooltipProvider>
       </TourProvider>
       </CockpitFullscreenProvider>
+      </RoleThemeProvider>
     </SubscriptionProvider>
   );
 }

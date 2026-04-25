@@ -284,7 +284,7 @@ const Pferde = () => {
             <EmptyState
               icon={Share2}
               title={searchTerm ? "Keine freigegebenen Pferde gefunden" : "Noch keine Pferde freigegeben"}
-              description={searchTerm ? "Versuche einen anderen Suchbegriff." : "Pferdebesitzer oder andere Hufbearbeiter können dir Pferde über HM Connect freigeben."}
+              description={searchTerm ? "Versuche einen anderen Suchbegriff." : "Pferdebesitzer oder andere Hufbearbeiter können dir Pferde über Hufi Connect freigeben."}
             />
           ) : (
             filterHorses(sharedHorses).map((horse, i) => (

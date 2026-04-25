@@ -67,7 +67,7 @@ const NAV_ITEMS: { id: AdminView; label: string; icon: React.ComponentType<{ cla
   { id: "botschafter-kommunikation", label: "↳ Kommunikation", icon: Mic },
   { id: "docs", label: "System & Doku", icon: BookOpen },
   { id: "ki-hub", label: "KI-Daten-Hub", icon: Brain },
-  { id: "connections", label: "HM Connect", icon: Link2 },
+  { id: "connections", label: "Hufi Connect", icon: Link2 },
   { id: "domains", label: "Domains", icon: Globe },
   { id: "dev", label: "Dev-Zentrale", icon: Bug },
   { id: "health", label: "System-Health", icon: Activity },
@@ -118,7 +118,7 @@ export default function AdminDashboard() {
     setIsAdmin(!!data);
     
     // Check if master admin
-    setIsMasterAdmin(user.email === "support@hufmanager.de");
+    setIsMasterAdmin(user.email === "support@hufiapp.de");
   };
 
   const handleViewChange = (view: AdminView) => {

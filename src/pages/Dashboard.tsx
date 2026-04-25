@@ -1,12 +1,9 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useOnboarding } from "@/hooks/useOnboarding";
 import { useNavigate } from "react-router-dom";
-import { ProviderSetupWizard } from "@/components/onboarding/ProviderSetupWizard";
 import { PushNotificationBanner } from "@/components/notifications/PushNotificationBanner";
-import { MilestoneCelebration } from "@/components/growth/MilestoneCelebration";
-import { CompactOnboardingBanner } from "@/components/dashboard/CompactOnboardingBanner";
 import { WidgetGrid } from "@/components/dashboard/widgets/WidgetGrid";
 import { DashboardSidebar } from "@/components/dashboard/sidebar/DashboardSidebar";
 import { PferdeakteInsights } from "@/components/dashboard/PferdeakteInsights";
@@ -15,14 +12,16 @@ import { InsuranceInsights } from "@/components/dashboard/InsuranceInsights";
 import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { format } from "date-fns";
-import { CalendarPlus, UserPlus, Route, Calendar, Users, FileText, Inbox } from "lucide-react";
+import { CalendarPlus, UserPlus, Route, Calendar, Users, FileText, Inbox, Zap, Mic } from "lucide-react";
+import { AutoFlowPanel } from "@/components/autoflow/AutoFlowPanel";
+import { NextHorseCard } from "@/components/dashboard/NextHorseCard";
 
 import { DashboardHero, KpiGrid, NextAppointmentCard, QuickActionBar } from "@/components/dashboard-zones";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { showOnboarding, completeOnboarding } = useOnboarding();
+  const [autoFlowOpen, setAutoFlowOpen] = useState(false);
   const isMobile = useIsMobile();
   const todayStr = format(new Date(), "yyyy-MM-dd");
 
@@ -87,7 +86,7 @@ const Dashboard = () => {
 
   return (
     <>
-      {showOnboarding && <ProviderSetupWizard onComplete={completeOnboarding} />}
+      <AutoFlowPanel open={autoFlowOpen} onOpenChange={setAutoFlowOpen} />
 
       <div className="space-y-4 pb-4">
         {/* ══════ ZONE 1 — HERO ══════ */}
@@ -104,13 +103,15 @@ const Dashboard = () => {
             { key: "termin", label: "Neuer Termin", icon: CalendarPlus, primary: true, onClick: () => navigate("/calendar") },
             { key: "kunde", label: "Neuer Kunde", icon: UserPlus, onClick: () => navigate("/customers") },
             { key: "tour", label: "Tour", icon: Route, onClick: () => navigate("/tour") },
+            { key: "autoflow", label: "AutoFlow", icon: Zap, onClick: () => setAutoFlowOpen(true) },
           ]} />
         </DashboardHero>
 
         {/* Banners */}
         <PushNotificationBanner />
-        <MilestoneCelebration />
-        <CompactOnboardingBanner />
+
+        {/* ══════ NEXT HORSE ══════ */}
+        <NextHorseCard />
 
         {/* ══════ ZONE 2 — KPI GRID ══════ */}
         <KpiGrid columns={4} items={[
@@ -144,6 +145,13 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+
+      <button
+        onClick={() => setAutoFlowOpen(true)}
+        style={{ position: "fixed", bottom: 88, right: 20, zIndex: 40, width: 52, height: 52, borderRadius: "50%", background: "#e8a020", color: "#1a0f00", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px rgba(232,160,32,.4)" }}
+      >
+        <Mic style={{ width: 22, height: 22 }} />
+      </button>
     </>
   );
 };

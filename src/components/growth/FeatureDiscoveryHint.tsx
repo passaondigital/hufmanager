@@ -33,8 +33,8 @@ const featureHints: FeatureHint[] = [
   {
     id: "hm-connect",
     title: "Das echte Stallnetzwerk",
-    description: "Mit HM Connect siehst du welche Therapeuten und Tierärzte deine Pferde kennen — und sie sehen dich.",
-    cta: "HM Connect entdecken",
+    description: "Mit Hufi Connect siehst du welche Therapeuten und Tierärzte deine Pferde kennen — und sie sehen dich.",
+    cta: "Hufi Connect entdecken",
     navigateTo: "/hm-connect",
     requiredDaysActive: 7,
   },

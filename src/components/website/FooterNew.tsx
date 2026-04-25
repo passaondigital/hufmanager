@@ -69,8 +69,8 @@ const FooterNew = () => (
             {/* Contact */}
             <div className="space-y-2">
               <p className="text-white/60 text-xs font-bold uppercase tracking-wider mb-3">Kontakt</p>
-              <a href="mailto:support@hufmanager.de" className="block text-white/50 hover:text-white transition-colors text-sm">
-                support@hufmanager.de
+              <a href="mailto:support@hufiapp.de" className="block text-white/50 hover:text-white transition-colors text-sm">
+                support@hufiapp.de
               </a>
               <p className="text-white/40 text-xs mt-3 leading-relaxed">
                 Pascal Schmid<br />

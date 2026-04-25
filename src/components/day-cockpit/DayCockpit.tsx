@@ -24,7 +24,11 @@ import { PreTourChecklistSheet } from "./PreTourChecklistSheet";
 
 export type CockpitState = "ready" | "underway" | "complete";
 
-export function DayCockpit() {
+interface DayCockpitProps {
+  onStateChange?: (state: CockpitState) => void;
+}
+
+export function DayCockpit({ onStateChange }: DayCockpitProps = {}) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const today = format(new Date(), "yyyy-MM-dd");
@@ -63,6 +67,11 @@ export function DayCockpit() {
     setFullscreen(true);
     return () => setFullscreen(false);
   }, [setFullscreen]);
+
+  // Propagate state changes to parent
+  useEffect(() => {
+    onStateChange?.(cockpitState);
+  }, [cockpitState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Online/offline detection
   useEffect(() => {

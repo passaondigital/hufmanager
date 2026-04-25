@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
+import { OwnerDashboard } from "@/components/client/OwnerDashboard";
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -29,6 +30,7 @@ import { ConnectionSearch } from "@/components/network/ConnectionSearch";
 import { ProviderSelector } from "@/components/client/ProviderSelector";
 import { CreateHorseModal } from "@/components/horse-detail/CreateHorseModal";
 import { ClientOnboarding } from "@/components/client/ClientOnboarding";
+import { ClientOnboardingWizard } from "@/components/client/ClientOnboardingWizard";
 import { MandatoryHorseModal } from "@/components/onboarding/MandatoryHorseModal";
 import { HMCamModal } from "@/components/hufcam";
 
@@ -148,7 +150,7 @@ function ClientKpiGrid({ horses, userId }: { horses: Horse[]; userId?: string })
 }
 
 export default function ClientHome() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, userType } = useAuth();
   const { showOnboarding, completeOnboarding } = useOnboarding();
   
   const navigate = useNavigate();
@@ -242,12 +244,25 @@ export default function ClientHome() {
       {showMandatoryHorseModal && !showOnboarding && (
         <MandatoryHorseModal open={showMandatoryHorseModal} onComplete={handleHorseCreated} />
       )}
-      {showOnboarding && <ClientOnboarding onComplete={completeOnboarding} />}
+      {showOnboarding && (
+        <ClientOnboardingWizard
+          onComplete={completeOnboarding}
+          onSkip={completeOnboarding}
+        />
+      )}
 
       <div className="min-h-[100dvh] bg-gradient-to-b from-background via-background to-muted/20 overflow-safe">
 
         {/* Main Content */}
         <main className="px-4 py-6 max-w-lg mx-auto space-y-5 pb-safe" style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom, 0px))" }}>
+
+          {/* === Owner View (user_type="owner") === */}
+          {userType === "owner" && !loading && (
+            <OwnerDashboard
+              horses={horses}
+              displayName={profile?.full_name ?? null}
+            />
+          )}
 
           {/* === Compact Banners (non-intrusive) === */}
           <ClientPushPermissionBanner />

@@ -18,24 +18,20 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({
   children,
-  defaultTheme = "dark",
-  storageKey = "hufmanager-theme",
+  storageKey = "hufi-theme",
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const stored = localStorage.getItem(storageKey);
-    return (stored as Theme) || defaultTheme;
-  });
+  const [theme] = useState<Theme>("light");
 
   useEffect(() => {
     const root = window.document.documentElement;
-    root.classList.remove("light", "dark");
-    root.classList.add(theme);
-    localStorage.setItem(storageKey, theme);
-  }, [theme, storageKey]);
+    root.classList.remove("dark");
+    root.classList.add("light");
+    localStorage.setItem(storageKey, "light");
+  }, [storageKey]);
 
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  };
+  // Dark mode switching disabled — Hufi is always light
+  const setTheme = (_t: Theme) => {};
+  const toggleTheme = () => {};
 
   return (
     <ThemeProviderContext.Provider value={{ theme, setTheme, toggleTheme }}>
