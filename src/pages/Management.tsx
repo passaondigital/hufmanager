@@ -843,7 +843,7 @@ Emsdettener Str. 10
 48268 Greven
 
 Telefon: 015209007017
-E-Mail: support@hufmanager.de
+E-Mail: kontakt@hufiapp.de
 
 Steuernummer: 43/150/40518
 ...`}

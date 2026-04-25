@@ -39,7 +39,7 @@ const Widerruf = () => {
       `Plan: ${plan}\nGrund: ${reason || "–"}`
     );
 
-    window.open(`mailto:support@hufmanager.de?subject=${subject}&body=${body}`, "_self");
+    window.open(`mailto:kontakt@hufiapp.de?subject=${subject}&body=${body}`, "_self");
     setSubmitted(true);
   };
 
@@ -63,7 +63,7 @@ const Widerruf = () => {
             <p>Sie haben das Recht, binnen 14 Tagen ohne Angabe von Gründen diesen Vertrag zu widerrufen. Die Widerrufsfrist beträgt 14 Tage ab dem Tag des Vertragsabschlusses.</p>
 
             <p>
-              Um Ihr Widerrufsrecht auszuüben, müssen Sie uns (Barhufserviceschmid, c/o Postflex #10643, Emsdettener Str. 10, 48268 Greven, Telefon: 015209007017, E-Mail: support@hufmanager.de) mittels einer eindeutigen Erklärung (z.&nbsp;B. ein mit der Post versandter Brief oder eine E-Mail) über Ihren Entschluss, diesen Vertrag zu widerrufen, informieren. Sie können dafür das beigefügte Muster-Widerrufsformular verwenden, das jedoch nicht vorgeschrieben ist. Sie können das Muster-Widerrufsformular oder eine andere eindeutige Erklärung auch auf unserer Webseite (<a href="https://www.hufmanager.de/widerruf" className="text-[#F5970A] underline">https://www.hufmanager.de/widerruf</a>) elektronisch ausfüllen und übermitteln. Machen Sie von dieser Möglichkeit Gebrauch, so werden wir Ihnen unverzüglich (z.&nbsp;B. per E-Mail) eine Bestätigung über den Eingang eines solchen Widerrufs übermitteln.
+              Um Ihr Widerrufsrecht auszuüben, müssen Sie uns (Barhufserviceschmid, c/o Postflex #10643, Emsdettener Str. 10, 48268 Greven, Telefon: 015209007017, E-Mail: kontakt@hufiapp.de) mittels einer eindeutigen Erklärung (z.&nbsp;B. ein mit der Post versandter Brief oder eine E-Mail) über Ihren Entschluss, diesen Vertrag zu widerrufen, informieren. Sie können dafür das beigefügte Muster-Widerrufsformular verwenden, das jedoch nicht vorgeschrieben ist. Sie können das Muster-Widerrufsformular oder eine andere eindeutige Erklärung auch auf unserer Webseite (<a href="https://hufiapp.de/widerruf" className="text-[#F5970A] underline">https://hufiapp.de/widerruf</a>) elektronisch ausfüllen und übermitteln. Machen Sie von dieser Möglichkeit Gebrauch, so werden wir Ihnen unverzüglich (z.&nbsp;B. per E-Mail) eine Bestätigung über den Eingang eines solchen Widerrufs übermitteln.
             </p>
 
             <p>Zur Wahrung der Widerrufsfrist reicht es aus, dass Sie die Mitteilung über die Ausübung des Widerrufsrechts vor Ablauf der Widerrufsfrist absenden.</p>
@@ -82,7 +82,7 @@ const Widerruf = () => {
                 <p>c/o Postflex #10643</p>
                 <p>Emsdettener Str. 10</p>
                 <p>48268 Greven</p>
-                <p>E-Mail: support@hufmanager.de</p>
+                <p>E-Mail: kontakt@hufiapp.de</p>
                 <br />
                 <p>Hiermit widerrufe(n) ich/wir den von mir/uns abgeschlossenen Vertrag über die Bereitstellung des Zugangs zu folgenden digitalen Inhalten (Bezeichnung, ggf. Bestellnummer und Preis):</p>
                 <p>......................................................................</p>

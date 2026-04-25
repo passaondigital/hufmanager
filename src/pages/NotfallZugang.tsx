@@ -311,8 +311,8 @@ export default function NotfallZugang() {
             Diese Notfall-Seite wird durch die digitale Pferdeakte von{" "}
             <span className="font-semibold text-foreground">HufManager</span> bereitgestellt.
           </p>
-          <a href="https://hufmanager.de" className="text-xs text-primary hover:underline">
-            hufmanager.de
+          <a href="https://hufiapp.de" className="text-xs text-primary hover:underline">
+            hufiapp.de
           </a>
         </div>
       </main>

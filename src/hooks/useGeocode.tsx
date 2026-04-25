@@ -63,7 +63,7 @@ export function useGeocode(): UseGeocodeReturn {
       const response = await fetch(url.toString(), {
         headers: {
           // Nominatim requires a valid User-Agent
-          "User-Agent": "HufManager/1.0 (https://hufmanager.de)",
+          "User-Agent": "HufManager/1.0 (https://hufiapp.de)",
         },
       });
 

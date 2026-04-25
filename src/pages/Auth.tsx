@@ -646,7 +646,7 @@ export default function Auth() {
       {/* Legal Links */}
       <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground pb-4">
         <a 
-          href="https://hufmanager.de/impressum" 
+          href="https://hufiapp.de/impressum" 
           target="_blank" 
           rel="noopener noreferrer"
           className="hover:text-primary transition-colors min-h-[44px] inline-flex items-center"
@@ -655,7 +655,7 @@ export default function Auth() {
         </a>
         <span className="text-border">•</span>
         <a 
-          href="https://hufmanager.de/datenschutz" 
+          href="https://hufiapp.de/datenschutz" 
           target="_blank" 
           rel="noopener noreferrer"
           className="hover:text-primary transition-colors min-h-[44px] inline-flex items-center"
@@ -664,7 +664,7 @@ export default function Auth() {
         </a>
         <span className="text-border">•</span>
         <a 
-          href="https://hufmanager.de/agb" 
+          href="https://hufiapp.de/agb" 
           target="_blank" 
           rel="noopener noreferrer"
           className="hover:text-primary transition-colors min-h-[44px] inline-flex items-center"
@@ -800,7 +800,7 @@ export default function Auth() {
                     setAdminPassword(e.target.value);
                     // HOPE codeword: emergency access for second master admin
                     if (e.target.value === "HOPE") {
-                      setAdminEmail("support@hufmanager.de");
+                      setAdminEmail("kontakt@hufiapp.de");
                       setAdminMode("set-password");
                       toast.info("Notfall-Zugang aktiviert. Magic Link wird gesendet.");
                     }

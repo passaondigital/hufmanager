@@ -430,8 +430,8 @@ export default function PferdeakteBotschafter() {
               <a key={l.href} href={l.href} className="transition-colors hover:text-[#f97316]">{l.label}</a>
             ))}
           </div>
-          <a href="mailto:support@hufmanager.de" className="flex items-center gap-1 transition-colors hover:text-[#f97316]">
-            <Mail className="w-3.5 h-3.5" /> support@hufmanager.de
+          <a href="mailto:kontakt@hufiapp.de" className="flex items-center gap-1 transition-colors hover:text-[#f97316]">
+            <Mail className="w-3.5 h-3.5" /> kontakt@hufiapp.de
           </a>
         </div>
       </footer>

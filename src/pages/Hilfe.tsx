@@ -254,7 +254,7 @@ const FAQ_DATA: FAQCategory[] = [
       },
       {
         question: 'Was wenn der Käufer keinen HufManager Account hat?',
-        answer: 'Der Käufer kann sich kostenlos registrieren unter hufmanager.de/auth. Die Basis-Registrierung ist kostenlos.',
+        answer: 'Der Käufer kann sich kostenlos registrieren unter hufiapp.de. Die Basis-Registrierung ist kostenlos.',
       },
     ],
   },

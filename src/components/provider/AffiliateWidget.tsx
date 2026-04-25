@@ -11,7 +11,7 @@ interface AffiliateWidgetProps {
 }
 
 export function AffiliateWidget({ affiliateCode = "", conversions = 0, earnings = 0 }: AffiliateWidgetProps) {
-  const link = `https://hufmanager.de/?ref=${affiliateCode}`;
+  const link = `https://hufiapp.de/?ref=${affiliateCode}`;
 
   const copy = () => {
     navigator.clipboard.writeText(link);

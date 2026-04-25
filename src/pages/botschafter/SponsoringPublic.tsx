@@ -111,7 +111,7 @@ export default function SponsoringPublic() {
         {/* Footer */}
         <div className="text-center pt-8">
           <Link to="/" className="text-xs hover:underline" style={{ color: "#6b7280" }}>
-            © HufManager · hufmanager.de
+            © Hufi · hufiapp.de
           </Link>
         </div>
       </div>

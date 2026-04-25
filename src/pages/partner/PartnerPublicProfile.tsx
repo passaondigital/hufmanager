@@ -403,7 +403,7 @@ export default function PartnerPublicProfile() {
         <div className="max-w-3xl mx-auto px-4 text-center space-y-2">
           <p className="text-xs text-muted-foreground">
             #{data.readable_id} · Profil auf{" "}
-            <a href="https://hufmanager.de" className="text-primary hover:underline">HufManager</a>
+            <a href="https://hufiapp.de" className="text-primary hover:underline">HufManager</a>
           </p>
           <p className="text-xs text-muted-foreground/60">
             © {new Date().getFullYear()} HufManager · DSGVO-konform

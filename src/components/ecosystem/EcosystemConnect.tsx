@@ -32,7 +32,7 @@ const ECOSYSTEM_APPS: EcosystemApp[] = [
     name: "HufManager",
     description: "Professionelle Hufbearbeiter-Software",
     idPrefix: "#pid",
-    url: "https://hufmanager.de",
+    url: "https://hufiapp.de",
     icon: "🐴",
   },
   {

@@ -35,7 +35,7 @@ const TEMPLATES: TemplateConfig[] = [
   { id: "story_pferdeakte", name: "Story: Pferdeakte", category: "instagram_story", width: 1080, height: 1920, headline: ["Alles zu deinem", "Pferd. An einem Ort."], cta: "Link in Bio ↑", bg: "#0a0700", textColor: "#ffffff", accentColor: "#F5970A" },
   { id: "story_stats", name: "Story: Statistik", category: "instagram_story", width: 1080, height: 1920, headline: ["2.100+ Pferdeakten.", "380+ Dienstleister.", "Werde Teil davon."], cta: "Jetzt starten", bg: "#0a0700", textColor: "#ffffff", accentColor: "#F5970A" },
   { id: "fb_overview", name: "Facebook: Übersicht", category: "facebook", width: 1200, height: 630, headline: ["Die digitale Pferdeakte", "Kostenlos. Sicher. Vernetzt."], cta: "Mehr erfahren", bg: "#0a0700", textColor: "#ffffff", accentColor: "#F5970A" },
-  { id: "flyer_a4", name: "Flyer A4", category: "flyer_a4", width: 2480, height: 3508, headline: ["Alles zu deinem Pferd.", "An einem Ort."], cta: "hufmanager.de/pferdeakte", bg: "#0a0700", textColor: "#ffffff", accentColor: "#F5970A" },
+  { id: "flyer_a4", name: "Flyer A4", category: "flyer_a4", width: 2480, height: 3508, headline: ["Alles zu deinem Pferd.", "An einem Ort."], cta: "hufiapp.de/pferdeakte", bg: "#0a0700", textColor: "#ffffff", accentColor: "#F5970A" },
 ];
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -102,8 +102,8 @@ export default function BotschafterWerbemittelPage() {
   };
 
   const refCode = botschafter?.referral_code || "CODE";
-  const refLink = `hufmanager.de/?ref=${refCode}`;
-  const fullRefLink = `https://hufmanager.de/?ref=${refCode}`;
+  const refLink = `hufiapp.de/?ref=${refCode}`;
+  const fullRefLink = `https://hufiapp.de/?ref=${refCode}`;
 
   const openEditor = (tpl: TemplateConfig) => {
     setEditTemplate(tpl);
@@ -179,9 +179,9 @@ export default function BotschafterWerbemittelPage() {
   }));
 
   // Embed codes
-  const bannerHtml = `<a href="${fullRefLink}" target="_blank" rel="noopener">\n  <img src="https://hufmanager.de/banner/${bannerSize.w}x${bannerSize.h}.png?ref=${refCode}" \n    alt="HufManager Pferdeakte" width="${bannerSize.w}" height="${bannerSize.h}" />\n</a>`;
-  const widgetHtml = `<iframe src="https://hufmanager.de/widget/referral?ref=${refCode}" \n  width="300" height="400" frameborder="0" \n  style="border-radius:12px;border:none;"></iframe>`;
-  const signatureHtml = `<table cellpadding="0" cellspacing="0"><tr>\n  <td style="padding-right:12px"><img src="https://hufmanager.de/logo/icon-60.png" width="60" height="60" alt="HufManager" /></td>\n  <td style="font-family:Arial,sans-serif;font-size:13px">\n    <b>Empfohlen: HufManager Pferdeakte</b><br>\n    Die digitale Akte für dein Pferd.<br>\n    <a href="${fullRefLink}" style="color:#F5970A">Kostenlos starten →</a>\n  </td>\n</tr></table>`;
+  const bannerHtml = `<a href="${fullRefLink}" target="_blank" rel="noopener">\n  <img src="https://hufiapp.de/banner/${bannerSize.w}x${bannerSize.h}.png?ref=${refCode}" \n    alt="HufManager Pferdeakte" width="${bannerSize.w}" height="${bannerSize.h}" />\n</a>`;
+  const widgetHtml = `<iframe src="https://hufiapp.de/widget/referral?ref=${refCode}" \n  width="300" height="400" frameborder="0" \n  style="border-radius:12px;border:none;"></iframe>`;
+  const signatureHtml = `<table cellpadding="0" cellspacing="0"><tr>\n  <td style="padding-right:12px"><img src="https://hufiapp.de/logo/icon-60.png" width="60" height="60" alt="HufManager" /></td>\n  <td style="font-family:Arial,sans-serif;font-size:13px">\n    <b>Empfohlen: HufManager Pferdeakte</b><br>\n    Die digitale Akte für dein Pferd.<br>\n    <a href="${fullRefLink}" style="color:#F5970A">Kostenlos starten →</a>\n  </td>\n</tr></table>`;
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-5xl mx-auto">

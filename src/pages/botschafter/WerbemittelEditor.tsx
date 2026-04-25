@@ -213,7 +213,7 @@ export default function WerbemittelEditor() {
   };
 
   const textColor = isDark(bgColor) ? "#ffffff" : "#0a0a0a";
-  const referralUrl = botschafter ? `hufmanager.de/pferdeakte?ref=${botschafter.referral_code}` : "";
+  const referralUrl = botschafter ? `hufiapp.de/pferdeakte?ref=${botschafter.referral_code}` : "";
 
   // Aspect ratio for canvas preview
   const maxW = 500;

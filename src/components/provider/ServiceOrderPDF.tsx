@@ -37,7 +37,7 @@ export function ServiceOrderPDF({ order, open, onClose }: Props) {
 
     doc.setFontSize(10);
     doc.text("HufManager", margin, y);
-    doc.text("www.hufmanager.de", margin + 100, y);
+    doc.text("hufiapp.de", margin + 100, y);
     y += 15;
 
     doc.setFontSize(18);
@@ -122,7 +122,7 @@ export function ServiceOrderPDF({ order, open, onClose }: Props) {
 
     doc.line(margin, y, 190, y);
     y += 8;
-    doc.text("Erstellt mit HufManager · www.hufmanager.de", margin, y);
+    doc.text("Erstellt mit HufManager · hufiapp.de", margin, y);
 
     doc.save(`${order.order_number}.pdf`);
     onClose();

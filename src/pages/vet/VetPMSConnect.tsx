@@ -49,7 +49,7 @@ export default function VetPMSConnect() {
         return;
       }
       if (pms?.apiStatus === "partner_required") {
-        toast.info(`${pms.name} erfordert einen Partnervertrag. Kontaktiere uns unter info@hufmanager.de`);
+        toast.info(`${pms.name} erfordert einen Partnervertrag. Kontaktiere uns unter info@hufiapp.de`);
         return;
       }
 

@@ -118,7 +118,7 @@ export default function AdminDashboard() {
     setIsAdmin(!!data);
     
     // Check if master admin
-    setIsMasterAdmin(user.email === "support@hufmanager.de");
+    setIsMasterAdmin(user.email === "kontakt@hufiapp.de");
   };
 
   const handleViewChange = (view: AdminView) => {

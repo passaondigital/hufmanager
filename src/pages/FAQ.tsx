@@ -119,7 +119,7 @@ export default function FAQ() {
               variant="outline"
               className="gap-2"
               onClick={() =>
-                (window.location.href = "mailto:support@hufmanager.de")
+                (window.location.href = "mailto:kontakt@hufiapp.de")
               }
             >
               E-Mail an Support

@@ -30,7 +30,7 @@ const Hufrente = () => {
   const aboCost = 49;
   const netCalc = monthlyCalc - aboCost;
 
-  const referralLink = `https://hufmanager.de/ref/${stats?.affiliateSlug || "..."}`;
+  const referralLink = `https://hufiapp.de/ref/${stats?.affiliateSlug || "..."}`;
 
   // Show onboarding on first visit
   useEffect(() => {

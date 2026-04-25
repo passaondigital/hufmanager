@@ -133,8 +133,8 @@ export default function WidgetPage() {
       <div className="flex items-center justify-center min-h-[200px] p-6">
         <div className="text-center space-y-2">
           <p className="text-muted-foreground text-sm">{error || "Widget konnte nicht geladen werden"}</p>
-          <a href="https://hufmanager.de" target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
-            hufmanager.de
+          <a href="https://hufiapp.de" target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
+            hufiapp.de
           </a>
         </div>
       </div>

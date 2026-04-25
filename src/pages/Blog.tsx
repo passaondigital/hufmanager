@@ -85,13 +85,13 @@ export default function Blog() {
             />
           </Link>
           <nav className="hidden md:flex items-center gap-8">
-            <a href="https://www.hufmanager.de/#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <a href="https://hufiapp.de/#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Features
             </a>
-            <a href="https://www.hufmanager.de/#preise" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <a href="https://hufiapp.de/#preise" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Preise
             </a>
-            <a href="https://www.hufmanager.de/kalkulator" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <a href="https://hufiapp.de/kalkulator" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Kalkulator
             </a>
             <Link to="/blog" className="text-sm font-medium text-foreground">
@@ -102,7 +102,7 @@ export default function Blog() {
             <Link to="/auth">
               <Button variant="ghost" size="sm">Login</Button>
             </Link>
-            <a href="https://www.hufmanager.de/#preise">
+            <a href="https://hufiapp.de/#preise">
               <Button size="sm" className="bg-primary hover:bg-primary/90">
                 Kostenlos testen
               </Button>
@@ -251,10 +251,10 @@ export default function Blog() {
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           <p>© {new Date().getFullYear()} Hufmanager. Alle Rechte vorbehalten.</p>
           <div className="flex justify-center gap-4 mt-4">
-            <a href="https://www.hufmanager.de/impressum" className="hover:text-foreground">
+            <a href="https://hufiapp.de/impressum" className="hover:text-foreground">
               Impressum
             </a>
-            <a href="https://www.hufmanager.de/datenschutz" className="hover:text-foreground">
+            <a href="https://hufiapp.de/datenschutz" className="hover:text-foreground">
               Datenschutz
             </a>
           </div>

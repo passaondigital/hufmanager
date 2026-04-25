@@ -11,7 +11,7 @@ export function PaymentBlockedScreen({ portalUrl }: PaymentBlockedScreenProps) {
     if (portalUrl) {
       window.open(portalUrl, "_blank");
     } else {
-      window.open("https://hufmanager.de/billing", "_blank");
+      window.open("https://hufiapp.de/billing", "_blank");
     }
   };
 
@@ -48,7 +48,7 @@ export function PaymentBlockedScreen({ portalUrl }: PaymentBlockedScreenProps) {
             </Button>
             
             <a 
-              href="mailto:support@hufmanager.de"
+              href="mailto:kontakt@hufiapp.de"
               className="block text-center text-sm text-primary hover:underline"
             >
               Hilfe benötigt? Kontaktiere den Support

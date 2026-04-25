@@ -110,7 +110,7 @@ const PreviewLanding = () => {
           Hufpflege-Profi suchst, findest du hier Profis in deiner Nähe:
         </p>
         <Button asChild>
-          <Link to="/website">hufmanager.de entdecken</Link>
+          <Link to="/website">hufiapp.de entdecken</Link>
         </Button>
       </div>
     );

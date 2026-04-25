@@ -793,7 +793,7 @@ export const helpTexts: Record<string, Record<string, HelpTextEntry>> = {
     },
     agb: {
       title: "AGB",
-      description: "Die aktuellen AGB findest du unter hufmanager.de/agb",
+      description: "Die aktuellen AGB findest du unter hufiapp.de/agb",
     },
   },
 

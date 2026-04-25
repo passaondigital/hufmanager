@@ -49,7 +49,7 @@ export function WidgetGeneratorTab({ subdomain, businessName, primaryColor, isPr
   const canCustomize = isPro || isTeam;
   const canWhiteLabel = isTeam;
 
-  const baseUrl = "https://hufmanager.de";
+  const baseUrl = "https://hufiapp.de";
 
   const widgetUrl = useMemo(() => {
     const params = new URLSearchParams();
@@ -96,7 +96,7 @@ export function WidgetGeneratorTab({ subdomain, businessName, primaryColor, isPr
     toast({ title: "Code kopiert! 📋" });
   };
 
-  const privacyText = `Auf unserer Website setzen wir Widgets von HufManager (hufmanager.de) ein. Dabei werden Daten an HufManager übermittelt. Details entnehmen Sie unserer Datenschutzerklärung. Es besteht ein Auftragsverarbeitungsvertrag (AVV) mit der HufManager GmbH.`;
+  const privacyText = `Auf unserer Website setzen wir Widgets von HufManager (hufiapp.de) ein. Dabei werden Daten an HufManager übermittelt. Details entnehmen Sie unserer Datenschutzerklärung. Es besteht ein Auftragsverarbeitungsvertrag (AVV) mit der HufManager GmbH.`;
 
   return (
     <div className="space-y-4">

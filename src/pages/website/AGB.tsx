@@ -8,7 +8,7 @@ const AGB = () => (
       <div className="max-w-3xl mx-auto">
         <h1 className="text-4xl font-bold mb-4 text-white">Allgemeine Geschäftsbedingungen</h1>
         <p className="text-white/60 mb-10 leading-relaxed">
-          für die Erbringung von Dienstleistungen von Barhufserviceschmid, Emsdettener Str. 10, c/o Postflex #10643, 48268 Greven, E-Mail: support@hufmanager.de (nachfolgend „Auftragnehmer") gegenüber seinen Kunden (nachfolgend „Auftraggeber")
+          für die Erbringung von Dienstleistungen von Barhufserviceschmid, Emsdettener Str. 10, c/o Postflex #10643, 48268 Greven, E-Mail: kontakt@hufiapp.de (nachfolgend „Auftragnehmer") gegenüber seinen Kunden (nachfolgend „Auftraggeber")
         </p>
 
         <div className="rounded-xl border border-white/10 bg-white/5 p-6 md:p-8 space-y-10 text-white/70 text-sm leading-relaxed">

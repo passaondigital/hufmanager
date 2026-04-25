@@ -67,7 +67,7 @@ import {
 } from "@/components/ui/collapsible";
 
 // Stealth feature: Only these emails can see Abo-Matrix
-const STEALTH_EMAILS = ["support@hufmanager.de", "barhufserviceschmid@gmail.com"];
+const STEALTH_EMAILS = ["kontakt@hufiapp.de", "barhufserviceschmid@gmail.com"];
 
 // Hook to get count of new leads
 function useNewLeadsCount() {
@@ -542,7 +542,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         {!collapsed && (
           <div className="flex items-center justify-center gap-1.5 pt-2 text-[10px] text-sidebar-foreground/40">
             <a 
-              href="https://hufmanager.de/impressum" 
+              href="https://hufiapp.de/impressum" 
               target="_blank" 
               rel="noopener noreferrer"
               className="hover:text-sidebar-foreground hover:underline"
@@ -551,7 +551,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
             </a>
             <span>·</span>
             <a 
-              href="https://hufmanager.de/datenschutz" 
+              href="https://hufiapp.de/datenschutz" 
               target="_blank" 
               rel="noopener noreferrer"
               className="hover:text-sidebar-foreground hover:underline"

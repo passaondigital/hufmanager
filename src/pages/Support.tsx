@@ -43,7 +43,7 @@ const Support = ({ basePath }: SupportProps) => {
           icon={<Mail className="w-10 h-10 text-primary" />}
           title="E-Mail"
           description="Persönlicher Support, Feedback, Fehlermeldungen"
-          onClick={() => window.location.href = "mailto:support@hufmanager.de"}
+          onClick={() => window.location.href = "mailto:kontakt@hufiapp.de"}
         />
         <Tile
           icon={<PlayCircle className="w-10 h-10 text-primary" />}

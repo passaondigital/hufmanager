@@ -43,7 +43,7 @@ const WebsiteHome = () => {
         "@type": "SoftwareApplication",
         "name": "HufManager",
         "description": "Die Praxissoftware für Hufpflegeprofis",
-        "url": "https://hufmanager.de",
+        "url": "https://hufiapp.de",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Web, iOS, Android",
         "offers": {

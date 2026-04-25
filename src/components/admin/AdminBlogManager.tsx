@@ -588,7 +588,7 @@ export default function AdminBlogManager() {
                         <p className="text-sm text-muted-foreground">
                           {formScheduledAt 
                             ? "Deaktiviert wenn geplante Veröffentlichung gesetzt ist"
-                            : "Content auf www.hufmanager.de sichtbar machen"}
+                            : "Content auf hufiapp.de sichtbar machen"}
                         </p>
                       </div>
                       <Switch

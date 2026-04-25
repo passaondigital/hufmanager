@@ -56,7 +56,7 @@ const PLANS = [
     yearlySave: 50,
     highlight: false,
     cta: "Anfrage senden",
-    href: "mailto:info@hufmanager.de",
+    href: "mailto:info@hufiapp.de",
   },
 ];
 

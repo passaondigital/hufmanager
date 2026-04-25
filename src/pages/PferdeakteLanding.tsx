@@ -710,7 +710,7 @@ function SupportersSection() {
             Als Verband, Unternehmen oder bekannte Persönlichkeit im Pferdesport kannst du Teil dieser Bewegung werden — und auf dieser Seite namentlich genannt werden.
           </p>
           <a
-            href="mailto:support@hufmanager.de"
+            href="mailto:kontakt@hufiapp.de"
             className="inline-flex items-center justify-center h-12 px-8 rounded-full font-bold text-white transition-all hover:brightness-110 hover:scale-[1.03] hover:shadow-md"
             style={{ backgroundColor: "#f97316" }}
           >
@@ -878,7 +878,7 @@ function WaitlistSection({ defaultRef }: { defaultRef: string }) {
 
   const copyLink = () => {
     if (!success) return;
-    navigator.clipboard.writeText(`https://hufmanager.de/pferdeakte?ref=${success.refCode}`);
+    navigator.clipboard.writeText(`https://hufiapp.de/pferdeakte?ref=${success.refCode}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -960,7 +960,7 @@ function WaitlistSection({ defaultRef }: { defaultRef: string }) {
             <p className="text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>Dein persönlicher Referral-Link:</p>
             <div className="flex items-center gap-2 rounded-lg p-3" style={{ backgroundColor: "rgba(255,255,255,0.1)" }}>
               <code className="flex-1 text-sm break-all" style={{ color: "rgba(255,255,255,0.8)" }}>
-                https://hufmanager.de/pferdeakte?ref={success.refCode}
+                https://hufiapp.de/pferdeakte?ref={success.refCode}
               </code>
               <button onClick={copyLink} className="shrink-0 p-2 rounded-md transition-colors" style={{ backgroundColor: copied ? "rgba(249,115,22,0.2)" : "transparent" }}>
                 {copied ? <Check className="w-4 h-4" style={{ color: "#f97316" }} /> : <Copy className="w-4 h-4" style={{ color: "#f97316" }} />}
@@ -1132,8 +1132,8 @@ function BotschafterSection() {
 function ShareSection() {
   const r = useReveal();
   const [linkCopied, setLinkCopied] = useState(false);
-  const shareUrl = "https://hufmanager.de/pferdeakte";
-  const waText = encodeURIComponent("Hast du schon von der digitalen Pferdeakte gehört? Läuft am 1. April live: https://hufmanager.de/pferdeakte");
+  const shareUrl = "https://hufiapp.de/pferdeakte";
+  const waText = encodeURIComponent("Hast du schon von der digitalen Pferdeakte gehört? Läuft am 1. April live: https://hufiapp.de/pferdeakte");
 
   const copyShareLink = () => {
     navigator.clipboard.writeText(shareUrl);
@@ -1210,11 +1210,11 @@ function FooterSection() {
           ))}
         </div>
         <a
-          href="mailto:support@hufmanager.de"
+          href="mailto:kontakt@hufiapp.de"
           className="flex items-center gap-1 transition-colors hover:text-[#f97316]"
           style={{ color: "rgba(255,255,255,0.4)" }}
         >
-          <Mail className="w-3.5 h-3.5" /> support@hufmanager.de
+          <Mail className="w-3.5 h-3.5" /> kontakt@hufiapp.de
         </a>
       </div>
     </footer>

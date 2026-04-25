@@ -8,7 +8,7 @@ export function PoweredByBadge({ show }: PoweredByBadgeProps) {
   return (
     <div className="flex justify-center pt-6 pb-2">
       <a
-        href="https://hufmanager.de"
+        href="https://hufiapp.de"
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"

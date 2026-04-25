@@ -118,7 +118,7 @@ export function BotschafterRegistration({ sourceRole }: Props) {
     toast.success("Registrierung eingegangen!");
   };
 
-  const referralLink = existing ? `https://hufmanager.de/pferdeakte?ref=${existing.referral_code}` : "";
+  const referralLink = existing ? `https://hufiapp.de/pferdeakte?ref=${existing.referral_code}` : "";
 
   const handleCopy = () => {
     navigator.clipboard.writeText(referralLink);
@@ -291,7 +291,7 @@ export function BotschafterRegistration({ sourceRole }: Props) {
             />
             <label htmlFor="privacy" className="text-sm text-muted-foreground cursor-pointer">
               Ich habe die{" "}
-              <a href="https://hufmanager.de/datenschutz" target="_blank" rel="noopener noreferrer" className="underline text-primary">
+              <a href="https://hufiapp.de/datenschutz" target="_blank" rel="noopener noreferrer" className="underline text-primary">
                 Datenschutzerklärung
               </a>{" "}
               gelesen und stimme zu.
