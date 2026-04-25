@@ -16,7 +16,7 @@ const Index = () => {
     return <WebsiteHome />;
   }
 
-  // app.hufmanager.de (or preview/localhost) → auth flow
+  // app.hufiapp.de (or preview/localhost) → auth flow
   // If logged in, redirect to role-specific home
   if (!loading && user && role) {
     return <Navigate to={getPostLoginPath(role, user.email)} replace />;
