@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Camera, Loader2 } from "lucide-react";
+import { Camera, Loader2, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { HufCamPro } from "./HufCamPro";
@@ -19,6 +20,7 @@ interface HorseOption {
  */
 export function HufCamProStandalone() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [selectedHorseId, setSelectedHorseId] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [horses, setHorses] = useState<HorseOption[]>([]);
@@ -118,9 +120,20 @@ export function HufCamProStandalone() {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : horses.length === 0 ? (
-          <p className="text-muted-foreground text-center py-4">
-            Keine Pferde vorhanden. Bitte erst ein Pferd anlegen.
-          </p>
+          <div className="text-center py-6 space-y-3">
+            <p className="text-muted-foreground text-sm">
+              Noch kein Pferd angelegt.
+            </p>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => navigate("/pferde?new=true")}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Jetzt Pferd anlegen
+            </Button>
+          </div>
         ) : (
           <>
             <div className="space-y-2">

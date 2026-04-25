@@ -127,8 +127,8 @@ export function AppLayout() {
 
       <div className="flex-1 flex flex-col min-h-[100dvh] overflow-x-hidden lg:ml-64">
         {/* Mobile Header with Hamburger */}
-        <header 
-          className="lg:hidden h-14 max-h-14 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-3"
+        <header
+          className="lg:hidden sticky top-0 z-40 min-h-14 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-3"
           style={{ paddingTop: "max(env(safe-area-inset-top), 0px)" }}
         >
           <div className="flex items-center gap-2">
