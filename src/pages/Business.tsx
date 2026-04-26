@@ -1,4 +1,3 @@
-import { PageHeader } from "@/components/layout/PageHeader";
 import { FileText, Calculator, TrendingDown, TrendingUp, Car, Package, Download } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -15,8 +14,10 @@ export default function Business() {
 
   return (
     <div className="pb-24">
-      <PageHeader title="Hufi Business" backButton />
-      <div className="p-4 space-y-6">
+      <div className="p-6 bg-white border-b sticky top-0 z-10 flex items-center shadow-sm">
+        <h1 className="text-xl font-bold text-gray-900">Hufi Business</h1>
+      </div>
+      <div className="p-4 space-y-6 mt-4">
         <p className="text-gray-500 text-sm">Dein gesamter Betrieb auf einen Blick.</p>
         
         <div className="grid grid-cols-2 gap-4">
