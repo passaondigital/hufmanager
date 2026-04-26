@@ -178,6 +178,14 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
+          // React MUST be isolated so every other chunk can import it reliably.
+          // Without this, Rollup may embed React inside e.g. AdminDashboard,
+          // causing "forwardRef is undefined" when Radix loads first.
+          if (
+            id.includes("node_modules/react/") ||
+            id.includes("node_modules/react-dom/") ||
+            id.includes("node_modules/scheduler/")
+          ) return "vendor-react";
           // Vendor: heavy UI libs
           if (id.includes("node_modules/recharts") || id.includes("node_modules/d3")) return "charts";
           if (id.includes("node_modules/jspdf") || id.includes("node_modules/html2canvas")) return "pdf";
