@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Scissors, Hammer, Stethoscope, Sparkles, Wrench, Shield, Calendar, MessageSquare } from "lucide-react";
+import { Check, Scissors, Hammer, Stethoscope, Search, Sparkles, Wrench, Shield, Calendar, MessageSquare } from "lucide-react";
 
 interface ServiceCardProps {
   title: string;
@@ -19,7 +19,7 @@ const iconMap: Record<string, React.ReactNode> = {
   scissors: <Scissors className="h-6 w-6" />,
   hammer: <Hammer className="h-6 w-6" />,
   stethoscope: <Stethoscope className="h-6 w-6" />,
-  sparkles: <Sparkles className="h-6 w-6" />,
+  sparkles: <Search className="h-6 w-6" />,
   wrench: <Wrench className="h-6 w-6" />,
   shield: <Shield className="h-6 w-6" />,
 };
