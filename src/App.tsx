@@ -801,6 +801,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/hufi-connect" element={<HMConnect />} />
               <Route path="/autoflow" element={<AutoFlow />} />
               <Route path="/archiv" element={<Archiv />} />
+                <Route path="/cockpit" element={<Dashboard />} />
               <Route path="/abo-matrix" element={<AboMatrix />} />
               <Route path="/marketplace" element={<Marketplace />} />
               {/* neu: Notfall-Dashboard für Provider */}
