@@ -374,7 +374,7 @@ export function ClientAppLayout() {
             <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)} className="h-10 w-10" aria-label="Menü öffnen">
               <Menu className="h-5 w-5" />
             </Button>
-            <img src="/hufmanager-logo.png" alt="HufManager" className="h-7 w-auto" />
+            <img src="/hufi-logo.svg" alt="Hufi" className="h-7 w-auto" />
           </div>
 
           <div className="flex items-center gap-1">

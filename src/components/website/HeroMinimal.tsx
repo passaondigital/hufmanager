@@ -35,7 +35,7 @@ const HeroMinimal = () => {
             <br className="hidden sm:block" />
             fängt die Arbeit an.
             <br />
-            <span style={{ color: "#f97316" }}>Mit HufManager nicht mehr.</span>
+            <span style={{ color: "#f97316" }}>Mit Hufi nicht mehr.</span>
           </h1>
 
           <p className="text-lg md:text-xl leading-relaxed max-w-2xl mx-auto" style={{ color: "rgba(255,255,255,0.55)" }}>

@@ -26,7 +26,7 @@ interface FeatureGroup {
 
 /* ── Data ────────────────────────────────────────────────── */
 const PROVIDERS: Provider[] = [
-  { key: "huf", name: "HufManager Pferdeakte", category: "Pferdeakte + Tresor", origin: "DACH", price: "Akte: Kostenlos / Tresor: Premium", highlight: true },
+  { key: "huf", name: "Hufi Pferdeakte", category: "Pferdeakte + Tresor", origin: "DACH", price: "Akte: Kostenlos / Tresor: Premium", highlight: true },
   { key: "fei", name: "FEI Equipass", category: "Digitaler Pferdepass", origin: "International (FEI)", price: "Kostenlos (FEI-Pferde)" },
   { key: "happie", name: "Happie Horse", category: "Pferdebesitzer-App", origin: "Hamburg, DE", price: "Freemium (30–60€/Jahr)" },
   { key: "barncat", name: "Barncat", category: "Pferdebesitzer-App", origin: "USA", price: "Kostenlos + Premium" },
@@ -142,7 +142,7 @@ export default function PferdeakteComparisonTable() {
             MARKTVERGLEICH 2026
           </p>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold leading-tight mb-4" style={{ color: "#0A0700" }}>
-            Die HufManager Pferdeakte{" "}
+            Die Hufi Pferdeakte{" "}
             <span style={{ color: "#F5970A" }}>vs. alle anderen.</span>
           </h2>
           <p className="text-base md:text-lg max-w-3xl mx-auto" style={{ color: "#6b7280" }}>

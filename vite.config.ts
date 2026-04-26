@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "robots.txt", "hufmanager-logo.png", "apple-touch-icon.png"],
+      includeAssets: ["favicon.ico", "robots.txt", "hufi-logo.svg", "apple-touch-icon.png"],
       workbox: {
         // Limit auf 6 MB erhöht für große Bundles
         maximumFileSizeToCacheInBytes: 6000000,
@@ -161,14 +161,14 @@ export default defineConfig(({ mode }) => ({
             sizes: "1920x1080",
             type: "image/png",
             form_factor: "wide",
-            label: "HufManager Dashboard",
+            label: "Hufi Dashboard",
           },
           {
             src: "/screenshot-mobile.png",
             sizes: "1080x1920",
             type: "image/png",
             form_factor: "narrow",
-            label: "HufManager Mobile",
+            label: "Hufi Mobile",
           },
         ],
       },

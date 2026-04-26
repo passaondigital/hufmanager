@@ -53,8 +53,8 @@ export function ProfileGuardianScreen({ isRepairing, error, onRetry }: ProfileGu
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
         <img 
-          src="/hufmanager-logo.png" 
-          alt="HufManager" 
+          src="/hufi-logo.svg" 
+          alt="Hufi" 
           className="h-24 w-auto animate-pulse"
         />
         <div className="flex items-center gap-3">

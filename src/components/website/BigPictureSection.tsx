@@ -23,7 +23,7 @@ const points = [
   {
     icon: "🤝",
     title: "Zusammenarbeit zum Pferdewohl",
-    text: "Hufbearbeiter, Tierarzt, Physiotherapeut, Besitzer — jeder arbeitet am selben Pferd. Aber jeder hat nur seinen Ausschnitt. HufManager verbindet diese Ausschnitte zu einem vollständigen Bild.",
+    text: "Hufbearbeiter, Tierarzt, Physiotherapeut, Besitzer — jeder arbeitet am selben Pferd. Aber jeder hat nur seinen Ausschnitt. Hufi verbindet diese Ausschnitte zu einem vollständigen Bild.",
   },
   {
     icon: "🛡️",
@@ -33,7 +33,7 @@ const points = [
   {
     icon: "🐴",
     title: "Das Pferd im Mittelpunkt",
-    text: "Nicht die Software. Nicht die Abrechnung. Das Pferd. Jede Entscheidung die HufManager unterstützt, dient einem Ziel: dass jedes Pferd die Betreuung bekommt die es als Individuum braucht.",
+    text: "Nicht die Software. Nicht die Abrechnung. Das Pferd. Jede Entscheidung die Hufi unterstützt, dient einem Ziel: dass jedes Pferd die Betreuung bekommt die es als Individuum braucht.",
   },
 ];
 
@@ -51,7 +51,7 @@ export default function BigPictureSection() {
         {/* Intro */}
         <div ref={rIntro.ref} className={`text-center mb-16 ${rc(rIntro.visible)}`}>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold leading-tight text-white mb-4">
-            HufManager ist mehr als{" "}
+            Hufi ist mehr als{" "}
             <br className="hidden sm:block" />
             Buchhaltung und Terminplanung.
           </h2>

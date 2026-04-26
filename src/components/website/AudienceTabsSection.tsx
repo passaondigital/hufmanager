@@ -131,7 +131,7 @@ export default function AudienceTabsSection() {
       <div className="container">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Für wen ist HufManager?
+            Für wen ist Hufi?
           </h2>
           <p className="text-zinc-400 max-w-xl mx-auto">
             Jede Rolle hat ihre eigene App — perfekt auf die Bedürfnisse zugeschnitten.

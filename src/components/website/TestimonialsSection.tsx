@@ -27,7 +27,7 @@ const testimonials: Testimonial[] = [
     name: "Tim K.",
     role: "Hufschmied",
     region: "NRW",
-    quote: "Rechnungen in 2 Klicks statt Excel-Chaos. Allein dafür lohnt sich HufManager.",
+    quote: "Rechnungen in 2 Klicks statt Excel-Chaos. Allein dafür lohnt sich Hufi.",
     placeholder: true,
   },
 ];

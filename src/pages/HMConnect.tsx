@@ -340,7 +340,7 @@ export default function HMConnect() {
         <Card className="border-primary/20">
           <CardContent className="p-8 text-center space-y-4">
             <Crown className="h-16 w-16 mx-auto text-primary" />
-            <h2 className="text-2xl font-bold">HM Connect</h2>
+            <h2 className="text-2xl font-bold">Hufi Connect</h2>
             <p className="text-muted-foreground max-w-md mx-auto">
               Vernetze dich DSGVO-konform mit anderen Profis, Kunden und Pferden über ihre #ID.
               <br />Dieses Feature ist ab dem <strong>Pro-Plan</strong> verfügbar.
@@ -361,7 +361,7 @@ export default function HMConnect() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight flex items-center gap-3">
           <Link2 className="h-7 w-7 text-primary" />
-          HM Connect
+          Hufi Connect
         </h1>
         <p className="text-muted-foreground mt-1">
           Dein Netzwerk — Suchen, Verbinden, Verwalten. Alles DSGVO-konform.

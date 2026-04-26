@@ -215,10 +215,11 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 
   // Erweiterungen - Addon modules (locked based on feature flags)
   const addonItems = [
+    { title: "Hufi Business", icon: DollarSign, locked: false, url: "/business" },
     { title: "Mein Office", icon: FileText, locked: !isFeatureVisible('module_office'), url: "/mein-office" },
     { title: "Lager", icon: Warehouse, locked: !isFeatureVisible('beta_features'), url: "/lager" },
     { title: "Mitarbeiter", icon: UsersRound, locked: !isFeatureVisible('module_team'), url: "/team" },
-    { title: "HM Connect", icon: Link2, locked: !isFeatureVisible('module_network'), url: "/hm-connect" },
+    { title: "Hufi Connect", icon: Link2, locked: !isFeatureVisible('module_network'), url: "/hufi-connect" },
     { title: "AutoFlow", icon: Zap, locked: false, url: "/autoflow" },
     { title: "E-Mail Marketing", icon: Mail, locked: false, url: "/email-marketing" },
   ];
@@ -395,13 +396,13 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
         {!collapsed ? (
           <img 
-            src="/hufmanager-logo.png" 
-            alt="HufManager" 
+            src="/hufi-logo.svg" 
+            alt="Hufi" 
             className="h-10 w-auto"
           />
         ) : (
           <img 
-            src="/hufmanager-logo.png" 
+            src="/hufi-logo.svg" 
             alt="HM" 
             className="h-8 w-auto"
           />

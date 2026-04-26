@@ -79,7 +79,7 @@ export default function Blog() {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/blog" className="flex items-center gap-2">
             <img 
-              src="/hufmanager-logo.png" 
+              src="/hufi-logo.svg" 
               alt="Hufmanager" 
               className="h-8 w-auto"
             />

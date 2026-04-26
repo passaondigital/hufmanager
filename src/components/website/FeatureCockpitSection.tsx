@@ -9,7 +9,7 @@ const features = [
   {
     icon: Navigation,
     title: "Live-Navigation",
-    desc: "Turn-by-Turn direkt im HufManager. DSGVO-konform, offline-fähig, kein Google Maps nötig.",
+    desc: "Turn-by-Turn direkt im Hufi. DSGVO-konform, offline-fähig, kein Google Maps nötig.",
   },
   {
     icon: BookOpen,

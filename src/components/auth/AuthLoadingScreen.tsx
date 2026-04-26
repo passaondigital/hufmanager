@@ -6,8 +6,8 @@ export function AuthLoadingScreen() {
       <div className="flex flex-col items-center gap-4">
         <div className="relative">
           <img 
-            src="/hufmanager-logo.png" 
-            alt="HufManager" 
+            src="/hufi-logo.svg" 
+            alt="Hufi" 
             className="h-16 w-16 animate-pulse"
           />
         </div>

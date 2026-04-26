@@ -61,7 +61,7 @@ const founderParagraphs = [
   "Es ist das was diese Branche verdient hat — gebaut von jemandem der sie liebt.",
 ];
 
-export default function WhyHufManagerSection() {
+export default function WhyHufiSection() {
   const rIntro = useReveal();
   const rCard0 = useReveal();
   const rCard1 = useReveal();

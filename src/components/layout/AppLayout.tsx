@@ -142,8 +142,8 @@ export function AppLayout() {
               <Menu className="h-5 w-5" />
             </Button>
             <img 
-              src="/hufmanager-logo.png" 
-              alt="HufManager" 
+              src="/hufi-logo.svg" 
+              alt="Hufi" 
               className="h-7 w-auto"
             />
           </div>

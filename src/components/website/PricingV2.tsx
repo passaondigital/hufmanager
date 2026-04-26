@@ -146,7 +146,7 @@ const PricingV2 = () => (
           <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full border border-primary/30 bg-primary/5">
             <Users className="w-5 h-5 text-primary" />
             <span className="text-white font-medium">
-              Pferdebesitzer nutzen HufManager <strong className="text-primary">kostenlos</strong>
+              Pferdebesitzer nutzen Hufi <strong className="text-primary">kostenlos</strong>
             </span>
           </div>
         </div>
@@ -267,11 +267,11 @@ const PricingV2 = () => (
           <div className="text-white/50 text-sm space-y-2 leading-relaxed">
             <p>
               Alle Preise beziehen sich auf monatliche Abonnements für Profis (Hufbearbeiter, Pferdeosteopathen,
-              Physiotherapeuten, Trainer & weitere Pferde-Profis). Pferdebesitzer nutzen die HufManager-App
+              Physiotherapeuten, Trainer & weitere Pferde-Profis). Pferdebesitzer nutzen die Hufi-App
               weiterhin <strong className="text-white/70">kostenlos</strong>.
             </p>
             <p>
-              HufManager ist als Kleinunternehmer nach <strong className="text-white/70">§ 19 UStG</strong> tätig.
+              Hufi ist als Kleinunternehmer nach <strong className="text-white/70">§ 19 UStG</strong> tätig.
               Aus diesem Grund wird keine Umsatzsteuer (Mehrwertsteuer) auf die Preise erhoben. Die Preise für
               Profis verstehen sich netto – Endverbraucher zahlen keine gesonderte Umsatzsteuer.
             </p>

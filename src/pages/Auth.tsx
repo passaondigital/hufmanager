@@ -214,7 +214,7 @@ export default function Auth() {
   if (signingOut || isSwitchingAccount) {
     return (
       <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
-        <img src="/hufmanager-logo.png" alt="HufManager" className="h-24 w-auto animate-pulse" />
+        <img src="/hufi-logo.svg" alt="Hufi" className="h-24 w-auto animate-pulse" />
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -225,7 +225,7 @@ export default function Auth() {
       // Show loading while checking onboarding status
       return (
         <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
-          <img src="/hufmanager-logo.png" alt="HufManager" className="h-24 w-auto animate-pulse" />
+          <img src="/hufi-logo.svg" alt="Hufi" className="h-24 w-auto animate-pulse" />
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       );
@@ -413,8 +413,8 @@ export default function Auth() {
     return (
       <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
         <img 
-          src="/hufmanager-logo.png" 
-          alt="HufManager" 
+          src="/hufi-logo.svg" 
+          alt="Hufi" 
           className="h-24 w-auto animate-pulse"
         />
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -459,11 +459,11 @@ export default function Auth() {
         )}
         <CardHeader className="text-center pb-2 pt-4">
           <img 
-            src="/hufmanager-logo.png" 
-            alt="HufManager Logo" 
+            src="/hufi-logo.svg" 
+            alt="Hufi Logo" 
             className="mx-auto h-16 sm:h-20 w-auto mb-2"
           />
-          <CardTitle className="text-2xl font-bold text-foreground sr-only">HufManager</CardTitle>
+          <CardTitle className="text-2xl font-bold text-foreground sr-only">Hufi</CardTitle>
           <CardDescription className="text-sm text-muted-foreground">
             {pferdeakteSource 
               ? "Erstelle dein Konto und leg deine erste Pferdeakte an" 

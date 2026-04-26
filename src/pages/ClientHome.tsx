@@ -231,7 +231,7 @@ export default function ClientHome() {
   if (authLoading) {
     return (
       <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
-        <img src="/hufmanager-logo.png" alt="HufManager" className="h-24 w-auto animate-pulse" />
+        <img src="/hufi-logo.svg" alt="Hufi" className="h-24 w-auto animate-pulse" />
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );

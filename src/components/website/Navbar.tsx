@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import logo from "@/assets/lp/hufmanager-logo.png";
+import logo from "@/assets/lp/hufi-logo.svg";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,7 +12,7 @@ const Navbar = () => {
       <div className="container">
         <div className="flex items-center justify-between h-16">
           <a href="/" className="flex items-center gap-2">
-            <img src={logo} alt="HufManager Logo" className="h-[66px] w-auto" />
+            <img src={logo} alt="Hufi Logo" className="h-[66px] w-auto" />
           </a>
 
           <nav className="hidden md:flex items-center gap-8">

@@ -181,7 +181,7 @@ export default function BotschafterWerbemittelPage() {
   // Embed codes
   const bannerHtml = `<a href="${fullRefLink}" target="_blank" rel="noopener">\n  <img src="https://hufiapp.de/banner/${bannerSize.w}x${bannerSize.h}.png?ref=${refCode}" \n    alt="HufManager Pferdeakte" width="${bannerSize.w}" height="${bannerSize.h}" />\n</a>`;
   const widgetHtml = `<iframe src="https://hufiapp.de/widget/referral?ref=${refCode}" \n  width="300" height="400" frameborder="0" \n  style="border-radius:12px;border:none;"></iframe>`;
-  const signatureHtml = `<table cellpadding="0" cellspacing="0"><tr>\n  <td style="padding-right:12px"><img src="https://hufiapp.de/logo/icon-60.png" width="60" height="60" alt="HufManager" /></td>\n  <td style="font-family:Arial,sans-serif;font-size:13px">\n    <b>Empfohlen: HufManager Pferdeakte</b><br>\n    Die digitale Akte für dein Pferd.<br>\n    <a href="${fullRefLink}" style="color:#F5970A">Kostenlos starten →</a>\n  </td>\n</tr></table>`;
+  const signatureHtml = `<table cellpadding="0" cellspacing="0"><tr>\n  <td style="padding-right:12px"><img src="https://hufiapp.de/logo/icon-60.png" width="60" height="60" alt="Hufi" /></td>\n  <td style="font-family:Arial,sans-serif;font-size:13px">\n    <b>Empfohlen: HufManager Pferdeakte</b><br>\n    Die digitale Akte für dein Pferd.<br>\n    <a href="${fullRefLink}" style="color:#F5970A">Kostenlos starten →</a>\n  </td>\n</tr></table>`;
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-5xl mx-auto">

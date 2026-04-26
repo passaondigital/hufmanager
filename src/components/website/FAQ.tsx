@@ -3,20 +3,20 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 
 const faqs = [
   // Provider FAQ
-  { question: "Funktioniert die App auch ohne Internet – im Stall?", answer: "Ja. HufManager ist Offline-First. Du kannst im Stall Kunden anlegen, Termine abhaken und Befunde dokumentieren. Sobald du wieder Netz hast, synchronisiert sich alles automatisch." },
+  { question: "Funktioniert die App auch ohne Internet – im Stall?", answer: "Ja. Hufi ist Offline-First. Du kannst im Stall Kunden anlegen, Termine abhaken und Befunde dokumentieren. Sobald du wieder Netz hast, synchronisiert sich alles automatisch." },
   { question: "Was ist das Tages-Cockpit?", answer: "Das Cockpit vereint Kalender, Navigation, Zeiterfassung und Fahrtenbuch in einem Screen. Du startest deine Tour mit einem Tap und alles läuft automatisch im Hintergrund." },
-  { question: "Welche Berufsgruppen unterstützt HufManager?", answer: "Hufbearbeiter, Osteopathen, Physios, Equine Dentist, Reitlehrer, Sattler, Massage, mobiler Tierarzt und weitere. Jede Gruppe bekommt automatisch die passenden Zeitpuffer und Auftragstypen." },
-  { question: "Brauche ich Google Maps für die Navigation?", answer: "Nein. HufManager hat eine eigene Turn-by-Turn Navigation (ORS, EU-Server, DSGVO-konform) direkt im Tages-Cockpit. Kein externes Tool nötig." },
-  { question: "Wie funktionieren die Live-Spritpreise?", answer: "HufManager zeigt dir automatisch die günstigste Tankstelle auf deiner Route – live über die Tankerkönig API. Die Fahrtkosten werden automatisch in deiner Rechnung berücksichtigt." },
-  { question: "Ich fahre mit Pferdeanhänger – plant HufManager die Route richtig?", answer: "Ja. Wenn du im Fahrzeugprofil einen Anhänger einträgst (Höhe, Gewicht, Länge) plant HufManager deine Route automatisch ohne Unterführungen und Höhenbeschränkungen." },
+  { question: "Welche Berufsgruppen unterstützt Hufi?", answer: "Hufbearbeiter, Osteopathen, Physios, Equine Dentist, Reitlehrer, Sattler, Massage, mobiler Tierarzt und weitere. Jede Gruppe bekommt automatisch die passenden Zeitpuffer und Auftragstypen." },
+  { question: "Brauche ich Google Maps für die Navigation?", answer: "Nein. Hufi hat eine eigene Turn-by-Turn Navigation (ORS, EU-Server, DSGVO-konform) direkt im Tages-Cockpit. Kein externes Tool nötig." },
+  { question: "Wie funktionieren die Live-Spritpreise?", answer: "Hufi zeigt dir automatisch die günstigste Tankstelle auf deiner Route – live über die Tankerkönig API. Die Fahrtkosten werden automatisch in deiner Rechnung berücksichtigt." },
+  { question: "Ich fahre mit Pferdeanhänger – plant Hufi die Route richtig?", answer: "Ja. Wenn du im Fahrzeugprofil einen Anhänger einträgst (Höhe, Gewicht, Länge) plant Hufi deine Route automatisch ohne Unterführungen und Höhenbeschränkungen." },
   { question: "Was ist die Kunden-App?", answer: "Eine kostenlose App für deine Pferdebesitzer. Sie sehen Termine, Befunde und Rechnungen – und können Daten freigeben. Du sparst Rückfragen, sie fühlen sich gut betreut." },
-  { question: "Ist HufManager DSGVO-konform?", answer: "Vollständig. Deutsche Server in Frankfurt, verschlüsselte Übertragung, AVV inklusive. Deine Daten und die deiner Kunden sind sicher." },
+  { question: "Ist Hufi DSGVO-konform?", answer: "Vollständig. Deutsche Server in Frankfurt, verschlüsselte Übertragung, AVV inklusive. Deine Daten und die deiner Kunden sind sicher." },
   { question: "Kann ich jederzeit kündigen?", answer: "Ja. Monatlich kündbar, kein Knebelvertrag. Du bleibst, weil es dir hilft – nicht weil du musst." },
   // Client FAQ
-  { question: "Wie sehe ich wann mein Hufprofi kommt?", answer: "In deiner HufManager App siehst du live den Status: Geplant → Unterwegs → Angekommen. Du bekommst auch eine Push-Benachrichtigung wenn er unterwegs zu dir ist." },
+  { question: "Wie sehe ich wann mein Hufprofi kommt?", answer: "In deiner Hufi App siehst du live den Status: Geplant → Unterwegs → Angekommen. Du bekommst auch eine Push-Benachrichtigung wenn er unterwegs zu dir ist." },
   { question: "Kann ich einen Termin ablehnen?", answer: "Ja. Wenn ein neuer Termin angelegt wird bekommst du eine Benachrichtigung mit [Bestätigen] und [Absagen] direkt in der App." },
   { question: "Meine Pferde stehen auf verschiedenen Ställen – wie trage ich das ein?", answer: "Unter 'Meine Ställe' kannst du mehrere Standorte anlegen. Jedes Pferd bekommt seinen eigenen Stall zugewiesen." },
-  { question: "Muss ich meinen Kunden die App aufzwingen?", answer: "Nein. Die Kunden-App ist ein Service, keine Pflicht. Du kannst HufManager komplett alleine nutzen – auch wenn deine Kunden kein Smartphone haben." },
+  { question: "Muss ich meinen Kunden die App aufzwingen?", answer: "Nein. Die Kunden-App ist ein Service, keine Pflicht. Du kannst Hufi komplett alleine nutzen – auch wenn deine Kunden kein Smartphone haben." },
 ];
 
 const FAQ = () => {

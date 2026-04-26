@@ -14,7 +14,7 @@ const OfflineSection = () => (
                 Stall ist nicht Büro. <span className="text-primary">Offline ist Pflicht.</span>
               </h2>
               <p className="text-white/70 text-lg leading-relaxed max-w-2xl">
-                Zwischen Heuballen und Stallgasse gibt es kein WLAN. HufManager funktioniert komplett offline – Kunden anlegen, Termine abhaken, Befunde dokumentieren. Sobald du wieder Netz hast, synchronisiert sich alles automatisch.
+                Zwischen Heuballen und Stallgasse gibt es kein WLAN. Hufi funktioniert komplett offline – Kunden anlegen, Termine abhaken, Befunde dokumentieren. Sobald du wieder Netz hast, synchronisiert sich alles automatisch.
               </p>
               <p className="text-white/50 text-base leading-relaxed max-w-2xl">
                 Kein Laden, kein Warten, kein Datenverlust. Dein Workflow läuft, egal wo du stehst.

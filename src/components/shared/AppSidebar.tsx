@@ -202,8 +202,8 @@ export function AppSidebar({ appName, userDisplayName, navigationConfig, mobile 
       {/* Logo Header */}
       <div className="h-16 flex items-center px-4 border-b border-sidebar-border shrink-0">
         <img
-          src="/hufmanager-logo.png"
-          alt="HufManager"
+          src="/hufi-logo.svg"
+          alt="Hufi"
           className="h-10 w-auto"
         />
       </div>

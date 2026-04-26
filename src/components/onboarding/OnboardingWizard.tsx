@@ -141,8 +141,8 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
     <div key="welcome" className="text-center space-y-6">
       <div className="relative mx-auto w-32 h-32">
         <img 
-          src="/hufmanager-logo.png" 
-          alt="HufManager" 
+          src="/hufi-logo.svg" 
+          alt="Hufi" 
           className="w-full h-full object-contain"
         />
         <motion.div
@@ -314,8 +314,8 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
     <div key="welcome" className="text-center space-y-6">
       <div className="relative mx-auto w-32 h-32">
         <img 
-          src="/hufmanager-logo.png" 
-          alt="HufManager" 
+          src="/hufi-logo.svg" 
+          alt="Hufi" 
           className="w-full h-full object-contain"
         />
         <motion.div
