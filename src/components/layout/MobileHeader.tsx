@@ -8,7 +8,7 @@ export function MobileHeader({ onMenuClick }: { onMenuClick: () => void }) {
   const isHome = location.pathname === "/home" || location.pathname === "/archiv" || location.pathname === "/dashboard";
 
   return (
-    <header className="lg:hidden sticky top-0 z-40 min-h-14 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-3" style={{ paddingTop: "max(env(safe-area-inset-top), 0px)" }}>
+    <header className="sticky top-0 z-40 min-h-14 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-3" style={{ paddingTop: "max(env(safe-area-inset-top), 0px)" }}>
       <div className="flex items-center gap-2">
         {isHome ? (
           <Button variant="ghost" size="icon" onClick={onMenuClick} className="h-10 w-10" aria-label="Menü öffnen">
