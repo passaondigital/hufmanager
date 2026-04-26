@@ -46,7 +46,7 @@ const Services = lazy(() => import("@/pages/Services"));
 const MeinAngebot = lazy(() => import("@/pages/MeinAngebot"));
 const Management = lazy(() => import("@/pages/Management"));
 const ManagementHub = lazy(() => import("@/pages/ManagementHub"));
-const Business = lazy(() => import("@/pages/Business"));
+
 const ManagementProfil = lazy(() => import("@/pages/management/ManagementProfil"));
 const ManagementWebsite = lazy(() => import("@/pages/management/ManagementWebsite"));
 const ManagementKommunikation = lazy(() => import("@/pages/management/ManagementKommunikation"));
