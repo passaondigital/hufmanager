@@ -6,27 +6,31 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 20 14.3% 4.1%;
-    --card: 0 0% 100%;
-    --card-foreground: 20 14.3% 4.1%;
     --primary: 38 92% 50%;
     --primary-foreground: 0 0% 100%;
     --secondary: 38 92% 96%;
-    --secondary-foreground: 38 92% 20%;
-    --muted: 30 10% 97%;
-    --muted-foreground: 25 5% 45%;
-    --accent: 38 92% 92%;
-    --accent-foreground: 38 92% 20%;
-    --border: 20 5.9% 90%;
     --radius: 1.25rem;
+    /* Safe Area Variablen für native Apps */
+    --sat: env(safe-area-inset-top);
+    --sar: env(safe-area-inset-right);
+    --sab: env(safe-area-inset-bottom);
+    --sal: env(safe-area-inset-left);
   }
 }
 
 body {
-  @apply bg-white text-foreground antialiased;
-  background-color: white !important;
+  @apply bg-slate-50 text-foreground antialiased overflow-x-hidden;
+  /* Verhindert das typische "Web-Bouncen" beim Scrollen auf iOS */
+  overscroll-behavior-y: none;
 }
 
-/* Hufi-spezifische Card-Schatten */
-.card-hufi {
-  @apply shadow-sm border border-border/50 transition-all hover:shadow-md;
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Der App-Container: Auf Desktop zentriert, auf Mobile füllend */
+.app-container {
+  @apply w-full max-w-[480px] mx-auto bg-white min-h-screen shadow-2xl relative flex flex-col border-x border-border/30;
 }
