@@ -62,7 +62,7 @@ export function ClientOnboarding({ onComplete }: ClientOnboardingProps) {
         <Sparkles className="h-10 w-10 text-primary" />
       </div>
       <h2 className="text-2xl font-bold text-foreground">
-        Willkommen bei HufManager!
+        Willkommen bei Hufi!
       </h2>
       <p className="text-muted-foreground max-w-sm mx-auto">
         Hier hast du alles zu deinem Pferd im Blick.
@@ -96,7 +96,7 @@ export function ClientOnboarding({ onComplete }: ClientOnboardingProps) {
     <div key="provider" className="space-y-6">
       <h2 className="text-xl font-bold text-foreground text-center">Hufbearbeiter verbinden</h2>
       <p className="text-sm text-muted-foreground text-center">
-        Hat dein Hufbearbeiter eine HufManager-ID? Dann verbinde euch jetzt.
+        Hat dein Hufbearbeiter eine Hufi-ID? Dann verbinde euch jetzt.
       </p>
       <div>
         <Label htmlFor="pid">#PID eingeben</Label>

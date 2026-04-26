@@ -276,7 +276,7 @@ export function AppSettingsCard() {
           <div>
             <p className="text-sm font-medium">App installieren</p>
             <p className="text-xs text-muted-foreground">
-              HufManager als App auf diesem Gerät installieren
+              Hufi als App auf diesem Gerät installieren
             </p>
           </div>
 
@@ -304,7 +304,7 @@ export function AppSettingsCard() {
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">
-              Öffne HufManager im Browser, um die Installationsoption zu sehen.
+              Öffne Hufi im Browser, um die Installationsoption zu sehen.
             </p>
           )}
         </div>

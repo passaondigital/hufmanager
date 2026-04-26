@@ -66,7 +66,7 @@ export function AdminBotschafterRangliste() {
         <CardContent className="pt-6 flex items-start gap-3">
           <Info className="w-5 h-5 text-orange-400 mt-0.5 shrink-0" />
           <div>
-            <p className="font-medium">Die Top 10 erhalten automatisch HufManager Pro 1 Jahr kostenlos.</p>
+            <p className="font-medium">Die Top 10 erhalten automatisch Hufi Pro 1 Jahr kostenlos.</p>
             <p className="text-sm text-muted-foreground">Aktuell qualifiziert: {qualified} von 10 Plätzen vergeben</p>
           </div>
         </CardContent>

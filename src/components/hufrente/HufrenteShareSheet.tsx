@@ -35,22 +35,22 @@ export function HufrenteShareSheet({
       label: "WhatsApp",
       emoji: "💬",
       action: "whatsapp",
-      text: `Hey, ich nutze seit einer Weile HufManager für meine Hufpflege — Termine, Rechnungen, Pferdeakten alles digital, auch offline im Stall. Falls du das auch suchst: ${referralLink} (14 Tage kostenlos, keine Kreditkarte)`,
+      text: `Hey, ich nutze seit einer Weile Hufi für meine Hufpflege — Termine, Rechnungen, Pferdeakten alles digital, auch offline im Stall. Falls du das auch suchst: ${referralLink} (14 Tage kostenlos, keine Kreditkarte)`,
     },
     {
       id: "email",
       label: "E-Mail",
       emoji: "✉️",
       action: "email",
-      emailSubject: "HufManager — vielleicht interessant für dich",
-      text: `Hallo,\n\nich nutze seit einer Weile HufManager für meine tägliche Arbeit — Termine, Rechnungen, Pferdeakten, alles digital und DSGVO-konform.\n\nFalls du etwas Ähnliches suchst, schau dir das mal an:\n${referralLink}\n\n14 Tage kostenlos testen, keine Kreditkarte nötig.\n\nViele Grüße`,
+      emailSubject: "Hufi — vielleicht interessant für dich",
+      text: `Hallo,\n\nich nutze seit einer Weile Hufi für meine tägliche Arbeit — Termine, Rechnungen, Pferdeakten, alles digital und DSGVO-konform.\n\nFalls du etwas Ähnliches suchst, schau dir das mal an:\n${referralLink}\n\n14 Tage kostenlos testen, keine Kreditkarte nötig.\n\nViele Grüße`,
     },
     {
       id: "social",
       label: "Social Media",
       emoji: "📱",
       action: "copy",
-      text: `Als Hufpfleger/Therapeut/Trainer kennst du das: nach dem letzten Pferd fängt die eigentliche Arbeit erst an.\n\nHufManager hat das bei mir geändert — alles digital, offline-fähig, DSGVO-konform.\n\nSchau mal rein: ${referralLink} #HufManager #ZukunftPferd2030`,
+      text: `Als Hufpfleger/Therapeut/Trainer kennst du das: nach dem letzten Pferd fängt die eigentliche Arbeit erst an.\n\nHufManager hat das bei mir geändert — alles digital, offline-fähig, DSGVO-konform.\n\nSchau mal rein: ${referralLink} #Hufi #ZukunftPferd2030`,
     },
   ];
 
@@ -86,8 +86,8 @@ export function HufrenteShareSheet({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "HufManager — Empfehlung",
-          text: "Empfiehl HufManager an Kolleginnen und Kollegen",
+          title: "Hufi — Empfehlung",
+          text: "Empfiehl Hufi an Kolleginnen und Kollegen",
           url: referralLink,
         });
       } catch {

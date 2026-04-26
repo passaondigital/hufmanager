@@ -32,7 +32,7 @@ export function PaymentBlockedScreen({ portalUrl }: PaymentBlockedScreenProps) {
         <CardContent className="space-y-6">
           <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
             <p>
-              Die letzte Zahlung für dein HufManager-Abo konnte nicht verarbeitet werden. 
+              Die letzte Zahlung für dein Hufi-Abo konnte nicht verarbeitet werden. 
               Bitte aktualisiere deine Zahlungsinformationen, um den vollen Zugang wiederherzustellen.
             </p>
           </div>

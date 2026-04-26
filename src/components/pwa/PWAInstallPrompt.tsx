@@ -188,7 +188,7 @@ export function PWAInstallPrompt() {
             <div className="flex-1">
               <p className="font-semibold text-foreground text-sm">Als App installieren</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                HufManager als Desktop-App im Dock nutzen
+                Hufi als Desktop-App im Dock nutzen
               </p>
               <div className="flex items-center gap-2 mt-3">
                 <Button 

@@ -141,7 +141,7 @@ export function AdminInvoiceModal({ open, onOpenChange, editInvoice, onSaved }: 
     if (planConfig) {
       setItems([{
         id: crypto.randomUUID(),
-        description: `HufManager ${planConfig.label} – Monatslizenz`,
+        description: `Hufi ${planConfig.label} – Monatslizenz`,
         quantity: 1,
         unit: "Monat",
         unitPrice: planConfig.monthly,

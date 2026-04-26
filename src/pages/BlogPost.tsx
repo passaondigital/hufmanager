@@ -104,7 +104,7 @@ export default function BlogPost() {
   useEffect(() => {
     if (post) {
       // Update page title and meta
-      document.title = post.meta_title || post.title + " | Hufmanager Blog";
+      document.title = post.meta_title || post.title + " | Hufi Blog";
       const metaDesc = document.querySelector('meta[name="description"]');
       if (metaDesc && post.meta_description) {
         metaDesc.setAttribute("content", post.meta_description);
@@ -165,7 +165,7 @@ export default function BlogPost() {
           <Link to="/blog" className="flex items-center gap-2">
             <img 
               src="/hufi-logo.svg" 
-              alt="Hufmanager" 
+              alt="Hufi" 
               className="h-8 w-auto"
             />
           </Link>
@@ -277,7 +277,7 @@ export default function BlogPost() {
       {/* Footer */}
       <footer className="border-t py-8">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} Hufmanager. Alle Rechte vorbehalten.</p>
+          <p>© {new Date().getFullYear()} Hufi. Alle Rechte vorbehalten.</p>
           <div className="flex justify-center gap-4 mt-4">
             <a href="https://hufiapp.de/impressum" className="hover:text-foreground">
               Impressum

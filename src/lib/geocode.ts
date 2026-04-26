@@ -41,7 +41,7 @@ export async function geocodeAddress(
     const res = await fetch(url.toString(), {
       headers: {
         "Accept-Language": "de",
-        "User-Agent": "HufManager/1.0",
+        "User-Agent": "Hufi/1.0",
       },
     });
 

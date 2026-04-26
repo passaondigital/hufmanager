@@ -246,7 +246,7 @@ export function HufCamGalleryReport({
       ctx.textAlign = "right";
       ctx.fillStyle = "#F47B20";
       ctx.font = "bold 18px 'Outfit', sans-serif";
-      ctx.fillText("HufManager.de", collageSize - padding - 16, collageSize - 24);
+      ctx.fillText("Hufi.de", collageSize - padding - 16, collageSize - 24);
 
       const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
       setCollageUrl(dataUrl);
@@ -310,7 +310,7 @@ export function HufCamGalleryReport({
         await navigator.share({
           files: [file],
           title: `${horseName} - Huf-Dokumentation`,
-          text: `Huf-Dokumentation für ${horseName} #HufManager`,
+          text: `Huf-Dokumentation für ${horseName} #Hufi`,
         });
       } else {
         downloadCollage();

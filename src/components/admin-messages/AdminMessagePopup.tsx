@@ -87,7 +87,7 @@ export function AdminMessagePopup() {
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <Mail className="h-5 w-5 shrink-0" />
             <DialogTitle className="text-base font-semibold truncate">
-              📬 Nachricht vom HufManager Team
+              📬 Nachricht vom Hufi Team
             </DialogTitle>
           </div>
           {config.badge && (

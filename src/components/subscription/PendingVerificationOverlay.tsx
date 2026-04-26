@@ -44,7 +44,7 @@ export function PendingVerificationOverlay() {
           </p>
           <div className="flex items-center gap-2 justify-center text-xs text-muted-foreground">
             <Mail className="h-3.5 w-3.5" />
-            <span>Prüfung durch das HufManager-Team</span>
+            <span>Prüfung durch das Hufi-Team</span>
           </div>
         </div>
       </div>

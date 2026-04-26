@@ -88,7 +88,7 @@ export default function BotschafterDashboard() {
   if (!data) return (
     <div className="p-6 max-w-2xl mx-auto text-center py-16 space-y-4">
       <p className="text-lg font-semibold">Du bist noch kein Botschafter.</p>
-      <p className="text-sm" style={{ color: "#9ca3af" }}>Registriere dich jetzt und verdiene mit HufManager.</p>
+      <p className="text-sm" style={{ color: "#9ca3af" }}>Registriere dich jetzt und verdiene mit Hufi.</p>
       <div className="flex gap-3 justify-center">
         <Button onClick={() => navigate("/botschafter/login")} style={{ backgroundColor: "#F5970A", color: "#0a0700" }}>
           Jetzt Botschafter werden
@@ -134,15 +134,15 @@ export default function BotschafterDashboard() {
         </p>
       </div>
 
-      {/* Info Box: So funktioniert HufManager */}
+      {/* Info Box: So funktioniert Hufi */}
       <Card style={{ backgroundColor: "#1a1a12", borderColor: "#2a2a1f" }}>
         <CardContent className="p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Info className="w-4 h-4 flex-shrink-0" style={{ color: "#F5970A" }} />
-            <h3 className="font-semibold text-sm">So funktioniert HufManager</h3>
+            <h3 className="font-semibold text-sm">So funktioniert Hufi</h3>
           </div>
           <p className="text-xs" style={{ color: "#9ca3af" }}>
-            Die Pferdeakte ist der Kern von HufManager. Alles baut darauf auf.
+            Die Pferdeakte ist der Kern von Hufi. Alles baut darauf auf.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs" style={{ color: "#d1d5db" }}>
             <div className="p-3 rounded-lg" style={{ backgroundColor: "#0a0700" }}>
@@ -186,7 +186,7 @@ export default function BotschafterDashboard() {
           <h3 className="font-semibold text-sm flex items-center gap-2">💰 Deine Einnahmen</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="p-3 rounded-lg" style={{ backgroundColor: "#0a0700" }}>
-              <p className="text-xs font-medium" style={{ color: "#9ca3af" }}>HufManager-Accounts ({currentTier.hm}% Lifetime)</p>
+              <p className="text-xs font-medium" style={{ color: "#9ca3af" }}>Hufi-Accounts ({currentTier.hm}% Lifetime)</p>
               <p className="text-lg font-bold mt-1" style={{ color: "#F5970A" }}>
                 {((data.total_earnings_cents || 0) * 0.7 / 100).toFixed(2)}€
               </p>
@@ -279,7 +279,7 @@ export default function BotschafterDashboard() {
               <div className="p-3 rounded-lg text-center space-y-1" style={{ backgroundColor: "rgba(245,151,10,0.1)" }}>
                 <p className="text-xs font-medium" style={{ color: "#9ca3af" }}>Nach 12 Monaten (kumuliert)</p>
                 <p className="text-xs" style={{ color: "#d1d5db" }}>
-                  HufManager: {after12Hbs} HBs × {hbPrice}€ × {currentTier.hm}% = {after12MonthlyHb.toFixed(0)}€/Mon
+                  Hufi: {after12Hbs} HBs × {hbPrice}€ × {currentTier.hm}% = {after12MonthlyHb.toFixed(0)}€/Mon
                 </p>
                 <p className="text-xs" style={{ color: "#d1d5db" }}>
                   Tresor: {after12Owners} Besitzer × {tresorPrice}€ × {currentTier.tresor}% = {after12MonthlyTresor.toFixed(0)}€/Mon
@@ -345,7 +345,7 @@ export default function BotschafterDashboard() {
                 <span>📱</span> QR-Code für Visitenkarte
               </button>
               <button onClick={() => {
-                navigator.clipboard.writeText(`Hey! Ich nutze die digitale Pferdeakte von HufManager – kostenlos und mega praktisch. Schau mal: ${referralLink}`);
+                navigator.clipboard.writeText(`Hey! Ich nutze die digitale Pferdeakte von Hufi – kostenlos und mega praktisch. Schau mal: ${referralLink}`);
                 toast.success("WhatsApp-Vorlage kopiert!");
               }} className="flex items-center gap-2 text-sm hover:underline" style={{ color: "#d1d5db" }}>
                 <span>💬</span> WhatsApp-Vorlage kopieren
@@ -373,7 +373,7 @@ export default function BotschafterDashboard() {
       {/* Provision Table */}
       <Card style={{ backgroundColor: "#1a1a12", borderColor: "#2a2a1f" }}>
         <CardContent className="p-4 space-y-3">
-          <h3 className="font-semibold text-sm">💰 So verdienst du mit HufManager</h3>
+          <h3 className="font-semibold text-sm">💰 So verdienst du mit Hufi</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="p-3 rounded-lg space-y-2" style={{ backgroundColor: "#0a0700" }}>
               <p className="text-xs font-bold" style={{ color: "#F5970A" }}>HUFBEARBEITER & PARTNER</p>
@@ -405,7 +405,7 @@ export default function BotschafterDashboard() {
       {/* Tier Progress */}
       {nextTier && (
         <div className="text-center text-sm p-3 rounded-lg" style={{ backgroundColor: "rgba(245,151,10,0.1)", color: "#F5970A" }}>
-          🎯 Noch {nextTier.min - conversions} Partner bis {nextTier.label} ({nextTier.hm}% HufManager / {nextTier.tresor}% Tresor)
+          🎯 Noch {nextTier.min - conversions} Partner bis {nextTier.label} ({nextTier.hm}% Hufi / {nextTier.tresor}% Tresor)
         </div>
       )}
     </div>

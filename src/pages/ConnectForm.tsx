@@ -231,7 +231,7 @@ const ConnectForm = () => {
             <div className="mx-auto w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
               <CheckCircle className="h-8 w-8 text-green-500" />
             </div>
-            <h2 className="text-xl font-semibold">Willkommen bei HufManager! 🐴</h2>
+            <h2 className="text-xl font-semibold">Willkommen bei Hufi! 🐴</h2>
             <p className="text-muted-foreground">
               Du wirst gleich weitergeleitet...
             </p>
@@ -262,7 +262,7 @@ const ConnectForm = () => {
             <div className="space-y-2">
               <span className="text-4xl">🐴</span>
               <h1 className="text-2xl font-bold text-foreground">
-                Willkommen bei HufManager
+                Willkommen bei Hufi
               </h1>
               <p className="text-muted-foreground">
                 <strong>{linkData.providerName}</strong> hat dich eingeladen.
@@ -408,7 +408,7 @@ const ConnectForm = () => {
               <Label htmlFor="connect-dsgvo" className="text-xs leading-relaxed cursor-pointer text-muted-foreground">
                 Ich stimme zu, dass meine Daten von{" "}
                 <strong>{linkData?.providerName}</strong>{" "}
-                über HufManager verarbeitet werden.{" "}
+                über Hufi verarbeitet werden.{" "}
                 <a href="/datenschutz" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                   Datenschutzerklärung
                 </a> *

@@ -231,7 +231,7 @@ export default function VetCSVImport() {
             <CardHeader>
               <CardTitle className="text-base">Feld-Zuordnung</CardTitle>
               <p className="text-xs text-muted-foreground">
-                {csvData.length} Zeilen erkannt. Ordne die Spalten den HufManager-Feldern zu.
+                {csvData.length} Zeilen erkannt. Ordne die Spalten den Hufi-Feldern zu.
               </p>
             </CardHeader>
             <CardContent className="space-y-3">

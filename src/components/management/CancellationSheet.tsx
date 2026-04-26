@@ -65,7 +65,7 @@ export function CancellationSheet({ open, onOpenChange, contract, currentPlan, o
       if (error) throw error;
 
       toast.success("Kündigung wurde beantragt", {
-        description: `Wirksam zum ${periodEnd}. Du kannst HufManager bis dahin weiterhin nutzen.`,
+        description: `Wirksam zum ${periodEnd}. Du kannst Hufi bis dahin weiterhin nutzen.`,
       });
 
       onOpenChange(false);
@@ -107,7 +107,7 @@ export function CancellationSheet({ open, onOpenChange, contract, currentPlan, o
             <AlertTriangle className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800 dark:text-amber-300 text-sm">
               Deine Kündigung wird zum Ende der aktuellen Vertragslaufzeit wirksam.
-              Du kannst HufManager bis dahin weiterhin vollständig nutzen.
+              Du kannst Hufi bis dahin weiterhin vollständig nutzen.
               <br /><br />
               <strong>Kündigungsfrist:</strong> 30 Tage zum Laufzeitende
             </AlertDescription>
@@ -134,7 +134,7 @@ export function CancellationSheet({ open, onOpenChange, contract, currentPlan, o
             <Textarea
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
-              placeholder="Dein Feedback hilft uns, HufManager besser zu machen..."
+              placeholder="Dein Feedback hilft uns, Hufi besser zu machen..."
               rows={3}
             />
           </div>
@@ -147,7 +147,7 @@ export function CancellationSheet({ open, onOpenChange, contract, currentPlan, o
               onCheckedChange={(v) => setConfirmed(v === true)}
             />
             <Label htmlFor="confirm-cancel" className="text-sm leading-relaxed cursor-pointer">
-              Ich bestätige, dass ich mein HufManager-Abonnement kündigen möchte.
+              Ich bestätige, dass ich mein Hufi-Abonnement kündigen möchte.
             </Label>
           </div>
 

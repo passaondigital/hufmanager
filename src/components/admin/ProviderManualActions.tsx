@@ -58,7 +58,7 @@ export function ProviderManualActions({
             body: {
               user_id: providerId,
               title: "Vertrag zur Unterzeichnung 📄",
-              body: "Bitte unterzeichne deinen HufManager-Nutzungsvertrag.",
+              body: "Bitte unterzeichne deinen Hufi-Nutzungsvertrag.",
               url: "/management/abo",
             },
           });

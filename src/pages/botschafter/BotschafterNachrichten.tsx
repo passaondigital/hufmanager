@@ -255,7 +255,7 @@ export default function BotschafterNachrichten() {
                   )}
                   <div className={`max-w-[75%] ${msg.sender === "botschafter" ? "bg-orange-500 text-white" : "bg-muted"} rounded-2xl px-4 py-2.5`}>
                     {msg.sender === "admin" && (
-                      <p className="text-xs font-medium mb-0.5 text-orange-500">Pascal · HufManager</p>
+                      <p className="text-xs font-medium mb-0.5 text-orange-500">Pascal · Hufi</p>
                     )}
                     <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                     <p className={`text-[10px] mt-1 ${msg.sender === "botschafter" ? "text-white/60" : "text-muted-foreground"}`}>

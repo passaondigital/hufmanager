@@ -142,10 +142,10 @@ export default function PartnerPublicProfile() {
 
   // SEO
   if (typeof document !== "undefined") {
-    document.title = `${data.full_name} — ${typeConfig.label} | HufManager`;
+    document.title = `${data.full_name} — ${typeConfig.label} | Hufi`;
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
-      metaDesc.setAttribute("content", `${data.full_name} — ${typeConfig.label}. ${data.bio?.substring(0, 120) || "Fachpartner auf HufManager."}`);
+      metaDesc.setAttribute("content", `${data.full_name} — ${typeConfig.label}. ${data.bio?.substring(0, 120) || "Fachpartner auf Hufi."}`);
     }
   }
 
@@ -403,10 +403,10 @@ export default function PartnerPublicProfile() {
         <div className="max-w-3xl mx-auto px-4 text-center space-y-2">
           <p className="text-xs text-muted-foreground">
             #{data.readable_id} · Profil auf{" "}
-            <a href="https://hufiapp.de" className="text-primary hover:underline">HufManager</a>
+            <a href="https://hufiapp.de" className="text-primary hover:underline">Hufi</a>
           </p>
           <p className="text-xs text-muted-foreground/60">
-            © {new Date().getFullYear()} HufManager · DSGVO-konform
+            © {new Date().getFullYear()} Hufi · DSGVO-konform
           </p>
         </div>
       </footer>

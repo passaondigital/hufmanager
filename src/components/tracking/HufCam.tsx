@@ -307,7 +307,7 @@ export function HufCam({ horseName, horseId, onCollageGenerated }: HufCamProps) 
       ctx.textAlign = "right";
       ctx.fillStyle = "#F47B20";
       ctx.font = "bold 16px sans-serif";
-      ctx.fillText("HufManager.de", size - padding, size - 25);
+      ctx.fillText("Hufi.de", size - padding, size - 25);
 
       const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
       onCollageGenerated?.(dataUrl);

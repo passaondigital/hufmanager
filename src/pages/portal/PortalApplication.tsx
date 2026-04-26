@@ -28,7 +28,7 @@ const REFERRAL_SOURCES = [
   "Messe / Event",
   "Social Media",
   "Presse / Artikel",
-  "HufManager Portal",
+  "Hufi Portal",
   "Sonstiges",
 ];
 
@@ -108,7 +108,7 @@ export default function PortalApplication() {
             <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto" />
             <h1 className="text-2xl font-bold">Bewerbung eingegangen!</h1>
             <p className="text-muted-foreground">
-              Danke für Ihr Interesse an einem HufManager Business Portal.
+              Danke für Ihr Interesse an einem Hufi Business Portal.
               Wir prüfen Ihre Bewerbung und melden uns innerhalb von 48 Stunden.
             </p>
             <p className="text-sm text-muted-foreground">
@@ -135,7 +135,7 @@ export default function PortalApplication() {
           <CardHeader>
             <CardTitle className="text-xl">📝 Portal-Bewerbung</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Betreiben Sie Ihr Geschäft auf der HufManager-Plattform – dem Betriebssystem der Pferdewelt.
+              Betreiben Sie Ihr Geschäft auf der Hufi-Plattform – dem Betriebssystem der Pferdewelt.
             </p>
           </CardHeader>
           <CardContent>
@@ -167,7 +167,7 @@ export default function PortalApplication() {
                   <Textarea value={form.description} onChange={(e) => update("description", e.target.value)} rows={3} required />
                 </div>
                 <div>
-                  <Label>Was erhoffen Sie sich vom HufManager-Portal? *</Label>
+                  <Label>Was erhoffen Sie sich vom Hufi-Portal? *</Label>
                   <Textarea value={form.expectations} onChange={(e) => update("expectations", e.target.value)} rows={3} required />
                 </div>
                 <div>
@@ -213,7 +213,7 @@ export default function PortalApplication() {
 
               {/* Source */}
               <div>
-                <Label>Wie haben Sie von HufManager erfahren?</Label>
+                <Label>Wie haben Sie von Hufi erfahren?</Label>
                 <Select value={form.referral_source} onValueChange={(v) => update("referral_source", v)}>
                   <SelectTrigger><SelectValue placeholder="Wählen..." /></SelectTrigger>
                   <SelectContent>

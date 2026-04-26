@@ -108,7 +108,7 @@ export function HMTeamCenter() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">👥 HufManager Team</h2>
+          <h2 className="text-2xl font-bold">👥 Hufi Team</h2>
           <p className="text-muted-foreground">Internes Team verwalten</p>
         </div>
         <div className="flex items-center gap-4">

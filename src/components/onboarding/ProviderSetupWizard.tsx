@@ -235,7 +235,7 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
 
           <div className="space-y-3">
             <h1 className="text-3xl font-bold text-foreground">
-              Willkommen bei HufManager!
+              Willkommen bei Hufi!
             </h1>
             <p className="text-xl text-muted-foreground">
               Hallo {displayName}!

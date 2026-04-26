@@ -180,12 +180,12 @@ export function HorseTransferReceive() {
       await supabase.from("notifications").insert({
         user_id: user.id,
         title: `🐴 ${selectedTransfer.horse_name || "Pferd"} ist jetzt deins!`,
-        message: `${selectedTransfer.horse_name || "Pferd"} wurde erfolgreich in deinen HufManager übertragen.`,
+        message: `${selectedTransfer.horse_name || "Pferd"} wurde erfolgreich in deinen Hufi übertragen.`,
         type: "horse_transfer_completed",
         link: `/client-horse/${selectedTransfer.horse_id}`,
       } as any);
 
-      toast.success(`🎉 ${selectedTransfer.horse_name} ist jetzt in deinem HufManager!`);
+      toast.success(`🎉 ${selectedTransfer.horse_name} ist jetzt in deinem Hufi!`);
       setSelectedTransfer(null);
       setBuyerStep(1);
       setPassword("");

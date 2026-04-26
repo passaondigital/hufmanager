@@ -191,7 +191,7 @@ function SOSSupportSection() {
               )}
             </div>
             <div className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">
-              📧 Deine Meldung geht direkt an das HufManager-Team.
+              📧 Deine Meldung geht direkt an das Hufi-Team.
             </div>
           </div>
           <DialogFooter>

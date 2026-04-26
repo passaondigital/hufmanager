@@ -48,7 +48,7 @@ export function ProviderReferral() {
     ? `${window.location.origin}/p/${subdomain}`
     : `${window.location.origin}`;
 
-  const shareText = `Ich nutze HufManager für mein Pferd — alle Termine, Befunde und Rechnungen digital. Mein Hufpfleger ${providerName} ist dabei. Schau mal rein: ${profileUrl}`;
+  const shareText = `Ich nutze Hufi für mein Pferd — alle Termine, Befunde und Rechnungen digital. Mein Hufpfleger ${providerName} ist dabei. Schau mal rein: ${profileUrl}`;
 
   const handleShare = async () => {
     // Log referral
@@ -62,7 +62,7 @@ export function ProviderReferral() {
 
     if (navigator.share) {
       try {
-        await navigator.share({ title: "HufManager Empfehlung", text: shareText });
+        await navigator.share({ title: "Hufi Empfehlung", text: shareText });
       } catch {
         // User cancelled
       }

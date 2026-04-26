@@ -20,7 +20,7 @@ export function AffiliateWidget({ affiliateCode = "", conversions = 0, earnings 
 
   const share = async () => {
     if (navigator.share) {
-      await navigator.share({ title: "HufManager empfehlen", url: link });
+      await navigator.share({ title: "Hufi empfehlen", url: link });
     } else {
       copy();
     }
@@ -33,7 +33,7 @@ export function AffiliateWidget({ affiliateCode = "", conversions = 0, earnings 
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-primary" />
-          Empfehle HufManager
+          Empfehle Hufi
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">

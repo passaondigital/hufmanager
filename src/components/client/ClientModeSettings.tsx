@@ -67,7 +67,7 @@ export function ClientModeSettings({ variant = "settings", onComplete }: ClientM
     <div className={cn("space-y-4", isOnboarding && "max-w-lg mx-auto")}>
       {isOnboarding && (
         <div className="text-center mb-6">
-          <h2 className="text-xl font-semibold text-foreground">Wie nutzt du HufManager?</h2>
+          <h2 className="text-xl font-semibold text-foreground">Wie nutzt du Hufi?</h2>
           <p className="text-sm text-muted-foreground mt-1">
             Wähle deinen Account-Typ. Du kannst ihn später in den Einstellungen ändern.
           </p>

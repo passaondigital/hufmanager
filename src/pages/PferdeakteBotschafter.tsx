@@ -204,7 +204,7 @@ export default function PferdeakteBotschafter() {
           <Link to="/pferdeakte" className="text-sm font-medium hover:text-[#f97316] transition-colors" style={{ color: "#6b7280" }}>
             ← Zur Pferdeakte
           </Link>
-          <span className="text-xl font-bold tracking-tight">HufManager</span>
+          <span className="text-xl font-bold tracking-tight">Hufi</span>
           <div className="flex items-center gap-3">
             <Link to="/botschafter/login" className="text-sm font-medium hover:text-[#f97316] transition-colors" style={{ color: "#6b7280" }}>
               Bereits Botschafter? Anmelden
@@ -291,7 +291,7 @@ export default function PferdeakteBotschafter() {
                 <Input placeholder="Telefon (optional)" value={form.phone} onChange={set("phone")} className={inputCls} />
                 <div className="relative">
                   <select value={form.heard_from} onChange={set("heard_from")} className={selectCls}>
-                    <option value="">Wie hast du von HufManager gehört?</option>
+                    <option value="">Wie hast du von Hufi gehört?</option>
                     {HEARD_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "#9ca3af" }} />
@@ -404,7 +404,7 @@ export default function PferdeakteBotschafter() {
       <section className="py-16 bg-white">
         <div className="max-w-3xl mx-auto px-6 grid sm:grid-cols-3 gap-6">
           {[
-            { icon: "🏆", title: "Top 10 Empfehler", text: "Die 10 aktivsten Botschafter erhalten HufManager Pro 1 Jahr kostenlos — automatisch, kein Antrag nötig." },
+            { icon: "🏆", title: "Top 10 Empfehler", text: "Die 10 aktivsten Botschafter erhalten Hufi Pro 1 Jahr kostenlos — automatisch, kein Antrag nötig." },
             { icon: "💰", title: "Bis 50% Provision", text: "Für jeden zahlenden Nutzer den du empfiehlst bekommst du bis zu 50% der ersten Zahlung — dauerhaft nachvollziehbar." },
             { icon: "📣", title: "Namentlich gelistet", text: "Botschafter und Unterstützer werden namentlich auf der Launchpage und in der App erwähnt." },
           ].map((b) => (
@@ -420,7 +420,7 @@ export default function PferdeakteBotschafter() {
       {/* Footer */}
       <footer className="py-8 px-6 text-sm" style={{ backgroundColor: "#111111", color: "rgba(255,255,255,0.4)" }}>
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <span>© 2026 HufManager · Barhufservice Schmid</span>
+          <span>© 2026 Hufi · Barhufservice Schmid</span>
           <div className="flex items-center gap-4">
             {[
               { href: "/impressum", label: "Impressum" },

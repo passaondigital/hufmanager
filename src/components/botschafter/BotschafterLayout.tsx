@@ -50,7 +50,7 @@ export function BotschafterLayout() {
           {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
         <div className="flex items-center gap-2">
-          <span className="text-lg font-bold tracking-tight">🤝 HufManager</span>
+          <span className="text-lg font-bold tracking-tight">🤝 Hufi</span>
           <Badge className="text-[10px] font-bold px-1.5 py-0" style={{ backgroundColor: "#F5970A", color: "#0a0700" }}>
             Botschafter
           </Badge>
@@ -95,7 +95,7 @@ export function BotschafterLayout() {
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#9ca3af] hover:text-white hover:bg-white/5 transition-colors"
             >
               <span className="text-base">🐴</span>
-              <span>HufManager</span>
+              <span>Hufi</span>
               <ChevronRight className="w-3 h-3 ml-auto" />
             </Link>
             <button

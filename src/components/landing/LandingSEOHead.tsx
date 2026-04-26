@@ -164,7 +164,7 @@ export const LandingSEOHead = ({ settings, currentPage }: LandingSEOHeadProps) =
     }
 
     return () => {
-      document.title = "HufManager";
+      document.title = "Hufi";
       const ldScript = document.querySelector("#landing-jsonld");
       if (ldScript) ldScript.remove();
     };

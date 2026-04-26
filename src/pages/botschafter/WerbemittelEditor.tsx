@@ -395,7 +395,7 @@ export default function WerbemittelEditor() {
             {/* Logo */}
             {showLogo && (
               <div className="absolute top-4 left-4 font-bold text-sm" style={{ color: textColor }}>
-                HufManager
+                Hufi
               </div>
             )}
 

@@ -207,7 +207,7 @@ export default function BotschafterUmsaetze() {
             {TIERS.map(t => (
               <div key={t.key} className="flex justify-between" style={{ color: currentTier.key === t.key ? "#F5970A" : undefined }}>
                 <span>{t.label} ({t.min}+):</span>
-                <span>{t.hm}% HufManager · {t.tresor}% Tresor {t.extra}</span>
+                <span>{t.hm}% Hufi · {t.tresor}% Tresor {t.extra}</span>
               </div>
             ))}
           </div>

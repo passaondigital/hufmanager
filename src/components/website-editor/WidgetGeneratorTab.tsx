@@ -96,7 +96,7 @@ export function WidgetGeneratorTab({ subdomain, businessName, primaryColor, isPr
     toast({ title: "Code kopiert! 📋" });
   };
 
-  const privacyText = `Auf unserer Website setzen wir Widgets von HufManager (hufiapp.de) ein. Dabei werden Daten an HufManager übermittelt. Details entnehmen Sie unserer Datenschutzerklärung. Es besteht ein Auftragsverarbeitungsvertrag (AVV) mit der HufManager GmbH.`;
+  const privacyText = `Auf unserer Website setzen wir Widgets von Hufi (hufiapp.de) ein. Dabei werden Daten an Hufi übermittelt. Details entnehmen Sie unserer Datenschutzerklärung. Es besteht ein Auftragsverarbeitungsvertrag (AVV) mit der Hufi GmbH.`;
 
   return (
     <div className="space-y-4">
@@ -197,7 +197,7 @@ export function WidgetGeneratorTab({ subdomain, businessName, primaryColor, isPr
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium">HufManager-Branding ausblenden</p>
+              <p className="text-sm font-medium">Hufi-Branding ausblenden</p>
               <p className="text-xs text-muted-foreground">
                 {canWhiteLabel ? "White-Label Modus" : "Nur im Team-Plan verfügbar"}
               </p>
@@ -317,7 +317,7 @@ export function WidgetGeneratorTab({ subdomain, businessName, primaryColor, isPr
             <div className="space-y-2">
               <p className="text-sm font-medium text-foreground">DSGVO-Hinweis</p>
               <p className="text-xs text-muted-foreground">
-                Wenn du das Widget auf deiner Website einbindest, erwähne HufManager in deiner
+                Wenn du das Widget auf deiner Website einbindest, erwähne Hufi in deiner
                 Datenschutzerklärung als Auftragsverarbeiter. Dein AVV mit uns deckt das bereits ab.
               </p>
               <Button

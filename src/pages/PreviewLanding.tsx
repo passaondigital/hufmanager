@@ -235,7 +235,7 @@ const PreviewLanding = () => {
         <p className="text-[10px] text-muted-foreground">
           Powered by{" "}
           <a href="/website" className="text-primary hover:underline font-medium">
-            HufManager
+            Hufi
           </a>
         </p>
       </div>

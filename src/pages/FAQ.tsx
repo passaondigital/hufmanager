@@ -36,7 +36,7 @@ export default function FAQ() {
             Häufig gestellte Fragen
           </h1>
           <p className="text-muted-foreground mt-2">
-            Finde schnell Antworten zu HufManager
+            Finde schnell Antworten zu Hufi
           </p>
         </div>
 

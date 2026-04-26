@@ -79,7 +79,7 @@ export default function AdminBlogManager() {
   const [formExcerpt, setFormExcerpt] = useState("");
   const [formContent, setFormContent] = useState("");
   const [formImageUrl, setFormImageUrl] = useState("");
-  const [formAuthor, setFormAuthor] = useState("HufManager Team");
+  const [formAuthor, setFormAuthor] = useState("Hufi Team");
   const [formMetaTitle, setFormMetaTitle] = useState("");
   const [formMetaDescription, setFormMetaDescription] = useState("");
   const [formIsPublished, setFormIsPublished] = useState(false);
@@ -186,7 +186,7 @@ export default function AdminBlogManager() {
     setFormExcerpt("");
     setFormContent("");
     setFormImageUrl("");
-    setFormAuthor("HufManager Team");
+    setFormAuthor("Hufi Team");
     setFormMetaTitle("");
     setFormMetaDescription("");
     setFormIsPublished(false);
@@ -204,7 +204,7 @@ export default function AdminBlogManager() {
     setFormExcerpt(post.excerpt || "");
     setFormContent(post.content);
     setFormImageUrl(post.featured_image_url || "");
-    setFormAuthor(post.author_name || "HufManager Team");
+    setFormAuthor(post.author_name || "Hufi Team");
     setFormMetaTitle(post.meta_title || "");
     setFormMetaDescription(post.meta_description || "");
     setFormIsPublished(post.is_published);
@@ -550,7 +550,7 @@ export default function AdminBlogManager() {
                       <Input
                         value={formAuthor}
                         onChange={(e) => setFormAuthor(e.target.value)}
-                        placeholder="HufManager Team"
+                        placeholder="Hufi Team"
                       />
                     </div>
 

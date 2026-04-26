@@ -84,7 +84,7 @@ export default function VetPMSConnect() {
           </Link>
           <div>
             <h1 className="text-lg font-bold">🔗 Praxissoftware verbinden</h1>
-            <p className="text-xs text-muted-foreground">Synchronisiere Befunde automatisch mit der HufManager Pferdeakte</p>
+            <p className="text-xs text-muted-foreground">Synchronisiere Befunde automatisch mit der Hufi Pferdeakte</p>
           </div>
         </div>
       </header>
@@ -95,7 +95,7 @@ export default function VetPMSConnect() {
           <CardContent className="p-4">
             <p className="text-xs text-emerald-700 dark:text-emerald-400">
               Verbinde deine Praxissoftware und synchronisiere Befunde, Impfungen und Rezepte automatisch.
-              Du arbeitest weiter in deiner Software – HufManager holt die Daten automatisch.
+              Du arbeitest weiter in deiner Software – Hufi holt die Daten automatisch.
             </p>
           </CardContent>
         </Card>

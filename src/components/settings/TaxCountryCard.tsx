@@ -243,7 +243,7 @@ export function TaxCountryCard() {
                   Hinweis zur Registrierkassenpflicht (RKSV)
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  HufManager ist ein Praxis- und Rechnungstool – <strong>keine zertifizierte Registrierkasse</strong> im Sinne der RKSV. 
+                  Hufi ist ein Praxis- und Rechnungstool – <strong>keine zertifizierte Registrierkasse</strong> im Sinne der RKSV. 
                   Für Barverkäufe über 0 € benötigst du eine separate, BMF-zertifizierte Kassenlösung. 
                   Rechnungen per Überweisung/Bankeinzug sind von der RKSV nicht betroffen.
                 </p>

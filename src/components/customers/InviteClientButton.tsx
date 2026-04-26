@@ -59,7 +59,7 @@ function buildInviteMessage({
 
   return `Hallo ${clientFirstName} 👋
 
-Ich nutze jetzt HufManager für meine Termine und Pferdeakten.
+Ich nutze jetzt Hufi für meine Termine und Pferdeakten.
 
 Mit deinem persönlichen Link kannst du ${horseText}:
 
@@ -188,7 +188,7 @@ export function InviteClientButton({
     setLoading(true);
     try {
       const slug = await getOrCreateMagicLink();
-      const subject = encodeURIComponent(`${effectiveProviderName} lädt dich zu HufManager ein`);
+      const subject = encodeURIComponent(`${effectiveProviderName} lädt dich zu Hufi ein`);
       const body = encodeURIComponent(buildInviteMessage({
         clientFirstName,
         horseName: horseName || null,

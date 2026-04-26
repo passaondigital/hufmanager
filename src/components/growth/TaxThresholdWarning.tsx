@@ -73,7 +73,7 @@ export function TaxThresholdWarning({ annualRevenue }: TaxThresholdWarningProps)
                 {config.message(formatCurrency(annualRevenue))}
               </p>
               <p className="text-xs text-muted-foreground mt-2 italic">
-                Bitte konsultiere deinen Steuerberater. HufManager gibt keine Rechtsberatung.
+                Bitte konsultiere deinen Steuerberater. Hufi gibt keine Rechtsberatung.
               </p>
             </div>
             <button onClick={dismiss} className="shrink-0 text-muted-foreground hover:text-foreground p-1">

@@ -22,7 +22,7 @@ const infoScreens = [
   {
     emoji: "💬",
     title: "Fragen? Einfach schreiben.",
-    text: "Schreib deinem Hufpfleger direkt — kein Telefonieren, kein WhatsApp hin und her. Alles läuft über HufManager.",
+    text: "Schreib deinem Hufpfleger direkt — kein Telefonieren, kein WhatsApp hin und her. Alles läuft über Hufi.",
   },
 ];
 

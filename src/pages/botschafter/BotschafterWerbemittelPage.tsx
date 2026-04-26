@@ -74,7 +74,7 @@ export default function BotschafterWerbemittelPage() {
   const [editorCta, setEditorCta] = useState("");
   const [editorName, setEditorName] = useState("");
   const [editorDark, setEditorDark] = useState(true);
-  const [editorHashtags, setEditorHashtags] = useState(["#Pferdeakte", "#HufManager", "#ZukunftHuf2030"]);
+  const [editorHashtags, setEditorHashtags] = useState(["#Pferdeakte", "#Hufi", "#ZukunftHuf2030"]);
   const previewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -179,9 +179,9 @@ export default function BotschafterWerbemittelPage() {
   }));
 
   // Embed codes
-  const bannerHtml = `<a href="${fullRefLink}" target="_blank" rel="noopener">\n  <img src="https://hufiapp.de/banner/${bannerSize.w}x${bannerSize.h}.png?ref=${refCode}" \n    alt="HufManager Pferdeakte" width="${bannerSize.w}" height="${bannerSize.h}" />\n</a>`;
+  const bannerHtml = `<a href="${fullRefLink}" target="_blank" rel="noopener">\n  <img src="https://hufiapp.de/banner/${bannerSize.w}x${bannerSize.h}.png?ref=${refCode}" \n    alt="Hufi Pferdeakte" width="${bannerSize.w}" height="${bannerSize.h}" />\n</a>`;
   const widgetHtml = `<iframe src="https://hufiapp.de/widget/referral?ref=${refCode}" \n  width="300" height="400" frameborder="0" \n  style="border-radius:12px;border:none;"></iframe>`;
-  const signatureHtml = `<table cellpadding="0" cellspacing="0"><tr>\n  <td style="padding-right:12px"><img src="https://hufiapp.de/logo/icon-60.png" width="60" height="60" alt="Hufi" /></td>\n  <td style="font-family:Arial,sans-serif;font-size:13px">\n    <b>Empfohlen: HufManager Pferdeakte</b><br>\n    Die digitale Akte für dein Pferd.<br>\n    <a href="${fullRefLink}" style="color:#F5970A">Kostenlos starten →</a>\n  </td>\n</tr></table>`;
+  const signatureHtml = `<table cellpadding="0" cellspacing="0"><tr>\n  <td style="padding-right:12px"><img src="https://hufiapp.de/logo/icon-60.png" width="60" height="60" alt="Hufi" /></td>\n  <td style="font-family:Arial,sans-serif;font-size:13px">\n    <b>Empfohlen: Hufi Pferdeakte</b><br>\n    Die digitale Akte für dein Pferd.<br>\n    <a href="${fullRefLink}" style="color:#F5970A">Kostenlos starten →</a>\n  </td>\n</tr></table>`;
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-5xl mx-auto">
@@ -236,9 +236,9 @@ export default function BotschafterWerbemittelPage() {
             <h3 className="text-sm font-semibold mb-3" style={{ color: "#9ca3af" }}>── Textvorlagen ──</h3>
             <div className="space-y-2">
               {[
-                { label: "WhatsApp-Nachricht", icon: "💬", text: `Hey! Ich nutze die digitale Pferdeakte von HufManager – kostenlos und mega praktisch für alle Pferdeinfos an einem Ort. Schau mal: ${fullRefLink}` },
-                { label: "Instagram Caption", icon: "📸", text: `🐴 Dein Pferd. Deine Daten. Endlich sicher.\n\nDie HufManager Pferdeakte ist kostenlos und verbindet dich mit Hufbearbeiter, Tierarzt und Osteo.\n\n➡️ Link in Bio\n\n#Pferdeakte #HufManager #ZukunftHuf2030 #Pferde` },
-                { label: "E-Mail-Vorlage", icon: "📧", text: `Betreff: Kennst du schon die digitale Pferdeakte?\n\nHallo,\n\nich möchte dir HufManager vorstellen – die kostenlose digitale Pferdeakte. Alle Daten deines Pferdes an einem Ort, sicher geteilt mit deinem Hufbearbeiter und Tierarzt.\n\nSchau mal hier: ${fullRefLink}\n\nLiebe Grüße` },
+                { label: "WhatsApp-Nachricht", icon: "💬", text: `Hey! Ich nutze die digitale Pferdeakte von Hufi – kostenlos und mega praktisch für alle Pferdeinfos an einem Ort. Schau mal: ${fullRefLink}` },
+                { label: "Instagram Caption", icon: "📸", text: `🐴 Dein Pferd. Deine Daten. Endlich sicher.\n\nDie Hufi Pferdeakte ist kostenlos und verbindet dich mit Hufbearbeiter, Tierarzt und Osteo.\n\n➡️ Link in Bio\n\n#Pferdeakte #Hufi #ZukunftHuf2030 #Pferde` },
+                { label: "E-Mail-Vorlage", icon: "📧", text: `Betreff: Kennst du schon die digitale Pferdeakte?\n\nHallo,\n\nich möchte dir Hufi vorstellen – die kostenlose digitale Pferdeakte. Alle Daten deines Pferdes an einem Ort, sicher geteilt mit deinem Hufbearbeiter und Tierarzt.\n\nSchau mal hier: ${fullRefLink}\n\nLiebe Grüße` },
               ].map(item => (
                 <Card key={item.label} style={{ backgroundColor: "#1a1a12", borderColor: "#2a2a1f" }}>
                   <CardContent className="p-3 flex items-center justify-between">
@@ -330,7 +330,7 @@ export default function BotschafterWerbemittelPage() {
               </div>
               <div className="p-3 rounded flex items-center justify-center" style={{ backgroundColor: "#0a0700", minHeight: 100 }}>
                 <div className="text-center text-xs" style={{ color: "#F5970A", width: Math.min(bannerSize.w, 300), height: Math.min(bannerSize.h, 200) }}>
-                  <p className="font-bold">HufManager</p>
+                  <p className="font-bold">Hufi</p>
                   <p>Die digitale Pferdeakte</p>
                   <p className="mt-1">[Kostenlos starten]</p>
                 </div>
@@ -369,7 +369,7 @@ export default function BotschafterWerbemittelPage() {
                     <div className="w-[60px] h-[60px] rounded-lg flex items-center justify-center text-xl" style={{ backgroundColor: "#F5970A" }}>🐴</div>
                   </td>
                   <td style={{ fontFamily: "Arial, sans-serif", fontSize: 13, color: "#333" }}>
-                    <b>Empfohlen: HufManager Pferdeakte</b><br />
+                    <b>Empfohlen: Hufi Pferdeakte</b><br />
                     Die digitale Akte für dein Pferd.<br />
                     <a href={fullRefLink} style={{ color: "#F5970A" }}>Kostenlos starten →</a>
                   </td>
@@ -473,7 +473,7 @@ export default function BotschafterWerbemittelPage() {
                 <div>
                   <label className="text-xs font-medium" style={{ color: "#9ca3af" }}>Hashtags</label>
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {["#Pferdeakte", "#HufManager", "#ZukunftHuf2030", "#Pferde"].map(tag => (
+                    {["#Pferdeakte", "#Hufi", "#ZukunftHuf2030", "#Pferde"].map(tag => (
                       <button key={tag} onClick={() => {
                         setEditorHashtags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
                       }}
@@ -506,7 +506,7 @@ export default function BotschafterWerbemittelPage() {
                       onClick={() => shareTelegram(editorHeadline.join(" "))}>Telegram</Button>
                   </div>
                   <Button size="sm" variant="ghost" className="w-full h-8 text-xs"
-                    onClick={() => shareEmail("HufManager Pferdeakte", editorHeadline.join(" ") + "\n\n" + editorCta)}>
+                    onClick={() => shareEmail("Hufi Pferdeakte", editorHeadline.join(" ") + "\n\n" + editorCta)}>
                     📧 Per E-Mail teilen
                   </Button>
                 </div>

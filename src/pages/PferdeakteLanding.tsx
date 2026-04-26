@@ -174,7 +174,7 @@ function StickyNav({ scrolled }: { scrolled: boolean }) {
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 md:px-12 h-16">
         <span className="text-xl font-bold tracking-tight" style={{ color: "#0a0a0a" }}>
-          HufManager
+          Hufi
         </span>
         <div className="hidden md:flex items-center gap-6 text-sm font-medium" style={{ color: "#6b7280" }}>
           <button onClick={scrollTo("besitzer")} className="hover:text-[#0a0a0a] transition-colors">Für Pferdebesitzer</button>
@@ -560,7 +560,7 @@ function TargetGroupsSection() {
           label="Für Hufbearbeiter, Tierärzte & Therapeuten"
           labelColor="#0a0a0a"
           headline={"Endlich wirst du gesehen.\nFür das was du wirklich leistest."}
-          text="Du dokumentierst sorgfältig. Du arbeitest professionell. Aber wenn niemand den Verlauf kennt, steht dein Name trotzdem in Frage. Mit HufManager dokumentierst du lückenlos — digital, rechtssicher, von Besitzer freigegeben. Deine Arbeit spricht für sich."
+          text="Du dokumentierst sorgfältig. Du arbeitest professionell. Aber wenn niemand den Verlauf kennt, steht dein Name trotzdem in Frage. Mit Hufi dokumentierst du lückenlos — digital, rechtssicher, von Besitzer freigegeben. Deine Arbeit spricht für sich."
           benefits={[
             "Lückenlose Dokumentation als Rechtsschutz",
             "Schneller Zugriff auf freigegebene Vorgeschichten",
@@ -657,10 +657,10 @@ function MissionSection() {
           Pferdeschutz und Datenschutz sind keine Gegensätze.<br />Sie sind dasselbe.
         </p>
         <p className="leading-relaxed mb-6" style={{ color: "rgba(255,255,255,.5)" }}>
-          HufManager wurde gegründet von einem Pferdeprofi mit fast 20 Jahren Erfahrung in der Pferdebranche. Nicht aus einem Büro heraus. Aus dem Stall. Von der Praxis – für die Praxis. Für die Menschen, die täglich mit Pferden leben und arbeiten.
+          Hufi wurde gegründet von einem Pferdeprofi mit fast 20 Jahren Erfahrung in der Pferdebranche. Nicht aus einem Büro heraus. Aus dem Stall. Von der Praxis – für die Praxis. Für die Menschen, die täglich mit Pferden leben und arbeiten.
         </p>
         <p className="text-white font-bold">Pascal Schmid</p>
-        <p className="text-sm" style={{ color: "rgba(255,255,255,.4)" }}>Gründer HufManager · Barhufpfleger & Equine Tech Founder</p>
+        <p className="text-sm" style={{ color: "rgba(255,255,255,.4)" }}>Gründer Hufi · Barhufpfleger & Equine Tech Founder</p>
       </div>
     </section>
   );
@@ -1040,7 +1040,7 @@ const botschafterTypes = [
     title: "Pferdemenschen & Creator",
     points: [
       "Bis 50% Provision auf alle Pakete pro Empfehlung",
-      "Top 10 Empfehler: HufManager Pro — 1 Jahr kostenlos",
+      "Top 10 Empfehler: Hufi Pro — 1 Jahr kostenlos",
       "Namentliche Erwähnung als Botschafter",
       "Exklusiver Frühzugang vor dem Launch",
     ],
@@ -1053,8 +1053,8 @@ const botschafterTypes = [
       "Bis 50% Affiliate-Provision auf alle Pakete",
       "Eigenes Botschafter-Dashboard mit Tracking",
       "Namentlich auf der Launchpage gelistet",
-      "HufManager Pro 1 Jahr kostenlos (Top 10 Empfehler)",
-      "Vorzugspreis auf eigenes HufManager-Abo",
+      "Hufi Pro 1 Jahr kostenlos (Top 10 Empfehler)",
+      "Vorzugspreis auf eigenes Hufi-Abo",
     ],
   },
   {
@@ -1082,7 +1082,7 @@ function BotschafterSection() {
           Werde Teil der Bewegung.<br />Nicht nur Nutzer — Mitgestalter.
         </h2>
         <p className="text-center max-w-[650px] mx-auto mb-14" style={{ color: "rgba(255,255,255,.5)" }}>
-          HufManager sucht Menschen und Organisationen, die den neuen Standard im Pferdesport aktiv mitprägen wollen. Als Botschafter wirst du nicht nur sichtbar — du verdienst an jedem, den du überzeugst.
+          Hufi sucht Menschen und Organisationen, die den neuen Standard im Pferdesport aktiv mitprägen wollen. Als Botschafter wirst du nicht nur sichtbar — du verdienst an jedem, den du überzeugst.
         </p>
 
         <div className="grid md:grid-cols-3 gap-6 mb-10">
@@ -1192,7 +1192,7 @@ function FooterSection() {
   return (
     <footer className="py-8 px-6 text-sm" style={{ backgroundColor: "#111111", color: "rgba(255,255,255,0.4)" }}>
       <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-        <span>© 2026 HufManager · Barhufservice Schmid</span>
+        <span>© 2026 Hufi · Barhufservice Schmid</span>
         <div className="flex items-center gap-4">
           {[
             { href: "/impressum", label: "Impressum" },

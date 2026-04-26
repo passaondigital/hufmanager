@@ -80,7 +80,7 @@ export default function Blog() {
           <Link to="/blog" className="flex items-center gap-2">
             <img 
               src="/hufi-logo.svg" 
-              alt="Hufmanager" 
+              alt="Hufi" 
               className="h-8 w-auto"
             />
           </Link>
@@ -249,7 +249,7 @@ export default function Blog() {
       {/* Footer */}
       <footer className="border-t py-8">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} Hufmanager. Alle Rechte vorbehalten.</p>
+          <p>© {new Date().getFullYear()} Hufi. Alle Rechte vorbehalten.</p>
           <div className="flex justify-center gap-4 mt-4">
             <a href="https://hufiapp.de/impressum" className="hover:text-foreground">
               Impressum

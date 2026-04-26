@@ -124,7 +124,7 @@ const Aufnahme = () => {
         <Tile
           icon={<Send className="w-10 h-10 text-primary" />}
           title="Einladung senden"
-          description="Kunden zur HufManager-App einladen"
+          description="Kunden zur Hufi-App einladen"
           colSpan
           onClick={() => setShowInviteModal(true)}
         />

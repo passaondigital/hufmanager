@@ -38,7 +38,7 @@ const GeldVerdienen = () => {
         </h1>
 
         <p className="text-sm text-muted-foreground max-w-2xl">
-          Empfiehl HufManager an Kollegen. Für jede Anmeldung über deinen Link
+          Empfiehl Hufi an Kollegen. Für jede Anmeldung über deinen Link
           erhältst du 20&nbsp;% Provision auf das Abo – monatlich, solange der Account aktiv ist.
         </p>
 
@@ -92,7 +92,7 @@ const GeldVerdienen = () => {
               </span>
             </div>
             <div className="flex justify-between items-center px-4 py-3">
-              <span className="text-sm text-muted-foreground">Dein HufManager-Abo</span>
+              <span className="text-sm text-muted-foreground">Dein Hufi-Abo</span>
               <span className="text-sm font-semibold text-foreground">
                 −{hufManagerCost.toFixed(2)}&nbsp;€
               </span>

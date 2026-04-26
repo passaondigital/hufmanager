@@ -4,7 +4,7 @@ export { HMCamCapture } from "./HMCamCapture";
 export { HMCamModal } from "./HMCamModal";
 export { HufCamProStandalone } from "./HufCamProStandalone";
 
-// HM-CAM (HufManager Cam) Guide System
+// HM-CAM (Hufi Cam) Guide System
 export { HoofViewSelector } from "./HoofViewSelector";
 export { CameraGuideOverlay } from "./CameraGuideOverlay";
 export { HOOF_VIEW_CONFIGS } from "./types";

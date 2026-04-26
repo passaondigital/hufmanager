@@ -12,7 +12,7 @@ export function CommunicationSettingsCard() {
     toast.success(
       newMode === "whatsapp"
         ? "WhatsApp als Kommunikationsweg aktiviert"
-        : "HufManager Chat als Kommunikationsweg aktiviert"
+        : "Hufi Chat als Kommunikationsweg aktiviert"
     );
   };
 

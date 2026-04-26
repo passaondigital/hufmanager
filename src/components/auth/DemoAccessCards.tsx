@@ -205,7 +205,7 @@ export function DemoAccessCards({ onSelectAccount }: DemoAccessCardsProps) {
                 <Building2 className="h-5 w-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <span className="text-xs font-semibold text-foreground block">HufManager Business Portal</span>
+                <span className="text-xs font-semibold text-foreground block">Hufi Business Portal</span>
                 <span className="text-[10px] text-muted-foreground block">
                   Versicherungen · Hersteller · Verbände · Kliniken · Ausbildung · Lieferanten
                 </span>

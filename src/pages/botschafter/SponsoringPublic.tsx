@@ -63,7 +63,7 @@ export default function SponsoringPublic() {
             {bot.type === "creator" ? "🎙️" : bot.type === "profi" ? "🔨" : "🏢"}
           </div>
           <h1 className="text-2xl font-bold">{displayName}</h1>
-          <p className="text-sm" style={{ color: "#9ca3af" }}>{typeLabel} · empfiehlt HufManager</p>
+          <p className="text-sm" style={{ color: "#9ca3af" }}>{typeLabel} · empfiehlt Hufi</p>
         </div>
 
         {/* Bio */}
@@ -75,7 +75,7 @@ export default function SponsoringPublic() {
 
         {/* Features */}
         <div className="space-y-3">
-          <h2 className="text-base font-semibold text-center">Was ist HufManager?</h2>
+          <h2 className="text-base font-semibold text-center">Was ist Hufi?</h2>
           <div className="space-y-2">
             {features.map(f => (
               <div key={f} className="flex items-center gap-2 text-sm" style={{ color: "#d1d5db" }}>

@@ -13,7 +13,7 @@ export const dashboardTourSteps: TourStep[] = [
   {
     target: '[data-tour="due-appointments"]',
     title: 'Fällige Termine',
-    description: 'HufManager erinnert dich automatisch, wenn ein Pferd wieder dran ist. Kein Termin geht verloren.',
+    description: 'Hufi erinnert dich automatisch, wenn ein Pferd wieder dran ist. Kein Termin geht verloren.',
     position: 'bottom',
   },
   {
@@ -25,7 +25,7 @@ export const dashboardTourSteps: TourStep[] = [
   {
     target: '[data-tour="checklist"]',
     title: 'Erste Schritte',
-    description: 'Arbeite die Punkte ab und dein HufManager ist vollständig eingerichtet.',
+    description: 'Arbeite die Punkte ab und dein Hufi ist vollständig eingerichtet.',
     position: 'bottom',
   },
   {

@@ -60,7 +60,7 @@ export const FAQ_DATA: FAQCategory[] = [
     questions: [
       { q: "Wo werden meine Daten gespeichert?", a: "Auf Servern in Deutschland (Hetzner). DSGVO-konform. Verschlüsselt. Row-Level-Security auf jeder Tabelle." },
       { q: "Kann ich meine Daten löschen?", a: "Ja. In den Einstellungen kannst du dein Konto und alle zugehörigen Daten löschen." },
-      { q: "Was kostet HufManager?", a: "Für Pferdebesitzer: Kostenlos. Für Hufbearbeiter: Ab 19€/Monat (0-50 Pferde), 49€ (50-150), 99€ (150-350)." },
+      { q: "Was kostet Hufi?", a: "Für Pferdebesitzer: Kostenlos. Für Hufbearbeiter: Ab 19€/Monat (0-50 Pferde), 49€ (50-150), 99€ (150-350)." },
     ],
   },
 ];

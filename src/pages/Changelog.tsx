@@ -58,7 +58,7 @@ export default function Changelog() {
           </div>
           <h1 className="text-3xl font-bold text-foreground">Was ist neu?</h1>
           <p className="text-muted-foreground mt-2">
-            Alle Neuerungen bei HufManager
+            Alle Neuerungen bei Hufi
           </p>
         </div>
 

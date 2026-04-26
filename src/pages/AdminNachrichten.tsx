@@ -47,7 +47,7 @@ export default function AdminNachrichten() {
         </div>
         <div>
           <h1 className="text-xl font-bold text-foreground">Nachrichten</h1>
-          <p className="text-sm text-muted-foreground">Nachrichten vom HufManager Team</p>
+          <p className="text-sm text-muted-foreground">Nachrichten vom Hufi Team</p>
         </div>
       </div>
 
@@ -194,14 +194,14 @@ function UserThread({ messageId, onBack }: { messageId: string; onBack: () => vo
         <div className={cn("px-4 py-3", priorityColor[msg.priority] || priorityColor.normal)}>
           <h3 className="font-semibold">{msg.subject}</h3>
           <p className="text-xs opacity-80 mt-0.5">
-            HufManager Team • {format(new Date(msg.created_at), "dd. MMMM yyyy, HH:mm", { locale: de })} Uhr
+            Hufi Team • {format(new Date(msg.created_at), "dd. MMMM yyyy, HH:mm", { locale: de })} Uhr
           </p>
         </div>
 
         {/* Online indicator */}
         <div className="px-4 py-1.5 bg-muted/30 flex items-center gap-2 text-xs text-muted-foreground">
           <div className="h-2 w-2 rounded-full bg-emerald-500" />
-          HufManager Team verfügbar
+          Hufi Team verfügbar
         </div>
       </Card>
 
@@ -341,7 +341,7 @@ function ChatBubble({ body, time, isAdmin, attachments }: { body: string; time: 
           </div>
         )}
         <p className="text-[10px] text-muted-foreground mt-1">
-          {isAdmin ? "HufManager Team" : "Du"} • {format(new Date(time), "dd.MM. HH:mm")}
+          {isAdmin ? "Hufi Team" : "Du"} • {format(new Date(time), "dd.MM. HH:mm")}
         </p>
       </div>
     </div>

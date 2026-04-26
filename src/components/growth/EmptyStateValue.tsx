@@ -52,7 +52,7 @@ const emptyStates: Record<string, {
     icon: Calendar,
     emoji: "📅",
     title: "Plane deinen ersten Termin",
-    description: "HufManager erinnert dich und deinen Kunden automatisch. Schluss mit Zettelwirtschaft — kein Anrufen mehr nötig.",
+    description: "Hufi erinnert dich und deinen Kunden automatisch. Schluss mit Zettelwirtschaft — kein Anrufen mehr nötig.",
     cta: "Ersten Termin erstellen →",
     navigateTo: "/calendar",
   },

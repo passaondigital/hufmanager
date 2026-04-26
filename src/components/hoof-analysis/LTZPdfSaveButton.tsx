@@ -340,7 +340,7 @@ export function LTZPdfSaveButton({ analysis, horseId, horseName, ownerName }: LT
       
       doc.setTextColor(156, 163, 175);
       doc.setFontSize(7);
-      doc.text("LTZ Bearbeitungsbogen - Generiert mit HufManager", 15, yPos);
+      doc.text("LTZ Bearbeitungsbogen - Generiert mit Hufi", 15, yPos);
       doc.text("Seite 1 von 1", 195, yPos, { align: "right" });
 
       // Get PDF as blob

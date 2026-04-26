@@ -13,7 +13,7 @@ export const WebsiteTrustBadges = ({ reviewCount, averageRating, horseCount, yea
     averageRating && reviewCount ? { icon: Star, label: `${averageRating.toFixed(1)} ★`, sub: `${reviewCount} Bewertungen` } : null,
     yearActive ? { icon: CheckCircle2, label: `Aktiv seit ${yearActive}`, sub: "Erfahrung" } : null,
     horseCount ? { icon: Users, label: `${horseCount}+`, sub: "betreute Pferde" } : null,
-    { icon: Shield, label: "Verifiziert", sub: "HufManager" },
+    { icon: Shield, label: "Verifiziert", sub: "Hufi" },
     { icon: Shield, label: "DSGVO", sub: "Konform" },
   ].filter(Boolean) as { icon: any; label: string; sub: string }[];
 

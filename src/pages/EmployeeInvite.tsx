@@ -138,7 +138,7 @@ const EmployeeInvite = () => {
           <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
             <UserPlus className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle>Willkommen bei HufManager</CardTitle>
+          <CardTitle>Willkommen bei Hufi</CardTitle>
           <CardDescription>
             {employee?.provider_name} hat dich als Mitarbeiter eingeladen
           </CardDescription>

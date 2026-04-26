@@ -58,13 +58,13 @@ export const SYSTEM_CAMPAIGN_TEMPLATES: SystemCampaignTemplate[] = [
     </p>
     <ul style="color:#333;font-size:13px;line-height:1.8;margin:8px 0 0;padding-left:20px;">
       <li>Transparente Infos zur Datennutzung einsehen</li>
-      <li>Selbst entscheiden, ob sie die <strong>kostenlose HufManager KundenApp</strong> nutzen möchten</li>
+      <li>Selbst entscheiden, ob sie die <strong>kostenlose Hufi KundenApp</strong> nutzen möchten</li>
       <li>Jederzeit ihre Einwilligung widerrufen</li>
     </ul>
   </div>
 
   <div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:16px 20px;border-radius:0 8px 8px 0;margin:0 0 24px;">
-    <p style="color:#92400e;font-size:14px;font-weight:bold;margin:0 0 8px;">📱 HufManager KundenApp</p>
+    <p style="color:#92400e;font-size:14px;font-weight:bold;margin:0 0 8px;">📱 Hufi KundenApp</p>
     <p style="color:#333;font-size:13px;line-height:1.5;margin:0;">
       Die KundenApp ist <strong>dauerhaft kostenlos</strong> für alle Pferdebesitzer. Nach dem Import erhalten deine Kunden eine Einladung und können selbst entscheiden, ob sie die App nutzen möchten. Kein Zwang, volle Transparenz.
     </p>
@@ -97,7 +97,7 @@ export const SYSTEM_CAMPAIGN_TEMPLATES: SystemCampaignTemplate[] = [
 <!-- Footer -->
 <tr><td style="background:#f5f5f5;padding:24px 40px;text-align:center;">
   <p style="color:#999;font-size:12px;margin:0;">
-    © ${new Date().getFullYear()} HufManager – Deine digitale Praxisverwaltung<br/>
+    © ${new Date().getFullYear()} Hufi – Deine digitale Praxisverwaltung<br/>
     <a href="{{unsubscribe_url}}" style="color:#999;text-decoration:underline;">Abmelden</a>
   </p>
 </td></tr>

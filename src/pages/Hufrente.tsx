@@ -68,7 +68,7 @@ const Hufrente = () => {
         <p className="text-sm text-muted-foreground mb-1">Du hast aufgebaut. Wir helfen dir, es abzusichern.</p>
         <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed mt-4">
           Ein Ausfall als Selbstständige:r kann alles ins Wanken bringen. Die Hufrente ist dein Netz:
-          Empfiehl HufManager an Kolleginnen und Kollegen — und solange sie aktive Nutzer sind,
+          Empfiehl Hufi an Kolleginnen und Kollegen — und solange sie aktive Nutzer sind,
           erhältst du 20% ihrer Monatsgebühr als Provision. Automatisch. Monatlich. Dauerhaft.
         </p>
 
@@ -224,7 +224,7 @@ const Hufrente = () => {
               <span className="text-sm font-semibold text-foreground">{monthlyCalc.toFixed(2)}&nbsp;€</span>
             </div>
             <div className="flex justify-between px-4 py-3">
-              <span className="text-sm text-muted-foreground">Dein HufManager-Abo</span>
+              <span className="text-sm text-muted-foreground">Dein Hufi-Abo</span>
               <span className="text-sm font-semibold text-foreground">−{aboCost.toFixed(2)}&nbsp;€</span>
             </div>
             <div className="flex justify-between px-4 py-3 bg-muted/30">
@@ -280,7 +280,7 @@ const Hufrente = () => {
             <p className="text-xs font-medium text-foreground mb-1">Was ist Affiliate Marketing?</p>
             <p className="text-xs text-muted-foreground leading-relaxed">
               Affiliate Marketing ist das gleiche Prinzip wie wenn ein Hotel dir Punkte gibt weil du einen Freund empfohlen hast —
-              nur dass du hier echtes Geld bekommst, dauerhaft, solange dein Kollege HufManager nutzt.
+              nur dass du hier echtes Geld bekommst, dauerhaft, solange dein Kollege Hufi nutzt.
               Es ist vollkommen legal, transparent und in Deutschland, Österreich und der Schweiz weit verbreitet.
               Amazon macht es. Booking.com macht es. Wir auch.
             </p>
@@ -298,7 +298,7 @@ const Hufrente = () => {
             {[
               {
                 q: "Ist das ein Schneeballsystem?",
-                a: "Nein. Bei einem Schneeballsystem verdienst du daran dass andere einzahlen — unabhängig vom Produkt. Bei der Hufrente verdienst du nur wenn dein Kollege aktiv HufManager nutzt und einen echten Mehrwert erhält. Hört er auf zu zahlen, erhältst du keine Provision mehr. Das ist der fundamentale Unterschied.",
+                a: "Nein. Bei einem Schneeballsystem verdienst du daran dass andere einzahlen — unabhängig vom Produkt. Bei der Hufrente verdienst du nur wenn dein Kollege aktiv Hufi nutzt und einen echten Mehrwert erhält. Hört er auf zu zahlen, erhältst du keine Provision mehr. Das ist der fundamentale Unterschied.",
               },
               {
                 q: "Muss ich Steuern auf die Provision zahlen?",

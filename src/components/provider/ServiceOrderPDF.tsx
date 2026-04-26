@@ -36,7 +36,7 @@ export function ServiceOrderPDF({ order, open, onClose }: Props) {
     let y = 20;
 
     doc.setFontSize(10);
-    doc.text("HufManager", margin, y);
+    doc.text("Hufi", margin, y);
     doc.text("hufiapp.de", margin + 100, y);
     y += 15;
 
@@ -115,14 +115,14 @@ export function ServiceOrderPDF({ order, open, onClose }: Props) {
     doc.line(margin, y, 190, y);
     y += 8;
     doc.setFontSize(9);
-    const disclaimer = "Hinweis: HufManager ist nicht Vertragspartei. Dieses Dokument dient der Dokumentation. Die rechtliche Verantwortung liegt bei Auftraggeber und Auftragnehmer.";
+    const disclaimer = "Hinweis: Hufi ist nicht Vertragspartei. Dieses Dokument dient der Dokumentation. Die rechtliche Verantwortung liegt bei Auftraggeber und Auftragnehmer.";
     const disclaimerLines = doc.splitTextToSize(disclaimer, 170);
     doc.text(disclaimerLines, margin, y);
     y += disclaimerLines.length * 5 + 10;
 
     doc.line(margin, y, 190, y);
     y += 8;
-    doc.text("Erstellt mit HufManager · hufiapp.de", margin, y);
+    doc.text("Erstellt mit Hufi · hufiapp.de", margin, y);
 
     doc.save(`${order.order_number}.pdf`);
     onClose();
@@ -180,7 +180,7 @@ export function ServiceOrderPDF({ order, open, onClose }: Props) {
           )}
 
           <div className="bg-muted/50 border border-border rounded p-3 text-xs text-muted-foreground">
-            HufManager ist nicht Vertragspartei. Dieses Dokument dient der Dokumentation. Die rechtliche Verantwortung liegt bei Auftraggeber und Auftragnehmer.
+            Hufi ist nicht Vertragspartei. Dieses Dokument dient der Dokumentation. Die rechtliche Verantwortung liegt bei Auftraggeber und Auftragnehmer.
           </div>
         </div>
 

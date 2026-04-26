@@ -182,7 +182,7 @@ export function AdminInvoices() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Rechnungen</h2>
-          <p className="text-muted-foreground">HufManager → Provider</p>
+          <p className="text-muted-foreground">Hufi → Provider</p>
         </div>
         <Button onClick={() => { setEditInvoice(null); setShowModal(true); }} className="gap-2">
           <Plus className="h-4 w-4" /> Rechnung erstellen

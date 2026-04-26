@@ -311,7 +311,7 @@ export function LandingpageTab({ orgName }: { orgName: string }) {
       <Card>
         <CardHeader><CardTitle className="text-base">Embed-Widgets</CardTitle></CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground mb-3">Integrieren Sie HufManager-Funktionen direkt in Ihre bestehende Website:</p>
+          <p className="text-sm text-muted-foreground mb-3">Integrieren Sie Hufi-Funktionen direkt in Ihre bestehende Website:</p>
           <div className="grid sm:grid-cols-3 gap-3">
             {[{ name: "Buchungs-Widget", desc: "Online-Terminbuchung" }, { name: "Bewertungs-Widget", desc: "Kundenbewertungen anzeigen" }, { name: "Kontakt-Widget", desc: "Kontaktformular" }].map((w) => (
               <Card key={w.name}><CardContent className="p-3 text-center"><p className="text-sm font-medium">{w.name}</p><p className="text-xs text-muted-foreground">{w.desc}</p><Button size="sm" variant="outline" className="mt-2">Code kopieren</Button></CardContent></Card>

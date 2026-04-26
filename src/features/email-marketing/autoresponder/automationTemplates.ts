@@ -27,7 +27,7 @@ export const AUTOMATION_TEMPLATES: AutomationTemplate[] = [
 <h1 style="color:#F47B20;font-size:24px;">Die Digitale Pferdeakte</h1>
 <p>Hallo {{vorname}},</p>
 <p>stell dir vor, alle wichtigen Daten deines Pferdes – Hufbearbeitung, Tierarztberichte, Impfungen, Röntgenbilder – an <strong>einem sicheren Ort</strong>.</p>
-<p>Das ist die Pferdeakte im HufManager. Kostenlos für dich als Pferdebesitzer.</p>
+<p>Das ist die Pferdeakte im Hufi. Kostenlos für dich als Pferdebesitzer.</p>
 <ul>
 <li>📋 Komplette Behandlungshistorie</li>
 <li>📸 Fotos & Röntgenbilder sicher gespeichert</li>
@@ -103,7 +103,7 @@ export const AUTOMATION_TEMPLATES: AutomationTemplate[] = [
 <p>du findest die Pferdeakte gut? Dann verdiene damit!</p>
 <p>Als <strong>Botschafter</strong> erhältst du:</p>
 <ul>
-<li>💰 <strong>20% Lifetime-Provision</strong> auf HufManager-Abos</li>
+<li>💰 <strong>20% Lifetime-Provision</strong> auf Hufi-Abos</li>
 <li>💎 <strong>10% Lifetime-Provision</strong> auf Tresor-Abos</li>
 <li>📈 Gamification von Bronze bis Platin mit steigenden Provisionen</li>
 </ul>
@@ -190,9 +190,9 @@ export const AUTOMATION_TEMPLATES: AutomationTemplate[] = [
 <h2 style="color:#F47B20;">Das Botschafter-Programm</h2>
 <p>Hallo {{vorname}},</p>
 <p>du bist in der Pferdewelt zuhause? Dann verdiene damit!</p>
-<p>Als <strong>HufManager-Botschafter</strong> empfiehlst du die Pferdeakte und den HufManager weiter – und verdienst bei jeder Anmeldung <strong>lebenslang</strong> mit.</p>
+<p>Als <strong>Hufi-Botschafter</strong> empfiehlst du die Pferdeakte und den Hufi weiter – und verdienst bei jeder Anmeldung <strong>lebenslang</strong> mit.</p>
 <ul>
-<li>🎯 <strong>20% Lifetime-Provision</strong> auf HufManager-Abos</li>
+<li>🎯 <strong>20% Lifetime-Provision</strong> auf Hufi-Abos</li>
 <li>🎯 <strong>10% Lifetime-Provision</strong> auf Tresor-Abos</li>
 <li>📊 Echtzeit-Dashboard mit Klicks & Conversions</li>
 </ul>
@@ -210,9 +210,9 @@ export const AUTOMATION_TEMPLATES: AutomationTemplate[] = [
 <p>Hallo {{vorname}},</p>
 <p>Ein Beispiel: Du teilst deinen Link und <strong>10 Personen</strong> melden sich an.</p>
 <table style="width:100%;border-collapse:collapse;margin:16px 0;">
-<tr style="background:#FFF3E6;"><td style="padding:8px;">5x HufManager Starter (29€/Monat)</td><td style="padding:8px;font-weight:bold;">29 €/Monat für dich</td></tr>
+<tr style="background:#FFF3E6;"><td style="padding:8px;">5x Hufi Starter (29€/Monat)</td><td style="padding:8px;font-weight:bold;">29 €/Monat für dich</td></tr>
 <tr><td style="padding:8px;">3x Tresor PRO (7,99€/Monat)</td><td style="padding:8px;font-weight:bold;">2,40 €/Monat für dich</td></tr>
-<tr style="background:#FFF3E6;"><td style="padding:8px;">2x HufManager Pro (49€/Monat)</td><td style="padding:8px;font-weight:bold;">19,60 €/Monat für dich</td></tr>
+<tr style="background:#FFF3E6;"><td style="padding:8px;">2x Hufi Pro (49€/Monat)</td><td style="padding:8px;font-weight:bold;">19,60 €/Monat für dich</td></tr>
 <tr style="background:#F47B20;color:white;"><td style="padding:8px;font-weight:bold;">GESAMT</td><td style="padding:8px;font-weight:bold;">= 51 €/Monat passiv</td></tr>
 </table>
 <p>Und das ist nur der Anfang. Mit dem <strong>Stufen-Modell</strong> (Bronze → Platin) steigen deine Provisionen auf bis zu 30%.</p>

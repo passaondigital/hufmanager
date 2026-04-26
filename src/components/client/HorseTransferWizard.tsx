@@ -57,7 +57,7 @@ export function HorseTransferWizard({ horseId, horseName, onComplete, onCancel }
       const results = (data as unknown as Array<{ id: string; name: string; readable_id: string; avatar_url: string | null; role: string }>) || [];
       
       if (results.length === 0) {
-        toast.error("Kein HufManager Account gefunden. Bitte den Käufer bitten sich kostenlos zu registrieren.");
+        toast.error("Kein Hufi Account gefunden. Bitte den Käufer bitten sich kostenlos zu registrieren.");
         return;
       }
       
@@ -176,7 +176,7 @@ export function HorseTransferWizard({ horseId, horseName, onComplete, onCancel }
       await supabase.from("notifications").insert({
         user_id: buyer.id,
         title: "🐴 Pferdeübernahme angefragt",
-        message: `Dir wurde ${horseName} zur Übernahme angeboten. Öffne HufManager um den Transfer zu bestätigen.`,
+        message: `Dir wurde ${horseName} zur Übernahme angeboten. Öffne Hufi um den Transfer zu bestätigen.`,
         type: "horse_transfer_received",
         link: "/client-home",
       } as any);
@@ -220,7 +220,7 @@ export function HorseTransferWizard({ horseId, horseName, onComplete, onCancel }
           </div>
 
           <p className="text-sm text-muted-foreground">
-            ⚠️ Der Käufer muss einen aktiven HufManager Account haben.
+            ⚠️ Der Käufer muss einen aktiven Hufi Account haben.
           </p>
 
           {/* Multiple results selection */}
@@ -321,7 +321,7 @@ export function HorseTransferWizard({ horseId, horseName, onComplete, onCancel }
               </div>
             </TooltipTrigger>
             <TooltipContent className="max-w-xs">
-              Sicherheitsmerkmal: Beide Parteien müssen aktiv zustimmen. HufManager speichert nur den verschlüsselten Hash — das Passwort selbst ist uns unbekannt.
+              Sicherheitsmerkmal: Beide Parteien müssen aktiv zustimmen. Hufi speichert nur den verschlüsselten Hash — das Passwort selbst ist uns unbekannt.
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -368,7 +368,7 @@ export function HorseTransferWizard({ horseId, horseName, onComplete, onCancel }
         <div className="bg-muted/50 border border-border rounded-lg p-4 text-sm">
           <p className="font-medium mb-1">⚠️ Wichtiger Hinweis:</p>
           <p className="text-muted-foreground">
-            HufManager stellt die technische Infrastruktur zur Verfügung. Wir prüfen keine Vertragsinhalte und übernehmen keine Haftung für den Eigentumsübergang. Die rechtliche Verantwortung liegt bei Verkäufer und Käufer.
+            Hufi stellt die technische Infrastruktur zur Verfügung. Wir prüfen keine Vertragsinhalte und übernehmen keine Haftung für den Eigentumsübergang. Die rechtliche Verantwortung liegt bei Verkäufer und Käufer.
           </p>
         </div>
 

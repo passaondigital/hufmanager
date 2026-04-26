@@ -14,7 +14,7 @@ import { Info } from "lucide-react";
 const ID_EXPLANATIONS: Record<string, { label: string; description: string; relations: string }> = {
   "#PID": {
     label: "Provider-ID",
-    description: "Identifiziert einen Hufbearbeiter / Dienstleister im HufManager-System.",
+    description: "Identifiziert einen Hufbearbeiter / Dienstleister im Hufi-System.",
     relations: "Verknüpft mit: Kunden (#KID), Pferde (#EQID), Termine, Rechnungen",
   },
   "#KID": {

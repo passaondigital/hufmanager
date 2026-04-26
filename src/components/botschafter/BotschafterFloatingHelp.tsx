@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 const FAQ = [
   {
     q: "Wie funktioniert das Affiliate-Programm?",
-    a: "Du teilst deinen persönlichen Referral-Link. Jeder der über diesen Link ein HufManager-Paket bucht, wird dir zugeordnet. Du erhältst automatisch Provision — gestaffelt nach deiner Stufe (bis zu 50%).",
+    a: "Du teilst deinen persönlichen Referral-Link. Jeder der über diesen Link ein Hufi-Paket bucht, wird dir zugeordnet. Du erhältst automatisch Provision — gestaffelt nach deiner Stufe (bis zu 50%).",
   },
   {
     q: "Wann bekomme ich meine Provision ausgezahlt?",
@@ -24,7 +24,7 @@ const FAQ = [
   },
   {
     q: "Was bedeutet #BID?",
-    a: "BID steht für Botschafter-ID — deine eindeutige Kennung im HufManager-System. Sie wird automatisch vergeben und ist mit deinem Account verknüpft.",
+    a: "BID steht für Botschafter-ID — deine eindeutige Kennung im Hufi-System. Sie wird automatisch vergeben und ist mit deinem Account verknüpft.",
   },
   {
     q: "Wie werde ich auf der Launchpage gelistet?",

@@ -485,7 +485,7 @@ export function ServiceOrderWizard({ open, onClose, horseId, horseName, horseRea
               <div className="flex items-start gap-2">
                 <Checkbox id="terms2" checked={agbAccepted} onCheckedChange={(v) => setAgbAccepted(v === true)} />
                 <label htmlFor="terms2" className="text-sm cursor-pointer">
-                  Ich habe die AGB von HufManager gelesen. HufManager ist nicht Vertragspartei und übernimmt keine Haftung.
+                  Ich habe die AGB von Hufi gelesen. Hufi ist nicht Vertragspartei und übernimmt keine Haftung.
                 </label>
                 <HelpTip id="auftrag.agb" />
               </div>

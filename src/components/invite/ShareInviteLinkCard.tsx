@@ -56,8 +56,8 @@ export function ShareInviteLinkCard() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'HufManager Einladung',
-          text: 'Registriere dich bei HufManager und verbinde dich direkt mit mir!',
+          title: 'Hufi Einladung',
+          text: 'Registriere dich bei Hufi und verbinde dich direkt mit mir!',
           url: inviteUrl,
         });
       } catch (error: any) {

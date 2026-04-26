@@ -238,7 +238,7 @@ export function TourPdfExport({
       doc.setFontSize(8);
       doc.setTextColor(150);
       doc.text(
-        `Erstellt am ${format(new Date(), "dd.MM.yyyy 'um' HH:mm", { locale: de })} • HufManager`,
+        `Erstellt am ${format(new Date(), "dd.MM.yyyy 'um' HH:mm", { locale: de })} • Hufi`,
         margin,
         footerY
       );

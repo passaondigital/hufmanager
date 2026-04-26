@@ -911,7 +911,7 @@ export function AdminSystemDoku() {
                 Datenfluss – Von Einrichtung bis Client-Nutzung
               </CardTitle>
               <CardDescription>
-                Schritt-für-Schritt Ablauf im HufManager
+                Schritt-für-Schritt Ablauf im Hufi
               </CardDescription>
             </CardHeader>
             <CardContent>

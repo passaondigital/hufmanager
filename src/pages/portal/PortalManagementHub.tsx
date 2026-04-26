@@ -30,7 +30,7 @@ export default function PortalManagementHub() {
         />
       </TileCategory>
 
-      <TileCategory title="HufManager">
+      <TileCategory title="Hufi">
         <Tile
           icon={<Mic className="w-10 h-10 text-primary" />}
           title="Botschafter werden"

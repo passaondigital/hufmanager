@@ -51,7 +51,7 @@ export function KiSettingsCard() {
           <div className="text-xs text-muted-foreground space-y-1">
             <p>
               <strong>Datenschutz-Hinweis:</strong> Wenn KI-Features aktiviert sind, werden Daten zur Verarbeitung 
-              an KI-Modelle gesendet. HufManager speichert keine KI-Konversationen und nutzt deine Daten 
+              an KI-Modelle gesendet. Hufi speichert keine KI-Konversationen und nutzt deine Daten 
               nicht für Trainingszwecke.
             </p>
             <p>

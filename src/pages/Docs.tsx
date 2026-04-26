@@ -65,7 +65,7 @@ const userDocs: { category: string; sections: DocSection[] }[] = [
         content: "Im **Kalender** planst du deine Termine. Du siehst Tages-, Wochen- und Monatsansicht. Termine können mit Kunden, Pferden und Services verknüpft werden.\n\nDeine Kunden werden automatisch per Benachrichtigung an den Termin erinnert.",
         subsections: [
           { id: "termin-erstellen", title: "Termin erstellen", content: "Klick auf einen Tag im Kalender oder den \"+\" Button. Wähle Kunde, Pferd und Service — fertig. Der Preis wird automatisch aus deiner Preisliste übernommen." },
-          { id: "termin-tour", title: "Touren planen", content: "Wenn du mehrere Kunden am selben Tag besuchst, gruppiert HufManager die Termine nach Standort. So sparst du Fahrzeit.\n\n[SCREENSHOT: Tourenplanung mit Kartenansicht]" },
+          { id: "termin-tour", title: "Touren planen", content: "Wenn du mehrere Kunden am selben Tag besuchst, gruppiert Hufi die Termine nach Standort. So sparst du Fahrzeit.\n\n[SCREENSHOT: Tourenplanung mit Kartenansicht]" },
         ],
       },
       {
@@ -86,9 +86,9 @@ const userDocs: { category: string; sections: DocSection[] }[] = [
       {
         id: "rechnungen",
         title: "Rechnungen",
-        content: "HufManager erstellt professionelle PDF-Rechnungen mit einem Klick. Die Rechnung wird automatisch mit den richtigen Beträgen, Kundendaten und deiner Steuernummer gefüllt.\n\nDu kannst sie direkt per E-Mail versenden — kein Ausdrucken nötig.",
+        content: "Hufi erstellt professionelle PDF-Rechnungen mit einem Klick. Die Rechnung wird automatisch mit den richtigen Beträgen, Kundendaten und deiner Steuernummer gefüllt.\n\nDu kannst sie direkt per E-Mail versenden — kein Ausdrucken nötig.",
         subsections: [
-          { id: "rechnung-erstellen", title: "Rechnung erstellen", content: "Gehe zu **Rechnungen** → \"Neue Rechnung\". Wähle den Kunden und die erbrachten Leistungen. HufManager berechnet den Betrag automatisch aus deiner Preisliste.\n\n[SCREENSHOT: Rechnungserstellung]" },
+          { id: "rechnung-erstellen", title: "Rechnung erstellen", content: "Gehe zu **Rechnungen** → \"Neue Rechnung\". Wähle den Kunden und die erbrachten Leistungen. Hufi berechnet den Betrag automatisch aus deiner Preisliste.\n\n[SCREENSHOT: Rechnungserstellung]" },
           { id: "rechnung-versand", title: "Rechnung versenden", content: "Klick auf \"Per E-Mail senden\" — der Kunde erhält die Rechnung als PDF. Du siehst den Status: Entwurf → Versendet → Bezahlt." },
         ],
       },
@@ -134,12 +134,12 @@ const userDocs: { category: string; sections: DocSection[] }[] = [
       {
         id: "webseite",
         title: "Eigene Webseite",
-        content: "HufManager erstellt automatisch eine professionelle Webseite für dich. Kunden finden dich online, sehen deine Leistungen und können Termine anfragen.\n\nDeine Seite: hufmanager.app/p/dein-name",
+        content: "Hufi erstellt automatisch eine professionelle Webseite für dich. Kunden finden dich online, sehen deine Leistungen und können Termine anfragen.\n\nDeine Seite: hufmanager.app/p/dein-name",
       },
       {
         id: "kalender-sync",
         title: "Kalender-Synchronisation",
-        content: "Synchronisiere deine HufManager-Termine mit deinem iPhone-, Android- oder Outlook-Kalender. So hast du alle Termine immer dabei — auch offline.",
+        content: "Synchronisiere deine Hufi-Termine mit deinem iPhone-, Android- oder Outlook-Kalender. So hast du alle Termine immer dabei — auch offline.",
       },
     ],
   },
@@ -149,7 +149,7 @@ const legalDocs: DocSection[] = [
   {
     id: "architektur-uebersicht",
     title: "Technische Architektur (Übersicht)",
-    content: "HufManager ist eine webbasierte Software-as-a-Service (SaaS) Plattform für Hufbearbeiter und Hufschmiede. Die Anwendung läuft vollständig in der Cloud auf europäischen Servern.\n\n**Frontend:** Moderne Single-Page-Application (SPA), gehostet auf einem CDN mit Standorten in der EU.\n\n**Backend:** Supabase (PostgreSQL-Datenbank, Authentifizierung, Echtzeit-Funktionen). Rechenzentrum: **Frankfurt am Main, Deutschland** (AWS eu-central-1).\n\n**Serverlose Funktionen:** Edge Functions für geschäftslogische Prozesse wie Rechnungsgenerierung und Erinnerungen.\n\n**Keine eigenen Server:** HufManager betreibt keine eigenen physischen oder virtuellen Server. Alle Infrastruktur wird über zertifizierte Cloud-Anbieter bereitgestellt.",
+    content: "Hufi ist eine webbasierte Software-as-a-Service (SaaS) Plattform für Hufbearbeiter und Hufschmiede. Die Anwendung läuft vollständig in der Cloud auf europäischen Servern.\n\n**Frontend:** Moderne Single-Page-Application (SPA), gehostet auf einem CDN mit Standorten in der EU.\n\n**Backend:** Supabase (PostgreSQL-Datenbank, Authentifizierung, Echtzeit-Funktionen). Rechenzentrum: **Frankfurt am Main, Deutschland** (AWS eu-central-1).\n\n**Serverlose Funktionen:** Edge Functions für geschäftslogische Prozesse wie Rechnungsgenerierung und Erinnerungen.\n\n**Keine eigenen Server:** Hufi betreibt keine eigenen physischen oder virtuellen Server. Alle Infrastruktur wird über zertifizierte Cloud-Anbieter bereitgestellt.",
   },
   {
     id: "datenspeicherung",
@@ -164,7 +164,7 @@ const legalDocs: DocSection[] = [
   {
     id: "subprozessoren",
     title: "Subprozessoren",
-    content: "| Anbieter | Zweck | Standort | Zertifizierungen |\n|---|---|---|---|\n| **Supabase Inc.** | Datenbank, Authentifizierung, Dateispeicher, Edge Functions | Frankfurt/Main, DE (AWS eu-central-1) | SOC 2 Type II, ISO 27001, HIPAA-fähig |\n| **Anthropic PBC (Claude API)** | KI-gestützte Textgenerierung (Hufi-Assistent, Belegerfassung) | San Francisco, USA | SOC 2 Type II. **Keine Speicherung** von Nutzerdaten durch Anthropic. |\n| **Stripe Inc.** | Zahlungsabwicklung (nur für Abo-Zahlungen an HufManager) | EU | PCI DSS Level 1, SOC 2 Type II |\n| **CopeCart GmbH** | Abo-Verwaltung & Checkout | Deutschland | DSGVO-konform, deutsches Unternehmen |\n| **Vercel Inc.** | CDN / Frontend-Hosting | Frankfurt/Main, DE | SOC 2 Type II |\n\n**Hinweis:** Es werden keine Kundendaten (Pferdebesitzer-Daten) an Subprozessoren weitergegeben, die nicht für den technischen Betrieb zwingend erforderlich sind. Die KI-Funktion (Claude) verarbeitet nur anonymisierte Textfragmente und speichert keine Daten.",
+    content: "| Anbieter | Zweck | Standort | Zertifizierungen |\n|---|---|---|---|\n| **Supabase Inc.** | Datenbank, Authentifizierung, Dateispeicher, Edge Functions | Frankfurt/Main, DE (AWS eu-central-1) | SOC 2 Type II, ISO 27001, HIPAA-fähig |\n| **Anthropic PBC (Claude API)** | KI-gestützte Textgenerierung (Hufi-Assistent, Belegerfassung) | San Francisco, USA | SOC 2 Type II. **Keine Speicherung** von Nutzerdaten durch Anthropic. |\n| **Stripe Inc.** | Zahlungsabwicklung (nur für Abo-Zahlungen an Hufi) | EU | PCI DSS Level 1, SOC 2 Type II |\n| **CopeCart GmbH** | Abo-Verwaltung & Checkout | Deutschland | DSGVO-konform, deutsches Unternehmen |\n| **Vercel Inc.** | CDN / Frontend-Hosting | Frankfurt/Main, DE | SOC 2 Type II |\n\n**Hinweis:** Es werden keine Kundendaten (Pferdebesitzer-Daten) an Subprozessoren weitergegeben, die nicht für den technischen Betrieb zwingend erforderlich sind. Die KI-Funktion (Claude) verarbeitet nur anonymisierte Textfragmente und speichert keine Daten.",
   },
   {
     id: "dsgvo",
@@ -207,12 +207,12 @@ const devDocs: DocSection[] = [
   {
     id: "webhooks",
     title: "Webhooks & Integrationen",
-    content: "**CopeCart Webhook:**\nAbonnement-Events (Kauf, Kündigung, Upgrade) werden per Webhook empfangen und aktualisieren Feature-Flags in der Datenbank.\n\n**HM Connect (Ecosystem Webhook):**\nSynchronisation zwischen HufManager-Instanzen und Partnersystemen. Dual-Auth: Interne Calls verwenden JWT, externe verwenden HMAC-Signatur (`x-ecosystem-signature`) validiert gegen `ECOSYSTEM_WEBHOOK_SECRET`.\n\n**Supabase Realtime:**\nÄnderungen an Terminen, Nachrichten und Benachrichtigungen werden in Echtzeit an verbundene Clients gepusht (WebSocket).",
+    content: "**CopeCart Webhook:**\nAbonnement-Events (Kauf, Kündigung, Upgrade) werden per Webhook empfangen und aktualisieren Feature-Flags in der Datenbank.\n\n**HM Connect (Ecosystem Webhook):**\nSynchronisation zwischen Hufi-Instanzen und Partnersystemen. Dual-Auth: Interne Calls verwenden JWT, externe verwenden HMAC-Signatur (`x-ecosystem-signature`) validiert gegen `ECOSYSTEM_WEBHOOK_SECRET`.\n\n**Supabase Realtime:**\nÄnderungen an Terminen, Nachrichten und Benachrichtigungen werden in Echtzeit an verbundene Clients gepusht (WebSocket).",
   },
   {
     id: "offline-architektur",
     title: "Offline-First Architektur",
-    content: "HufManager ist für den Einsatz in ländlichen Gebieten mit schlechter Internetverbindung optimiert.\n\n**Strategie:**\n- TanStack Query mit IndexedDB Persistenz (idb-keyval)\n- Offline-Schreibvorgänge werden in einer Sync-Queue gespeichert\n- Bei Wiederverbindung: automatische Synchronisation\n- Optimistic UI: Änderungen erscheinen sofort, Sync im Hintergrund\n- PWA mit Service Worker für App-Shell Caching",
+    content: "Hufi ist für den Einsatz in ländlichen Gebieten mit schlechter Internetverbindung optimiert.\n\n**Strategie:**\n- TanStack Query mit IndexedDB Persistenz (idb-keyval)\n- Offline-Schreibvorgänge werden in einer Sync-Queue gespeichert\n- Bei Wiederverbindung: automatische Synchronisation\n- Optimistic UI: Änderungen erscheinen sofort, Sync im Hintergrund\n- PWA mit Service Worker für App-Shell Caching",
   },
   {
     id: "versionierung",
@@ -501,7 +501,7 @@ export default function Docs() {
             <ArrowLeft className="h-4 w-4" /> Zurück zur Dokumentation
           </Button>
           <h1 className="text-3xl font-bold text-foreground mb-2">Changelog</h1>
-          <p className="text-muted-foreground mb-8">Was sich bei HufManager tut — in verständlicher Sprache.</p>
+          <p className="text-muted-foreground mb-8">Was sich bei Hufi tut — in verständlicher Sprache.</p>
           <div className="space-y-8">
             {changelogEntries.map((entry) => (
               <div key={entry.date}>
@@ -536,7 +536,7 @@ export default function Docs() {
               </div>
             </Link>
             <div>
-              <h1 className="text-lg font-bold text-foreground leading-tight">HufManager Dokumentation</h1>
+              <h1 className="text-lg font-bold text-foreground leading-tight">Hufi Dokumentation</h1>
               <p className="text-xs text-muted-foreground hidden sm:block">Alles was du wissen musst — für Nutzer, Behörden und Entwickler</p>
             </div>
           </div>
@@ -632,7 +632,7 @@ export default function Docs() {
       {/* Footer */}
       <footer className="border-t border-border py-8 mt-12 print:hidden">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-          <p>© {new Date().getFullYear()} HufManager. Alle Rechte vorbehalten.</p>
+          <p>© {new Date().getFullYear()} Hufi. Alle Rechte vorbehalten.</p>
           <div className="flex items-center gap-4">
             <Link to="/datenschutz" className="hover:text-foreground">Datenschutz</Link>
             <Link to="/impressum" className="hover:text-foreground">Impressum</Link>

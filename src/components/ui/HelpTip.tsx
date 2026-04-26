@@ -25,7 +25,7 @@ interface HelpTipProps {
 }
 
 /**
- * Universelles Hilfe-Icon (?) für den gesamten HufManager.
+ * Universelles Hilfe-Icon (?) für den gesamten Hufi.
  * Desktop: Hover → Tooltip
  * Mobile: Tap → Bottom-Sheet (Drawer)
  */

@@ -1,5 +1,5 @@
 /**
- * Zentrale Hilfe-Texte für den gesamten HufManager.
+ * Zentrale Hilfe-Texte für den gesamten Hufi.
  * Struktur: { sektion: { feld: { title, description } } }
  * Leere Beschreibungen mit Platzhalter, damit sie nach und nach befüllt werden können.
  */
@@ -40,12 +40,12 @@ export const helpTexts: Record<string, Record<string, HelpTextEntry>> = {
     "erste-schritte": {
       title: "Erste Schritte",
       description:
-        "Checkliste zum Einrichten deines HufManager-Accounts. Erledige alle Schritte, um das volle Potenzial auszuschöpfen.",
+        "Checkliste zum Einrichten deines Hufi-Accounts. Erledige alle Schritte, um das volle Potenzial auszuschöpfen.",
     },
     "tour-vorschlaege": {
       title: "Smarte Tour-Vorschläge",
       description:
-        "Basierend auf deinen Terminen und Standorten schlägt HufManager optimierte Tourenrouten vor, um Fahrzeit und Sprit zu sparen.",
+        "Basierend auf deinen Terminen und Standorten schlägt Hufi optimierte Tourenrouten vor, um Fahrzeit und Sprit zu sparen.",
     },
     "spritpreise": {
       title: "Live-Spritpreise",
@@ -65,7 +65,7 @@ export const helpTexts: Record<string, Record<string, HelpTextEntry>> = {
     "demo-tour": {
       title: "Demo-Tour",
       description:
-        "Starte eine geführte Tour durch den HufManager, um alle wichtigen Funktionen kennenzulernen.",
+        "Starte eine geführte Tour durch den Hufi, um alle wichtigen Funktionen kennenzulernen.",
     },
   },
 
@@ -652,14 +652,14 @@ export const helpTexts: Record<string, Record<string, HelpTextEntry>> = {
   onboarding: {
     "profession-type": {
       title: "Berufsgruppe",
-      description: "Wähle deinen Beruf – HufManager passt Service-Typen, Zeitpuffer und Kalenderfarben automatisch an deine Tätigkeit an.",
+      description: "Wähle deinen Beruf – Hufi passt Service-Typen, Zeitpuffer und Kalenderfarben automatisch an deine Tätigkeit an.",
     },
   },
   // ─── Fahrzeug ────────────────────────────────────────────
   fahrzeug: {
     anhaenger: {
       title: "Anhänger-Profil",
-      description: "Mit Anhänger plant HufManager deine Route ohne Unterführungen und Höhenbeschränkungen. Gib die Maße deines Anhängers ein für optimale Routenplanung.",
+      description: "Mit Anhänger plant Hufi deine Route ohne Unterführungen und Höhenbeschränkungen. Gib die Maße deines Anhängers ein für optimale Routenplanung.",
     },
   },
   // ─── Tages-Cockpit ──────────────────────────────────────
@@ -769,11 +769,11 @@ export const helpTexts: Record<string, Record<string, HelpTextEntry>> = {
   transfer: {
     "gemeinsames-passwort": {
       title: "Gemeinsames Passwort",
-      description: "Sicherheitsmerkmal: Beide Parteien müssen dasselbe Passwort eingeben. HufManager kennt das Passwort nicht — es wird nur verschlüsselt gespeichert.",
+      description: "Sicherheitsmerkmal: Beide Parteien müssen dasselbe Passwort eingeben. Hufi kennt das Passwort nicht — es wird nur verschlüsselt gespeichert.",
     },
     "dokument-hochladen": {
       title: "Dokument hochladen",
-      description: "HufManager prüft keine Vertragsinhalte. Das Dokument dient nur als Nachweis dass ein Vertrag existiert.",
+      description: "Hufi prüft keine Vertragsinhalte. Das Dokument dient nur als Nachweis dass ein Vertrag existiert.",
     },
     "transfer-abschliessen": {
       title: "Transfer abschließen",
@@ -785,7 +785,7 @@ export const helpTexts: Record<string, Record<string, HelpTextEntry>> = {
   auftrag: {
     bereich: {
       title: "Auftragserteilung",
-      description: "Ein digitaler Behandlungsauftrag dokumentiert was vereinbart wurde. HufManager ist nicht Vertragspartei — wir stellen nur die Infrastruktur zur Verfügung.",
+      description: "Ein digitaler Behandlungsauftrag dokumentiert was vereinbart wurde. Hufi ist nicht Vertragspartei — wir stellen nur die Infrastruktur zur Verfügung.",
     },
     auftragsnummer: {
       title: "Auftragsnummer",

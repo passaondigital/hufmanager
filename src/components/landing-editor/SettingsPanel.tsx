@@ -20,7 +20,7 @@ export const SettingsPanel = ({ editor }: SettingsPanelProps) => {
         <div className="space-y-2">
           <Label className="text-xs">Seiten-Titel (Browser-Tab)</Label>
           <Input
-            placeholder="Hufpflege Musterhausen | HufManager"
+            placeholder="Hufpflege Musterhausen | Hufi"
             value={settings.hero_headline}
             onChange={(e) => updateSetting("hero_headline", e.target.value)}
           />

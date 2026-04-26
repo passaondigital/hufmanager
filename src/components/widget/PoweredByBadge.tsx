@@ -15,7 +15,7 @@ export function PoweredByBadge({ show }: PoweredByBadgeProps) {
       >
         <span>🐴</span>
         <span>Erstellt mit</span>
-        <span className="font-medium text-primary">HufManager</span>
+        <span className="font-medium text-primary">Hufi</span>
       </a>
     </div>
   );

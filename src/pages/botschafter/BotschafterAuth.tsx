@@ -308,7 +308,7 @@ export default function BotschafterAuth() {
           <Link to="/pferdeakte" className="text-sm font-medium hover:text-[#f97316] transition-colors" style={{ color: "#6b7280" }}>
             ← Zur Pferdeakte
           </Link>
-          <span className="text-xl font-bold tracking-tight">HufManager</span>
+          <span className="text-xl font-bold tracking-tight">Hufi</span>
           <div className="w-24" />
         </div>
       </nav>
@@ -320,7 +320,7 @@ export default function BotschafterAuth() {
             {/* Header */}
             <div className="p-6 pb-4 text-center border-b border-zinc-100">
               <div className="flex items-center justify-center gap-2 mb-1">
-                <span className="text-xl font-bold tracking-tight">HufManager</span>
+                <span className="text-xl font-bold tracking-tight">Hufi</span>
                 <Badge className="text-xs font-bold" style={{ backgroundColor: "#fff7ed", color: "#ea580c", border: "none" }}>
                   Botschafter Portal
                 </Badge>
@@ -496,9 +496,9 @@ export default function BotschafterAuth() {
                   </button>
 
                   <div className="border-t border-zinc-100 pt-4 text-center">
-                    <p className="text-xs" style={{ color: "#9ca3af" }}>Du hast bereits einen HufManager Account?</p>
+                    <p className="text-xs" style={{ color: "#9ca3af" }}>Du hast bereits einen Hufi Account?</p>
                     <Link to="/auth" className="text-sm font-medium hover:underline" style={{ color: "#f97316" }}>
-                      Im HufManager anmelden →
+                      Im Hufi anmelden →
                     </Link>
                   </div>
                 </form>
@@ -630,7 +630,7 @@ export default function BotschafterAuth() {
                   )}
 
                   <div className="border-t border-zinc-100 pt-4 text-center">
-                    <p className="text-xs" style={{ color: "#9ca3af" }}>Bereits HufManager Nutzer?</p>
+                    <p className="text-xs" style={{ color: "#9ca3af" }}>Bereits Hufi Nutzer?</p>
                     <Link to="/auth" className="text-sm font-medium hover:underline" style={{ color: "#f97316" }}>
                       Botschafter-Funktion in deiner App aktivieren →
                     </Link>
