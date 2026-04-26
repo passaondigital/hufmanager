@@ -8,34 +8,33 @@
     --foreground: 20 14.3% 4.1%;
     --primary: 38 92% 50%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 30 20% 98%;
     --border: 20 5.9% 92%;
     --radius: 1.25rem;
-    --sat: env(safe-area-inset-top);
   }
 }
 
 body {
-  @apply bg-slate-100/50 text-foreground antialiased;
-  background-color: #F1F5F9 !important; /* Ganz helles Grau für Kontrast zu weißen Karten */
+  @apply bg-slate-50 text-foreground antialiased;
+  background-color: #F8FAFC !important;
 }
 
-/* Der zentrale App-Container */
 .app-container {
-  @apply w-full max-w-[480px] mx-auto bg-white min-h-screen relative flex flex-col shadow-xl border-x border-slate-200/50;
+  @apply w-full max-w-[480px] mx-auto bg-white min-h-screen relative flex flex-col shadow-2xl;
 }
 
-/* Hufi-Card System: Sauberer, weicher Schatten */
+/* Zwingt alle Karten untereinander ohne Überlappung */
+.hufi-stack {
+  @apply flex flex-col gap-4 w-full px-4 py-2;
+}
+
 .hufi-card {
-  @apply bg-white rounded-3xl border border-slate-100/80 p-5 mb-5 transition-all;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  @apply bg-white rounded-[2rem] border border-slate-100 p-5 shadow-sm;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
 }
 
-/* Fix für das Kalender-Chaos und Overlaps */
-.calendar-wrapper {
-  @apply flex flex-col gap-6 w-full;
+/* Kalender-Grid Optimierung */
+.fc-view-harness {
+  @apply bg-white rounded-xl overflow-hidden border border-slate-100;
 }
 
-/* Scrollbar-Hide für das App-Feeling */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

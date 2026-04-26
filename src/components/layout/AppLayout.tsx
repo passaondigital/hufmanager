@@ -7,9 +7,9 @@ export function AppLayout() {
   return (
     <div className="app-container">
       <MobileHeader />
-      <main className="flex-1 overflow-y-auto px-5 py-6 pb-28 scrollbar-hide">
+      <main className="flex-1 overflow-y-auto scrollbar-hide pb-32">
         <ErrorBoundary name="HufiMain">
-          <div className="calendar-wrapper">
+          <div className="hufi-stack">
             <Outlet />
           </div>
         </ErrorBoundary>
