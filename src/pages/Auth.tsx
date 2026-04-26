@@ -16,14 +16,29 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, Hammer, Heart, Package, Rocket, KeyRound, Users, Stethoscope, Link2 } from "lucide-react";
+import { Loader2, Rocket, KeyRound, Link2 } from "lucide-react";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { PricingModal } from "@/components/subscription/PricingModal";
-import { DemoAccessCards } from "@/components/auth/DemoAccessCards";
 import { MultiStepSignup } from "@/components/auth/MultiStepSignup";
 import { clear } from "idb-keyval";
+
+function HufiLogo({ animate }: { animate?: boolean }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <img
+        src="https://upload.assaon.com/files/medien/hufiapp-logo-mit-text-1777028919801-id2zm.png"
+        alt="Hufi"
+        style={{
+          height: 54,
+          objectFit: "contain",
+          animation: animate ? "pulse 2s cubic-bezier(.4,0,.6,1) infinite" : undefined,
+        }}
+      />
+    </div>
+  );
+}
 
 // NOTE: Admin access is controlled server-side via user_roles table and RLS policies
 // Do NOT add client-side email whitelists - they can be bypassed
@@ -80,23 +95,23 @@ async function clearClientSessionState() {
 }
 
 export default function Auth() {
-  const { user, role, loading: authLoading, signIn, signUp } = useAuth();
+  const { user, role, userType, loading: authLoading, signIn, signUp } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [showMultiStepSignup, setShowMultiStepSignup] = useState(false);
   const [loading, setLoading] = useState(false);
-  
-  // Invite code from URL (provider's readable_id) or HM Connect invite token
+
+  // Invite code from URL (provider's readable_id) or Hufi Connect invite token
   const inviteCode = searchParams.get("invite_code");
   const hmInviteToken = searchParams.get("invite");
-  
+
   // Login mode (provider vs client)
   const [loginMode, setLoginMode] = useState<LoginMode>("provider");
-  
+
   // Login form
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  
+
   // Signup form
   const [signupName, setSignupName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
@@ -129,7 +144,7 @@ export default function Auth() {
   const pendingSwitchTarget = sessionStorage.getItem(SWITCH_ACCOUNT_STORAGE_KEY);
   const isSwitchingAccount = forceLogin || pendingSwitchTarget === currentEntryPath;
   const switchSignOutStartedRef = useRef(false);
-  
+
   // Check for partner invite mode from URL
   const urlMode = searchParams.get("mode");
   const urlEmail = searchParams.get("email");
@@ -213,8 +228,8 @@ export default function Auth() {
   // Show loading screen while signing out to prevent flash
   if (signingOut || isSwitchingAccount) {
     return (
-      <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
-        <img src="/hufi-logo.svg" alt="Hufi" className="h-24 w-auto animate-pulse" />
+      <div className="force-light min-h-[100dvh] flex flex-col items-center justify-center gap-6" style={{ background: "#F5F5F5" }}>
+        <HufiLogo animate />
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -224,8 +239,8 @@ export default function Auth() {
     if (role === "provider" && !onboardingChecked && !isPortalBusinessEmail(user.email) && !isStallbetreiberDemoEmail(user.email)) {
       // Show loading while checking onboarding status
       return (
-        <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
-          <img src="/hufi-logo.svg" alt="Hufi" className="h-24 w-auto animate-pulse" />
+        <div className="force-light min-h-[100dvh] flex flex-col items-center justify-center gap-6" style={{ background: "#F5F5F5" }}>
+          <HufiLogo animate />
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       );
@@ -235,7 +250,7 @@ export default function Auth() {
     }
 
     // Auto-redirect: logged-in user on /auth → go to dashboard
-    const targetPath = redirectTo || getPostLoginPath(role, user.email);
+    const targetPath = redirectTo || getPostLoginPath(role, user.email, userType);
     return <Navigate to={targetPath} replace />;
   }
 
@@ -247,7 +262,7 @@ export default function Auth() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const validation = loginSchema.safeParse({ email: loginEmail, password: loginPassword });
     if (!validation.success) {
       toast.error(validation.error.errors[0].message);
@@ -309,11 +324,11 @@ export default function Auth() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const validation = signupSchema.safeParse({ 
-      fullName: signupName, 
-      email: signupEmail, 
-      password: signupPassword 
+
+    const validation = signupSchema.safeParse({
+      fullName: signupName,
+      email: signupEmail,
+      password: signupPassword
     });
     if (!validation.success) {
       toast.error(validation.error.errors[0].message);
@@ -321,17 +336,17 @@ export default function Auth() {
     }
 
     setLoading(true);
-    
+
     try {
       // If coming from partner invite, use 'partner' role
       const signupRole = urlRole === "partner" ? "partner" : selectedRole;
       const { error } = await signUp(signupEmail, signupPassword, signupName, signupRole as "provider" | "client" | "partner");
-      
+
       if (error) {
         console.error("Signup error:", error);
-        
+
         // Handle specific error cases
-        if (error.message.includes("already registered") || 
+        if (error.message.includes("already registered") ||
             error.message.includes("User already registered")) {
           toast.error("Diese E-Mail ist bereits registriert. Bitte melden Sie sich an.");
         } else if (error.message.includes("Edge Function")) {
@@ -379,7 +394,7 @@ export default function Auth() {
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!resetEmail) {
       toast.error("Bitte geben Sie Ihre E-Mail-Adresse ein");
       return;
@@ -392,7 +407,7 @@ export default function Auth() {
     }
 
     setResetLoading(true);
-    
+
     const redirectUrl = `${window.location.origin}/reset-password`;
 
     const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
@@ -411,22 +426,37 @@ export default function Auth() {
 
   if (authLoading) {
     return (
-      <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
-        <img 
-          src="/hufi-logo.svg" 
-          alt="Hufi" 
-          className="h-24 w-auto animate-pulse"
-        />
+      <div className="force-light min-h-[100dvh] flex flex-col items-center justify-center gap-6" style={{ background: "#F5F5F5" }}>
+        <HufiLogo animate />
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-background">
+    <div className="force-light min-h-[100dvh] flex flex-col" style={{ background: "#F5F5F5", position: "relative", overflow: "hidden" }}>
+      {/* Golden horse background */}
+      <div style={{
+        position: "absolute",
+        right: "-8%",
+        top: "50%",
+        transform: "translateY(-50%)",
+        width: "48%",
+        maxWidth: 480,
+        opacity: 0.15,
+        pointerEvents: "none",
+        zIndex: 0,
+      }}>
+        <img
+          src="https://upload.assaon.com/files/medien/goldenespferd.png"
+          alt=""
+          style={{ width: "100%", height: "auto" }}
+        />
+      </div>
+
       {/* Scrollable content area that fills viewport */}
-      <div className="flex-1 flex flex-col items-center justify-start px-4 py-6 sm:justify-center overflow-auto">
-      <Card className="w-full max-w-md border-border bg-card shadow-xl">
+      <div className="flex-1 flex flex-col items-center justify-start px-4 py-6 sm:justify-center overflow-auto" style={{ position: "relative", zIndex: 1 }}>
+      <Card className="w-full max-w-md shadow-xl" style={{ background: "#FFFFFF", borderColor: "#E5E7EB" }}>
         {/* Pferdeakte Source Banner */}
         {pferdeakteSource && (
           <div className="bg-orange-50 border-b border-orange-200 p-4 rounded-t-lg dark:bg-orange-950/30 dark:border-orange-800">
@@ -441,7 +471,7 @@ export default function Auth() {
             </div>
           </div>
         )}
-        {/* HM Connect Invite Banner */}
+        {/* Hufi Connect Invite Banner */}
         {hmInviteToken && !pferdeakteSource && (
           <div className="bg-primary/10 border-b border-primary/20 p-4 rounded-t-lg">
             <div className="flex items-center gap-3">
@@ -457,16 +487,12 @@ export default function Auth() {
             </div>
           </div>
         )}
-        <CardHeader className="text-center pb-2 pt-4">
-          <img 
-            src="/hufi-logo.svg" 
-            alt="Hufi Logo" 
-            className="mx-auto h-16 sm:h-20 w-auto mb-2"
-          />
+        <CardHeader className="text-center pb-2 pt-6">
+          <HufiLogo />
           <CardTitle className="text-2xl font-bold text-foreground sr-only">Hufi</CardTitle>
           <CardDescription className="text-sm text-muted-foreground">
-            {pferdeakteSource 
-              ? "Erstelle dein Konto und leg deine erste Pferdeakte an" 
+            {pferdeakteSource
+              ? "Erstelle dein Konto und leg deine erste Pferdeakte an"
               : "Für alle Rollen – du wirst automatisch weitergeleitet"}
           </CardDescription>
         </CardHeader>
@@ -476,7 +502,7 @@ export default function Auth() {
               <TabsTrigger value="login" className="h-10 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Anmelden</TabsTrigger>
               <TabsTrigger value="signup" className="h-10 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Registrieren</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="login" className="mt-6">
               <form onSubmit={handleLogin} autoComplete="off" className="space-y-4">
                 <div className="space-y-1.5">
@@ -524,7 +550,7 @@ export default function Auth() {
                 </div>
               </form>
             </TabsContent>
-            
+
             <TabsContent value="signup" className="mt-6">
               <MultiStepSignup
                 inviteCode={inviteCode}
@@ -548,9 +574,6 @@ export default function Auth() {
                       }
                       if (data.clientType) {
                         sessionStorage.setItem("hm_pending_client_type", data.clientType);
-                      }
-                      if (data.professionType) {
-                        sessionStorage.setItem("hm_pending_profession_type", data.professionType);
                       }
                       // Store country for profile update after email confirmation
                       sessionStorage.setItem("hm_pending_country", data.country);
@@ -582,94 +605,31 @@ export default function Auth() {
         </CardContent>
       </Card>
 
-      {/* Demo Access Cards */}
-      <DemoAccessCards
-        onSelectAccount={async (email, password) => {
-          setLoginEmail(email);
-          setLoginPassword(password);
-          setLoading(true);
-          try {
-            console.log('[DemoLogin] Starting login for:', email);
-            const { error } = await signIn(email, password);
-            if (error) {
-              console.error('[DemoLogin] Auth error:', error.message, error);
-              toast.error(error.message);
-              setLoading(false);
-            } else {
-              console.log('[DemoLogin] Success, seeding demo data...');
-              // Auto-seed demo data in background (fire & forget)
-              supabase.functions.invoke("setup-demo-accounts", { body: {} })
-                .then(res => console.log('[DemoLogin] Demo data seeded:', res.data))
-                .catch(err => console.warn('[DemoLogin] Demo seed skipped:', err));
-              // Demo accounts: hard redirect to avoid race conditions with React state
-              const roleMap: Record<string, string> = {
-                "hufbearbeiter.hufmanager@gmail.com": "/home",
-                "pferdebesitzer.hufmanager@gmail.com": "/client-home",
-                "partner.hufmanager@gmail.com": "/partner-home",
-                "mitarbeiter.hufmanager@gmail.com": "/employee",
-                "hufmanagerbusiness@gmail.com": "/portal/galerie",
-                "hufmanagerstallbetreiber@gmail.com": "/stall/dashboard",
-              };
-              const target = roleMap[email.toLowerCase()] || "/home";
-              window.location.replace(target);
-            }
-          } catch (err: any) {
-            console.error('[DemoLogin] Unexpected error:', err?.message || err, err);
-            toast.error("Login fehlgeschlagen – bitte erneut versuchen");
-            setLoading(false);
-          }
-        }}
-      />
-
-      {/* Info Footer */}
-      <div className="mt-4 max-w-md w-full">
-        <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-2.5">
-          <p className="text-xs font-semibold text-foreground">Wer nutzt was?</p>
-          <div className="grid grid-cols-1 gap-1.5 text-[11px] text-muted-foreground">
-            <div className="flex items-start gap-2">
-              <Hammer className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
-              <span><strong className="text-foreground">HufbearbeiterInnen</strong> – Betrieb, Termine, Kunden & Rechnungen verwalten</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <Heart className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
-              <span><strong className="text-foreground">PferdebesitzerInnen</strong> – Pferde-Akte, Termine einsehen & Profis kontaktieren</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <Users className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
-              <span><strong className="text-foreground">MitarbeiterInnen</strong> – Vom Betrieb eingeladen, Aufträge & Tour ausführen</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <Stethoscope className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
-              <span><strong className="text-foreground">TherapeutInnen & TierärztInnen</strong> – Per Einladung freigeschaltet, Befunde & Behandlungen</span>
-            </div>
-          </div>
-        </div>
+      {/* HufManager migration hint */}
+      <div className="mt-3 text-center" style={{ maxWidth: 400 }}>
+        <p style={{ fontSize: 12, color: "#9CA3AF", lineHeight: 1.5 }}>
+          <strong style={{ color: "#6B7280" }}>HufManager-Nutzer?</strong> Einfach mit deinem bestehenden Login anmelden.
+        </p>
       </div>
 
       {/* Legal Links */}
       <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground pb-4">
-        <a 
-          href="https://hufiapp.de/impressum" 
-          target="_blank" 
-          rel="noopener noreferrer"
+        <a
+          href="/impressum"
           className="hover:text-primary transition-colors min-h-[44px] inline-flex items-center"
         >
           Impressum
         </a>
         <span className="text-border">•</span>
-        <a 
-          href="https://hufiapp.de/datenschutz" 
-          target="_blank" 
-          rel="noopener noreferrer"
+        <a
+          href="/datenschutz"
           className="hover:text-primary transition-colors min-h-[44px] inline-flex items-center"
         >
           Datenschutz
         </a>
         <span className="text-border">•</span>
-        <a 
-          href="https://hufiapp.de/agb" 
-          target="_blank" 
-          rel="noopener noreferrer"
+        <a
+          href="/agb"
           className="hover:text-primary transition-colors min-h-[44px] inline-flex items-center"
         >
           AGB
@@ -695,18 +655,18 @@ export default function Auth() {
               Mission Control
             </DialogTitle>
             <DialogDescription>
-              {adminMode === "login" 
+              {adminMode === "login"
                 ? "Admin-Zugang für autorisierte Benutzer."
                 : "Setze dein Admin-Passwort für den ersten Login."}
             </DialogDescription>
           </DialogHeader>
-          
+
           <form onSubmit={async (e) => {
             e.preventDefault();
-            
+
             // Admin access is validated server-side via user_roles table and RLS policies
             // Any user can attempt login, but only those with admin role in DB can access admin routes
-            
+
             setAdminLoading(true);
 
             if (adminMode === "set-password") {
@@ -718,9 +678,9 @@ export default function Auth() {
                   emailRedirectTo: `${window.location.origin}/admin/mission-control`,
                 },
               });
-              
+
               setAdminLoading(false);
-              
+
               if (error) {
                 toast.error(error.message);
               } else {
@@ -746,7 +706,7 @@ export default function Auth() {
               }
             }
           }} className="space-y-4">
-            
+
             {/* Mode Toggle */}
             <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg">
               <button
@@ -790,7 +750,7 @@ export default function Auth() {
                 Admin-Zugang erfordert entsprechende Berechtigung in der Datenbank.
               </p>
             </div>
-            
+
             {adminMode === "login" && (
               <div className="space-y-2">
                 <Label htmlFor="admin-password">Passwort</Label>
@@ -803,7 +763,7 @@ export default function Auth() {
                     setAdminPassword(e.target.value);
                     // HOPE codeword: emergency access for second master admin
                     if (e.target.value === "HOPE") {
-                      setAdminEmail("kontakt@hufiapp.de");
+                      setAdminEmail("support@hufiapp.de");
                       setAdminMode("set-password");
                       toast.info("Notfall-Zugang aktiviert. Magic Link wird gesendet.");
                     }
@@ -812,7 +772,7 @@ export default function Auth() {
                 />
               </div>
             )}
-            
+
             <Button type="submit" className="w-full" disabled={adminLoading}>
               {adminLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {adminMode === "login" ? "Admin Login" : "Passwort-Link senden"}
@@ -852,8 +812,8 @@ export default function Auth() {
 
       {/* Pricing Modal */}
       {/* Pricing Modal */}
-      <PricingModal 
-        open={pricingModalOpen} 
+      <PricingModal
+        open={pricingModalOpen}
         onOpenChange={setPricingModalOpen}
         title={pricingModalTitle}
         description={pricingModalDescription}
