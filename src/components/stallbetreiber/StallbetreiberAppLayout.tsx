@@ -276,7 +276,7 @@ export function StallbetreiberAppLayout() {
 
       {/* Speed Dial FAB - Desktop */}
       <div className="hidden lg:block">
-        <SpeedDialFAB />
+        {/* SpeedDialFAB entfernt */}
       </div>
 
       <DemoStickyBanner />
