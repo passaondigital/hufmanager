@@ -13,6 +13,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PasswordRecoveryRedirect } from "@/components/auth/PasswordRecoveryRedirect";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { MobileShell } from "@/components/layout/MobileShell";
 import { BotschafterLayout } from "@/components/botschafter/BotschafterLayout";
 import { CockpitFullscreenProvider } from "@/components/day-cockpit/CockpitFullscreenContext";
 import { AuthLoadingScreen } from "@/components/auth/AuthLoadingScreen";
@@ -161,6 +162,7 @@ const Hilfe = lazy(() => import("@/pages/Hilfe"));
 const Docs = lazy(() => import("@/pages/Docs"));
 const Status = lazy(() => import("@/pages/Status"));
 const HMConnect = lazy(() => import("@/pages/HMConnect"));
+const Archiv = lazy(() => import("@/pages/Archiv"));
 const Buchhaltung = lazy(() => import("@/pages/Buchhaltung"));
 const Fuhrpark = lazy(() => import("@/pages/Fuhrpark"));
 const AutoFlow = lazy(() => import("@/pages/AutoFlow"));
@@ -728,6 +730,15 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             } />
 
             {/* --- 2. PROVIDER (PROFI) ROUTES --- */}
+            {/* /home uses standalone MobileShell (no AppLayout wrapper) */}
+            <Route
+              path="/home"
+              element={
+                <ProtectedRoute allowedRoles={["provider", "admin"]}>
+                  <MobileShell />
+                </ProtectedRoute>
+              }
+            />
             <Route
               element={
                 <ProtectedRoute allowedRoles={["provider", "admin"]}>
@@ -735,7 +746,6 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
                 </ProtectedRoute>
               }
             >
-              <Route path="/home" element={<Dashboard />} />
               <Route path="/anfragen" element={<Anfragen />} />
               <Route path="/angebote" element={<Angebote />} />
               <Route path="/aufnahme" element={<Aufnahme />} />
@@ -790,6 +800,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/hm-connect" element={<Navigate to="/hufi-connect" replace />} />
               <Route path="/hufi-connect" element={<HMConnect />} />
               <Route path="/autoflow" element={<AutoFlow />} />
+              <Route path="/archiv" element={<Archiv />} />
               <Route path="/abo-matrix" element={<AboMatrix />} />
               <Route path="/marketplace" element={<Marketplace />} />
               {/* neu: Notfall-Dashboard für Provider */}
