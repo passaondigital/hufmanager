@@ -45,10 +45,12 @@ const Services = lazy(() => import("@/pages/Services"));
 const MeinAngebot = lazy(() => import("@/pages/MeinAngebot"));
 const Management = lazy(() => import("@/pages/Management"));
 const ManagementHub = lazy(() => import("@/pages/ManagementHub"));
+const Business = lazy(() => import("@/pages/Business"));
 const ManagementProfil = lazy(() => import("@/pages/management/ManagementProfil"));
 const ManagementWebsite = lazy(() => import("@/pages/management/ManagementWebsite"));
 const ManagementKommunikation = lazy(() => import("@/pages/management/ManagementKommunikation"));
 const ManagementAbo = lazy(() => import("@/pages/management/ManagementAbo"));
+const AboSettings = lazy(() => import("@/pages/settings/AboSettings"));
 const ManagementRechtliches = lazy(() => import("@/pages/management/ManagementRechtliches"));
 const ManagementSteuer = lazy(() => import("@/pages/management/ManagementSteuer"));
 const ManagementBusinessHub = lazy(() => import("@/pages/management/ManagementBusinessHub"));
@@ -753,12 +755,14 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/services" element={<Navigate to="/mein-angebot" replace />} />
               <Route path="/preise" element={<Navigate to="/mein-angebot" replace />} />
               <Route path="/mein-angebot" element={<MeinAngebot />} />
+              <Route path="/business" element={<Business />} />
               <Route path="/management" element={<ManagementHub />} />
               <Route path="/management/profil" element={<ManagementProfil />} />
               <Route path="/management/business" element={<ManagementBusinessHub />} />
               <Route path="/management/website" element={<ManagementWebsite />} />
               <Route path="/management/kommunikation" element={<ManagementKommunikation />} />
               <Route path="/management/abo" element={<ManagementAbo />} />
+              <Route path="/settings/abo" element={<AboSettings />} />
               <Route path="/management/rechtliches" element={<ManagementRechtliches />} />
               <Route path="/management/steuer" element={<ManagementSteuer />} />
               <Route path="/management/import" element={<ImportCenter />} />
@@ -782,8 +786,9 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/support" element={<Support />} />
               <Route path="/hilfe" element={<Hilfe />} />
               <Route path="/status" element={<Status />} />
-              <Route path="/ecosystem" element={<Navigate to="/hm-connect" replace />} />
-              <Route path="/hm-connect" element={<HMConnect />} />
+              <Route path="/ecosystem" element={<Navigate to="/hufi-connect" replace />} />
+              <Route path="/hm-connect" element={<Navigate to="/hufi-connect" replace />} />
+              <Route path="/hufi-connect" element={<HMConnect />} />
               <Route path="/autoflow" element={<AutoFlow />} />
               <Route path="/abo-matrix" element={<AboMatrix />} />
               <Route path="/marketplace" element={<Marketplace />} />
@@ -941,7 +946,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner-settings" element={<PartnerSettings />} />
               <Route path="/partner-profile" element={<PartnerProfile />} />
               <Route path="/partner-notfall" element={<EmergencyDashboard />} />
-              <Route path="/partner-connect" element={<Navigate to="/hm-connect" replace />} />
+              <Route path="/partner-connect" element={<Navigate to="/hufi-connect" replace />} />
               <Route path="/partner-tour" element={<Tour />} />
               <Route path="/partner-work-mode" element={<WorkMode />} />
               <Route path="/partner-feedback" element={<Auffassen />} />
