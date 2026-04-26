@@ -396,13 +396,13 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
         {!collapsed ? (
           <img 
-            src="/hufi-logo.svg" 
+            src="https://upload.assaon.com/files/medien/hufiapp-logo-mit-text-1777028919801-id2zm.png" 
             alt="Hufi" 
             className="h-10 w-auto"
           />
         ) : (
           <img 
-            src="/hufi-logo.svg" 
+            src="https://upload.assaon.com/files/medien/hufiapp-logo-mit-text-1777028919801-id2zm.png" 
             alt="HM" 
             className="h-8 w-auto"
           />

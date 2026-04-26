@@ -79,7 +79,7 @@ export default function Blog() {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/blog" className="flex items-center gap-2">
             <img 
-              src="/hufi-logo.svg" 
+              src="https://upload.assaon.com/files/medien/hufiapp-logo-mit-text-1777028919801-id2zm.png" 
               alt="Hufi" 
               className="h-8 w-auto"
             />

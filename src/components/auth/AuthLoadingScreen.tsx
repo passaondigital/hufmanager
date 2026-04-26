@@ -6,7 +6,7 @@ export function AuthLoadingScreen() {
       <div className="flex flex-col items-center gap-4">
         <div className="relative">
           <img 
-            src="/hufi-logo.svg" 
+            src="https://upload.assaon.com/files/medien/goldenespferd.png" 
             alt="Hufi" 
             className="h-16 w-16 animate-pulse"
           />

@@ -141,7 +141,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
     <div key="welcome" className="text-center space-y-6">
       <div className="relative mx-auto w-32 h-32">
         <img 
-          src="/hufi-logo.svg" 
+          src="https://upload.assaon.com/files/medien/hufiapp-logo-mit-text-1777028919801-id2zm.png" 
           alt="Hufi" 
           className="w-full h-full object-contain"
         />
@@ -314,7 +314,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
     <div key="welcome" className="text-center space-y-6">
       <div className="relative mx-auto w-32 h-32">
         <img 
-          src="/hufi-logo.svg" 
+          src="https://upload.assaon.com/files/medien/hufiapp-logo-mit-text-1777028919801-id2zm.png" 
           alt="Hufi" 
           className="w-full h-full object-contain"
         />

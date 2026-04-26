@@ -57,7 +57,7 @@ export function PWAInstallPrompt() {
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
-                <img src="/hufi-logo.svg" alt="Hufi" className="h-8 w-auto" />
+                <img src="https://upload.assaon.com/files/medien/hufiapp-logo-mit-text-1777028919801-id2zm.png" alt="Hufi" className="h-8 w-auto" />
               </div>
               <div>
                 <h3 className="font-semibold text-foreground">App installieren</h3>

@@ -214,7 +214,7 @@ export default function Auth() {
   if (signingOut || isSwitchingAccount) {
     return (
       <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
-        <img src="/hufi-logo.svg" alt="Hufi" className="h-24 w-auto animate-pulse" />
+        <img src="https://upload.assaon.com/files/medien/hufiapp-logo-mit-text-1777028919801-id2zm.png" alt="Hufi" className="h-24 w-auto animate-pulse" />
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -225,7 +225,7 @@ export default function Auth() {
       // Show loading while checking onboarding status
       return (
         <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
-          <img src="/hufi-logo.svg" alt="Hufi" className="h-24 w-auto animate-pulse" />
+          <img src="https://upload.assaon.com/files/medien/hufiapp-logo-mit-text-1777028919801-id2zm.png" alt="Hufi" className="h-24 w-auto animate-pulse" />
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       );
@@ -413,7 +413,7 @@ export default function Auth() {
     return (
       <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
         <img 
-          src="/hufi-logo.svg" 
+          src="https://upload.assaon.com/files/medien/hufiapp-logo-mit-text-1777028919801-id2zm.png" 
           alt="Hufi" 
           className="h-24 w-auto animate-pulse"
         />
@@ -459,7 +459,7 @@ export default function Auth() {
         )}
         <CardHeader className="text-center pb-2 pt-4">
           <img 
-            src="/hufi-logo.svg" 
+            src="https://upload.assaon.com/files/medien/hufiapp-logo-mit-text-1777028919801-id2zm.png" 
             alt="Hufi Logo" 
             className="mx-auto h-16 sm:h-20 w-auto mb-2"
           />

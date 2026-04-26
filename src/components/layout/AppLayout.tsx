@@ -4,6 +4,7 @@ import { AlertTriangle, RefreshCw, Home, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AppSidebar } from "./AppSidebar";
+import { MobileHeader } from "./MobileHeader";
 import { AppHeader } from "./AppHeader";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { OfflineBanner } from "@/components/offline/OfflineBanner";
@@ -61,22 +62,7 @@ export function AppLayout() {
 
       <div className="flex-1 flex flex-col min-h-[100dvh] overflow-x-hidden lg:ml-64">
         {/* Neuer, aufgeräumter Mobile Header (ersetzt den alten komplett) */}
-        <header className="lg:hidden sticky top-0 z-40 h-16 bg-white border-b border-gray-100 flex items-center justify-between px-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <img src="/hufi-logo.svg" alt="Hufi" className="h-6 w-auto" />
-            <span className="font-semibold text-gray-900 text-lg">Hufi</span>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="h-10 w-10 text-gray-500 relative">
-               <Bell className="h-5 w-5" />
-               <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500" />
-            </Button>
-            <Button variant="outline" size="sm" className="h-8 text-xs font-semibold text-amber-600 border-amber-200 bg-amber-50/50 rounded-full px-3">
-              PROFI
-            </Button>
-          </div>
-        </header>
+        <MobileHeader onMenuClick={() => setMobileMenuOpen(true)} />
 
         {/* Desktop Header - hidden on mobile */}
         <div className="hidden lg:block">
