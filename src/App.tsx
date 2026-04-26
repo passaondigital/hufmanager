@@ -269,7 +269,6 @@ const ClientHistorie = lazy(() => import("@/pages/client/ClientHistorie"));
 const ClientDokumente = lazy(() => import("@/pages/client/ClientDokumente"));
 
 // Components
-import { AIChatWidget } from "@/components/chat/AIChatWidget";
 import { PWAInstallPrompt } from "@/components/pwa/PWAInstallPrompt";
 import { VersionChecker } from "@/components/version/VersionChecker";
 import { SystemStatusBanner } from "@/components/notifications/SystemStatusBanner";
@@ -529,7 +528,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <AIChatWidget />
+        {/* Assistent entfernt */}
         <PWAInstallPrompt />
         <VersionChecker />
         <SystemStatusBanner />
