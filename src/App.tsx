@@ -163,6 +163,7 @@ const Docs = lazy(() => import("@/pages/Docs"));
 const Status = lazy(() => import("@/pages/Status"));
 const HMConnect = lazy(() => import("@/pages/HMConnect"));
 const Archiv = lazy(() => import("@/pages/Archiv"));
+const Business = lazy(() => import("@/pages/Business"));
 const Buchhaltung = lazy(() => import("@/pages/Buchhaltung"));
 const Fuhrpark = lazy(() => import("@/pages/Fuhrpark"));
 const AutoFlow = lazy(() => import("@/pages/AutoFlow"));
@@ -801,6 +802,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/hufi-connect" element={<HMConnect />} />
               <Route path="/autoflow" element={<AutoFlow />} />
               <Route path="/archiv" element={<Archiv />} />
+                <Route path="/business" element={<Business />} />
                 <Route path="/cockpit" element={<Dashboard />} />
               <Route path="/abo-matrix" element={<AboMatrix />} />
               <Route path="/marketplace" element={<Marketplace />} />

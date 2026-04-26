@@ -1,61 +1,35 @@
-import { useNavigate } from "react-router-dom";
-import { Receipt, FileText, TrendingDown, Car, Package, Scale, Download, Briefcase } from "lucide-react";
-import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { FileText, Calculator, TrendingDown, TrendingUp, Car, Package, Download } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Business() {
-  const navigate = useNavigate();
+  const businessLinks = [
+    { name: "Rechnungen", icon: FileText, path: "/rechnungen", color: "text-blue-500", bg: "bg-blue-50" },
+    { name: "Buchhaltung", icon: Calculator, path: "/buchhaltung", color: "text-amber-500", bg: "bg-amber-50" },
+    { name: "Ausgaben", icon: TrendingDown, path: "/ausgaben", color: "text-red-500", bg: "bg-red-50" },
+    { name: "GuV", icon: TrendingUp, path: "/guv", color: "text-emerald-500", bg: "bg-emerald-50" },
+    { name: "Fuhrpark", icon: Car, path: "/fuhrpark", color: "text-slate-500", bg: "bg-slate-50" },
+    { name: "Lager", icon: Package, path: "/lager", color: "text-indigo-500", bg: "bg-indigo-50" },
+    { name: "Daten-Export", icon: Download, path: "/settings", color: "text-gray-500", bg: "bg-gray-50" },
+  ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <TileHubHeader icon="💼" title="Hufi Business" subtitle="Dein Betrieb auf einen Blick" />
-
-      <TileCategory title="Finanzen">
-        <Tile
-          icon={<Receipt className="w-10 h-10 text-amber-500" />}
-          title="Rechnungen"
-          description="Rechnungen erstellen, versenden & verwalten"
-          onClick={() => navigate("/rechnungen")}
-        />
-        <Tile
-          icon={<TrendingDown className="w-10 h-10 text-amber-500" />}
-          title="Ausgaben & Belege"
-          description="Kosten erfassen & Belege scannen"
-          onClick={() => navigate("/ausgaben")}
-        />
-        <Tile
-          icon={<Scale className="w-10 h-10 text-amber-500" />}
-          title="GuV-Übersicht"
-          description="Gewinn- und Verlustrechnung"
-          onClick={() => navigate("/guv")}
-        />
-        <Tile
-          icon={<FileText className="w-10 h-10 text-amber-500" />}
-          title="Buchhaltung"
-          description="EÜR, USt-VA, DATEV & Steuerberater"
-          onClick={() => navigate("/buchhaltung")}
-        />
-      </TileCategory>
-
-      <TileCategory title="Betrieb">
-        <Tile
-          icon={<Car className="w-10 h-10 text-amber-500" />}
-          title="Fuhrpark"
-          description="Fahrzeuge, Tankbuch & km-Protokoll"
-          onClick={() => navigate("/fuhrpark")}
-        />
-        <Tile
-          icon={<Package className="w-10 h-10 text-amber-500" />}
-          title="Lager"
-          description="Material & Bestand verwalten"
-          onClick={() => navigate("/lager")}
-        />
-        <Tile
-          icon={<Download className="w-10 h-10 text-amber-500" />}
-          title="Daten-Export"
-          description="Daten exportieren & sichern"
-          onClick={() => navigate("/management/business")}
-        />
-      </TileCategory>
+    <div className="pb-24">
+      <PageHeader title="Hufi Business" backButton />
+      <div className="p-4 space-y-6">
+        <p className="text-gray-500 text-sm">Dein gesamter Betrieb auf einen Blick.</p>
+        
+        <div className="grid grid-cols-2 gap-4">
+          {businessLinks.map((link) => (
+            <Link key={link.name} to={link.path} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-3 active:scale-95 transition-transform">
+              <div className={`p-3 rounded-xl ${link.bg}`}>
+                <link.icon className={`w-6 h-6 ${link.color}`} />
+              </div>
+              <span className="font-medium text-gray-800 text-sm">{link.name}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

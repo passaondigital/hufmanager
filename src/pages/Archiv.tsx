@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useViewMode } from "@/hooks/useViewMode";
 import {
-  LayoutDashboard, Users, Sparkles, Calendar, Receipt, BarChart2,
+  LayoutDashboard, Users, Sparkles, Calendar, Briefcase, BarChart2,
   Camera, Filter, Settings, BookOpen, CalendarCheck, FolderOpen,
   Network, StickyNote, Lock, Shield, MapPin, Package, Timer,
   CheckSquare, NotebookPen, Coins, ArrowLeft, Link2, LogOut,
@@ -15,7 +15,7 @@ const PROVIDER_TILES: TileConfig[] = [
   { label: "Kunden",         icon: Users,            path: "/kunden",            color: "#10B981" },
   { label: "Pferde",         icon: Sparkles,         path: "/pferde",            color: "#8B5CF6" },
   { label: "Kalender",       icon: Calendar,         path: "/kalender",          color: "#3B82F6" },
-  { label: "Rechnungen",     icon: Receipt,          path: "/rechnungen",        color: "#F59E0B" },
+  { label: "Rechnungen",     icon: Briefcase,          path: "/rechnungen",        color: "#F59E0B" },
   { label: "Analyse",        icon: BarChart2,        path: "/analyse",           color: "#6B7280" },
   { label: "HufCam",         icon: Camera,           path: "/hufcam",            color: "#EF4444" },
   { label: "Hufi Connect",   icon: Link2,            path: "/hm-connect",        color: "#06B6D4" },
