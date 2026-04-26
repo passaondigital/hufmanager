@@ -475,7 +475,7 @@ export function ClientAppLayout() {
       </QuickSheet>
 
       <DemoStickyBanner />
-      <AIChatWidget />
+      null
     </div>
   );
 }

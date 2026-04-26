@@ -6,31 +6,38 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 20 14.3% 4.1%;
+    --card: 0 0% 100%;
+    --card-foreground: 20 14.3% 4.1%;
     --primary: 38 92% 50%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 38 92% 96%;
+    --secondary: 38 92% 98%;
+    --border: 20 5.9% 92%;
     --radius: 1.25rem;
-    /* Safe Area Variablen für native Apps */
     --sat: env(safe-area-inset-top);
-    --sar: env(safe-area-inset-right);
     --sab: env(safe-area-inset-bottom);
-    --sal: env(safe-area-inset-left);
   }
 }
 
 body {
-  @apply bg-slate-50 text-foreground antialiased overflow-x-hidden;
-  /* Verhindert das typische "Web-Bouncen" beim Scrollen auf iOS */
-  overscroll-behavior-y: none;
+  @apply bg-slate-50 text-foreground antialiased;
+  /* Verhindert horizontales Wackeln */
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
-#root {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-/* Der App-Container: Auf Desktop zentriert, auf Mobile füllend */
+/* Die App-Säule auf dem Desktop */
 .app-container {
-  @apply w-full max-w-[480px] mx-auto bg-white min-h-screen shadow-2xl relative flex flex-col border-x border-border/30;
+  @apply w-full max-w-[480px] mx-auto bg-white min-h-screen relative flex flex-col;
+  /* Eleganter Schatten für Desktop */
+  box-shadow: 0 0 40px rgba(0,0,0,0.05);
 }
+
+/* Karten-System für Hufi */
+.hufi-card {
+  @apply bg-white rounded-[1.25rem] border border-slate-100 p-4 mb-4;
+  box-shadow: 0 4px 12px rgba(245, 151, 10, 0.04);
+}
+
+/* Scrollbar verstecken für App-Feeling */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

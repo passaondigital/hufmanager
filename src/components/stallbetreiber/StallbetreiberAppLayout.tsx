@@ -280,7 +280,7 @@ export function StallbetreiberAppLayout() {
       </div>
 
       <DemoStickyBanner />
-      <AIChatWidget />
+      null
     </div>
   );
 }

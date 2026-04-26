@@ -334,7 +334,7 @@ export function PartnerAppLayout() {
       </div>
 
       <DemoStickyBanner />
-      <AIChatWidget />
+      null
     </div>
   );
 }

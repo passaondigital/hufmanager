@@ -358,7 +358,7 @@ export function EmployeeAppLayout() {
       </div>
 
       <DemoStickyBanner />
-      <AIChatWidget />
+      null
     </div>
   );
 }

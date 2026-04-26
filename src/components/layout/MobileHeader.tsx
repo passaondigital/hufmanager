@@ -5,28 +5,21 @@ import { Button } from "@/components/ui/button";
 export function MobileHeader() {
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // Definition der Haupt-Seiten (kein Zurück-Pfeil nötig)
   const isHome = ["/home", "/archiv", "/dashboard", "/cockpit"].includes(location.pathname);
 
   return (
     <header 
-      className="sticky top-0 z-50 w-full border-b border-border/40 bg-white/95 backdrop-blur-md flex items-center justify-between px-4"
-      style={{ 
-        paddingTop: "calc(var(--sat, 0px) + 0.75rem)",
-        paddingBottom: "0.75rem"
-      }}
+      className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-5 h-16"
+      style={{ paddingTop: "var(--sat, 0px)" }}
     >
       <div className="flex items-center gap-3">
         {!isHome && (
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <button 
             onClick={() => navigate(-1)} 
-            className="h-10 w-10 rounded-full bg-orange-50 active:scale-95 transition-transform"
+            className="flex items-center justify-center w-9 h-9 rounded-full bg-slate-50 text-[#F5970A] active:scale-90 transition-transform"
           >
-            <ArrowLeft className="h-5 w-5 text-[#F5970A]" />
-          </Button>
+            <ArrowLeft className="w-5 h-5" />
+          </button>
         )}
         <img 
           src="https://upload.assaon.com/files/medien/hufiapp-logo-mit-text-1777028919801-id2zm.png" 
@@ -35,15 +28,12 @@ export function MobileHeader() {
         />
       </div>
 
-      <Button 
-        variant="ghost" 
-        size="icon" 
+      <button 
         onClick={() => window.location.href = "/archiv"}
-        className="h-10 w-10 rounded-full hover:bg-orange-50 text-[#F5970A] active:scale-90 transition-transform"
-        aria-label="Menü"
+        className="flex items-center justify-center w-9 h-9 text-slate-400 hover:text-[#F5970A] active:scale-90 transition-transform"
       >
-        <LayoutGrid className="h-6 w-6" />
-      </Button>
+        <LayoutGrid className="w-6 h-6" />
+      </button>
     </header>
   );
 }
