@@ -178,15 +178,17 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // React MUST be isolated so every other chunk can import it reliably.
-          // Without this, Rollup may embed React inside e.g. AdminDashboard,
-          // causing "forwardRef is undefined" when Radix loads first.
+          // React MUST be the very first chunk resolved.
+          // Rollup's CJS interop helpers for React/ReactDOM must NOT end up
+          // inside an app chunk (e.g. AdminDashboard) — that creates a cycle:
+          // vendor-react → AdminDashboard → radix → vendor-react, causing
+          // forwardRef to be undefined when Radix evaluates at module top-level.
           if (
             id.includes("node_modules/react/") ||
             id.includes("node_modules/react-dom/") ||
             id.includes("node_modules/scheduler/")
           ) return "vendor-react";
-          // Vendor: heavy UI libs
+          // Named vendor splits (lazy-loaded, large libs)
           if (id.includes("node_modules/recharts") || id.includes("node_modules/d3")) return "charts";
           if (id.includes("node_modules/jspdf") || id.includes("node_modules/html2canvas")) return "pdf";
           if (id.includes("node_modules/@radix-ui")) return "radix";
@@ -195,7 +197,11 @@ export default defineConfig(({ mode }) => ({
           if (id.includes("node_modules/date-fns") || id.includes("node_modules/react-day-picker")) return "dates";
           if (id.includes("node_modules/@supabase")) return "supabase";
           if (id.includes("node_modules/react-router-dom") || id.includes("node_modules/react-router")) return "router";
-          // App: heavy page groups
+          // Catch-all for remaining node_modules: prevents Rollup from embedding
+          // shared CJS interop helpers inside app chunks (AdminDashboard etc.),
+          // which would otherwise create cross-chunk circular dependencies.
+          if (id.includes("node_modules/")) return "vendor";
+          // App: heavy page groups (only src/ code from here)
           if (id.includes("/pages/admin/") || id.includes("MissionControl")) return "AdminDashboard";
           if (id.includes("/pages/Kalender") || id.includes("/components/calendar")) return "Kalender";
           if (id.includes("/pages/Buchhaltung") || id.includes("/pages/GuV") || id.includes("/pages/Ausgaben") || id.includes("/pages/Fuhrpark")) return "HufiBusinessPages";
