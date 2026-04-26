@@ -18,7 +18,7 @@ interface NavOption {
 
 const PROVIDER_OPTIONS: NavOption[] = [
   { key: "kalender",      label: "Kalender",     Icon: Calendar,        path: "/kalender"      },
-  { key: "cockpit",       label: "Cockpit",       Icon: LayoutDashboard, path: "/cockpit"       },
+  { key: "cockpit",       label: "Cockpit",       Icon: LayoutDashboard, path: "/home"       },
   { key: "kunden",        label: "Kunden",        Icon: Users,           path: "/kunden"        },
   { key: "pferde",        label: "Pferde",        Icon: Sparkles,        path: "/pferde"        },
   { key: "rechnungen",    label: "Rechnungen",    Icon: Receipt,         path: "/rechnungen"    },

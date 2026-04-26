@@ -11,7 +11,7 @@ import {
 type TileConfig = { label: string; icon: React.ElementType; path: string; color: string };
 
 const PROVIDER_TILES: TileConfig[] = [
-  { label: "Cockpit",        icon: LayoutDashboard, path: "/cockpit",           color: "#F97316" },
+  { label: "Cockpit",        icon: LayoutDashboard, path: "/home",           color: "#F97316" },
   { label: "Kunden",         icon: Users,            path: "/kunden",            color: "#10B981" },
   { label: "Pferde",         icon: Sparkles,         path: "/pferde",            color: "#8B5CF6" },
   { label: "Kalender",       icon: Calendar,         path: "/kalender",          color: "#3B82F6" },

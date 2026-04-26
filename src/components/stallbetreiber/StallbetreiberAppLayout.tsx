@@ -74,7 +74,7 @@ const STALL_NAV: NavigationConfig = {
         {
           id: "auffassen", number: "4", label: "Auffassen", iconName: "Calendar",
           children: [
-            { label: "Tages-Cockpit", path: "/stall/cockpit" },
+            { label: "Tages-Cockpit", path: "/stall/home" },
             { label: "Kalender", path: "/stall/kalender" },
             { label: "Mitarbeiter", path: "/stall/staff" },
             { label: "Lager & Futter", path: "/stall/lager" },

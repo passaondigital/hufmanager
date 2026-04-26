@@ -301,7 +301,7 @@ export function buildContextActions(
 ): Array<{ label: string; route: string }> {
   const actions: Array<{ label: string; route: string }> = [];
   if (ctx.todayAppointments.length > 0) {
-    actions.push({ label: "🚀 Cockpit starten", route: "/cockpit" });
+    actions.push({ label: "🚀 Cockpit starten", route: "/home" });
     actions.push({ label: "🗺️ Route", route: "/tour" });
     actions.push({ label: "📅 Termine", route: "/kalender" });
   }

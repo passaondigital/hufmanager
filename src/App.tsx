@@ -803,7 +803,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/autoflow" element={<AutoFlow />} />
               <Route path="/archiv" element={<Archiv />} />
                 <Route path="/business" element={<Business />} />
-                <Route path="/cockpit" element={<Dashboard />} />
+                <Route path="/home" element={<Dashboard />} />
               <Route path="/abo-matrix" element={<AboMatrix />} />
               <Route path="/marketplace" element={<Marketplace />} />
               {/* neu: Notfall-Dashboard für Provider */}
@@ -879,7 +879,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/stall/boarders" element={<ClientStallBoarders />} />
               <Route path="/stall/pferde" element={<ClientHorses />} />
               <Route path="/stall/overview" element={<ClientStallOverview />} />
-              <Route path="/stall/cockpit" element={<StallCockpit />} />
+              <Route path="/stall/home" element={<StallCockpit />} />
               <Route path="/stall/kalender" element={<StallKalender />} />
               <Route path="/stall/staff" element={<ClientStallStaff />} />
               <Route path="/stall/lager" element={<StallLager />} />

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 export function MobileHeader() {
   const navigate = useNavigate();
   const location = useLocation();
-  const isHome = ["/home", "/archiv", "/dashboard", "/cockpit"].includes(location.pathname);
+  const isHome = ["/home", "/archiv", "/dashboard", "/home"].includes(location.pathname);
 
   return (
     <header className="sticky top-0 z-50 w-full min-h-16 border-b border-border/40 bg-white/80 backdrop-blur-md flex items-center justify-between px-4">

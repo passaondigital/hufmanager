@@ -91,7 +91,7 @@ function getClientNavigationConfig(mode: ClientModeType, isVerified: boolean): N
             label: "🏇 Stallbetrieb",
             items: [
               { id: "stall-mgmt", label: "Stallverwaltung", iconName: "Building2", path: "/client-stall-management" },
-              { id: "stall-cockpit", label: "Tages-Cockpit", iconName: "LayoutDashboard", path: "/client-stall/cockpit" },
+              { id: "stall-cockpit", label: "Tages-Cockpit", iconName: "LayoutDashboard", path: "/client-stall/home" },
               { id: "stall-kalender", label: "Kalender", iconName: "CalendarDays", path: "/client-stall/kalender" },
             ],
           },

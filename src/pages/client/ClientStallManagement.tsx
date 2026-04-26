@@ -72,7 +72,7 @@ export default function ClientStallManagement() {
           icon={<LayoutDashboard className="w-10 h-10 text-primary" />}
           title="Tages-Cockpit"
           description="Tagesaufgaben, Fütterungszeiten, anstehende Termine"
-          onClick={() => navigate("/client-stall/cockpit")}
+          onClick={() => navigate("/client-stall/home")}
         />
         <Tile
           icon={<CalendarDays className="w-10 h-10 text-primary" />}
