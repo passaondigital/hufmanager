@@ -6,38 +6,36 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 20 14.3% 4.1%;
-    --card: 0 0% 100%;
-    --card-foreground: 20 14.3% 4.1%;
     --primary: 38 92% 50%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 38 92% 98%;
+    --secondary: 30 20% 98%;
     --border: 20 5.9% 92%;
     --radius: 1.25rem;
     --sat: env(safe-area-inset-top);
-    --sab: env(safe-area-inset-bottom);
   }
 }
 
 body {
-  @apply bg-slate-50 text-foreground antialiased;
-  /* Verhindert horizontales Wackeln */
-  max-width: 100vw;
-  overflow-x: hidden;
+  @apply bg-slate-100/50 text-foreground antialiased;
+  background-color: #F1F5F9 !important; /* Ganz helles Grau für Kontrast zu weißen Karten */
 }
 
-/* Die App-Säule auf dem Desktop */
+/* Der zentrale App-Container */
 .app-container {
-  @apply w-full max-w-[480px] mx-auto bg-white min-h-screen relative flex flex-col;
-  /* Eleganter Schatten für Desktop */
-  box-shadow: 0 0 40px rgba(0,0,0,0.05);
+  @apply w-full max-w-[480px] mx-auto bg-white min-h-screen relative flex flex-col shadow-xl border-x border-slate-200/50;
 }
 
-/* Karten-System für Hufi */
+/* Hufi-Card System: Sauberer, weicher Schatten */
 .hufi-card {
-  @apply bg-white rounded-[1.25rem] border border-slate-100 p-4 mb-4;
-  box-shadow: 0 4px 12px rgba(245, 151, 10, 0.04);
+  @apply bg-white rounded-3xl border border-slate-100/80 p-5 mb-5 transition-all;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
 }
 
-/* Scrollbar verstecken für App-Feeling */
+/* Fix für das Kalender-Chaos und Overlaps */
+.calendar-wrapper {
+  @apply flex flex-col gap-6 w-full;
+}
+
+/* Scrollbar-Hide für das App-Feeling */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

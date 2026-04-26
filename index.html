@@ -46,14 +46,12 @@
 
     <!-- Sentry Error Monitoring (CDN, deferred so React loads first) -->
     <script
-      src="https://browser.sentry-cdn.com/8.0.0/bundle.min.js"
       crossorigin="anonymous"
       defer
     ></script>
     <script defer>
       document.addEventListener('DOMContentLoaded', function() {
         window.Sentry && Sentry.init({
-          dsn: "https://e4032f9ae94098bb48fabd07b0ff259a@o4511282434998272.ingest.de.sentry.io/4511282438471760",
           environment: window.location.hostname === "hufiapp.de" ? "production" : "development",
           tracesSampleRate: 0.1,
           release: "hufi@2.5.0"
