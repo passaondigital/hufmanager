@@ -1,20 +1,20 @@
 import { Outlet } from "react-router-dom";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { MobileHeader } from "./MobileHeader";
+import { AppTopBar } from "./AppTopBar";
 import { MobileBottomNav } from "./MobileBottomNav";
 
-export function AppLayout() {
+export const AppLayout = () => {
   return (
-    <div className="app-container">
-      <MobileHeader />
-      <main className="flex-1 overflow-y-auto scrollbar-hide pb-32">
-        <ErrorBoundary name="HufiMain">
-          <div className="hufi-stack">
-            <Outlet />
-          </div>
-        </ErrorBoundary>
+    <div className="relative min-h-screen bg-gray-50 flex flex-col items-center">
+      {/* Top Bar - fest oben */}
+      <AppTopBar />
+      
+      {/* Hauptinhalt mit maximaler Breite für Desktop und Seitenabstand für Mobile */}
+      <main className="flex-1 w-full max-w-md pt-20 pb-24 px-4">
+        <Outlet />
       </main>
+
+      {/* Bottom Nav - fest unten */}
       <MobileBottomNav />
     </div>
   );
-}
+};
