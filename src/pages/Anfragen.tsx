@@ -66,13 +66,15 @@ const Anfragen = () => {
   const queryClient = useQueryClient();
 
   const { data: leads = [], isLoading } = useQuery({
-    queryKey: ['leads'],
+    queryKey: ['leads', user?.id],
+    enabled: !!user?.id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('leads')
         .select('*')
+        .eq('provider_id', user!.id)
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
       return data as Lead[];
     },
