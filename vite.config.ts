@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => ({
       includeAssets: ["favicon.ico", "robots.txt", "hufi-logo.svg", "apple-touch-icon.png"],
       workbox: {
         // Limit auf 6 MB erhöht für große Bundles
-        maximumFileSizeToCacheInBytes: 6000000,
+        maximumFileSizeToCacheInBytes: 15000000,
         
         // Force new service worker to activate immediately
         skipWaiting: true,
