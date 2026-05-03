@@ -50,6 +50,17 @@ const TIER_OPTIONS: { value: string; label: string; className: string; activeCla
   { value: "unklar",   label: "?",        className: "border-gray-200 text-gray-400",   activeClass: "bg-gray-200 text-gray-600 border-gray-300" },
 ];
 
+function getNextStepHint(lead: Lead): { text: string; className: string } | null {
+  if (lead.status === 'gewonnen' || lead.status === 'verloren') return null;
+  if (lead.status === 'angebot_gesendet') return { text: "→ Auf Rückmeldung warten", className: "text-amber-500" };
+  if (!lead.plan_tier)                   return { text: "Bitte klassifizieren",       className: "text-gray-400" };
+  if (lead.plan_tier === 'unklar')       return { text: "→ Rückfrage stellen",        className: "text-gray-500" };
+  if (lead.plan_tier === 'go')           return { text: "→ Ersttermin buchen",        className: "text-blue-600" };
+  if (lead.plan_tier === 'balance')      return { text: "→ Abo-Gespräch / Tourenplatz prüfen", className: "text-green-600" };
+  if (lead.plan_tier === 'intensiv')     return { text: "→ Bewerbungsgespräch / Video anfordern", className: "text-orange-500" };
+  return null;
+}
+
 const statusConfig: Record<string, { label: string; className: string }> = {
   neu: { label: "Neu", className: "bg-primary/10 text-primary" },
   kontaktiert: { label: "Kontaktiert", className: "bg-blue-500/10 text-blue-600" },
@@ -283,6 +294,15 @@ const Anfragen = () => {
                         </button>
                       ))}
                     </div>
+
+                    {(() => {
+                      const hint = getNextStepHint(lead);
+                      return hint ? (
+                        <p className={cn("text-xs font-medium", hint.className)}>
+                          {hint.text}
+                        </p>
+                      ) : null;
+                    })()}
 
                     <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                       {lead.phone && (
