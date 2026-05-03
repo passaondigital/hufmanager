@@ -9474,6 +9474,7 @@ export type Database = {
           message: string | null
           name: string | null
           phone: string | null
+          plan_tier: string | null
           postal_code: string | null
           provider_id: string
           source: string | null
@@ -9490,6 +9491,7 @@ export type Database = {
           message?: string | null
           name?: string | null
           phone?: string | null
+          plan_tier?: string | null
           postal_code?: string | null
           provider_id: string
           source?: string | null
@@ -9506,6 +9508,7 @@ export type Database = {
           message?: string | null
           name?: string | null
           phone?: string | null
+          plan_tier?: string | null
           postal_code?: string | null
           provider_id?: string
           source?: string | null

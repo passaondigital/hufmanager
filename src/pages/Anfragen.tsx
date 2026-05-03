@@ -40,7 +40,15 @@ interface Lead {
   status: string;
   source: string | null;
   created_at: string;
+  plan_tier: string | null;
 }
+
+const TIER_OPTIONS: { value: string; label: string; className: string; activeClass: string }[] = [
+  { value: "go",       label: "GO",       className: "border-blue-200 text-blue-500",   activeClass: "bg-blue-500 text-white border-blue-500" },
+  { value: "balance",  label: "BALANCE",  className: "border-green-200 text-green-600", activeClass: "bg-green-600 text-white border-green-600" },
+  { value: "intensiv", label: "INTENSIV", className: "border-orange-200 text-orange-500", activeClass: "bg-orange-500 text-white border-orange-500" },
+  { value: "unklar",   label: "?",        className: "border-gray-200 text-gray-400",   activeClass: "bg-gray-200 text-gray-600 border-gray-300" },
+];
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   neu: { label: "Neu", className: "bg-primary/10 text-primary" },
@@ -85,12 +93,27 @@ const Anfragen = () => {
       const { error } = await supabase
         .from('leads')
         .update({ status })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('provider_id', user!.id);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['leads', user?.id] });
       toast({ title: "Status aktualisiert" });
+    },
+  });
+
+  const updateTier = useMutation({
+    mutationFn: async ({ id, plan_tier }: { id: string; plan_tier: string | null }) => {
+      const { error } = await supabase
+        .from('leads')
+        .update({ plan_tier })
+        .eq('id', id)
+        .eq('provider_id', user!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads', user?.id] });
     },
   });
 
@@ -241,6 +264,24 @@ const Anfragen = () => {
                         {statusInfo.label}
                       </Badge>
                       <span className="text-sm text-muted-foreground">{formatDate(lead.created_at)}</span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      {TIER_OPTIONS.map((tier) => (
+                        <button
+                          key={tier.value}
+                          onClick={() => updateTier.mutate({
+                            id: lead.id,
+                            plan_tier: lead.plan_tier === tier.value ? null : tier.value,
+                          })}
+                          className={cn(
+                            "px-2 py-0.5 rounded text-xs font-semibold border transition-colors",
+                            lead.plan_tier === tier.value ? tier.activeClass : tier.className
+                          )}
+                        >
+                          {tier.label}
+                        </button>
+                      ))}
                     </div>
 
                     <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
