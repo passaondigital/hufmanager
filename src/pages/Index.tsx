@@ -7,16 +7,20 @@ const Index = () => {
   const { user, role, loading } = useAuth();
   const hostname = window.location.hostname;
 
-  // www.hufiapp.de or hufiapp.de → always landing page, no auth check
+  // Marketing landing on the bare apex / www; auth flow on app.* and everywhere else.
+  // Legacy hufmanager.de hosts are aliased so existing HufManager users don't
+  // land on the auth screen when they hit their old bookmark.
   const isMainDomain =
+    hostname === "hufiapp.de" ||
     hostname === "www.hufiapp.de" ||
-    hostname === "hufiapp.de";
+    hostname === "hufmanager.de" ||
+    hostname === "www.hufmanager.de";
 
   if (isMainDomain) {
     return <WebsiteHome />;
   }
 
-  // app.hufiapp.de (or preview/localhost) → auth flow
+  // app.hufiapp.de / app.hufmanager.de (or preview/localhost) → auth flow
   // If logged in, redirect to role-specific home
   if (!loading && user && role) {
     return <Navigate to={getPostLoginPath(role, user.email)} replace />;

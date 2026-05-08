@@ -1,6 +1,8 @@
 /**
  * Detects if the app is running on a portal subdomain or the main app.
  * Subdomains: portal.hufiapp.de, versicherung.hufiapp.de, markt.hufiapp.de, tierarzt.hufiapp.de
+ * Legacy: the same subdomains on hufmanager.de resolve identically — the
+ * startsWith() checks below are intentionally domain-agnostic.
  */
 export type PortalMode = 'app' | 'portal' | 'insurance' | 'marketplace' | 'veterinary';
 
