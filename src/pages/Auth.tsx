@@ -79,6 +79,11 @@ async function clearClientSessionState() {
   }
 }
 
+// Public 1-click demo logins from the HufManager era. Disabled while Hufi
+// stabilizes for paying users. Flip to true to re-enable; no demo account
+// or data has been removed, the cards just don't render.
+const SHOW_DEMO_LOGIN = false;
+
 export default function Auth() {
   const { user, role, loading: authLoading, signIn, signUp } = useAuth();
   const [searchParams] = useSearchParams();
@@ -583,6 +588,7 @@ export default function Auth() {
       </Card>
 
       {/* Demo Access Cards */}
+      {SHOW_DEMO_LOGIN && (
       <DemoAccessCards
         onSelectAccount={async (email, password) => {
           setLoginEmail(email);
@@ -620,6 +626,7 @@ export default function Auth() {
           }
         }}
       />
+      )}
 
       {/* Info Footer */}
       <div className="mt-4 max-w-md w-full">
