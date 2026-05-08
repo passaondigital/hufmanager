@@ -25,8 +25,13 @@ export default function StallAnfragen() {
     enabled: !!user,
   });
 
+  const isAccepted = (status: string) => status === "accepted" || status === "gewonnen";
+  const isPending = (status: string) => 
+    status === "new" || status === "pending" || 
+    status === "neu" || status === "kontaktiert" || status === "angebot_gesendet";
+
   const filtered = filter === "all" ? leads
-    : leads.filter((l: any) => filter === "pending" ? l.status === "new" || l.status === "pending" : l.status === "accepted");
+    : leads.filter((l: any) => filter === "pending" ? isPending(l.status) : isAccepted(l.status));
 
   const filters = [
     { key: "all", label: "Alle" },
@@ -62,29 +67,32 @@ export default function StallAnfragen() {
         </div>
       ) : (
         <div className="rounded-xl border border-border bg-card divide-y divide-border">
-          {filtered.map((lead: any) => (
-            <div key={lead.id} className="flex items-center gap-3 p-3">
-              <div className={cn(
-                "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0",
-                lead.status === "accepted" ? "bg-green-500/10" : "bg-primary/10"
-              )}>
-                {lead.status === "accepted" ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Mail className="h-4 w-4 text-primary" />}
+          {filtered.map((lead: any) => {
+            const accepted = isAccepted(lead.status);
+            return (
+              <div key={lead.id} className="flex items-center gap-3 p-3">
+                <div className={cn(
+                  "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0",
+                  accepted ? "bg-green-500/10" : "bg-primary/10"
+                )}>
+                  {accepted ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Mail className="h-4 w-4 text-primary" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">{lead.name || lead.email || "Anfrage"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {lead.created_at && format(new Date(lead.created_at), "d. MMM yyyy", { locale: de })}
+                    {lead.message && ` · ${lead.message.slice(0, 50)}...`}
+                  </p>
+                </div>
+                <div className={cn(
+                  "text-[10px] px-2 py-0.5 rounded-full",
+                  accepted ? "bg-green-500/10 text-green-600" : "bg-amber-500/10 text-amber-600"
+                )}>
+                  {accepted ? "Angenommen" : "Offen"}
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">{lead.name || lead.email || "Anfrage"}</p>
-                <p className="text-xs text-muted-foreground">
-                  {lead.created_at && format(new Date(lead.created_at), "d. MMM yyyy", { locale: de })}
-                  {lead.message && ` · ${lead.message.slice(0, 50)}...`}
-                </p>
-              </div>
-              <div className={cn(
-                "text-[10px] px-2 py-0.5 rounded-full",
-                lead.status === "accepted" ? "bg-green-500/10 text-green-600" : "bg-amber-500/10 text-amber-600"
-              )}>
-                {lead.status === "accepted" ? "Angenommen" : "Offen"}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

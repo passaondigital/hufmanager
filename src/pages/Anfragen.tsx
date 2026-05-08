@@ -51,7 +51,7 @@ const TIER_OPTIONS: { value: string; label: string; className: string; activeCla
 ];
 
 function getNextStepHint(lead: Lead): { text: string; className: string } | null {
-  if (lead.status === 'gewonnen' || lead.status === 'verloren') return null;
+  if (lead.status === 'gewonnen' || lead.status === 'accepted' || lead.status === 'verloren') return null;
   if (lead.status === 'angebot_gesendet') return { text: "→ Auf Rückmeldung warten", className: "text-amber-500" };
   if (!lead.plan_tier)                   return { text: "Bitte klassifizieren",       className: "text-gray-400" };
   if (lead.plan_tier === 'unklar')       return { text: "→ Rückfrage stellen",        className: "text-gray-500" };
@@ -63,9 +63,12 @@ function getNextStepHint(lead: Lead): { text: string; className: string } | null
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   neu: { label: "Neu", className: "bg-primary/10 text-primary" },
+  new: { label: "Neu", className: "bg-primary/10 text-primary" },
   kontaktiert: { label: "Kontaktiert", className: "bg-blue-500/10 text-blue-600" },
+  pending: { label: "Kontaktiert", className: "bg-blue-500/10 text-blue-600" },
   angebot_gesendet: { label: "Angebot gesendet", className: "bg-amber-500/10 text-amber-600" },
   gewonnen: { label: "Gewonnen", className: "bg-accent/10 text-accent" },
+  accepted: { label: "Gewonnen", className: "bg-accent/10 text-accent" },
   verloren: { label: "Verloren", className: "bg-muted text-muted-foreground" },
 };
 
@@ -129,7 +132,12 @@ const Anfragen = () => {
   });
 
   const filteredLeads = leads.filter(lead => {
-    if (filter !== 'alle' && lead.status !== filter) return false;
+    if (filter !== 'alle') {
+      if (filter === 'neu' && lead.status !== 'neu' && lead.status !== 'new') return false;
+      if (filter === 'kontaktiert' && lead.status !== 'kontaktiert' && lead.status !== 'pending') return false;
+      if (filter === 'gewonnen' && lead.status !== 'gewonnen' && lead.status !== 'accepted') return false;
+      if (filter !== 'neu' && filter !== 'kontaktiert' && filter !== 'gewonnen' && lead.status !== filter) return false;
+    }
     if (search) {
       const searchLower = search.toLowerCase();
       return (
