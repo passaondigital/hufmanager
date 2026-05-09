@@ -1,281 +1,316 @@
 # Hufi Memory Schema Provenance
 
-> Read-only Schema-Provenance-Erfassung für `public.hufi_memory` und
-> `public.hufi_memories`. Stand 2026-05-08, HEAD `99166f59`.
+> Read-only Schema-Provenance für `public.hufi_memory` und
+> `public.hufi_memories`. Stand 2026-05-09, HEAD `aca1b59b`.
 >
-> **Status: TEILWEISE VERIFIZIERT.** Repo-Lage ist vollständig erfasst.
-> Live-Schema **konnte nicht verifiziert werden**, weil die Supabase
-> CLI auf dem VPS nicht authentifiziert ist und kein Service-Role-
-> oder Access-Token bereitsteht. Dieser Report dokumentiert genau, was
-> heute belegbar ist und welchen Eingriff Pascal liefern muss, damit
-> die Provenance abgeschlossen werden kann.
+> **Status: LIVE VERIFIZIERT.** Schema wurde via `supabase db dump`
+> aus dem gelinkten Cloud-Projekt `vnschgjxkzzwzefqlrji`
+> (HufManager, Region Central EU Frankfurt) read-only ausgelesen,
+> Dump in `/tmp/hufi_full_schema.sql` (24144 Zeilen, lokal, nicht
+> committed). Keine Schema-Änderung, keine Migration, kein Daten-
+> Eingriff.
+>
+> Vorgänger-Stand (Pascal-Zugriff blockiert) bleibt nur in Git-
+> Historie. Diese Datei ist überarbeitet.
 
 ---
 
 ## Purpose
 
 Vor jedem Memory-Refactor (siehe
-`docs/HUFI_CORE_TARGET_ARCHITECTURE.md` §10 P0.1) muss das Schema der
-zwei Memory-Tabellen im Repo versioniert sein. Heute existiert das
-Schema nur live in Supabase, nicht in einer `CREATE TABLE`-Migration.
-Solange das so ist, ist jeder Refactor Spekulation und kann Daten
-verlieren.
+`docs/HUFI_CORE_TARGET_ARCHITECTURE.md` §10 P0.1) muss das Schema
+der zwei Memory-Tabellen im Repo versioniert sein. Mit diesem Dump
+ist die Wahrheit fixiert; eine reine `CREATE TABLE IF NOT EXISTS`-
+Provenance-Migration kann jetzt formuliert werden, ist aber **noch
+nicht** Aufgabe dieser Datei.
 
 ---
 
-## Repo references
+## Live schema: `public.hufi_memory`
 
-### `hufi_memory` (singular, kategorisiert key/value)
+### Columns
 
-- **Genutzt in:**
-  - `src/lib/hufi-brain.ts` — Interface `HufiMemory`
-    (`{ id, user_id, category, key, value, confidence, source,
-    last_updated, expires_at }`), Funktionen `fetchHufiContext`,
-    `updateHufiMemory`, `learnFromInteraction`,
-    `checkProactiveAlerts`.
-  - `src/components/layout/MobileShell.tsx` — Konsument von
-    `hufi-brain`-Funktionen.
-- **Referenzen in `supabase/functions/`:** keine.
-- **Referenzen in TypeScript-Types** (`src/integrations/supabase/`):
-  keine.
-- **Code-Pattern:** Zugriff vermutlich mit `as any`-Cast (in
-  `hufi-brain.ts` zu prüfen).
+| # | Spalte | Typ | NULL? | Default |
+|---|---|---|---|---|
+| 1 | `id` | `uuid` | NOT NULL | `gen_random_uuid()` |
+| 2 | `user_id` | `uuid` | **NULLABLE** | – |
+| 3 | `category` | `text` | NOT NULL | – |
+| 4 | `key` | `text` | NOT NULL | – |
+| 5 | `value` | `jsonb` | NULLABLE | – |
+| 6 | `confidence` | `double precision` | NULLABLE | `0.5` |
+| 7 | `source` | `text` | NULLABLE | `'system'::text` |
+| 8 | `last_updated` | `timestamp with time zone` | NULLABLE | `now()` |
+| 9 | `expires_at` | `timestamp with time zone` | NULLABLE | – |
 
-### `hufi_memories` (plural, Markdown-Archiv)
+### Constraints
 
-- **Genutzt in:**
-  - `src/lib/hufi-memory.ts` — Type `MemoryType`
-    (`pferdeakte | pferdebusiness | pferdemensch | hufi_notizen`),
-    Funktionen `getMemory`, `updateMemory`, `getMemoryContext`,
-    `exportAllMemories`, `transferHorseMemory`,
-    `initializeMemoriesForUser`. **Fünf Stellen** mit
-    `.from("hufi_memories" as any)`.
-- **Referenzen in `supabase/functions/`:** keine.
-- **Referenzen in TypeScript-Types** (`src/integrations/supabase/`):
-  keine.
-- **Schreib-Pattern:** `.upsert(record, { onConflict:
-  "user_id,memory_type,horse_id" })` — impliziert ein
-  Composite-Unique-Constraint auf diesen drei Spalten.
-
-### CREATE TABLE in Migrationen
-
-- **`hufi_memory`:** keine `CREATE TABLE`-Migration gefunden
-  (`grep -ril hufi_memor supabase/migrations` → leer).
-- **`hufi_memories`:** keine `CREATE TABLE`-Migration gefunden.
-
-### RLS Policies
-
-- Keine `CREATE POLICY`-Statements für `hufi_memor*` in den 389
-  Migrationen gefunden. Wenn RLS heute live aktiv ist, ist sie
-  **nicht im Repo versioniert**.
+- **Primary Key:** `hufi_memory_pkey` on `(id)`
+- **Unique:** `hufi_memory_user_id_category_key_key` on
+  `(user_id, category, key)`
+- **Foreign Keys:** keine
 
 ### Indexes
 
-- Keine `CREATE INDEX`-Statements für `hufi_memor*` in Migrationen
-  gefunden.
+Nur die durch PK und UNIQUE implizierten. Keine zusätzlichen
+`CREATE INDEX`-Statements.
 
-### Code-Pattern-Hinweise auf Schema
+### Owner / Grants
 
-Aus den `as any`-Zugriffen in `src/lib/hufi-memory.ts` und den
-TypeScript-Interface-Definitionen in `src/lib/hufi-brain.ts` lassen
-sich plausible Spalten ableiten — aber das ist **keine Provenance**,
-sondern Code-Annahme:
+- Owner: `postgres`
+- `GRANT ALL ON TABLE "public"."hufi_memory" TO "anon"`
+- `GRANT ALL ON TABLE "public"."hufi_memory" TO "authenticated"`
+- `GRANT ALL ON TABLE "public"."hufi_memory" TO "service_role"`
 
-| Tabelle | Vermutete Spalten (aus Code-Inferenz) |
-|---|---|
-| `hufi_memory` | `id`, `user_id`, `category`, `key`, `value` (jsonb?), `confidence` (numeric), `source`, `last_updated`, `expires_at` |
-| `hufi_memories` | `user_id`, `memory_type`, `content` (text/markdown), `horse_id` (nullable), `last_updated_by`, `updated_at` plus Unique `(user_id, memory_type, horse_id)` |
+(Supabase-Standard. Wirkungs-Filter ist RLS, siehe unten.)
 
-**Diese Inferenz ist nicht authoritative.** Echte Datentypen,
-Defaults, Foreign Keys, RLS, Triggers, Grants müssen aus der
-Live-DB ausgelesen werden.
+### RLS
 
----
+- **Enabled:** ja (`ALTER TABLE ... ENABLE ROW LEVEL SECURITY` auf
+  Zeile 20537 des Dumps).
+- **Policy** (1 Stück, `FOR ALL`-Operationen):
+  ```
+  CREATE POLICY "hufi_memory_owner" ON "public"."hufi_memory"
+    USING (auth.uid() = user_id);
+  ```
 
-## Live schema: hufi_memory
+### Triggers
 
-**Nicht verifiziert.**
+Keine.
 
-Grund: Supabase CLI (`supabase --version` → 2.90.0) ist auf dem VPS
-**nicht authentifiziert**:
+### Beobachtung
 
-- `supabase projects list` antwortet:
-  *"Access token not provided. Supply an access token by running
-  supabase login or setting the SUPABASE_ACCESS_TOKEN environment
-  variable."*
-- `SUPABASE_ACCESS_TOKEN` env-Variable ist nicht gesetzt.
-- Verzeichnis `supabase/.temp/` enthält keine `project-ref`-Datei
-  → Projekt ist via CLI **nicht gelinked**.
-
-`psql` (16.13) und `pg_dump` (16.13) sind installiert — können das
-Schema lesen, brauchen aber den vollständigen DB-Connection-String
-inkl. Credentials. Dieser ist **nicht im Repo** und Pascals Regel
-verbietet das Drucken von DB-Connection-Strings, Passwörtern,
-Service-Role-Keys.
+`user_id` ist **nullable** in `hufi_memory`. Die Policy prüft
+`auth.uid() = user_id` — bei `NULL`-user_id-Records ergibt das
+`NULL` (nicht `TRUE`), Records mit `user_id IS NULL` sind also
+**über die Standard-Policy nicht aus dem Frontend erreichbar**.
+Sie können aber über `service_role` (Edge Functions) gelesen oder
+geschrieben werden. Das wirkt wie ein bewusstes Pattern für
+**system-level memory** (nicht user-gebunden). Sollte beim
+Refactor erhalten bleiben, falls Hufi-Brain das nutzt
+[? Pascal-Bestätigung].
 
 ---
 
-## Live schema: hufi_memories
+## Live schema: `public.hufi_memories`
 
-**Nicht verifiziert.** Gleiche Begründung wie oben.
+### Columns
+
+| # | Spalte | Typ | NULL? | Default |
+|---|---|---|---|---|
+| 1 | `id` | `uuid` | NOT NULL | `gen_random_uuid()` |
+| 2 | `user_id` | `uuid` | NOT NULL | – |
+| 3 | `horse_id` | `uuid` | NULLABLE | – |
+| 4 | `memory_type` | `text` | NOT NULL | – |
+| 5 | `content` | `text` | NOT NULL | `''::text` |
+| 6 | `last_updated_by` | `text` | NULLABLE | `'hufi_brain'::text` |
+| 7 | `version` | `integer` | NULLABLE | `1` |
+| 8 | `exportable` | `boolean` | NULLABLE | `true` |
+| 9 | `visible_to_owner` | `boolean` | NULLABLE | `true` |
+| 10 | `created_at` | `timestamp with time zone` | NULLABLE | `now()` |
+| 11 | `updated_at` | `timestamp with time zone` | NULLABLE | `now()` |
+
+### Constraints
+
+- **Primary Key:** `hufi_memories_pkey` on `(id)`
+- **Unique (partial):**
+  - `hufi_memories_user_type_horse_uq`: UNIQUE on
+    `(user_id, memory_type, horse_id)` **WHERE `horse_id IS NOT NULL`**
+  - `hufi_memories_user_type_uq`: UNIQUE on
+    `(user_id, memory_type)` **WHERE `horse_id IS NULL`**
+- **Foreign Keys:** keine
+
+### Indexes
+
+- `idx_hufi_memories_horse` btree on `(horse_id)`
+- `idx_hufi_memories_user` btree on `(user_id)`
+- plus die durch PK und die zwei partiellen Unique-Indexes
+  implizierten
+
+### Owner / Grants
+
+- Owner: `postgres`
+- `GRANT ALL ON TABLE "public"."hufi_memories" TO "anon"`
+- `GRANT ALL ON TABLE "public"."hufi_memories" TO "authenticated"`
+- `GRANT ALL ON TABLE "public"."hufi_memories" TO "service_role"`
+
+### RLS
+
+- **Enabled:** ja (`ALTER TABLE ... ENABLE ROW LEVEL SECURITY` auf
+  Zeile 20518 des Dumps).
+- **Policies** (4 Stück, je eine pro Operation):
+  ```
+  CREATE POLICY "hufi_memories_select_own" ON "public"."hufi_memories"
+    FOR SELECT USING (auth.uid() = user_id);
+  CREATE POLICY "hufi_memories_insert_own" ON "public"."hufi_memories"
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+  CREATE POLICY "hufi_memories_update_own" ON "public"."hufi_memories"
+    FOR UPDATE USING (auth.uid() = user_id);
+  CREATE POLICY "hufi_memories_delete_own" ON "public"."hufi_memories"
+    FOR DELETE USING (auth.uid() = user_id);
+  ```
+
+### Triggers
+
+Keine.
+
+### Beobachtungen
+
+- `user_id` ist `NOT NULL` — anders als bei `hufi_memory`. Memories
+  sind also immer einer Person zugeordnet.
+- Die zwei **partiellen Unique-Indexes** sind clever: ein User
+  kann pro `memory_type` ohne `horse_id` *einen* Eintrag haben
+  (allgemeine Notizen), und pro `(memory_type, horse_id)`-Tupel
+  *einen* Eintrag (pferd-spezifische Markdown-Akte). Das deckt
+  exakt das Code-Pattern `.upsert(..., { onConflict:
+  "user_id,memory_type,horse_id" })` aus `src/lib/hufi-memory.ts`.
+- `visible_to_owner` und `exportable` sind im Schema vorhanden,
+  werden aber im aktuellen Code von `hufi-memory.ts` **nicht
+  gesetzt** (Code schreibt nur `content` und `last_updated_by`).
+  Defaults greifen also (`true`/`true`). Hint auf zukünftige
+  Multi-Akteur-Logik [?].
+- `version`-Spalte wird im Code nicht inkrementiert — Default
+  bleibt `1`. Vermutlich für künftige Versionierung vorgesehen [?].
+- `last_updated_by` Default `'hufi_brain'` — Hufi schreibt sich
+  selbst als Quelle.
+
+### Wichtig für RLS
+
+**`hufi_memories` hat keine Policy für service_role-Bypass-
+ähnliches Cross-User-Lesen** — und auch keine Pferd-zentrierte
+Logik. Wenn Provider X Memory zu einem Pferd anlegt, das Owner Y
+gehört, dann hat Owner Y über die Standard-Policies **keinen
+Lese-Zugriff** auf Provider X' Memories über sein eigenes Pferd.
+Das ist die Wurzel des "user-zentrierten Memory"-Befunds aus den
+Audits — datenmodell-seitig bestätigt.
 
 ---
 
-## Policies / RLS
+## Repo references (zur Bestätigung)
 
-**Nicht verifiziert.**
+### `hufi_memory` — Code-Konsumenten
 
-Plausible Erwartung (basierend auf anderen Hufi-Tabellen-Patterns):
+- `src/lib/hufi-brain.ts`: Interface `HufiMemory` mit allen 9
+  Live-Spalten, Funktionen `fetchHufiContext`, `updateHufiMemory`,
+  `learnFromInteraction`, `checkProactiveAlerts`.
+- `src/components/layout/MobileShell.tsx`: indirekt über
+  `hufi-brain`-Funktionen.
+- Code-Pattern: Zugriff via `as any`-Cast (TypeScript-Types fehlen).
 
-- `hufi_memory` sollte mindestens eine RLS-Policy
-  `auth.uid() = user_id` haben — wenn nicht, wäre die Tabelle für
-  alle authentifizierten User offen. Dringend zu prüfen.
-- `hufi_memories` sollte ähnlich haben, plus eine Logik für
-  `horse_id`-basierten Zugriff (Provider darf Memory zu seinen
-  Horses sehen).
+### `hufi_memories` — Code-Konsumenten
 
-**Diese Erwartung ist Hypothese, nicht Fakt.** Live-Audit nötig.
+- `src/lib/hufi-memory.ts`: 5× `.from("hufi_memories" as any)`,
+  Funktionen `getMemory`, `updateMemory`, `getMemoryContext`,
+  `exportAllMemories`, `transferHorseMemory`,
+  `initializeMemoriesForUser`.
+- Code-Pattern: gleiche `as any`-Cast-Struktur.
 
----
+### Repo-Migrations für die Tabellen
 
-## Indexes / triggers / grants
+- **Keine** `CREATE TABLE.*hufi_memor*` in den 389 Migrationen.
+- **Keine** `CREATE POLICY.*hufi_memor*`.
+- **Keine** `CREATE INDEX.*hufi_memor*`.
+- **Keine** TypeScript-Types in `src/integrations/supabase/`.
 
-**Nicht verifiziert.**
-
-Vermutung aus Code-Pattern:
-
-- `hufi_memories` hat einen Composite-Unique-Index auf
-  `(user_id, memory_type, horse_id)` — sonst würde das `onConflict`-
-  Pattern in `hufi-memory.ts:97` nicht funktionieren.
-- Indexes auf `user_id` und ggf. `horse_id` plausibel (Performance).
-- Keine Trigger-Vermutung — heute nicht erkennbar.
-
----
-
-## Gaps between repo and live schema
-
-Die Diskrepanz ist **maximal**: das Repo enthält keinerlei
-Schema-Definition, die Live-DB enthält das Schema vollständig
-(belegbar dadurch, dass das Frontend produktiv mit den Tabellen
-arbeitet).
-
-Konkrete Drift-Risiken:
-
-1. **Spalten-Umbenennung im Dashboard** würde den Code stillschweigend
-   brechen — `as any`-Cast lässt jeden Zugriff durch.
-2. **RLS-Drift im Dashboard** könnte unbemerkt Daten freigeben oder
-   blockieren.
-3. **Schema-Verlust bei Supabase-Migration** (z. B. Branch-Restore,
-   Projekt-Wechsel) würde die Tabellen löschen, weil sie nirgends
-   versioniert sind.
-4. **Audit-Lücke:** wer hat wann welche Spalte hinzugefügt? Heute
-   nirgends nachvollziehbar.
-5. **Unterschiedliche Schemas in Dev/Staging/Prod** möglich, wenn die
-   Tabellen in Dashboard angelegt wurden statt per Migration.
+Alles, was im Live-Schema existiert, wurde **direkt im Supabase-
+Dashboard** angelegt — vermutlich von Lovable AI-generiert oder
+durch frühere Pascal-Sessions im Dashboard-SQL-Editor [?].
 
 ---
 
-## Risk assessment
+## Gaps zum Repo
 
-**MEDIUM** (unverändert seit `HUFI_VERIFICATION_AUDIT.md` §2).
+Maximal:
 
-- Funktional läuft das System heute stabil — der Code arbeitet, die
-  Daten sind da.
-- Ohne Schema-Versionierung im Repo ist aber jeder zukünftige Refactor
-  ein Schritt auf nicht kartiertem Boden.
-- Ein einziger Schema-Drift im Dashboard kann das Memory-System
-  unbemerkt brechen.
+| Aspekt | Repo | Live |
+|---|---|---|
+| `CREATE TABLE hufi_memory` | – | vorhanden, 9 Spalten |
+| `CREATE TABLE hufi_memories` | – | vorhanden, 11 Spalten |
+| RLS-Policies | – | 5 Policies (1 + 4) |
+| Indexes | – | 4 Indexes (2 partial unique + 2 btree) |
+| Constraints (PK + UNIQUE) | – | 3 Constraints |
+| Grants | – | 6 Grants (3 pro Tabelle) |
+| Triggers | – | keine (konsistent zu Repo) |
+| Foreign Keys | – | keine (konsistent zu Repo) |
+| TypeScript-Types | – | implizit, aber `as any`-Cast |
+
+**Effekt:** ein Branch-Restore oder Schema-Wipe würde beide
+Tabellen mit allen Policies und Indexes verlieren, ohne dass der
+Repo das ersetzen könnte.
+
+---
+
+## Risk
+
+**MEDIUM bleibt** — funktional läuft das System, aber Schema-Drift
+ist jederzeit möglich, weil im Repo nichts versioniert ist. Die
+Provenance-Migration löst das, ist aber **noch nicht erstellt**.
+
+Zusätzliche Beobachtungs-Risiken aus dem Live-Schema:
+
+1. `hufi_memory.user_id NULLABLE` ist ein bewusstes oder
+   unbewusstes Pattern [?]. Wenn unbewusst, sollte `NOT NULL`
+   gesetzt werden — sonst können System-Records dauerhaft niemand
+   gehören. Wenn bewusst (system-level memory), sollte das
+   dokumentiert sein.
+2. `hufi_memories.visible_to_owner` und `exportable` haben
+   Defaults, werden aber nicht aktiv gesetzt — ein zukünftiger
+   Refactor sollte die Logik dafür einbauen oder die Spalten
+   entfernen.
+3. `hufi_memories.version` wird nie inkrementiert — entweder Logik
+   einbauen oder Spalte entfernen.
 
 ---
 
 ## Recommendation
 
-**Stop and request access** — dieser Report bleibt unvollständig, bis
-Pascal die Live-Schema-Erfassung freigibt.
+### Empfohlen jetzt (separater Schritt, nicht in dieser Datei)
 
-### Empfohlener Pfad (Pascal entscheidet)
+**Idempotente Provenance-Migration** in `supabase/migrations/`
+anlegen, die das Live-Schema 1:1 versioniert:
 
-#### Option A — Supabase Dashboard manuell
+- `CREATE TABLE IF NOT EXISTS public.hufi_memory (...)`
+- `CREATE TABLE IF NOT EXISTS public.hufi_memories (...)`
+- `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` (idempotent in
+  Postgres seit 9.5).
+- `DROP POLICY IF EXISTS ... ; CREATE POLICY ...` für die 5
+  Policies.
+- `CREATE UNIQUE INDEX IF NOT EXISTS ...` für die 2 partial
+  Unique-Indexes.
+- `CREATE INDEX IF NOT EXISTS ...` für die 2 btree-Indexes.
+- `GRANT ALL ON TABLE ... TO ...` (idempotent).
 
-Pascal öffnet das Supabase Dashboard für Projekt
-`vnschgjxkzzwzefqlrji`:
-
-1. Database → Tables → `hufi_memory` → Schema-Tab → Spalten-Liste,
-   Defaults, Constraints kopieren.
-2. Authentication → Policies → für `hufi_memory` alle Policies
-   notieren.
-3. Database → Indexes → für `hufi_memory` alle Indexes notieren.
-4. Database → Triggers → falls vorhanden notieren.
-5. Wiederholen für `hufi_memories`.
-6. Output an mich (Markdown oder Screenshot, kein Secret).
-
-Vorteil: kein Credential-Eingriff, Pascal hat volle Kontrolle.
-
-#### Option B — Supabase CLI authentifizieren
-
-Pascal:
-
-1. `supabase login` (öffnet Browser, generiert lokalen Access-Token).
-2. `cd /hufiapp && supabase link --project-ref vnschgjxkzzwzefqlrji`
-3. Danach kann ich read-only Schema-Pull machen:
-   - `supabase db dump --schema public --table hufi_memory
-     --table hufi_memories -f /tmp/hufi_memory_schema.sql`
-   (Datei lokal, kein Push, kein Apply)
-
-Vorteil: maschinenlesbares Output, exakt verifizierbar.
-Nachteil: Pascal muss CLI authentifizieren.
-
-#### Option C — direkter `psql` mit Service-Role-Connection-String
-
-Pascal kann mir einen sicher beschränkten DB-Read-User-
-Connection-String geben (NICHT Service-Role). Ich:
-
-1. Connection-String wird in Bash-Variable gesetzt, **nicht
-   gedruckt**.
-2. `psql "$DB_URL" -c "\d public.hufi_memory" > /tmp/schema.txt`
-3. `psql "$DB_URL" -c "\d public.hufi_memories" >> /tmp/schema.txt`
-4. Output ist Schema-Beschreibung ohne Daten.
-
-Vorteil: schnell.
-Nachteil: höchstes Secret-Risiko. Bevorzugt nicht.
-
-### Empfehlung
-
-**Option A oder B.** Option B ist maschinenlesbarer und ist deshalb
-für die anschließende `CREATE TABLE IF NOT EXISTS`-Migration
-präziser — aber nur, wenn Pascal mit CLI-Authentifizierung okay ist.
-
-### Wenn Schema endlich erfasst ist
-
-1. Migration `supabase/migrations/<timestamp>_hufi_memory_provenance.sql`
-   anlegen mit `CREATE TABLE IF NOT EXISTS public.hufi_memory (...)`
-   und gleicher für `hufi_memories`.
-2. RLS-Policies als `CREATE POLICY IF NOT EXISTS` (oder mit
-   `DROP IF EXISTS` davor).
-3. Indexes als `CREATE INDEX IF NOT EXISTS`.
-4. **Idempotent.** Lokal applizieren würde nichts ändern (Tabellen
-   existieren ja).
-5. Commit + Push als reine Provenance-Snapshot, kein Daten-Eingriff.
+**Sicher, weil:**
+- Alle Statements `IF NOT EXISTS` oder `IF EXISTS`-vorbereitet.
+- Keine `DROP TABLE`, keine `ALTER COLUMN`, keine `TRUNCATE`.
+- Keine Daten betroffen.
+- Bei lokaler Anwendung auf der Live-DB: NO-OP (alles existiert
+  schon).
+- Bei Branch-Restore: stellt das Schema wieder her.
 
 ### Nicht jetzt
 
-- **Keine Schema-Änderung** an den live-Tabellen.
-- **Keine Daten-Migration** zwischen `hufi_memory` und `hufi_memories`
-  (das ist P1.12 in der Architektur-Datei, lange nach P0.1).
-- **Keine Konsolidierung** auf eine zentrale `horse_memory`-Tabelle —
-  das ist P1.12, nicht P0.1.
+- Memory-Konsolidierung (`horse_memory`/`user_memory`/
+  `relation_memory`-Aufspaltung) bleibt P1.12 in der Architektur-
+  Datei.
+- `user_id NULLABLE`-Klärung muss Pascal entscheiden.
+- TypeScript-Types-Generation (`supabase gen types`) ist eigener
+  Schritt, separat.
 
 ---
 
-## Next action
+## Snapshot-Verifikation
 
-**Pascal, bitte wähle:**
+| Quelle | Wert |
+|---|---|
+| Dump-Datei | `/tmp/hufi_full_schema.sql` (lokal, nicht committed) |
+| Dump-Größe | 24144 Zeilen |
+| `hufi_memory` Mentions | 13 |
+| `hufi_memories` Mentions | 20 |
+| Policies (live) | 5 (1 für `hufi_memory`, 4 für `hufi_memories`) |
+| Indexes (live) | 4 (2 partial unique + 2 btree, alle auf `hufi_memories`) |
+| Triggers (live) | 0 |
+| Grants (live) | 6 (3 pro Tabelle: anon, authenticated, service_role) |
 
-- **A:** "Ich exportiere das Schema aus dem Dashboard und pastete es
-  hier rein."
-- **B:** "Ich melde mich mit `supabase login` an und linke das Projekt;
-  dann mach den Schema-Pull."
-- **C:** "Ich liefere einen DB-Read-User-Connection-String über
-  einen sicheren Kanal."
-
-Bis dahin ist P0.1 **blockiert by access**, nicht by uncertainty.
+Der Dump ist lokal in `/tmp/`, **nicht im Repo**. Sobald die
+Provenance-Migration formuliert ist, kann der Dump gelöscht
+werden — die Migration übernimmt die Versionierung.
