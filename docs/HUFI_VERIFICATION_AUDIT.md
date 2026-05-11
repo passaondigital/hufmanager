@@ -673,3 +673,34 @@ befürchtete — auf der Auth-/Chat-Seite. Die Schwachstellen liegen in
 **Schema-Provenance** (`hufi_memory*`) und **Webhook-Replay**
 (`copecart-webhook`). Beide sind P1 für die nächste Recovery-Phase,
 keine sofortige Gefahr.
+
+---
+
+## Nachtrag — HufAI-Strategie (Stand 2026-05-11)
+
+Dieser Audit dokumentiert Sicherheitsrisiken. Die Strategie-Ebene
+ist in `VISION.md`, `ROADMAP.md` und `HUFIBRAIN.md` vollständig
+beschrieben. Für den Audit relevant:
+
+**HufiApp** = Shell / Workflow / Gerät — die tägliche Oberfläche.
+**HufAI** = Intelligenzschicht dahinter (Briefing, Sprache, Kontext).
+
+Leitfrage: **"Macht das HufAI intelligenter?"**
+Vision: **"Jedes Pferd bekommt eine Stimme."**
+
+HufAI-Phasen-Status:
+
+| Phase | Inhalt | Status |
+|---|---|---|
+| A–C | Voice Greeting, Push-to-Talk, Navigation Actions | ✅ live |
+| D | Wake-Layer "Hey Hufi" + opt-in Consent | ✅ live |
+| E | Proaktives Tages-Briefing (Wetter, Termine, Pferde) | ✅ live |
+| F | Multimodales Pferde-Gedächtnis | geplant |
+| G | Lokale / Offline HufAI Runtime | später |
+
+**Sicherheits-Grenze für HufAI:**
+- Kein LLM-Aufruf im Briefing-Layer (Phase E ist rein regel-basiert).
+- Keine automatisierte medizinische Diagnose.
+- Keine erfundenen Fakten oder Befunde.
+- HufAI assistiert — ersetzt keine Tierärzte oder Fachleute.
+- Sensible Aktionen brauchen immer Nutzerbestätigung.

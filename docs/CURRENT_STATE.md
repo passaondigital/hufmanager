@@ -11,7 +11,7 @@
 
 ## Stand
 
-- **Datum:** 2026-05-08
+- **Datum:** 2026-05-11
 - **Branch:** `sprint2/anthropic-and-domains-20260425`
 - **Live-Domain:** https://hufiapp.de
 - **Kanonischer Pfad:** `/hufiapp` → Symlink auf `/root/hufmanager_v25/production`
@@ -23,11 +23,27 @@
 
 ## Wer ist Hufi heute?
 
-- HufiApp ist die **aktuelle Produktebene**.
-- HufManager ist der **Ursprung und Legacy-Name** — bestehende Nutzer und
+- **HufiApp** ist die tägliche Shell und das Workflow-Werkzeug.
+  Termine, Pferde, Befunde, Rechnungen, Navigation — live unter `hufiapp.de`.
+- **HufAI** ist die Intelligenzschicht dahinter.
+  Proaktives Briefing, Sprachsteuerung, Kontext-Assistent.
+  Leitfrage: "Macht das HufAI intelligenter?"
+- **HufManager** ist der Ursprung und Legacy-Name — bestehende Nutzer und
   Bookmarks zeigen weiter auf `hufmanager.de` / `app.hufmanager.de`.
-- Die Codebase ist eine Codebase für beide. Es gibt kein zweites, getrenntes
-  HufManager-Repo und es soll auch keins geben.
+- Eine Codebase für alle. Kein zweites Repo.
+
+## Phase E — Proaktives Briefing (live)
+
+| Datei | Funktion |
+|---|---|
+| `src/lib/hufai-proactive.ts` | TTL-Gate, Open-Meteo-Wetter, Briefing-Builder |
+| `src/components/voice/ProactiveBriefing.tsx` | Bottom-Sheet, TTS, Action-Chips |
+| `src/components/layout/MobileShell.tsx` | Integration, shouldShowBriefing-Check |
+
+- Feuert maximal einmal alle 4 Stunden pro Gerät (localStorage-Gate).
+- Kein LLM-Aufruf, kein API-Key — rein regel-basiert.
+- Wetter via Open-Meteo (kostenlos, kein Key), Fallback wenn nicht erreichbar.
+- Spricht automatisch via `useHufiTTS` wenn Sprachausgabe aktiviert.
 
 ## Was produktiv wichtig ist
 
@@ -40,18 +56,16 @@
 - Anthropic-Key liegt **nicht** im Frontend, sondern als Supabase-Secret
   hinter der Edge Function `anthropic-proxy`.
 
-## Was zuletzt gefixt wurde (heute)
+## Was zuletzt gebaut wurde
 
-| Commit | Fix |
+| Commit | Inhalt |
 |---|---|
-| `3522de61` | `fix(leads)` — Status-Werte zwischen Provider- und Stall-View kompatibel: `neu`/`new`, `kontaktiert`/`pending`, `gewonnen`/`accepted`. |
-| `b8eb6249` | `fix(routing)` — `hufmanager.de` und `www.hufmanager.de` als Legacy-Main-Domain-Aliase, damit alte HufManager-Bookmarks die Landing Page sehen statt Auth-Screen. |
-| `2d7344be` | `docs(vision)` — `docs/VISION.md` als versionierte Produkt-Vision (ohne vertrauliche Langfrist-Strategie). |
-
-Davor (für Kontext, nicht heute):
-- `932728d6` `feat(leads)` — Next-Step-Hint auf Lead-Karten.
-- `37f43d5b` `chore(recovery)` — Mobile-Nav-Zentrierung + PWA-Cache-Limit.
-- `88403316` `feat(leads)` — BHS-Plan-Tier-Klassifikation.
+| `1aa10683` | `feat(voice)` — Phase E: Proaktives Briefing, Wetter-Integration |
+| `304d3f7d` | `feat(tresor)` — Vault Premium Gate |
+| `e64687ab` | `feat(voice)` — Phase D: extended wake words + opt-in consent |
+| `55cdd6ab` | `feat(nav)` — Phase E: context-aware actions |
+| `2f4153d6` | `feat(voice)` — Phase D: globales "Hey Hufi" wake-word |
+| `cedb7794` | `feat(voice+nav)` — Phase A/B/C: Voice Greeting, Push-to-Talk, Nav |
 
 ## Was noch offen ist
 

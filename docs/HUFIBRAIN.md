@@ -111,13 +111,34 @@ Vollständige negative Regeln stehen in
 `docs/PASCAL_CONTEXT.md` (Sektion *Was Agenten NICHT tun sollen*).
 Diese Datei hier ist die Kurzfassung für den Einstieg.
 
+## HufiApp · HufAI — Architektur-Kurzübersicht
+
+```
+HufiApp (Shell / Workflow / Gerät)
+  ├── Termine, Pferde, Befunde, Rechnungen, Navigation
+  ├── MobileShell.tsx  ←  Einstiegspunkt für alle Nutzer
+  └── HufAI Layer (Intelligenz dahinter)
+        ├── Phase A–C: Voice Greeting, Push-to-Talk, Nav  ✅ live
+        ├── Phase D:   Wake "Hey Hufi" + opt-in Consent   ✅ live
+        ├── Phase E:   Proaktives Tages-Briefing           ✅ live
+        │     src/lib/hufai-proactive.ts
+        │     src/components/voice/ProactiveBriefing.tsx
+        ├── Phase F:   Multimodales Pferde-Gedächtnis      geplant
+        └── Phase G:   Lokale / Offline HufAI Runtime      später
+```
+
+> Leitfrage: **"Macht das HufAI intelligenter?"**
+> Vision: **"Jedes Pferd bekommt eine Stimme."**
+> Grenze: HufAI assistiert. Es ersetzt keine Tierärzte oder Fachleute.
+> Keine automatisierte Diagnose. Keine erfundenen Fakten.
+
 ## Aktuelle Priorität
 
 ```
-Stabilität  ▸  Vision  ▸  Feature-Ausbau
-   ▲                                ▲
-   |                                |
-  jetzt                       erst danach
+Stabilität  ▸  HufAI (Phase E live)  ▸  Feature-Ausbau (Phase F/G)
+   ▲                  ▲                          ▲
+   |                  |                          |
+  immer            jetzt                    erst danach
 ```
 
 In Worten:
@@ -125,10 +146,10 @@ In Worten:
 1. **Stabilität** für zahlende HufManager-/Hufi-Nutzer kommt zuerst.
    Recovery-Fixes, sauberes Routing, PWA-/Mobile-Verifikation,
    keine kaputten Releases.
-2. **Vision-Arbeit** (Doku, Brand-Klarheit, Kontextsystem-Design)
-   kommt erst danach.
-3. **Feature-Ausbau** (BHS-Command-Center, Lead-Qualifizierung,
-   Voice-First, `src/features/`-Struktur) ist P2 und wartet.
+2. **HufAI Phase E** (Proaktives Briefing) ist live — stabil halten,
+   iterieren, Feedback sammeln.
+3. **Feature-Ausbau** (Phase F: Multimodal, Phase G: Offline,
+   BHS-Command-Center, Lead-Qualifizierung) ist P2 und wartet.
 
 Wer einen P2-Punkt vor einem P0-Punkt bewegt, baut am Fundament
 vorbei.

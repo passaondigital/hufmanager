@@ -114,16 +114,18 @@ VPS (Hostinger · Ubuntu 24.04) trägt alles oben:
 
 ### Hufi / HufiApp / HufManager
 
-- **Zweck:** *Eine* Codebase, zwei Markennamen. HufiApp ist die
-  aktuelle Produktebene; HufManager ist Ursprung und Legacy-Name.
+- **Zweck:** *Eine* Codebase, zwei Markennamen.
+  **HufiApp** = Shell & Workflow-Gerät (Oberfläche).
+  **HufAI** = Intelligenzschicht dahinter (Briefing, Sprache, Kontext).
+  HufManager = Ursprung und Legacy-Name.
 - **Status:** produktiv (live unter `hufiapp.de`, Aliase
   `hufmanager.de`, `www.hufmanager.de`, `app.hufmanager.de`).
-- **Priorität:** P0 — Recovery & Stabilität für zahlende Nutzer.
+  Phase D (Wake-Layer) und Phase E (Proaktives Briefing) sind live.
+- **Priorität:** P0 — Stabilität + HufAI Phase E.
 - **Risiko:** PWA-/Mobile-Regressionen; Auth-Verhalten auf
   Legacy-Hosts noch nicht systematisch verifiziert.
-- **Nächster Schritt:** PWA-/Mobile-Nav-Verifikation, Auth-Test auf
-  `app.hufmanager.de`, Push-Entscheidung für die heutigen
-  Recovery-Commits.
+- **Nächster Schritt:** Phase E stabil halten, Feedback sammeln,
+  Phase F (Multimodal) planen sobald E bewährt ist.
 
 ### HufCamPro
 

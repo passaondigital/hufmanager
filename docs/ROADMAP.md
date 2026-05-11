@@ -72,6 +72,25 @@ Stabilität → täglicher Nutzen → Kontextsystem → Assistenz → proaktive 
   Build-Outputs unter `/var/www/hufiapps/` rotieren, Ollama-Modelle
   ausmisten.
 
+## HufAI Intelligenz-Phasen
+
+Unabhängig von P0/P1/P2 verläuft die KI-Reifung in Phasen:
+
+| Phase | Name | Status |
+|---|---|---|
+| A–C | Voice Greeting, Push-to-Talk, Navigation Actions | ✅ live |
+| D | Wake-Layer — "Hey Hufi" mit opt-in Consent | ✅ live |
+| E | Proaktives Tages-Briefing (Wetter, Termine, Pferde) | ✅ live |
+| F | Multimodales Pferde-Gedächtnis (Foto, Audio, Kontext) | geplant |
+| G | Lokale / Offline HufAI Runtime | später |
+
+> Leitfrage für jede KI-Funktion: **"Macht das HufAI intelligenter?"**
+
+> Kern-Vision: **"Jedes Pferd bekommt eine Stimme."**
+
+HufAI assistiert — ersetzt keine Tierärzte oder Fachleute.
+Keine automatisierte medizinische Diagnose. Keine erfundenen Fakten.
+
 ## P2 — Später
 
 - BHS-Command-Center (Tagesübersicht für Pascal, Ziel: < 60 Sekunden zur
@@ -80,6 +99,7 @@ Stabilität → täglicher Nutzen → Kontextsystem → Assistenz → proaktive 
 - BHS BALANCE Abo-Verwaltung (Intervalle, Kündigung, Umsatzübersicht).
 - BHS INTENSIV Bewerbungsflow (Formular, Video-Upload, KI-Zusammenfassung).
 - Schnell-Terminabschluss (3-Minuten-Voice-First).
+- Phase F: Multimodales Pferde-Gedächtnis (Foto-basierte Hufanalyse, Audio-Notizen).
 - Feature-Domain-Struktur (`src/features/...`) statt heutigem
   Pages-/Components-Mix.
 - Hufi-Memory-Layer (`src/lib/hufi-memory.ts`) — derzeit Konzept, kein
@@ -89,15 +109,13 @@ Stabilität → täglicher Nutzen → Kontextsystem → Assistenz → proaktive 
 ## Nicht jetzt
 
 - Keine zweite, getrennte HufManager-Codebase.
-- Keine großen Refactors während aktiver Recovery.
-- Keine KI-Spielereien (Chat-Bots, Voice-Demos) vor stabilen Kernflows.
+- Keine großen Refactors während aktiver Feature-Arbeit.
+- Kein LLM-Aufruf im Briefing-Layer (Phase E bleibt regel-basiert).
 - Keine komplexe Stimmerkennung, solange Login + Gerät + Rolle reichen.
 - Keine Branding-Migration "weg von HufManager" — Legacy bleibt parallel,
   bis Datenstand und Vertrauen es zulassen.
-- Keine Supabase-Schema-Migrations in Recovery-Phasen.
-- Kein Commit von `supabase/.temp/cli-latest` (generierter
-  CLI-Versionsmarker — gehört dauerhaft in den Working Tree, aber nicht
-  in den Verlauf).
+- Keine Supabase-Schema-Migrations ohne explizite Freigabe.
+- Kein Commit von `supabase/.temp/cli-latest`.
 - Keine öffentliche Kommunikation des 2030-Big-Picture.
 
 ## Messbare Ziele (BHS-Kontext)

@@ -46,31 +46,62 @@ Der operative Kern, auf dem alle Rollen arbeiten:
 - **Multi-Tenant-Struktur** — Daten sind pro Owner getrennt; Zugriff folgt Login,
   Rolle und expliziten Freigaben.
 
-## Hufi AI / Assistenz
+## HufiApp — Shell · Gerät · Workflow
 
-Zielrichtung, nicht heutiger Endzustand:
+HufiApp ist die tägliche Oberfläche und das Workflow-Werkzeug:
 
-- Persönlicher digitaler Assistent für Pferdemenschen.
-- Kennt Nutzerkontext, Rolle, Pferde, Termine und Arbeitsfluss.
+- Mobile-first, stalltauglich, offline-fähig.
+- Vereint Termine, Pferde, Befunde, Rechnungen und Navigation.
+- Sprach-First-Bedienung über "Hey Hufi" (Phase D, live).
+- Proaktives Tages-Briefing bei App-Start (Phase E, live).
+- Ein System für alle Rollen: Provider, Client, Stall, Tierarzt.
+
+## HufAI — Die Intelligenz dahinter
+
+HufAI ist das Kernprodukt — die echte Intelligenzschicht:
+
+- Kennt Nutzerkontext, Rolle, Pferde, Termine und Betriebs-Rhythmus.
+- Denkt mit, antizipiert, informiert — ohne dass man fragen muss.
 - Unterstützt Sprache, Suche, Dokumentation, Erinnerungen und Entscheidungen.
-- Erkennt nicht primär „wer spricht", sondern arbeitet mit Login, Gerät, Rolle
-  und Kontext.
-- Sensible Aktionen müssen bestätigt werden — die Assistenz ist nie Herr über
-  die Kerndaten.
+- Assistenz, keine Automatisierung: sensible Aktionen brauchen immer Bestätigung.
+- HufAI ersetzt keine Tierärzte, Therapeuten oder Fachleute —
+  es ergänzt ihren Kontext mit Fakten, Verlaufsdaten, Zeitstempeln.
+- Kein erfundenes Wissen. Keine medizinische Diagnose. Keine Garantien.
+
+> Leitfrage für jede neue Funktion: **"Macht das HufAI intelligenter?"**
+
+> Kern-Vision: **"Jedes Pferd bekommt eine Stimme."**
+
+## Intelligenz-Roadmap (Phasen)
+
+| Phase | Name | Status |
+|---|---|---|
+| A–C | Voice Greeting, Push-to-Talk, Navigation Actions | ✅ live |
+| D | Wake-Layer — "Hey Hufi" mit opt-in Consent | ✅ live |
+| E | Proaktives Tages-Briefing (Wetter, Termine, Pferde) | ✅ live |
+| F | Multimodales Pferde-Gedächtnis (Foto, Audio, Kontext) | geplant |
+| G | Lokale / Offline HufAI Runtime | später |
+
+## Grenzen — was HufAI nicht tut
+
+- Keine automatisierte medizinische Diagnose.
+- Keine Empfehlungen ohne Fachmenschen-Kontext.
+- Keine autonomen Aktionen ohne Nutzerbestätigung.
+- Kein Erfinden von Fakten, Terminen oder Befunden.
 
 ## Kurzfristiger Fokus
 
+- Proaktives Briefing stabil halten und verbessern (Phase E).
 - Produktive Stabilität für bestehende Nutzer.
 - Sauberes Routing zwischen HufiApp und HufManager-Legacy-Domains.
 - Zuverlässige Lead-/Anfragen-Flows zwischen Provider- und Stall-Sicht.
 - PWA-/Mobile-Stabilität.
-- Vertrauen bestehender Nutzer zurückholen.
 
 ## Nicht-Ziele für jetzt
 
 - Keine zweite, komplett getrennte HufManager-Codebase.
-- Keine großen Refactors während Recovery.
-- Keine KI-Spielereien vor stabilen Kernflows.
+- Keine großen Refactors während laufender Feature-Arbeit.
+- Kein LLM-Aufruf im Briefing-Layer (Phase E bleibt regel-basiert).
 - Keine komplexe Stimmerkennung vor echtem Team-/Shared-Device-Bedarf.
 
 ## Erfolgskriterien

@@ -1331,23 +1331,39 @@ Klärungs-Befunden.
 
 ---
 
+## HufAI — Phase-Status (Nachtrag 2026-05-11)
+
+**HufiApp** = Shell / Gerät / Workflow-Oberfläche.
+**HufAI** = Kern-Produkt, die Intelligenzschicht.
+Leitfrage: "Macht das HufAI intelligenter?"
+Vision: "Jedes Pferd bekommt eine Stimme."
+
+| Phase | Name | Status |
+|---|---|---|
+| A–C | Voice Greeting, Push-to-Talk, Nav | ✅ live |
+| D | Wake-Layer "Hey Hufi" | ✅ live |
+| E | Proaktives Briefing (regel-basiert) | ✅ live |
+| F | Multimodales Pferde-Gedächtnis | geplant |
+| G | Offline HufAI Runtime | später |
+
+HufAI ersetzt keine Tierärzte und stellt keine medizinische Diagnose.
+
+---
+
 ## Schlussbemerkung
 
 Hufi/HufManager ist **architektonisch reifer als die interne Doku
 suggeriert** und **strategisch fragmentierter als die operative
 Realität verträgt**. Die KI-Schicht, das Audit-Modell, die Ontologie,
-AutoFlow und der Notification-Scheduler sind echte Hufi-DNA-Assets
-auf Jarvis+-Niveau. Die Portal-Submodule, die Email-Pattern-Rollen,
-der single-owner-Pferd, der doppelte Memory-Layer und das
-`app_role`-ENUM-Defizit sind Hindernisse für die "ein Pferd, mehrere
+AutoFlow und der Notification-Scheduler sind echte Hufi-DNA-Assets.
+Die Portal-Submodule, der single-owner-Pferd und der doppelte
+Memory-Layer sind Hindernisse für die "ein Pferd, mehrere
 Akteure, ein KI-Begleiter"-Vision.
 
 Die wichtigste Einzelentscheidung bleibt:
 **Pferd-zentriert refactorisieren, bevor Hufi-Vision öffentlich wird.**
 Alle anderen Architektur-Entscheidungen folgen daraus.
 
-Diese Datei ist Snapshot vom 2026-05-08. Sie wird stale, sobald sich
+Diese Datei ist Snapshot vom 2026-05-11. Sie wird stale, sobald sich
 das Datenmodell, die Migrationen, die KI-Schicht oder die
-Notification-Engine weiterentwickeln. Bei jedem nicht-trivialen
-Backend-/KI-Eingriff: hier prüfen, ob eine Aussage angepasst werden
-muss.
+Notification-Engine weiterentwickeln.

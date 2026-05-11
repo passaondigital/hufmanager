@@ -1317,6 +1317,28 @@ horse.archived (Tod / Verkauf außerhalb Hufi-Welt)
 
 ---
 
+## HufAI — Intelligenz-Phasen (Nachtrag 2026-05-11)
+
+**HufiApp** = Shell / Gerät / Workflow-Oberfläche.
+**HufAI** = Kernprodukt — die Intelligenzschicht dahinter.
+
+| Phase | Name | Status |
+|---|---|---|
+| A–C | Voice Greeting, Push-to-Talk, Navigation Actions | ✅ live |
+| D | Wake-Layer — "Hey Hufi" mit opt-in Consent | ✅ live |
+| E | Proaktives Tages-Briefing (regel-basiert, kein LLM) | ✅ live |
+| F | Multimodales Pferde-Gedächtnis (Foto, Audio, Kontext) | geplant |
+| G | Lokale / Offline HufAI Runtime | später |
+
+> Leitfrage: **"Macht das HufAI intelligenter?"**
+> Vision: **"Jedes Pferd bekommt eine Stimme."**
+
+HufAI **ersetzt keine Tierärzte** und stellt keine automatisierte
+medizinische Diagnose. Es assistiert mit Fakten, Verlaufsdaten,
+Kontext — niemals autonom.
+
+---
+
 ## Schlussbemerkung
 
 Diese Architektur ist **erreichbar** mit dem heutigen Code-Stand,
@@ -1334,5 +1356,5 @@ auf eine user-zentrierte Foundation und macht den späteren Refactor
 teurer.
 
 Pascal entscheidet, wann P0 fertig ist und P1 beginnen darf.
-Diese Datei ist Snapshot vom 2026-05-08 und wird stale, sobald
+Diese Datei ist Snapshot vom 2026-05-11 — stale sobald
 Architektur-Entscheidungen getroffen werden.
