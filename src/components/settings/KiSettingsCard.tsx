@@ -16,6 +16,8 @@ export function KiSettingsCard() {
   const { speak, isSupported: ttsSupported, isSpeaking } = useHufiTTS();
   const [voiceGreeting, setVoiceGreeting] = useState<boolean>(false);
   const [heyHufi, setHeyHufi] = useState<boolean>(false);
+  // When true, show the explicit privacy opt-in panel before enabling.
+  const [heyHufiPendingConsent, setHeyHufiPendingConsent] = useState<boolean>(false);
 
   const srSupported =
     typeof window !== "undefined" &&
@@ -50,14 +52,31 @@ export function KiSettingsCard() {
 
   const handleHeyHufiToggle = (checked: boolean) => {
     if (typeof window === "undefined") return;
-    if (checked) localStorage.setItem(HEY_HUFI_KEY, "1");
-    else localStorage.removeItem(HEY_HUFI_KEY);
-    setHeyHufi(checked);
-    toast.success(checked ? "Hey Hufi aktiviert" : "Hey Hufi deaktiviert", {
-      description: checked
-        ? "Hufi hört auf das Schlüsselwort 'Hufi' im Hintergrund. Mikrofon läuft dauerhaft."
-        : "Hintergrund-Lauschen deaktiviert.",
+    if (!checked) {
+      // Disable: no confirmation needed.
+      localStorage.removeItem(HEY_HUFI_KEY);
+      setHeyHufi(false);
+      setHeyHufiPendingConsent(false);
+      toast.success("Hey Hufi deaktiviert", {
+        description: "Hintergrund-Lauschen deaktiviert.",
+      });
+      return;
+    }
+    // Enable: show inline consent panel first, don't store yet.
+    setHeyHufiPendingConsent(true);
+  };
+
+  const confirmHeyHufi = () => {
+    localStorage.setItem(HEY_HUFI_KEY, "1");
+    setHeyHufi(true);
+    setHeyHufiPendingConsent(false);
+    toast.success("Hey Hufi aktiviert", {
+      description: "Sag 'Hey Hufi', 'Hufi' oder 'Okay Hufi' — Hufi antwortet.",
     });
+  };
+
+  const cancelHeyHufi = () => {
+    setHeyHufiPendingConsent(false);
   };
 
   const handleVoiceTest = () => {
@@ -137,26 +156,68 @@ export function KiSettingsCard() {
           </div>
         )}
 
-        <div className="flex items-center justify-between border-t border-border pt-4">
-          <div className="space-y-0.5">
-            <p className="text-sm font-medium flex items-center gap-1.5">
-              <Mic className="h-4 w-4 text-muted-foreground" />
-              Hey Hufi
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Auf das Schlüsselwort 'Hufi' reagieren — ohne Tippen.
-              {!srSupported && (
-                <span className="block mt-1 text-destructive">
-                  Dein Browser unterstützt kein Wake-Word (kein SpeechRecognition).
-                </span>
+        <div className="border-t border-border pt-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <p className="text-sm font-medium flex items-center gap-1.5">
+                <Mic className="h-4 w-4 text-muted-foreground" />
+                Hey Hufi aktivieren
+              </p>
+              {srSupported ? (
+                <p className="text-xs text-muted-foreground">
+                  Sag <span className="font-medium">"Hey Hufi"</span>,{" "}
+                  <span className="font-medium">"Hufi"</span> oder{" "}
+                  <span className="font-medium">"Okay Hufi"</span> — Hufi antwortet sofort.
+                </p>
+              ) : (
+                <p className="text-xs text-destructive">
+                  Hey Hufi ist auf diesem Gerät nicht verfügbar. Nutze den Mikrofon-Button.
+                </p>
               )}
-            </p>
+            </div>
+            <Switch
+              checked={(heyHufi || heyHufiPendingConsent) && srSupported}
+              onCheckedChange={handleHeyHufiToggle}
+              disabled={!srSupported}
+            />
           </div>
-          <Switch
-            checked={heyHufi && srSupported}
-            onCheckedChange={handleHeyHufiToggle}
-            disabled={!srSupported}
-          />
+
+          {/* Inline opt-in consent — shown before Hey Hufi is actually enabled */}
+          {heyHufiPendingConsent && (
+            <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 space-y-2">
+              <div className="flex items-start gap-2">
+                <ShieldCheck className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                <p className="text-xs text-foreground leading-relaxed">
+                  <strong>Datenschutz-Hinweis:</strong> Hey Hufi nutzt die
+                  Browser-eigene Spracherkennung (Web Speech API). Dein Mikrofon
+                  läuft kontinuierlich und Audio wird vom Browser an{" "}
+                  <strong>externe Server (Google)</strong> gesendet. Hufi hört
+                  erst nach dem Schlüsselwort zu. Du kannst jederzeit
+                  deaktivieren.
+                </p>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={cancelHeyHufi}
+                  className="h-8 text-xs"
+                >
+                  Abbrechen
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={confirmHeyHufi}
+                  className="h-8 text-xs gap-1.5"
+                >
+                  <Mic className="h-3 w-3" />
+                  Ja, aktivieren
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="rounded-lg border border-border bg-muted/30 p-3 flex items-start gap-3">
@@ -168,12 +229,7 @@ export function KiSettingsCard() {
               nicht für Trainingszwecke.
             </p>
             <p>
-              <strong>Hey Hufi:</strong> Die Spracherkennung nutzt die Browser-eigene Web Speech API.
-              Audio wird hierbei vom Browser an externe Server (Google) gesendet.
-              Nur aktivieren, wenn dies akzeptiert wird.
-            </p>
-            <p>
-              Du kannst KI-Features jederzeit deaktivieren. Bereits gespeicherte Ergebnisse 
+              Du kannst KI-Features jederzeit deaktivieren. Bereits gespeicherte Ergebnisse
               (z.B. gescannte Belege) bleiben erhalten.
             </p>
           </div>

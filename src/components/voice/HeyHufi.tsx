@@ -195,20 +195,23 @@ export function HeyHufi({
       const transcript = Array.from(ev.results)
         .map((r) => r[0].transcript)
         .join(" ")
-        .toLowerCase();
+        .toLowerCase()
+        .trim();
 
-      if (!transcript.includes("hufi")) return;
+      // Accepted wake phrases: "hufi", "hey hufi", "okay hufi", "ok hufi"
+      const WAKE_RE = /\b(hey\s+hufi|okay\s+hufi|ok\s+hufi|hufi)\b/;
+      const wakeMatch = transcript.match(WAKE_RE);
+      if (!wakeMatch) return;
 
-      // Extract command part after "hufi"
-      const afterHufi = transcript.split("hufi").slice(1).join("hufi").trim();
+      // Extract command: everything after the wake phrase
+      const wakePhrase = wakeMatch[0];
+      const afterWake = transcript.slice(transcript.indexOf(wakePhrase) + wakePhrase.length).trim();
 
       if (phase === "ready" || phase === "speaking") {
-        // Wake word hit — switch to triggered
         setPhase("triggered");
         speak("Ja?");
-        commandBuf.current = afterHufi;
+        commandBuf.current = afterWake;
 
-        // Give user 4s to complete their sentence
         if (commandTimerRef.current) clearTimeout(commandTimerRef.current);
         commandTimerRef.current = setTimeout(() => {
           const cmd = commandBuf.current;
@@ -221,8 +224,7 @@ export function HeyHufi({
           }
         }, 4000);
       } else if (phase === "triggered") {
-        // Update command buffer while still in triggered window
-        commandBuf.current = afterHufi;
+        commandBuf.current = afterWake;
       }
     };
 
