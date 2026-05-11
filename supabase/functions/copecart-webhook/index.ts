@@ -140,6 +140,39 @@ function getPlanOverrideFromProductId(productId: string): string | null {
   return PRODUCT_PLAN_OVERRIDE_MAP[productId] || null;
 }
 
+// ─── Pferdeakte Tresor (Vault) products ─────────────────────────────────────
+// Standalone subscription for the document vault. Separate monetisation from
+// the HufManager provider plans above. Add the real CopeCart product IDs once
+// the products are created in CopeCart. Until then this map is empty and the
+// frontend (TresorPricing) shows a waitlist instead of a checkout link.
+type VaultPlanTier = 'light' | 'pro' | 'gestuet' | 'unlimited';
+type VaultBillingCycle = 'monthly' | 'yearly';
+
+interface VaultProductMeta {
+  plan: VaultPlanTier;
+  cycle: VaultBillingCycle;
+}
+
+const VAULT_PRODUCT_MAP: Record<string, VaultProductMeta> = {
+  // Example shape — uncomment and replace with real CopeCart product IDs:
+  // "abcd1234": { plan: "light",     cycle: "monthly" },
+  // "abcd1235": { plan: "light",     cycle: "yearly"  },
+  // "abcd1236": { plan: "pro",       cycle: "monthly" },
+  // "abcd1237": { plan: "pro",       cycle: "yearly"  },
+  // "abcd1238": { plan: "gestuet",   cycle: "monthly" },
+  // "abcd1239": { plan: "gestuet",   cycle: "yearly"  },
+  // "abcd1240": { plan: "unlimited", cycle: "monthly" },
+  // "abcd1241": { plan: "unlimited", cycle: "yearly"  },
+};
+
+function isVaultProduct(productId: string): boolean {
+  return productId !== "" && productId in VAULT_PRODUCT_MAP;
+}
+
+function getVaultProductMeta(productId: string): VaultProductMeta | null {
+  return VAULT_PRODUCT_MAP[productId] ?? null;
+}
+
 // Constant-time string comparison to prevent timing attacks
 function constantTimeCompare(a: string, b: string): boolean {
   const encoder = new TextEncoder();
@@ -565,11 +598,12 @@ const handler = async (req: Request): Promise<Response> => {
     // Determine plan from product
     const subscriptionPlan = getPlanFromProductId(productId);
     const planOverride = getPlanOverrideFromProductId(productId);
+    const vaultMeta = getVaultProductMeta(productId);
 
     // Handle payment/order events - these are when we should create users
     const isPaymentEvent = [
       "order_created",
-      "order.created", 
+      "order.created",
       "subscription_payment_succeeded",
       "subscription.payment.succeeded",
       "payment_completed",
@@ -577,6 +611,95 @@ const handler = async (req: Request): Promise<Response> => {
       "purchase",
       "sale",
     ].includes(eventType);
+
+    const isCancellationEvent = [
+      "subscription_cancelled",
+      "subscription.cancelled",
+      "subscription.canceled",
+      "subscription_expired",
+      "subscription.expired",
+      "refund_created",
+      "refund.created",
+      "refund",
+    ].includes(eventType);
+
+    const isPaymentFailureEvent = [
+      "payment_failed",
+      "payment.failed",
+      "subscription_payment_failed",
+      "subscription.payment.failed",
+    ].includes(eventType);
+
+    // ─── VAULT PRODUCT BRANCH ──────────────────────────────────────────────
+    // Standalone Tresor subscription. Touches only the vault_* columns and
+    // leaves HufManager subscription_plan / plan_override untouched. We do not
+    // auto-create user accounts for vault purchases — the user must already
+    // exist as a registered owner. If not, we acknowledge the webhook and
+    // log a warning so support can reach out.
+    if (vaultMeta) {
+      if (!profile) {
+        console.warn("[copecart][vault] No profile found for vault purchase:", customerEmail, "| Product:", productId);
+        return new Response(JSON.stringify({
+          success: true,
+          warning: "Vault product purchased but no matching user account found",
+          email: customerEmail,
+        }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      let vaultUpdate: {
+        vault_plan?: VaultPlanTier | null;
+        vault_plan_status?: string | null;
+        vault_subscription_id?: string | null;
+        vault_billing_cycle?: VaultBillingCycle | null;
+      } = {};
+
+      if (isPaymentEvent) {
+        vaultUpdate = {
+          vault_plan: vaultMeta.plan,
+          vault_plan_status: "active",
+          vault_subscription_id: subscriptionId,
+          vault_billing_cycle: vaultMeta.cycle,
+        };
+      } else if (isPaymentFailureEvent) {
+        vaultUpdate = { vault_plan_status: "past_due" };
+      } else if (isCancellationEvent) {
+        vaultUpdate = { vault_plan_status: "cancelled" };
+      } else {
+        console.log("[copecart][vault] Unhandled event type for vault product:", eventType);
+        return new Response(JSON.stringify({ success: true, message: "Event type not handled" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      const { error: vaultErr } = await supabase
+        .from("profiles")
+        .update(vaultUpdate)
+        .eq("id", profile.id);
+
+      if (vaultErr) {
+        console.error("[copecart][vault] Profile update failed:", vaultErr.message);
+        return new Response(JSON.stringify({ error: "Vault update failed" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      console.log("[copecart][vault] Profile updated:", profile.id, vaultUpdate);
+      return new Response(JSON.stringify({
+        success: true,
+        scope: "vault",
+        plan: vaultMeta.plan,
+        cycle: vaultMeta.cycle,
+        status: vaultUpdate.vault_plan_status ?? null,
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
 
     // If user doesn't exist and this is a payment event, create the user
     if (!profile && isPaymentEvent) {

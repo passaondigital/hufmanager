@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useVaultAccess } from "@/hooks/useVaultAccess";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,8 +89,12 @@ export function PferdeakteTresor({ horseId, horse, userRole }: PferdeakteTresorP
   const [showAccessLog, setShowAccessLog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Premium check - simple: if vault_pin exists, they have access
-  const [isPremium] = useState(true); // TODO: check subscription
+  // Premium check — mirrors public.has_vault_access() RLS in DB.
+  // Read access to existing documents stays open even if access ends
+  // (12-month grace period is product promise on TresorPricing).
+  const vaultAccess = useVaultAccess();
+  const isPremium = vaultAccess.hasAccess;
+  const accessLoading = vaultAccess.loading;
 
   useEffect(() => {
     checkVaultStatus();
@@ -134,6 +140,10 @@ export function PferdeakteTresor({ horseId, horse, userRole }: PferdeakteTresorP
   };
 
   const handleSetupPin = async () => {
+    if (!isPremium) {
+      toast.error("Tresor-Abo erforderlich, um den Tresor einzurichten");
+      return;
+    }
     if (pin.length !== 6 || !/^\d{6}$/.test(pin)) {
       toast.error("PIN muss 6 Ziffern haben");
       return;
@@ -229,6 +239,10 @@ export function PferdeakteTresor({ horseId, horse, userRole }: PferdeakteTresorP
 
   const handleUpload = async () => {
     if (!selectedFile || !selectedCategory || !user) return;
+    if (!isPremium) {
+      toast.error("Tresor-Abo erforderlich, um Dokumente hochzuladen");
+      return;
+    }
     setUploading(true);
     try {
       const fileExt = selectedFile.name.split('.').pop();
@@ -287,6 +301,11 @@ export function PferdeakteTresor({ horseId, horse, userRole }: PferdeakteTresorP
         .map(([key, v]: [string, any]) => ({ role: key, name: v.name, phone: v.phone, email: v.email }))
     : [];
 
+  // ─── ACCESS LOADING (subscription + vault plan fetch in flight) ───
+  if (accessLoading) {
+    return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+  }
+
   // ─── ROLE GATE: Only owner (client) and provider can access the vault ───
   if (userRole === "partner" || userRole === "employee") {
     return (
@@ -306,7 +325,11 @@ export function PferdeakteTresor({ horseId, horse, userRole }: PferdeakteTresorP
   }
 
   // ─── PREMIUM GATE ───
-  if (!isPremium) {
+  // Block only when user has no access AND has no PIN yet. If a PIN exists,
+  // the user is an existing customer whose subscription may have ended — they
+  // keep read/download/delete on existing documents (RLS allows it). Write
+  // operations are gated at the DB layer via has_vault_access().
+  if (!isPremium && state === "setup_pin") {
     return (
       <div className="space-y-4">
         {/* Premium Header */}
@@ -337,9 +360,11 @@ export function PferdeakteTresor({ horseId, horse, userRole }: PferdeakteTresorP
                 <p className="text-xs text-muted-foreground text-center max-w-[250px] mb-4">
                   PostIdent-gesichert · Kaufverträge & Versicherungen · QR-Notfall-Zugang · Besitzerwechsel
                 </p>
-                <Button className="gap-2">
-                  <Crown className="h-4 w-4" />
-                  Tresor aktivieren
+                <Button asChild className="gap-2">
+                  <Link to="/pferdeakte#tresor-pricing">
+                    <Crown className="h-4 w-4" />
+                    Tresor aktivieren
+                  </Link>
                 </Button>
               </div>
             </div>
@@ -538,10 +563,16 @@ export function PferdeakteTresor({ horseId, horse, userRole }: PferdeakteTresorP
                       <Trash2 className="h-3.5 w-3.5 text-destructive" />
                     </Button>
                   </div>
-                ) : (
+                ) : isPremium ? (
                   <Button variant="ghost" size="sm" className="h-8 text-xs gap-1"
                     onClick={() => { setSelectedCategory(cat.value); setShowUploadDialog(true); }}>
                     <Plus className="h-3.5 w-3.5" /> Hochladen
+                  </Button>
+                ) : (
+                  <Button asChild variant="ghost" size="sm" className="h-8 text-xs gap-1 text-primary">
+                    <Link to="/pferdeakte#tresor-pricing">
+                      <Crown className="h-3.5 w-3.5" /> Abo aktivieren
+                    </Link>
                   </Button>
                 )}
               </CardContent>
@@ -571,13 +602,23 @@ export function PferdeakteTresor({ horseId, horse, userRole }: PferdeakteTresorP
         ))}
 
         {/* Add more */}
-        <button
-          onClick={() => setShowUploadDialog(true)}
-          className="w-full border-2 border-dashed border-border rounded-xl p-4 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:border-primary/30 hover:text-primary transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          Weiteres Dokument hinzufügen
-        </button>
+        {isPremium ? (
+          <button
+            onClick={() => setShowUploadDialog(true)}
+            className="w-full border-2 border-dashed border-border rounded-xl p-4 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:border-primary/30 hover:text-primary transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            Weiteres Dokument hinzufügen
+          </button>
+        ) : (
+          <Link
+            to="/pferdeakte#tresor-pricing"
+            className="block w-full border-2 border-dashed border-primary/30 rounded-xl p-4 text-center text-sm text-primary hover:bg-primary/5 transition-colors"
+          >
+            <Crown className="h-4 w-4 inline mr-1.5" />
+            Abo aktivieren, um Dokumente hinzuzufügen
+          </Link>
+        )}
       </div>
 
       {/* Besitzerwechsel */}
@@ -591,9 +632,14 @@ export function PferdeakteTresor({ horseId, horse, userRole }: PferdeakteTresorP
             Bei Verkauf können Tresor-Inhalte vollständig oder selektiv an den neuen Besitzer übertragen werden.
             PostIdent-Verifizierung beider Parteien erforderlich.
           </p>
-          <Button variant="outline" size="sm" className="gap-1.5">
+          <Button variant="outline" size="sm" className="gap-1.5" disabled={!isPremium}>
             Besitzerwechsel starten
           </Button>
+          {!isPremium && (
+            <p className="text-[11px] text-muted-foreground/70">
+              <Link to="/pferdeakte#tresor-pricing" className="text-primary hover:underline">Tresor-Abo aktivieren</Link>, um Besitzerwechsel zu starten.
+            </p>
+          )}
         </CardContent>
       </Card>
 
