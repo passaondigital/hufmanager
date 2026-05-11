@@ -1,17 +1,20 @@
 import type { HufiMemory } from "./hufi-brain";
+import type { NavTarget } from "./hufi-nav-actions";
 
 export type HufiIntent =
   | "knowledge"
   | "agent_lookup"
   | "agent_action"
   | "agent_proactive"
-  | "emergency";
+  | "emergency"
+  | "navigation";
 
 export interface IntentEntities {
   horseName?: string;
   clientName?: string;
   action?: string;
   topic?: string;
+  navTarget?: NavTarget;
 }
 
 export interface IntentResult {
@@ -92,6 +95,125 @@ function extractAction(message: string): string {
   return "generic_action";
 }
 
+// ─── Navigation intent ───────────────────────────────────────────────────────
+// Phase C: detect simple "öffne X" / "zeig X" / "geh zu X" commands and map
+// them to a NavTarget descriptor for hufi-nav-actions.runNavAction.
+//
+// Returns null if the message is not a navigation command. Keep this function
+// CONSERVATIVE — false positives steal the user's prompt from the chat AI.
+
+const NAV_VERBS = [
+  "öffne", "öffnen", "oeffne", "oeffnen",
+  "zeig", "zeige", "zeigen", "zeig mir", "zeige mir",
+  "geh zu", "gehe zu", "gehen zu",
+  "navigiere zu", "navigiere",
+  "wechsle zu", "wechseln zu",
+  "spring zu", "springe zu",
+  "ruf auf", "rufe auf", "aufrufen",
+];
+
+interface TargetMatcher {
+  build: (rest: string) => NavTarget | null;
+  patterns: RegExp[];
+}
+
+// Each matcher has a list of word-boundary patterns. The last group, when
+// present, captures the remainder for entity-bearing targets (e.g. horse name).
+const TARGET_MATCHERS: TargetMatcher[] = [
+  // Calendar / appointments
+  {
+    build: () => ({ kind: "calendar" }),
+    patterns: [/\bkalender\b/, /\btermine?\b/, /\bterminkalender\b/],
+  },
+  // Daily route / today
+  {
+    build: () => ({ kind: "route_day" }),
+    patterns: [/\btour\b/, /\btages?tour\b/, /\bheutiger?\b/, /\btageskockpit\b/, /\btagestour\b/],
+  },
+  // Invoices
+  {
+    build: () => ({ kind: "invoices" }),
+    patterns: [/\brechnungen?\b/, /\bbelege?\b(?!.*upload)/, /\bumsa?tze?\b/],
+  },
+  // Customers
+  {
+    build: () => ({ kind: "customers" }),
+    patterns: [/\bkunden\b/, /\bkundenliste\b/, /\bclients?\b/],
+  },
+  // Leads / inquiries
+  {
+    build: () => ({ kind: "leads" }),
+    patterns: [/\banfragen?\b/, /\bleads?\b/, /\binteressenten\b/],
+  },
+  // Settings
+  {
+    build: () => ({ kind: "settings" }),
+    patterns: [/\beinstellungen?\b/, /\bsettings?\b/, /\bprofil\b/, /\bkonfiguration\b/],
+  },
+  // Horses list (must come BEFORE the wildcard horse matcher)
+  {
+    build: () => ({ kind: "horses" }),
+    patterns: [
+      /\b(meine|alle)\s+pferde\b/,
+      /\bpferdeliste\b/,
+      /\bpferde[-\s]?übersicht\b/,
+      /\bpferde\b\s*(?:liste|übersicht)?\s*$/,
+    ],
+  },
+];
+
+// Single horse with name — captures the rest of the message as a probable name.
+const HORSE_OPEN_PATTERNS: RegExp[] = [
+  /\b(?:öffne|öffnen|oeffne|zeig|zeige|geh zu|gehe zu|navigiere zu|spring zu|ruf auf|rufe auf)\s+(?:die\s+)?(?:pferdeakte\s+(?:von\s+)?|akte\s+(?:von\s+)?)?(.+?)\s*$/i,
+  /\b(?:pferdeakte\s+(?:von\s+)?|akte\s+(?:von\s+)?)(.+?)\s*$/i,
+  /^(.+?)\s+(?:öffnen|öffne|aufrufen|aufmachen|anzeigen|zeigen)\s*[.!?]?\s*$/i,
+];
+
+function startsWithNavVerb(message: string): boolean {
+  const lower = message.toLowerCase().trimStart();
+  return NAV_VERBS.some((v) => lower.startsWith(v + " ") || lower === v);
+}
+
+function endsWithNavVerb(message: string): boolean {
+  const lower = message.toLowerCase().trim().replace(/[.!?]+$/, "");
+  return /\b(öffnen|aufrufen|aufmachen|anzeigen|zeigen)$/i.test(lower);
+}
+
+export function detectNavigationTarget(message: string): NavTarget | null {
+  if (!message.trim()) return null;
+  if (!startsWithNavVerb(message) && !endsWithNavVerb(message)) return null;
+
+  const lower = message.toLowerCase();
+
+  // 1. Match deterministic targets first (calendar, invoices, …)
+  for (const matcher of TARGET_MATCHERS) {
+    if (matcher.patterns.some((re) => re.test(lower))) {
+      return matcher.build("");
+    }
+  }
+
+  // 2. Single horse by name. Skip if the message contains a generic
+  //    target-keyword that we already covered above.
+  const STOPWORDS = /\b(kalender|termine?|rechnungen?|kunden|anfragen?|leads?|einstellungen?|tour|tageskockpit|profil|settings|pferde\b)\b/;
+  if (STOPWORDS.test(lower)) return null;
+
+  for (const re of HORSE_OPEN_PATTERNS) {
+    const m = message.match(re);
+    if (m && m[1]) {
+      const candidate = m[1]
+        .replace(/^(die|der|das|den|den|dem|deine?n?|meinen?|ihren?|euren?)\s+/i, "")
+        .replace(/^(pferd|pferdes?)\s+/i, "")
+        .replace(/[.!?]+$/, "")
+        .trim();
+      if (candidate && candidate.length <= 60) {
+        return { kind: "horse", query: candidate };
+      }
+    }
+  }
+
+  return null;
+}
+
 export function detectIntent(
   message: string,
   isLoggedIn: boolean,
@@ -99,11 +221,26 @@ export function detectIntent(
 ): IntentResult {
   const lower = message.toLowerCase().trim();
 
-  // 1. Emergency — highest priority
+  // 1. Emergency — highest priority (overrides everything else)
   for (const kw of EMERGENCY_KW) {
     if (lower.includes(kw)) {
       return { intent: "emergency", confidence: 0.95, entities: { topic: kw }, requiresAuth: false, requiresContext: false };
     }
+  }
+
+  // 1b. Navigation — direct command, takes precedence over AI routing
+  const navTarget = detectNavigationTarget(message);
+  if (navTarget) {
+    return {
+      intent: "navigation",
+      confidence: 0.9,
+      entities: {
+        navTarget,
+        horseName: navTarget.kind === "horse" ? navTarget.query : undefined,
+      },
+      requiresAuth: true,
+      requiresContext: false,
+    };
   }
 
   // 2. Agent action

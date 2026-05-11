@@ -5,12 +5,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { Mic, Send, Loader2, Coins, Grid3X3 } from "lucide-react";
+import { Mic, Send, Loader2, Coins, Grid3X3, Volume2, X } from "lucide-react";
+import { toast } from "sonner";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { useViewMode } from "@/hooks/useViewMode";
+import { useHufiTTS } from "@/hooks/useHufiTTS";
+import { useVoiceCapture, type VoiceErrorCode } from "@/hooks/useVoiceCapture";
 import { chatWithHufAI, BEFUND_SYSTEM_PROMPT, ChatMessage as AIChatMessage } from "@/lib/ai-routing";
 import { extractBefundFromTranscript, formatBefundForChat } from "@/lib/autoflow-service";
 import { detectIntent, type HufiIntent } from "@/lib/hufi-intent";
+import { runNavAction, type ActionOutcome } from "@/lib/hufi-nav-actions";
 import { fetchRelevantContext } from "@/lib/hufi-context-resolver";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { DsgvoConsentModal } from "@/components/DsgvoConsentModal";
@@ -63,8 +67,6 @@ export function MobileShell() {
   const navigate = useNavigate();
   const { mode: viewMode, setMode: setViewMode, isPrivat } = useViewMode();
   const [inputText, setInputText] = useState("");
-  const [recording, setRecording] = useState(false);
-  const [transcribing, setTranscribing] = useState(false);
   const [responding, setResponding] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [showDsgvoModal, setShowDsgvoModal] = useState(false);
@@ -78,8 +80,6 @@ export function MobileShell() {
   const [kiConsent, setKiConsent] = useState<"granted" | "denied" | null>(
     () => localStorage.getItem("hufi_ki_consent") as "granted" | "denied" | null,
   );
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const sessionId = useRef<string>(crypto.randomUUID());
@@ -87,6 +87,21 @@ export function MobileShell() {
   const shownAlertsRef = useRef<Set<string>>(new Set());
   const migrationCheckedRef = useRef(false);
   const today = format(new Date(), "yyyy-MM-dd");
+
+  // Hufi Voice — Phase 1: spoken greeting + Phase 2: push-to-talk voice loop.
+  const { speak: hufiSpeak, isSupported: ttsSupported, isSpeaking: isTtsSpeaking } = useHufiTTS();
+  const [pendingSpokenGreeting, setPendingSpokenGreeting] = useState<string | null>(null);
+  const lastGreetingTextRef = useRef<string>("");
+  const voice = useVoiceCapture();
+  // When recording is started via the mic button we collect every AI text added
+  // during that turn and speak them after the response completes.
+  const voiceSessionRef = useRef<{ active: boolean; texts: string[] } | null>(null);
+  // State-based flag so the "Hufi spricht…" banner actually re-renders.
+  const [isVoiceSpeaking, setIsVoiceSpeaking] = useState(false);
+
+  // Derived state shorthands for UI/legacy code that referenced `recording` / `transcribing`.
+  const recording = voice.isRecording;
+  const transcribing = voice.isProcessing;
 
   const { data: nextAppt } = useQuery({
     queryKey: ["shell-next-appt", user?.id],
@@ -174,6 +189,93 @@ export function MobileShell() {
     setShowOnboardingTour(false);
   };
 
+  function spokenGreetingStorageKey(userId: string) {
+    const day = format(new Date(), "yyyy-MM-dd");
+    return `hufi_spoken_greeting_${day}_${userId}`;
+  }
+
+  function logVoiceSkip(reason: "unsupported" | "disabled" | "already_spoken_today" | "no_user_gesture" | "empty_text", context?: string) {
+    const suffix = context ? ` (${context})` : "";
+    console.info(`[hufi-voice] skip: ${reason}${suffix}`);
+  }
+
+  function queueSpokenGreetingIfEligible(userId: string, greeting: string) {
+    // Always remember the latest greeting so the replay button can re-speak it.
+    lastGreetingTextRef.current = greeting;
+
+    if (typeof window === "undefined") return;
+    if (!ttsSupported) {
+      logVoiceSkip("unsupported", "queue");
+      return;
+    }
+    if (!greeting.trim()) {
+      logVoiceSkip("empty_text", "queue");
+      return;
+    }
+    if (localStorage.getItem("hufi_voice_greeting_enabled") !== "1") {
+      logVoiceSkip("disabled", "queue");
+      return;
+    }
+    if (localStorage.getItem(spokenGreetingStorageKey(userId)) === "1") {
+      logVoiceSkip("already_spoken_today", "queue");
+      return;
+    }
+    console.info("[hufi-voice] queued: waiting for first user gesture");
+    setPendingSpokenGreeting(greeting);
+  }
+
+  // Manual replay — bypasses the once-per-day gate. Called from a button
+  // click so the user gesture is implicit and audio is allowed.
+  function replayGreeting() {
+    if (!ttsSupported) {
+      logVoiceSkip("unsupported", "replay");
+      return;
+    }
+    const text = lastGreetingTextRef.current;
+    if (!text.trim()) {
+      logVoiceSkip("empty_text", "replay");
+      return;
+    }
+    setPendingSpokenGreeting(null);
+    hufiSpeak(text);
+  }
+
+  // Speak the queued greeting on the first user gesture (browsers block audio
+  // before any interaction). Single-shot: listener removes itself after firing.
+  useEffect(() => {
+    if (!pendingSpokenGreeting) return;
+    if (!user?.id) return;
+    const userId = user.id;
+    const text = pendingSpokenGreeting;
+    let fired = false;
+
+    const fire = () => {
+      fired = true;
+      cleanup();
+      // Re-check the toggle right before speaking — user may have flipped it.
+      if (localStorage.getItem("hufi_voice_greeting_enabled") !== "1") {
+        logVoiceSkip("disabled", "on_gesture");
+        setPendingSpokenGreeting(null);
+        return;
+      }
+      localStorage.setItem(spokenGreetingStorageKey(userId), "1");
+      console.info("[hufi-voice] speaking greeting after gesture");
+      hufiSpeak(text, () => setPendingSpokenGreeting(null));
+    };
+
+    const cleanup = () => {
+      window.removeEventListener("pointerdown", fire);
+      window.removeEventListener("keydown", fire);
+    };
+
+    window.addEventListener("pointerdown", fire, { once: true });
+    window.addEventListener("keydown", fire, { once: true });
+    return () => {
+      cleanup();
+      if (!fired) logVoiceSkip("no_user_gesture", "queue cleared before tap");
+    };
+  }, [pendingSpokenGreeting, user?.id, hufiSpeak]);
+
   async function bootGreeting(userId: string, consented: boolean) {
     if (greetingSetRef.current) return;
     greetingSetRef.current = true;
@@ -201,6 +303,10 @@ export function MobileShell() {
       const greeting = await generateHufiGreeting(ctx);
       const actions = buildContextActions(ctx);
       const roleIntel = getRoleIntelligence(ctx);
+
+      // Hufi Voice Phase 1 — queue greeting for spoken playback after the
+      // first user gesture. Gated by user opt-in + once-per-day per user.
+      queueSpokenGreetingIfEligible(userId, greeting);
 
       // Build initial message list: greeting + any high-urgency role messages
       const initialMessages: ChatMessage[] = [
@@ -341,43 +447,84 @@ export function MobileShell() {
     }, 100);
   }
 
-  async function startRecording() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
-      const chunks: Blob[] = [];
-      chunksRef.current = chunks;
-      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
-      recorder.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop());
-        setRecording(false);
-        setTranscribing(true);
-        try {
-          const blob = new Blob(chunks, { type: "audio/webm" });
-          const form = new FormData();
-          form.append("file", blob, "recording.webm");
-          const res = await fetch("/api/local-ai/transcribe", { method: "POST", body: form });
-          const json = await res.json();
-          const text: string = json.text?.trim() ?? "";
-          await processTranscribedText(text);
-        } catch {
-          addMsg({ role: "ai", text: "Transkription fehlgeschlagen. Bitte erneut versuchen.", ts: Date.now() });
-        } finally {
-          setTranscribing(false);
-        }
-      };
-      recorder.start();
-      recorderRef.current = recorder;
-      setRecording(true);
-    } catch (err: unknown) {
-      const msg = (err as { name?: string })?.name === "NotAllowedError"
-        ? "Mikrofon-Zugriff verweigert. Bitte in den Einstellungen erlauben."
-        : "Kein Mikrofon gefunden.";
-      addMsg({ role: "ai", text: msg, ts: Date.now() });
+  function voiceErrorMessage(code: VoiceErrorCode): string {
+    switch (code) {
+      case "microphone_denied":
+        return "Mikrofon-Zugriff verweigert. Bitte in den Browser-Einstellungen erlauben.";
+      case "microphone_missing":
+        return "Kein Mikrofon gefunden oder vom Browser nicht unterstützt.";
+      case "recording_failed":
+        return "Aufnahme fehlgeschlagen. Bitte erneut versuchen.";
+      case "transcription_unavailable":
+        return "Hufi kann Sprache gerade nicht verarbeiten.";
+      case "transcription_failed":
+        return "Transkription fehlgeschlagen. Bitte erneut versuchen.";
+      case "empty_transcript":
+        return "Ich konnte nichts verstehen. Bitte nochmals sprechen.";
     }
   }
 
-  function stopRecording() { recorderRef.current?.stop(); }
+  async function startRecording() {
+    voiceSessionRef.current = { active: true, texts: [] };
+    const started = await voice.startRecording();
+    if (!started) {
+      voiceSessionRef.current = null;
+    }
+  }
+
+  function stopRecording() {
+    voice.stopRecording();
+  }
+
+  function cancelRecording() {
+    voiceSessionRef.current = null;
+    voice.cancel();
+  }
+
+  // Surface voice errors via toast — fail loud, never silent.
+  useEffect(() => {
+    if (!voice.error) return;
+    const msg = voiceErrorMessage(voice.error);
+    console.info(`[voice-capture] error: ${voice.error}`);
+    toast.error(msg);
+    voiceSessionRef.current = null;
+    voice.reset();
+  }, [voice.error]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Push transcript into the pipeline. Navigation intents are resolved instantly
+  // without entering the AI chat pipeline — user message is skipped for Jarvis
+  // feel. Regular messages fall through to processTranscribedText + spoken reply.
+  useEffect(() => {
+    if (!voice.transcript) return;
+    const text = voice.transcript;
+    voice.reset();
+    if (!user?.id) return;
+
+    const intent = detectIntent(text, true, hufiCtx?.memory ?? []);
+
+    if (intent.intent === "navigation" && intent.entities.navTarget) {
+      voiceSessionRef.current = null;
+      (async () => {
+        const outcome = await runNavAction(intent.entities.navTarget!, {
+          userId: user.id,
+          role: role as import("@/lib/hufi-nav-actions").ActionRole,
+        });
+        handleNavigationOutcome(outcome, /* fromVoice */ true);
+      })();
+      return;
+    }
+
+    (async () => {
+      await processTranscribedText(text);
+      const session = voiceSessionRef.current;
+      voiceSessionRef.current = null;
+      if (!session?.active || !ttsSupported) return;
+      const combined = session.texts.join(" ");
+      if (!combined.trim()) return;
+      setIsVoiceSpeaking(true);
+      hufiSpeak(combined, () => setIsVoiceSpeaking(false));
+    })();
+  }, [voice.transcript]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function broadcast(msg: ChatMessage) {
     channelRef.current?.send({
@@ -390,6 +537,9 @@ export function MobileShell() {
   function addMsg(msg: ChatMessage) {
     setMessages((prev) => [...prev, msg]);
     broadcast(msg);
+    if (msg.role === "ai" && voiceSessionRef.current?.active && msg.text) {
+      voiceSessionRef.current.texts.push(msg.text);
+    }
   }
 
   async function handleMsgAction(key: string, msg: ChatMessage) {
@@ -504,6 +654,44 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
     }
   }
 
+  async function handleNavigationOutcome(outcome: ActionOutcome, fromVoice = false) {
+    if (outcome.kind === "ok") {
+      const a = outcome.action;
+      // Short action chip in chat — no user bubble, no essay.
+      addMsg({ role: "ai", text: a.spokenConfirmation, ts: Date.now() });
+      toast.success(a.chipLabel);
+      // Speak immediately — button click / mic tap = user gesture, audio is allowed.
+      if (ttsSupported && (fromVoice || localStorage.getItem("hufi_voice_greeting_enabled") === "1")) {
+        setIsVoiceSpeaking(true);
+        hufiSpeak(a.spokenConfirmation, () => setIsVoiceSpeaking(false));
+      }
+      navigate(a.route);
+      return;
+    }
+    if (outcome.kind === "clarify") {
+      addMsg({
+        role: "ai",
+        text: outcome.message,
+        ts: Date.now(),
+        actions: outcome.options.map((o) => ({
+          label: o.name,
+          route: role === "employee" ? `/employee/pferd/${o.id}` : `/pferd/${o.id}`,
+        })),
+      });
+      if (fromVoice && ttsSupported) {
+        setIsVoiceSpeaking(true);
+        hufiSpeak(outcome.spoken, () => setIsVoiceSpeaking(false));
+      }
+      return;
+    }
+    // Fallback — toast is lighter than a chat bubble for errors.
+    toast.error(outcome.message);
+    if (fromVoice && ttsSupported) {
+      setIsVoiceSpeaking(true);
+      hufiSpeak(outcome.spoken, () => setIsVoiceSpeaking(false));
+    }
+  }
+
   async function processChatMessage(text: string) {
     addMsg({ role: "user", text, ts: Date.now() });
     const intent = detectIntent(text, !!user, hufiCtx?.memory ?? []);
@@ -532,6 +720,15 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
           ts: Date.now() + 1,
           actions: [{ label: "Anmelden", route: "/auth" }, { label: "Registrieren", route: "/auth?tab=register" }],
         });
+        return;
+      }
+      // ── Navigation intent: bypass AI entirely, route instantly ──────────────
+      if (intent.intent === "navigation" && intent.entities.navTarget && user?.id) {
+        const outcome = await runNavAction(intent.entities.navTarget, {
+          userId: user.id,
+          role: role as import("@/lib/hufi-nav-actions").ActionRole,
+        });
+        await handleNavigationOutcome(outcome);
         return;
       }
       if (intent.intent === "knowledge") { await answerFromKnowledge(text); return; }
@@ -643,6 +840,30 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
             <div style={{ fontSize: 15, fontWeight: 800, color: "#1A1A1A", lineHeight: 1 }}>Hufi</div>
             <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 1 }}>Proaktiver KI-Assistent</div>
           </div>
+          {/* Replay spoken greeting — visible only when TTS is supported and a greeting exists */}
+          {ttsSupported && lastGreetingTextRef.current && (
+            <button
+              type="button"
+              onClick={replayGreeting}
+              title="Begrüßung erneut sprechen"
+              aria-label="Begrüßung erneut sprechen"
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: 8,
+                background: "rgba(249,115,22,0.1)",
+                border: "1px solid rgba(249,115,22,0.25)",
+                color: "#F97316",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <Volume2 size={14} />
+            </button>
+          )}
           {/* Profi ↔ Privat mode toggle (providers only) */}
           {role === "provider" && (
             <button
@@ -951,6 +1172,59 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
           })()}
         </div>
 
+        {/* VOICE STATUS BANNER — visible only when mic flow is active */}
+        {(recording || transcribing || isVoiceSpeaking) && (
+          <div
+            role="status"
+            aria-live="polite"
+            style={{
+              position: "fixed",
+              bottom: 138,
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: "calc(100% - 28px)",
+              maxWidth: 402,
+              background: recording ? "rgba(239,68,68,0.95)" : "rgba(17,24,39,0.92)",
+              color: "#FFFFFF",
+              padding: "10px 14px",
+              borderRadius: 14,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              zIndex: 41,
+              boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+              fontSize: 13,
+              fontWeight: 600,
+              fontFamily: "inherit",
+            }}
+          >
+            {recording ? (
+              <>
+                <div className="rec-pulse" style={{ width: 10, height: 10, borderRadius: "50%", background: "#FFFFFF", flexShrink: 0 }} />
+                <span style={{ flex: 1 }}>Hufi hört zu… Tippe zum Beenden.</span>
+                <button
+                  onClick={cancelRecording}
+                  aria-label="Abbrechen"
+                  title="Abbrechen"
+                  style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.18)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#FFFFFF", flexShrink: 0 }}
+                >
+                  <X size={14} />
+                </button>
+              </>
+            ) : transcribing ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                <span>Hufi transkribiert…</span>
+              </>
+            ) : (
+              <>
+                <Volume2 size={14} />
+                <span>Hufi spricht…</span>
+              </>
+            )}
+          </div>
+        )}
+
         {/* BOTTOM INPUT */}
         <div style={{
           position: "fixed",
@@ -997,29 +1271,53 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
               {inputText.trim() ? (
                 <button
                   onClick={handleSend}
-                  style={{ width: 42, height: 42, borderRadius: "50%", background: "#F97316", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, boxShadow: "0 2px 8px rgba(249,115,22,0.35)" }}
+                  style={{ width: 56, height: 56, borderRadius: "50%", background: "#F97316", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, boxShadow: "0 2px 8px rgba(249,115,22,0.35)" }}
+                  aria-label="Senden"
                 >
-                  <Send size={16} style={{ color: "#FFFFFF" }} />
+                  <Send size={20} style={{ color: "#FFFFFF" }} />
                 </button>
               ) : (
                 <button
-                  onMouseDown={startRecording}
-                  onMouseUp={stopRecording}
-                  onTouchStart={(e) => { e.preventDefault(); startRecording(); }}
-                  onTouchEnd={stopRecording}
+                  onClick={() => {
+                    if (recording) stopRecording();
+                    else startRecording();
+                  }}
+                  disabled={transcribing || isTtsSpeaking}
                   className={recording ? "rec-pulse" : ""}
-                  style={{ width: 42, height: 42, borderRadius: "50%", background: recording ? "#EF4444" : "#F97316", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, boxShadow: "0 2px 8px rgba(249,115,22,0.35)" }}
+                  aria-label={recording ? "Aufnahme stoppen" : "Hufi fragen"}
+                  title={recording ? "Aufnahme stoppen" : "Hufi fragen"}
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: "50%",
+                    background: transcribing
+                      ? "#6B7280"
+                      : recording
+                        ? "#EF4444"
+                        : "#F97316",
+                    border: "none",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: transcribing || isTtsSpeaking ? "wait" : "pointer",
+                    flexShrink: 0,
+                    boxShadow: recording
+                      ? "0 0 0 6px rgba(239,68,68,0.18), 0 2px 12px rgba(239,68,68,0.45)"
+                      : "0 2px 10px rgba(249,115,22,0.4)",
+                    transition: "background .15s, box-shadow .15s",
+                  }}
                 >
-                  {recording
-                    ? (
-                      <div style={{ display: "flex", alignItems: "center", gap: 2, height: 16 }}>
-                        {[0.1, 0.25, 0, 0.15, 0.3].map((d, i) => (
-                          <div key={i} className="wave-bar" style={{ width: 3, height: "100%", borderRadius: 2, background: "#FFFFFF", transformOrigin: "bottom", animationDelay: `${d}s` }} />
-                        ))}
-                      </div>
-                    )
-                    : <Mic size={16} style={{ color: "#FFFFFF" }} />
-                  }
+                  {transcribing ? (
+                    <Loader2 size={22} style={{ color: "#FFFFFF" }} className="animate-spin" />
+                  ) : recording ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: 3, height: 22 }}>
+                      {[0.1, 0.25, 0, 0.15, 0.3].map((d, i) => (
+                        <div key={i} className="wave-bar" style={{ width: 3, height: "100%", borderRadius: 2, background: "#FFFFFF", transformOrigin: "bottom", animationDelay: `${d}s` }} />
+                      ))}
+                    </div>
+                  ) : (
+                    <Mic size={22} style={{ color: "#FFFFFF" }} />
+                  )}
                 </button>
               )}
             </>
