@@ -45,6 +45,39 @@
 - Wetter via Open-Meteo (kostenlos, kein Key), Fallback wenn nicht erreichbar.
 - Spricht automatisch via `useHufiTTS` wenn Sprachausgabe aktiviert.
 
+## Phase F-1 — Horse Media Pipeline (implementiert, noch nicht deployed)
+
+| Datei | Funktion |
+|---|---|
+| `supabase/migrations/20260511180000_horse_media.sql` | Tabelle `horse_media`, RLS, Bucket `horse-media` |
+| `src/lib/hufai-media.ts` | Upload, List, SignedURL, Delete |
+| `src/components/horse-detail/HorseMediaTimeline.tsx` | Kompakte Medien-Galerie (6 Items) |
+| `src/pages/ProviderHorseDetail.tsx` | HufiCam → echten Upload verdrahtet |
+
+- Bucket `horse-media` (privat, 50 MB, signed URLs, kein öffentlicher Zugriff).
+- Pfad-Struktur: `{ownerId}/{horseId}/{yyyy}/{mm}/{uuid}.{ext}`.
+- `ai_status = 'pending'` — Phase F-2 wird KI-Analyse anhängen.
+- **Keine** automatisierte medizinische Diagnose.
+- Migration noch nicht gepusht (warte auf explizite Freigabe via `db push`).
+
+## Sensor-Layer (implementiert, Integration gestartet)
+
+| Modul | Datei | Status |
+|---|---|---|
+| Biometrie (WebAuthn) | `src/lib/hufi-biometrics.ts` | Fertig — in `/management/sicherheit` eingebunden |
+| GPS-Hook | `src/hooks/useHufiGPS.ts` | Fertig — Opt-in-Consent in DayCockpit eingebunden |
+| Kamera / Video | `src/components/camera/HufiCam.tsx` | Fertig — in ProviderHorseDetail eingebunden |
+| Biometrie-UI | `src/components/sensors/HufiBiometricGate.tsx` | Fertig — in ManagementSicherheit eingebunden |
+| Wetter-Widget | `src/components/weather/HufiWeatherWidget.tsx` | Fertig — in MobileShell TopBar eingebunden |
+
+**Noch ausstehend:**
+- Kamera-Upload / Storage-Flow (Upload-Ziel offen — kein upload noch).
+- Foto/Video aus HufiCam in die Pferdeakte speichern (Supabase Storage-Bucket).
+- Deeper GPS-Integration: `useHufiGPS` in der bestehenden DayCockpit-GPS-Logik als
+  Hook-Ersatz (aktuell nur Consent-Gate, rawes watchPosition bleibt).
+- HufiWeatherWidget auf Dashboard/Home-Seite (derzeit nur TopBar compact).
+- Biometrik für Tresor-Entsperrung (statt oder zusätzlich zu PIN).
+
 ## Was produktiv wichtig ist
 
 - Live-Auslieferung über `hufiapp.de` (Hauptdomain) und die `hufmanager.de`-

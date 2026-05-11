@@ -72,6 +72,17 @@ Stabilität → täglicher Nutzen → Kontextsystem → Assistenz → proaktive 
   Build-Outputs unter `/var/www/hufiapps/` rotieren, Ollama-Modelle
   ausmisten.
 
+## Sensor-Layer — Status
+
+| Sensor | Modul | Integriert in |
+|---|---|---|
+| Biometrie (Fingerabdruck/Face ID/Iris) | `hufi-biometrics.ts` + `HufiBiometricGate` | `/management/sicherheit` |
+| GPS Live-Tracking (Opt-in) | `useHufiGPS` | DayCockpit (Consent-Gate) |
+| Kamera + Video | `HufiCam` | `ProviderHorseDetail` |
+| Wetter-Widget | `HufiWeatherWidget` | `MobileShell` TopBar |
+
+Offen: Upload-Flow (Foto/Video → Supabase Storage), Biometrie im Tresor.
+
 ## HufAI Intelligenz-Phasen
 
 Unabhängig von P0/P1/P2 verläuft die KI-Reifung in Phasen:
@@ -81,8 +92,16 @@ Unabhängig von P0/P1/P2 verläuft die KI-Reifung in Phasen:
 | A–C | Voice Greeting, Push-to-Talk, Navigation Actions | ✅ live |
 | D | Wake-Layer — "Hey Hufi" mit opt-in Consent | ✅ live |
 | E | Proaktives Tages-Briefing (Wetter, Termine, Pferde) | ✅ live |
-| F | Multimodales Pferde-Gedächtnis (Foto, Audio, Kontext) | geplant |
+| F-1 | Horse Media Pipeline (Foto/Video/Audio → horse_media) | ✅ implementiert, Migration ausstehend |
+| F-2 | HufAI Medien-Analyse (ai_status: pending → done) | geplant |
 | G | Lokale / Offline HufAI Runtime | später |
+
+**Phase F-1 Details:**
+- `horse_media`-Tabelle + `horse-media`-Bucket (Migration erstellt, noch nicht gepusht).
+- Upload via HufiCam → `hufai-media.ts` → DB-Record mit `ai_status = 'pending'`.
+- HorseMediaTimeline zeigt letzte 6 Medien im ProviderHorseDetail.
+- Keine automatisierte Diagnose. Kein LLM-Aufruf.
+- Phase F-2: KI analysiert `ai_status = 'pending'`-Medien (noch nicht implementiert).
 
 > Leitfrage für jede KI-Funktion: **"Macht das HufAI intelligenter?"**
 

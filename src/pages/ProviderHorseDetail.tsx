@@ -10,6 +10,9 @@ import { EditHorseModal } from "@/components/horse-detail/EditHorseModal";
 import { HorseProfileDashboard } from "@/components/horse-profile";
 import { Pferdeakte } from "@/components/pferdeakte";
 import { HufCamPro } from "@/components/hufcam/HufCamPro";
+import { HufiCam } from "@/components/camera/HufiCam";
+import { HorseMediaTimeline } from "@/components/horse-detail/HorseMediaTimeline";
+import { uploadHorseMedia, type HorseMediaType } from "@/lib/hufai-media";
 import type { Horse, Appointment, HoofPhoto, HorseDocument } from "@/components/horse-detail/types";
 
 interface OwnerProfile {
@@ -34,6 +37,9 @@ export default function ProviderHorseDetail() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAkte, setShowAkte] = useState(false);
   const [showHufCam, setShowHufCam] = useState(false);
+  const [showHufiCam, setShowHufiCam] = useState(false);
+  const [mediaUploadPending, setMediaUploadPending] = useState(false);
+  const [mediaRefresh, setMediaRefresh] = useState(0);
 
   const verifyProviderAccess = async (ownerId: string): Promise<boolean> => {
     if (!user) return false;
@@ -149,6 +155,40 @@ export default function ProviderHorseDetail() {
     );
   }
 
+  const handleHufiCamCapture = async (blob: Blob, type: "photo" | "video") => {
+    if (!horse || !user) return;
+    setShowHufiCam(false);
+    setMediaUploadPending(true);
+    const toastId = toast.loading(type === "photo" ? "Foto wird hochgeladen…" : "Video wird hochgeladen…");
+    const { error } = await uploadHorseMedia({
+      horseId:  horse.id,
+      ownerId:  user.id,
+      blob,
+      type:     type as HorseMediaType,
+      notes:    null ?? undefined,
+      tags:     [],
+    });
+    setMediaUploadPending(false);
+    toast.dismiss(toastId);
+    if (error) {
+      toast.error(`Upload fehlgeschlagen: ${error}`);
+    } else {
+      toast.success(type === "photo" ? "Foto gespeichert" : "Video gespeichert");
+      setMediaRefresh((n) => n + 1);
+    }
+  };
+
+  if (showHufiCam) {
+    return (
+      <HufiCam
+        mode="both"
+        facingMode="environment"
+        onCapture={handleHufiCamCapture}
+        onClose={() => setShowHufiCam(false)}
+      />
+    );
+  }
+
   if (showHufCam) {
     return (
       <div className="space-y-4 animate-fade-in">
@@ -200,6 +240,28 @@ export default function ProviderHorseDetail() {
             {owner.phone && <p className="text-xs text-muted-foreground">{owner.phone}</p>}
           </div>
         )}
+
+        {/* Medien & Verlauf */}
+        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-foreground uppercase tracking-wider">
+              Medien &amp; Verlauf
+            </p>
+            <button
+              onClick={() => setShowHufiCam(true)}
+              disabled={mediaUploadPending}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors disabled:opacity-50"
+              style={{
+                backgroundColor: "rgba(249,115,22,0.1)",
+                color: "#F97316",
+                border: "1px solid rgba(249,115,22,0.25)",
+              }}
+            >
+              📸 {mediaUploadPending ? "Lädt…" : "Aufnehmen"}
+            </button>
+          </div>
+          <HorseMediaTimeline horseId={horse.id} refreshTrigger={mediaRefresh} />
+        </div>
 
         {/* Akte Quick-Access */}
         <button

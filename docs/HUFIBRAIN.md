@@ -123,7 +123,14 @@ HufiApp (Shell / Workflow / Gerät)
         ├── Phase E:   Proaktives Tages-Briefing           ✅ live
         │     src/lib/hufai-proactive.ts
         │     src/components/voice/ProactiveBriefing.tsx
-        ├── Phase F:   Multimodales Pferde-Gedächtnis      geplant
+        ├── Phase F-1: Horse Media Pipeline                ✅ implementiert
+        │     src/lib/hufai-media.ts          (Upload, List, SignedURL)
+        │     src/components/horse-detail/HorseMediaTimeline.tsx
+        │     supabase/migrations/20260511180000_horse_media.sql
+        │     ai_status='pending' → bereit für Phase F-2
+        ├── Phase F-2: HufAI Medien-Analyse               geplant
+        │     "Jedes Pferd bekommt eine Stimme" = strukturiertes Gedächtnis,
+        │     keine automatische Diagnose, kein LLM-Ersatz für Tierärzte.
         └── Phase G:   Lokale / Offline HufAI Runtime      später
 ```
 
