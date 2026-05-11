@@ -14,7 +14,8 @@ import { useVoiceCapture, type VoiceErrorCode } from "@/hooks/useVoiceCapture";
 import { chatWithHufAI, BEFUND_SYSTEM_PROMPT, ChatMessage as AIChatMessage } from "@/lib/ai-routing";
 import { extractBefundFromTranscript, formatBefundForChat } from "@/lib/autoflow-service";
 import { detectIntent, type HufiIntent } from "@/lib/hufi-intent";
-import { runNavAction, type ActionOutcome } from "@/lib/hufi-nav-actions";
+import { runNavAction, type ActionOutcome, type ActionRole } from "@/lib/hufi-nav-actions";
+import { HeyHufi } from "@/components/voice/HeyHufi";
 import { fetchRelevantContext } from "@/lib/hufi-context-resolver";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { DsgvoConsentModal } from "@/components/DsgvoConsentModal";
@@ -98,6 +99,13 @@ export function MobileShell() {
   const voiceSessionRef = useRef<{ active: boolean; texts: string[] } | null>(null);
   // State-based flag so the "Hufi spricht…" banner actually re-renders.
   const [isVoiceSpeaking, setIsVoiceSpeaking] = useState(false);
+
+  // Phase D: Hey Hufi wake-word opt-in state.
+  const SR_SUPPORTED = typeof window !== "undefined" &&
+    !!(window.SpeechRecognition || (window as any).webkitSpeechRecognition);
+  const [heyHufiEnabled, setHeyHufiEnabled] = useState(
+    () => SR_SUPPORTED && localStorage.getItem("hufi_hey_hufi_enabled") === "1"
+  );
 
   // Derived state shorthands for UI/legacy code that referenced `recording` / `transcribing`.
   const recording = voice.isRecording;
@@ -863,6 +871,22 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
             >
               <Volume2 size={14} />
             </button>
+          )}
+          {/* Hey Hufi — Phase D: global wake-word, opt-in only, SR-gated */}
+          {SR_SUPPORTED && heyHufiEnabled && user && (
+            <HeyHufi
+              userName={hufiCtx?.user?.name ?? user.email?.split("@")[0] ?? ""}
+              appointmentCount={nextAppt ? 1 : 0}
+              defaultEnabled={true}
+              userId={user.id}
+              userRole={role as ActionRole}
+              onToggle={(enabled) => {
+                if (!enabled) {
+                  setHeyHufiEnabled(false);
+                  localStorage.removeItem("hufi_hey_hufi_enabled");
+                }
+              }}
+            />
           )}
           {/* Profi ↔ Privat mode toggle (providers only) */}
           {role === "provider" && (

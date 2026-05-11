@@ -1,8 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Mic, MicOff, Volume2, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import { cn } from "@/lib/utils";
+import { detectNavigationTarget } from "@/lib/hufi-intent";
+import { runNavAction } from "@/lib/hufi-nav-actions";
+import type { ActionRole } from "@/lib/hufi-nav-actions";
 
 /* ── Types ── */
 type Phase =
@@ -17,6 +21,14 @@ interface HeyHufiProps {
   userName: string;
   /** How many appointments today (for morning greeting) */
   appointmentCount: number;
+  /** Start in "ready" (listening) state immediately after mount. */
+  defaultEnabled?: boolean;
+  /** Fired whenever the user toggles Hey Hufi on/off. */
+  onToggle?: (enabled: boolean) => void;
+  /** User id — needed for horse resolution */
+  userId?: string;
+  /** User role — for role-aware routing */
+  userRole?: ActionRole;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
@@ -84,7 +96,15 @@ const SR = typeof window !== "undefined"
   ? ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
   : null;
 
-export function HeyHufi({ userName, appointmentCount }: HeyHufiProps) {
+export function HeyHufi({
+  userName,
+  appointmentCount,
+  defaultEnabled = false,
+  onToggle,
+  userId,
+  userRole,
+}: HeyHufiProps) {
+  const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("off");
   const [lastText, setLastText] = useState("");
   const recRef = useRef<SpeechRecognition | null>(null);
@@ -124,6 +144,31 @@ export function HeyHufi({ userName, appointmentCount }: HeyHufiProps) {
     if (!cmd.trim()) return;
     setLastText(cmd.trim());
     setPhase("thinking");
+
+    // Navigation intent? Resolve immediately — no AI roundtrip needed.
+    const navTarget = detectNavigationTarget(cmd);
+    if (navTarget && userId) {
+      try {
+        const outcome = await runNavAction(navTarget, { userId, role: userRole ?? null });
+        if (outcome.kind === "ok") {
+          setPhase("speaking");
+          speak(outcome.action.spokenConfirmation, () => setPhase("ready"));
+          navigate(outcome.action.route);
+          return;
+        }
+        if (outcome.kind === "clarify") {
+          setPhase("speaking");
+          speak(outcome.spoken, () => setPhase("ready"));
+          return;
+        }
+        setPhase("speaking");
+        speak(outcome.spoken, () => setPhase("ready"));
+        return;
+      } catch {
+        // fall through to AI
+      }
+    }
+
     speak("Einen Moment..."); // immediate audio ACK
     try {
       const answer = await askAI(cmd.trim());
@@ -136,7 +181,7 @@ export function HeyHufi({ userName, appointmentCount }: HeyHufiProps) {
         setPhase("ready")
       );
     }
-  }, []);
+  }, [userId, userRole, navigate]);
 
   const startRecognition = useCallback(() => {
     if (!SR) return;
@@ -209,14 +254,24 @@ export function HeyHufi({ userName, appointmentCount }: HeyHufiProps) {
     if (!SR) return;
     setPhase("ready");
     startRecognition();
-  }, [startRecognition]);
+    onToggle?.(true);
+  }, [startRecognition, onToggle]);
 
   const disable = useCallback(() => {
     stopRecognition();
     window.speechSynthesis?.cancel();
     setPhase("off");
     setLastText("");
-  }, [stopRecognition]);
+    onToggle?.(false);
+  }, [stopRecognition, onToggle]);
+
+  // Auto-enable on mount when defaultEnabled is set (user has opted in).
+  useEffect(() => {
+    if (defaultEnabled && SR) {
+      setPhase("ready");
+      runningRef.current = true;
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Restart recognition when phase transitions back to ready
   useEffect(() => {
