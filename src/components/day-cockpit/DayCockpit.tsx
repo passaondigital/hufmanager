@@ -54,6 +54,10 @@ export function DayCockpit() {
   const [checklistOpen, setChecklistOpen] = useState(false);
   const [isTourStarting, setIsTourStarting] = useState(false);
 
+  const [gpsConsentGiven, setGpsConsentGiven] = useState(
+    () => localStorage.getItem("hufi_gps_consent") === "1"
+  );
+
   const lastGpsRef = useRef<{ lat: number; lng: number } | null>(null);
   const gpsWatchRef = useRef<number | null>(null);
   const routeDebounceRef = useRef<ReturnType<typeof setTimeout>>();
@@ -306,9 +310,14 @@ export function DayCockpit() {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   };
 
-  // GPS tracking during tour (pauses when isPaused)
+  const handleGpsConsentChange = (v: boolean) => {
+    localStorage.setItem("hufi_gps_consent", v ? "1" : "0");
+    setGpsConsentGiven(v);
+  };
+
+  // GPS tracking during tour (pauses when isPaused, requires user consent)
   useEffect(() => {
-    if (cockpitState !== "underway" || !tourId || isPaused) {
+    if (cockpitState !== "underway" || !tourId || isPaused || !gpsConsentGiven) {
       // Clear watch when paused
       if (gpsWatchRef.current !== null) {
         navigator.geolocation.clearWatch(gpsWatchRef.current);
@@ -350,7 +359,7 @@ export function DayCockpit() {
         gpsWatchRef.current = null;
       }
     };
-  }, [cockpitState, tourId, isPaused, user?.id, today]);
+  }, [cockpitState, tourId, isPaused, gpsConsentGiven, user?.id, today]);
 
   // User location for "ready" state
   useEffect(() => {
@@ -792,6 +801,8 @@ export function DayCockpit() {
           isOnline={isOnline}
           geocodeProgress={geocodeProgress}
           onStartTour={() => setChecklistOpen(true)}
+          gpsConsentGiven={gpsConsentGiven}
+          onGpsConsentChange={handleGpsConsentChange}
         />
         <PreTourChecklistSheet
           open={checklistOpen}

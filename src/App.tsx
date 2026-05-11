@@ -55,6 +55,7 @@ const AboSettings = lazy(() => import("@/pages/settings/AboSettings"));
 const ManagementRechtliches = lazy(() => import("@/pages/management/ManagementRechtliches"));
 const ManagementSteuer = lazy(() => import("@/pages/management/ManagementSteuer"));
 const ManagementBusinessHub = lazy(() => import("@/pages/management/ManagementBusinessHub"));
+const ManagementSicherheit = lazy(() => import("@/pages/management/ManagementSicherheit"));
 const Academy = lazy(() => import("@/pages/Academy"));
 const Chat = lazy(() => import("@/pages/Chat"));
 const GeldVerdienen = lazy(() => import("@/pages/GeldVerdienen"));
@@ -768,6 +769,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/business" element={<Business />} />
               <Route path="/management" element={<ManagementHub />} />
               <Route path="/management/profil" element={<ManagementProfil />} />
+              <Route path="/management/sicherheit" element={<ManagementSicherheit />} />
               <Route path="/management/business" element={<ManagementBusinessHub />} />
               <Route path="/management/website" element={<ManagementWebsite />} />
               <Route path="/management/kommunikation" element={<ManagementKommunikation />} />

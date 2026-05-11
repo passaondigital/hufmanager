@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { User, Briefcase, Mic } from "lucide-react";
+import { User, Briefcase, Mic, Shield } from "lucide-react";
 import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
 
 const TAB_REDIRECTS: Record<string, string> = {
@@ -33,6 +33,12 @@ export default function ManagementHub() {
           title="Mein Profil"
           description="Profil, Zertifikate, Fotos, Kontaktdaten, Qualifikationen"
           onClick={() => navigate("/management/profil")}
+        />
+        <Tile
+          icon={<Shield className="w-10 h-10 text-primary" />}
+          title="Sicherheit"
+          description="Biometrische Anmeldung — Fingerabdruck, Face ID, Iris-Scan"
+          onClick={() => navigate("/management/sicherheit")}
         />
       </TileCategory>
 

@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import {
   Play, MapPin, Clock, Route, Fuel, Loader2, WifiOff,
-  AlertTriangle, Timer
+  AlertTriangle, Timer, Navigation
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -24,6 +24,8 @@ interface CockpitReadyProps {
   isOnline: boolean;
   geocodeProgress: { current: number; total: number } | null;
   onStartTour: () => void;
+  gpsConsentGiven: boolean;
+  onGpsConsentChange: (v: boolean) => void;
 }
 
 export function CockpitReady({
@@ -36,6 +38,8 @@ export function CockpitReady({
   isOnline,
   geocodeProgress,
   onStartTour,
+  gpsConsentGiven,
+  onGpsConsentChange,
 }: CockpitReadyProps) {
   const { user } = useAuth();
   const fmt = (v: number) =>
@@ -93,6 +97,22 @@ export function CockpitReady({
         {estimatedFuelCost !== null && (
           <Stat icon={<Fuel className="h-4 w-4" />} label={fmt(estimatedFuelCost)} />
         )}
+      </div>
+
+      {/* GPS Consent Toggle */}
+      <div className="px-5 pb-2">
+        <button
+          onClick={() => onGpsConsentChange(!gpsConsentGiven)}
+          className="flex items-center gap-2 px-3 h-8 rounded-full text-xs font-medium transition-colors"
+          style={{
+            background: gpsConsentGiven ? "rgba(245,151,10,0.15)" : "#1a1a1a",
+            color: gpsConsentGiven ? "#F5970A" : "#666",
+            border: gpsConsentGiven ? "1px solid rgba(245,151,10,0.3)" : "1px solid #333",
+          }}
+        >
+          <Navigation className="h-3 w-3" />
+          GPS {gpsConsentGiven ? "aktiv" : "aktivieren"}
+        </button>
       </div>
 
       {/* Team overview */}

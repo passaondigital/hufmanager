@@ -46,6 +46,7 @@ import {
   HufiContext,
 } from "@/lib/hufi-brain";
 import { ProactiveBriefing } from "@/components/voice/ProactiveBriefing";
+import { HufiWeatherWidget } from "@/components/weather/HufiWeatherWidget";
 import {
   shouldShowBriefing,
   fetchWeatherContext,
@@ -866,6 +867,7 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
             <div style={{ fontSize: 15, fontWeight: 800, color: "#1A1A1A", lineHeight: 1 }}>Hufi</div>
             <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 1 }}>Proaktiver KI-Assistent</div>
           </div>
+          <HufiWeatherWidget compact={true} />
           {/* Replay spoken greeting — visible only when TTS is supported and a greeting exists */}
           {ttsSupported && lastGreetingTextRef.current && (
             <button
