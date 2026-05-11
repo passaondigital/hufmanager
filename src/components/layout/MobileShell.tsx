@@ -45,6 +45,13 @@ import {
   logWelfareAlert,
   HufiContext,
 } from "@/lib/hufi-brain";
+import { ProactiveBriefing } from "@/components/voice/ProactiveBriefing";
+import {
+  shouldShowBriefing,
+  fetchWeatherContext,
+  buildBriefingPayload,
+  type BriefingPayload,
+} from "@/lib/hufai-proactive";
 
 interface ChatAction {
   label: string;
@@ -74,6 +81,7 @@ export function MobileShell() {
   const [showMigrationBanner, setShowMigrationBanner] = useState(false);
   const [showOnboardingTour, setShowOnboardingTour] = useState(false);
   const [hufiCtx, setHufiCtx] = useState<HufiContext | null>(null);
+  const [proactiveBriefing, setProactiveBriefing] = useState<BriefingPayload | null>(null);
   const [searching, setSearching] = useState(false);
   const [activeIntent, setActiveIntent] = useState<HufiIntent | null>(null);
   const [showKiModal, setShowKiModal] = useState(false);
@@ -308,6 +316,16 @@ export function MobileShell() {
         ctx.user.name = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
       }
       setHufiCtx(ctx);
+
+      // Phase E: Proactive briefing — fires at most once every 4 h, only
+      // after DSGVO consent. Weather fetch is fire-and-forget; a null result
+      // just means the weather line is omitted.
+      if (shouldShowBriefing()) {
+        fetchWeatherContext().then((weather) => {
+          setProactiveBriefing(buildBriefingPayload(ctx, weather));
+        });
+      }
+
       const greeting = await generateHufiGreeting(ctx);
       const actions = buildContextActions(ctx);
       const roleIntel = getRoleIntelligence(ctx);
@@ -1350,6 +1368,14 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
 
         <MobileBottomNav onTranscript={handleVoiceTranscript} />
       </div>
+
+      {/* Phase E: Proactive Briefing overlay */}
+      {proactiveBriefing && (
+        <ProactiveBriefing
+          payload={proactiveBriefing}
+          onDismiss={() => setProactiveBriefing(null)}
+        />
+      )}
     </>
   );
 }
