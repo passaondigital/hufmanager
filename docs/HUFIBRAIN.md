@@ -33,20 +33,25 @@ Es gibt zwei Pfade. Wähle nach Aufgabe.
 Wenn ein Agent oder Mensch noch nie mit Hufi gearbeitet hat, in
 genau dieser Reihenfolge:
 
-1. **`docs/VISION.md`** — Was Hufi sein will.
-2. **`docs/CURRENT_STATE.md`** — Wo Hufi heute steht: Branch,
-   Live-Domain, letzte Fixes, offene Punkte, Risiken, was nicht
-   angefasst werden darf.
-3. **`docs/PROJECT_MAP.md`** — Wie die Marken zusammenhängen,
-   Pro-Bereich-Status / Priorität / Risiko / nächster Schritt.
-4. **`docs/PASCAL_CONTEXT.md`** — Wer Pascal ist, wie er denkt, was
-   er von Agenten erwartet, was Agenten nicht tun sollen.
-5. **`docs/ROADMAP.md`** — Priorisierte Realität: P0 / P1 / P2 /
-   Nicht jetzt.
-6. **`docs/VPS_INFRASTRUCTURE.md`** — Wo es physisch läuft. Read-
-   only Überblick, keine Secrets.
-7. **`docs/RECOVERY_LOG.md`** — Chronik bisheriger Sanierungen,
-   damit bekannte Fehler nicht zweimal passieren.
+1. **`docs/VISION.md`** — Was Hufi sein will. Inkl. neuer HufAI-Ausrichtung.
+2. **`docs/HUFAI_RUNTIME_VISION.md`** — HufAI als Kernprodukt, 4 Tracks, Zielstruktur.
+3. **`docs/CURRENT_STATE.md`** — Wo Hufi heute steht: Branch, Live-Domain,
+   Security-P0s, offene Punkte, Risiken, was nicht angefasst werden darf.
+4. **`docs/PROJECT_MAP.md`** — Wie die Marken zusammenhängen.
+5. **`docs/PASCAL_CONTEXT.md`** — Wer Pascal ist, wie er denkt, was er
+   von Agenten erwartet, was Agenten nicht tun sollen.
+6. **`docs/ROADMAP.md`** — Priorisierte Realität: P0 / P1 / P2 / Nicht jetzt.
+7. **`docs/VPS_INFRASTRUCTURE.md`** — Wo es physisch läuft.
+8. **`docs/RECOVERY_LOG.md`** — Chronik bisheriger Sanierungen.
+
+Ergänzende Architektur-Docs (bei spezifischem Bedarf):
+- **`docs/HUFI_CORE_TARGET_ARCHITECTURE.md`** — Detail-Architektur (Entity Model,
+  Event Architecture, Brain, Memory, Voice, Approval)
+- **`docs/HUFAI_DEVICE_CAPABILITY_MATRIX.md`** — Browser/iOS/Android/Electron/Native
+- **`docs/HUFAI_WAKE_RUNTIME_RESEARCH.md`** — Wake Word Realität
+- **`docs/HUFAI_CLI_VISION.md`** — CLI-Konzept
+- **`docs/HUFAI_BIOMETRIC_IDENTITY.md`** — Passkeys, Face ID, WebAuthn
+- **`docs/HUFAI_LANDING_PAGE_MESSAGING.md`** — Was wir kommunizieren dürfen
 
 ### Pfad B — Recovery-Quick-Start (laufende Session)
 
@@ -111,33 +116,47 @@ Vollständige negative Regeln stehen in
 `docs/PASCAL_CONTEXT.md` (Sektion *Was Agenten NICHT tun sollen*).
 Diese Datei hier ist die Kurzfassung für den Einstieg.
 
-## HufiApp · HufAI — Architektur-Kurzübersicht
+## HufAI Core · HufiApp — Architektur-Kurzübersicht
+
+**Die zentrale Verschiebung (2026-05-11):**
+HufAI ist das Produkt. HufiApp ist die UI-Shell / Manifestation.
 
 ```
+HufAI Core (Intelligenz-Zentrum)
+  ├── src/lib/hufai/core/     — Memory, Context, Identity, Intelligence
+  ├── src/lib/hufai/runtime/  — Session, Device, Wake, Offline
+  ├── src/lib/hufai/layers/   — Voice, Action, Proactive, Vision, Weather
+  ├── src/lib/hufai/multimodal/ — Image, Video, Sensor, Hoof-Analysis
+  └── manifestiert sich in:
+        ├── HufiApp (React PWA, heute produktiv)
+        ├── Hufi CLI (geplant, nach Memory-API)
+        ├── Hufi Desktop (future, Electron/Tauri)
+        └── Hufi Watch (future)
+
 HufiApp (Shell / Workflow / Gerät)
   ├── Termine, Pferde, Befunde, Rechnungen, Navigation
-  ├── MobileShell.tsx  ←  Einstiegspunkt für alle Nutzer
-  └── HufAI Layer (Intelligenz dahinter)
+  ├── MobileShell.tsx  ←  Einstiegspunkt
+  └── HufAI Layer — Phasenstatus:
         ├── Phase A–C: Voice Greeting, Push-to-Talk, Nav  ✅ live
         ├── Phase D:   Wake "Hey Hufi" + opt-in Consent   ✅ live
         ├── Phase E:   Proaktives Tages-Briefing           ✅ live
         │     src/lib/hufai-proactive.ts
         │     src/components/voice/ProactiveBriefing.tsx
         ├── Phase F-1: Horse Media Pipeline                ✅ implementiert
-        │     src/lib/hufai-media.ts          (Upload, List, SignedURL)
-        │     src/components/horse-detail/HorseMediaTimeline.tsx
-        │     supabase/migrations/20260511180000_horse_media.sql
+        │     src/lib/hufai-media.ts · HorseMediaTimeline.tsx
         │     ai_status='pending' → bereit für Phase F-2
-        ├── Phase F-2: HufAI Medien-Analyse               geplant
-        │     "Jedes Pferd bekommt eine Stimme" = strukturiertes Gedächtnis,
-        │     keine automatische Diagnose, kein LLM-Ersatz für Tierärzte.
-        └── Phase G:   Lokale / Offline HufAI Runtime      später
+        ├── Phase F-2: HufAI Vision-Analyse               geplant (nächster USP)
+        └── Phase G:   Lokale / Offline Runtime            später
+
+Security P0 (offen):
+  ├── anthropic-proxy ohne Auth → sofort patchen
+  └── Voice-Befund-Persistenz → PferdeakteHuf.tsx:29 → sofort patchen
 ```
 
 > Leitfrage: **"Macht das HufAI intelligenter?"**
 > Vision: **"Jedes Pferd bekommt eine Stimme."**
-> Grenze: HufAI assistiert. Es ersetzt keine Tierärzte oder Fachleute.
-> Keine automatisierte Diagnose. Keine erfundenen Fakten.
+> Grenze: HufAI assistiert. Keine automatisierte Diagnose. Keine erfundenen Fakten.
+> Wake Reality: Browser-Wake nur im Vordergrund. Kein Background-Hack. Ehrlich kommunizieren.
 
 ## Aktuelle Priorität
 

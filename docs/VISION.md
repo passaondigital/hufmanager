@@ -1,5 +1,22 @@
 # Hufi Vision
 
+> Zuletzt aktualisiert: 2026-05-11
+
+## Die zentrale Verschiebung
+
+**HufAI ist das Produkt. HufiApp ist die Manifestation.**
+
+HufiApp ist die UI-Shell, die Workflow-Oberfläche, das Geräte-Gateway.
+HufAI ist das persistente Pferde-Gedächtnis, die Intelligenzschicht,
+die proaktive Assistenz, die Kontext-Engine.
+
+Alles was gebaut wird, muss durch eine Frage:
+**"Macht das HufAI intelligenter?"**
+
+Vollständige Runtime-Vision: `docs/HUFAI_RUNTIME_VISION.md`
+
+---
+
 ## Zweck
 
 Hufi ist der digitale Assistent und Arbeitsbegleiter für Pferdemenschen,
@@ -79,8 +96,28 @@ HufAI ist das Kernprodukt — die echte Intelligenzschicht:
 | A–C | Voice Greeting, Push-to-Talk, Navigation Actions | ✅ live |
 | D | Wake-Layer — "Hey Hufi" mit opt-in Consent | ✅ live |
 | E | Proaktives Tages-Briefing (Wetter, Termine, Pferde) | ✅ live |
-| F | Multimodales Pferde-Gedächtnis (Foto, Audio, Kontext) | geplant |
+| F-1 | Horse Media Pipeline (Upload, SignedURL, ai_status) | ✅ implementiert |
+| F-2 | HufAI Medien-Analyse (Vision → Befund-JSON) | geplant |
 | G | Lokale / Offline HufAI Runtime | später |
+
+## 4 Strategische Tracks (2026+)
+
+### Track A — Proaktives HufAI
+Intelligente Briefings, Wetter-Alerts, Überfall-Checks, LLM-generierte Texte.
+Heute: Regel-basiert (Phase E). Ziel: LLM-Summarisierung + semantische Trigger.
+
+### Track B — Multimodale Pferdeintelligenz
+Foto → strukturierter Befund. Längsschnitt-Vergleich. Muster-Erkennung.
+Heute: Upload-Pipeline bereit. Ziel: Phase F-2 — Vision-Analyse aktivieren.
+
+### Track C — Runtime / Device Layer
+CLI, Desktop, persistente Sessions, Cross-Device, Background-Listeners.
+Heute: PWA mit Browser-Limits. Ziel: Stufen-Plan Browser → Electron → Native.
+Realitäts-Check: `docs/HUFAI_WAKE_RUNTIME_RESEARCH.md`
+
+### Track D — HufAI Memory
+Long-term Pferde-Gedächtnis, Timeline-Reasoning, semantische Suche, pgvector.
+Heute: 2 parallele Tabellen, kein Session-Memory. Ziel: 6-Schichten-Memory.
 
 ## Grenzen — was HufAI nicht tut
 
@@ -88,21 +125,24 @@ HufAI ist das Kernprodukt — die echte Intelligenzschicht:
 - Keine Empfehlungen ohne Fachmenschen-Kontext.
 - Keine autonomen Aktionen ohne Nutzerbestätigung.
 - Kein Erfinden von Fakten, Terminen oder Befunden.
+- Kein echter Background-Wake im Browser (technisch unmöglich — ehrlich kommunizieren).
 
-## Kurzfristiger Fokus
+## Kurzfristiger Fokus (P0)
 
-- Proaktives Briefing stabil halten und verbessern (Phase E).
-- Produktive Stabilität für bestehende Nutzer.
-- Sauberes Routing zwischen HufiApp und HufManager-Legacy-Domains.
-- Zuverlässige Lead-/Anfragen-Flows zwischen Provider- und Stall-Sicht.
-- PWA-/Mobile-Stabilität.
+1. `anthropic-proxy` Auth-Patch — Sicherheitslücke (kein JWT, CORS `"*"`).
+2. Voice-Befund-Persistenz — Datenverlust in `PferdeakteHuf.tsx`.
+3. Multi-Turn Dialog — Session-Memory + Rolling-Window.
+4. Phase F-2 — Horse Vision Analysis aktivieren.
+5. Azure TTS + Barge-In — Voice-UX verbessern.
 
 ## Nicht-Ziele für jetzt
 
 - Keine zweite, komplett getrennte HufManager-Codebase.
 - Keine großen Refactors während laufender Feature-Arbeit.
-- Kein LLM-Aufruf im Briefing-Layer (Phase E bleibt regel-basiert).
-- Keine komplexe Stimmerkennung vor echtem Team-/Shared-Device-Bedarf.
+- Kein Background-Wake-Hack der die Browser-Limits umgeht.
+- Keine Stimmerkennung pro Person vor echtem Team-Bedarf.
+- Keine öffentliche Kommunikation des 2030-Big-Picture.
+- Kein "Jarvis"-Claim bis Multi-Turn, Vision-Analyse und TTS-Qualität ready.
 
 ## Erfolgskriterien
 
@@ -112,3 +152,4 @@ HufAI ist das Kernprodukt — die echte Intelligenzschicht:
 - Klare Kommunikation zwischen Hufbearbeiter, Besitzer und Betrieb.
 - Bessere Dokumentation am Pferd.
 - Nutzer vertrauen dem System im Alltag.
+- HufAI erinnert sich korrekt an Pferd-Kontext zwischen Sessions.

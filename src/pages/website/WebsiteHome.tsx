@@ -8,6 +8,7 @@ import FooterNew from "@/components/website/FooterNew";
 import CookieBanner from "@/components/website/CookieBanner";
 import { useGA4 } from "@/hooks/useGA4";
 import pascalImage from "@/assets/lp/pascal-founder.png";
+import HufiVoiceSection from "@/components/landing/HufiVoiceSection";
 
 /* ── Reveal hook ── */
 function useReveal(threshold = 0.12) {
@@ -307,6 +308,7 @@ function HufiHero() {
               </Button>
             </div>
             <p className="text-white/25 text-xs">Kein App Store · Keine Kreditkarte · Kündigung jederzeit</p>
+
             <div className="flex flex-wrap justify-center lg:justify-start gap-2">
               {heroBadges.map((b) => (
                 <span key={b.text} className="text-xs font-medium px-3 py-1.5 rounded-full border flex items-center gap-1.5" style={{ color: "rgba(255,255,255,0.35)", borderColor: "rgba(255,255,255,0.09)", backgroundColor: "rgba(255,255,255,0.03)" }}>
@@ -776,6 +778,7 @@ const WebsiteHome = () => {
     <div className="min-h-screen bg-black">
       <Navbar />
       <HufiHero />
+      <HufiVoiceSection />
       <PainSection />
       <VoiceOfHorseSection />
       <EcosystemHeader />

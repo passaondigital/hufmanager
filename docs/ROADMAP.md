@@ -32,23 +32,35 @@ Stabilität → täglicher Nutzen → Kontextsystem → Assistenz → proaktive 
 > **Stabilitätsverpflichtungen** = laufend, nie erledigt, gelten für jeden
 > Agenten zu jeder Zeit.
 
-### Offene Aktionen
+### Security P0 (aus Jarvis-Audit 2026-05-11)
 
-- Doku-Dateien dieser Session (`CURRENT_STATE`, `ROADMAP`,
-  `VPS_INFRASTRUCTURE`, `RECOVERY_LOG`, `PASCAL_CONTEXT`, `PROJECT_MAP`)
-  reviewen und committen, sobald freigegeben.
-- Push-Entscheidung für die heutigen Recovery- (`3522de61`, `b8eb6249`,
-  `2d7344be`) und Doku-Commits treffen.
-- Nach Push: kurz live verifizieren, dass `hufiapp.de` und
-  `hufmanager.de`-Aliase weiter sauber laden.
+Diese Punkte sind vor jedem Nutzerzuwachs zu patchen:
+
+1. **`anthropic-proxy` ohne Auth** (`supabase/functions/anthropic-proxy/index.ts`)
+   Kein JWT-Check, CORS `"*"`. Jeder mit der URL kann API-Calls auf Projektkosten
+   auslösen. Fix: Supabase JWT validieren vor Anthropic-Request. Aufwand: < 1 Tag.
+
+2. **Voice-Befund-Persistenz** (`src/components/pferdeakte/PferdeakteHuf.tsx:29`)
+   TODO: befunde werden nur getoastet, nicht in `hoof_entries`/`hoof_analyses`
+   geschrieben. Aktiver Datenverlust in Core-Feature. Fix: < 1 Tag.
+
+3. **`VITE_ANTHROPIC_API_KEY` Architektur** (`src/lib/ai-routing.ts`)
+   Key wird aus `import.meta.env` gelesen — würde bei `.env`-Eintrag im
+   JS-Bundle landen. Aktuell nicht gesetzt (sicher). Fix: alle AI-Calls
+   über Edge Functions routen, Key nie ins Frontend.
+
+### Offene Aktionen (Doku/Infra)
+
+- Doku-Dateien dieser Session reviewen und committen, sobald freigegeben.
+- Phase F-1 Migration (`20260511180000_horse_media.sql`) pushen wenn freigegeben.
+- Biometrie-Credential-ID in `user_profiles` persistieren (Cross-Device-Fix).
 
 ### Stabilitätsverpflichtungen (laufend)
 
 - Live-Auslieferung auf `hufiapp.de` darf nicht brechen.
 - Legacy-Domain-Aliase (`hufmanager.de`, `www.hufmanager.de`,
-  `app.hufmanager.de`) bleiben funktional — siehe Commit `b8eb6249`.
-- Lead-/Anfragen-Flows: Provider- und Stall-View sehen konsistente
-  Status-Werte — siehe Commit `3522de61`.
+  `app.hufmanager.de`) bleiben funktional.
+- Lead-/Anfragen-Flows: Provider- und Stall-View sehen konsistente Status-Werte.
 - Kein `git push`, kein Deploy, kein Schema-Change, keine Secret-Ausgabe
   ohne explizite Freigabe.
 
@@ -93,7 +105,7 @@ Unabhängig von P0/P1/P2 verläuft die KI-Reifung in Phasen:
 | D | Wake-Layer — "Hey Hufi" mit opt-in Consent | ✅ live |
 | E | Proaktives Tages-Briefing (Wetter, Termine, Pferde) | ✅ live |
 | F-1 | Horse Media Pipeline (Foto/Video/Audio → horse_media) | ✅ implementiert, Migration ausstehend |
-| F-2 | HufAI Medien-Analyse (ai_status: pending → done) | geplant |
+| F-2 | HufAI Medien-Analyse (Vision → Befund-JSON) | geplant — nächster USP-Sprint |
 | G | Lokale / Offline HufAI Runtime | später |
 
 **Phase F-1 Details:**
@@ -101,7 +113,8 @@ Unabhängig von P0/P1/P2 verläuft die KI-Reifung in Phasen:
 - Upload via HufiCam → `hufai-media.ts` → DB-Record mit `ai_status = 'pending'`.
 - HorseMediaTimeline zeigt letzte 6 Medien im ProviderHorseDetail.
 - Keine automatisierte Diagnose. Kein LLM-Aufruf.
-- Phase F-2: KI analysiert `ai_status = 'pending'`-Medien (noch nicht implementiert).
+- Phase F-2: DB-Trigger oder Edge Function → Claude Vision → Befund-JSON mit
+  Kategorie, Empfehlung, Konfidenz. `ai_status = 'analysiert'`.
 
 > Leitfrage für jede KI-Funktion: **"Macht das HufAI intelligenter?"**
 
@@ -109,6 +122,18 @@ Unabhängig von P0/P1/P2 verläuft die KI-Reifung in Phasen:
 
 HufAI assistiert — ersetzt keine Tierärzte oder Fachleute.
 Keine automatisierte medizinische Diagnose. Keine erfundenen Fakten.
+
+## 4 Strategische Tracks (Neu ab 2026-05-11)
+
+Diese Tracks ergänzen die Phasen-Logik und strukturieren die mittelfristige Arbeit.
+Details: `docs/HUFAI_RUNTIME_VISION.md`
+
+| Track | Name | Fokus | Status |
+|---|---|---|---|
+| A | Proaktives HufAI | LLM-Briefing, semantische Trigger, Wetter-Alerts | P1 |
+| B | Multimodale Pferdeintelligenz | Phase F-2, Längsschnitt, Muster | P1 |
+| C | Runtime / Device Layer | CLI, Electron, Background, Cross-Device | P2 |
+| D | HufAI Memory | 6-Schichten-Memory, Timeline, pgvector, Multi-Turn | P1 |
 
 ## P2 — Später
 
@@ -118,24 +143,28 @@ Keine automatisierte medizinische Diagnose. Keine erfundenen Fakten.
 - BHS BALANCE Abo-Verwaltung (Intervalle, Kündigung, Umsatzübersicht).
 - BHS INTENSIV Bewerbungsflow (Formular, Video-Upload, KI-Zusammenfassung).
 - Schnell-Terminabschluss (3-Minuten-Voice-First).
-- Phase F: Multimodales Pferde-Gedächtnis (Foto-basierte Hufanalyse, Audio-Notizen).
-- Feature-Domain-Struktur (`src/features/...`) statt heutigem
-  Pages-/Components-Mix.
-- Hufi-Memory-Layer (`src/lib/hufi-memory.ts`) — derzeit Konzept, kein
-  Code. Erst angehen, wenn ein konkretes Nutzer-Bedürfnis (z. B.
-  geräteübergreifender Kontext für Pascal) klar formuliert ist.
+- Feature-Domain-Struktur (`src/features/...`) statt heutigem Pages-/Components-Mix.
+- `src/lib/hufai/` Ordnerstruktur (Track A/B/C/D) einführen.
+- God-Components aufteilen: MobileShell.tsx (1.383 Z.), App.tsx (1.007 Z.).
+- Type-sichere DB-Calls für alle HufAI-Tabellen (`supabase gen types`).
+- Error Monitoring (Sentry o.ä.) einführen.
+- Analytics (GA4-ID setzen oder Posthog).
+- Hufi CLI (`hufi today`, `hufi horse`, `hufi ask`) — nach Memory-API.
+- Offline AI Phase G (Ollama in PWA-Kontext, Electron).
+- CopeCart-Webhook Replay-Protection.
+- Stallbetreiber-Suite echte Features (aktuell Placeholder).
 
 ## Nicht jetzt
 
 - Keine zweite, getrennte HufManager-Codebase.
 - Keine großen Refactors während aktiver Feature-Arbeit.
-- Kein LLM-Aufruf im Briefing-Layer (Phase E bleibt regel-basiert).
+- Kein Background-Wake-Hack (Browser-Architektur-Limit — kein Workaround).
 - Keine komplexe Stimmerkennung, solange Login + Gerät + Rolle reichen.
-- Keine Branding-Migration "weg von HufManager" — Legacy bleibt parallel,
-  bis Datenstand und Vertrauen es zulassen.
+- Keine Branding-Migration "weg von HufManager" — Legacy bleibt parallel.
 - Keine Supabase-Schema-Migrations ohne explizite Freigabe.
 - Kein Commit von `supabase/.temp/cli-latest`.
 - Keine öffentliche Kommunikation des 2030-Big-Picture.
+- Kein "Jarvis"-Claim vor Multi-Turn + Phase F-2 + Azure TTS.
 
 ## Messbare Ziele (BHS-Kontext)
 

@@ -100,34 +100,60 @@
 | `2f4153d6` | `feat(voice)` — Phase D: globales "Hey Hufi" wake-word |
 | `cedb7794` | `feat(voice+nav)` — Phase A/B/C: Voice Greeting, Push-to-Talk, Nav |
 
+## Strategische Verschiebung (2026-05-11)
+
+**HufAI ist das Produkt. HufiApp ist die Manifestation.**
+
+HufiApp wird zu: UI-Shell, Identitätsschicht, Workflow-Layer, Geräte-Gateway.
+HufAI Core wird zu: Persistentes Pferde-Gedächtnis, Intelligenzschicht, Proaktivität.
+
+Ziel-Ordnerstruktur: `src/lib/hufai/core/`, `/runtime/`, `/layers/`, `/integrations/`, `/multimodal/`
+Vollständige Vision: `docs/HUFAI_RUNTIME_VISION.md`
+
 ## Was noch offen ist
 
-- **Kein Push** der drei heutigen Recovery-Commits — bewusste
-  Sicherheitspause, bevor Live-Deployment ausgelöst wird.
-- **PWA / Mobile Nav** noch nicht systematisch getestet (Recovery-Risiko aus
-  früherem Stand, Code unverändert seit `37f43d5b`).
-- **Inventur der `hufmanager`-Mentions** in `src/` steht noch aus —
-  laut Live-Check ~65 Vorkommen (E-Mails, Affiliate-Links,
-  UI-Strings). Klassifikation in *legitim* vs. *zu migrieren*
-  als P1 in `ROADMAP.md`, keine Massen-Replace-Aktion.
-- **`src/lib/hufi-memory.ts`** existiert noch nicht — Hufi-Memory-Layer
-  ist Konzept, kein Code.
-- **`docs/PASCAL_CONTEXT.md`** ist strukturiert vorbereitet, wartet
-  aber weiter auf den "System Context Export". SmartHoof, PASSAON,
-  Arbeitsrhythmen und Mitarbeitende brauchen direkte Pascal-Inputs,
-  kein Agent darf sie erfinden.
+### Security P0 (vor Nutzerzuwachs patchen)
+
+1. **`anthropic-proxy` ohne Auth** — `supabase/functions/anthropic-proxy/index.ts`
+   kein JWT, CORS `"*"`. Jeder mit der URL kann API-Calls auf Projektkosten auslösen.
+   Fix: Supabase JWT validieren vor Anthropic-Request. Aufwand: < 1 Tag.
+
+2. **Voice-Befund-Persistenz** — `src/components/pferdeakte/PferdeakteHuf.tsx:29`
+   TODO: Befunde werden nur getoastet, nicht in DB persistiert. Aktiver Datenverlust.
+   Fix: `hoof_entries`/`hoof_analyses`-Insert implementieren. Aufwand: < 1 Tag.
+
+3. **Biometrie-Credential nur in localStorage** — kein Cross-Device, kein Backup.
+   Fix: `user_profiles.webauthn_credentials` JSONB-Array speichern. Aufwand: < 1 Tag.
+   Details: `docs/HUFAI_BIOMETRIC_IDENTITY.md`
+
+### HufAI Core — nächste Schritte
+
+4. **Multi-Turn Dialog** — `HeyHufi.tsx` sendet nur 1 Nachricht, kein Verlauf.
+   Fix: Rolling-Window (max 10 Turns) in State + `ai-chat` Edge Function erweitern.
+
+5. **Phase F-2** — `ai_status='pending'` in `horse_media` hat keinen Trigger.
+   Fix: Supabase Trigger oder Edge Function → Claude Vision → Befund-JSON.
+
+6. **Barge-In + Azure TTS** — Browser-Stimme und kein TTS-Unterbrechen.
+   Fix: Azure TTS `de-DE-KatjaNeural`, `speechSynthesis.cancel()` bei SR-onresult.
+
+### Infra / Doku
+
+- **Phase F-1 Migration** (`20260511180000_horse_media.sql`) wartet auf `db push`.
+- **PWA / Mobile Nav** noch nicht systematisch getestet.
+- **Inventur `hufmanager`-Mentions** (~65 in `src/`) steht aus — P1.
+- **`docs/PASCAL_CONTEXT.md`** wartet auf "System Context Export" von Pascal.
+- **GA4-ID leer** — kein Analytics aktiv (`src/hooks/useGA4.tsx`).
+- **0 Tests** — kein Vitest/Jest/Playwright konfiguriert.
 
 ## Bekannte Risiken
 
-- **Disk-Auslastung** auf VPS: 71% belegt (136 GB von 193 GB) — Build-Output
-  und Ollama-Modelle wachsen, im Auge behalten.
-- **Generierte Riesen-Assets**: am 2026-05-07 wurden durch einen
-  Agenten-Unfall drei Bilder (`apple-touch-icon.png`, `og-image.png`,
-  fälschlich erzeugte `favicon.ico`) als 11.8 MB / 10000×10000 PNGs
-  überschrieben. Zurückgerollt, nicht im Verlauf. Wenn solche Sizes
-  wieder auftauchen → sofort stoppen. Details: `RECOVERY_LOG.md`.
-- **Memory-Drift**: Architektur-Memory aus April/Mai 2026 enthält teils
-  veraltete Routen-Aussagen. Code-Stand schlägt Memory.
+- **Disk-Auslastung** auf VPS: 71% belegt (136 GB von 193 GB).
+- **Generierte Riesen-Assets**: Vorfall 2026-05-07 (11.8 MB PNGs), zurückgerollt.
+  Details: `RECOVERY_LOG.md`.
+- **Memory-Drift**: Code-Stand schlägt Memory-Aussagen.
+- **`VITE_ANTHROPIC_API_KEY`** in `ai-routing.ts` lesen — aktuell nicht gesetzt
+  (sicher), aber Architektur-Risiko wenn Key in `.env` landet.
 
 ## Was nicht angefasst werden soll
 
@@ -135,19 +161,15 @@
 - Bestehende `hufiapp.de`-Routing-Logik.
 - Auth-Domain-Setup (`app.hufiapp.de` / `app.hufmanager.de`).
 - Ollama-Modellbestand auf dem VPS, wenn nicht ausdrücklich gefragt.
-- Supabase-Schema (keine Migrations in Recovery-Phasen).
+- Supabase-Schema (keine Migrations ohne explizite Freigabe).
 
 ## Nächster sinnvoller Schritt
 
 > Diese Liste ist bewusst kurz und wird bei jeder Aktualisierung dieser
 > Datei neu geschrieben. Erledigtes wandert ins `RECOVERY_LOG.md`.
 
-1. Doku-Dateien aus dieser Session (`CURRENT_STATE`, `ROADMAP`,
-   `VPS_INFRASTRUCTURE`, `RECOVERY_LOG`, `PASCAL_CONTEXT`, `PROJECT_MAP`)
-   reviewen und committen, sobald freigegeben.
-2. Push-Entscheidung für die heutigen Recovery- und Doku-Commits treffen
-   (kein Push ohne explizite Freigabe).
-3. PWA-/Mobile-Nav-Verifikation gezielt durchführen, separat von
-   Feature-Arbeit.
-4. `PASCAL_CONTEXT.md` mit Pascals "System Context Export" verdichten,
-   sobald nachgereicht.
+1. Security P0 patchen: `anthropic-proxy` Auth + Voice-Befund-Persistenz.
+2. Doku-Dateien dieser Session reviewen und committen, sobald freigegeben.
+3. Phase F-1 Migration freigeben: `supabase db push`.
+4. Multi-Turn Dialog implementieren (Session-Memory, Rolling-Window).
+5. `PASCAL_CONTEXT.md` mit Pascals "System Context Export" verdichten.

@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,12 +25,55 @@ interface Props {
 export function PferdeakteHuf({ horseId, userRole }: Props) {
   const [showComparison, setShowComparison] = useState(false);
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const handleFindingGenerated = (finding: HoofFindingResult) => {
-    // TODO: Save to hoof_entries and hoof_analyses
-    toast.success("Befund übernommen");
+  const handleFindingGenerated = async (finding: HoofFindingResult) => {
+    if (!user) {
+      toast.error("Nicht angemeldet — Befund kann nicht gespeichert werden.");
+      return;
+    }
+
+    try {
+      // Hoof-Entry für Verlaufshistorie
+      const { error: entryError } = await supabase
+        .from("hoof_entries")
+        .insert({
+          horse_id: horseId,
+          type: "voice_befund",
+          description: [finding.befund, finding.massnahme, finding.empfehlung]
+            .filter(Boolean)
+            .join(" | "),
+          created_by: user.id,
+          entry_date: new Date().toISOString().split("T")[0],
+        });
+
+      if (entryError) throw entryError;
+
+      // Strukturierter Hoof-Analysis-Record mit Messwerten
+      const { error: analysisError } = await supabase
+        .from("hoof_analyses")
+        .insert({
+          horse_id: horseId,
+          provider_id: user.id,
+          notes: [finding.befund, finding.massnahme].filter(Boolean).join("\n"),
+          recommendations: finding.empfehlung ? [finding.empfehlung] : [],
+          hoof_data_vl: finding.huf_werte ?? null,
+          status: finding.dringend_tierarzt ? "dringend_tierarzt"
+            : finding.dringend_osteo ? "dringend_osteo"
+            : "dokumentiert",
+        });
+
+      if (analysisError) throw analysisError;
+
+      await queryClient.invalidateQueries({ queryKey: ["pferdeakte-hoof-analyses", horseId] });
+      toast.success("Befund gespeichert");
+    } catch (err) {
+      console.error("Befund speichern fehlgeschlagen:", err);
+      toast.error("Befund konnte nicht gespeichert werden.");
+    }
+
     setShowVoiceRecorder(false);
-    console.log("Finding generated:", finding);
   };
   // Fetch hoof analyses
   const { data: analyses, isLoading: loadingAnalyses } = useQuery({

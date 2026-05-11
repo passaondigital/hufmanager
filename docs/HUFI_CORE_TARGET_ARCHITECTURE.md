@@ -1,10 +1,13 @@
-# Hufi Core — Target Architecture
+# HufAI Core — Target Architecture
 
+> Zuletzt aktualisiert: 2026-05-11
+>
 > Architektur-Kristallisation. Keine Implementierung, keine Migration,
 > kein Refactor, kein Deploy.
 >
-> Quelle: Findings aus `docs/HUFI_SYSTEM_DNA_ANALYSIS.md` und
-> `docs/HUFI_VERIFICATION_AUDIT.md` (HEAD `260af789`, Stand 2026-05-08).
+> Quelle: Findings aus `docs/HUFI_SYSTEM_DNA_ANALYSIS.md`,
+> `docs/HUFI_VERIFICATION_AUDIT.md` (HEAD `260af789`, Stand 2026-05-08)
+> und Jarvis-Level Audit 2026-05-11.
 >
 > Diese Datei beschreibt den **Soll-Zustand**. Jeder Abschnitt trennt
 > deutlich zwischen *existing already* (mit konkretem Datei-/Tabellen-
@@ -13,6 +16,69 @@
 >
 > **Kein Marketing. Keine Buzzwords. Keine Fantasie-Features
 > disconnected vom aktuellen Code.**
+>
+> Ergänzende Dokumente (neu ab 2026-05-11):
+> - `HUFAI_RUNTIME_VISION.md` — HufAI als Kernprodukt, 4 Tracks
+> - `HUFAI_DEVICE_CAPABILITY_MATRIX.md` — Platform-Capabilities
+> - `HUFAI_WAKE_RUNTIME_RESEARCH.md` — Wake Reality Check
+> - `HUFAI_CLI_VISION.md` — CLI-Konzept
+> - `HUFAI_BIOMETRIC_IDENTITY.md` — Passkeys & WebAuthn
+
+---
+
+## 0. HufAI Frontend-Zielstruktur (Neu 2026-05-11)
+
+Die folgende Ordnerstruktur ist das **Ziel** für `src/lib/hufai/`.
+Sie existiert noch nicht — heutige Dateien liegen flach in `src/lib/`.
+
+```
+src/lib/hufai/
+
+core/
+  ├── memory/          — Heute: hufi-brain.ts, hufi-memory.ts (flach)
+  │                      Ziel: horse_memory, user_memory, relation_memory API
+  ├── context/         — Heute: hufi-context-resolver.ts
+  │                      Ziel: Permission-gefilterter Context-Builder
+  ├── identity/        — Heute: hufi-biometrics.ts
+  │                      Ziel: Auth + Biometrie + Rollen-Resolution
+  └── intelligence/    — Heute: ai-routing.ts, hufi-brain.ts
+                         Ziel: AI-Router, Credit-System, Model-Selection
+
+runtime/
+  ├── session/         — Heute: nicht vorhanden (P0-Lücke)
+  │                      Ziel: Multi-Turn-Konversations-State
+  ├── device/          — Heute: nicht vorhanden
+  │                      Ziel: Platform-Detection, Capability-Flags
+  ├── wake/            — Heute: HeyHufi.tsx (Browser SR API)
+  │                      Ziel: abstrahierte Wake-Engine (Browser / Porcupine)
+  └── offline/         — Heute: TanStack+IndexedDB (Daten), kein Offline-AI
+                         Ziel: Ollama-Bridge, Local-Inference-API
+
+layers/
+  ├── voice/           — Heute: useHufiTTS.ts, useVoiceCapture.ts, HeyHufi.tsx
+  ├── action/          — Heute: hufi-actions.ts, hufi-nav-actions.ts
+  ├── recommendation/  — Heute: hufai-proactive.ts (regel-basiert)
+  ├── proactive/       — Heute: hufai-proactive.ts (TTL-Gate, Open-Meteo)
+  ├── navigation/      — Heute: hufi-intent.ts, hufi-nav-actions.ts
+  ├── vision/          — Heute: hufai-media.ts (Upload), F-2 fehlt
+  ├── weather/         — Heute: HufiWeatherWidget.tsx, Open-Meteo
+  └── horse/           — Heute: hufi-brain.ts (Teile davon)
+
+integrations/
+  ├── calendar/        — Heute: nicht vorhanden
+  ├── email/           — Heute: Resend via Edge Functions
+  ├── weather/         — Heute: Open-Meteo (kostenlos)
+  └── stable-systems/  — Heute: sync-vet-pms Edge Function
+
+multimodal/
+  ├── image/           — Heute: HufiCam.tsx, hufai-media.ts
+  ├── sensor/          — Heute: useHufiGPS.ts, hufi-biometrics.ts
+  └── hoof-analysis/   — Heute: ai_status='pending', F-2 nicht implementiert
+```
+
+**Migration-Strategie:** Kein Big-Bang-Refactor. Dateien werden bei
+nächstem Anfassen in die neue Struktur verschoben. Neue Dateien direkt
+in die Zielstruktur anlegen.
 
 ---
 
