@@ -239,16 +239,107 @@ export async function buildOpenHorse(
   };
 }
 
+// ─── Phase E: Context-aware lookups ─────────────────────────────────────────
+
+/** Returns the next scheduled/confirmed appointment for the user. */
+async function fetchNextAppointment(ctx: ResolveContext): Promise<{
+  date: string;
+  time: string | null;
+  horseName: string | null;
+} | null> {
+  const today = new Date().toISOString().slice(0, 10);
+  const { data } = await supabase
+    .from("appointments")
+    .select("id, date, time, horses(name)")
+    .eq("provider_id", ctx.userId)
+    .gte("date", today)
+    .in("status", ["scheduled", "confirmed"])
+    .order("date", { ascending: true })
+    .order("time", { ascending: true, nullsFirst: false })
+    .limit(1)
+    .maybeSingle();
+  if (!data) return null;
+  const horses = (data as any).horses;
+  return {
+    date: (data as any).date as string,
+    time: (data as any).time as string | null,
+    horseName: typeof horses === "object" && horses !== null ? (horses as any).name ?? null : null,
+  };
+}
+
+/** Resolves a lead by partial name match (provider-scoped). */
+async function resolveLeadByName(
+  query: string,
+  ctx: ResolveContext
+): Promise<{ id: string; name: string }[]> {
+  if (!query.trim()) return [];
+  const { data } = await supabase
+    .from("leads")
+    .select("id, name")
+    .eq("provider_id", ctx.userId)
+    .ilike("name", `%${query.replace(/[%_]/g, " ").trim()}%`)
+    .limit(5);
+  return (data ?? []).filter((r: any) => !!r.name).map((r: any) => ({ id: r.id, name: r.name }));
+}
+
+// ─── Phase E builders ────────────────────────────────────────────────────────
+
+async function buildOpenNextAppointment(ctx: ResolveContext): Promise<ActionOutcome> {
+  const appt = await fetchNextAppointment(ctx);
+  if (!appt) {
+    return {
+      kind: "fallback",
+      message: "Keine geplanten Termine gefunden.",
+      spoken: "Du hast keine geplanten Termine.",
+    };
+  }
+  const dateStr = new Date(appt.date).toLocaleDateString("de-DE", {
+    weekday: "long", day: "numeric", month: "long",
+  });
+  const timeStr = appt.time ? ` um ${appt.time.slice(0, 5)} Uhr` : "";
+  const horseStr = appt.horseName ? ` bei ${appt.horseName}` : "";
+  const spoken = `Dein nächster Termin ist am ${dateStr}${timeStr}${horseStr}.`;
+  return {
+    kind: "ok",
+    action: makeAction("open_appointments", ctx.role, spoken, "Nächster Termin"),
+  };
+}
+
+async function buildOpenLeadByName(query: string, ctx: ResolveContext): Promise<ActionOutcome> {
+  const leads = await resolveLeadByName(query, ctx);
+  if (!leads.length) {
+    return {
+      kind: "fallback",
+      message: `Keine Anfrage von „${query}" gefunden.`,
+      spoken: `Ich konnte keine Anfrage von ${query} finden.`,
+    };
+  }
+  // Navigate to leads list regardless of match count — no detail route exists.
+  return {
+    kind: "ok",
+    action: makeAction(
+      "open_leads",
+      ctx.role,
+      leads.length === 1
+        ? `Ich öffne die Anfragen. ${leads[0].name} ist dabei.`
+        : `Ich habe ${leads.length} Anfragen gefunden.`,
+      "Anfragen geöffnet"
+    ),
+  };
+}
+
 // ─── Top-level: target descriptor → outcome ─────────────────────────────────
 export type NavTarget =
   | { kind: "horse"; query: string }
   | { kind: "horses" }
   | { kind: "appointments" }
+  | { kind: "next_appointment" }
   | { kind: "calendar" }
   | { kind: "route_day" }
   | { kind: "invoices" }
   | { kind: "customers" }
   | { kind: "leads" }
+  | { kind: "lead_by_name"; query: string }
   | { kind: "settings" };
 
 export async function runNavAction(
@@ -260,6 +351,8 @@ export async function runNavAction(
       return buildOpenHorse(target.query, ctx);
     case "horses":
       return { kind: "ok", action: buildOpenHorses(ctx.role) };
+    case "next_appointment":
+      return buildOpenNextAppointment(ctx);
     case "appointments":
       return { kind: "ok", action: buildOpenAppointments(ctx.role) };
     case "calendar":
@@ -270,6 +363,8 @@ export async function runNavAction(
       return { kind: "ok", action: buildOpenInvoices(ctx.role) };
     case "customers":
       return { kind: "ok", action: buildOpenCustomers(ctx.role) };
+    case "lead_by_name":
+      return buildOpenLeadByName(target.query, ctx);
     case "leads":
       return { kind: "ok", action: buildOpenLeads(ctx.role) };
     case "settings":

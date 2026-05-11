@@ -120,10 +120,19 @@ interface TargetMatcher {
 // Each matcher has a list of word-boundary patterns. The last group, when
 // present, captures the remainder for entity-bearing targets (e.g. horse name).
 const TARGET_MATCHERS: TargetMatcher[] = [
+  // Phase E: next/today's appointment (must come BEFORE generic calendar)
+  {
+    build: () => ({ kind: "next_appointment" }),
+    patterns: [
+      /\b(nächste[rn]?|kommende[rn]?|heutige[rn]?|nächste[ns]?)\s+termin\b/,
+      /\btermin\s+(heute|als\s+nächstes|jetzt)\b/,
+      /\bwann\s+(ist|hab)\s+(ich\s+)?(der\s+)?nächste[rn]?\s+termin\b/,
+    ],
+  },
   // Calendar / appointments
   {
     build: () => ({ kind: "calendar" }),
-    patterns: [/\bkalender\b/, /\btermine?\b/, /\bterminkalender\b/],
+    patterns: [/\bkalender\b/, /\btermine?\b/, /\bterminkalender\b/, /\bappointments?\b/],
   },
   // Daily route / today
   {
@@ -133,17 +142,17 @@ const TARGET_MATCHERS: TargetMatcher[] = [
   // Invoices
   {
     build: () => ({ kind: "invoices" }),
-    patterns: [/\brechnungen?\b/, /\bbelege?\b(?!.*upload)/, /\bumsa?tze?\b/],
+    patterns: [/\brechnungen?\b/, /\bbelege?\b(?!.*upload)/, /\bumsa?tze?\b/, /\binvoices?\b/],
   },
   // Customers
   {
     build: () => ({ kind: "customers" }),
-    patterns: [/\bkunden\b/, /\bkundenliste\b/, /\bclients?\b/],
+    patterns: [/\bkunden\b/, /\bkundenliste\b/, /\bclients?\b/, /\bkundenübersicht\b/],
   },
-  // Leads / inquiries
+  // Leads / inquiries (generic — must come BEFORE lead_by_name)
   {
     build: () => ({ kind: "leads" }),
-    patterns: [/\banfragen?\b/, /\bleads?\b/, /\binteressenten\b/],
+    patterns: [/\banfragen?\b/, /\bleads?\b/, /\binteressenten\b/, /\bneuanfragen?\b/],
   },
   // Settings
   {
@@ -160,6 +169,12 @@ const TARGET_MATCHERS: TargetMatcher[] = [
       /\bpferde\b\s*(?:liste|übersicht)?\s*$/,
     ],
   },
+];
+
+// Phase E: Lead by name — "zeig Lead von Max" / "öffne Anfrage von Müller"
+const LEAD_NAME_PATTERNS: RegExp[] = [
+  /\b(?:anfrage|lead)\s+(?:von\s+)(.+?)\s*[.!?]?\s*$/i,
+  /\b(?:zeig|öffne|öffnen)\s+(?:anfrage|lead)\s+(?:von\s+)?(.+?)\s*[.!?]?\s*$/i,
 ];
 
 // Single horse with name — captures the rest of the message as a probable name.
@@ -192,8 +207,19 @@ export function detectNavigationTarget(message: string): NavTarget | null {
     }
   }
 
-  // 2. Single horse by name. Skip if the message contains a generic
-  //    target-keyword that we already covered above.
+  // 2a. Phase E: lead by name — check before horse patterns.
+  for (const re of LEAD_NAME_PATTERNS) {
+    const m = message.match(re);
+    if (m && m[1]) {
+      const candidate = m[1].replace(/[.!?]+$/, "").trim();
+      if (candidate && candidate.length <= 60) {
+        return { kind: "lead_by_name", query: candidate };
+      }
+    }
+  }
+
+  // 2b. Single horse by name. Skip if the message contains a generic
+  //     target-keyword that we already covered above.
   const STOPWORDS = /\b(kalender|termine?|rechnungen?|kunden|anfragen?|leads?|einstellungen?|tour|tageskockpit|profil|settings|pferde\b)\b/;
   if (STOPWORDS.test(lower)) return null;
 
