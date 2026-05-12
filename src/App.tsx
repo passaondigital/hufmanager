@@ -550,8 +550,12 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/welcome" element={<Welcome />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/update-password" element={<UpdatePassword />} />
-             {/* Legacy/alias route */}
+             {/* Legacy/alias routes */}
              <Route path="/dashboard" element={<Navigate to="/home" replace />} />
+             {/* Alias-Routen für fehlende Seiten — kein 404 mehr */}
+             <Route path="/credits" element={<Navigate to="/management/abo" replace />} />
+             <Route path="/meine-zentrale" element={<Navigate to="/management" replace />} />
+             <Route path="/einstellungen" element={<Navigate to="/management" replace />} />
             
             {/* Domain-basierte Weiche: www.hufiapp.de → LP, app.hufiapp.de → Dashboard */}
             <Route path="/" element={<Index />} />

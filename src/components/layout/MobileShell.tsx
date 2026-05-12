@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { Mic, Send, Loader2, Coins, Grid3X3, Volume2, X } from "lucide-react";
+import { Loader2, Coins, Grid3X3, Volume2, X } from "lucide-react";
 import { toast } from "sonner";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { useViewMode } from "@/hooks/useViewMode";
@@ -17,6 +17,7 @@ import { detectIntent, type HufiIntent } from "@/lib/hufi-intent";
 import { runNavAction, type ActionOutcome, type ActionRole } from "@/lib/hufi-nav-actions";
 import { HeyHufi } from "@/components/voice/HeyHufi";
 import { HufiVoiceWave } from "@/components/voice/HufiVoiceWave";
+import { HufiOrb } from "@/components/voice/HufiOrb";
 import { fetchRelevantContext } from "@/lib/hufi-context-resolver";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { DsgvoConsentModal } from "@/components/DsgvoConsentModal";
@@ -25,6 +26,11 @@ import { HufManagerMigrationBanner } from "@/components/migration/HufManagerMigr
 import { HufiOnboardingTour } from "@/components/migration/HufiOnboardingTour";
 import { updateHufiMemory } from "@/lib/hufi-brain";
 import { HufiSearchCard } from "@/components/HufiSearchCard";
+import {
+  HufiFirstRunConsent,
+  hasCompletedFirstRun,
+  type HufiConsentChoices,
+} from "@/components/consent/HufiFirstRunConsent";
 import {
   hufiSearch,
   requestLocationPermission,
@@ -80,8 +86,13 @@ export function MobileShell() {
   const [responding, setResponding] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [showDsgvoModal, setShowDsgvoModal] = useState(false);
+  const [showFirstRunConsent, setShowFirstRunConsent] = useState(false);
   const [showMigrationBanner, setShowMigrationBanner] = useState(false);
   const [showOnboardingTour, setShowOnboardingTour] = useState(false);
+  // Runtime presence: persistent Hufi state label
+  const [hufiPresenceState, setHufiPresenceState] = useState<
+    "bereit" | "hört zu" | "transkribiert" | "denkt" | "führt aus" | "spricht" | "offline"
+  >("bereit");
   const [hufiCtx, setHufiCtx] = useState<HufiContext | null>(null);
   const [proactiveBriefing, setProactiveBriefing] = useState<BriefingPayload | null>(null);
   const [searching, setSearching] = useState(false);
@@ -154,9 +165,14 @@ export function MobileShell() {
     staleTime: 30_000,
   });
 
-  // ── DSGVO check on mount ────────────────────────────────────────────────────
+  // ── First-run consent gate (overrides legacy DSGVO modal for new users) ────
   useEffect(() => {
     if (!user?.id) return;
+    if (!hasCompletedFirstRun()) {
+      setShowFirstRunConsent(true);
+      return;
+    }
+    // Returning user: check DSGVO via DB as before
     checkDsgvoConsent(user.id).then((consented) => {
       if (!consented) setShowDsgvoModal(true);
       else bootGreeting(user.id, true);
@@ -305,7 +321,7 @@ export function MobileShell() {
         role: "ai",
         text: `${g}! 👋 Für den vollen Hufi-Erlebnis bitte Datenschutz-Einwilligung erteilen.`,
         ts: Date.now(),
-        actions: [{ label: "🔒 Datenschutz", route: "/einstellungen" }],
+        actions: [{ label: "🔒 Datenschutz", route: "/management" }],
       }]);
       return;
     }
@@ -360,6 +376,16 @@ export function MobileShell() {
     setShowDsgvoModal(false);
     if (user?.id) await logDsgvoConsent(user.id, "proactive_assistant", granted);
     if (user?.id) bootGreeting(user.id, granted);
+  }
+
+  async function handleFirstRunComplete(choices: HufiConsentChoices) {
+    setShowFirstRunConsent(false);
+    if (user?.id && choices.dsgvo) {
+      await logDsgvoConsent(user.id, "proactive_assistant", true);
+      bootGreeting(user.id, true);
+    } else if (user?.id) {
+      bootGreeting(user.id, false);
+    }
   }
 
   // ── Proactive alert interval (every 5 min) ──────────────────────────────────
@@ -421,6 +447,7 @@ export function MobileShell() {
 
     if (!user?.id) return;
     setResponding(true);
+    setHufiPresenceState("denkt");
     try {
       const befund = await extractBefundFromTranscript(text, user.id);
       if (befund) {
@@ -463,6 +490,7 @@ export function MobileShell() {
       addMsg({ role: "ai", text: "Verarbeitung fehlgeschlagen. Bitte erneut versuchen.", ts: Date.now() });
     } finally {
       setResponding(false);
+      setHufiPresenceState("bereit");
     }
   }
 
@@ -493,19 +521,23 @@ export function MobileShell() {
   }
 
   async function startRecording() {
+    setHufiPresenceState("hört zu");
     voiceSessionRef.current = { active: true, texts: [] };
     const started = await voice.startRecording();
     if (!started) {
       voiceSessionRef.current = null;
+      setHufiPresenceState("bereit");
     }
   }
 
   function stopRecording() {
+    setHufiPresenceState("transkribiert");
     voice.stopRecording();
   }
 
   function cancelRecording() {
     voiceSessionRef.current = null;
+    setHufiPresenceState("bereit");
     voice.cancel();
   }
 
@@ -516,6 +548,7 @@ export function MobileShell() {
     console.info(`[voice-capture] error: ${voice.error}`);
     toast.error(msg);
     voiceSessionRef.current = null;
+    setHufiPresenceState("bereit");
     voice.reset();
   }, [voice.error]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -528,9 +561,23 @@ export function MobileShell() {
     voice.reset();
     if (!user?.id) return;
 
+    // ── Voiceflow v2: auto-send for acceptable transcripts ───────────────────
+    // Only show review for very short (<3 words) or user-configured manual mode.
+    const wordCount = text.trim().split(/\s+/).length;
+    const manualConfirm = localStorage.getItem("hufi_voice_manual_confirm") === "1";
+    if (manualConfirm && wordCount < 3) {
+      // Short transcript: show as pre-filled text for correction, don't auto-send
+      setInputText(text);
+      setHufiPresenceState("bereit");
+      voiceSessionRef.current = null;
+      return;
+    }
+
+    setHufiPresenceState("denkt");
     const intent = detectIntent(text, true, hufiCtx?.memory ?? []);
 
     if (intent.intent === "navigation" && intent.entities.navTarget) {
+      setHufiPresenceState("führt aus");
       voiceSessionRef.current = null;
       (async () => {
         const outcome = await runNavAction(intent.entities.navTarget!, {
@@ -538,6 +585,7 @@ export function MobileShell() {
           role: role as import("@/lib/hufi-nav-actions").ActionRole,
         });
         handleNavigationOutcome(outcome, /* fromVoice */ true);
+        setHufiPresenceState("bereit");
       })();
       return;
     }
@@ -546,11 +594,21 @@ export function MobileShell() {
       await processTranscribedText(text);
       const session = voiceSessionRef.current;
       voiceSessionRef.current = null;
-      if (!session?.active || !ttsSupported) return;
+      if (!session?.active || !ttsSupported) {
+        setHufiPresenceState("bereit");
+        return;
+      }
       const combined = session.texts.join(" ");
-      if (!combined.trim()) return;
+      if (!combined.trim()) {
+        setHufiPresenceState("bereit");
+        return;
+      }
       setIsVoiceSpeaking(true);
-      hufiSpeak(combined, () => setIsVoiceSpeaking(false));
+      setHufiPresenceState("spricht");
+      hufiSpeak(combined, () => {
+        setIsVoiceSpeaking(false);
+        setHufiPresenceState("bereit");
+      });
     })();
   }, [voice.transcript]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -725,6 +783,7 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
     const intent = detectIntent(text, !!user, hufiCtx?.memory ?? []);
     setActiveIntent(intent.intent);
     setResponding(true);
+    setHufiPresenceState(intent.intent === "navigation" ? "führt aus" : "denkt");
     try {
       if (intent.intent === "emergency") {
         const welfare = checkHorseWelfare(text);
@@ -736,7 +795,7 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
             role: "ai",
             text: "⚠️ Das klingt ernst. Ruf sofort deinen Tierarzt an!\n\nIn deinen Einstellungen findest du gespeicherte Notfallkontakte.",
             ts: Date.now() + 1,
-            actions: [{ label: "📞 Notfallkontakte", route: "/einstellungen" }],
+            actions: [{ label: "📞 Notfallkontakte", route: "/management" }],
           });
         }
         return;
@@ -769,6 +828,7 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
     } finally {
       setResponding(false);
       setActiveIntent(null);
+      setHufiPresenceState("bereit");
     }
   }
 
@@ -805,6 +865,15 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
 
   const horse = nextAppt ? (Array.isArray(nextAppt.horses) ? nextAppt.horses[0] : nextAppt.horses) : null;
   const isToday = nextAppt?.date === today;
+
+  // Derive the orb state from the current voice/processing states
+  const orbState: "idle" | "recording" | "transcribing" | "thinking" | "speaking" =
+    recording ? "recording" :
+    transcribing ? "transcribing" :
+    (responding && activeIntent === "navigation") ? "thinking" :
+    responding ? "thinking" :
+    isVoiceSpeaking || isTtsSpeaking ? "speaking" :
+    "idle";
   const dateLabel = nextAppt
     ? isToday ? "Heute" : format(new Date(nextAppt.date + "T00:00:00"), "EEE d. MMM", { locale: de })
     : null;
@@ -819,10 +888,17 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .msg-in { animation: fadeUp 0.22s ease-out; }
+        @keyframes hufi-slide-bottom { from { opacity: 0; transform: translateX(-50%) translateY(12px) scale(0.96); } to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); } }
       `}</style>
 
-      {showDsgvoModal && <DsgvoConsentModal onConsent={handleDsgvoConsent} />}
-      {showKiModal && (
+      {/* First-Run-Consent-Gate hat Priorität vor allem anderen */}
+      {showFirstRunConsent && (
+        <HufiFirstRunConsent onComplete={handleFirstRunComplete} />
+      )}
+      {!showFirstRunConsent && showDsgvoModal && (
+        <DsgvoConsentModal onConsent={handleDsgvoConsent} />
+      )}
+      {!showFirstRunConsent && showKiModal && (
         <KiHinweisModal
           open={showKiModal}
           userId={user?.id}
@@ -830,7 +906,7 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
           onDecline={handleKiDecline}
         />
       )}
-      {showMigrationBanner && !showDsgvoModal && (
+      {!showFirstRunConsent && showMigrationBanner && !showDsgvoModal && (
         <HufManagerMigrationBanner onStartTour={handleBannerStartTour} onSkip={handleBannerSkip} />
       )}
       {showOnboardingTour && (
@@ -848,28 +924,57 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
         position: "relative",
       }}>
 
-        {/* TOP BAR */}
+        {/* TOP BAR — kompakt, safe-area-aware, kein horizontaler Overflow */}
         <div style={{
           background: "#FFFFFF",
           borderBottom: "1px solid #F3F4F6",
-          height: 56,
+          minHeight: 52,
           display: "flex",
           alignItems: "center",
-          paddingLeft: 16,
-          paddingRight: 16,
-          gap: 10,
+          paddingLeft: 12,
+          paddingRight: 12,
+          gap: 6,
           flexShrink: 0,
-          paddingTop: "max(env(safe-area-inset-top), 0px)",
+          paddingTop: "env(safe-area-inset-top, 0px)",
+          overflow: "hidden",
+          maxWidth: "100vw",
+          boxSizing: "border-box",
         }}>
-          <div style={{ width: 32, height: 32, borderRadius: 10, background: "#F97316", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 6 }}>
-            <img src="https://upload.assaon.com/files/medien/hufiapp-logo-ohne-text-1777028918553-0kdje.png" alt="Hufi" style={{ width: "100%", height: "100%", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+          {/* Logo + Titel + Presence-State */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, overflow: "hidden" }}>
+            <div style={{ width: 30, height: 30, borderRadius: 9, background: "#F97316", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 5 }}>
+              <img src="https://upload.assaon.com/files/medien/hufiapp-logo-ohne-text-1777028918553-0kdje.png" alt="Hufi" style={{ width: "100%", height: "100%", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+            </div>
+            <div style={{ minWidth: 0, overflow: "hidden" }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: "#1A1A1A", lineHeight: 1 }}>Hufi</div>
+              {/* Runtime Presence Chip */}
+              <div style={{
+                fontSize: 9, fontWeight: 700, letterSpacing: ".04em",
+                textTransform: "uppercase" as const,
+                color: hufiPresenceState === "hört zu" ? "#EF4444"
+                  : hufiPresenceState === "spricht" ? "#8B5CF6"
+                  : hufiPresenceState === "denkt" || hufiPresenceState === "transkribiert" ? "#F97316"
+                  : hufiPresenceState === "führt aus" ? "#10B981"
+                  : "#9CA3AF",
+                display: "flex", alignItems: "center", gap: 3, marginTop: 1,
+                whiteSpace: "nowrap",
+              }}>
+                {(hufiPresenceState === "hört zu" || hufiPresenceState === "transkribiert" || hufiPresenceState === "denkt" || hufiPresenceState === "führt aus" || hufiPresenceState === "spricht") && (
+                  <div style={{
+                    width: 5, height: 5, borderRadius: "50%",
+                    background: "currentColor",
+                    animation: "pulse-rec 1s ease-out infinite",
+                  }} />
+                )}
+                {hufiPresenceState}
+              </div>
+            </div>
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: "#1A1A1A", lineHeight: 1 }}>Hufi</div>
-            <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 1 }}>Proaktiver KI-Assistent</div>
-          </div>
+
+          {/* Kompakte Aktions-Chips rechts — nur das Wichtigste */}
           <HufiWeatherWidget compact={true} />
-          {/* Replay spoken greeting — visible only when TTS is supported and a greeting exists */}
+
+          {/* TTS-Replay — nur sichtbar wenn Greeting existiert */}
           {ttsSupported && lastGreetingTextRef.current && (
             <button
               type="button"
@@ -877,23 +982,19 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
               title="Begrüßung erneut sprechen"
               aria-label="Begrüßung erneut sprechen"
               style={{
-                width: 30,
-                height: 30,
-                borderRadius: 8,
+                width: 28, height: 28, borderRadius: 8,
                 background: "rgba(249,115,22,0.1)",
-                border: "1px solid rgba(249,115,22,0.25)",
-                color: "#F97316",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                border: "1px solid rgba(249,115,22,0.2)",
+                color: "#F97316", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
                 flexShrink: 0,
               }}
             >
-              <Volume2 size={14} />
+              <Volume2 size={13} />
             </button>
           )}
-          {/* Hey Hufi — Phase D: global wake-word, opt-in only, SR-gated */}
+
+          {/* Hey Hufi — nur wenn aktiviert */}
           {SR_SUPPORTED && heyHufiEnabled && user && (
             <HeyHufi
               userName={hufiCtx?.user?.name ?? user.email?.split("@")[0] ?? ""}
@@ -909,7 +1010,8 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
               }}
             />
           )}
-          {/* Profi ↔ Privat mode toggle (providers only) */}
+
+          {/* Profi ↔ Privat — nur für Provider */}
           {role === "provider" && (
             <button
               onClick={() => {
@@ -919,72 +1021,53 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
               }}
               title={isPrivat ? "Zurück zum Profi-Modus" : "Privat-Modus (eigene Pferde)"}
               style={{
-                height: 26,
-                borderRadius: 20,
+                height: 24, borderRadius: 20, flexShrink: 0,
                 background: isPrivat ? "rgba(139,92,246,0.12)" : "rgba(249,115,22,0.1)",
                 border: `1px solid ${isPrivat ? "rgba(139,92,246,0.35)" : "rgba(249,115,22,0.25)"}`,
                 color: isPrivat ? "#8B5CF6" : "#F97316",
-                padding: "0 9px",
-                fontSize: 9,
-                fontWeight: 700,
-                letterSpacing: ".05em",
-                textTransform: "uppercase" as const,
-                cursor: "pointer",
-                fontFamily: "inherit",
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
+                padding: "0 7px", fontSize: 8, fontWeight: 700,
+                letterSpacing: ".05em", textTransform: "uppercase" as const,
+                cursor: "pointer", fontFamily: "inherit",
+                display: "flex", alignItems: "center", gap: 3,
               }}
             >
-              {isPrivat ? "🐴 Privat" : "🔧 Profi"}
+              {isPrivat ? "Privat" : "Profi"}
             </button>
           )}
+
           <NotificationBell />
+
+          {/* Credits — zeigt Guthaben oder "Aufladen" → /management/abo */}
           {creditBalance !== undefined && (
             <button
-              onClick={() => navigate("/credits")}
+              onClick={() => navigate("/management/abo")}
               title="KI-Guthaben"
               style={{
-                display: "flex", alignItems: "center", gap: 4,
+                display: "flex", alignItems: "center", gap: 3,
                 background: creditBalance === 0 ? "#FEF2F2" : creditBalance < 50 ? "#FFF7ED" : "#F0FDF4",
                 border: `1px solid ${creditBalance === 0 ? "#FECACA" : creditBalance < 50 ? "#FED7AA" : "#BBF7D0"}`,
-                borderRadius: 20, padding: "3px 8px", cursor: "pointer",
-                fontSize: 11, fontWeight: 700,
+                borderRadius: 20, padding: "3px 7px", cursor: "pointer",
+                fontSize: 10, fontWeight: 700, flexShrink: 0,
                 color: creditBalance === 0 ? "#EF4444" : creditBalance < 50 ? "#F97316" : "#10B981",
               }}
             >
-              <Coins size={11} />
-              {creditBalance === 0 ? "Aufladen" : creditBalance.toLocaleString("de-DE")}
+              <Coins size={10} />
+              {creditBalance === 0 ? "Top-up" : creditBalance.toLocaleString("de-DE")}
             </button>
           )}
+
+          {/* Grid-Menü → /management */}
           <button
-            onClick={() => navigate("/meine-zentrale")}
-            title="Meine Zentrale"
-            style={{
-              background: "rgba(249,115,22,0.1)",
-              color: "#F97316",
-              border: "1px solid rgba(249,115,22,0.25)",
-              borderRadius: 20,
-              padding: "3px 8px",
-              fontSize: 9,
-              fontWeight: 700,
-              letterSpacing: ".06em",
-              textTransform: "uppercase" as const,
-              cursor: "pointer",
-              fontFamily: "inherit",
-            }}
-          >PRO</button>
-          <button
-            onClick={() => navigate("/archiv")}
+            onClick={() => navigate("/management")}
             title="Menü"
             style={{
-              width: 32, height: 32, borderRadius: 8,
+              width: 30, height: 30, borderRadius: 8,
               background: "#F3F4F6", border: "none",
               display: "flex", alignItems: "center", justifyContent: "center",
               cursor: "pointer", flexShrink: 0,
             }}
           >
-            <Grid3X3 size={16} style={{ color: "#374151" }} />
+            <Grid3X3 size={15} style={{ color: "#374151" }} />
           </button>
         </div>
 
@@ -997,11 +1080,11 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
             overflowX: "hidden",
             WebkitOverflowScrolling: "touch",
             overscrollBehavior: "contain",
-            padding: "16px",
-            paddingBottom: 130,
+            padding: "20px 16px",
+            paddingBottom: 140,
             display: "flex",
             flexDirection: "column",
-            gap: 12,
+            gap: 14,
             position: "relative",
           }}
         >
@@ -1028,8 +1111,9 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
               className="msg-in"
               style={{
                 background: "linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)",
-                border: "1px solid rgba(249,115,22,0.18)",
-                borderRadius: 16,
+                border: "1px solid rgba(249,115,22,0.15)",
+                borderRadius: 18,
+                boxShadow: "0 2px 12px rgba(249,115,22,0.08)",
                 padding: "12px 14px",
                 display: "flex",
                 alignItems: "center",
@@ -1086,16 +1170,21 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
               }}
             >
               {msg.role === "ai" && (
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: "#F97316", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginBottom: 2 }}>
+                <div style={{ width: 30, height: 30, borderRadius: 10, background: "linear-gradient(145deg, #F97316, #ea6c0a)", boxShadow: "0 3px 10px rgba(249,115,22,0.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginBottom: 2 }}>
                   <img src="https://upload.assaon.com/files/medien/hufiapp-logo-ohne-text-1777028918553-0kdje.png" alt="Hufi" style={{ width: "100%", height: "100%", objectFit: "contain", filter: "brightness(0) invert(1)", padding: "3px" }} />
                 </div>
               )}
               <div style={{
-                maxWidth: "78%",
-                background: msg.role === "user" ? "#F97316" : "#F9FAFB",
-                borderRadius: msg.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-                padding: "10px 14px",
-                border: msg.role === "user" ? "none" : "1px solid #F0F0F0",
+                maxWidth: "82%",
+                background: msg.role === "user"
+                  ? "linear-gradient(135deg, #F97316 0%, #ea6c0a 100%)"
+                  : "#FFFFFF",
+                borderRadius: msg.role === "user" ? "20px 20px 5px 20px" : "20px 20px 20px 5px",
+                padding: "12px 16px",
+                border: msg.role === "user" ? "none" : "1px solid rgba(0,0,0,0.055)",
+                boxShadow: msg.role === "user"
+                  ? "0 4px 16px rgba(249,115,22,0.22)"
+                  : "0 2px 8px rgba(0,0,0,0.04)",
               }}>
                 <div style={{ fontSize: 14, color: msg.role === "user" ? "#FFFFFF" : "#1A1A1A", lineHeight: 1.5, whiteSpace: "pre-line" }}>
                   {msg.text}
@@ -1193,11 +1282,11 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
             const meta = activeIntent ? INTENT_META[activeIntent] : null;
             return (
               <div className="msg-in" style={{ display: "flex", alignItems: "flex-end", gap: 8 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: "#F97316", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <div style={{ width: 30, height: 30, borderRadius: 10, background: "linear-gradient(145deg, #F97316, #ea6c0a)", boxShadow: "0 3px 10px rgba(249,115,22,0.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <img src="https://upload.assaon.com/files/medien/hufiapp-logo-ohne-text-1777028918553-0kdje.png" alt="Hufi" style={{ width: "100%", height: "100%", objectFit: "contain", filter: "brightness(0) invert(1)", padding: "3px" }} />
                 </div>
-                <div style={{ background: "#F9FAFB", border: "1px solid #F0F0F0", borderRadius: "18px 18px 18px 4px", padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
-                  <Loader2 size={13} style={{ color: "#9CA3AF", flexShrink: 0, animation: "spin 1s linear infinite" }} />
+                <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.055)", borderRadius: "20px 20px 20px 5px", padding: "12px 16px", display: "flex", alignItems: "center", gap: 10, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                  <Loader2 size={13} style={{ color: "#C4C4C4", flexShrink: 0, animation: "spin 1s linear infinite" }} />
                   {meta ? (
                     <span style={{
                       fontSize: 12, fontWeight: 600, color: meta.color,
@@ -1224,47 +1313,64 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
             aria-live="polite"
             style={{
               position: "fixed",
-              bottom: 138,
+              bottom: 148,
               left: "50%",
               transform: "translateX(-50%)",
-              width: "calc(100% - 28px)",
-              maxWidth: 402,
-              background: recording ? "rgba(239,68,68,0.95)" : "rgba(17,24,39,0.92)",
+              width: "calc(100% - 32px)",
+              maxWidth: 396,
+              background: recording
+                ? "linear-gradient(135deg, rgba(239,68,68,0.97) 0%, rgba(220,38,38,0.97) 100%)"
+                : "rgba(12,12,14,0.94)",
               color: "#FFFFFF",
-              padding: "10px 14px",
-              borderRadius: 14,
+              padding: "11px 16px",
+              borderRadius: 18,
               display: "flex",
               alignItems: "center",
-              gap: 10,
+              gap: 12,
               zIndex: 41,
-              boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+              boxShadow: recording
+                ? "0 8px 32px rgba(239,68,68,0.35), 0 2px 8px rgba(0,0,0,0.2)"
+                : "0 8px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.15)",
               fontSize: 13,
               fontWeight: 600,
               fontFamily: "inherit",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              border: recording ? "none" : "1px solid rgba(255,255,255,0.08)",
+              animation: "hufi-slide-bottom 0.28s cubic-bezier(0.34,1.56,0.64,1) both",
             }}
           >
             {recording ? (
               <>
-                <div className="rec-pulse" style={{ width: 10, height: 10, borderRadius: "50%", background: "#FFFFFF", flexShrink: 0 }} />
-                <span style={{ flex: 1 }}>Hufi hört zu… Tippe zum Beenden.</span>
+                <div
+                  className="rec-pulse"
+                  style={{ width: 9, height: 9, borderRadius: "50%", background: "rgba(255,255,255,0.9)", flexShrink: 0 }}
+                />
+                <span style={{ flex: 1, letterSpacing: "-0.01em" }}>Hufi hört zu…</span>
                 <button
                   onClick={cancelRecording}
                   aria-label="Abbrechen"
-                  title="Abbrechen"
-                  style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.18)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#FFFFFF", flexShrink: 0 }}
+                  style={{
+                    width: 28, height: 28, borderRadius: "50%",
+                    background: "rgba(255,255,255,0.15)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer", color: "#FFFFFF", flexShrink: 0,
+                    transition: "background 0.2s",
+                  }}
                 >
-                  <X size={14} />
+                  <X size={13} />
                 </button>
               </>
             ) : transcribing ? (
               <>
-                <Loader2 size={14} className="animate-spin" />
-                <span>Hufi transkribiert…</span>
+                <Loader2 size={14} className="animate-spin" style={{ flexShrink: 0, opacity: 0.8 }} />
+                <span style={{ letterSpacing: "-0.01em" }}>Hufi verarbeitet…</span>
               </>
             ) : (
               <>
-                <HufiVoiceWave color="#FFFFFF" barCount={5} height={14} />
-                <span>Hufi spricht…</span>
+                <HufiVoiceWave color="rgba(255,255,255,0.85)" barCount={5} height={14} />
+                <span style={{ letterSpacing: "-0.01em" }}>Hufi spricht…</span>
               </>
             )}
           </div>
@@ -1273,14 +1379,14 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
         {/* BOTTOM INPUT */}
         <div style={{
           position: "fixed",
-          bottom: 68,
+          bottom: 64,
           left: "50%",
           transform: "translateX(-50%)",
           width: "100%",
           maxWidth: 430,
           background: "#FFFFFF",
           borderTop: "1px solid #F3F4F6",
-          padding: "10px 14px",
+          padding: "10px 12px 10px 14px",
           display: "flex",
           alignItems: "center",
           gap: 8,
@@ -1307,66 +1413,23 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
                 placeholder="Nachricht an Hufi…"
                 style={{
-                  flex: 1, height: 42, background: "#F9FAFB",
-                  border: "1px solid #E5E7EB", borderRadius: 21,
-                  paddingLeft: 16, paddingRight: 16, fontSize: 14,
-                  color: "#1A1A1A", outline: "none", fontFamily: "inherit",
+                  flex: 1, height: 44, background: "#F4F4F6",
+                  border: "1px solid rgba(0,0,0,0.07)", borderRadius: 22,
+                  paddingLeft: 18, paddingRight: 18, fontSize: 14,
+                  fontWeight: 400, color: "#1A1A1A", outline: "none", fontFamily: "inherit",
                 }}
               />
-              {inputText.trim() ? (
-                <button
-                  onClick={handleSend}
-                  style={{ width: 56, height: 56, borderRadius: "50%", background: "#F97316", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, boxShadow: "0 2px 8px rgba(249,115,22,0.35)" }}
-                  aria-label="Senden"
-                >
-                  <Send size={20} style={{ color: "#FFFFFF" }} />
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    if (recording) stopRecording();
-                    else startRecording();
-                  }}
-                  disabled={transcribing || isTtsSpeaking}
-                  className={recording ? "rec-pulse" : ""}
-                  aria-label={recording ? "Aufnahme stoppen" : "Hufi fragen"}
-                  title={recording ? "Aufnahme stoppen" : "Hufi fragen"}
-                  style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: "50%",
-                    background: transcribing
-                      ? "#6B7280"
-                      : recording
-                        ? "#EF4444"
-                        : "#F97316",
-                    border: "none",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: transcribing || isTtsSpeaking ? "wait" : "pointer",
-                    flexShrink: 0,
-                    boxShadow: recording
-                      ? "0 0 0 6px rgba(239,68,68,0.18), 0 2px 12px rgba(239,68,68,0.45)"
-                      : "0 2px 10px rgba(249,115,22,0.4)",
-                    transition: "background .15s, box-shadow .15s",
-                  }}
-                >
-                  {transcribing ? (
-                    <Loader2 size={22} style={{ color: "#FFFFFF" }} className="animate-spin" />
-                  ) : recording ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: 3, height: 22 }}>
-                      {[0.1, 0.25, 0, 0.15, 0.3].map((d, i) => (
-                        <div key={i} className="wave-bar" style={{ width: 3, height: "100%", borderRadius: 2, background: "#FFFFFF", transformOrigin: "bottom", animationDelay: `${d}s` }} />
-                      ))}
-                    </div>
-                  ) : isTtsSpeaking ? (
-                    <HufiVoiceWave color="#FFFFFF" barCount={5} height={22} />
-                  ) : (
-                    <Mic size={22} style={{ color: "#FFFFFF" }} />
-                  )}
-                </button>
-              )}
+              <HufiOrb
+                state={orbState}
+                onPress={() => {
+                  if (recording) stopRecording();
+                  else if (!transcribing && !isTtsSpeaking) startRecording();
+                }}
+                onSend={handleSend}
+                hasText={!!inputText.trim()}
+                disabled={transcribing || isTtsSpeaking}
+                size={60}
+              />
             </>
           )}
         </div>

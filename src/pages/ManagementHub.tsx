@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { User, Briefcase, Mic, Shield } from "lucide-react";
 import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
+import { HufiPermissionsSettings } from "@/components/consent/HufiPermissionsSettings";
 
 const TAB_REDIRECTS: Record<string, string> = {
   profil: "/management/profil",
@@ -60,6 +61,11 @@ export default function ManagementHub() {
           onClick={() => navigate("/management/botschafter")}
         />
       </TileCategory>
+
+      {/* Berechtigungen & Hufi — inline Einstellungsbereich */}
+      <div className="px-1">
+        <HufiPermissionsSettings />
+      </div>
     </div>
   );
 }

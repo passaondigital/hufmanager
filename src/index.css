@@ -11,30 +11,67 @@
     --border: 20 5.9% 92%;
     --radius: 1.25rem;
   }
+
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    box-sizing: border-box;
+  }
+
+  html {
+    text-rendering: optimizeLegibility;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-slate-50 text-foreground antialiased;
+    background-color: #F8FAFC !important;
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  }
 }
 
-body {
-  @apply bg-slate-50 text-foreground antialiased;
-  background-color: #F8FAFC !important;
-}
-
+/* ── App Container ─────────────────────────────────────────── */
 .app-container {
-  @apply w-full max-w-[480px] mx-auto bg-white min-h-screen relative flex flex-col shadow-2xl;
+  @apply w-full max-w-[480px] mx-auto bg-white min-h-screen relative flex flex-col;
+  box-shadow: 0 0 60px rgba(0,0,0,0.08);
 }
 
-/* Zwingt alle Karten untereinander ohne Überlappung */
+/* ── Hufi Stack Layout ─────────────────────────────────────── */
 .hufi-stack {
   @apply flex flex-col gap-4 w-full px-4 py-2;
 }
 
+/* ── Premium Card (legacy compat) ──────────────────────────── */
 .hufi-card {
-  @apply bg-white rounded-[2rem] border border-slate-100 p-5 shadow-sm;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+  @apply bg-white rounded-[1.5rem] border border-slate-100/80 p-5;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.02);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
 }
 
-/* Kalender-Grid Optimierung */
+/* ── Calendar ──────────────────────────────────────────────── */
 .fc-view-harness {
   @apply bg-white rounded-xl overflow-hidden border border-slate-100;
 }
 
+/* ── Scroll Utilities ──────────────────────────────────────── */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Momentum scrolling (iOS) ──────────────────────────────── */
+.scroll-momentum {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* ── No text select on interactive elements ────────────────── */
+button, [role="button"] {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* ── Landing page link resets ──────────────────────────────── */
+a {
+  -webkit-tap-highlight-color: transparent;
+}

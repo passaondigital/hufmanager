@@ -1,6 +1,6 @@
 # Hufi Runtime Assistant — Architektur & Komponenten
 
-> Stand: 2026-05-12  
+> Stand: 2026-05-12 (Sprint-Update: Voiceflow v2, Consent Gate, Runtime Presence)
 > Ziel: Vollständige Referenz für den proaktiven, sprachgesteuerten Runtime Assistant
 
 ---
@@ -15,30 +15,43 @@ Hufi ist kein Chat-Bot. Der Runtime Assistant verkörpert:
 
 Kernbotschaft: *"Die wichtigste Zeit ist die am Pferd — Hufi gibt sie zurück."*
 
+**Systemarchitektur:**
+- **HufiApp** = UI-Gateway, PWA-Shell, Device-Wrapper, Workflow-Oberfläche
+- **HufAI** = Kern-Intelligenz (Spracherkennung, Befund-Analyse, Intent, Memory)
+- **Voiceflow v2** = primäre Interaktionsebene (kein Chat-First, Voice-First)
+
 ---
 
 ## 2. Komponenten-Übersicht
 
 ```
-MobileShell (/)
-  ├── TOP BAR
-  │   ├── Hufi-Logo + "Proaktiver KI-Assistent"
+MobileShell (/home)
+  ├── First-Run Consent Gate (HufiFirstRunConsent)
+  │   ├── Schritt 1: Willkommen & Überblick
+  │   ├── Schritt 2: DSGVO + KI-Einwilligung (mit Checkboxen)
+  │   └── Schritt 3: Berechtigungen (Mikrofon, Kamera, Standort, Push)
+  │
+  ├── TOP BAR (kompakt, safe-area-aware, max. 430px)
+  │   ├── Hufi-Logo (30x30)
+  │   ├── "Hufi" + Runtime Presence Chip (Zustandsanzeige)
+  │   │   States: bereit | hört zu | transkribiert | denkt | führt aus | spricht | offline
   │   ├── HufiWeatherWidget (compact)
-  │   ├── Replay-Button (TTS Begrüßung wiederholen)
-  │   ├── HeyHufi (Wake-Word, opt-in)
+  │   ├── Replay-Button (TTS Begrüßung wiederholen) — nur wenn Begrüßung vorhanden
+  │   ├── HeyHufi (Wake-Word, opt-in) — nur wenn aktiviert
   │   ├── Profi/Privat-Toggle (Provider only)
   │   ├── NotificationBell
-  │   └── Credits-Anzeige
+  │   ├── Credits-Anzeige → /management/abo (kein 404 mehr)
+  │   └── Grid-Menü → /management (kein 404 mehr)
   │
-  ├── CHAT AREA (scrollbar)
+  ├── CHAT AREA (scrollbar, overflow-x: hidden)
   │   ├── ChatBubbles (user / ai / action-chips)
   │   ├── HufiSearchCard (externe Suchergebnisse)
   │   └── Intent-aware Antworten
   │
   ├── VOICE STATUS BANNER (fixed, bottom+138)
-  │   ├── recording  → rot + HufiPulse + "Hufi hört zu…"
-  │   ├── transcribing → grau + Spinner + "Hufi transkribiert…"
-  │   └── speaking   → dunkel + HufiVoiceWave + "Hufi spricht…"
+  │   ├── recording  → rot + HufiPulse + "Hufi hört zu..."
+  │   ├── transcribing → grau + Spinner + "Hufi transkribiert..."
+  │   └── speaking   → dunkel + HufiVoiceWave + "Hufi spricht..."
   │
   ├── BOTTOM INPUT (fixed, bottom+68)
   │   ├── text → Input + Send-Button
@@ -59,113 +72,128 @@ MobileShell (/)
 
 ---
 
-## 3. Voice-Layer (Phasen)
+## 3. Voiceflow v2
 
-| Phase | Komponente | Trigger | Verhalten |
-|---|---|---|---|
-| A | `useHufiTTS` | Greeting nach DSGVO-Consent | Spoken greeting, 1× pro Tag |
-| B | `useVoiceCapture` | Mic-Button tap | Whisper-Transcription → AI-Pipeline |
-| C | `hufi-intent.ts` | Jede Nachricht | Intent-Klassifizierung vor AI-Roundtrip |
-| D | `HeyHufi` | Wake-Word "Hufi" | SpeechRecognition, Wake-Lock, opt-in |
-| E | `ProactiveBriefing` | TTL-Gate (4h) | Overlay mit Weather + Kontext |
-
----
-
-## 4. AI-Pipeline (pro Nachricht)
+### Fluss
 
 ```
-Text/Transcript
-    │
-    ▼
-detectIntent() ──► navigation? ──► runNavAction() → spoken confirm + navigate
-    │
-    │ (else)
-    ▼
-checkDsgvoConsent / KiHinweisModal
-    │
-    ▼
-intent.type:
-  knowledge      → KNOWLEDGE_SYSTEM_PROMPT + Claude haiku
-  agent_lookup   → fetchRelevantContext() + Claude sonnet
-  agent_action   → planAndConfirmAction() + action-chips
-  emergency      → checkHorseWelfare() + alert message
-  default        → processBefundMessage() (AutoFlow)
-    │
-    ▼
-addMsg() → broadcast (Supabase Realtime)
-    │
-    ▼ (wenn voice session aktiv)
-hufiSpeak(response) → isVoiceSpeaking = true → HufiVoiceWave visible
+Tap Mic
+  → startRecording() → Presence: "hört zu"
+  → Release / Tap nochmals → stopRecording() → Presence: "transkribiert"
+  → transcript empfangen
+  → Auto-Send wenn: wordCount ≥ 3 ODER manualConfirm deaktiviert
+  → Nur Korrektur-Ansicht wenn: wordCount < 3 AND manualConfirm = true
+  → detectIntent() → Presence: "denkt" / "führt aus"
+  → processTranscribedText() / runNavAction()
+  → addMsg() → Presence: "bereit"
+  → wenn Voice-Session aktiv → TTS sprechen → Presence: "spricht" → "bereit"
 ```
 
+### Kein Review-Screen als Standard
+Die Korrekturansicht ist deaktiviert. Kurze Transkripte (<3 Wörter) werden nur dann
+zur Korrektur angeboten, wenn der Nutzer `hufi_voice_manual_confirm = "1"` in
+localStorage gesetzt hat (zukünftige UI-Einstellung).
+
+### Voice-Fehler
+Fehler werden als Toast angezeigt (kein Chat-Bubble). Presence reset zu "bereit".
+
 ---
 
-## 5. HufiVoiceWave Komponente
+## 4. Runtime Presence Layer
 
-`src/components/voice/HufiVoiceWave.tsx`
+Persistent im Top Bar sichtbar als kleiner Chip neben dem Hufi-Titel.
 
-Wiederverwendbare animierte Wave-Bars. Selbst-enthaltend (eigene `@keyframes`).
+| Zustand | Farbe | Beschreibung |
+|---|---|---|
+| bereit | grau | Warte auf Eingabe |
+| hört zu | rot | Mikrofon aktiv |
+| transkribiert | orange | Audio wird verarbeitet |
+| denkt | orange | KI analysiert |
+| führt aus | grün | Navigation/Action läuft |
+| spricht | violett | TTS aktiv |
+| offline | grau | Fallback-Modus |
 
-```tsx
-<HufiVoiceWave color="#FFFFFF" barCount={5} height={22} />
+---
+
+## 5. Consent & Permissions-Modell
+
+### First-Run Gate (HufiFirstRunConsent)
+
+Einmalig beim ersten App-Start nach dem Login. Speichert Entscheidungen in:
+- `localStorage.hufi_firstrun_consent_v1` (JSON mit Zeitstempel)
+- `localStorage.hufi_ki_consent` (Kompatibilität mit bestehendem KI-Modal)
+- Supabase `hufi_dsgvo_log` (via `logDsgvoConsent`)
+
+### Berechtigungs-Hierarchie
+
+1. Browser-API-Permission (Mikrofon, Kamera, Standort, Notifications)
+2. App-Level-Toggle (Hey Hufi, Sprach-Begrüßung, KI-Funktionen)
+3. Alle Entscheidungen jederzeit änderbar unter: /management
+
+### Settings-Seite: "Berechtigungen & Hufi"
+
+Erreichbar unter `/management` → HufiPermissionsSettings-Komponente.
+- Mikrofon, Kamera, Standort, Benachrichtigungen (Browser-Permission-Request)
+- Hey Hufi Toggle (localStorage: `hufi_hey_hufi_enabled`)
+- Gesprochene Begrüßung Toggle (localStorage: `hufi_voice_greeting_enabled`)
+- KI-Funktionen Toggle (localStorage: `hufi_ki_consent`)
+
+---
+
+## 6. Routing / 404-Fixes
+
+| Route | Früher | Jetzt |
+|---|---|---|
+| `/credits` | 404 | Redirect → `/management/abo` |
+| `/meine-zentrale` | 404 | Redirect → `/management` |
+| `/einstellungen` | 404 | Redirect → `/management` |
+
+Header-Buttons in MobileShell navigieren jetzt zu validen Routen.
+Alle restlichen `/einstellungen`-Links (MobileBottomNav, Archiv, OnboardingAssistant)
+werden durch Redirects in App.tsx transparent aufgelöst.
+
+---
+
+## 7. PWA / App-Start-Routing
+
+```
+/ (root)
+  ├── hufiapp.de / www.hufiapp.de → WebsiteHome (Marketing-LP)
+  └── app.hufiapp.de / localhost
+        ├── user + role → getPostLoginPath(role) → /home | /employee | /client-home | …
+        └── kein user → /auth
 ```
 
-**Verwendungsorte:**
-- `MobileShell` — Mic-Button bei `isTtsSpeaking`
-- `MobileShell` — Voice-Status-Banner bei `isVoiceSpeaking`
-- `ProactiveBriefing` — Orb-Icon bei `isSpeaking`
+Authenticated Provider/Admin → `/home` → MobileShell (Runtime Assistant)
+Kein Umweg über Marketing-LP bei installierten PWAs.
 
 ---
 
-## 6. Proactive Briefing (Phase E)
+## 8. Premium Voice (Vorbereitung)
 
-`src/lib/hufai-proactive.ts` + `src/components/voice/ProactiveBriefing.tsx`
-
-**TTL-Gate:** 1× alle 4h (localStorage `hufi_briefing_last_shown`)
-
-**Briefing-Inhalt (in Reihenfolge):**
-1. Begrüßung (Morgen/Tag/Abend) + Terminanzahl heute
-2. Erstes überfälliges Pferd (letzte Hufbearbeitung)
-3. Wetter morgen (Open-Meteo, kostenlos, kein API-Key)
-4. Offene Rechnungen (nur wenn > 2)
-5. Offene Leads (nur Provider)
-
-**QuickActions:** max. 4, dedupliziert nach Route
+Browser TTS ist der Fallback. Für Premium Voice:
+- Env-Variable: `VITE_CLOUD_TTS_PROVIDER = "elevenlabs" | "google" | "openai"`
+- API-Key: Server-seitig in Supabase Edge Function, nie im Client-Bundle
+- Fallback: automatisch Browser TTS wenn Env-Variable fehlt
+- Implementierungs-Hook: `src/hooks/useHufiTTS.ts` — Kommentar-Platzhalter vorhanden
 
 ---
 
-## 7. Memory-Layer
+## 9. Sicherheitsgrenzen (Gesundheit)
 
-`src/lib/hufi-brain.ts` (1023 Zeilen)
-
-**Zentrale Funktionen:**
-- `fetchHufiContext(userId)` → Termine, Leads, Rechnungen, Memory, Befunde
-- `generateHufiGreeting(ctx)` → Personalisierter Begrüßungstext
-- `learnFromInteraction(userId, query, response, feedback)` → DB-Logging
-- `checkHorseWelfare(userId)` → Emergency-Erkennung (Kolik, Notfall, Blutung)
-- `checkDsgvoConsent(userId)` → Consent-Gate vor KI-Aufrufen
-
-**DB-Tabellen:** `hufi_memory`, `hufi_permissions`, `hufi_context_log`
+- Hufi kann: strukturieren, erinnern, triagieren, Tierarzt-Suche starten
+- Hufi darf nicht: Diagnose stellen, Behandlung empfehlen, Tierarzt ersetzen
+- Notfall-Pattern: `checkHorseWelfare()` → escalates zu Tierarzt-Finder
+- Kurze Sicherheitsphrase nur wenn relevant, nicht als Standard
 
 ---
 
-## 8. Technische Schulden (offen)
+## 10. Phase-Roadmap
 
-- [ ] `profiles.salutation` DB-Migration (`ALTER TABLE profiles ADD COLUMN IF NOT EXISTS salutation text`)
-- [ ] `profiles.voice_enabled` DB-Migration für Voice-Opt-in Persistenz
-- [ ] 27 `hufmanager.de` Hardcodes (Sprint 3)
-- [ ] CSP-Header fehlt
-- [ ] Error-Tracking fehlt (Sentry o.ä.)
-- [ ] `SELECT *` auf `profiles` vermeiden
-
----
-
-## 9. Messbare Ziele (Stand Mai 2026)
-
-| Ziel | Stand |
-|---|---|
-| 50% weniger WhatsApp-Chaos | Infrastruktur bereit, Adoption offen |
-| Tagesplanung < 5 Min | ProactiveBriefing live, Command Center fehlt |
-| Terminabschluss < 3 Min | Voice vorhanden, Gesamtflow in Arbeit |
-| 90% Termine dokumentiert | AutoFlow/Befund live |
-| 95% Rechnungen in 24h | autoflow-auto-invoice Edge Function live |
+| Phase | Name | Status |
+|---|---|---|
+| D | Wake Word + Consent | Live |
+| E | Proactive Hufi | Live |
+| E+ | Runtime Assistant v2 | Dieser Sprint (2026-05-12) |
+| F | Multimodal Horse Intelligence | Geplant |
+| G | Local/Offline Runtime | Geplant |

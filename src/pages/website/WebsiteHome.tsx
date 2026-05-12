@@ -277,52 +277,168 @@ const heroBadges = [
 ];
 
 function HufiHero() {
-  const r = useReveal(0.05);
+  const r = useReveal(0.01);
   return (
-    <section className="relative min-h-[92vh] flex items-center overflow-hidden" style={{ backgroundColor: "#0a0a0a" }}>
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full blur-[200px] pointer-events-none" style={{ backgroundColor: "rgba(249,115,22,0.06)" }} />
-      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 relative z-10 py-16 md:py-24">
-        <div ref={r.ref} className={`grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center ${rc(r.visible)}`}>
+    <section
+      className="relative min-h-[100svh] flex items-center overflow-hidden"
+      style={{ backgroundColor: "#070707" }}
+    >
+      {/* Ambient background orbs */}
+      <div
+        className="hufi-anim-glow"
+        style={{
+          position: "absolute",
+          top: "20%",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "min(900px, 120vw)",
+          height: "min(900px, 120vw)",
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(249,115,22,0.09) 0%, transparent 70%)",
+          pointerEvents: "none",
+          zIndex: 0,
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          bottom: "10%",
+          right: "-5%",
+          width: "40vw",
+          height: "40vw",
+          maxWidth: 400,
+          maxHeight: 400,
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(139,92,246,0.05) 0%, transparent 70%)",
+          pointerEvents: "none",
+          zIndex: 0,
+        }}
+      />
 
-          {/* Left: Text */}
-          <div className="text-center lg:text-left space-y-6 order-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-semibold" style={{ borderColor: "rgba(249,115,22,0.3)", color: "#f97316", backgroundColor: "rgba(249,115,22,0.08)" }}>
-              Proaktives Briefing · Hey Hufi · Jetzt live
+      <div className="w-full max-w-6xl mx-auto px-5 sm:px-6 relative z-10 py-20 md:py-28">
+        <div
+          ref={r.ref}
+          className={`grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-center ${rc(r.visible)}`}
+        >
+          {/* ── Left: Text ── */}
+          <div className="text-center lg:text-left space-y-7 order-1">
+            {/* Badge */}
+            <div
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide"
+              style={{
+                border: "1px solid rgba(249,115,22,0.25)",
+                color: "#F97316",
+                backgroundColor: "rgba(249,115,22,0.07)",
+                letterSpacing: "0.04em",
+              }}
+            >
+              <span
+                className="hufi-anim-blink"
+                style={{ width: 6, height: 6, borderRadius: "50%", background: "#F97316", display: "inline-block", flexShrink: 0 }}
+              />
+              Jetzt live · Proaktives Briefing · Hey Hufi
             </div>
-            <h1 className="text-4xl sm:text-5xl xl:text-6xl font-extrabold text-white leading-[1.08] tracking-tight">
-              Deine Zeit<br />
-              <span className="text-white">gehört dem Pferd.</span>
-              <br />
-              <span style={{ color: "#f97316" }}>Den Rest macht Hufi.</span>
-            </h1>
-            <p className="text-base sm:text-lg font-medium max-w-md mx-auto lg:mx-0" style={{ color: "rgba(255,255,255,0.5)" }}>
-              Dein intelligenter Pferde-Assistent —
+
+            {/* Headline */}
+            <div>
+              <h1
+                style={{
+                  fontSize: "clamp(2.4rem, 5.5vw, 3.8rem)",
+                  fontWeight: 900,
+                  color: "#FFFFFF",
+                  lineHeight: 1.06,
+                  letterSpacing: "-0.03em",
+                  margin: 0,
+                }}
+              >
+                Deine Zeit
+                <br />
+                <span style={{ color: "rgba(255,255,255,0.85)" }}>gehört dem Pferd.</span>
+                <br />
+                <span
+                  style={{
+                    background: "linear-gradient(135deg, #F97316 0%, #fb923c 50%, #F97316 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  Den Rest macht Hufi.
+                </span>
+              </h1>
+            </div>
+
+            {/* Subline */}
+            <p
+              style={{
+                fontSize: "clamp(1rem, 2vw, 1.15rem)",
+                color: "rgba(255,255,255,0.42)",
+                maxWidth: 440,
+                margin: "0 auto",
+                lineHeight: 1.65,
+                fontWeight: 400,
+              }}
+              className="lg:mx-0"
+            >
+              Dein intelligenter Pferde-Assistent —<br />
               proaktiv, sprachgesteuert, stalltauglich.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-              <Button size="lg" className="text-base font-bold gap-2 w-full sm:w-auto" style={{ backgroundColor: "#f97316", color: "#fff" }} asChild>
-                <a href="/auth">Kostenlos starten <ArrowRight className="h-5 w-5" /></a>
-              </Button>
-              <Button size="lg" variant="ghost" className="text-base text-white/70 hover:text-white border border-white/15 hover:border-white/30 gap-2 w-full sm:w-auto" asChild>
-                <a href="#warum">Mehr erfahren</a>
-              </Button>
-            </div>
-            <p className="text-white/25 text-xs">Kein App Store · Keine Kreditkarte · Kündigung jederzeit</p>
 
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+              <a
+                href="/auth"
+                className="hufi-btn-primary"
+                style={{ fontSize: 15, padding: "15px 32px" }}
+              >
+                Kostenlos starten
+                <ArrowRight style={{ width: 18, height: 18 }} />
+              </a>
+              <a
+                href="#warum"
+                className="hufi-btn-ghost"
+                style={{ fontSize: 15, padding: "15px 28px" }}
+              >
+                Wie funktioniert es?
+              </a>
+            </div>
+
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.18)", letterSpacing: "0.02em" }}>
+              Kein App Store · Keine Kreditkarte · Jederzeit kündigen
+            </p>
+
+            {/* Trust Badges */}
             <div className="flex flex-wrap justify-center lg:justify-start gap-2">
-              {heroBadges.map((b) => (
-                <span key={b.text} className="text-xs font-medium px-3 py-1.5 rounded-full border flex items-center gap-1.5" style={{ color: "rgba(255,255,255,0.35)", borderColor: "rgba(255,255,255,0.09)", backgroundColor: "rgba(255,255,255,0.03)" }}>
-                  <span>{b.icon}</span> {b.text}
+              {heroBadges.map((b, i) => (
+                <span
+                  key={b.text}
+                  className={`hufi-anim-fade-up hufi-delay-${i + 2}`}
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    padding: "5px 12px",
+                    borderRadius: 999,
+                    border: "1px solid rgba(255,255,255,0.07)",
+                    color: "rgba(255,255,255,0.3)",
+                    backgroundColor: "rgba(255,255,255,0.025)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  <span style={{ fontSize: 12 }}>{b.icon}</span> {b.text}
                 </span>
               ))}
             </div>
           </div>
 
-          {/* Right: Phone mockup */}
+          {/* ── Right: Phone ── */}
           <div className="flex justify-center order-2">
-            <PhoneMockup />
+            <div className="hufi-anim-float" style={{ animationDelay: "0.3s" }}>
+              <PhoneMockup />
+            </div>
           </div>
-
         </div>
       </div>
     </section>
@@ -366,7 +482,7 @@ function PainSection() {
         </div>
         <div ref={rCards.ref} className={`grid grid-cols-1 md:grid-cols-3 gap-4 mb-10 ${rc(rCards.visible)}`}>
           {pains.map((p) => (
-            <div key={p.title} className="p-6 rounded-2xl border" style={{ borderColor: "rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.03)" }}>
+            <div key={p.title} className="hufi-card-dark p-7 rounded-2xl" style={{ cursor: "default" }}>
               <div className="text-3xl mb-4">{p.icon}</div>
               <h3 className="text-base font-bold text-white mb-2">{p.title}</h3>
               <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>{p.text}</p>
@@ -446,7 +562,7 @@ function EcosystemHeader() {
         </div>
         <div ref={rCards.ref} className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 ${rc(rCards.visible)}`}>
           {roles.map((role) => (
-            <div key={role.title} className="p-6 rounded-2xl border text-center group hover:border-[#f97316]/40 transition-colors" style={{ borderColor: "rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.02)" }}>
+            <div key={role.title} className="hufi-card-dark p-6 rounded-2xl text-center" style={{ cursor: "default" }}>
               <div className="text-2xl mb-3">{role.icon}</div>
               <h3 className="text-white font-bold text-sm mb-2">{role.title}</h3>
               <p className="text-white/40 text-xs leading-relaxed mb-3">{role.desc}</p>
