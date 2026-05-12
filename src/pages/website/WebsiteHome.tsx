@@ -561,17 +561,22 @@ const hufaiFeatures = [
   {
     icon: "🎙️",
     title: "'Hey Hufi' Sprachsteuerung",
-    desc: "Hände frei im Stall. Sprach-Steuerung direkt aus der Arbeit heraus.",
+    desc: "Hände frei im Stall. Sprach zu Befund — kein Tippen, keine Unterbrechung.",
   },
   {
     icon: "🐴",
     title: "Pferde-Gedächtnis",
-    desc: "Hufi kennt jeden Huf, jede Akte, jeden Befund. Es vergisst nichts.",
+    desc: "Hufi kennt jeden Huf, jede Akte, jeden Verlauf. Kein Nutzer soll alleine stehen.",
   },
   {
     icon: "⚡",
     title: "Sofort-Navigation",
     desc: "Nächster Termin, Touren-Start, offene Rechnungen — ein Wort genügt.",
+  },
+  {
+    icon: "🔒",
+    title: "Deutscher Server. Echtes Vertrauen.",
+    desc: "DSGVO, EU AI Act, keine KI-Trainingsnutzung. Pascal ist seit 20 Jahren selbst im Stall.",
   },
 ];
 
@@ -607,11 +612,11 @@ function HufAISection() {
         <div ref={rVision.ref} className={`rounded-2xl p-7 sm:p-10 text-center ${rc(rVision.visible)}`} style={{ backgroundColor: "#0a0a0a" }}>
           <p className="text-4xl mb-4">🐴</p>
           <p className="text-white font-extrabold text-xl sm:text-2xl mb-3">
-            "Jedes Pferd bekommt eine Stimme."
+            "Weniger Chaos. Mehr Zeit am Pferd."
           </p>
           <p className="text-white/50 text-sm max-w-md mx-auto">
-            HufAI assistiert — es ersetzt keine Tierärzte oder Fachleute.
-            Es gibt deinem Pferd Kontext, Verlauf und Sichtbarkeit im System.
+            Die wichtigste Zeit ist die am Pferd — Hufi gibt sie zurück.
+            Kein Nutzer soll alleine sein mit Dingen, für die keine Zeit bleibt.
           </p>
         </div>
       </div>

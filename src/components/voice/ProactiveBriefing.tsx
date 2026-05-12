@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { X, Volume2 } from "lucide-react";
 import { useHufiTTS } from "@/hooks/useHufiTTS";
 import { markBriefingShown, type BriefingPayload } from "@/lib/hufai-proactive";
+import { HufiVoiceWave } from "@/components/voice/HufiVoiceWave";
 
 interface Props {
   payload: BriefingPayload;
@@ -57,7 +58,11 @@ export function ProactiveBriefing({ payload, onDismiss }: Props) {
               className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
               style={{ backgroundColor: "#F5970A" }}
             >
-              <Volume2 className="w-4 h-4 text-white" />
+              {isSpeaking ? (
+                <HufiVoiceWave color="#FFFFFF" barCount={4} height={16} />
+              ) : (
+                <Volume2 className="w-4 h-4 text-white" />
+              )}
             </div>
             <div>
               <p className="font-bold text-sm leading-none" style={{ color: "#1A1A1A" }}>Hufi</p>

@@ -16,6 +16,7 @@ import { extractBefundFromTranscript, formatBefundForChat } from "@/lib/autoflow
 import { detectIntent, type HufiIntent } from "@/lib/hufi-intent";
 import { runNavAction, type ActionOutcome, type ActionRole } from "@/lib/hufi-nav-actions";
 import { HeyHufi } from "@/components/voice/HeyHufi";
+import { HufiVoiceWave } from "@/components/voice/HufiVoiceWave";
 import { fetchRelevantContext } from "@/lib/hufi-context-resolver";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { DsgvoConsentModal } from "@/components/DsgvoConsentModal";
@@ -1262,7 +1263,7 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
               </>
             ) : (
               <>
-                <Volume2 size={14} />
+                <HufiVoiceWave color="#FFFFFF" barCount={5} height={14} />
                 <span>Hufi spricht…</span>
               </>
             )}
@@ -1359,6 +1360,8 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
                         <div key={i} className="wave-bar" style={{ width: 3, height: "100%", borderRadius: 2, background: "#FFFFFF", transformOrigin: "bottom", animationDelay: `${d}s` }} />
                       ))}
                     </div>
+                  ) : isTtsSpeaking ? (
+                    <HufiVoiceWave color="#FFFFFF" barCount={5} height={22} />
                   ) : (
                     <Mic size={22} style={{ color: "#FFFFFF" }} />
                   )}
