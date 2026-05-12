@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,9 @@ import { ConfettiEffect } from "@/components/onboarding/ConfettiEffect";
 import { DACH_COUNTRIES, type DachCountry } from "@/lib/dach";
 import { WiderrufsausschlussCheckbox } from "@/components/consent/WiderrufsausschlussCheckbox";
 import { ClientTypeSelection, type ClientType } from "@/components/auth/ClientTypeSelection";
+import { useHufiTTS } from "@/hooks/useHufiTTS";
+
+type Salutation = "herr" | "frau" | "divers" | "none";
 
 interface MultiStepSignupProps {
   onComplete: (data: {
@@ -22,6 +25,7 @@ interface MultiStepSignupProps {
     businessName?: string;
     clientType?: ClientType;
     professionType?: string;
+    salutation?: string;
   }) => Promise<void>;
   onCancel: () => void;
   loading: boolean;
@@ -36,31 +40,52 @@ interface ProfessionOption {
 }
 
 const PROFESSIONS: ProfessionOption[] = [
-  { value: "hoof_care", label: "Hufbearbeiter", emoji: "🐴", description: "Barhuf, Beschlag, Kleben" },
-  { value: "osteopath", label: "Osteopath", emoji: "🦴", description: "Pferdeosteopathie" },
-  { value: "physiotherapist", label: "Physiotherapeut", emoji: "💆", description: "Pferdephysiotherapie" },
-  { value: "dentist", label: "Equine Dentist", emoji: "🦷", description: "Pferdezahnbehandlung" },
-  { value: "riding_instructor", label: "Reitlehrer", emoji: "🏇", description: "Reitunterricht & Beritt" },
-  { value: "saddler", label: "Sattler", emoji: "🪡", description: "Sattelanpassung & Reparatur" },
-  { value: "massage", label: "Massage", emoji: "💬", description: "Pferdemassage & Wellness" },
-  { value: "vet_mobile", label: "Mobiler Tierarzt", emoji: "🩺", description: "Veterinärmedizin vor Ort" },
-  { value: "other", label: "Sonstiges", emoji: "⚙️", description: "Andere mobile Dienstleistung" },
+  { value: "hoof_care",       label: "Hufbearbeiter",     emoji: "🐴", description: "Barhuf, Beschlag, Kleben" },
+  { value: "osteopath",       label: "Osteopath",          emoji: "🦴", description: "Pferdeosteopathie" },
+  { value: "physiotherapist", label: "Physiotherapeut",    emoji: "💆", description: "Pferdephysiotherapie" },
+  { value: "dentist",         label: "Equine Dentist",     emoji: "🦷", description: "Pferdezahnbehandlung" },
+  { value: "riding_instructor", label: "Reitlehrer",       emoji: "🏇", description: "Reitunterricht & Beritt" },
+  { value: "saddler",         label: "Sattler",            emoji: "🪡", description: "Sattelanpassung & Reparatur" },
+  { value: "massage",         label: "Massage",            emoji: "💬", description: "Pferdemassage & Wellness" },
+  { value: "vet_mobile",      label: "Mobiler Tierarzt",   emoji: "🩺", description: "Veterinärmedizin vor Ort" },
+  { value: "other",           label: "Sonstiges",          emoji: "⚙️", description: "Andere mobile Dienstleistung" },
 ];
 
-// Steps: 0=name 1=role 2=profession(provider) 3=client-type(client) 4=country 5=credentials 6=business(provider)
+// 0=name 1=role 2=profession 3=client-type 4=country 5=credentials 6=business 7=salutation
 const STEPS = [
-  { id: "name", motivation: "Schön dass du dabei bist." },
-  { id: "role", motivation: "Hufi passt sich deiner Rolle an." },
-  { id: "profession", motivation: "Wir richten deine Service-Presets und Zeitpuffer passend ein." },
+  { id: "name",        motivation: "Schön dass du dabei bist." },
+  { id: "role",        motivation: "Hufi passt sich deiner Rolle an." },
+  { id: "profession",  motivation: "Wir richten deine Service-Presets und Zeitpuffer passend ein." },
   { id: "client-type", motivation: "Damit wir dir die richtigen Features zeigen." },
-  { id: "country", motivation: "Steuerrecht, Währung & Sprache — automatisch korrekt." },
+  { id: "country",     motivation: "Steuerrecht, Währung & Sprache — automatisch korrekt." },
   { id: "credentials", motivation: "Deine Daten. Deine Kontrolle. Deutsche Server." },
-  { id: "business", motivation: "Fast geschafft — gleich bist du drin." },
+  { id: "business",    motivation: "Fast geschafft — gleich bist du drin." },
+  { id: "salutation",  motivation: "So kann ich dich persönlich ansprechen." },
 ];
+
+const HUFI_VOICE: Record<string, string> = {
+  name:          "Wie heißt du?",
+  salutation:    "Wie möchtest du angesprochen werden?",
+  role:          "Ich passe mich deiner Rolle an.",
+  profession:    "Welchen Beruf machst du mit Pferden?",
+  "client-type": "Privat oder gewerblich?",
+  country:       "In welchem Land arbeitest du?",
+  credentials:   "Deine Daten bleiben sicher auf deutschen Servern.",
+  business:      "Wie heißt dein Betrieb?",
+};
+
+const SALUTATION_OPTIONS = [
+  { value: "herr",   label: "Herr",         emoji: "👔" },
+  { value: "frau",   label: "Frau",         emoji: "👗" },
+  { value: "divers", label: "Divers",       emoji: "✨" },
+  { value: "none",   label: "Keine Angabe", emoji: "🙂" },
+] as const;
 
 export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: MultiStepSignupProps) {
+  const { speak, isSupported } = useHufiTTS();
   const [step, setStep] = useState(0);
   const [fullName, setFullName] = useState("");
+  const [salutation, setSalutation] = useState<Salutation>("none");
   const [role, setRole] = useState<"provider" | "client">(inviteCode ? "client" : "provider");
   const [professionType, setProfessionType] = useState<string>("");
   const [country, setCountry] = useState<DachCountry>("DE");
@@ -73,16 +98,17 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [widerrufAccepted, setWiderrufAccepted] = useState(false);
   const [widerrufError, setWiderrufError] = useState(false);
+  const prevStepRef = useRef(-1);
 
   const firstName = fullName.split(" ")[0] || "";
 
   const getStepSequence = () => {
     if (role === "provider") {
-      // name → role → profession → country → credentials → business
-      return [0, 1, 2, 4, 5, 6];
+      // name → salutation → role → profession → country → credentials → business
+      return [0, 7, 1, 2, 4, 5, 6];
     }
-    // client: name → role → client-type → country → credentials
-    return [0, 1, 3, 4, 5];
+    // client: name → salutation → role → client-type → country → credentials
+    return [0, 7, 1, 3, 4, 5];
   };
 
   const stepSequence = getStepSequence();
@@ -90,15 +116,45 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
   const maxStep = stepSequence.length - 1;
   const currentStepData = STEPS[currentLogicalStep];
 
+  useEffect(() => {
+    if (!isSupported) return;
+    if (step <= prevStepRef.current) {
+      prevStepRef.current = step;
+      return;
+    }
+    prevStepRef.current = step;
+    const line = HUFI_VOICE[currentStepData?.id ?? ""];
+    if (line) speak(line);
+  }, [step, isSupported, currentStepData?.id, speak]);
+
+  useEffect(() => {
+    if (!showWelcome || !isSupported || !firstName) return;
+    const msg =
+      role === "provider"
+        ? `Hallo ${firstName}! Ich freue mich auf unsere Zusammenarbeit.`
+        : `Hallo ${firstName}! Schön dass du dabei bist.`;
+    speak(msg);
+  }, [showWelcome, isSupported, firstName, role, speak]);
+
   const canProceed = () => {
     switch (currentLogicalStep) {
       case 0: return fullName.trim().length >= 2;
+      case 7: return true;
       case 1: return true;
-      case 2: return professionType !== ""; // profession required for providers
-      case 3: return true; // client-type always has default
-      case 4: return true; // country always selected
-      case 5: return email.includes("@") && password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password) && agbAccepted && privacyAccepted && widerrufAccepted;
-      case 6: return true; // business name optional
+      case 2: return professionType !== "";
+      case 3: return true;
+      case 4: return true;
+      case 5:
+        return (
+          email.includes("@") &&
+          password.length >= 8 &&
+          /[A-Z]/.test(password) &&
+          /[0-9]/.test(password) &&
+          agbAccepted &&
+          privacyAccepted &&
+          widerrufAccepted
+        );
+      case 6: return true;
       default: return false;
     }
   };
@@ -121,6 +177,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
       businessName: businessName.trim() || undefined,
       clientType: role === "client" ? clientType : undefined,
       professionType: role === "provider" ? professionType : undefined,
+      salutation: salutation !== "none" ? salutation : undefined,
     });
     setShowWelcome(true);
   };
@@ -134,14 +191,30 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
           animate={{ opacity: 1, scale: 1 }}
           className="text-center space-y-6 max-w-sm"
         >
-          <motion.div initial={{ y: 20 }} animate={{ y: 0 }} transition={{ delay: 0.3 }}>
+          <motion.div
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.1, type: "spring", stiffness: 180 }}
+            className="mx-auto w-20 h-20 rounded-full flex items-center justify-center"
+            style={{
+              background: "radial-gradient(circle at 38% 30%, #ffab60 0%, #f97316 60%, #e06010 100%)",
+              boxShadow: "0 0 0 8px rgba(249,115,22,0.15), 0 0 32px rgba(249,115,22,0.3)",
+            }}
+          >
+            <span className="text-3xl">🐴</span>
+          </motion.div>
+
+          <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
             <h1 className="text-3xl font-bold text-foreground">
-              Willkommen, {firstName}! 🎉
+              Willkommen{firstName ? `, ${firstName}` : ""}! 🎉
             </h1>
             <p className="text-muted-foreground mt-3 text-lg">
-              Dein Betrieb wartet — leg los.
+              {role === "provider"
+                ? "Dein Betrieb wartet — leg los."
+                : "Dein Pferd ist in guten Händen."}
             </p>
           </motion.div>
+
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5 }}>
             <Button size="lg" className="w-full h-14 text-base font-semibold gap-2" onClick={onCancel}>
               Jetzt starten <ArrowRight className="h-5 w-5" />
@@ -156,20 +229,19 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
 
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
-      {/* Progress Dots */}
+      {/* Progress dots */}
       <div className="flex items-center justify-center gap-2">
         {Array.from({ length: totalDots }).map((_, i) => (
           <div
             key={i}
             className={cn(
               "h-2 rounded-full transition-all duration-300",
-              i === step ? "w-8 bg-primary" : i < step ? "w-2 bg-primary/60" : "w-2 bg-muted"
+              i === step ? "w-8 bg-primary" : i < step ? "w-2 bg-primary/60" : "w-2 bg-muted",
             )}
           />
         ))}
       </div>
 
-      {/* Step Content */}
       <AnimatePresence mode="wait">
         <motion.div
           key={step}
@@ -179,7 +251,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
           transition={{ duration: 0.25 }}
           className="space-y-6"
         >
-          {/* Step 0: Name */}
+          {/* ── Step 0: Name ── */}
           {currentLogicalStep === 0 && (
             <div className="space-y-4">
               <div className="text-center">
@@ -201,7 +273,39 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
             </div>
           )}
 
-          {/* Step 1: Role */}
+          {/* ── Step 7: Salutation ── */}
+          {currentLogicalStep === 7 && (
+            <div className="space-y-4">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-foreground">
+                  Wie möchtest du angesprochen werden{firstName ? `, ${firstName}` : ""}?
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  So spricht dich Hufi persönlich an.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {SALUTATION_OPTIONS.map((s) => (
+                  <button
+                    key={s.value}
+                    type="button"
+                    onClick={() => setSalutation(s.value)}
+                    className={cn(
+                      "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
+                      salutation === s.value
+                        ? "border-primary bg-primary/10 shadow-md"
+                        : "border-border hover:border-primary/50",
+                    )}
+                  >
+                    <span className="text-3xl">{s.emoji}</span>
+                    <span className="font-semibold text-foreground">{s.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Step 1: Role ── */}
           {currentLogicalStep === 1 && (
             <div className="space-y-4">
               <div className="text-center">
@@ -214,7 +318,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
                   onClick={() => setRole("provider")}
                   className={cn(
                     "w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all min-h-[80px]",
-                    role === "provider" ? "border-primary bg-primary/10 shadow-md" : "border-border hover:border-primary/50"
+                    role === "provider" ? "border-primary bg-primary/10 shadow-md" : "border-border hover:border-primary/50",
                   )}
                 >
                   <div className={cn("w-12 h-12 rounded-full flex items-center justify-center shrink-0", role === "provider" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
@@ -231,7 +335,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
                   onClick={() => setRole("client")}
                   className={cn(
                     "w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all min-h-[80px] relative",
-                    role === "client" ? "border-primary bg-primary/10 shadow-md" : "border-border hover:border-primary/50"
+                    role === "client" ? "border-primary bg-primary/10 shadow-md" : "border-border hover:border-primary/50",
                   )}
                 >
                   <div className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">GRATIS</div>
@@ -248,7 +352,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
             </div>
           )}
 
-          {/* Step 2: Profession (providers only) */}
+          {/* ── Step 2: Profession (providers) ── */}
           {currentLogicalStep === 2 && (
             <div className="space-y-4">
               <div className="text-center">
@@ -267,7 +371,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
                       "flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-center",
                       professionType === p.value
                         ? "border-primary bg-primary/10 shadow-md"
-                        : "border-border hover:border-primary/50 hover:bg-muted/50"
+                        : "border-border hover:border-primary/50 hover:bg-muted/50",
                     )}
                   >
                     <span className="text-2xl">{p.emoji}</span>
@@ -281,18 +385,18 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
                   animate={{ opacity: 1 }}
                   className="text-sm text-muted-foreground text-center"
                 >
-                  {PROFESSIONS.find(p => p.value === professionType)?.description}
+                  {PROFESSIONS.find((p) => p.value === professionType)?.description}
                 </motion.p>
               )}
             </div>
           )}
 
-          {/* Step 3: Client Type (Privat / Gewerbe) – only for clients */}
+          {/* ── Step 3: Client Type ── */}
           {currentLogicalStep === 3 && (
             <ClientTypeSelection value={clientType} onChange={setClientType} />
           )}
 
-          {/* Step 4: Country */}
+          {/* ── Step 4: Country ── */}
           {currentLogicalStep === 4 && (
             <div className="space-y-4">
               <div className="text-center">
@@ -306,7 +410,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
                     onClick={() => setCountry(c.code)}
                     className={cn(
                       "w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all min-h-[64px]",
-                      country === c.code ? "border-primary bg-primary/10 shadow-md" : "border-border hover:border-primary/50"
+                      country === c.code ? "border-primary bg-primary/10 shadow-md" : "border-border hover:border-primary/50",
                     )}
                   >
                     <span className="text-3xl">{c.flag}</span>
@@ -328,7 +432,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
             </div>
           )}
 
-          {/* Step 5: Email & Password */}
+          {/* ── Step 5: Credentials ── */}
           {currentLogicalStep === 5 && (
             <div className="space-y-4">
               <div className="text-center">
@@ -376,7 +480,6 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
                   )}
                 </div>
 
-                {/* DSGVO Consent Checkboxes */}
                 <div className="space-y-3 pt-2">
                   <div className="flex items-start gap-3">
                     <Checkbox
@@ -387,7 +490,8 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
                     />
                     <Label htmlFor="agb-consent" className="text-sm leading-relaxed cursor-pointer text-muted-foreground">
                       Ich akzeptiere die{" "}
-                      <a href="/agb" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">AGB</a> und{" "}
+                      <a href="/agb" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">AGB</a>{" "}
+                      und{" "}
                       <a href="/agb" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Nutzungsbedingungen</a>. *
                     </Label>
                   </div>
@@ -414,7 +518,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
             </div>
           )}
 
-          {/* Step 6: Business Name (providers only) */}
+          {/* ── Step 6: Business Name (providers) ── */}
           {currentLogicalStep === 6 && (
             <div className="space-y-4">
               <div className="text-center">
@@ -433,7 +537,6 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
             </div>
           )}
 
-          {/* Motivational text */}
           <p className="text-sm text-muted-foreground text-center">
             {currentStepData.motivation}
           </p>
@@ -459,7 +562,8 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
       </div>
 
       <button
-        type="button" onClick={onCancel}
+        type="button"
+        onClick={onCancel}
         className="w-full text-sm text-muted-foreground hover:text-foreground text-center min-h-[44px]"
       >
         Ich habe schon ein Konto → Anmelden

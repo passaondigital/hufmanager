@@ -300,6 +300,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   sessionStorage.removeItem("hm_pending_profession_type");
                 }
               }
+              const pendingSalutation = sessionStorage.getItem("hm_pending_salutation");
+              if (pendingSalutation) {
+                const { error: salErr } = await supabase
+                  .from("profiles")
+                  .update({ salutation: pendingSalutation } as any)
+                  .eq("id", session.user.id);
+                if (salErr) {
+                  console.warn("salutation not written (column may not exist yet):", salErr.message);
+                }
+                sessionStorage.removeItem("hm_pending_salutation");
+              }
             }
           }, 0);
         } else {
