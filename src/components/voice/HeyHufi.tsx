@@ -29,6 +29,8 @@ interface HeyHufiProps {
   userId?: string;
   /** User role — for role-aware routing */
   userRole?: ActionRole;
+  /** When true: render only a small indicator dot, no chip or toggle button. */
+  compact?: boolean;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
@@ -103,6 +105,7 @@ export function HeyHufi({
   onToggle,
   userId,
   userRole,
+  compact = false,
 }: HeyHufiProps) {
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("off");
@@ -308,6 +311,16 @@ export function HeyHufi({
 
   /* ── UI ── */
   const isOff = phase === "off";
+
+  if (compact) {
+    if (isOff) return null;
+    return (
+      <div
+        className="pulse-dot"
+        style={{ width: 6, height: 6, borderRadius: "50%", background: "#10B981", flexShrink: 0 }}
+      />
+    );
+  }
 
   return (
     <div className="flex items-center gap-2">

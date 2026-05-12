@@ -880,17 +880,6 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
 
   return (
     <>
-      <style>{`
-        @keyframes wavebar { 0% { transform: scaleY(0.2); } 100% { transform: scaleY(1); } }
-        .wave-bar { animation: wavebar 0.6s ease-in-out infinite alternate; }
-        @keyframes pulse-rec { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,.5); } 100% { box-shadow: 0 0 0 12px rgba(239,68,68,0); } }
-        .rec-pulse { animation: pulse-rec 1s ease-out infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        .msg-in { animation: fadeUp 0.22s ease-out; }
-        @keyframes hufi-slide-bottom { from { opacity: 0; transform: translateX(-50%) translateY(12px) scale(0.96); } to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); } }
-      `}</style>
-
       {/* First-Run-Consent-Gate hat Priorität vor allem anderen */}
       {showFirstRunConsent && (
         <HufiFirstRunConsent onComplete={handleFirstRunComplete} />
@@ -940,6 +929,20 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
           maxWidth: "100vw",
           boxSizing: "border-box",
         }}>
+          {/* Grid-Menü → /management — ERSTES Element ganz links */}
+          <button
+            onClick={() => navigate("/management")}
+            title="Menü"
+            style={{
+              width: 30, height: 30, borderRadius: 8,
+              background: "#F3F4F6", border: "none",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", flexShrink: 0,
+            }}
+          >
+            <Grid3X3 size={15} style={{ color: "#374151" }} />
+          </button>
+
           {/* Logo + Titel + Presence-State */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, overflow: "hidden" }}>
             <div style={{ width: 30, height: 30, borderRadius: 9, background: "#F97316", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 5 }}>
@@ -994,7 +997,7 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
             </button>
           )}
 
-          {/* Hey Hufi — nur wenn aktiviert */}
+          {/* Hey Hufi — unsichtbar im Hintergrund (nur Dot wenn aktiv) */}
           {SR_SUPPORTED && heyHufiEnabled && user && (
             <HeyHufi
               userName={hufiCtx?.user?.name ?? user.email?.split("@")[0] ?? ""}
@@ -1002,6 +1005,7 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
               defaultEnabled={true}
               userId={user.id}
               userRole={role as ActionRole}
+              compact={true}
               onToggle={(enabled) => {
                 if (!enabled) {
                   setHeyHufiEnabled(false);
@@ -1055,20 +1059,6 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
               {creditBalance === 0 ? "Top-up" : creditBalance.toLocaleString("de-DE")}
             </button>
           )}
-
-          {/* Grid-Menü → /management */}
-          <button
-            onClick={() => navigate("/management")}
-            title="Menü"
-            style={{
-              width: 30, height: 30, borderRadius: 8,
-              background: "#F3F4F6", border: "none",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", flexShrink: 0,
-            }}
-          >
-            <Grid3X3 size={15} style={{ color: "#374151" }} />
-          </button>
         </div>
 
         {/* SCROLL AREA */}
@@ -1086,6 +1076,9 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
             flexDirection: "column",
             gap: 14,
             position: "relative",
+            transform: "translateZ(0)",
+            willChange: "transform",
+            contain: "layout" as import("react").CSSProperties["contain"],
           }}
         >
           {/* Watermark */}
@@ -1158,9 +1151,9 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
           )}
 
           {/* Chat messages */}
-          {messages.map((msg, i) => (
+          {messages.map((msg) => (
             <div
-              key={i}
+              key={msg.ts.toString()}
               className="msg-in"
               style={{
                 display: "flex",
@@ -1334,8 +1327,8 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
               fontSize: 13,
               fontWeight: 600,
               fontFamily: "inherit",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
               border: recording ? "none" : "1px solid rgba(255,255,255,0.08)",
               animation: "hufi-slide-bottom 0.28s cubic-bezier(0.34,1.56,0.64,1) both",
             }}
