@@ -3,6 +3,16 @@ import { Navigate } from "react-router-dom";
 import WebsiteHome from "@/pages/website/WebsiteHome";
 import { getPostLoginPath } from "@/lib/portal-user-detect";
 
+// Erkennt ob die App als installiertes PWA läuft (Homescreen-Kachel)
+function isPWAStandalone(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (window.navigator as any).standalone === true ||
+    document.referrer.startsWith("android-app://")
+  );
+}
+
 const Index = () => {
   const { user, role, loading } = useAuth();
   const hostname = window.location.hostname;
@@ -10,13 +20,14 @@ const Index = () => {
   // Marketing landing on the bare apex / www; auth flow on app.* and everywhere else.
   // Legacy hufmanager.de hosts are aliased so existing HufManager users don't
   // land on the auth screen when they hit their old bookmark.
+  // PWA (standalone) überspringt immer die Landing Page — direkt zur App.
   const isMainDomain =
     hostname === "hufiapp.de" ||
     hostname === "www.hufiapp.de" ||
     hostname === "hufmanager.de" ||
     hostname === "www.hufmanager.de";
 
-  if (isMainDomain) {
+  if (isMainDomain && !isPWAStandalone()) {
     return <WebsiteHome />;
   }
 

@@ -282,6 +282,26 @@ export function HeyHufi({
     }
   }, [phase, startRecognition]);
 
+  // PWA-Resume: wenn die App aus dem Hintergrund kommt (Homescreen-Kachel), Recognition neu starten
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible" && runningRef.current) {
+        // Kurze Pause damit der Browser das Mikrofon freigeben kann
+        setTimeout(() => {
+          if (recRef.current) return; // läuft schon
+          setPhase("ready");
+          startRecognition();
+        }, 600);
+      } else if (document.visibilityState === "hidden") {
+        // Recognition pausieren wenn App in Hintergrund geht (spart Akku)
+        recRef.current?.stop();
+        recRef.current = null;
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [startRecognition]);
+
   useEffect(() => {
     return () => { stopRecognition(); window.speechSynthesis?.cancel(); };
   }, [stopRecognition]);
