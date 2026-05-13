@@ -5,27 +5,36 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { Loader2, Coins, Grid3X3, Volume2, X } from "lucide-react";
+import { Grid3X3, Volume2 } from "lucide-react";
+import { MobileShellVoiceSection, MobileShellInputBar, MobileShellMessages, type ChatAction, type ChatMessage } from "./MobileShellParts";
 import { toast } from "sonner";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { useViewMode } from "@/hooks/useViewMode";
 import { useHufiTTS } from "@/hooks/useHufiTTS";
 import { useVoiceCapture, type VoiceErrorCode } from "@/hooks/useVoiceCapture";
-import { chatWithHufAI, BEFUND_SYSTEM_PROMPT, ChatMessage as AIChatMessage } from "@/lib/ai-routing";
+import { streamWithHufAI, callClaudeWithTools, BEFUND_SYSTEM_PROMPT, ChatMessage as AIChatMessage } from "@/lib/ai-routing";
+import { HUFI_TOOLS, toolNameToTaskType, buildToolExplanation, extractLineItems } from "@/lib/hufi-tool-definitions";
+import {
+  fetchBusinessContext, buildInvoiceCatalogPrompt, build5AContextAddition,
+  formatInvoiceConfirmation, type BusinessContext,
+} from "@/lib/hufi-business-context";
+import { buildShortSpokenGreeting, type HufiPresenceLabel } from "@/lib/hufi-runtime";
 import { extractBefundFromTranscript, formatBefundForChat } from "@/lib/autoflow-service";
 import { detectIntent, type HufiIntent } from "@/lib/hufi-intent";
 import { runNavAction, type ActionOutcome, type ActionRole } from "@/lib/hufi-nav-actions";
+import {
+  createAgentTask, approveAndExecuteTask, rejectTask,
+  intentActionToTaskType, taskTypeLabel, taskTypeIcon,
+  type AgentTask,
+} from "@/lib/hufi-agent-tasks";
 import { HeyHufi } from "@/components/voice/HeyHufi";
-import { HufiVoiceWave } from "@/components/voice/HufiVoiceWave";
-import { HufiOrb } from "@/components/voice/HufiOrb";
 import { fetchRelevantContext } from "@/lib/hufi-context-resolver";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { DsgvoConsentModal } from "@/components/DsgvoConsentModal";
 import { KiHinweisModal } from "@/components/KiHinweisModal";
 import { HufManagerMigrationBanner } from "@/components/migration/HufManagerMigrationBanner";
 import { HufiOnboardingTour } from "@/components/migration/HufiOnboardingTour";
-import { updateHufiMemory } from "@/lib/hufi-brain";
-import { HufiSearchCard } from "@/components/HufiSearchCard";
+import { updateHufiMemory, deleteLastLearnedMemory } from "@/lib/hufi-brain";
 import {
   HufiFirstRunConsent,
   hasCompletedFirstRun,
@@ -59,24 +68,8 @@ import {
   fetchWeatherContext,
   buildBriefingPayload,
   type BriefingPayload,
+  type WeatherContext,
 } from "@/lib/hufai-proactive";
-
-interface ChatAction {
-  label: string;
-  route?: string;
-  actionKey?: string;
-}
-
-interface ChatMessage {
-  role: "user" | "ai";
-  text: string;
-  ts: number;
-  actionPrompt?: boolean;
-  actions?: ChatAction[];
-  searchResults?: HufiSearchResult[];
-  searchSuggestions?: SearchSuggestion[];
-  senderId?: string;
-}
 
 export function MobileShell() {
   const { user, role } = useAuth();
@@ -90,9 +83,7 @@ export function MobileShell() {
   const [showMigrationBanner, setShowMigrationBanner] = useState(false);
   const [showOnboardingTour, setShowOnboardingTour] = useState(false);
   // Runtime presence: persistent Hufi state label
-  const [hufiPresenceState, setHufiPresenceState] = useState<
-    "bereit" | "hört zu" | "transkribiert" | "denkt" | "führt aus" | "spricht" | "offline"
-  >("bereit");
+  const [hufiPresenceState, setHufiPresenceState] = useState<HufiPresenceLabel>("bereit");
   const [hufiCtx, setHufiCtx] = useState<HufiContext | null>(null);
   const [proactiveBriefing, setProactiveBriefing] = useState<BriefingPayload | null>(null);
   const [searching, setSearching] = useState(false);
@@ -106,6 +97,7 @@ export function MobileShell() {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const sessionId = useRef<string>(crypto.randomUUID());
   const greetingSetRef = useRef(false);
+  const bizCtxRef = useRef<BusinessContext | null>(null);
   const shownAlertsRef = useRef<Set<string>>(new Set());
   const migrationCheckedRef = useRef(false);
   const today = format(new Date(), "yyyy-MM-dd");
@@ -327,7 +319,13 @@ export function MobileShell() {
     }
 
     try {
-      const ctx = await fetchHufiContext(userId, role ?? null);
+      // Beide Kontexte parallel laden — HufiContext + BusinessContext
+      const [ctx] = await Promise.all([
+        fetchHufiContext(userId, role ?? null),
+        fetchBusinessContext(userId)
+          .then((biz) => { bizCtxRef.current = biz; })
+          .catch(() => { /* non-blocking */ }),
+      ]);
       // Fallback: use first part of email if no profile name is set
       if (!ctx.user.name && user?.email) {
         const raw = user.email.split("@")[0].split(/[._+]/)[0];
@@ -340,31 +338,60 @@ export function MobileShell() {
       // just means the weather line is omitted.
       if (shouldShowBriefing()) {
         fetchWeatherContext().then((weather) => {
-          setProactiveBriefing(buildBriefingPayload(ctx, weather));
+          setProactiveBriefing(buildBriefingPayload(ctx, weather, bizCtxRef.current));
         });
       }
 
-      const greeting = await generateHufiGreeting(ctx);
       const actions = buildContextActions(ctx);
       const roleIntel = getRoleIntelligence(ctx);
 
-      // Hufi Voice Phase 1 — queue greeting for spoken playback after the
-      // first user gesture. Gated by user opt-in + once-per-day per user.
-      queueSpokenGreetingIfEligible(userId, greeting);
+      // Build spoken greeting from DB data immediately — no AI call needed.
+      // Queue TTS before generateHufiGreeting so voice fires on the first user
+      // tap (~300 ms after DB query) rather than after the AI call (~3 s).
+      const spokenGreeting = buildShortSpokenGreeting({
+        userId,
+        userName: ctx.user.name ?? null,
+        role: ctx.user.role ?? null,
+        nextAppointment: ctx.todayAppointments[0]
+          ? {
+              date: ctx.todayAppointments[0].date ?? new Date().toISOString().slice(0, 10),
+              time: ctx.todayAppointments[0].time ?? null,
+              horseName: ctx.todayAppointments[0].horse_name ?? null,
+              clientName: ctx.todayAppointments[0].client_name ?? null,
+              isToday: true,
+              minutesAway: ctx.todayAppointments[0].time
+                ? Math.round((new Date(`${new Date().toISOString().slice(0, 10)}T${ctx.todayAppointments[0].time}`).getTime() - Date.now()) / 60000)
+                : null,
+            }
+          : null,
+        todayCount: ctx.todayAppointments.length,
+        openLeads: ctx.openLeads,
+        unpaidInvoices: ctx.unpaidInvoices,
+      });
+      queueSpokenGreetingIfEligible(userId, spokenGreeting);
 
-      // Build initial message list: greeting + any high-urgency role messages
+      // Show spoken greeting immediately in chat. AI generates full greeting
+      // text asynchronously and replaces the placeholder once ready.
+      const greetingTs = Date.now();
+      const urgentRoleMessages = roleIntel.proactiveMessages
+        .filter((m) => m.urgency === "high").slice(0, 2);
       const initialMessages: ChatMessage[] = [
-        { role: "ai", text: greeting, ts: Date.now(), actions },
-      ];
-      for (const msg of roleIntel.proactiveMessages.filter((m) => m.urgency === "high").slice(0, 2)) {
-        initialMessages.push({
-          role: "ai",
+        { role: "ai", text: spokenGreeting, ts: greetingTs, actions },
+        ...urgentRoleMessages.map((msg, i) => ({
+          role: "ai" as const,
           text: `${msg.text}\n\n_Warum: ${msg.reason}_`,
-          ts: Date.now() + initialMessages.length,
+          ts: greetingTs + i + 1,
           actions: msg.action ? [msg.action] : undefined,
-        });
-      }
+        })),
+      ];
       setMessages(initialMessages);
+
+      // Async: replace first bubble with full AI greeting once ready.
+      generateHufiGreeting(ctx).then((greeting) => {
+        setMessages((prev) =>
+          prev.map((m) => m.ts === greetingTs ? { ...m, text: greeting } : m)
+        );
+      }).catch(() => { /* keep spoken greeting if AI fails */ });
     } catch {
       const h = new Date().getHours();
       const g = h < 12 ? "Guten Morgen" : h < 18 ? "Guten Tag" : "Guten Abend";
@@ -426,14 +453,34 @@ export function MobileShell() {
 
   // ── Recording ───────────────────────────────────────────────────────────────
   // ── Shared transcript processing (used by inline mic + voice modal) ─────────
+  // Wake-Word aus Transkript entfernen bevor es verarbeitet wird
+  function stripWakeWord(text: string): string {
+    return text.replace(/^(hey\s+hufi|okay\s+hufi|ok\s+hufi|hey\s+wufi)[,\s]*/i, "").trim();
+  }
+
+  // Erkennt "vergiss das / lösch das / nicht speichern" etc.
+  function isForgetCommand(text: string): boolean {
+    const l = text.toLowerCase();
+    return /\b(vergiss|lösch|löschen|nicht speichern|vergessen|cancel|rückgängig|undo)\b/.test(l)
+      && /\b(das|es|alles|memory|gespeichert|letzte[ns]?)\b/.test(l);
+  }
+
+  function isRoutineCommand(text: string): boolean {
+    const l = text.toLowerCase();
+    return /\b(routine|routinen|automatisch|automatisierung|cron|erinnerung anlegen|erinnere mich|erinnere mich täglich|erinnere mich wöchentlich)\b/.test(l)
+      || /\b(zeig.*(meine\s+)?routinen?|öffne.*routinen?|routine.*anzeigen)\b/.test(l);
+  }
+
   async function processTranscribedText(text: string) {
     if (!text) {
       addMsg({ role: "ai", text: "Ich konnte nichts verstehen. Bitte nochmals sprechen.", ts: Date.now() });
       return;
     }
-    addMsg({ role: "user", text, ts: Date.now() });
+    const cleaned = stripWakeWord(text);
+    if (!cleaned) return; // war nur das Wake-Word, nichts danach
+    addMsg({ role: "user", text: cleaned, ts: Date.now() });
 
-    const voiceWelfare = checkHorseWelfare(text);
+    const voiceWelfare = checkHorseWelfare(cleaned);
     if (voiceWelfare && user?.id) {
       addMsg({
         role: "ai",
@@ -441,15 +488,27 @@ export function MobileShell() {
         ts: Date.now() + 1,
         actions: [{ label: `🚨 ${voiceWelfare.callToAction}`, route: "/tierarzt-finder" }],
       });
-      logWelfareAlert(user.id, voiceWelfare, text);
+      logWelfareAlert(user.id, voiceWelfare, cleaned);
       return;
     }
 
     if (!user?.id) return;
+
+    // "Vergiss das" / "Lösch das" → letzten Memory-Eintrag löschen
+    if (isForgetCommand(cleaned)) {
+      const deleted = await deleteLastLearnedMemory(user.id);
+      addMsg({
+        role: "ai",
+        text: deleted ? `✅ Gelöscht: _${deleted}_` : "Ich habe nichts Löschbares gefunden.",
+        ts: Date.now() + 1,
+      });
+      return;
+    }
+
     setResponding(true);
     setHufiPresenceState("denkt");
     try {
-      const befund = await extractBefundFromTranscript(text, user.id);
+      const befund = await extractBefundFromTranscript(cleaned, user.id);
       if (befund) {
         const befundText = formatBefundForChat(befund);
         addMsg({ role: "ai", text: befundText, ts: Date.now() });
@@ -472,7 +531,7 @@ export function MobileShell() {
             ],
           });
         }
-        learnFromInteraction(user.id, text, befundText, "confirmed", sessionId.current);
+        learnFromInteraction(user.id, cleaned, befundText, "confirmed", sessionId.current);
         if (hufiCtx) {
           setHufiCtx((prev) => prev ? {
             ...prev,
@@ -483,8 +542,8 @@ export function MobileShell() {
           } : prev);
         }
       } else {
-        addMsg({ role: "ai", text: `Verstanden: „${text}". Ich habe das notiert.`, ts: Date.now() });
-        learnFromInteraction(user.id, text, "Notiz", "confirmed", sessionId.current);
+        addMsg({ role: "ai", text: `Verstanden: „${cleaned}". Ich habe das notiert.`, ts: Date.now() });
+        learnFromInteraction(user.id, cleaned, "Notiz", "confirmed", sessionId.current);
       }
     } catch {
       addMsg({ role: "ai", text: "Verarbeitung fehlgeschlagen. Bitte erneut versuchen.", ts: Date.now() });
@@ -530,6 +589,24 @@ export function MobileShell() {
     }
   }
 
+  // Aktiviert Hufi per Wake-Word oder Tap: einheitliche Hufi-TTS, dann Mikro
+  async function activateHufi() {
+    if (recording || transcribing || responding || isTtsSpeaking || isVoiceSpeaking) return;
+
+    setHufiPresenceState("spricht");
+    setIsVoiceSpeaking(true);
+
+    const ok = await hufiSpeak("Ja, ich höre zu.", () => {
+      setIsVoiceSpeaking(false);
+      startRecording();
+    }, true);
+
+    if (!ok) {
+      setIsVoiceSpeaking(false);
+      startRecording();
+    }
+  }
+
   function stopRecording() {
     setHufiPresenceState("transkribiert");
     voice.stopRecording();
@@ -540,6 +617,17 @@ export function MobileShell() {
     setHufiPresenceState("bereit");
     voice.cancel();
   }
+
+  // VAD Auto-Stop: wenn recording von true → false wechselt (ohne manuellen Stop)
+  const prevRecordingRef = useRef(false);
+  useEffect(() => {
+    if (prevRecordingRef.current && !voice.isRecording) {
+      if (voiceSessionRef.current?.active) {
+        setHufiPresenceState("transkribiert");
+      }
+    }
+    prevRecordingRef.current = voice.isRecording;
+  }, [voice.isRecording]);
 
   // Surface voice errors via toast — fail loud, never silent.
   useEffect(() => {
@@ -591,7 +679,7 @@ export function MobileShell() {
     }
 
     (async () => {
-      await processTranscribedText(text);
+      await processChatMessage(text, true);
       const session = voiceSessionRef.current;
       voiceSessionRef.current = null;
       if (!session?.active || !ttsSupported) {
@@ -608,7 +696,7 @@ export function MobileShell() {
       hufiSpeak(combined, () => {
         setIsVoiceSpeaking(false);
         setHufiPresenceState("bereit");
-      });
+      }, /* fastMode */ true);
     })();
   }, [voice.transcript]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -628,7 +716,87 @@ export function MobileShell() {
     }
   }
 
+  async function addStreamingMsg(
+    history: AIChatMessage[],
+    userId: string,
+    model?: string,
+  ): Promise<string> {
+    const ts = Date.now();
+    // Placeholder so the bubble appears immediately
+    setMessages((prev) => [...prev, { role: "ai" as const, text: "", ts }]);
+    let fullText = "";
+    try {
+      await streamWithHufAI(history, userId, model, (chunk) => {
+        fullText += chunk;
+        setMessages((prev) =>
+          prev.map((m) => m.ts === ts ? { ...m, text: m.text + chunk } : m)
+        );
+      });
+    } catch (e) {
+      // Remove the empty placeholder bubble before rethrowing so no blank
+      // bubble is left in the chat when the caller's catch adds an error msg.
+      setMessages((prev) => prev.filter((m) => m.ts !== ts));
+      throw e;
+    }
+    // Post-stream: broadcast & voice session tracking
+    const complete: ChatMessage = { role: "ai", text: fullText, ts };
+    broadcast(complete);
+    if (voiceSessionRef.current?.active && fullText) {
+      voiceSessionRef.current.texts.push(fullText);
+    }
+    return fullText;
+  }
+
   async function handleMsgAction(key: string, msg: ChatMessage) {
+    // ── Agent Task: Bestätigen ────────────────────────────────────────────────
+    if (key.startsWith("task_approve:") && user?.id) {
+      const taskId = key.slice("task_approve:".length);
+      setMessages((prev) => prev.map((m) =>
+        m.ts === msg.ts ? { ...m, actions: undefined, text: m.text + "\n\n⏳ Wird ausgeführt…" } : m
+      ));
+      const fakeTask: AgentTask = {
+        id: taskId,
+        user_id: user.id,
+        session_id: sessionId.current,
+        type: "generic_action",
+        status: "approved",
+        payload: {},
+        explanation: null,
+        user_message: null,
+        result: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        executed_at: null,
+      };
+      // Fetch real task to get type + payload
+      const { data } = await supabase.from("agent_tasks").select("*").eq("id", taskId).maybeSingle();
+      const realTask = (data as AgentTask | null) ?? fakeTask;
+      let result: { success: boolean; message: string };
+      try {
+        result = await approveAndExecuteTask(realTask, user.id);
+      } catch (err) {
+        result = { success: false, message: (err as Error)?.message ?? "Fehler beim Ausführen." };
+      }
+      setMessages((prev) => prev.map((m) =>
+        m.ts === msg.ts
+          ? { ...m, text: m.text.replace("\n\n⏳ Wird ausgeführt…", `\n\n${result.success ? "✅" : "❌"} ${result.message}`) }
+          : m
+      ));
+      if (result.success) toast.success(result.message);
+      else toast.error(result.message);
+      return;
+    }
+
+    // ── Agent Task: Ablehnen ──────────────────────────────────────────────────
+    if (key.startsWith("task_reject:")) {
+      const taskId = key.slice("task_reject:".length);
+      await rejectTask(taskId);
+      setMessages((prev) => prev.map((m) =>
+        m.ts === msg.ts ? { ...m, actions: undefined, text: m.text + "\n\n✖ Abgebrochen." } : m
+      ));
+      return;
+    }
+
     if (key === "search_no" || key === "confirm_no") {
       setMessages((prev) => prev.map((m) =>
         m.ts === msg.ts ? { ...m, actions: undefined, text: key === "confirm_no" ? m.text + "\n\n✖ Abgebrochen." : m.text } : m
@@ -668,8 +836,14 @@ export function MobileShell() {
   }
 
   // ── Intent-aware helpers ─────────────────────────────────────────────────────
+  function nowStamp() {
+    const now = new Date();
+    return now.toLocaleString("de-DE", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  }
+
   const KNOWLEDGE_SYSTEM_PROMPT = `Du bist Hufi, ein KI-Assistent für die Pferdewelt. Beantworte allgemeine Wissensfragen zu Pferden, Hufen, Tierpflege und Veterinärmedizin.
-Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklärung. Kein Zugriff auf persönliche Daten.`;
+Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklärung. Kein Zugriff auf persönliche Daten.
+Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
 
   async function answerFromKnowledge(text: string) {
     const history: AIChatMessage[] = [
@@ -677,67 +851,176 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
       ...messages.slice(-4).map((m) => ({ role: m.role === "user" ? "user" : "assistant" as const, content: m.text })),
       { role: "user", content: text },
     ];
-    const reply = await chatWithHufAI(history, user?.id ?? "anonymous", "hufiai-fast");
-    addMsg({ role: "ai", text: reply, ts: Date.now() });
+    await addStreamingMsg(history, user?.id ?? "anonymous", "hufiai-fast");
   }
 
-  async function answerWithContext(text: string, entities: ReturnType<typeof detectIntent>["entities"]) {
+  async function answerWithWeather(text: string, voiceMode: boolean) {
+    const weather = await fetchWeatherContext().catch(() => null);
+    const WMO: Record<number, string> = {
+      0:"klar", 1:"überwiegend klar", 2:"teils bewölkt", 3:"bewölkt",
+      45:"neblig", 48:"Reifnebel", 51:"leichter Nieselregen", 53:"Nieselregen",
+      55:"starker Nieselregen", 61:"leichter Regen", 63:"Regen", 65:"starker Regen",
+      71:"leichter Schnee", 73:"Schnee", 75:"starker Schnee",
+      80:"Regenschauer", 81:"Schauer", 82:"starke Schauer",
+      95:"Gewitter", 96:"Gewitter mit Hagel", 99:"starkes Gewitter",
+    };
+    const label = (code: number) => WMO[code] ?? "wechselhaft";
+    const storedLat = localStorage.getItem("hufi_user_lat");
+    const storedLon = localStorage.getItem("hufi_user_lon");
+    const hasLocation = !!(storedLat && storedLon);
+
+    let weatherBlock: string;
+    if (weather) {
+      weatherBlock = `AKTUELLES WETTER (Open-Meteo, ${hasLocation ? "gespeicherter Standort" : "Deutschland-Mitte"}):
+Heute: ${label(weather.todayCode)}, max. ${weather.tempMax}°C, Niederschlag: ${weather.todayPrecipMm} mm
+Morgen: ${label(weather.tomorrowCode)}, Niederschlag: ${weather.tomorrowPrecipMm} mm`;
+    } else {
+      weatherBlock = "Wetterdaten konnten nicht geladen werden (kein Netz oder API nicht erreichbar).";
+    }
+
+    const history: AIChatMessage[] = [
+      {
+        role: "system",
+        content: `${KNOWLEDGE_SYSTEM_PROMPT}\n\n${weatherBlock}\n\nBeantworte die Wetterfrage des Nutzers präzise und kurz auf Basis dieser Daten.${
+          !hasLocation ? " Weise darauf hin, dass kein genauer Standort gespeichert ist — der Nutzer kann ihn in den Einstellungen hinterlegen." : ""
+        }`,
+      },
+      { role: "user", content: text },
+    ];
+    await addStreamingMsg(history, user?.id ?? "anonymous", "hufiai-fast");
+  }
+
+  async function answerWithContext(text: string, entities: ReturnType<typeof detectIntent>["entities"], voiceMode = false) {
+    // Business-Kontext lazy laden (gecacht)
+    if (!bizCtxRef.current && user?.id) {
+      try { bizCtxRef.current = await fetchBusinessContext(user.id); } catch { /* optional */ }
+    }
     const ctx = await fetchRelevantContext(entities, user!.id);
     const contextBlock = ctx.summary
       ? `AKTUELLE DATEN AUS DER PFERDEAKTE:\n${ctx.summary}\n\nBeantworte die Anfrage auf Basis dieser Daten.`
       : "Keine spezifischen Daten gefunden.";
+    const professionBlock = bizCtxRef.current
+      ? build5AContextAddition(bizCtxRef.current)
+      : "";
     const history: AIChatMessage[] = [
-      { role: "system", content: `${BEFUND_SYSTEM_PROMPT}\n\n${contextBlock}` },
+      {
+        role: "system",
+        content: `${BEFUND_SYSTEM_PROMPT}\n\nAktuelles Datum und Uhrzeit: ${nowStamp()}\n\n${contextBlock}${professionBlock}`,
+      },
       ...messages.slice(-4).map((m) => ({ role: m.role === "user" ? "user" : "assistant" as const, content: m.text })),
       { role: "user", content: text },
     ];
-    const reply = await chatWithHufAI(history, user!.id);
-    addMsg({ role: "ai", text: reply, ts: Date.now() });
+    // Im Voice-Modus immer schnelles Modell (Haiku) für geringe Latenz
+    const reply = await addStreamingMsg(history, user!.id, voiceMode ? "hufiai-fast" : undefined);
     learnFromInteraction(user!.id, text, reply, "confirmed", sessionId.current);
   }
 
   async function planAndConfirmAction(text: string, entities: ReturnType<typeof detectIntent>["entities"]) {
-    const horse = entities.horseName ? `für ${entities.horseName}` : "";
-    const client = entities.clientName ? ` (${entities.clientName})` : "";
-    if (entities.action === "create_invoice") {
-      addMsg({
-        role: "ai",
-        text: `Ich erstelle folgendes:\n📄 Rechnung ${horse}${client}\n💰 Bitte Details im Rechnungsformular ergänzen.\n\nFortfahren?`,
-        ts: Date.now(),
-        actions: [
-          { label: "Erstellen ✓", route: "/rechnungen" },
-          { label: "Anpassen ✏️", route: "/rechnungen" },
-          { label: "Abbrechen ✗", actionKey: "confirm_no" },
-        ],
-      });
-    } else if (entities.action === "create_appointment") {
-      addMsg({
-        role: "ai",
-        text: `Ich lege einen neuen Termin an${horse ? ` ${horse}` : ""}.\nZum Kalender um Details einzugeben?`,
-        ts: Date.now(),
-        actions: [
-          { label: "Zum Kalender ✓", route: "/kalender" },
-          { label: "Abbrechen ✗", actionKey: "confirm_no" },
-        ],
-      });
-    } else if (entities.action === "set_reminder") {
-      addMsg({
-        role: "ai",
-        text: `Erinnerung notiert${horse ? ` ${horse}` : ""}.\nDetaillierte Erinnerungen findest du im Kalender.`,
-        ts: Date.now(),
-        actions: [{ label: "Zum Kalender", route: "/kalender" }],
-      });
-    } else {
-      // Generic: use AI
-      const history: AIChatMessage[] = [
-        { role: "system", content: BEFUND_SYSTEM_PROMPT },
-        ...messages.slice(-4).map((m) => ({ role: m.role === "user" ? "user" : "assistant" as const, content: m.text })),
-        { role: "user", content: text },
-      ];
-      const reply = await chatWithHufAI(history, user!.id);
-      addMsg({ role: "ai", text: reply, ts: Date.now() });
-      learnFromInteraction(user!.id, text, reply, "confirmed", sessionId.current);
+    if (!user?.id) return;
+
+    // ── Business-Kontext laden (gecacht) ────────────────────────────────────────
+    if (!bizCtxRef.current) {
+      try { bizCtxRef.current = await fetchBusinessContext(user.id); } catch { /* optional */ }
     }
+    const bizCtx = bizCtxRef.current;
+
+    // ── Phase 3: Claude Tool Use mit Katalog-Kontext ────────────────────────────
+    let taskType = intentActionToTaskType(entities.action ?? "generic_action");
+    let payload: Record<string, unknown> = {};
+    let explanation = "";
+    let confirmText = "";
+
+    try {
+      const todayLabel = new Date().toLocaleDateString("de-DE", {
+        weekday: "long", year: "numeric", month: "long", day: "numeric",
+      });
+      const catalogBlock = bizCtx ? buildInvoiceCatalogPrompt(bizCtx) : "";
+      const systemPrompt =
+        `Du bist Hufi, ein KI-Assistent für Hufpfleger. Heute ist ${todayLabel}.\n` +
+        `Analysiere die Anfrage und rufe das passende Tool auf.\n` +
+        `Wenn kein Tool passt, antworte nur mit kurzem Text.\n` +
+        (catalogBlock ? `\n${catalogBlock}` : "");
+
+      const toolResult = await callClaudeWithTools(text, HUFI_TOOLS, systemPrompt, user.id);
+
+      if (toolResult.type === "tool_use") {
+        taskType = toolNameToTaskType(toolResult.toolName);
+        payload  = toolResult.toolInput;
+        explanation = buildToolExplanation(toolResult.toolName, toolResult.toolInput);
+
+        // Reiche Bestätigungskarte für Rechnungen
+        if (toolResult.toolName === "create_invoice" && bizCtx) {
+          const lineItems = extractLineItems(payload);
+          if (lineItems.length > 0) {
+            confirmText = formatInvoiceConfirmation({
+              horseName:      payload.horse_name  as string | undefined,
+              clientName:     payload.client_name as string | undefined,
+              lineItems,
+              kleinunternehmer: bizCtx.kleinunternehmer,
+              mwstPflichtig:    bizCtx.mwstPflichtig,
+              vatRate:          bizCtx.defaultVatRate,
+              currency:         bizCtx.currency,
+              inventory:        bizCtx.inventory,
+            });
+          }
+        }
+      } else {
+        throw new Error("no_tool");
+      }
+    } catch {
+      // ── Fallback: keyword-basiert ───────────────────────────────────────────
+      const horse  = entities.horseName  ? `für ${entities.horseName}` : "";
+      const client = entities.clientName ? ` (${entities.clientName})` : "";
+      payload = {
+        horse_name:  entities.horseName,
+        client_name: entities.clientName,
+        ...(taskType === "create_invoice"
+          ? { amount: 0, notes: horse ? `Hufpflege ${horse}` : "Hufpflege" }
+          : {}),
+        ...(taskType === "create_appointment"
+          ? { date: new Date().toISOString().slice(0, 10) }
+          : {}),
+      };
+      explanation = taskType === "create_invoice"
+        ? `Rechnung ${horse}${client} erstellen.`
+        : taskType === "create_appointment"
+        ? `Neuen Termin anlegen${horse ? ` ${horse}` : ""}${client}.`
+        : taskType === "set_reminder"
+        ? `Erinnerung setzen${horse ? ` ${horse}` : ""}.`
+        : `Aufgabe: ${text.slice(0, 100)}`;
+    }
+
+    const task  = await createAgentTask(user.id, taskType, payload, explanation, text, sessionId.current);
+    const icon  = taskTypeIcon(taskType);
+    const label = taskTypeLabel(taskType);
+
+    if (!task) {
+      const routeMap: Record<string, string> = {
+        create_invoice:     "/rechnungen",
+        create_appointment: "/kalender",
+        set_reminder:       "/kalender",
+        add_expense:        "/buchhaltung",
+        set_price_group:    "/kunden",
+      };
+      addMsg({
+        role: "ai",
+        text: `${icon} ${label}`,
+        ts: Date.now(),
+        actions: [{ label: "Öffnen", route: routeMap[taskType] ?? "/management" }],
+      });
+      return;
+    }
+
+    const msgText = confirmText || `${icon} ${label}\n\n${explanation}`;
+    addMsg({
+      role: "ai",
+      text: msgText,
+      ts: Date.now(),
+      actions: [
+        { label: "✓ Bestätigen", actionKey: `task_approve:${task.id}` },
+        { label: "✗ Ablehnen",   actionKey: `task_reject:${task.id}` },
+      ],
+    });
   }
 
   async function handleNavigationOutcome(outcome: ActionOutcome, fromVoice = false) {
@@ -749,7 +1032,7 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
       // Speak immediately — button click / mic tap = user gesture, audio is allowed.
       if (ttsSupported && (fromVoice || localStorage.getItem("hufi_voice_greeting_enabled") === "1")) {
         setIsVoiceSpeaking(true);
-        hufiSpeak(a.spokenConfirmation, () => setIsVoiceSpeaking(false));
+        hufiSpeak(a.spokenConfirmation, () => setIsVoiceSpeaking(false), fromVoice);
       }
       navigate(a.route);
       return;
@@ -778,15 +1061,42 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
     }
   }
 
-  async function processChatMessage(text: string) {
-    addMsg({ role: "user", text, ts: Date.now() });
-    const intent = detectIntent(text, !!user, hufiCtx?.memory ?? []);
+  async function processChatMessage(text: string, voiceMode = false) {
+    const cleaned = stripWakeWord(text);
+    if (!cleaned) return;
+
+    // "Vergiss das" im Chat
+    if (isForgetCommand(cleaned) && user?.id) {
+      addMsg({ role: "user", text: cleaned, ts: Date.now() });
+      const deleted = await deleteLastLearnedMemory(user.id);
+      addMsg({
+        role: "ai",
+        text: deleted ? `✅ Gelöscht: _${deleted}_` : "Ich habe nichts Löschbares gefunden.",
+        ts: Date.now() + 1,
+      });
+      return;
+    }
+
+    // Routine-Befehle → Management / Routinen-Tab
+    if (isRoutineCommand(cleaned)) {
+      addMsg({ role: "user", text: cleaned, ts: Date.now() });
+      addMsg({
+        role: "ai",
+        text: "Ich öffne deine Routinen-Verwaltung — dort kannst du neue anlegen, bearbeiten oder deaktivieren.",
+        ts: Date.now() + 1,
+        actions: [{ label: "Routinen öffnen", route: "/management?tab=routines" }],
+      });
+      return;
+    }
+
+    addMsg({ role: "user", text: cleaned, ts: Date.now() });
+    const intent = detectIntent(cleaned, !!user, hufiCtx?.memory ?? []);
     setActiveIntent(intent.intent);
     setResponding(true);
     setHufiPresenceState(intent.intent === "navigation" ? "führt aus" : "denkt");
     try {
       if (intent.intent === "emergency") {
-        const welfare = checkHorseWelfare(text);
+        const welfare = checkHorseWelfare(cleaned);
         if (welfare) {
           addMsg({ role: "ai", text: welfare.message, ts: Date.now() + 1, actions: [{ label: `🚨 ${welfare.callToAction}`, route: "/tierarzt-finder" }] });
           if (user?.id) logWelfareAlert(user.id, welfare, text);
@@ -818,13 +1128,21 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
         await handleNavigationOutcome(outcome);
         return;
       }
-      if (intent.intent === "knowledge") { await answerFromKnowledge(text); return; }
+      if (intent.intent === "knowledge" && intent.entities.topic === "weather_query") {
+        await answerWithWeather(cleaned, voiceMode);
+        return;
+      }
+      if (intent.intent === "knowledge") { await answerFromKnowledge(cleaned); return; }
       if (!user?.id) return;
-      if (intent.intent === "agent_lookup") await answerWithContext(text, intent.entities);
-      else if (intent.intent === "agent_action") await planAndConfirmAction(text, intent.entities);
-      else await answerWithContext(text, intent.entities);
+      if (intent.intent === "agent_lookup") await answerWithContext(cleaned, intent.entities, voiceMode);
+      else if (intent.intent === "agent_action") await planAndConfirmAction(cleaned, intent.entities);
+      else await answerWithContext(cleaned, intent.entities, voiceMode);
     } catch {
-      addMsg({ role: "ai", text: "Verbindung fehlgeschlagen. Bitte erneut versuchen.", ts: Date.now() });
+      addMsg({
+        role: "ai",
+        text: voiceMode ? "Keine Verbindung." : "Verbindung fehlgeschlagen. Bitte erneut versuchen.",
+        ts: Date.now(),
+      });
     } finally {
       setResponding(false);
       setActiveIntent(null);
@@ -844,6 +1162,23 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
     setKiConsent("denied");
     setShowKiModal(false);
     setPendingChatText("");
+  }
+
+  function handleImageUpload(file: File) {
+    const url = URL.createObjectURL(file);
+    const userMsg: ChatMessage = {
+      role: "user",
+      text: `📷 ${file.name}`,
+      ts: Date.now(),
+    };
+    setMessages((prev) => [...prev, userMsg]);
+    const aiMsg: ChatMessage = {
+      role: "ai",
+      text: `Ich sehe dein Bild "${file.name}". Bild-Analyse ist noch in Entwicklung — bald kann ich Huf-Fotos direkt auswerten! 🐴`,
+      ts: Date.now() + 1,
+    };
+    setTimeout(() => setMessages((prev) => [...prev, aiMsg]), 600);
+    URL.revokeObjectURL(url);
   }
 
   async function handleSend() {
@@ -943,9 +1278,26 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
             <Grid3X3 size={15} style={{ color: "#374151" }} />
           </button>
 
-          {/* Logo + Titel + Presence-State */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, overflow: "hidden" }}>
-            <div style={{ width: 30, height: 30, borderRadius: 9, background: "#F97316", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 5 }}>
+          {/* Logo + Titel + Presence-State — tippbar zum Aktivieren */}
+          <button
+            onClick={activateHufi}
+            title="Hufi aktivieren"
+            style={{
+              display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, overflow: "hidden",
+              background: "transparent", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit",
+              textAlign: "left",
+            }}
+          >
+            <div style={{
+              width: 30, height: 30, borderRadius: 9, background: "#F97316",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 5,
+              boxShadow: hufiPresenceState === "bereit" && SR_SUPPORTED
+                ? "0 0 0 0 rgba(249,115,22,0.4)"
+                : "none",
+              animation: hufiPresenceState === "bereit" && SR_SUPPORTED
+                ? "hufi-idle-pulse 3s ease-in-out infinite"
+                : "none",
+            }}>
               <img src="https://upload.assaon.com/files/medien/hufiapp-logo-ohne-text-1777028918553-0kdje.png" alt="Hufi" style={{ width: "100%", height: "100%", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
             </div>
             <div style={{ minWidth: 0, overflow: "hidden" }}>
@@ -969,10 +1321,12 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
                     animation: "pulse-rec 1s ease-out infinite",
                   }} />
                 )}
-                {hufiPresenceState}
+                {hufiPresenceState === "bereit" && SR_SUPPORTED
+                  ? <span style={{ color: "#9CA3AF" }}>tippen oder hey hufi</span>
+                  : hufiPresenceState}
               </div>
             </div>
-          </div>
+          </button>
 
           {/* Kompakte Aktions-Chips rechts — nur das Wichtigste */}
           <HufiWeatherWidget compact={true} />
@@ -997,21 +1351,12 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
             </button>
           )}
 
-          {/* Hey Hufi — unsichtbar im Hintergrund (nur Dot wenn aktiv) */}
-          {SR_SUPPORTED && heyHufiEnabled && user && (
+          {/* Hey Hufi — immer aktiv wenn SR unterstützt */}
+          {SR_SUPPORTED && user && (
             <HeyHufi
-              userName={hufiCtx?.user?.name ?? user.email?.split("@")[0] ?? ""}
-              appointmentCount={nextAppt ? 1 : 0}
-              defaultEnabled={true}
-              userId={user.id}
-              userRole={role as ActionRole}
-              compact={true}
-              onToggle={(enabled) => {
-                if (!enabled) {
-                  setHeyHufiEnabled(false);
-                  localStorage.removeItem("hufi_hey_hufi_enabled");
-                }
-              }}
+              enabled={!recording && !transcribing && !responding && !isTtsSpeaking && !isVoiceSpeaking}
+              isSpeaking={isTtsSpeaking || isVoiceSpeaking}
+              onWakeWord={activateHufi}
             />
           )}
 
@@ -1039,26 +1384,8 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
             </button>
           )}
 
-          <NotificationBell />
+          <NotificationBell className="text-gray-500 hover:text-gray-800 hover:bg-gray-100" />
 
-          {/* Credits — zeigt Guthaben oder "Aufladen" → /management/abo */}
-          {creditBalance !== undefined && (
-            <button
-              onClick={() => navigate("/management/abo")}
-              title="KI-Guthaben"
-              style={{
-                display: "flex", alignItems: "center", gap: 3,
-                background: creditBalance === 0 ? "#FEF2F2" : creditBalance < 50 ? "#FFF7ED" : "#F0FDF4",
-                border: `1px solid ${creditBalance === 0 ? "#FECACA" : creditBalance < 50 ? "#FED7AA" : "#BBF7D0"}`,
-                borderRadius: 20, padding: "3px 7px", cursor: "pointer",
-                fontSize: 10, fontWeight: 700, flexShrink: 0,
-                color: creditBalance === 0 ? "#EF4444" : creditBalance < 50 ? "#F97316" : "#10B981",
-              }}
-            >
-              <Coins size={10} />
-              {creditBalance === 0 ? "Top-up" : creditBalance.toLocaleString("de-DE")}
-            </button>
-          )}
         </div>
 
         {/* SCROLL AREA */}
@@ -1071,7 +1398,7 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
             WebkitOverflowScrolling: "touch",
             overscrollBehavior: "contain",
             padding: "20px 16px",
-            paddingBottom: 140,
+            paddingBottom: "calc(200px + env(safe-area-inset-bottom, 0px))",
             display: "flex",
             flexDirection: "column",
             gap: 14,
@@ -1150,291 +1477,53 @@ Antworte sachlich, klar und auf Deutsch. Verwende Fachbegriffe mit kurzer Erklä
             </button>
           )}
 
-          {/* Chat messages */}
-          {messages.map((msg) => (
-            <div
-              key={msg.ts.toString()}
-              className="msg-in"
-              style={{
-                display: "flex",
-                flexDirection: msg.role === "user" ? "row-reverse" : "row",
-                alignItems: "flex-end",
-                gap: 8,
-              }}
-            >
-              {msg.role === "ai" && (
-                <div style={{ width: 30, height: 30, borderRadius: 10, background: "linear-gradient(145deg, #F97316, #ea6c0a)", boxShadow: "0 3px 10px rgba(249,115,22,0.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginBottom: 2 }}>
-                  <img src="https://upload.assaon.com/files/medien/hufiapp-logo-ohne-text-1777028918553-0kdje.png" alt="Hufi" style={{ width: "100%", height: "100%", objectFit: "contain", filter: "brightness(0) invert(1)", padding: "3px" }} />
-                </div>
-              )}
-              <div style={{
-                maxWidth: "82%",
-                background: msg.role === "user"
-                  ? "linear-gradient(135deg, #F97316 0%, #ea6c0a 100%)"
-                  : "#FFFFFF",
-                borderRadius: msg.role === "user" ? "20px 20px 5px 20px" : "20px 20px 20px 5px",
-                padding: "12px 16px",
-                border: msg.role === "user" ? "none" : "1px solid rgba(0,0,0,0.055)",
-                boxShadow: msg.role === "user"
-                  ? "0 4px 16px rgba(249,115,22,0.22)"
-                  : "0 2px 8px rgba(0,0,0,0.04)",
-              }}>
-                <div style={{ fontSize: 14, color: msg.role === "user" ? "#FFFFFF" : "#1A1A1A", lineHeight: 1.5, whiteSpace: "pre-line" }}>
-                  {msg.text}
-                </div>
-
-                {/* Action buttons (context, search, etc.) */}
-                {msg.actions && msg.actions.length > 0 && (
-                  <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    {msg.actions.map((a, ai) => (
-                      <button
-                        key={a.route ?? a.actionKey ?? ai}
-                        onClick={() => {
-                          if (a.route) navigate(a.route);
-                          else if (a.actionKey) handleMsgAction(a.actionKey, msg);
-                        }}
-                        style={{
-                          background: a.actionKey === "search_yes" ? "#F97316"
-                            : a.actionKey === "confirm_no" ? "#F3F4F6"
-                            : "rgba(249,115,22,0.08)",
-                          border: a.actionKey === "search_yes" ? "none"
-                            : a.actionKey === "confirm_no" ? "1px solid #E5E7EB"
-                            : "1px solid rgba(249,115,22,0.2)",
-                          borderRadius: 10, padding: "8px 12px",
-                          color: a.actionKey === "search_yes" ? "#FFFFFF"
-                            : a.actionKey === "confirm_no" ? "#9CA3AF"
-                            : "#F97316",
-                          fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-                        }}
-                      >
-                        {a.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {/* Search result cards */}
-                {msg.searchResults && msg.searchResults.length > 0 && (
-                  <div style={{ marginTop: 8 }}>
-                    {msg.searchResults.map((r, ri) => (
-                      <HufiSearchCard key={ri} result={r} />
-                    ))}
-                  </div>
-                )}
-
-                {/* Befund follow-up actions */}
-                {msg.actionPrompt && (
-                  <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
-                    {[
-                      { label: "📅 Termin in 6 Wochen anlegen", route: "/kalender" },
-                      { label: "🧾 Rechnung erstellen",          route: "/rechnungen" },
-                      { label: "💬 Besitzer benachrichtigen",    route: "/chat" },
-                    ].map((a) => (
-                      <button
-                        key={a.route}
-                        onClick={() => navigate(a.route)}
-                        style={{ background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.2)", borderRadius: 10, padding: "8px 12px", color: "#F97316", fontSize: 12, fontWeight: 500, cursor: "pointer", textAlign: "left" }}
-                      >
-                        {a.label}
-                      </button>
-                    ))}
-                    <button
-                      onClick={() => setMessages((prev) => prev.map((m) => m.ts === msg.ts ? { ...m, actionPrompt: false } : m))}
-                      style={{ background: "transparent", border: "1px solid #E5E7EB", borderRadius: 10, padding: "8px 12px", color: "#9CA3AF", fontSize: 12, fontWeight: 500, cursor: "pointer", textAlign: "left" }}
-                    >
-                      ✖ Nichts weiteres
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-
-          {/* Search indicator */}
-          {searching && (
-            <div className="msg-in" style={{ display: "flex", alignItems: "flex-end", gap: 8 }}>
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: "#F97316", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <img src="https://upload.assaon.com/files/medien/hufiapp-logo-ohne-text-1777028918553-0kdje.png" alt="Hufi" style={{ width: "100%", height: "100%", objectFit: "contain", filter: "brightness(0) invert(1)", padding: "3px" }} />
-              </div>
-              <div style={{ background: "#F9FAFB", border: "1px solid #F0F0F0", borderRadius: "18px 18px 18px 4px", padding: "12px 14px", display: "flex", alignItems: "center", gap: 8 }}>
-                <Loader2 size={13} style={{ color: "#9CA3AF", flexShrink: 0, animation: "spin 1s linear infinite" }} />
-                <span style={{ fontSize: 13, color: "#9CA3AF" }}>Hufi sucht…</span>
-              </div>
-            </div>
-          )}
-
-          {/* Thinking / intent indicator */}
-          {(transcribing || responding) && (() => {
-            const INTENT_META: Record<HufiIntent, { icon: string; label: string; color: string }> = {
-              knowledge:       { icon: "📚", label: "Wissensdatenbank…", color: "#F59E0B" },
-              agent_lookup:    { icon: "🐴", label: "Deine Pferdeakte…", color: "#3B82F6" },
-              agent_action:    { icon: "⚡", label: "Führe aus…",         color: "#F97316" },
-              agent_proactive: { icon: "🧠", label: "Analysiere…",        color: "#8B5CF6" },
-              emergency:       { icon: "🚨", label: "Notfall erkannt!",   color: "#EF4444" },
-            };
-            const meta = activeIntent ? INTENT_META[activeIntent] : null;
-            return (
-              <div className="msg-in" style={{ display: "flex", alignItems: "flex-end", gap: 8 }}>
-                <div style={{ width: 30, height: 30, borderRadius: 10, background: "linear-gradient(145deg, #F97316, #ea6c0a)", boxShadow: "0 3px 10px rgba(249,115,22,0.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <img src="https://upload.assaon.com/files/medien/hufiapp-logo-ohne-text-1777028918553-0kdje.png" alt="Hufi" style={{ width: "100%", height: "100%", objectFit: "contain", filter: "brightness(0) invert(1)", padding: "3px" }} />
-                </div>
-                <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.055)", borderRadius: "20px 20px 20px 5px", padding: "12px 16px", display: "flex", alignItems: "center", gap: 10, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-                  <Loader2 size={13} style={{ color: "#C4C4C4", flexShrink: 0, animation: "spin 1s linear infinite" }} />
-                  {meta ? (
-                    <span style={{
-                      fontSize: 12, fontWeight: 600, color: meta.color,
-                      background: `${meta.color}18`, borderRadius: 8,
-                      padding: "2px 8px", display: "inline-flex", alignItems: "center", gap: 4,
-                    }}>
-                      {meta.icon} {meta.label}
-                    </span>
-                  ) : (
-                    <span style={{ fontSize: 13, color: "#9CA3AF" }}>
-                      {transcribing ? "Hufi transkribiert…" : "Hufi analysiert…"}
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
+          <MobileShellMessages
+            messages={messages}
+            searching={searching}
+            transcribing={transcribing}
+            responding={responding}
+            activeIntent={activeIntent}
+            onMsgAction={handleMsgAction}
+            onDismissPrompt={(ts) => setMessages((prev) => prev.map((m) => m.ts === ts ? { ...m, actionPrompt: false } : m))}
+          />
         </div>
 
-        {/* VOICE STATUS BANNER — visible only when mic flow is active */}
-        {(recording || transcribing || isVoiceSpeaking) && (
-          <div
-            role="status"
-            aria-live="polite"
-            style={{
-              position: "fixed",
-              bottom: 148,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: "calc(100% - 32px)",
-              maxWidth: 396,
-              background: recording
-                ? "linear-gradient(135deg, rgba(239,68,68,0.97) 0%, rgba(220,38,38,0.97) 100%)"
-                : "rgba(12,12,14,0.94)",
-              color: "#FFFFFF",
-              padding: "11px 16px",
-              borderRadius: 18,
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              zIndex: 41,
-              boxShadow: recording
-                ? "0 8px 32px rgba(239,68,68,0.35), 0 2px 8px rgba(0,0,0,0.2)"
-                : "0 8px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.15)",
-              fontSize: 13,
-              fontWeight: 600,
-              fontFamily: "inherit",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              border: recording ? "none" : "1px solid rgba(255,255,255,0.08)",
-              animation: "hufi-slide-bottom 0.28s cubic-bezier(0.34,1.56,0.64,1) both",
-            }}
-          >
-            {recording ? (
-              <>
-                <div
-                  className="rec-pulse"
-                  style={{ width: 9, height: 9, borderRadius: "50%", background: "rgba(255,255,255,0.9)", flexShrink: 0 }}
-                />
-                <span style={{ flex: 1, letterSpacing: "-0.01em" }}>Hufi hört zu…</span>
-                <button
-                  onClick={cancelRecording}
-                  aria-label="Abbrechen"
-                  style={{
-                    width: 28, height: 28, borderRadius: "50%",
-                    background: "rgba(255,255,255,0.15)",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    cursor: "pointer", color: "#FFFFFF", flexShrink: 0,
-                    transition: "background 0.2s",
-                  }}
-                >
-                  <X size={13} />
-                </button>
-              </>
-            ) : transcribing ? (
-              <>
-                <Loader2 size={14} className="animate-spin" style={{ flexShrink: 0, opacity: 0.8 }} />
-                <span style={{ letterSpacing: "-0.01em" }}>Hufi verarbeitet…</span>
-              </>
-            ) : (
-              <>
-                <HufiVoiceWave color="rgba(255,255,255,0.85)" barCount={5} height={14} />
-                <span style={{ letterSpacing: "-0.01em" }}>Hufi spricht…</span>
-              </>
-            )}
-          </div>
-        )}
+        <MobileShellVoiceSection
+          recording={recording}
+          transcribing={transcribing}
+          isVoiceSpeaking={isVoiceSpeaking}
+          responding={responding}
+          onMicPress={recording ? stopRecording : startRecording}
+          onCancel={cancelRecording}
+        />
 
-        {/* BOTTOM INPUT */}
-        <div style={{
-          position: "fixed",
-          bottom: 64,
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: "100%",
-          maxWidth: 430,
-          background: "#FFFFFF",
-          borderTop: "1px solid #F3F4F6",
-          padding: "10px 12px 10px 14px",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          zIndex: 40,
-        }}>
-          {kiConsent === "denied" ? (
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
-              <p style={{ fontSize: 12, color: "#9CA3AF", margin: 0, lineHeight: 1.5 }}>
-                KI-Nutzung abgelehnt. Du kannst die App weiterhin ohne KI-Chat nutzen.
-              </p>
-              <button
-                onClick={() => { localStorage.removeItem("hufi_ki_consent"); setKiConsent(null); setShowKiModal(true); }}
-                style={{ height: 36, borderRadius: 10, background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.25)", color: "#F97316", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
-              >
-                Einwilligung erteilen
-              </button>
-            </div>
-          ) : (
-            <>
-              <input
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                placeholder="Nachricht an Hufi…"
-                style={{
-                  flex: 1, height: 44, background: "#F4F4F6",
-                  border: "1px solid rgba(0,0,0,0.07)", borderRadius: 22,
-                  paddingLeft: 18, paddingRight: 18, fontSize: 14,
-                  fontWeight: 400, color: "#1A1A1A", outline: "none", fontFamily: "inherit",
-                }}
-              />
-              <HufiOrb
-                state={orbState}
-                onPress={() => {
-                  if (recording) stopRecording();
-                  else if (!transcribing && !isTtsSpeaking) startRecording();
-                }}
-                onSend={handleSend}
-                hasText={!!inputText.trim()}
-                disabled={transcribing || isTtsSpeaking}
-                size={60}
-              />
-            </>
-          )}
-        </div>
+        <MobileShellInputBar
+          inputText={inputText}
+          onInputChange={setInputText}
+          responding={responding}
+          kiConsent={kiConsent}
+          onRevokeConsent={() => { localStorage.removeItem("hufi_ki_consent"); setKiConsent(null); setShowKiModal(true); }}
+          onSend={handleSend}
+          onImageUpload={handleImageUpload}
+        />
 
-        <MobileBottomNav onTranscript={handleVoiceTranscript} />
+        <MobileBottomNav />
       </div>
 
       {/* Phase E: Proactive Briefing overlay */}
       {proactiveBriefing && (
         <ProactiveBriefing
           payload={proactiveBriefing}
-          onDismiss={() => setProactiveBriefing(null)}
+          onDismiss={() => {
+            // Briefing als Chat-Bubble einfrieren — Gespräch kann weitergehen
+            addMsg({
+              role: "ai",
+              text: proactiveBriefing.lines.join("\n"),
+              ts: Date.now(),
+              actions: proactiveBriefing.actions.length > 0 ? proactiveBriefing.actions : undefined,
+            });
+            setProactiveBriefing(null);
+          }}
         />
       )}
     </>
