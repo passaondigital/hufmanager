@@ -919,76 +919,48 @@ Morgen: ${label(weather.tomorrowCode)}, Niederschlag: ${weather.tomorrowPrecipMm
   async function planAndConfirmAction(text: string, entities: ReturnType<typeof detectIntent>["entities"]) {
     if (!user?.id) return;
 
-    // ── Business-Kontext laden (gecacht) ────────────────────────────────────────
-    if (!bizCtxRef.current) {
-      try { bizCtxRef.current = await fetchBusinessContext(user.id); } catch { /* optional */ }
-    }
-    const bizCtx = bizCtxRef.current;
+    // keyword-basierter Fallback-Plan
+    const defaultTaskType = intentActionToTaskType(entities.action ?? "generic_action");
+    const horse  = entities.horseName  ? `für ${entities.horseName}` : "";
+    const client = entities.clientName ? ` (${entities.clientName})` : "";
+    const fallbackPayload: Record<string, unknown> = {
+      horse_name:  entities.horseName,
+      client_name: entities.clientName,
+      ...(defaultTaskType === "create_invoice"  ? { amount: 0, notes: horse ? `Hufpflege ${horse}` : "Hufpflege" } : {}),
+      ...(defaultTaskType === "create_appointment" ? { date: new Date().toISOString().slice(0, 10) } : {}),
+    };
+    const fallbackExplanation = defaultTaskType === "create_invoice"
+      ? `Rechnung ${horse}${client} erstellen.`
+      : defaultTaskType === "create_appointment"
+      ? `Neuen Termin anlegen${horse ? ` ${horse}` : ""}${client}.`
+      : defaultTaskType === "set_reminder"
+      ? `Erinnerung setzen${horse ? ` ${horse}` : ""}.`
+      : `Aufgabe: ${text.slice(0, 100)}`;
 
-    // ── Phase 3: Claude Tool Use mit Katalog-Kontext ────────────────────────────
-    let taskType = intentActionToTaskType(entities.action ?? "generic_action");
-    let payload: Record<string, unknown> = {};
-    let explanation = "";
-    let confirmText = "";
+    let taskType  = defaultTaskType;
+    let payload   = fallbackPayload;
+    let explanation = fallbackExplanation;
 
+    // KI-Plan über zentralen Agenten holen
     try {
-      const todayLabel = new Date().toLocaleDateString("de-DE", {
-        weekday: "long", year: "numeric", month: "long", day: "numeric",
+      const agentHistory = messages.slice(-4).map((m) => ({
+        role: (m.role === "user" ? "user" : "assistant") as "user" | "assistant",
+        content: m.text,
+      }));
+      const resp = await askHufiAgent({
+        text,
+        voiceMode: false,
+        history: agentHistory,
+        route: window.location.pathname,
+        mode: "action",
       });
-      const catalogBlock = bizCtx ? buildInvoiceCatalogPrompt(bizCtx) : "";
-      const systemPrompt =
-        `Du bist Hufi, ein KI-Assistent für Hufpfleger. Heute ist ${todayLabel}.\n` +
-        `Analysiere die Anfrage und rufe das passende Tool auf.\n` +
-        `Wenn kein Tool passt, antworte nur mit kurzem Text.\n` +
-        (catalogBlock ? `\n${catalogBlock}` : "");
-
-      const toolResult = await callClaudeWithTools(text, HUFI_TOOLS, systemPrompt, user.id);
-
-      if (toolResult.type === "tool_use") {
-        taskType = toolNameToTaskType(toolResult.toolName);
-        payload  = toolResult.toolInput;
-        explanation = buildToolExplanation(toolResult.toolName, toolResult.toolInput);
-
-        // Reiche Bestätigungskarte für Rechnungen
-        if (toolResult.toolName === "create_invoice" && bizCtx) {
-          const lineItems = extractLineItems(payload);
-          if (lineItems.length > 0) {
-            confirmText = formatInvoiceConfirmation({
-              horseName:      payload.horse_name  as string | undefined,
-              clientName:     payload.client_name as string | undefined,
-              lineItems,
-              kleinunternehmer: bizCtx.kleinunternehmer,
-              mwstPflichtig:    bizCtx.mwstPflichtig,
-              vatRate:          bizCtx.defaultVatRate,
-              currency:         bizCtx.currency,
-              inventory:        bizCtx.inventory,
-            });
-          }
-        }
-      } else {
-        throw new Error("no_tool");
+      if (resp.actionPlan?.taskType) {
+        taskType    = resp.actionPlan.taskType;
+        payload     = resp.actionPlan.payload;
+        explanation = resp.actionPlan.explanation;
       }
-    } catch {
-      // ── Fallback: keyword-basiert ───────────────────────────────────────────
-      const horse  = entities.horseName  ? `für ${entities.horseName}` : "";
-      const client = entities.clientName ? ` (${entities.clientName})` : "";
-      payload = {
-        horse_name:  entities.horseName,
-        client_name: entities.clientName,
-        ...(taskType === "create_invoice"
-          ? { amount: 0, notes: horse ? `Hufpflege ${horse}` : "Hufpflege" }
-          : {}),
-        ...(taskType === "create_appointment"
-          ? { date: new Date().toISOString().slice(0, 10) }
-          : {}),
-      };
-      explanation = taskType === "create_invoice"
-        ? `Rechnung ${horse}${client} erstellen.`
-        : taskType === "create_appointment"
-        ? `Neuen Termin anlegen${horse ? ` ${horse}` : ""}${client}.`
-        : taskType === "set_reminder"
-        ? `Erinnerung setzen${horse ? ` ${horse}` : ""}.`
-        : `Aufgabe: ${text.slice(0, 100)}`;
+    } catch (e) {
+      console.warn("[Hufi] Action-Plan Fallback auf Keywords:", e);
     }
 
     const task  = await createAgentTask(user.id, taskType, payload, explanation, text, sessionId.current);
@@ -997,25 +969,16 @@ Morgen: ${label(weather.tomorrowCode)}, Niederschlag: ${weather.tomorrowPrecipMm
 
     if (!task) {
       const routeMap: Record<string, string> = {
-        create_invoice:     "/rechnungen",
-        create_appointment: "/kalender",
-        set_reminder:       "/kalender",
-        add_expense:        "/buchhaltung",
-        set_price_group:    "/kunden",
+        create_invoice: "/rechnungen", create_appointment: "/kalender",
+        set_reminder: "/kalender", add_expense: "/buchhaltung", set_price_group: "/kunden",
       };
-      addMsg({
-        role: "ai",
-        text: `${icon} ${label}`,
-        ts: Date.now(),
-        actions: [{ label: "Öffnen", route: routeMap[taskType] ?? "/management" }],
-      });
+      addMsg({ role: "ai", text: `${icon} ${label}`, ts: Date.now(), actions: [{ label: "Öffnen", route: routeMap[taskType] ?? "/management" }] });
       return;
     }
 
-    const msgText = confirmText || `${icon} ${label}\n\n${explanation}`;
     addMsg({
       role: "ai",
-      text: msgText,
+      text: `${icon} ${label}\n\n${explanation}`,
       ts: Date.now(),
       actions: [
         { label: "✓ Bestätigen", actionKey: `task_approve:${task.id}` },

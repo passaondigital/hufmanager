@@ -5,12 +5,20 @@ export interface HufiAgentMessage {
   content: string;
 }
 
+export interface HufiActionPlan {
+  taskType: string;
+  payload: Record<string, unknown>;
+  explanation: string;
+  confirmText: string;
+}
+
 export interface HufiAgentResponse {
   ok: boolean;
   answer: string;
   spokenText: string;
   source: "claude" | "ollama" | "none";
   error?: string;
+  actionPlan?: HufiActionPlan;
 }
 
 export async function askHufiAgent(params: {
@@ -18,6 +26,7 @@ export async function askHufiAgent(params: {
   voiceMode?: boolean;
   history?: HufiAgentMessage[];
   route?: string;
+  mode?: "chat" | "action";
   clientTimestamp?: string;
 }): Promise<HufiAgentResponse> {
   const {
@@ -43,6 +52,7 @@ export async function askHufiAgent(params: {
           voiceMode: params.voiceMode ?? false,
           history: params.history ?? [],
           route: params.route,
+          mode: params.mode ?? "chat",
           clientTimestamp: params.clientTimestamp ?? new Date().toISOString(),
         }),
       },
