@@ -22,7 +22,9 @@ export class CreditExhaustedException extends Error {
 export async function checkAndUseCredit(
   userId: string,
   model: "fast" | "smart",
+  bypass = false,
 ): Promise<boolean> {
+  if (bypass) return true;
   const modelName = model === "fast" ? "claude-haiku" : "claude-sonnet";
   try {
     const { data, error } = await supabase.rpc("use_hufi_credit", {
@@ -30,7 +32,6 @@ export async function checkAndUseCredit(
       p_model: modelName,
     });
     if (error) {
-      // Fail open for any DB error (table/function not set up yet, RLS, etc.)
       console.warn("[hufi-credit] RPC error — fail open:", error.message);
       return true;
     }
@@ -38,7 +39,6 @@ export async function checkAndUseCredit(
     return true;
   } catch (e) {
     if (e instanceof CreditExhaustedException) throw e;
-    // Any other unexpected error → fail open so the AI pipeline continues
     console.warn("[hufi-credit] unexpected error — fail open:", e);
     return true;
   }
@@ -156,9 +156,10 @@ export async function streamWithHufAI(
   forceModel?: string,
   onChunk?: (text: string) => void,
   signal?: AbortSignal,
+  bypassCredit = false,
 ): Promise<string> {
   if (userId && userId !== "anonymous") {
-    await checkAndUseCredit(userId, forceModel === "hufiai-fast" ? "fast" : "smart");
+    await checkAndUseCredit(userId, forceModel === "hufiai-fast" ? "fast" : "smart", bypassCredit);
   }
 
   if (!anthropicKey()) {

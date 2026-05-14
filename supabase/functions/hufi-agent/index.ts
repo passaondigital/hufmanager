@@ -34,16 +34,20 @@ interface ActionPlan {
 
 // ── System Prompt ──────────────────────────────────────────────────────────────
 
-const HUFI_BASE = `Du bist Hufi, KI-Assistent für Hufpflege- und Pferdebetriebs-Management.
-Fachgebiete: Hufpflege, Huforthopädie, Stallmanagement, Kundenkommunikation, Betriebsorganisation.
-Krankheitsbilder: Hufrehe, Bockhuf, Strahlfäule, Kolik, EMS, Cushing, Spat, Fesselträgerschaden.
+const HUFI_BASE = `Du bist Hufi — persönlicher App-Assistent für Hufpfleger und Pferdehalter.
+Stil: direkt, kurz, handlungsorientiert. Keine Floskeln, keine Ausweichmanöver.
 
-Regeln:
-- Im Voice-Modus: kurze Sätze, kein Markdown.
-- Im Chat-Modus: strukturiert, Aufzählungen erlaubt.
+Antwortregeln:
+- ZUERST App-Kontext nutzen (echte Zahlen, echte Namen aus APP-KONTEXT unten).
+- Wenn Daten vorhanden: konkret antworten. Z.B. "Du hast 3 Termine heute: 09:00 Moritz (K. Meier)."
+- Wenn keine Daten: "Ich sehe aktuell keine [Kunden/Pferde/Termine] in deinem Account."
+- NICHT generisch raten oder "Das kann ich leider nicht sehen" sagen.
+- Voice-Modus: max 2 Sätze, kein Markdown.
+- Chat-Modus: max 4 Sätze, Aufzählungen erlaubt.
+- Duzen. Auf Deutsch.
+- Notfall (Kolik, Nageltritt, Lahmheit, Hufrehe, Fieber, Atemnot): sofort Tierarzt empfehlen.
 - NIEMALS tierärztliche Diagnose ersetzen.
-- Bei Notfall (Kolik, Nageltritt, Lahmheit, Hufrehe, Fieber, Atemnot): Tierarzt empfehlen.
-- Duze den Nutzer. Auf Deutsch. Max 3-4 Sätze wenn möglich.`;
+Fachgebiete: Hufpflege, Huforthopädie, Stallmanagement, Kundenkommunikation, Betriebsorganisation, Krankheitsbilder (Hufrehe, Bockhuf, Strahlfäule, EMS, Cushing, Spat, Fesselträgerschaden).`;
 
 const ACTION_SUFFIX = `
 
@@ -61,7 +65,7 @@ Antworte NUR als gültiges JSON (kein Markdown, kein Text davor/danach):
 async function loadContext(userId: string, supabase: ReturnType<typeof createClient>) {
   const today = new Date().toISOString().slice(0, 10);
 
-  const [profileRes, apptRes, invoiceRes, horsesRes, memoryRes] = await Promise.allSettled([
+  const [profileRes, apptRes, invoiceRes, horsesRes, memoryRes, clientCountRes, horseCountRes] = await Promise.allSettled([
     supabase.from("profiles").select("full_name, user_type").eq("id", userId).single(),
     supabase
       .from("appointments")
@@ -83,6 +87,16 @@ async function loadContext(userId: string, supabase: ReturnType<typeof createCli
       .eq("user_id", userId)
       .order("last_updated", { ascending: false })
       .limit(4),
+    // Kundenzahl: Profiles die dieser Provider angelegt hat
+    supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true })
+      .eq("created_by_provider_id", userId),
+    // Pferdezahl: Pferde der eigenen Kunden (via appointments distinct horse_id)
+    supabase
+      .from("appointments")
+      .select("horse_id")
+      .eq("provider_id", userId),
   ]);
 
   const profile = profileRes.status === "fulfilled" ? profileRes.value.data : null;
@@ -106,8 +120,12 @@ async function loadContext(userId: string, supabase: ReturnType<typeof createCli
   const memories = memoryRes.status === "fulfilled" && memoryRes.value.data
     ? (memoryRes.value.data as Array<{ category: string; key: string; value: Record<string, unknown> }>)
     : [];
+  const clientCount = clientCountRes.status === "fulfilled" ? (clientCountRes.value.count ?? null) : null;
+  const horseCount = horseCountRes.status === "fulfilled" && horseCountRes.value.data
+    ? new Set((horseCountRes.value.data as Array<{ horse_id: string | null }>).map((r) => r.horse_id).filter(Boolean)).size
+    : null;
 
-  return { userName: profile?.full_name ?? null, appointments, unpaidCount, horses, memories };
+  return { userName: profile?.full_name ?? null, userType: profile?.user_type ?? null, appointments, unpaidCount, horses, memories, clientCount, horseCount };
 }
 
 // ── Context Block bauen ────────────────────────────────────────────────────────
@@ -130,9 +148,9 @@ function buildContextBlock(ctx: Awaited<ReturnType<typeof loadContext>>, voiceMo
 
   if (ctx.unpaidCount > 0) lines.push(`Offene Rechnungen: ${ctx.unpaidCount}`);
 
-  if (ctx.horses.length > 0) {
-    lines.push(`Bekannte Pferde: ${ctx.horses.map((h) => h.name).join(", ")}`);
-  }
+  if (ctx.clientCount !== null) lines.push(`Kunden im System: ${ctx.clientCount}`);
+  if (ctx.horseCount !== null && ctx.horseCount > 0) lines.push(`Betreute Pferde (alle Termine): ${ctx.horseCount}`);
+  else if (ctx.horses.length > 0) lines.push(`Bekannte Pferde: ${ctx.horses.map((h) => h.name).join(", ")}`);
 
   if (ctx.memories.length > 0) {
     const memLines = ctx.memories

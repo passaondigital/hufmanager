@@ -675,6 +675,7 @@ export function MobileShell() {
     userId: string,
     model?: string,
   ): Promise<string> {
+    const bypassCredit = role === "provider" || role === "admin";
     const ts = Date.now();
     // Placeholder so the bubble appears immediately
     setMessages((prev) => [...prev, { role: "ai" as const, text: "", ts }]);
@@ -685,7 +686,7 @@ export function MobileShell() {
         setMessages((prev) =>
           prev.map((m) => m.ts === ts ? { ...m, text: m.text + chunk } : m)
         );
-      });
+      }, undefined, bypassCredit);
     } catch (e) {
       // Remove the empty placeholder bubble before rethrowing so no blank
       // bubble is left in the chat when the caller's catch adds an error msg.
@@ -809,7 +810,6 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
   }
 
   async function answerWithWeather(text: string, voiceMode: boolean) {
-    const weather = await fetchWeatherContext().catch(() => null);
     const WMO: Record<number, string> = {
       0:"klar", 1:"überwiegend klar", 2:"teils bewölkt", 3:"bewölkt",
       45:"neblig", 48:"Reifnebel", 51:"leichter Nieselregen", 53:"Nieselregen",
@@ -818,26 +818,60 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
       80:"Regenschauer", 81:"Schauer", 82:"starke Schauer",
       95:"Gewitter", 96:"Gewitter mit Hagel", 99:"starkes Gewitter",
     };
-    const label = (code: number) => WMO[code] ?? "wechselhaft";
-    const storedLat = localStorage.getItem("hufi_user_lat");
-    const storedLon = localStorage.getItem("hufi_user_lon");
-    const hasLocation = !!(storedLat && storedLon);
+    const wmoLabel = (code: number) => WMO[code] ?? "wechselhaft";
+
+    // Stadtname aus Anfrage extrahieren und geocodieren (Open-Meteo, kostenlos)
+    const cityMatch = text.match(/\b(?:in|für|bei|um)\s+([A-ZÄÖÜ][a-zäöüß]+(?:[\s-][A-ZÄÖÜ][a-zäöüß]+)*)/);
+    const cityName = cityMatch?.[1];
+    let weather: import("@/lib/hufai-proactive").WeatherContext | null = null;
+    let locationLabel = "";
+
+    if (cityName) {
+      try {
+        const geoRes = await fetch(
+          `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=1&language=de`,
+          { signal: AbortSignal.timeout(3000) }
+        );
+        const geoJson = await geoRes.json() as { results?: Array<{ latitude: number; longitude: number; name: string; country: string }> };
+        const loc = geoJson.results?.[0];
+        if (loc) {
+          const url = new URL("https://api.open-meteo.com/v1/forecast");
+          url.searchParams.set("latitude", String(loc.latitude));
+          url.searchParams.set("longitude", String(loc.longitude));
+          url.searchParams.set("daily", "weathercode,precipitation_sum,temperature_2m_max");
+          url.searchParams.set("timezone", "Europe/Berlin");
+          url.searchParams.set("forecast_days", "2");
+          const wRes = await fetch(url.toString(), { signal: AbortSignal.timeout(5000) });
+          if (wRes.ok) {
+            const wJson = await wRes.json() as { daily: { weathercode: number[]; precipitation_sum: number[]; temperature_2m_max: number[] } };
+            const d = wJson.daily;
+            weather = { todayCode: d.weathercode[0] ?? 0, todayPrecipMm: d.precipitation_sum[0] ?? 0, tomorrowCode: d.weathercode[1] ?? 0, tomorrowPrecipMm: d.precipitation_sum[1] ?? 0, tempMax: d.temperature_2m_max[0] ?? 15 };
+            locationLabel = `${loc.name}, ${loc.country}`;
+          }
+        }
+      } catch { /* fallback */ }
+    }
+
+    if (!weather) {
+      weather = await fetchWeatherContext().catch(() => null);
+      const storedLat = localStorage.getItem("hufi_user_lat");
+      const storedLon = localStorage.getItem("hufi_user_lon");
+      locationLabel = storedLat && storedLon ? "gespeicherter Standort" : "Deutschland-Mitte";
+    }
 
     let weatherBlock: string;
     if (weather) {
-      weatherBlock = `AKTUELLES WETTER (Open-Meteo, ${hasLocation ? "gespeicherter Standort" : "Deutschland-Mitte"}):
-Heute: ${label(weather.todayCode)}, max. ${weather.tempMax}°C, Niederschlag: ${weather.todayPrecipMm} mm
-Morgen: ${label(weather.tomorrowCode)}, Niederschlag: ${weather.tomorrowPrecipMm} mm`;
+      weatherBlock = `AKTUELLES WETTER (${locationLabel}):
+Heute: ${wmoLabel(weather.todayCode)}, max. ${weather.tempMax}°C, Niederschlag: ${weather.todayPrecipMm} mm
+Morgen: ${wmoLabel(weather.tomorrowCode)}, Niederschlag: ${weather.tomorrowPrecipMm} mm`;
     } else {
-      weatherBlock = "Wetterdaten konnten nicht geladen werden (kein Netz oder API nicht erreichbar).";
+      weatherBlock = "Wetterdaten konnten nicht geladen werden.";
     }
 
     const history: AIChatMessage[] = [
       {
         role: "system",
-        content: `${KNOWLEDGE_SYSTEM_PROMPT}\n\n${weatherBlock}\n\nBeantworte die Wetterfrage des Nutzers präzise und kurz auf Basis dieser Daten.${
-          !hasLocation ? " Weise darauf hin, dass kein genauer Standort gespeichert ist — der Nutzer kann ihn in den Einstellungen hinterlegen." : ""
-        }`,
+        content: `${KNOWLEDGE_SYSTEM_PROMPT}\n\n${weatherBlock}\n\nBeantworte die Wetterfrage präzise und kurz auf Basis dieser Daten.`,
       },
       { role: "user", content: text },
     ];
