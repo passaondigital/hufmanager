@@ -153,3 +153,28 @@ Heute: 2 parallele Tabellen, kein Session-Memory. Ziel: 6-Schichten-Memory.
 - Bessere Dokumentation am Pferd.
 - Nutzer vertrauen dem System im Alltag.
 - HufAI erinnert sich korrekt an Pferd-Kontext zwischen Sessions.
+
+---
+
+## Aktueller Implementierungsstand (Mai 2026)
+
+### Abgeschlossen
+- Multi-Tenant localStorage-Isolation (user-storage.ts)
+- Voice-First UI: Wave-Idle-State, goldener Splash-Screen, Auto-Listen nach Begrüßung
+- Lokale Antworten: Datum/Zeit (TTS-freundlich), Wetter (Open-Meteo ohne Claude), Termine-Zählung
+- Follow-up Konversation: 5 Runden, 800ms Pause
+- Pferdeakten-Vollständigkeits-Engine (hufi-horse-completeness.ts)
+- Persistente Konversations-Sessions (hufi-conversations.ts)
+- WhatsApp + Email Entwurf-System (hufi-communication.ts)
+- Proaktives Briefing-System (hufi-briefing.ts)
+- Gesprächsbasiertes Onboarding (HufiOnboardingChat.tsx)
+
+### Slogan
+> "Hufi kennt dich, dein Pferd/e, dein Business und die Pferdewelt."
+
+### Design-Prinzipien für Hufi-UI
+- Orange #F97316 als primäre Akzentfarbe (keine anderen Farben für Wave/Pulse)
+- Pferde-Silhouette (goldenes Pferd) als Identitäts-Anker
+- Idle-State zeigt Wave (paused), nicht leeres UI
+- Jede Antwort endet mit Bereitschaft (kein "Sitzung beendet"-Gefühl)
+- Kein Chat-Spam: Systeminfos als Cards, nicht als Bubbles

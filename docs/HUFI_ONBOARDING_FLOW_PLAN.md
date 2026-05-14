@@ -319,3 +319,58 @@ Implement Phase A of HUFI_ONBOARDING_FLOW_PLAN.md:
 - Add personalized Hufi welcome moment in Welcome.tsx
 No migrations. No deploy yet. Build must stay green.
 ```
+
+---
+
+## 3. Implementierter Onboarding-Chat Flow (HufiOnboardingChat.tsx)
+
+> Komponente: src/components/onboarding/HufiOnboardingChat.tsx
+> Route: wird über App.tsx als Overlay geladen wenn profile.onboarding_completed === false
+
+### Trigger
+```typescript
+// In App.tsx / ProtectedRoute:
+if (user && profile && !profile.onboarding_completed) {
+  return <HufiOnboardingChat userId={user.id} onComplete={() => refetchProfile()} />;
+}
+```
+
+### Datenbankschema
+
+```sql
+-- In profiles Tabelle:
+onboarding_step INT DEFAULT 0          -- aktueller Schritt (0–5)
+onboarding_completed BOOLEAN DEFAULT false
+onboarding_data JSONB DEFAULT '{}'     -- gesammelte Daten
+
+-- onboarding_data Struktur:
+{
+  name: string,           -- Vorname
+  context: "privat"|"beruflich"|"beides",
+  profession?: string,    -- nur wenn beruflich
+  client_count?: string,  -- Anzahl Kunden
+  team?: "solo"|"team",
+  horse_count?: string,   -- Anzahl eigene Pferde
+  horse_names?: string[], -- Namen der Pferde
+  goals?: string[],       -- Was soll Hufi tun
+  formal?: boolean        -- Anredeform
+}
+```
+
+### Dialog-Schritte
+
+| Step | Trigger | Hufi-Frage | Eingabe-Typ | Gespeichert in |
+|------|---------|-----------|-------------|----------------|
+| 0 | Mount | "Hallo! Ich bin Hufi... Wie heißt du?" | Freitext | profiles.full_name, onboarding_data.name |
+| 1 | Nach Name | "Bist du eher privat oder beruflich unterwegs?" | Buttons | onboarding_data.context |
+| 2a | Beruflich | "Was machst du genau?" + "Wie viele Kunden?" | Buttons + Text | onboarding_data.profession, client_count |
+| 2b | Privat | "Wie viele Pferde hast du?" | Buttons | onboarding_data.horse_count |
+| 3 | Immer | "Wie heißen deine Pferde?" | Freitext (mehrere) | horses Tabelle + horse_completeness |
+| 4 | Nach Pferden | "Was soll Hufi für dich erledigen?" | Checkboxen | onboarding_data.goals |
+| 5 | Abschluss | Personalisierter Abschluss | Quick-Actions | profiles.onboarding_completed = true |
+
+### Speicher-Strategie
+- Jeder Step: sofortiger Supabase-UPDATE auf profiles
+- Pferdenamen: INSERT in horses Tabelle + horse_completeness anlegen (score: 10)
+- Kein "Alles am Ende speichern" — bei Abbruch kann fortgesetzt werden
+- localStorage-Key (userId-basiert): hufi_onboarding_step_${userId.slice(-8)}
