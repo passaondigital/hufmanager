@@ -9,6 +9,7 @@ import CookieBanner from "@/components/website/CookieBanner";
 import { useGA4 } from "@/hooks/useGA4";
 import pascalImage from "@/assets/lp/pascal-founder.png";
 import HufiVoiceSection from "@/components/landing/HufiVoiceSection";
+import HufiFeatureGrid from "@/components/landing/HufiFeatureGrid";
 
 /* ── Reveal hook ── */
 function useReveal(threshold = 0.12) {
@@ -336,7 +337,7 @@ function HufiHero() {
                 className="hufi-anim-blink"
                 style={{ width: 6, height: 6, borderRadius: "50%", background: "#F97316", display: "inline-block", flexShrink: 0 }}
               />
-              Jetzt live · Proaktives Briefing · Hey Hufi
+              Horse Industry OS · KI-Assistent · Jetzt live
             </div>
 
             {/* Headline */}
@@ -351,10 +352,6 @@ function HufiHero() {
                   margin: 0,
                 }}
               >
-                Deine Zeit
-                <br />
-                <span style={{ color: "rgba(255,255,255,0.85)" }}>gehört dem Pferd.</span>
-                <br />
                 <span
                   style={{
                     background: "linear-gradient(135deg, #F97316 0%, #fb923c 50%, #F97316 100%)",
@@ -363,7 +360,7 @@ function HufiHero() {
                     backgroundClip: "text",
                   }}
                 >
-                  Den Rest macht Hufi.
+                  HUFI KENNT DICH.
                 </span>
               </h1>
             </div>
@@ -373,15 +370,15 @@ function HufiHero() {
               style={{
                 fontSize: "clamp(1rem, 2vw, 1.15rem)",
                 color: "rgba(255,255,255,0.42)",
-                maxWidth: 440,
+                maxWidth: 480,
                 margin: "0 auto",
                 lineHeight: 1.65,
                 fontWeight: 400,
               }}
               className="lg:mx-0"
             >
-              Dein intelligenter Pferde-Assistent —<br />
-              proaktiv, sprachgesteuert, stalltauglich.
+              Dein Assistent für Pferd, Kundschaft und Hufpflege-Business —<br />
+              der spricht, denkt und handelt.
             </p>
 
             {/* CTAs */}
@@ -452,12 +449,12 @@ const pains = [
   {
     icon: "🗺️",
     title: "Jeder Tag neu planen.",
-    text: "Route, Reihenfolge, wer ist wo — das kostet Kopf, bevor du überhaupt im Stall bist.",
+    text: "Route, Reihenfolge, wer ist wo — das kostet Kopf, bevor du überhaupt das erste Pferd siehst.",
   },
   {
     icon: "📋",
     title: "Befunde irgendwo. Fotos im Handy.",
-    text: "In drei Monaten weißt du was du heute gemacht hast — aber nicht mehr wo.",
+    text: "In drei Monaten weißt du was du heute gemacht hast — aber nicht mehr wo. Und der Tierarzt fragt genau danach.",
   },
   {
     icon: "💸",
@@ -545,30 +542,36 @@ function VoiceOfHorseSection() {
 function EcosystemHeader() {
   const rHead = useReveal();
   const rCards = useReveal();
+  const rNote = useReveal();
   const roles = [
-    { icon: "🔧", title: "Hufpfleger & Hufschmiede", desc: "Termine, Touren, Befunde, Rechnungen. KI dokumentiert mit." },
-    { icon: "🐎", title: "Pferdebesitzer", desc: "Digitale Pferdeakte, Befunde, Dienstleister — kostenlos." },
-    { icon: "👥", title: "Tierärzte & Therapeuten", desc: "Befunde einsehen, Diagnosen ergänzen — mit Freigabe." },
-    { icon: "🏢", title: "Stallbetreiber & Teams", desc: "Alle Pferde, alle Dienstleister, ein Dashboard." },
+    { icon: "🔧", title: "Hufpfleger & Hufschmiede", desc: "Termine, Touren, Befunde, Rechnungen — und Hufi dokumentiert per Sprache mit. Kein Tippen im Stall." },
+    { icon: "🐎", title: "Reitlehrer & Trainer", desc: "Stundenpläne, Pferdefortschritt, Rechnungen. Alle Kunden auf einen Blick." },
+    { icon: "👥", title: "Tierärzte & Osteopathen", desc: "Befunde einsehen, eigene Diagnosen ergänzen — mit Freigabe des Besitzers." },
+    { icon: "🏢", title: "Stallbetreiber & Herden", desc: "Alle Pferde, alle Dienstleister, ein Dashboard. Nichts geht verloren." },
+    { icon: "🐴", title: "Pferdebesitzer", desc: "Digitale Pferdeakte, Befunde vom Profi, Dienstleister finden — komplett kostenlos." },
   ];
   return (
     <section className="py-20 md:py-28" style={{ backgroundColor: "#0a0a0a" }}>
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <div ref={rHead.ref} className={`text-center mb-12 ${rc(rHead.visible)}`}>
+          <span className="text-[#f97316] font-bold text-xs uppercase tracking-widest mb-3 block">Für wen ist Hufi?</span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-3">
-            Ein Pferd. Viele Menschen. Ein System.
+            Egal ob Hufbearbeiter, Reitlehrer<br className="hidden sm:block" /> oder Stallbetreiber.
           </h2>
-          <p className="text-white/50 text-sm sm:text-base">Das Pferd im Mittelpunkt. Alle verbunden.</p>
+          <p className="text-white/50 text-sm sm:text-base max-w-xl mx-auto">Das Pferd im Mittelpunkt. Alle Beteiligten verbunden. Jeder sieht genau das, was er sehen darf.</p>
         </div>
-        <div ref={rCards.ref} className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 ${rc(rCards.visible)}`}>
+        <div ref={rCards.ref} className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 ${rc(rCards.visible)}`}>
           {roles.map((role) => (
-            <div key={role.title} className="hufi-card-dark p-6 rounded-2xl text-center" style={{ cursor: "default" }}>
+            <div key={role.title} className="hufi-card-dark p-6 rounded-2xl" style={{ cursor: "default" }}>
               <div className="text-2xl mb-3">{role.icon}</div>
               <h3 className="text-white font-bold text-sm mb-2">{role.title}</h3>
               <p className="text-white/40 text-xs leading-relaxed mb-3">{role.desc}</p>
-              <a href="/auth" className="text-[#f97316] text-xs font-semibold inline-flex items-center gap-1 hover:gap-2 transition-all">Mehr erfahren <ArrowRight className="h-3 w-3" /></a>
+              <a href="/auth" className="text-[#f97316] text-xs font-semibold inline-flex items-center gap-1 hover:gap-2 transition-all">Kostenlos starten <ArrowRight className="h-3 w-3" /></a>
             </div>
           ))}
+        </div>
+        <div ref={rNote.ref} className={`mt-8 text-center ${rc(rNote.visible)}`}>
+          <p className="text-white/25 text-xs">Pferdebesitzer nutzen Hufi immer kostenlos · Profis 14 Tage kostenlos testen</p>
         </div>
       </div>
     </section>
@@ -579,32 +582,32 @@ function EcosystemHeader() {
    5. FEATURES
 ───────────────────────────────────────── */
 const provenFeatures = [
-  "Terminkalender & Tourenplanung",
-  "Kunden & Pferdeverwaltung",
-  "Rechnungen & Buchhaltung",
-  "Pferdeakte & Befunde",
-  "Mitarbeiter & Rollen",
-  "DSGVO-konform, EU-Server",
+  "Terminkalender & smarte Tourenplanung",
+  "Kunden- & Pferdeverwaltung",
+  "Rechnungen in Sekunden — PDF, E-Mail, fertig",
+  "Vollständige Pferdeakte & Befunde",
+  "Material-Verwaltung: Lager, Bestellung, Verbrauch",
+  "Mitarbeiter & Rollen für Teams",
+  "DSGVO-konform · EU-Server · Offline-Modus",
   "PWA — kein App Store nötig",
-  "Offline-Modus",
 ];
 
 const newFeatures = [
-  "Proaktives Tages-Briefing (HufAI)",
-  "'Hey Hufi' Sprachsteuerung",
-  "AutoFlow — Sprache wird Befund",
-  "HufCam Pro — Hufanalyse mit KI",
-  "Pferde-Gedächtnis (Kontext, Verlauf)",
-  "Intent Detection — Hufi erkennt was du willst",
-  "DSGVO + EU AI Act konform",
+  "Proaktives Tages-Briefing — Hufi informiert dich",
+  "'Hey Hufi' Sprachsteuerung (hands-free im Stall)",
+  "AutoFlow — Sprache wird Befund, automatisch",
+  "Huf-Analyse mit KI — Foto rein, Auswertung raus",
+  "Pferde-Gedächtnis: Hufi kennt Verlauf & Kontext",
+  "Notfall-Erkennung — Hufi erkennt kritische Signale",
+  "Netzwerk: Profis, Stallbetreiber & Besitzer verbunden",
 ];
 
 const clientFeatures = [
-  "Digitale Pferdeakte",
-  "Befunde vom Hufpfleger sehen",
+  "Digitale Pferdeakte — immer dabei",
+  "Befunde & Fotos vom Profi einsehen",
   "Dienstleister finden & kontaktieren",
-  "Termine einsehen",
-  "Dokumente & Impfpass",
+  "Termine & Erinnerungen",
+  "Dokumente, Impfpass & Zertifikate",
 ];
 
 function FeaturesComparisonSection() {
@@ -612,11 +615,12 @@ function FeaturesComparisonSection() {
   const rCols = useReveal();
   const rClient = useReveal();
   return (
-    <section className="py-20 md:py-28" style={{ backgroundColor: "#0a0a0a" }}>
+    <section id="plattform" className="py-20 md:py-28" style={{ backgroundColor: "#0a0a0a" }}>
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <div ref={rHead.ref} className={`text-center mb-12 ${rc(rHead.visible)}`}>
+          <span className="text-[#f97316] font-bold text-xs uppercase tracking-widest mb-3 block">Die Plattform</span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-3">Bewährt. Intelligent. Vollständig.</h2>
-          <p className="text-white/50 text-sm sm:text-base">Alles was du liebst — jetzt mit echter KI-Intelligenz.</p>
+          <p className="text-white/50 text-sm sm:text-base">Das operative Fundament für deinen Betrieb — jetzt mit echter KI.</p>
         </div>
         <div ref={rCols.ref} className={`grid grid-cols-1 md:grid-cols-2 gap-5 mb-5 ${rc(rCols.visible)}`}>
           <div className="rounded-2xl border p-6 sm:p-8" style={{ borderColor: "rgba(255,255,255,0.1)", backgroundColor: "rgba(255,255,255,0.03)" }}>
@@ -633,7 +637,7 @@ function FeaturesComparisonSection() {
           </div>
           <div className="rounded-2xl border-2 p-6 sm:p-8" style={{ borderColor: "rgba(249,115,22,0.4)", backgroundColor: "rgba(249,115,22,0.05)" }}>
             <h3 className="text-white font-bold text-sm mb-5 flex items-center gap-2">
-              <span>✨</span> HufAI — Neu & Live
+              <span>✨</span> Hufi KI — Jetzt live
             </h3>
             <ul className="space-y-3">
               {newFeatures.map((f) => (
@@ -649,7 +653,7 @@ function FeaturesComparisonSection() {
             <div className="text-2xl">🐴</div>
             <div>
               <h3 className="text-white font-bold text-sm">Für Pferdebesitzer</h3>
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(59,130,246,0.2)", color: "#60a5fa" }}>Kostenlos</span>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(59,130,246,0.2)", color: "#60a5fa" }}>Immer kostenlos</span>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -672,32 +676,45 @@ const hufaiFeatures = [
   {
     icon: "🌅",
     title: "Proaktives Tages-Briefing",
-    desc: "Hufi begrüßt dich jeden Morgen: Termine, überfällige Pferde, Wetter — bevor du fragst.",
+    desc: "Hufi begrüßt dich jeden Morgen: Termine, überfällige Pferde, Wetter-Warnung — bevor du fragst.",
   },
   {
     icon: "🎙️",
-    title: "'Hey Hufi' Sprachsteuerung",
-    desc: "Hände frei im Stall. Sprach zu Befund — kein Tippen, keine Unterbrechung.",
+    title: "Voice-First — Hände frei im Stall",
+    desc: 'Hufi versteht dich: "Öffne den Kalender" / "Neue Rechnung für Luna" / "Wie ist der Status von Muninn?" — ein Satz, sofort erledigt.',
   },
   {
     icon: "🐴",
     title: "Pferde-Gedächtnis",
-    desc: "Hufi kennt jeden Huf, jede Akte, jeden Verlauf. Kein Nutzer soll alleine stehen.",
+    desc: "Hufi kennt jeden Huf, jede Akte, jeden Verlauf — und erinnert dich, wenn etwas nicht stimmt.",
+  },
+  {
+    icon: "📸",
+    title: "Huf-Analyse mit KI",
+    desc: "Foto aufnehmen, Auswertung in Sekunden. KI-gestützte Huf-Foto-Analyse für dokumentierbare Befunde.",
   },
   {
     icon: "⚡",
-    title: "Sofort-Navigation",
-    desc: "Nächster Termin, Touren-Start, offene Rechnungen — ein Wort genügt.",
+    title: "Notfall-Erkennung",
+    desc: "Hufi erkennt kritische Signale aus dem Kontext — überfällige Pferde, ungewöhnliche Muster, dringende Fälle.",
   },
   {
     icon: "🔒",
-    title: "Deutscher Server. Echtes Vertrauen.",
-    desc: "DSGVO, EU AI Act, keine KI-Trainingsnutzung. Pascal ist seit 20 Jahren selbst im Stall.",
+    title: "Vertrauen durch Herkunft",
+    desc: "DSGVO, EU AI Act, keine KI-Trainingsnutzung deiner Daten. Alles auf deutschen Servern. Gebaut von jemandem der selbst im Stall steht.",
   },
+];
+
+const voiceExamples = [
+  { cmd: "Öffne den Kalender", result: "Hufi öffnet deine Wochenübersicht" },
+  { cmd: "Neue Rechnung für Luna", result: "Hufi legt die Rechnung vor — du bestätigst nur" },
+  { cmd: "Wie ist der Status von Muninn?", result: "Hufi zeigt Akte, letzten Befund, nächsten Termin" },
+  { cmd: "Wann bin ich das nächste Mal bei Hof Berger?", result: "Hufi sucht und antwortet sofort" },
 ];
 
 function HufAISection() {
   const rHead = useReveal();
+  const rVoice = useReveal();
   const rCards = useReveal();
   const rVision = useReveal();
   return (
@@ -705,7 +722,7 @@ function HufAISection() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <div ref={rHead.ref} className={`text-center mb-12 ${rc(rHead.visible)}`}>
           <div className="flex items-center justify-center gap-2 mb-3">
-            <span className="text-[#f97316] font-bold text-xs uppercase tracking-widest">HufAI — Die Intelligenz dahinter</span>
+            <span className="text-[#f97316] font-bold text-xs uppercase tracking-widest">Hufi KI — Die Intelligenz dahinter</span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(249,115,22,0.12)", color: "#f97316" }}>Jetzt live</span>
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-4">
@@ -716,6 +733,20 @@ function HufAISection() {
             proaktiv, sprachgesteuert, stalltauglich.
           </p>
         </div>
+
+        {/* Voice examples */}
+        <div ref={rVoice.ref} className={`mb-10 rounded-2xl p-6 sm:p-8 ${rc(rVoice.visible)}`} style={{ backgroundColor: "#0a0a0a" }}>
+          <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-5 text-center">Echte Befehle. Echte Antworten.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {voiceExamples.map((ex) => (
+              <div key={ex.cmd} className="rounded-xl p-4" style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(249,115,22,0.15)" }}>
+                <p className="text-sm font-bold mb-1.5" style={{ color: "#f97316" }}>🎙 &ldquo;{ex.cmd}&rdquo;</p>
+                <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>→ {ex.result}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div ref={rCards.ref} className={`grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10 ${rc(rCards.visible)}`}>
           {hufaiFeatures.map((f) => (
             <div key={f.title} className="p-6 rounded-2xl border border-gray-100 bg-gray-50 hover:border-[#f97316]/30 transition-colors">
@@ -842,9 +873,12 @@ function HufiCTA() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 relative z-10">
         <div ref={r.ref} className={`text-center space-y-7 ${rc(r.visible)}`}>
           <h2 className="font-extrabold text-3xl sm:text-4xl md:text-5xl text-white leading-tight">
-            Bereit für Hufi?
+            Weniger Verwaltung.<br />Mehr Zeit am Pferd.
           </h2>
-          <p className="text-white/80 text-base sm:text-lg">14 Tage kostenlos. Kein Risiko. Kein App Store. Kein Vertrag.</p>
+          <p className="text-white/80 text-base sm:text-lg max-w-xl mx-auto">
+            Hufbearbeiter, Reitlehrer, Stallbetreiber — starte heute kostenlos.<br />
+            14 Tage. Kein Risiko. Kein App Store. Kein Vertrag.
+          </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button size="lg" className="text-base sm:text-lg font-bold bg-white hover:bg-white/90 gap-2 w-full sm:w-auto" style={{ color: "#f97316" }} asChild>
               <a href="/auth">Kostenlos starten <ArrowRight className="h-5 w-5" /></a>
@@ -871,9 +905,9 @@ const WebsiteHome = () => {
   useGA4();
 
   useEffect(() => {
-    document.title = "Hufi — Dein intelligenter Pferde-Assistent";
+    document.title = "Hufi — Das Horse Industry Operating System";
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute("content", "Hufi ist dein proaktiver Pferde-Assistent: Termine, Pferdeakte, Hey-Hufi-Sprachsteuerung, Rechnungen — alles in einer App. Jetzt 14 Tage kostenlos testen.");
+    if (metaDesc) metaDesc.setAttribute("content", "Hufi ist das vollständige Betriebssystem für Hufbearbeiter, Hufschmiede, Reitlehrer, Stallbetreiber & Pferdebesitzer. KI-Assistent, Sprachsteuerung, Pferdeakte, Rechnungen — alles in einer App. 14 Tage kostenlos testen.");
     const existingLd = document.querySelector('script[data-huf-schema]');
     if (!existingLd) {
       const ld = document.createElement("script");
@@ -883,7 +917,7 @@ const WebsiteHome = () => {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
         name: "Hufi",
-        description: "Dein intelligenter Pferde-Assistent — proaktives Briefing, Sprachsteuerung, Pferdeakte, Termine und Rechnungen in einer App.",
+        description: "Das Horse Industry Operating System — für Hufbearbeiter, Hufschmiede, Reitlehrer, Stallbetreiber & Pferdebesitzer. KI-Assistent, Sprachsteuerung, Pferdeakte, Rechnungen in einer App.",
         url: "https://hufiapp.de",
         applicationCategory: "BusinessApplication",
         operatingSystem: "Web, iOS, Android",
@@ -904,11 +938,37 @@ const WebsiteHome = () => {
       <VoiceOfHorseSection />
       <EcosystemHeader />
       <FeaturesComparisonSection />
+      <HufiFeatureGrid />
+      <section style={{ padding: "40px 20px", textAlign: "center", background: "#FFF7ED" }}>
+        <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1A1A1A", marginBottom: 8 }}>
+          Häufige Fragen
+        </h2>
+        <p style={{ fontSize: 14, color: "#6B7280", marginBottom: 20 }}>
+          Alles was du über Hufi wissen willst
+        </p>
+        <a href="/faq" style={{
+          display: "inline-block",
+          background: "#F97316",
+          color: "#FFFFFF",
+          padding: "12px 28px",
+          borderRadius: 12,
+          fontWeight: 700,
+          fontSize: 14,
+          textDecoration: "none",
+        }}>
+          Alle Fragen ansehen →
+        </a>
+      </section>
       <HufAISection />
       <DataSovereigntySection />
       <FounderSection />
       <PricingV2 />
       <TestimonialsSection />
+      <section style={{ padding: "48px 20px", textAlign: "center" }}>
+        <p style={{ fontSize: 28, fontWeight: 900, color: "#F97316", letterSpacing: "-0.5px" }}>
+          "Hufi. Damit du Zeit hast fürs Pferd."
+        </p>
+      </section>
       <HufiCTA />
       <FooterNew />
       <CookieBanner />
