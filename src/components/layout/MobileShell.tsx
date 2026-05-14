@@ -21,6 +21,7 @@ import {
 import { buildShortSpokenGreeting, type HufiPresenceLabel } from "@/lib/hufi-runtime";
 import { extractBefundFromTranscript, formatBefundForChat } from "@/lib/autoflow-service";
 import { detectIntent, type HufiIntent } from "@/lib/hufi-intent";
+import { matchScenario } from "@/lib/hufi-scenarios";
 import { runNavAction, type ActionOutcome, type ActionRole } from "@/lib/hufi-nav-actions";
 import {
   createAgentTask, approveAndExecuteTask, rejectTask,
@@ -1168,6 +1169,44 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
 
     addMsg({ role: "user", text: cleaned, ts: Date.now() });
     const intent = detectIntent(cleaned, !!user, hufiCtx?.memory ?? []);
+
+    // ── Korrektur-Flow ──────────────────────────────────────────────────────────
+    if (intent.intent === "correction") {
+      addMsg({
+        role: "ai",
+        text: "Entschuldigung — was soll ich anders machen?",
+        ts: Date.now() + 1,
+      });
+      setResponding(false);
+      setHufiPresenceState("bereit");
+      setActiveIntent(null);
+      return;
+    }
+
+    // ── Scenario Quick-Match (lokal, kein AI-Call) ──────────────────────────────
+    if (user?.id) {
+      const roleForScenario = role ?? null;
+      const scenarioMatch = matchScenario(cleaned, roleForScenario, {
+        appointmentCount: hufiCtx?.todayAppointments.length,
+        unpaidCount: hufiCtx?.unpaidInvoices,
+      });
+      if (scenarioMatch) {
+        addMsg({
+          role: "ai",
+          text: scenarioMatch.text,
+          ts: Date.now() + 1,
+          ...(scenarioMatch.actions ? { actions: scenarioMatch.actions } : {}),
+        });
+        if (voiceMode && scenarioMatch.spoken) {
+          hufiSpeak(scenarioMatch.spoken);
+        }
+        setResponding(false);
+        setHufiPresenceState("bereit");
+        setActiveIntent(null);
+        return;
+      }
+    }
+
     setActiveIntent(intent.intent);
     setResponding(true);
     setHufiPresenceState(intent.intent === "navigation" ? "führt aus" : "denkt");

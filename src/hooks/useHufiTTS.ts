@@ -10,21 +10,58 @@ interface UseHufiTTS {
   isCloudVoice: boolean;
 }
 
-/**
- * Bereinigt Text für Sprachausgabe:
- * - Entfernt Emojis, Markdown, Links
- * - Erhält Satzzeichen für natürliche Intonation
- */
+// Deutsche Abkürzungen für TTS-Aussprache
+const TTS_ABBREV: Array<[RegExp, string]> = [
+  [/z\.B\./gi, "zum Beispiel"],
+  [/d\.h\./gi, "das heißt"],
+  [/usw\./gi, "und so weiter"],
+  [/bzw\./gi, "beziehungsweise"],
+  [/ca\./gi, "circa"],
+  [/Nr\./gi, "Nummer"],
+  [/Std\./gi, "Stunden"],
+  [/Min\./gi, "Minuten"],
+  [/Wo\./gi, "Wochen"],
+  [/€/g, "Euro"],
+  [/\bkm\b/g, "Kilometer"],
+  [/\bMo\b/g, "Montag"],
+  [/\bDi\b/g, "Dienstag"],
+  [/\bMi\b/g, "Mittwoch"],
+  [/\bDo\b/g, "Donnerstag"],
+  [/\bFr\b/g, "Freitag"],
+  [/\bSa\b/g, "Samstag"],
+  [/\bSo\b/g, "Sonntag"],
+  // Prozente
+  [/(\d+)\s*%/g, "$1 Prozent"],
+];
+
 export function sanitizeForSpeech(input: string): string {
   if (!input) return "";
-  return input
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/\p{Extended_Pictographic}/gu, "")
+  let text = input
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")   // Links → Linktext
+    .replace(/\p{Extended_Pictographic}/gu, "")  // Emojis raus
     .replace(/[︎️‍]/g, "")
-    .replace(/[*_#>`~]/g, "")
-    .replace(/-{3,}/g, ".")
-    .replace(/\s+/g, " ")
-    .trim();
+    .replace(/[*_#>`~]/g, "")                    // Markdown
+    .replace(/-{3,}/g, ".")                       // --- → Pause
+    .replace(/\n{2,}/g, ". ")                     // Doppelzeilenumbrüche → Satzpause
+    .replace(/\n/g, " ");                          // Einzelne Zeilenumbrüche → Leerzeichen
+
+  // Uhrzeiten natürlicher aussprechen: "08:30" → "acht Uhr dreißig"
+  text = text.replace(/\b(\d{1,2}):(\d{2})\b/g, (_full, h, m) => {
+    const hNum = parseInt(h, 10);
+    const mNum = parseInt(m, 10);
+    if (mNum === 0) return `${hNum} Uhr`;
+    if (mNum === 30) return `halb ${hNum + 1}`;
+    if (mNum === 15) return `Viertel nach ${hNum}`;
+    if (mNum === 45) return `Viertel vor ${hNum + 1}`;
+    return `${hNum} Uhr ${mNum}`;
+  });
+
+  // Abkürzungen expandieren
+  for (const [pattern, replacement] of TTS_ABBREV) {
+    text = text.replace(pattern, replacement as string);
+  }
+
+  return text.replace(/\s+/g, " ").trim();
 }
 
 // Piper TTS: lokaler Server auf demselben VPS (via Nginx-Proxy)

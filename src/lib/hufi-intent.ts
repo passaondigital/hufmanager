@@ -7,7 +7,8 @@ export type HufiIntent =
   | "agent_action"
   | "agent_proactive"
   | "emergency"
-  | "navigation";
+  | "navigation"
+  | "correction";
 
 export interface IntentEntities {
   horseName?: string;
@@ -29,6 +30,14 @@ const EMERGENCY_KW = [
   "kolik", "notfall", "blutet", "liegt nicht auf", "atmet schwer",
   "lahmt stark", "sturz", "aufgebläht", "wälzt sich", "schweißgebadet",
   "bewusstlos", "krampf", "kollaps", "schockzustand", "liegt nicht mehr auf",
+];
+
+const WEATHER_KW = [
+  "wetter", "temperatur", "regen", "regnet", "regnen", "sonne", "sonnig",
+  "wind", "windig", "wolken", "bewölkt", "schnee", "frost", "gewitter",
+  "wetterbericht", "wettervorhersage", "wie ist das wetter", "wetter heute",
+  "wetter morgen", "wird es regnen", "regnet es", "wie kalt", "wie warm",
+  "grad", "celsius", "niederschlag",
 ];
 
 const KNOWLEDGE_KW = [
@@ -62,11 +71,26 @@ function extractHorseName(message: string, memory: HufiMemory[]): string | undef
     if (lower.includes(name)) return name;
   }
 
-  // Detect capitalised mid-sentence word as likely name
+  // Detect capitalised mid-sentence word as likely horse name
+  const HORSE_STOP = new Set([
+    "hey", "okay", "ok", "hufi", "wufi", "bitte", "kannst", "hast",
+    "brauchst", "nicht", "speichern", "vergiss", "lösch", "schreib",
+    "mach", "zeig", "öffne", "geh", "erstell", "sende", "plan",
+    "termin", "rechnung", "kalender", "kunden", "pferde", "befund",
+    "ich", "du", "er", "sie", "es", "wir", "ihr", "sie",
+    "das", "die", "der", "ein", "eine", "einen", "dem", "den",
+    "und", "oder", "aber", "doch", "auch", "noch", "schon",
+    "ah", "ach", "ja", "nein", "okay", "gut", "danke",
+  ]);
   const words = message.split(/\s+/);
   for (let i = 1; i < words.length; i++) {
     const w = words[i].replace(/[^a-zA-ZäöüÄÖÜß]/g, "");
-    if (w.length > 2 && w[0] === w[0].toUpperCase() && /[a-z]/.test(w)) {
+    if (
+      w.length >= 4 &&
+      w[0] === w[0].toUpperCase() &&
+      /[a-z]/.test(w) &&
+      !HORSE_STOP.has(w.toLowerCase())
+    ) {
       return w;
     }
   }
@@ -157,7 +181,42 @@ const TARGET_MATCHERS: TargetMatcher[] = [
   // Settings
   {
     build: () => ({ kind: "settings" }),
-    patterns: [/\beinstellungen?\b/, /\bsettings?\b/, /\bprofil\b/, /\bkonfiguration\b/],
+    patterns: [/\beinstellungen?\b/, /\bsettings?\b/, /\bkonfiguration\b/],
+  },
+  // Tages-Cockpit
+  {
+    build: () => ({ kind: "cockpit" }),
+    patterns: [/\bcockpit\b/, /\btages.?cockpit\b/, /\barbeits.?tag\b/],
+  },
+  // Management Hub
+  {
+    build: () => ({ kind: "management" }),
+    patterns: [/\bmanagement\b/, /\bprofil\b/, /\bmein\s+(profil|account|konto)\b/],
+  },
+  // Team
+  {
+    build: () => ({ kind: "team" }),
+    patterns: [/\bteam\b/, /\bmitarbeiter\b/, /\bangestellte?\b/],
+  },
+  // Lager
+  {
+    build: () => ({ kind: "lager" }),
+    patterns: [/\blager\b/, /\bmaterial\b/, /\bwerkzeug\b/, /\bvorrat\b/],
+  },
+  // Hufanalyse
+  {
+    build: () => ({ kind: "hufanalyse" }),
+    patterns: [/\bhufanalyse\b/, /\bhuf.?analyse\b/, /\bhuf.?bild\b/, /\bhuf.?foto\b/],
+  },
+  // Analyse / Statistiken
+  {
+    build: () => ({ kind: "analyse" }),
+    patterns: [/\banalyse\b/, /\bstatistik\b/, /\bauswertung\b/, /\bzahlen\b/],
+  },
+  // Chat / Nachrichten
+  {
+    build: () => ({ kind: "chat" }),
+    patterns: [/\bchat\b/, /\bnachrichten\b/, /\bnachricht\b/],
   },
   // Horses list (must come BEFORE the wildcard horse matcher)
   {
@@ -247,10 +306,28 @@ export function detectIntent(
 ): IntentResult {
   const lower = message.toLowerCase().trim();
 
+  // ── Korrektur-Intent (muss zuerst geprüft werden) ─────────────────────────
+  const CORRECTION_PATTERNS = [
+    /^(nein|nee|nö|ne)\b/i,
+    /\b(das stimmt nicht|nicht das|nicht so|falsch|ich meinte|ich wollte sagen|korrigier|ändere das|das war falsch)\b/i,
+    /^(stop|halt|warte)\b/i,
+    /\b(vergiss das|vergiss es|cancel|abbrechen)\b/i,
+  ];
+  if (CORRECTION_PATTERNS.some((p) => p.test(lower))) {
+    return { intent: "correction" as HufiIntent, confidence: 0.95, entities: {}, requiresAuth: false, requiresContext: false };
+  }
+
   // 1. Emergency — highest priority (overrides everything else)
   for (const kw of EMERGENCY_KW) {
     if (lower.includes(kw)) {
       return { intent: "emergency", confidence: 0.95, entities: { topic: kw }, requiresAuth: false, requiresContext: false };
+    }
+  }
+
+  // 1a. Weather — real-time lookup, handled separately
+  for (const kw of WEATHER_KW) {
+    if (lower.includes(kw)) {
+      return { intent: "knowledge", confidence: 0.9, entities: { topic: "weather_query" }, requiresAuth: false, requiresContext: false };
     }
   }
 
