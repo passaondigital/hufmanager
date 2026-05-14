@@ -60,18 +60,33 @@ else
   fail "Whisper STT (5000/transcribe) — HTTP $WHISPER_CODE"
 fi
 
+OLLAMA_SECRET="05399052e9855534c69b1a3389071d35ae5ca4c6"
+
 echo ""
 echo "▶ nginx Proxys (HTTPS)"
-check_http "Ollama via nginx HTTPS" \
-  "https://127.0.0.1/api/ollama/api/tags" -k -H "Host: hufiapp.de"
+# Ollama ohne Secret → muss 403 sein
+OLLAMA_NO_SECRET=$(curl -s -k -o /dev/null -w "%{http_code}" \
+  "https://127.0.0.1/api/ollama/api/tags" -H "Host: hufiapp.de" 2>/dev/null)
+if [[ "$OLLAMA_NO_SECRET" == "403" ]]; then
+  ok "Ollama-Proxy gesichert (403 ohne Secret)"
+else
+  fail "Ollama-Proxy NICHT gesichert (HTTP $OLLAMA_NO_SECRET ohne Secret)"
+fi
+
+# Ollama mit Secret → muss 200 sein
+check_http "Ollama-Proxy mit Secret" \
+  "https://127.0.0.1/api/ollama/api/tags" \
+  -k -H "Host: hufiapp.de" -H "x-ollama-secret: $OLLAMA_SECRET"
+
 check_http "TTS via nginx HTTPS" \
   "https://127.0.0.1/api/local-tts" -k -H "Host: hufiapp.de" -X POST
 
 echo ""
-echo "▶ Ollama Chat Test"
+echo "▶ Ollama Chat Test (mit Secret)"
 CHAT_CODE=$(curl -s -k -o /tmp/hufi_chat_test.txt -w "%{http_code}" \
   -H "Host: hufiapp.de" \
   -H "Content-Type: application/json" \
+  -H "x-ollama-secret: $OLLAMA_SECRET" \
   https://127.0.0.1/api/ollama/api/chat \
   -d '{"model":"hufiai-fast","messages":[{"role":"user","content":"Antworte nur mit: OK"}],"stream":false}' 2>/dev/null || echo "000")
 

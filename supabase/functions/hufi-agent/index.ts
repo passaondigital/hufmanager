@@ -174,13 +174,13 @@ async function callClaude(systemPrompt: string, messages: Message[], apiKey: str
 
 // ── Ollama ──────────────────────────────────────────────────────────────────────
 
-async function callOllama(systemPrompt: string, messages: Message[], proxyBase: string): Promise<string> {
+async function callOllama(systemPrompt: string, messages: Message[], proxyBase: string, secret: string): Promise<string> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 30_000);
   try {
     const res = await fetch(`${proxyBase}/api/ollama/api/chat`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-ollama-secret": secret },
       body: JSON.stringify({
         model: "hufiai-core",
         messages: [{ role: "system", content: systemPrompt }, ...messages],
@@ -253,6 +253,7 @@ serve(async (req) => {
 
   const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY");
   const OLLAMA_PROXY  = Deno.env.get("OLLAMA_PROXY_URL") ?? "";
+  const OLLAMA_SECRET = Deno.env.get("OLLAMA_PROXY_SECRET") ?? "";
 
   let rawAnswer = "";
   let source: "claude" | "ollama" = "claude";
@@ -270,7 +271,7 @@ serve(async (req) => {
 
   if (!rawAnswer?.trim() && OLLAMA_PROXY) {
     try {
-      rawAnswer = await callOllama(systemPrompt, messages, OLLAMA_PROXY);
+      rawAnswer = await callOllama(systemPrompt, messages, OLLAMA_PROXY, OLLAMA_SECRET);
       source = "ollama";
     } catch (e) {
       console.error(`[hufi-agent][${requestId}] Ollama Fehler:`, e);

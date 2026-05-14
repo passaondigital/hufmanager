@@ -12,12 +12,11 @@ import { MobileBottomNav } from "./MobileBottomNav";
 import { useViewMode } from "@/hooks/useViewMode";
 import { useHufiTTS } from "@/hooks/useHufiTTS";
 import { useVoiceCapture, type VoiceErrorCode } from "@/hooks/useVoiceCapture";
-import { streamWithHufAI, callClaudeWithTools, BEFUND_SYSTEM_PROMPT, ChatMessage as AIChatMessage } from "@/lib/ai-routing";
+import { streamWithHufAI, ChatMessage as AIChatMessage } from "@/lib/ai-routing";
 import { askHufiAgent } from "@/lib/hufi-agent-client";
-import { HUFI_TOOLS, toolNameToTaskType, buildToolExplanation, extractLineItems } from "@/lib/hufi-tool-definitions";
+import { } from "@/lib/hufi-tool-definitions";
 import {
-  fetchBusinessContext, buildInvoiceCatalogPrompt, build5AContextAddition,
-  formatInvoiceConfirmation, type BusinessContext,
+  fetchBusinessContext, type BusinessContext,
 } from "@/lib/hufi-business-context";
 import { buildShortSpokenGreeting, type HufiPresenceLabel } from "@/lib/hufi-runtime";
 import { extractBefundFromTranscript, formatBefundForChat } from "@/lib/autoflow-service";
@@ -29,7 +28,6 @@ import {
   type AgentTask,
 } from "@/lib/hufi-agent-tasks";
 import { HeyHufi } from "@/components/voice/HeyHufi";
-import { fetchRelevantContext } from "@/lib/hufi-context-resolver";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { DsgvoConsentModal } from "@/components/DsgvoConsentModal";
 import { KiHinweisModal } from "@/components/KiHinweisModal";
@@ -891,30 +889,7 @@ Morgen: ${label(weather.tomorrowCode)}, Niederschlag: ${weather.tomorrowPrecipMm
     await addStreamingMsg(history, user?.id ?? "anonymous", "hufiai-fast");
   }
 
-  async function answerWithContext(text: string, entities: ReturnType<typeof detectIntent>["entities"], voiceMode = false) {
-    // Business-Kontext lazy laden (gecacht)
-    if (!bizCtxRef.current && user?.id) {
-      try { bizCtxRef.current = await fetchBusinessContext(user.id); } catch { /* optional */ }
-    }
-    const ctx = await fetchRelevantContext(entities, user!.id);
-    const contextBlock = ctx.summary
-      ? `AKTUELLE DATEN AUS DER PFERDEAKTE:\n${ctx.summary}\n\nBeantworte die Anfrage auf Basis dieser Daten.`
-      : "Keine spezifischen Daten gefunden.";
-    const professionBlock = bizCtxRef.current
-      ? build5AContextAddition(bizCtxRef.current)
-      : "";
-    const history: AIChatMessage[] = [
-      {
-        role: "system",
-        content: `${BEFUND_SYSTEM_PROMPT}\n\nAktuelles Datum und Uhrzeit: ${nowStamp()}\n\n${contextBlock}${professionBlock}`,
-      },
-      ...messages.slice(-4).map((m) => ({ role: m.role === "user" ? "user" : "assistant" as const, content: m.text })),
-      { role: "user", content: text },
-    ];
-    // Im Voice-Modus immer schnelles Modell (Haiku) für geringe Latenz
-    const reply = await addStreamingMsg(history, user!.id, voiceMode ? "hufiai-fast" : undefined);
-    learnFromInteraction(user!.id, text, reply, "confirmed", sessionId.current);
-  }
+
 
   async function planAndConfirmAction(text: string, entities: ReturnType<typeof detectIntent>["entities"]) {
     if (!user?.id) return;
