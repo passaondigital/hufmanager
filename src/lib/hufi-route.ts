@@ -153,3 +153,27 @@ export function formatRouteMessage(route: OptimizedRoute): string {
 
   return `🗺️ Deine optimierte Route:\n\n${lines.join("\n")}\n\n${meta}`;
 }
+
+// ── Additional helpers ────────────────────────────────────────────────────────
+
+export function buildGoogleMapsRouteLink(addresses: string[]): string {
+  if (addresses.length === 0) return "https://maps.google.com";
+  const parts = addresses.map((a) => encodeURIComponent(a));
+  return `https://www.google.com/maps/dir/${parts.join("/")}`;
+}
+
+export function formatRouteKm(totalMinutes: number): string {
+  // Grobe Schätzung: 1 km ≈ 1.5 min ländlich
+  const km = Math.round(totalMinutes / 1.5);
+  return `ca. ${km} km`;
+}
+
+export function buildRouteSummary(
+  stops: Array<{ name: string; address?: string }>,
+  estimatedKm?: number
+): string {
+  if (stops.length === 0) return "Keine Stopps geplant.";
+  const names = stops.map((s) => s.name).join(" → ");
+  const kmStr = estimatedKm ? ` (ca. ${estimatedKm} km)` : "";
+  return `${names}${kmStr}`;
+}
