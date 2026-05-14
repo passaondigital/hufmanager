@@ -33,6 +33,11 @@ import { DsgvoConsentModal } from "@/components/DsgvoConsentModal";
 import { KiHinweisModal } from "@/components/KiHinweisModal";
 import { HufManagerMigrationBanner } from "@/components/migration/HufManagerMigrationBanner";
 import { HufiOnboardingTour } from "@/components/migration/HufiOnboardingTour";
+import { detectCommunicationIntent, buildWhatsAppDraft, buildEmailDraft, generateAppointmentReminder } from "@/lib/hufi-communication";
+import type { DraftMessage } from "@/lib/hufi-communication";
+import { DraftMessageCard } from "@/components/communication/DraftMessageCard";
+import { DayRouteCard } from "@/components/route/DayRouteCard";
+import { HufiOnboardingChat } from "@/components/onboarding/HufiOnboardingChat";
 import { updateHufiMemory, deleteLastLearnedMemory } from "@/lib/hufi-brain";
 import {
   HufiFirstRunConsent,
@@ -85,6 +90,9 @@ export function MobileShell() {
   const [showFirstRunConsent, setShowFirstRunConsent] = useState(false);
   const [showMigrationBanner, setShowMigrationBanner] = useState(false);
   const [showOnboardingTour, setShowOnboardingTour] = useState(false);
+  const [showOnboardingChat, setShowOnboardingChat] = useState(false);
+  const [pendingDraft, setPendingDraft] = useState<DraftMessage | null>(null);
+  const [pendingRoute, setPendingRoute] = useState<Array<{name: string; address?: string; time?: string; clientName?: string}> | null>(null);
   // Runtime presence: persistent Hufi state label
   const [hufiPresenceState, setHufiPresenceState] = useState<HufiPresenceLabel>("bereit");
   const [hufiCtx, setHufiCtx] = useState<HufiContext | null>(null);
@@ -178,6 +186,17 @@ export function MobileShell() {
       if (!consented) setShowDsgvoModal(true);
       else bootGreeting(user.id, true);
     });
+    // Onboarding-Chat wenn Profil noch nicht onboarded
+    supabase
+      .from("profiles")
+      .select("onboarding_completed")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data: prof }) => {
+        if (prof && prof.onboarding_completed === false) {
+          setShowOnboardingChat(true);
+        }
+      });
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Migration banner check (existing users only, shown once) ─────────────
@@ -1200,6 +1219,55 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
         await answerFromKnowledge(cleaned);
         return;
       }
+      // ── Kommunikations-Entwurf lokal (kein AI-Call nötig) ──────────────────────
+      if (user?.id) {
+        const commIntent = detectCommunicationIntent(cleaned);
+        if (commIntent) {
+          const nameMatch = cleaned.match(/(?:an|für|zu|schreib|schreibe|erinner|informier)\s+([A-ZÄÖÜ][a-zäöüß]+(?:\s+[A-ZÄÖÜ][a-zäöüß]+)?)/);
+          const targetName = nameMatch?.[1];
+          if (targetName) {
+            const { data: contacts } = await supabase
+              .from("contacts")
+              .select("name, phone, email")
+              .eq("user_id", user.id)
+              .ilike("name", `%${targetName}%`)
+              .limit(1);
+            const contact = contacts?.[0];
+            if (contact && (contact.phone || contact.email)) {
+              const template = generateAppointmentReminder({
+                clientName: contact.name,
+                horseName: "deinem Pferd",
+                date: "beim nächsten Termin",
+                senderName: hufiCtx?.user.name ?? undefined,
+              });
+              const draft = (commIntent === "email" || commIntent === "both") && contact.email
+                ? buildEmailDraft({ email: contact.email, name: contact.name, subject: "Terminbestätigung", body: template })
+                : buildWhatsAppDraft({ phone: contact.phone ?? "", name: contact.name, text: template });
+              setPendingDraft(draft);
+              addMsg({ role: "ai", text: `Ich habe einen Entwurf für ${contact.name} vorbereitet.`, ts: Date.now() + 1 });
+              setResponding(false);
+              setHufiPresenceState("bereit");
+              setActiveIntent(null);
+              return;
+            }
+          }
+        }
+      }
+      // ── Route lokal aus Kalender-Kontext ──────────────────────────────────────
+      const isRouteQuery = /\b(route|tour|weg|fahrt|strecke|reihenfolge|optimier)\b/i.test(cleaned);
+      if (isRouteQuery && hufiCtx?.todayAppointments && hufiCtx.todayAppointments.length > 0) {
+        const stops = hufiCtx.todayAppointments.map((a) => ({
+          name: a.horse_name ?? "Pferd",
+          time: a.time ?? undefined,
+          clientName: a.client_name ?? undefined,
+        }));
+        setPendingRoute(stops);
+        addMsg({ role: "ai", text: `Hier ist deine Tagesroute mit ${stops.length} ${stops.length === 1 ? "Stop" : "Stops"}:`, ts: Date.now() + 1 });
+        setResponding(false);
+        setHufiPresenceState("bereit");
+        setActiveIntent(null);
+        return;
+      }
       // Agent Action → Task-Bestätigungs-UI (eigene Pipeline mit Approve/Reject)
       if (intent.intent === "agent_action") {
         await planAndConfirmAction(cleaned, intent.entities);
@@ -1335,6 +1403,14 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
       )}
       {showOnboardingTour && (
         <HufiOnboardingTour onComplete={handleTourComplete} />
+      )}
+      {showOnboardingChat && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "#FFFFFF", overflowY: "auto" }}>
+          <HufiOnboardingChat
+            userId={user?.id ?? ""}
+            onComplete={() => setShowOnboardingChat(false)}
+          />
+        </div>
       )}
 
       <div style={{
@@ -1613,6 +1689,20 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
 
         <MobileBottomNav />
       </div>
+
+      {/* Communication Draft */}
+      {pendingDraft && (
+        <div style={{ position: "fixed", bottom: 80, left: 0, right: 0, zIndex: 200, padding: "0 12px" }}>
+          <DraftMessageCard draft={pendingDraft} onDismiss={() => setPendingDraft(null)} />
+        </div>
+      )}
+
+      {/* Day Route Card */}
+      {pendingRoute && (
+        <div style={{ position: "fixed", bottom: 80, left: 0, right: 0, zIndex: 200, padding: "0 12px" }}>
+          <DayRouteCard stops={pendingRoute} onDismiss={() => setPendingRoute(null)} />
+        </div>
+      )}
 
       {/* Phase E: Proactive Briefing overlay */}
       {proactiveBriefing && (
