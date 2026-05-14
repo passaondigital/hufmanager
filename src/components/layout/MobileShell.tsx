@@ -67,6 +67,12 @@ import {
   type BriefingPayload,
   type WeatherContext,
 } from "@/lib/hufai-proactive";
+import {
+  getCurrentBriefingTime,
+  hasBriefingShownToday,
+  markBriefingShown,
+  buildDailyBriefing,
+} from "@/lib/hufi-briefing";
 
 export function MobileShell() {
   const { user, role } = useAuth();
@@ -337,6 +343,14 @@ export function MobileShell() {
         fetchWeatherContext().then((weather) => {
           setProactiveBriefing(buildBriefingPayload(ctx, weather, bizCtxRef.current));
         });
+      }
+
+      // Time-slot briefing (morning/midday/evening) — shown once per slot per day
+      const briefingTime = getCurrentBriefingTime();
+      if (briefingTime && userId && !hasBriefingShownToday(userId, briefingTime)) {
+        markBriefingShown(userId, briefingTime);
+        const timeBriefing = buildDailyBriefing(ctx, briefingTime, null);
+        setProactiveBriefing((prev) => prev ?? timeBriefing);
       }
 
       // TTS greeting — opt-in only, fires on first user gesture

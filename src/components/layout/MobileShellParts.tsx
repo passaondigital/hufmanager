@@ -326,6 +326,7 @@ export function MobileShellMessages({
               { label: "Nächster Termin", route: "/kalender" },
               { label: "Offene Rechnungen", route: "/rechnungen" },
               { label: "Heute planen", route: "/kalender" },
+              { label: "FAQ & Hilfe", route: "/hufi/faq" },
             ].map((q) => (
               <button
                 key={q.label}

@@ -12,26 +12,30 @@ import { SubscriptionProvider } from "@/hooks/useSubscription";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PasswordRecoveryRedirect } from "@/components/auth/PasswordRecoveryRedirect";
-import { AppLayout } from "@/components/layout/AppLayout";
-import { MobileShell } from "@/components/layout/MobileShell";
-import { BotschafterLayout } from "@/components/botschafter/BotschafterLayout";
 import { CockpitFullscreenProvider } from "@/components/day-cockpit/CockpitFullscreenContext";
 import { AuthLoadingScreen } from "@/components/auth/AuthLoadingScreen";
 import { ProfileGuardianScreen } from "@/components/auth/ProfileGuardianScreen";
-import { createIDBPersister, initImageSyncManager, QUERY_CACHE_MAX_AGE, STATIC_QUERY_KEYS } from "@/lib/offline";
-import { initSyncManager } from "@/lib/offline/syncManager";
+import { createIDBPersister } from "@/lib/offline/persister";
+import { QUERY_CACHE_MAX_AGE } from "@/lib/offline/offlineConfig";
 import { Loader2 } from "lucide-react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { TourProvider } from "@/components/tour/TourContext";
-import { ClientErrorFallback as ClientErrorFallbackComponent } from "@/components/client/ClientErrorFallback";
 
 // Eagerly loaded core pages
 import Index from "@/pages/Index";
-import Auth from "@/pages/Auth";
-import NotFound from "@/pages/NotFound";
 
 // Lazy-loaded pages for code-splitting
-const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
+const Auth = lazy(() => import("@/pages/Auth"));
+const AppLayout = lazy(() =>
+  import("@/components/layout/AppLayout").then((m) => ({ default: m.AppLayout }))
+);
+const MobileShell = lazy(() =>
+  import("@/components/layout/MobileShell").then((m) => ({ default: m.MobileShell }))
+);
+const BotschafterLayout = lazy(() =>
+  import("@/components/botschafter/BotschafterLayout").then((m) => ({ default: m.BotschafterLayout }))
+);
 const Anfragen = lazy(() => import("@/pages/Anfragen"));
 const Angebote = lazy(() => import("@/pages/Angebote"));
 const Aufnahme = lazy(() => import("@/pages/Aufnahme"));
@@ -160,6 +164,8 @@ const EmployeeHorseDetail = lazy(() => import("@/pages/employee/EmployeeHorseDet
 const MeinOffice = lazy(() => import("@/pages/MeinOffice"));
 const OfficeEditor = lazy(() => import("@/pages/OfficeEditor"));
 const Hilfe = lazy(() => import("@/pages/Hilfe"));
+const HufiFAQ = lazy(() => import("@/pages/HufiFAQ"));
+const HufiMemoryPage = lazy(() => import("@/pages/HufiMemoryPage"));
 const Docs = lazy(() => import("@/pages/Docs"));
 const Status = lazy(() => import("@/pages/Status"));
 const HMConnect = lazy(() => import("@/pages/HMConnect"));
@@ -269,32 +275,54 @@ const ClientKalender = lazy(() => import("@/pages/client/ClientKalender"));
 const ClientHistorie = lazy(() => import("@/pages/client/ClientHistorie"));
 const ClientDokumente = lazy(() => import("@/pages/client/ClientDokumente"));
 
-// Components
-import { PWAInstallPrompt } from "@/components/pwa/PWAInstallPrompt";
-import { VersionChecker } from "@/components/version/VersionChecker";
-import { SystemStatusBanner } from "@/components/notifications/SystemStatusBanner";
-import { TrialPaywall } from "@/components/subscription/TrialPaywall";
-import { PendingVerificationOverlay } from "@/components/subscription/PendingVerificationOverlay";
+// Global overlays: not needed for first paint
+const PWAInstallPrompt = lazy(() =>
+  import("@/components/pwa/PWAInstallPrompt").then((m) => ({ default: m.PWAInstallPrompt }))
+);
+const VersionChecker = lazy(() =>
+  import("@/components/version/VersionChecker").then((m) => ({ default: m.VersionChecker }))
+);
+const SystemStatusBanner = lazy(() =>
+  import("@/components/notifications/SystemStatusBanner").then((m) => ({ default: m.SystemStatusBanner }))
+);
+const PendingVerificationOverlay = lazy(() =>
+  import("@/components/subscription/PendingVerificationOverlay").then((m) => ({ default: m.PendingVerificationOverlay }))
+);
 
 // Suspense fallback with timeout
 const LazyFallback = () => {
   const [timedOut, setTimedOut] = useState(false);
+  const [slow, setSlow] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setTimedOut(true), 15000);
-    return () => clearTimeout(timer);
+    const slowTimer = setTimeout(() => setSlow(true), 5000);
+    const hardTimer = setTimeout(() => setTimedOut(true), 25000);
+    return () => { clearTimeout(slowTimer); clearTimeout(hardTimer); };
   }, []);
 
   if (timedOut) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-6">
-        <div className="text-center space-y-4 max-w-sm">
-          <p className="text-sm text-muted-foreground">
-            Laden fehlgeschlagen. Bitte Seite neu laden.
-          </p>
+      <div
+        className="min-h-screen flex items-center justify-center p-6"
+        style={{ background: "#F8FAFC" }}
+      >
+        <div className="flex flex-col items-center gap-4 text-center max-w-xs">
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center"
+            style={{ background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.2)" }}
+          >
+            <span style={{ fontSize: 22 }}>⚡</span>
+          </div>
+          <div className="space-y-1">
+            <p className="font-semibold text-gray-800 text-sm">Verbindung unterbrochen</p>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              Prüfe deine Internetverbindung und lade die Seite neu.
+            </p>
+          </div>
           <button
             onClick={() => window.location.reload()}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
+            className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all active:scale-95"
+            style={{ background: "#F97316", boxShadow: "0 4px 16px rgba(249,115,22,0.3)" }}
           >
             Neu laden
           </button>
@@ -304,8 +332,19 @@ const LazyFallback = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    <div
+      className="min-h-screen flex flex-col items-center justify-center gap-3"
+      style={{ background: "#F8FAFC" }}
+    >
+      <div
+        className="w-10 h-10 rounded-2xl flex items-center justify-center"
+        style={{ background: "rgba(249,115,22,0.1)" }}
+      >
+        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+      </div>
+      {slow && (
+        <p className="text-xs text-gray-400 animate-pulse">Einen Moment...</p>
+      )}
     </div>
   );
 };
@@ -451,11 +490,33 @@ function App() {
   );
 
   useEffect(() => {
-    const cleanupSync = initSyncManager();
-    const cleanupImageSync = initImageSyncManager();
+    let cleanupSync: (() => void) | undefined;
+    let cleanupImageSync: (() => void) | undefined;
+    let cancelled = false;
+
+    const startSyncManagers = async () => {
+      const [{ initSyncManager }, { initImageSyncManager }] = await Promise.all([
+        import("@/lib/offline/syncManager"),
+        import("@/lib/offline/imageSyncManager"),
+      ]);
+      if (cancelled) return;
+      cleanupSync = initSyncManager();
+      cleanupImageSync = initImageSyncManager();
+    };
+
+    const idleId = "requestIdleCallback" in window
+      ? window.requestIdleCallback(() => { void startSyncManagers(); }, { timeout: 3000 })
+      : window.setTimeout(() => { void startSyncManagers(); }, 1500);
+
     return () => {
-      cleanupSync();
-      cleanupImageSync();
+      cancelled = true;
+      if ("cancelIdleCallback" in window && typeof idleId === "number") {
+        window.cancelIdleCallback(idleId);
+      } else {
+        clearTimeout(idleId);
+      }
+      cleanupSync?.();
+      cleanupImageSync?.();
     };
   }, []);
 
@@ -530,11 +591,12 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
         <Toaster />
         <Sonner />
         {/* Assistent entfernt */}
-        <PWAInstallPrompt />
-        <VersionChecker />
-        <SystemStatusBanner />
-        {/* <TrialPaywall /> */}
-        <PendingVerificationOverlay />
+        <Suspense fallback={null}>
+          <PWAInstallPrompt />
+          <VersionChecker />
+          <SystemStatusBanner />
+          <PendingVerificationOverlay />
+        </Suspense>
         
         
         <PasswordRecoveryRedirect>
@@ -820,6 +882,8 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/landing-editor" element={<LandingEditor />} />
               <Route path="/email-marketing" element={<EmailMarketing />} />
               <Route path="/admin-nachrichten" element={<AdminNachrichten />} />
+              <Route path="/hufi/faq" element={<HufiFAQ />} />
+              <Route path="/hufi/memory" element={<HufiMemoryPage />} />
             </Route>
 
             {/* --- 3. CLIENT (PFERDEBESITZER) ROUTES --- */}
