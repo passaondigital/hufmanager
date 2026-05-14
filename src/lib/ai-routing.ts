@@ -24,17 +24,24 @@ export async function checkAndUseCredit(
   model: "fast" | "smart",
 ): Promise<boolean> {
   const modelName = model === "fast" ? "claude-haiku" : "claude-sonnet";
-  const { data, error } = await supabase.rpc("use_hufi_credit", {
-    p_user_id: userId,
-    p_model: modelName,
-  });
-  if (error) {
-    // Table might not exist yet — fail open during setup
-    if (error.code === "42P01") return true;
-    throw error;
+  try {
+    const { data, error } = await supabase.rpc("use_hufi_credit", {
+      p_user_id: userId,
+      p_model: modelName,
+    });
+    if (error) {
+      // Fail open for any DB error (table/function not set up yet, RLS, etc.)
+      console.warn("[hufi-credit] RPC error — fail open:", error.message);
+      return true;
+    }
+    if (!data) throw new CreditExhaustedException();
+    return true;
+  } catch (e) {
+    if (e instanceof CreditExhaustedException) throw e;
+    // Any other unexpected error → fail open so the AI pipeline continues
+    console.warn("[hufi-credit] unexpected error — fail open:", e);
+    return true;
   }
-  if (!data) throw new CreditExhaustedException();
-  return true;
 }
 
 function anthropicKey(): string | null {
@@ -136,6 +143,182 @@ export async function chatWithHufAI(
     }
   }
   return callOllama(messages, model);
+}
+
+/**
+ * Streaming version — delivers tokens incrementally via `onChunk`.
+ * Falls back to full-response Ollama if no Anthropic key is available.
+ * Returns the complete accumulated text.
+ */
+export async function streamWithHufAI(
+  messages: ChatMessage[],
+  userId: string,
+  forceModel?: string,
+  onChunk?: (text: string) => void,
+  signal?: AbortSignal,
+): Promise<string> {
+  if (userId && userId !== "anonymous") {
+    await checkAndUseCredit(userId, forceModel === "hufiai-fast" ? "fast" : "smart");
+  }
+
+  if (!anthropicKey()) {
+    // Ollama has no easy browser-side streaming — return full response and emit as one chunk
+    const reply = await callOllama(messages, forceModel ?? "hufiai-core");
+    onChunk?.(reply);
+    return reply;
+  }
+
+  const key = anthropicKey()!;
+  const systemMsg = messages.find((m) => m.role === "system");
+  const chatMsgs   = messages.filter((m) => m.role !== "system");
+
+  const res = await fetch(ANTHROPIC_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "x-api-key": key,
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model: toClaudeModel(forceModel),
+      max_tokens: 1024,
+      stream: true,
+      ...(systemMsg ? { system: systemMsg.content } : {}),
+      messages: chatMsgs.map((m) => ({ role: m.role, content: m.content })),
+    }),
+    signal,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { error?: { message?: string } };
+    throw new Error(`Claude ${res.status}: ${err.error?.message ?? res.statusText}`);
+  }
+
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  let fullText = "";
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split("\n");
+      buf = lines.pop() ?? "";
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const json = line.slice(6).trim();
+        if (!json || json === "[DONE]") continue;
+        try {
+          const ev = JSON.parse(json) as { type: string; delta?: { type: string; text: string } };
+          if (ev.type === "content_block_delta" && ev.delta?.type === "text_delta") {
+            fullText += ev.delta.text;
+            onChunk?.(ev.delta.text);
+          }
+        } catch { /* skip malformed line */ }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  return fullText;
+}
+
+// ── Claude Tool Use (Phase 3) ─────────────────────────────────────────────────
+
+export interface ClaudeToolDef {
+  name: string;
+  description: string;
+  input_schema: Record<string, unknown>;
+}
+
+export interface ToolUseResult {
+  type: "tool_use";
+  toolName: string;
+  toolInput: Record<string, unknown>;
+  toolUseId: string;
+  preText: string;
+}
+
+export interface TextOnlyResult {
+  type: "text";
+  text: string;
+}
+
+export type ClaudeToolResponse = ToolUseResult | TextOnlyResult;
+
+export async function callClaudeWithTools(
+  userMessage: string,
+  tools: ClaudeToolDef[],
+  systemPrompt: string,
+  userId: string,
+): Promise<ClaudeToolResponse> {
+  if (userId && userId !== "anonymous") {
+    await checkAndUseCredit(userId, "fast");
+  }
+
+  if (!anthropicKey()) {
+    return { type: "text", text: "" };
+  }
+
+  const key = anthropicKey()!;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15_000);
+
+  try {
+    const res = await fetch(ANTHROPIC_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "x-api-key": key,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: CLAUDE_HAIKU,
+        max_tokens: 1024,
+        system: systemPrompt,
+        tools,
+        messages: [{ role: "user", content: userMessage }],
+      }),
+      signal: ctrl.signal,
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({})) as { error?: { message?: string } };
+      throw new Error(`Claude ${res.status}: ${err.error?.message ?? res.statusText}`);
+    }
+
+    const json = await res.json() as {
+      stop_reason: string;
+      content: Array<{
+        type: string;
+        text?: string;
+        name?: string;
+        input?: Record<string, unknown>;
+        id?: string;
+      }>;
+    };
+
+    if (json.stop_reason === "tool_use") {
+      const toolBlock = json.content.find((b) => b.type === "tool_use");
+      const textBlock = json.content.find((b) => b.type === "text");
+      if (toolBlock?.name) {
+        return {
+          type: "tool_use",
+          toolName: toolBlock.name,
+          toolInput: toolBlock.input ?? {},
+          toolUseId: toolBlock.id ?? "",
+          preText: textBlock?.text ?? "",
+        };
+      }
+    }
+
+    return { type: "text", text: json.content.find((b) => b.type === "text")?.text ?? "" };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // ── Whisper STT ───────────────────────────────────────────────────────────────

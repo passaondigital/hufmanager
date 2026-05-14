@@ -13,6 +13,7 @@ import { useViewMode } from "@/hooks/useViewMode";
 import { useHufiTTS } from "@/hooks/useHufiTTS";
 import { useVoiceCapture, type VoiceErrorCode } from "@/hooks/useVoiceCapture";
 import { streamWithHufAI, callClaudeWithTools, BEFUND_SYSTEM_PROMPT, ChatMessage as AIChatMessage } from "@/lib/ai-routing";
+import { askHufiAgent } from "@/lib/hufi-agent-client";
 import { HUFI_TOOLS, toolNameToTaskType, buildToolExplanation, extractLineItems } from "@/lib/hufi-tool-definitions";
 import {
   fetchBusinessContext, buildInvoiceCatalogPrompt, build5AContextAddition,
@@ -1137,12 +1138,26 @@ Morgen: ${label(weather.tomorrowCode)}, Niederschlag: ${weather.tomorrowPrecipMm
       if (intent.intent === "agent_lookup") await answerWithContext(cleaned, intent.entities, voiceMode);
       else if (intent.intent === "agent_action") await planAndConfirmAction(cleaned, intent.entities);
       else await answerWithContext(cleaned, intent.entities, voiceMode);
-    } catch {
-      addMsg({
-        role: "ai",
-        text: voiceMode ? "Keine Verbindung." : "Verbindung fehlgeschlagen. Bitte erneut versuchen.",
-        ts: Date.now(),
-      });
+    } catch (err) {
+      const e = err as Error;
+      console.error("[Hufi] processChatMessage Fehler:", e?.message ?? e);
+      let userText: string;
+      if (e?.message?.includes("Kein KI-Guthaben")) {
+        userText = voiceMode
+          ? "Dein KI-Guthaben ist erschöpft."
+          : "Dein KI-Guthaben ist aufgebraucht. Bitte lade es in den Einstellungen auf.";
+      } else if (e?.message?.includes("Nicht angemeldet") || e?.message?.includes("401")) {
+        userText = "Dafür musst du angemeldet sein.";
+      } else if (e?.message?.includes("Ollama") || e?.message?.includes("fetch")) {
+        userText = voiceMode
+          ? "Ich erreiche den lokalen Assistenten gerade nicht. Bitte erneut versuchen."
+          : "Der lokale Assistent ist nicht erreichbar. Bitte prüfe die Verbindung und versuche es erneut.";
+      } else {
+        userText = voiceMode
+          ? "Ich konnte deine Anfrage nicht verarbeiten. Bitte erneut versuchen."
+          : `Anfrage fehlgeschlagen. Bitte erneut versuchen.${import.meta.env.DEV ? ` (${e?.message})` : ""}`;
+      }
+      addMsg({ role: "ai", text: userText, ts: Date.now() });
     } finally {
       setResponding(false);
       setActiveIntent(null);
