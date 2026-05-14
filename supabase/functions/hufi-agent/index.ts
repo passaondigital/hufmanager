@@ -47,7 +47,46 @@ Antwortregeln:
 - Duzen. Auf Deutsch.
 - Notfall (Kolik, Nageltritt, Lahmheit, Hufrehe, Fieber, Atemnot): sofort Tierarzt empfehlen.
 - NIEMALS tierärztliche Diagnose ersetzen.
-Fachgebiete: Hufpflege, Huforthopädie, Stallmanagement, Kundenkommunikation, Betriebsorganisation, Krankheitsbilder (Hufrehe, Bockhuf, Strahlfäule, EMS, Cushing, Spat, Fesselträgerschaden).`;
+Fachgebiete: Hufpflege, Huforthopädie, Stallmanagement, Kundenkommunikation, Betriebsorganisation, Krankheitsbilder (Hufrehe, Bockhuf, Strahlfäule, EMS, Cushing, Spat, Fesselträgerschaden).
+
+Slot-Filling-Regel: Wenn der User eine Aktion will, für die wichtige Infos fehlen (Wer? Was? Wann? Wie?), stelle GENAU EINE klare Rückfrage. Nicht raten. Beispiel: "Alle heutigen Kunden oder bestimmte?" — dann warte auf Antwort.
+
+Wetter-Reaktion: Wenn der User sagt "es regnet / Sturm / Frost" FRAGE: "Soll ich deine heutigen Kunden informieren? Wenn ja, alle oder bestimmte?" — empfehle NIE pauschal den Tag abzusagen.
+
+Voice-Modus Sprachqualität:
+- Schreibe Zahlen aus: nicht "8:30" sondern "halb neun", nicht "3" sondern "drei".
+- Keine Bindestriche oder Schrägstriche mitten im Satz.
+- Abkürzungen ausschreiben: "z.B." → "zum Beispiel", "ca." → "circa".
+- Sätze mit Punkt abschließen, nicht mit "..." oder Doppelpunkt.
+- Keine Aufzählungen mit "-" oder "*" — verwende stattdessen "erstens", "zweitens" oder beschreibe fließend.`;
+
+const ROLE_INSTRUCTIONS: Record<string, string> = {
+  provider: `
+WICHTIG — Nutzerrolle: MOBILER HUFPFLEGE-DIENSTLEISTER
+- Er fährt täglich zu Kunden. Kein eigener Stall.
+- Wetter (Regen, Frost, Sturm) = NIE pauschal "nicht rausfahren" empfehlen.
+  Stattdessen: Fragen ob Kunden informiert werden sollen, ob Termine verschoben werden.
+- Er erstellt Rechnungen pro Termin oder per Abo-Modell.
+- Hufpflege-Rhythmus: Kunden haben feste Intervalle (4/6/8 Wochen).
+- Sein Erfolg = voller Kalender + bezahlte Rechnungen + zufriedene Pferde.
+- Typische Probleme: Terminausfall, Stornos, überfällige Pferde, Rechnungen offen.`,
+
+  client: `
+WICHTIG — Nutzerrolle: PFERDEBESITZER / KUNDE
+- Sucht Hufpfleger, verfolgt Gesundheit seines Pferdes.
+- Hat keinen eigenen Betrieb, bucht Dienstleister.
+- Braucht: Terminerinnerungen, Pflegehinweise, Impf-/Entwurmungskalender.`,
+
+  employee: `
+WICHTIG — Nutzerrolle: ANGESTELLTER HUFPFLEGER
+- Arbeitet für einen Betrieb, hat eigene Tour-Zuweisung.
+- Sieht nur eigene Termine, nicht alle Betriebsdaten.`,
+};
+
+function getRoleInstruction(userType: string | null): string {
+  if (!userType) return "";
+  return ROLE_INSTRUCTIONS[userType] ?? "";
+}
 
 const ACTION_SUFFIX = `
 
@@ -134,6 +173,14 @@ function buildContextBlock(ctx: Awaited<ReturnType<typeof loadContext>>, voiceMo
   const lines: string[] = [];
 
   if (ctx.userName) lines.push(`Nutzer: ${ctx.userName}`);
+  if (ctx.userType) {
+    const roleLabel: Record<string, string> = {
+      provider: "Mobiler Hufpflege-Dienstleister",
+      client: "Pferdebesitzer",
+      employee: "Angestellter Hufpfleger",
+    };
+    lines.push(`Rolle: ${roleLabel[ctx.userType] ?? ctx.userType}`);
+  }
   if (route) lines.push(`Aktuelle Seite: ${route}`);
 
   if (ctx.appointments.length > 0) {
@@ -258,13 +305,17 @@ serve(async (req) => {
   if (!text?.trim()) return jsonErr("Kein Text", 400);
 
   // Kontext laden
-  let ctx: Awaited<ReturnType<typeof loadContext>> = { userName: null, appointments: [], unpaidCount: 0, horses: [], memories: [] };
+  let ctx: Awaited<ReturnType<typeof loadContext>> = { userName: null, userType: null, appointments: [], unpaidCount: 0, horses: [], memories: [], clientCount: null, horseCount: null };
   try { ctx = await loadContext(user.id, supabase); }
   catch (e) { console.warn(`[hufi-agent][${requestId}] Kontext-Fehler:`, e); }
 
   const contextBlock = buildContextBlock(ctx, voiceMode, route);
-  const systemBase   = contextBlock ? `${HUFI_BASE}\n\n${contextBlock}` : HUFI_BASE;
-  const systemPrompt = mode === "action" ? systemBase + ACTION_SUFFIX : systemBase;
+  const systemPrompt = [
+    HUFI_BASE,
+    getRoleInstruction(ctx.userType),
+    contextBlock,
+    mode === "action" ? ACTION_SUFFIX : "",
+  ].filter(Boolean).join("\n\n");
 
   const messages: Message[] = [...history.slice(-MAX_HISTORY), { role: "user", content: text.trim() }];
   const model = selectModel(text, voiceMode);
