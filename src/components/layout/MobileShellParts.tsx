@@ -213,7 +213,7 @@ export function MobileShellInputBar({
             value={inputText}
             onChange={(e) => onInputChange(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !responding && onSend()}
-            placeholder="Schreib Hufi…"
+            placeholder="Frag Hufi oder sag Hey Hufi…"
             style={{
               flex: 1, height: 40, background: "#F4F4F6",
               border: "1px solid rgba(0,0,0,0.06)", borderRadius: 20,
@@ -247,12 +247,12 @@ export function MobileShellInputBar({
 const HUFI_LOGO = "https://upload.assaon.com/files/medien/hufiapp-logo-ohne-text-1777028918553-0kdje.png";
 
 const INTENT_META: Record<HufiIntent, { icon: string; label: string; color: string }> = {
-  knowledge:       { icon: "📚", label: "Wissensdatenbank…", color: "#F59E0B" },
-  agent_lookup:    { icon: "🐴", label: "Deine Pferdeakte…", color: "#3B82F6" },
-  agent_action:    { icon: "⚡", label: "Führe aus…",         color: "#F97316" },
-  agent_proactive: { icon: "🧠", label: "Analysiere…",        color: "#8B5CF6" },
-  emergency:       { icon: "🚨", label: "Notfall erkannt!",   color: "#EF4444" },
-  navigation:      { icon: "🧭", label: "Navigiere…",         color: "#10B981" },
+  knowledge:       { icon: "📚", label: "Hufi prüft Kontext…", color: "#F97316" },
+  agent_lookup:    { icon: "🐴", label: "Deine Pferdeakte…",   color: "#3B82F6" },
+  agent_action:    { icon: "⚡", label: "Führe aus…",           color: "#F97316" },
+  agent_proactive: { icon: "🧠", label: "Analysiere…",          color: "#F97316" },
+  emergency:       { icon: "🚨", label: "Notfall erkannt!",     color: "#EF4444" },
+  navigation:      { icon: "🧭", label: "Navigiere…",           color: "#10B981" },
 };
 
 const BEFUND_ACTIONS: { icon: React.ReactNode; label: string; route: string }[] = [
@@ -269,6 +269,7 @@ interface MessagesProps {
   activeIntent: HufiIntent | null;
   onMsgAction: (actionKey: string, msg: ChatMessage) => void;
   onDismissPrompt: (ts: number) => void;
+  showIdleCard?: boolean;
 }
 
 export function MobileShellMessages({
@@ -279,11 +280,26 @@ export function MobileShellMessages({
   activeIntent,
   onMsgAction,
   onDismissPrompt,
+  showIdleCard,
 }: MessagesProps) {
   const navigate = useNavigate();
 
   return (
     <>
+      {/* Idle-Card — kein ChatMessage, nur wenn Chat leer und ruhig */}
+      {showIdleCard && messages.length === 0 && !searching && !responding && !transcribing && (
+        <div style={{
+          display: "flex", flexDirection: "column", alignItems: "center",
+          padding: "40px 16px 8px", gap: 10, textAlign: "center",
+        }}>
+          <div style={{ fontSize: 34, fontWeight: 900, color: "#1A1A1A", letterSpacing: "-0.02em", lineHeight: 1 }}>
+            Bereit.
+          </div>
+          <div style={{ fontSize: 14, color: "#9CA3AF", lineHeight: 1.6, maxWidth: 240 }}>
+            Sag <span style={{ color: "#F97316", fontWeight: 600 }}>"Hey Hufi"</span> oder tippe deine Frage.
+          </div>
+        </div>
+      )}
       {messages.map((msg) => (
         <div
           key={msg.ts.toString()}
@@ -407,7 +423,7 @@ export function MobileShellMessages({
                 </span>
               ) : (
                 <span style={{ fontSize: 13, color: "#9CA3AF" }}>
-                  {transcribing ? "Hufi transkribiert…" : "Hufi analysiert…"}
+                  Hufi denkt…
                 </span>
               )}
             </div>

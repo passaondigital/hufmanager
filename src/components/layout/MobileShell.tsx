@@ -1411,6 +1411,7 @@ Morgen: ${label(weather.tomorrowCode)}, Niederschlag: ${weather.tomorrowPrecipMm
             activeIntent={activeIntent}
             onMsgAction={handleMsgAction}
             onDismissPrompt={(ts) => setMessages((prev) => prev.map((m) => m.ts === ts ? { ...m, actionPrompt: false } : m))}
+            showIdleCard={messages.length === 0}
           />
         </div>
 
