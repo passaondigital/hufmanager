@@ -659,13 +659,13 @@ export function MobileShell() {
         if (followUpTimerRef.current) clearTimeout(followUpTimerRef.current);
         followUpTimerRef.current = setTimeout(() => {
           followUpTimerRef.current = null;
-          if (followUpRoundRef.current < 2 && !voice.isRecording && !voice.isProcessing && !responding) {
+          if (followUpRoundRef.current < 5 && !voice.isRecording && !voice.isProcessing && !responding) {
             followUpRoundRef.current++;
             voiceSessionRef.current = { active: true, texts: [] };
             voice.startRecording();
             setHufiPresenceState("hört zu");
           }
-        }, 700);
+        }, 800);
       }, /* fastMode */ true);
     })();
   }, [voice.transcript]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -875,23 +875,25 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
       locationLabel = storedLat && storedLon ? "gespeicherter Standort" : "Deutschland-Mitte";
     }
 
-    let weatherBlock: string;
-    if (weather) {
-      weatherBlock = `AKTUELLES WETTER (${locationLabel}):
-Heute: ${wmoLabel(weather.todayCode)}, max. ${weather.tempMax}°C, Niederschlag: ${weather.todayPrecipMm} mm
-Morgen: ${wmoLabel(weather.tomorrowCode)}, Niederschlag: ${weather.tomorrowPrecipMm} mm`;
-    } else {
-      weatherBlock = "Wetterdaten konnten nicht geladen werden.";
+    if (!weather) {
+      addMsg({ role: "ai", text: "Wetterdaten sind momentan nicht abrufbar. Bitte in ein paar Minuten erneut versuchen.", ts: Date.now() });
+      return;
     }
 
-    const history: AIChatMessage[] = [
-      {
-        role: "system",
-        content: `${KNOWLEDGE_SYSTEM_PROMPT}\n\n${weatherBlock}\n\nBeantworte die Wetterfrage präzise und kurz auf Basis dieser Daten.`,
-      },
-      { role: "user", content: text },
-    ];
-    await addStreamingMsg(history, user?.id ?? "anonymous", "hufiai-fast");
+    const rain = weather.todayPrecipMm >= 2
+      ? `Regenrisiko hoch (${weather.todayPrecipMm} mm).`
+      : weather.todayPrecipMm >= 0.5
+      ? `Leichter Regen möglich (${weather.todayPrecipMm} mm).`
+      : "Trocken.";
+
+    const hufTip = weather.todayPrecipMm >= 2
+      ? "Heute eher kein Außeneinsatz für Hufpflege."
+      : weather.todayCode <= 2
+      ? "Gute Bedingungen für Hufpflege draußen."
+      : "Hufpflege möglich, Boden prüfen.";
+
+    const answer = `${locationLabel}: ${wmoLabel(weather.todayCode)}, max. ${weather.tempMax}°C. ${rain}\nMorgen: ${wmoLabel(weather.tomorrowCode)}, ${weather.tomorrowPrecipMm} mm.\n${hufTip}`;
+    addMsg({ role: "ai", text: answer, ts: Date.now() });
   }
 
 
@@ -1031,6 +1033,77 @@ Morgen: ${wmoLabel(weather.tomorrowCode)}, Niederschlag: ${weather.tomorrowPreci
         actions: [{ label: "Routinen öffnen", route: "/management?tab=routines" }],
       });
       return;
+    }
+
+    // ── Datum/Uhrzeit lokal beantworten ─────────────────────────────────────────
+    {
+      const lc = cleaned.toLowerCase();
+      const isDateQ = /\b(datum|welcher tag|welches datum|was für ein tag|heute|wochentag)\b/.test(lc) &&
+        /\b(ist|haben wir|ist heute|ist es)\b/.test(lc);
+      const isTimeQ = /\b(uhrzeit|wie spät|wie viel uhr|welche uhrzeit|wieviel uhr)\b/.test(lc);
+      if (isDateQ || isTimeQ) {
+        const now = new Date();
+        const DE_DAYS = ["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+        const DE_MONTHS = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+        const DE_MONTHS_GEN = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+        const num2spoken = (n: number): string => {
+          const ones = ["","erste","zweite","dritte","vierte","fünfte","sechste","siebte","achte","neunte","zehnte","elfte","zwölfte","dreizehnte","vierzehnte","fünfzehnte","sechzehnte","siebzehnte","achtzehnte","neunzehnte","zwanzigste","einundzwanzigste","zweiundzwanzigste","dreiundzwanzigste","vierundzwanzigste","fünfundzwanzigste","sechsundzwanzigste","siebenundzwanzigste","achtundzwanzigste","neunundzwanzigste","dreißigste","einunddreißigste"];
+          return ones[n] ?? `${n}.`;
+        };
+        const day = DE_DAYS[now.getDay()];
+        const monthName = DE_MONTHS[now.getMonth()];
+        const monthGen = DE_MONTHS_GEN[now.getMonth()];
+        const d = now.getDate();
+        const y = now.getFullYear();
+        const h = now.getHours().toString().padStart(2,"0");
+        const m2 = now.getMinutes().toString().padStart(2,"0");
+        addMsg({ role: "user", text: cleaned, ts: Date.now() });
+        const spokenYear = (yr: number): string => {
+          const ONES = ["","ein","zwei","drei","vier","fünf","sechs","sieben","acht","neun","zehn","elf","zwölf","dreizehn","vierzehn","fünfzehn","sechzehn","siebzehn","achtzehn","neunzehn"];
+          const TENS = ["","","zwanzig","dreißig","vierzig","fünfzig","sechzig","siebzig","achtzig","neunzig"];
+          if (yr < 100) return ONES[yr] ?? `${yr}`;
+          const rest = yr - 2000;
+          if (rest <= 0 || rest >= 100) return `${yr}`;
+          if (rest < 20) return `zweitausend${ONES[rest]}`;
+          const t = Math.floor(rest / 10); const o = rest % 10;
+          return `zweitausend${o > 0 ? `${ONES[o]}und` : ""}${TENS[t]}`;
+        };
+        if (isTimeQ) {
+          addMsg({ role: "ai", text: `Es ist ${h}:${m2} Uhr.`, ts: Date.now() + 1 });
+          if (voiceMode && ttsSupported) {
+            const spokenH = h === "01" ? "ein" : h.replace(/^0/,"");
+            const spokenM = m2 === "00" ? "Uhr" : `Uhr ${m2.replace(/^0/,"")}`;
+            void hufiSpeak(`Es ist ${spokenH} ${spokenM}.`);
+          }
+        } else {
+          addMsg({ role: "ai", text: `Heute ist ${day}, ${d}. ${monthName} ${y}.`, ts: Date.now() + 1 });
+          if (voiceMode && ttsSupported) {
+            void hufiSpeak(`Heute ist ${day}, der ${num2spoken(d)} ${monthGen} ${spokenYear(y)}.`);
+          }
+        }
+        return;
+      }
+    }
+
+    // ── Kontext-Zählungen lokal beantworten ─────────────────────────────────────
+    {
+      const lc = cleaned.toLowerCase();
+      const isCountQ = /\b(wie viele?|wieviele?|anzahl)\b/.test(lc);
+      if (isCountQ && hufiCtx) {
+        const isPferde = /\b(pferde?|pferd)\b/.test(lc);
+        const isKunden = /\b(kunden?|kunde)\b/.test(lc);
+        const isTermine = /\b(termine?|termin)\b/.test(lc);
+        addMsg({ role: "user", text: cleaned, ts: Date.now() });
+        if (isTermine) {
+          const n = hufiCtx.todayAppointments?.length ?? 0;
+          addMsg({ role: "ai", text: n === 0 ? "Heute stehen keine Termine an." : `Du hast heute ${n} ${n === 1 ? "Termin" : "Termine"}.`, ts: Date.now() + 1 });
+          return;
+        }
+        if (isPferde || isKunden) {
+          addMsg({ role: "ai", text: "Öffne kurz die Kunden- oder Pferdeliste — dort siehst du die aktuelle Anzahl.", ts: Date.now() + 1, actions: isPferde ? [{ label: "Pferde öffnen", route: "/pferde" }] : [{ label: "Kunden öffnen", route: "/kunden" }] });
+          return;
+        }
+      }
     }
 
     addMsg({ role: "user", text: cleaned, ts: Date.now() });

@@ -292,17 +292,61 @@ export function MobileShellMessages({
       {showIdleCard && messages.length === 0 && !searching && !responding && !transcribing && (
         <div style={{
           display: "flex", flexDirection: "column", alignItems: "center",
-          padding: "40px 16px 8px", gap: 10, textAlign: "center",
+          padding: "32px 16px 8px", gap: 16, textAlign: "center",
         }}>
-          <div style={{ fontSize: 34, fontWeight: 900, color: "#1A1A1A", letterSpacing: "-0.02em", lineHeight: 1 }}>
+          {/* Hufi Pferd */}
+          <img
+            src="https://upload.assaon.com/files/medien/goldenespferd.png"
+            alt=""
+            style={{ width: 64, height: 64, objectFit: "contain", opacity: 0.9 }}
+          />
+
+          {/* Wave im Ruhemodus */}
+          <HufiVoiceWave
+            color="#F97316"
+            barCount={7}
+            height={28}
+            paused={true}
+          />
+
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#1A1A1A", letterSpacing: "-0.02em", lineHeight: 1, marginTop: -4 }}>
             Bereit.
           </div>
-          <div style={{ fontSize: 14, color: "#9CA3AF", lineHeight: 1.6, maxWidth: 240 }}>
+          <div style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.6, maxWidth: 220 }}>
             {pendingGreeting ? (
               <>Tippe auf <span style={{ color: "#F97316", fontWeight: 600 }}>„Hören"</span> — Hufi begrüßt dich.</>
             ) : (
-              <>Sag <span style={{ color: "#F97316", fontWeight: 600 }}>"Hey Hufi"</span> oder tippe deine Frage.</>
+              <>Sag mir, was du erledigen möchtest.</>
             )}
+          </div>
+
+          {/* Schnellziele */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%", maxWidth: 300, marginTop: 4 }}>
+            {[
+              { label: "Nächster Termin", route: "/kalender" },
+              { label: "Offene Rechnungen", route: "/rechnungen" },
+              { label: "Heute planen", route: "/kalender" },
+            ].map((q) => (
+              <button
+                key={q.label}
+                onClick={() => navigate(q.route)}
+                style={{
+                  background: "rgba(249,115,22,0.06)",
+                  border: "1px solid rgba(249,115,22,0.18)",
+                  borderRadius: 14,
+                  padding: "10px 16px",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#F97316",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  textAlign: "center",
+                  width: "100%",
+                }}
+              >
+                {q.label}
+              </button>
+            ))}
           </div>
         </div>
       )}
