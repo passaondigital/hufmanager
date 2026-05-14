@@ -270,6 +270,7 @@ interface MessagesProps {
   onMsgAction: (actionKey: string, msg: ChatMessage) => void;
   onDismissPrompt: (ts: number) => void;
   showIdleCard?: boolean;
+  pendingGreeting?: boolean;
 }
 
 export function MobileShellMessages({
@@ -281,6 +282,7 @@ export function MobileShellMessages({
   onMsgAction,
   onDismissPrompt,
   showIdleCard,
+  pendingGreeting,
 }: MessagesProps) {
   const navigate = useNavigate();
 
@@ -296,7 +298,11 @@ export function MobileShellMessages({
             Bereit.
           </div>
           <div style={{ fontSize: 14, color: "#9CA3AF", lineHeight: 1.6, maxWidth: 240 }}>
-            Sag <span style={{ color: "#F97316", fontWeight: 600 }}>"Hey Hufi"</span> oder tippe deine Frage.
+            {pendingGreeting ? (
+              <>Tippe auf <span style={{ color: "#F97316", fontWeight: 600 }}>„Hören"</span> — Hufi begrüßt dich.</>
+            ) : (
+              <>Sag <span style={{ color: "#F97316", fontWeight: 600 }}>"Hey Hufi"</span> oder tippe deine Frage.</>
+            )}
           </div>
         </div>
       )}

@@ -21,14 +21,17 @@ const SR =
       ).webkitSpeechRecognition
     : null;
 
-const WAKE_RE = /\b(hey\s+hu[fp][iy]|hei\s+hufi|hey\s+hoofi|okay\s+hufi|ok\s+hufi|hallo\s+hufi|hey\s+wufi)\b/i;
+// Fuzzy wake variants: hey/hei hufi/hoofi/huffy/wufi + okay/hallo hufi
+const WAKE_RE = /\b(hey\s+hu[fp]{1,2}[iy]|hei\s+hufi|hey\s+hoofi|okay\s+hufi|ok\s+hufi|hallo\s+hufi|hey\s+wufi)\b/i;
 const STANDALONE_RE = /^[\s,!.?]*hufi[\s,!.?]*$/i;
+const WAKE_COOLDOWN_MS = 2500;
 
 export function HeyHufi({ onWakeWord, enabled = true, isSpeaking }: HeyHufiProps) {
   const recRef = useRef<SpeechRecognition | null>(null);
   const runningRef = useRef(false);
   const onWakeWordRef = useRef(onWakeWord);
   const isSpeakingRef = useRef(isSpeaking ?? false);
+  const lastTriggerRef = useRef<number>(0);
 
   // Keep ref in sync so recognition callbacks never have stale closures
   useEffect(() => {
@@ -49,15 +52,19 @@ export function HeyHufi({ onWakeWord, enabled = true, isSpeaking }: HeyHufiProps
     recRef.current = rec;
 
     rec.onresult = (ev: SpeechRecognitionEvent) => {
-      if (isSpeakingRef.current) return; // Hufi spricht gerade — nicht triggern
-      const transcript = Array.from(ev.results)
-        .map((r) => r[0].transcript)
-        .join(" ")
-        .toLowerCase()
-        .trim();
+      if (isSpeakingRef.current) return;
+      const now = Date.now();
+      if (now - lastTriggerRef.current < WAKE_COOLDOWN_MS) return;
+
+      // Only check the newest result to avoid re-triggering from accumulated history
+      const lastResult = ev.results[ev.results.length - 1];
+      const transcript = lastResult[0].transcript.toLowerCase().trim();
 
       if (WAKE_RE.test(transcript) || STANDALONE_RE.test(transcript)) {
+        lastTriggerRef.current = now;
         onWakeWordRef.current();
+        // Stop to clear accumulated buffer; onend will auto-restart
+        try { recRef.current?.stop(); } catch { /* ignore */ }
       }
     };
 

@@ -97,6 +97,8 @@ export function MobileShell() {
   const shownAlertsRef = useRef<Set<string>>(new Set());
   const migrationCheckedRef = useRef(false);
   const followUpTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const followUpRoundRef = useRef(0); // max follow-up rounds per wake session
+  const [hasGreeting, setHasGreeting] = useState(false); // triggers re-render when greeting ready
   const today = format(new Date(), "yyyy-MM-dd");
 
   // Hufi Voice — Phase 1: spoken greeting + Phase 2: push-to-talk voice loop.
@@ -223,8 +225,8 @@ export function MobileShell() {
   }
 
   function queueSpokenGreetingIfEligible(userId: string, greeting: string) {
-    // Always remember the latest greeting so the replay button can re-speak it.
     lastGreetingTextRef.current = greeting;
+    setHasGreeting(true); // make replay button visible immediately
 
     if (typeof window === "undefined") return;
     if (!ttsSupported) {
@@ -543,6 +545,7 @@ export function MobileShell() {
   // Aktiviert Hufi per Wake-Word oder Tap: einheitliche Hufi-TTS, dann Mikro
   async function activateHufi() {
     if (recording || transcribing || responding || isTtsSpeaking || isVoiceSpeaking) return;
+    followUpRoundRef.current = 0; // Reset follow-up counter on explicit activation
 
     setHufiPresenceState("spricht");
     setIsVoiceSpeaking(true);
@@ -656,12 +659,13 @@ export function MobileShell() {
         if (followUpTimerRef.current) clearTimeout(followUpTimerRef.current);
         followUpTimerRef.current = setTimeout(() => {
           followUpTimerRef.current = null;
-          if (!voice.isRecording && !voice.isProcessing && !responding) {
+          if (followUpRoundRef.current < 2 && !voice.isRecording && !voice.isProcessing && !responding) {
+            followUpRoundRef.current++;
             voiceSessionRef.current = { active: true, texts: [] };
             voice.startRecording();
             setHufiPresenceState("hört zu");
           }
-        }, 600);
+        }, 700);
       }, /* fastMode */ true);
     })();
   }, [voice.transcript]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1070,7 +1074,11 @@ Morgen: ${wmoLabel(weather.tomorrowCode)}, Niederschlag: ${weather.tomorrowPreci
       }
       // Wetterfragen immer lokal (Open-Meteo, kein AI-Key nötig)
       if (intent.intent === "knowledge" && intent.entities.topic === "weather_query") {
-        await answerWithWeather(cleaned, voiceMode);
+        try {
+          await answerWithWeather(cleaned, voiceMode);
+        } catch {
+          addMsg({ role: "ai", text: "Wetterdaten sind gerade nicht verfügbar.", ts: Date.now() });
+        }
         return;
       }
       // Nicht-angemeldete User: lokale Ollama-Pipeline für allgemeine Fragen
@@ -1109,9 +1117,9 @@ Morgen: ${wmoLabel(weather.tomorrowCode)}, Niederschlag: ${weather.tomorrowPreci
           : "Dein KI-Guthaben ist aufgebraucht. Bitte lade es in den Einstellungen auf.";
       } else if (e?.message?.includes("Nicht angemeldet") || e?.message?.includes("401")) {
         userText = "Dafür musst du angemeldet sein.";
-      } else if (e?.message?.includes("Ollama") || e?.message?.includes("fetch")) {
+      } else if (e?.message?.includes("Ollama") || e?.message?.includes("fetch") || e?.message?.includes("nicht erreichbar")) {
         userText = voiceMode
-          ? "Verbindung konnte gerade nicht hergestellt werden. Bitte kurz warten."
+          ? "Verbindung kurz unterbrochen. Bitte gleich nochmal."
           : "Verbindung fehlgeschlagen. Bitte erneut versuchen.";
       } else {
         userText = voiceMode
@@ -1305,8 +1313,8 @@ Morgen: ${wmoLabel(weather.tomorrowCode)}, Niederschlag: ${weather.tomorrowPreci
           {/* Kompakte Aktions-Chips rechts — nur das Wichtigste */}
           <HufiWeatherWidget compact={true} />
 
-          {/* TTS-Replay — nur sichtbar wenn Greeting existiert */}
-          {ttsSupported && lastGreetingTextRef.current && (
+          {/* TTS-Replay — sichtbar wenn Greeting vorhanden (hasGreeting = state, nicht ref) */}
+          {ttsSupported && hasGreeting && (
             <button
               type="button"
               onClick={replayGreeting}
@@ -1464,6 +1472,7 @@ Morgen: ${wmoLabel(weather.tomorrowCode)}, Niederschlag: ${weather.tomorrowPreci
             onMsgAction={handleMsgAction}
             onDismissPrompt={(ts) => setMessages((prev) => prev.map((m) => m.ts === ts ? { ...m, actionPrompt: false } : m))}
             showIdleCard={messages.length === 0}
+            pendingGreeting={!!pendingSpokenGreeting}
           />
         </div>
 
