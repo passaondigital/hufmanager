@@ -574,7 +574,7 @@ export function MobileShell() {
       case "transcription_failed":
         return "Transkription fehlgeschlagen. Bitte erneut versuchen.";
       case "empty_transcript":
-        return "Ich konnte nichts verstehen. Bitte nochmals sprechen.";
+        return "Ich habe dich nicht sicher verstanden. Bitte wiederhole das kurz.";
     }
   }
 
@@ -633,7 +633,11 @@ export function MobileShell() {
     if (!voice.error) return;
     const msg = voiceErrorMessage(voice.error);
     console.info(`[voice-capture] error: ${voice.error}`);
-    toast.error(msg);
+    if (voice.error === "empty_transcript") {
+      void hufiSpeak(msg, undefined, true);
+    } else {
+      toast.error(msg);
+    }
     voiceSessionRef.current = null;
     setHufiPresenceState("bereit");
     voice.reset();
@@ -1067,13 +1071,14 @@ Morgen: ${label(weather.tomorrowCode)}, Niederschlag: ${weather.tomorrowPrecipMm
         await handleNavigationOutcome(outcome);
         return;
       }
+      // Wetterfragen immer lokal (Open-Meteo, kein AI-Key nötig)
+      if (intent.intent === "knowledge" && intent.entities.topic === "weather_query") {
+        await answerWithWeather(cleaned, voiceMode);
+        return;
+      }
       // Nicht-angemeldete User: lokale Ollama-Pipeline für allgemeine Fragen
       if (!user?.id) {
-        if (intent.intent === "knowledge" && intent.entities.topic === "weather_query") {
-          await answerWithWeather(cleaned, voiceMode);
-        } else {
-          await answerFromKnowledge(cleaned);
-        }
+        await answerFromKnowledge(cleaned);
         return;
       }
       // Agent Action → Task-Bestätigungs-UI (eigene Pipeline mit Approve/Reject)
@@ -1488,16 +1493,7 @@ Morgen: ${label(weather.tomorrowCode)}, Niederschlag: ${weather.tomorrowPrecipMm
       {proactiveBriefing && (
         <ProactiveBriefing
           payload={proactiveBriefing}
-          onDismiss={() => {
-            // Briefing als Chat-Bubble einfrieren — Gespräch kann weitergehen
-            addMsg({
-              role: "ai",
-              text: proactiveBriefing.lines.join("\n"),
-              ts: Date.now(),
-              actions: proactiveBriefing.actions.length > 0 ? proactiveBriefing.actions : undefined,
-            });
-            setProactiveBriefing(null);
-          }}
+          onDismiss={() => setProactiveBriefing(null)}
         />
       )}
     </>
