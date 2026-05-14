@@ -1,28 +1,22 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { X, Volume2 } from "lucide-react";
+import { X, Volume2, CalendarDays, Receipt, CloudSun, Lightbulb } from "lucide-react";
 import { useHufiTTS } from "@/hooks/useHufiTTS";
 import { markBriefingShown, type BriefingPayload } from "@/lib/hufai-proactive";
-import { HufiVoiceWave } from "@/components/voice/HufiVoiceWave";
 
 interface Props {
   payload: BriefingPayload;
   onDismiss: () => void;
 }
 
+const LINE_ICONS = [CalendarDays, Receipt, CloudSun, Lightbulb];
+
 export function ProactiveBriefing({ payload, onDismiss }: Props) {
   const navigate = useNavigate();
-  const { speak, cancel, isSupported, isSpeaking } = useHufiTTS();
-  const spokenRef = useRef(false);
+  const { speak, cancel, isSupported } = useHufiTTS();
 
   useEffect(() => {
     markBriefingShown();
-    if (isSupported && !spokenRef.current) {
-      spokenRef.current = true;
-      // Small delay so the slide-in animation completes before speech starts.
-      const t = setTimeout(() => speak(payload.text), 350);
-      return () => clearTimeout(t);
-    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -35,87 +29,129 @@ export function ProactiveBriefing({ payload, onDismiss }: Props) {
     navigate(route);
   };
 
-  const handleDismiss = () => {
-    cancel();
-    onDismiss();
-  };
-
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end"
-      style={{ backgroundColor: "rgba(0,0,0,0.45)", backdropFilter: "blur(2px)" }}
-      onClick={handleDismiss}
+      style={{
+        position: "fixed",
+        bottom: 76,
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: "100%",
+        maxWidth: 430,
+        zIndex: 45,
+        padding: "0 12px",
+        pointerEvents: "none",
+      }}
     >
       <div
-        className="w-full rounded-t-3xl px-6 pt-5 pb-8 animate-in slide-in-from-bottom duration-300"
-        style={{ backgroundColor: "#fff", maxHeight: "80vh", overflowY: "auto" }}
-        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#FFFFFF",
+          borderRadius: 20,
+          border: "1px solid rgba(0,0,0,0.07)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)",
+          overflow: "hidden",
+          pointerEvents: "auto",
+        }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-2.5">
-            <div
-              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: "#F5970A" }}
-            >
-              {isSpeaking ? (
-                <HufiVoiceWave color="#FFFFFF" barCount={4} height={16} />
-              ) : (
-                <Volume2 className="w-4 h-4 text-white" />
-              )}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "14px 16px 10px",
+          borderBottom: "1px solid #F3F4F6",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: 8,
+              background: "#F97316",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <img
+                src="https://upload.assaon.com/files/medien/hufiapp-logo-ohne-text-1777028918553-0kdje.png"
+                alt="Hufi"
+                style={{ width: "100%", height: "100%", objectFit: "contain", filter: "brightness(0) invert(1)", padding: 4 }}
+              />
             </div>
             <div>
-              <p className="font-bold text-sm leading-none" style={{ color: "#1A1A1A" }}>Hufi</p>
-              {isSpeaking && (
-                <p className="text-[10px] mt-0.5" style={{ color: "#F5970A" }}>spricht …</p>
-              )}
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#1A1A1A", lineHeight: 1 }}>Tages-Briefing</div>
+              <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2 }}>Hufi</div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
             {isSupported && (
               <button
                 onClick={() => speak(payload.text)}
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-                aria-label="Wiederholen"
+                style={{
+                  width: 30, height: 30, borderRadius: 8,
+                  background: "transparent", border: "none",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  cursor: "pointer", color: "#9CA3AF",
+                }}
+                aria-label="Vorlesen"
               >
-                <Volume2 className="w-4 h-4" style={{ color: "#9CA3AF" }} />
+                <Volume2 size={15} />
               </button>
             )}
             <button
-              onClick={handleDismiss}
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+              onClick={onDismiss}
+              style={{
+                width: 30, height: 30, borderRadius: 8,
+                background: "transparent", border: "none",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", color: "#9CA3AF",
+              }}
               aria-label="Schließen"
             >
-              <X className="w-5 h-5" style={{ color: "#9CA3AF" }} />
+              <X size={16} />
             </button>
           </div>
         </div>
 
-        {/* Briefing lines */}
-        <div className="space-y-2.5 mb-6">
-          {payload.lines.map((line, i) => (
-            <p
-              key={i}
-              className="text-base leading-relaxed"
-              style={{ color: i === 0 ? "#111827" : "#4B5563", fontWeight: i === 0 ? 600 : 400 }}
-            >
-              {line}
-            </p>
-          ))}
+        {/* Lines */}
+        <div style={{ padding: "10px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
+          {payload.lines.map((line, i) => {
+            const Icon = LINE_ICONS[i] ?? Lightbulb;
+            return (
+              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                <div style={{
+                  width: 24, height: 24, borderRadius: 6, flexShrink: 0,
+                  background: i === 0 ? "rgba(249,115,22,0.08)" : "#F9FAFB",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  marginTop: 1,
+                }}>
+                  <Icon size={12} style={{ color: i === 0 ? "#F97316" : "#6B7280" }} />
+                </div>
+                <p style={{
+                  fontSize: 13,
+                  color: i === 0 ? "#111827" : "#4B5563",
+                  fontWeight: i === 0 ? 600 : 400,
+                  lineHeight: 1.45,
+                  margin: 0,
+                }}>
+                  {line}
+                </p>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Quick actions */}
+        {/* Actions */}
         {payload.actions.length > 0 && (
-          <div className="flex flex-wrap gap-2">
+          <div style={{ padding: "8px 16px 14px", display: "flex", gap: 8, flexWrap: "wrap" as const }}>
             {payload.actions.map((action) => (
               <button
                 key={action.route}
                 onClick={() => handleAction(action.route)}
-                className="px-4 py-2 rounded-full text-sm font-semibold transition-colors active:scale-95"
                 style={{
-                  backgroundColor: "rgba(245,151,10,0.1)",
-                  color: "#F5970A",
-                  border: "1px solid rgba(245,151,10,0.25)",
+                  padding: "7px 14px",
+                  borderRadius: 20,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  background: "rgba(249,115,22,0.08)",
+                  color: "#F97316",
+                  border: "1px solid rgba(249,115,22,0.2)",
+                  cursor: "pointer",
                 }}
               >
                 {action.label}

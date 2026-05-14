@@ -49,9 +49,6 @@ import {
 } from "@/lib/hufi-search";
 import {
   fetchHufiContext,
-  generateHufiGreeting,
-  buildContextActions,
-  getRoleIntelligence,
   checkProactiveAlerts,
   learnFromInteraction,
   checkDsgvoConsent,
@@ -304,49 +301,28 @@ export function MobileShell() {
   async function bootGreeting(userId: string, consented: boolean) {
     if (greetingSetRef.current) return;
     greetingSetRef.current = true;
-
-    if (!consented) {
-      const h = new Date().getHours();
-      const g = h < 12 ? "Guten Morgen" : h < 18 ? "Guten Tag" : "Guten Abend";
-      setMessages([{
-        role: "ai",
-        text: `${g}! 👋 Für den vollen Hufi-Erlebnis bitte Datenschutz-Einwilligung erteilen.`,
-        ts: Date.now(),
-        actions: [{ label: "🔒 Datenschutz", route: "/management" }],
-      }]);
-      return;
-    }
+    if (!consented) return; // DSGVO modal is shown separately
 
     try {
-      // Beide Kontexte parallel laden — HufiContext + BusinessContext
       const [ctx] = await Promise.all([
         fetchHufiContext(userId, role ?? null),
         fetchBusinessContext(userId)
           .then((biz) => { bizCtxRef.current = biz; })
-          .catch(() => { /* non-blocking */ }),
+          .catch(() => {}),
       ]);
-      // Fallback: use first part of email if no profile name is set
       if (!ctx.user.name && user?.email) {
         const raw = user.email.split("@")[0].split(/[._+]/)[0];
         ctx.user.name = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
       }
       setHufiCtx(ctx);
 
-      // Phase E: Proactive briefing — fires at most once every 4 h, only
-      // after DSGVO consent. Weather fetch is fire-and-forget; a null result
-      // just means the weather line is omitted.
       if (shouldShowBriefing()) {
         fetchWeatherContext().then((weather) => {
           setProactiveBriefing(buildBriefingPayload(ctx, weather, bizCtxRef.current));
         });
       }
 
-      const actions = buildContextActions(ctx);
-      const roleIntel = getRoleIntelligence(ctx);
-
-      // Build spoken greeting from DB data immediately — no AI call needed.
-      // Queue TTS before generateHufiGreeting so voice fires on the first user
-      // tap (~300 ms after DB query) rather than after the AI call (~3 s).
+      // TTS greeting — opt-in only, fires on first user gesture
       const spokenGreeting = buildShortSpokenGreeting({
         userId,
         userName: ctx.user.name ?? null,
@@ -368,33 +344,8 @@ export function MobileShell() {
         unpaidInvoices: ctx.unpaidInvoices,
       });
       queueSpokenGreetingIfEligible(userId, spokenGreeting);
-
-      // Show spoken greeting immediately in chat. AI generates full greeting
-      // text asynchronously and replaces the placeholder once ready.
-      const greetingTs = Date.now();
-      const urgentRoleMessages = roleIntel.proactiveMessages
-        .filter((m) => m.urgency === "high").slice(0, 2);
-      const initialMessages: ChatMessage[] = [
-        { role: "ai", text: spokenGreeting, ts: greetingTs, actions },
-        ...urgentRoleMessages.map((msg, i) => ({
-          role: "ai" as const,
-          text: `${msg.text}\n\n_Warum: ${msg.reason}_`,
-          ts: greetingTs + i + 1,
-          actions: msg.action ? [msg.action] : undefined,
-        })),
-      ];
-      setMessages(initialMessages);
-
-      // Async: replace first bubble with full AI greeting once ready.
-      generateHufiGreeting(ctx).then((greeting) => {
-        setMessages((prev) =>
-          prev.map((m) => m.ts === greetingTs ? { ...m, text: greeting } : m)
-        );
-      }).catch(() => { /* keep spoken greeting if AI fails */ });
     } catch {
-      const h = new Date().getHours();
-      const g = h < 12 ? "Guten Morgen" : h < 18 ? "Guten Tag" : "Guten Abend";
-      setMessages([{ role: "ai", text: `${g}! 👋 Was kann ich heute für dich tun?`, ts: Date.now() }]);
+      // silently fail — no error bubble on startup
     }
   }
 
@@ -422,7 +373,7 @@ export function MobileShell() {
       for (const alert of alerts) {
         if (!shownAlertsRef.current.has(alert)) {
           shownAlertsRef.current.add(alert);
-          addMsg({ role: "ai", text: alert, ts: Date.now() });
+          toast(alert, { duration: 8000 });
         }
       }
     }, 5 * 60 * 1000);
@@ -1285,11 +1236,7 @@ Morgen: ${label(weather.tomorrowCode)}, Niederschlag: ${weather.tomorrowPrecipMm
               <div style={{
                 fontSize: 9, fontWeight: 700, letterSpacing: ".04em",
                 textTransform: "uppercase" as const,
-                color: hufiPresenceState === "hört zu" ? "#EF4444"
-                  : hufiPresenceState === "spricht" ? "#8B5CF6"
-                  : hufiPresenceState === "denkt" || hufiPresenceState === "transkribiert" ? "#F97316"
-                  : hufiPresenceState === "führt aus" ? "#10B981"
-                  : "#9CA3AF",
+                color: hufiPresenceState === "bereit" ? "#9CA3AF" : "#F97316",
                 display: "flex", alignItems: "center", gap: 3, marginTop: 1,
                 whiteSpace: "nowrap",
               }}>
