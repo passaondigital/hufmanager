@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getHorseKnowledgeForRole } from "./horse-knowledge.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -313,6 +314,7 @@ serve(async (req) => {
   const systemPrompt = [
     HUFI_BASE,
     getRoleInstruction(ctx.userType),
+    getHorseKnowledgeForRole(ctx.userType),
     contextBlock,
     mode === "action" ? ACTION_SUFFIX : "",
   ].filter(Boolean).join("\n\n");
