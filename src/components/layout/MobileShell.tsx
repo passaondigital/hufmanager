@@ -96,6 +96,7 @@ export function MobileShell() {
   const bizCtxRef = useRef<BusinessContext | null>(null);
   const shownAlertsRef = useRef<Set<string>>(new Set());
   const migrationCheckedRef = useRef(false);
+  const followUpTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const today = format(new Date(), "yyyy-MM-dd");
 
   // Hufi Voice — Phase 1: spoken greeting + Phase 2: push-to-talk voice loop.
@@ -405,7 +406,7 @@ export function MobileShell() {
   // ── Shared transcript processing (used by inline mic + voice modal) ─────────
   // Wake-Word aus Transkript entfernen bevor es verarbeitet wird
   function stripWakeWord(text: string): string {
-    return text.replace(/^(hey\s+hufi|okay\s+hufi|ok\s+hufi|hey\s+wufi)[,\s]*/i, "").trim();
+    return text.replace(/^(hey\s+hu[fp][iy]|hei\s+hufi|hey\s+hoofi|okay\s+hufi|ok\s+hufi|hallo\s+hufi|hey\s+wufi)[,\s]*/i, "").trim();
   }
 
   // Erkennt "vergiss das / lösch das / nicht speichern" etc.
@@ -563,6 +564,7 @@ export function MobileShell() {
   }
 
   function cancelRecording() {
+    if (followUpTimerRef.current) { clearTimeout(followUpTimerRef.current); followUpTimerRef.current = null; }
     voiceSessionRef.current = null;
     setHufiPresenceState("bereit");
     voice.cancel();
@@ -650,6 +652,16 @@ export function MobileShell() {
       hufiSpeak(combined, () => {
         setIsVoiceSpeaking(false);
         setHufiPresenceState("bereit");
+        // Follow-up: 600ms Pause, dann automatisch zuhören (ohne Wake Word)
+        if (followUpTimerRef.current) clearTimeout(followUpTimerRef.current);
+        followUpTimerRef.current = setTimeout(() => {
+          followUpTimerRef.current = null;
+          if (!voice.isRecording && !voice.isProcessing && !responding) {
+            voiceSessionRef.current = { active: true, texts: [] };
+            voice.startRecording();
+            setHufiPresenceState("hört zu");
+          }
+        }, 600);
       }, /* fastMode */ true);
     })();
   }, [voice.transcript]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1099,8 +1111,8 @@ Morgen: ${wmoLabel(weather.tomorrowCode)}, Niederschlag: ${weather.tomorrowPreci
         userText = "Dafür musst du angemeldet sein.";
       } else if (e?.message?.includes("Ollama") || e?.message?.includes("fetch")) {
         userText = voiceMode
-          ? "Ich erreiche den lokalen Assistenten gerade nicht. Bitte erneut versuchen."
-          : "Der lokale Assistent ist nicht erreichbar. Bitte prüfe die Verbindung und versuche es erneut.";
+          ? "Verbindung konnte gerade nicht hergestellt werden. Bitte kurz warten."
+          : "Verbindung fehlgeschlagen. Bitte erneut versuchen.";
       } else {
         userText = voiceMode
           ? "Ich konnte deine Anfrage nicht verarbeiten. Bitte erneut versuchen."
@@ -1281,7 +1293,9 @@ Morgen: ${wmoLabel(weather.tomorrowCode)}, Niederschlag: ${weather.tomorrowPreci
                     animation: "pulse-rec 1s ease-out infinite",
                   }} />
                 )}
-                {hufiPresenceState === "bereit" && SR_SUPPORTED
+                {pendingSpokenGreeting
+                  ? <span style={{ color: "#F97316", animation: "pulse-rec 1.5s ease-out infinite" }}>tippen zum hören</span>
+                  : hufiPresenceState === "bereit" && SR_SUPPORTED
                   ? <span style={{ color: "#9CA3AF" }}>tippen oder hey hufi</span>
                   : hufiPresenceState}
               </div>
@@ -1299,15 +1313,19 @@ Morgen: ${wmoLabel(weather.tomorrowCode)}, Niederschlag: ${weather.tomorrowPreci
               title="Begrüßung erneut sprechen"
               aria-label="Begrüßung erneut sprechen"
               style={{
-                width: 28, height: 28, borderRadius: 8,
-                background: "rgba(249,115,22,0.1)",
-                border: "1px solid rgba(249,115,22,0.2)",
-                color: "#F97316", cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center",
+                height: 28, borderRadius: 8,
+                background: pendingSpokenGreeting ? "#F97316" : "rgba(249,115,22,0.1)",
+                border: `1px solid ${pendingSpokenGreeting ? "#F97316" : "rgba(249,115,22,0.2)"}`,
+                color: pendingSpokenGreeting ? "#FFFFFF" : "#F97316",
+                cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
                 flexShrink: 0,
+                padding: pendingSpokenGreeting ? "0 8px" : "0 6px",
+                fontSize: 10, fontWeight: 700,
               }}
             >
-              <Volume2 size={13} />
+              <Volume2 size={12} />
+              {pendingSpokenGreeting && <span>Hören</span>}
             </button>
           )}
 
