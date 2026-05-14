@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Mic, Camera, MapPin, Bell, Brain, Ear, Volume2, ChevronRight, Check, X, RefreshCw } from "lucide-react";
 import { loadSavedConsent, saveFirstRunConsent, type HufiConsentChoices } from "./HufiFirstRunConsent";
 import { HufiVoiceSelector } from "@/components/voice/HufiVoiceSelector";
+import { ulget, ulset, ulremove, USER_STORAGE_KEYS } from "@/lib/user-storage";
 
 type PermStatus = "granted" | "denied" | "pending" | "unsupported";
 
@@ -108,31 +109,57 @@ const ROWS: SettingRow[] = [
   },
 ];
 
-export function HufiPermissionsSettings() {
+export function HufiPermissionsSettings({ userId = "" }: { userId?: string }) {
   const [statuses, setStatuses] = useState<Record<string, PermStatus | boolean>>({});
   const [requesting, setRequesting] = useState<string | null>(null);
 
   useEffect(() => {
-    const initial: Record<string, PermStatus | boolean> = {};
+    async function init() {
+      const initial: Record<string, PermStatus | boolean> = {};
+      const saved = loadSavedConsent(userId);
 
-    // Browser permissions: read from saved consent or default to pending
-    const saved = loadSavedConsent();
-    initial.microphone = (saved?.microphone ?? "pending") as PermStatus;
-    initial.camera = (saved?.camera ?? "pending") as PermStatus;
-    initial.location = (saved?.location ?? "pending") as PermStatus;
-    initial.notifications =
-      "Notification" in window
-        ? Notification.permission === "granted"
-          ? "granted"
-          : (saved?.notifications ?? "pending")
-        : ("unsupported" as PermStatus);
+      // ── Check actual browser permission state via Permissions API ──────────
+      async function checkPerm(name: PermissionName): Promise<PermStatus> {
+        if (!("permissions" in navigator)) return (saved as Record<string, unknown>)?.[name] as PermStatus ?? "pending";
+        try {
+          const s = await navigator.permissions.query({ name });
+          if (s.state === "granted") return "granted";
+          if (s.state === "denied") return "denied";
+          return "pending"; // "prompt"
+        } catch {
+          return "pending";
+        }
+      }
 
-    // Toggles: read from localStorage
-    initial.hey_hufi = localStorage.getItem("hufi_hey_hufi_enabled") === "1";
-    initial.voice_greeting = localStorage.getItem("hufi_voice_greeting_enabled") === "1";
-    initial.ai_functions = localStorage.getItem("hufi_ki_consent") === "granted";
+      initial.microphone    = await checkPerm("microphone" as PermissionName);
+      initial.camera        = await checkPerm("camera" as PermissionName);
+      initial.location      = await checkPerm("geolocation" as PermissionName);
+      initial.notifications =
+        "Notification" in window
+          ? (Notification.permission === "granted" ? "granted"
+            : Notification.permission === "denied" ? "denied"
+            : "pending")
+          : ("unsupported" as PermStatus);
 
-    setStatuses(initial);
+      // Sync saved consent so future boot reflects reality
+      if (saved) {
+        saveFirstRunConsent({
+          ...saved,
+          microphone:    initial.microphone    as PermStatus,
+          camera:        initial.camera        as PermStatus,
+          location:      initial.location      as PermStatus,
+          notifications: initial.notifications as PermStatus,
+        } as HufiConsentChoices, userId);
+      }
+
+      // Toggles: user-isoliert lesen
+      initial.hey_hufi       = ulget(userId, USER_STORAGE_KEYS.HEY_HUFI) === "1";
+      initial.voice_greeting = ulget(userId, USER_STORAGE_KEYS.VOICE_GREETING) === "1";
+      initial.ai_functions   = ulget(userId, USER_STORAGE_KEYS.KI_CONSENT) === "granted";
+
+      setStatuses(initial);
+    }
+    init();
   }, []);
 
   async function handleAction(row: SettingRow) {
@@ -141,13 +168,12 @@ export function HufiPermissionsSettings() {
       const next = !currentVal;
       setStatuses((s) => ({ ...s, [row.key]: next }));
       if (row.storageKey) {
-        if (next) localStorage.setItem(row.storageKey, row.storageKey === "hufi_ki_consent" ? "granted" : "1");
-        else localStorage.removeItem(row.storageKey);
+        if (next) ulset(userId, row.storageKey, row.storageKey === USER_STORAGE_KEYS.KI_CONSENT ? "granted" : "1");
+        else ulremove(userId, row.storageKey);
       }
-      // Sync consent storage
-      const saved = loadSavedConsent();
+      const saved = loadSavedConsent(userId);
       if (saved && row.key === "ai_functions") {
-        saveFirstRunConsent({ ...saved, ai: next });
+        saveFirstRunConsent({ ...saved, ai: next }, userId);
       }
       return;
     }
@@ -156,13 +182,12 @@ export function HufiPermissionsSettings() {
     try {
       const result = await row.browserPerm();
       setStatuses((s) => ({ ...s, [row.key]: result }));
-      // Sync saved consent
-      const saved = loadSavedConsent();
+      const saved = loadSavedConsent(userId);
       if (saved) {
         saveFirstRunConsent({
           ...saved,
           [row.key as keyof HufiConsentChoices]: result,
-        } as HufiConsentChoices);
+        } as HufiConsentChoices, userId);
       }
     } finally {
       setRequesting(null);
@@ -172,7 +197,7 @@ export function HufiPermissionsSettings() {
   return (
     <div style={{ padding: "0 0 24px" }}>
       {/* ── Stimmen-Auswahl ── */}
-      <HufiVoiceSelector />
+      <HufiVoiceSelector userId={userId} />
 
       <div style={{ height: 1, background: "#F0F0F0", margin: "20px 0 18px" }} />
 

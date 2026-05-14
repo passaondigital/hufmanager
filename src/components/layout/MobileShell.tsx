@@ -39,6 +39,7 @@ import {
   hasCompletedFirstRun,
   type HufiConsentChoices,
 } from "@/components/consent/HufiFirstRunConsent";
+import { ulget, ulset, ulremove, USER_STORAGE_KEYS } from "@/lib/user-storage";
 import {
   hufiSearch,
   requestLocationPermission,
@@ -86,9 +87,7 @@ export function MobileShell() {
   const [activeIntent, setActiveIntent] = useState<HufiIntent | null>(null);
   const [showKiModal, setShowKiModal] = useState(false);
   const [pendingChatText, setPendingChatText] = useState("");
-  const [kiConsent, setKiConsent] = useState<"granted" | "denied" | null>(
-    () => localStorage.getItem("hufi_ki_consent") as "granted" | "denied" | null,
-  );
+  const [kiConsent, setKiConsent] = useState<"granted" | "denied" | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const sessionId = useRef<string>(crypto.randomUUID());
@@ -102,7 +101,7 @@ export function MobileShell() {
   const today = format(new Date(), "yyyy-MM-dd");
 
   // Hufi Voice — Phase 1: spoken greeting + Phase 2: push-to-talk voice loop.
-  const { speak: hufiSpeak, isSupported: ttsSupported, isSpeaking: isTtsSpeaking } = useHufiTTS();
+  const { speak: hufiSpeak, isSupported: ttsSupported, isSpeaking: isTtsSpeaking } = useHufiTTS(user?.id ?? "");
   const [pendingSpokenGreeting, setPendingSpokenGreeting] = useState<string | null>(null);
   const lastGreetingTextRef = useRef<string>("");
   const voice = useVoiceCapture();
@@ -115,9 +114,7 @@ export function MobileShell() {
   // Phase D: Hey Hufi wake-word opt-in state.
   const SR_SUPPORTED = typeof window !== "undefined" &&
     !!(window.SpeechRecognition || (window as any).webkitSpeechRecognition);
-  const [heyHufiEnabled, setHeyHufiEnabled] = useState(
-    () => SR_SUPPORTED && localStorage.getItem("hufi_hey_hufi_enabled") === "1"
-  );
+  const [heyHufiEnabled, setHeyHufiEnabled] = useState(false);
 
   // Derived state shorthands for UI/legacy code that referenced `recording` / `transcribing`.
   const recording = voice.isRecording;
@@ -156,10 +153,17 @@ export function MobileShell() {
     staleTime: 30_000,
   });
 
+  // ── User-isolierte localStorage Werte laden ───────────────────────────────
+  useEffect(() => {
+    if (!user?.id) return;
+    setKiConsent(ulget(user.id, USER_STORAGE_KEYS.KI_CONSENT) as "granted" | "denied" | null);
+    setHeyHufiEnabled(SR_SUPPORTED && ulget(user.id, USER_STORAGE_KEYS.HEY_HUFI) === "1");
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── First-run consent gate (overrides legacy DSGVO modal for new users) ────
   useEffect(() => {
     if (!user?.id) return;
-    if (!hasCompletedFirstRun()) {
+    if (!hasCompletedFirstRun(user.id)) {
       setShowFirstRunConsent(true);
       return;
     }
@@ -237,7 +241,7 @@ export function MobileShell() {
       logVoiceSkip("empty_text", "queue");
       return;
     }
-    if (localStorage.getItem("hufi_voice_greeting_enabled") !== "1") {
+    if (ulget(userId, USER_STORAGE_KEYS.VOICE_GREETING) !== "1") {
       logVoiceSkip("disabled", "queue");
       return;
     }
@@ -278,14 +282,24 @@ export function MobileShell() {
       fired = true;
       cleanup();
       // Re-check the toggle right before speaking — user may have flipped it.
-      if (localStorage.getItem("hufi_voice_greeting_enabled") !== "1") {
+      if (ulget(userId, USER_STORAGE_KEYS.VOICE_GREETING) !== "1") {
         logVoiceSkip("disabled", "on_gesture");
         setPendingSpokenGreeting(null);
         return;
       }
       localStorage.setItem(spokenGreetingStorageKey(userId), "1");
       console.info("[hufi-voice] speaking greeting after gesture");
-      hufiSpeak(text, () => setPendingSpokenGreeting(null));
+      // C) Nach Begrüßung automatisch in Listening wechseln
+      hufiSpeak(text, () => {
+        setPendingSpokenGreeting(null);
+        if (SR_SUPPORTED && !voice.isRecording && !voice.isProcessing) {
+          setTimeout(() => {
+            voiceSessionRef.current = { active: true, texts: [] };
+            void voice.startRecording();
+            setHufiPresenceState("hört zu");
+          }, 800);
+        }
+      });
     };
 
     const cleanup = () => {
@@ -611,7 +625,7 @@ export function MobileShell() {
     // ── Voiceflow v2: auto-send for acceptable transcripts ───────────────────
     // Only show review for very short (<3 words) or user-configured manual mode.
     const wordCount = text.trim().split(/\s+/).length;
-    const manualConfirm = localStorage.getItem("hufi_voice_manual_confirm") === "1";
+    const manualConfirm = ulget(user?.id ?? "", USER_STORAGE_KEYS.VOICE_MANUAL) === "1";
     if (manualConfirm && wordCount < 3) {
       // Short transcript: show as pre-filled text for correction, don't auto-send
       setInputText(text);
@@ -836,8 +850,21 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
     };
     const wmoLabel = (code: number) => WMO[code] ?? "wechselhaft";
 
-    // Stadtname aus Anfrage extrahieren und geocodieren (Open-Meteo, kostenlos)
-    const cityMatch = text.match(/\b(?:in|für|bei|um)\s+([A-ZÄÖÜ][a-zäöüß]+(?:[\s-][A-ZÄÖÜ][a-zäöüß]+)*)/);
+    // Stadtname aus Anfrage extrahieren (mit oder ohne Präposition) + STT-Fehler korrigieren
+    const STT_CITY_FIXES: Record<string, string> = {
+      "kaiserlautern": "Kaiserslautern",
+      "kaisers lautern": "Kaiserslautern",
+      "frank furt": "Frankfurt",
+      "frank furt am main": "Frankfurt am Main",
+      "stutt gart": "Stuttgart",
+      "mün chen": "München",
+    };
+    const rawCityMatch =
+      text.match(/\b(?:in|für|bei|um)\s+([A-ZÄÖÜ][a-zäöüß]+(?:[\s-][A-ZÄÖÜ][a-zäöüß]*)*)/) ??
+      text.match(/(?:wetter|temperatur|regen|sonne)\s+([A-ZÄÖÜ][a-zäöüß]+(?:[\s-][A-ZÄÖÜ][a-zäöüß]*)*)/i) ??
+      text.match(/([A-ZÄÖÜ][a-zäöüß]{2,}(?:[\s-][A-ZÄÖÜ][a-zäöüß]+)*)(?:\s|$)/);
+    const rawCity = rawCityMatch?.[1];
+    const cityMatch = rawCity ? [rawCity, STT_CITY_FIXES[rawCity.toLowerCase()] ?? rawCity] : null;
     const cityName = cityMatch?.[1];
     let weather: import("@/lib/hufai-proactive").WeatherContext | null = null;
     let locationLabel = "";
@@ -870,8 +897,8 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
 
     if (!weather) {
       weather = await fetchWeatherContext().catch(() => null);
-      const storedLat = localStorage.getItem("hufi_user_lat");
-      const storedLon = localStorage.getItem("hufi_user_lon");
+      const storedLat = ulget(user?.id ?? "", USER_STORAGE_KEYS.USER_LAT);
+      const storedLon = ulget(user?.id ?? "", USER_STORAGE_KEYS.USER_LON);
       locationLabel = storedLat && storedLon ? "gespeicherter Standort" : "Deutschland-Mitte";
     }
 
@@ -976,7 +1003,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
       addMsg({ role: "ai", text: a.spokenConfirmation, ts: Date.now() });
       toast.success(a.chipLabel);
       // Speak immediately — button click / mic tap = user gesture, audio is allowed.
-      if (ttsSupported && (fromVoice || localStorage.getItem("hufi_voice_greeting_enabled") === "1")) {
+      if (ttsSupported && (fromVoice || ulget(user?.id ?? "", USER_STORAGE_KEYS.VOICE_GREETING) === "1")) {
         setIsVoiceSpeaking(true);
         hufiSpeak(a.spokenConfirmation, () => setIsVoiceSpeaking(false), fromVoice);
       }
@@ -1209,6 +1236,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
 
   function handleKiConsent() {
     setKiConsent("granted");
+    ulset(user?.id ?? "", USER_STORAGE_KEYS.KI_CONSENT, "granted");
     setShowKiModal(false);
     const pending = pendingChatText;
     setPendingChatText("");
@@ -1217,6 +1245,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
 
   function handleKiDecline() {
     setKiConsent("denied");
+    ulset(user?.id ?? "", USER_STORAGE_KEYS.KI_CONSENT, "denied");
     setShowKiModal(false);
     setPendingChatText("");
   }
@@ -1242,7 +1271,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
     const text = inputText.trim();
     if (!text || responding) return;
 
-    const consent = localStorage.getItem("hufi_ki_consent");
+    const consent = ulget(user?.id ?? "", USER_STORAGE_KEYS.KI_CONSENT);
     if (!consent) {
       setPendingChatText(text);
       setInputText("");
@@ -1274,7 +1303,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
     <>
       {/* First-Run-Consent-Gate hat Priorität vor allem anderen */}
       {showFirstRunConsent && (
-        <HufiFirstRunConsent onComplete={handleFirstRunComplete} />
+        <HufiFirstRunConsent onComplete={handleFirstRunComplete} userId={user?.id ?? ""} />
       )}
       {!showFirstRunConsent && showDsgvoModal && (
         <DsgvoConsentModal onConsent={handleDsgvoConsent} />
@@ -1563,7 +1592,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
           onInputChange={setInputText}
           responding={responding}
           kiConsent={kiConsent}
-          onRevokeConsent={() => { localStorage.removeItem("hufi_ki_consent"); setKiConsent(null); setShowKiModal(true); }}
+          onRevokeConsent={() => { ulremove(user?.id ?? "", USER_STORAGE_KEYS.KI_CONSENT); setKiConsent(null); setShowKiModal(true); }}
           onSend={handleSend}
           onImageUpload={handleImageUpload}
         />

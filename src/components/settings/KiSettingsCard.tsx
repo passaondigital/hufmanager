@@ -7,16 +7,13 @@ import { Bot, ShieldCheck, Volume2, Mic } from "lucide-react";
 import { useKiSettings } from "@/hooks/useKiSettings";
 import { useHufiTTS } from "@/hooks/useHufiTTS";
 import { toast } from "sonner";
+import { ulget, ulset, ulremove, USER_STORAGE_KEYS } from "@/lib/user-storage";
 
-const VOICE_GREETING_KEY = "hufi_voice_greeting_enabled";
-const HEY_HUFI_KEY = "hufi_hey_hufi_enabled";
-
-export function KiSettingsCard() {
+export function KiSettingsCard({ userId = "" }: { userId?: string }) {
   const { kiEnabled, isLoading, setKiEnabled, isToggling } = useKiSettings();
-  const { speak, isSupported: ttsSupported, isSpeaking } = useHufiTTS();
+  const { speak, isSupported: ttsSupported, isSpeaking } = useHufiTTS(userId);
   const [voiceGreeting, setVoiceGreeting] = useState<boolean>(false);
   const [heyHufi, setHeyHufi] = useState<boolean>(false);
-  // When true, show the explicit privacy opt-in panel before enabling.
   const [heyHufiPendingConsent, setHeyHufiPendingConsent] = useState<boolean>(false);
 
   const srSupported =
@@ -25,9 +22,9 @@ export function KiSettingsCard() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    setVoiceGreeting(localStorage.getItem(VOICE_GREETING_KEY) === "1");
-    setHeyHufi(localStorage.getItem(HEY_HUFI_KEY) === "1");
-  }, []);
+    setVoiceGreeting(ulget(userId, USER_STORAGE_KEYS.VOICE_GREETING) === "1");
+    setHeyHufi(ulget(userId, USER_STORAGE_KEYS.HEY_HUFI) === "1");
+  }, [userId]);
 
   const handleToggle = (checked: boolean) => {
     setKiEnabled(checked);
@@ -40,8 +37,8 @@ export function KiSettingsCard() {
 
   const handleVoiceGreetingToggle = (checked: boolean) => {
     if (typeof window === "undefined") return;
-    if (checked) localStorage.setItem(VOICE_GREETING_KEY, "1");
-    else localStorage.removeItem(VOICE_GREETING_KEY);
+    if (checked) ulset(userId, USER_STORAGE_KEYS.VOICE_GREETING, "1");
+    else ulremove(userId, USER_STORAGE_KEYS.VOICE_GREETING);
     setVoiceGreeting(checked);
     toast.success(checked ? "Hufi spricht dich an" : "Hufi spricht nicht mehr", {
       description: checked
@@ -53,21 +50,17 @@ export function KiSettingsCard() {
   const handleHeyHufiToggle = (checked: boolean) => {
     if (typeof window === "undefined") return;
     if (!checked) {
-      // Disable: no confirmation needed.
-      localStorage.removeItem(HEY_HUFI_KEY);
+      ulremove(userId, USER_STORAGE_KEYS.HEY_HUFI);
       setHeyHufi(false);
       setHeyHufiPendingConsent(false);
-      toast.success("Hey Hufi deaktiviert", {
-        description: "Hintergrund-Lauschen deaktiviert.",
-      });
+      toast.success("Hey Hufi deaktiviert", { description: "Hintergrund-Lauschen deaktiviert." });
       return;
     }
-    // Enable: show inline consent panel first, don't store yet.
     setHeyHufiPendingConsent(true);
   };
 
   const confirmHeyHufi = () => {
-    localStorage.setItem(HEY_HUFI_KEY, "1");
+    ulset(userId, USER_STORAGE_KEYS.HEY_HUFI, "1");
     setHeyHufi(true);
     setHeyHufiPendingConsent(false);
     toast.success("Hey Hufi aktiviert", {
@@ -75,17 +68,13 @@ export function KiSettingsCard() {
     });
   };
 
-  const cancelHeyHufi = () => {
-    setHeyHufiPendingConsent(false);
-  };
+  const cancelHeyHufi = () => { setHeyHufiPendingConsent(false); };
 
   const handleVoiceTest = () => {
     if (!ttsSupported) {
       toast.error("Sprachausgabe wird in diesem Browser nicht unterstützt.");
       return;
     }
-    // Independent of the once-per-day gate. Triggered by an explicit click,
-    // so the browser audio gesture requirement is satisfied.
     speak("Hallo, ich bin Hufi. So klingt deine Begrüßung.");
   };
 
@@ -111,11 +100,7 @@ export function KiSettingsCard() {
               Beinhaltet: Hufi-Assistent, intelligente Belegerfassung, KI-Analysen
             </p>
           </div>
-          <Switch
-            checked={kiEnabled}
-            onCheckedChange={handleToggle}
-            disabled={isLoading || isToggling}
-          />
+          <Switch checked={kiEnabled} onCheckedChange={handleToggle} disabled={isLoading || isToggling} />
         </div>
 
         <div className="flex items-center justify-between border-t border-border pt-4">
@@ -182,7 +167,6 @@ export function KiSettingsCard() {
             />
           </div>
 
-          {/* Inline opt-in consent — shown before Hey Hufi is actually enabled */}
           {heyHufiPendingConsent && (
             <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 space-y-2">
               <div className="flex items-start gap-2">
@@ -192,26 +176,14 @@ export function KiSettingsCard() {
                   Browser-eigene Spracherkennung (Web Speech API). Dein Mikrofon
                   läuft kontinuierlich und Audio wird vom Browser an{" "}
                   <strong>externe Server (Google)</strong> gesendet. Hufi hört
-                  erst nach dem Schlüsselwort zu. Du kannst jederzeit
-                  deaktivieren.
+                  erst nach dem Schlüsselwort zu. Du kannst jederzeit deaktivieren.
                 </p>
               </div>
               <div className="flex gap-2 justify-end">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={cancelHeyHufi}
-                  className="h-8 text-xs"
-                >
+                <Button type="button" variant="ghost" size="sm" onClick={cancelHeyHufi} className="h-8 text-xs">
                   Abbrechen
                 </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={confirmHeyHufi}
-                  className="h-8 text-xs gap-1.5"
-                >
+                <Button type="button" size="sm" onClick={confirmHeyHufi} className="h-8 text-xs gap-1.5">
                   <Mic className="h-3 w-3" />
                   Ja, aktivieren
                 </Button>
@@ -229,8 +201,7 @@ export function KiSettingsCard() {
               nicht für Trainingszwecke.
             </p>
             <p>
-              Du kannst KI-Features jederzeit deaktivieren. Bereits gespeicherte Ergebnisse
-              (z.B. gescannte Belege) bleiben erhalten.
+              Du kannst KI-Features jederzeit deaktivieren. Bereits gespeicherte Ergebnisse bleiben erhalten.
             </p>
           </div>
         </div>

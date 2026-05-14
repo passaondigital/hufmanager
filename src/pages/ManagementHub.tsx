@@ -4,6 +4,7 @@ import { User, Briefcase, Mic, Shield, Smartphone, Share } from "lucide-react";
 import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
 import { HufiPermissionsSettings } from "@/components/consent/HufiPermissionsSettings";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { useAuth } from "@/hooks/useAuth";
 
 const TAB_REDIRECTS: Record<string, string> = {
   profil: "/management/profil",
@@ -18,6 +19,7 @@ export default function ManagementHub() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { canInstall, isInstalled, isIOS, promptInstall } = usePWAInstall();
+  const { user } = useAuth();
 
   useEffect(() => {
     const tab = searchParams.get("tab");
@@ -133,7 +135,7 @@ export default function ManagementHub() {
 
       {/* Berechtigungen & Hufi — inline Einstellungsbereich */}
       <div className="px-1">
-        <HufiPermissionsSettings />
+        <HufiPermissionsSettings userId={user?.id ?? ""} />
       </div>
     </div>
   );

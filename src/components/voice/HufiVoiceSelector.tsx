@@ -24,6 +24,7 @@ async function previewVoice(
   onEnd: () => void,
   onError: (msg: string) => void
 ) {
+  // Browser TTS
   if (voice.id === "browser") {
     if (!("speechSynthesis" in window)) { onError("Keine Browser-Stimme verfügbar."); return; }
     onStart();
@@ -39,6 +40,30 @@ async function previewVoice(
     return;
   }
 
+  // Piper TTS (lokaler VPS-Server)
+  if (voice.id === "piper") {
+    onStart();
+    try {
+      const resp = await fetch("/api/local-tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: voice.previewText }),
+      });
+      if (!resp.ok) throw new Error(`Piper TTS Fehler (${resp.status})`);
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.onended = () => { onEnd(); URL.revokeObjectURL(url); };
+      audio.onerror = () => { onEnd(); URL.revokeObjectURL(url); onError("Audio konnte nicht abgespielt werden."); };
+      await audio.play();
+    } catch (e) {
+      onEnd();
+      onError(e instanceof Error ? e.message : "Piper TTS fehlgeschlagen");
+    }
+    return;
+  }
+
+  // ElevenLabs TTS
   onStart();
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -57,8 +82,8 @@ async function previewVoice(
     );
 
     if (!resp.ok) {
-      const err = await resp.json().catch(() => ({ error: "Unbekannter Fehler" }));
-      throw new Error(err.error ?? "TTS fehlgeschlagen");
+      const errBody = await resp.json().catch(() => ({}));
+      throw new Error(errBody.error ?? `ElevenLabs Fehler (${resp.status})`);
     }
 
     const blob = await resp.blob();
@@ -73,25 +98,25 @@ async function previewVoice(
   }
 }
 
-export function HufiVoiceSelector() {
+export function HufiVoiceSelector({ userId = "" }: { userId?: string }) {
   const voices = getAllVoices();
-  const [selectedId, setSelectedId] = useState<string>(() => getSelectedVoiceId() ?? "browser");
-  const [model, setModel] = useState(() => getSelectedModel());
+  const [selectedId, setSelectedId] = useState<string>(() => getSelectedVoiceId(userId) ?? "browser");
+  const [model, setModel] = useState(() => getSelectedModel(userId));
   const [playing, setPlaying] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showModels, setShowModels] = useState(false);
   const stopRef = useRef<(() => void) | null>(null);
 
   const handleSelect = useCallback((voice: HufiVoice) => {
-    setSelectedVoice(voice);
+    setSelectedVoice(voice, userId);
     setSelectedId(voice.id);
     setError(null);
-  }, []);
+  }, [userId]);
 
   const handleModelChange = useCallback((id: string) => {
-    setSelectedModel(id);
+    setSelectedModel(id, userId);
     setModel(id);
-  }, []);
+  }, [userId]);
 
   const handlePreview = useCallback(async (voice: HufiVoice) => {
     if (playing) {

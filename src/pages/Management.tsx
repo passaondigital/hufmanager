@@ -32,6 +32,7 @@ import {
   Star,
   Info,
   Settings,
+  Zap,
 } from "lucide-react";
 import { HelpTip } from "@/components/ui/HelpTip";
 import { BusinessHoursEditor, defaultHours, type BusinessHours } from "@/components/BusinessHoursEditor";
@@ -51,6 +52,7 @@ import { KiSettingsCard } from "@/components/settings/KiSettingsCard";
 import { CompanyLocationCard } from "@/components/settings/CompanyLocationCard";
 import { TutorialSettingsCard } from "@/components/settings/TutorialSettingsCard";
 import { ManagementTab } from "@/components/management/ManagementTab";
+import { HufiRoutinesManager } from "@/components/routines/HufiRoutinesManager";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -433,6 +435,7 @@ const Management = ({ tabs: tabFilter, hideChrome }: ManagementProps = {}) => {
           { value: "payment", icon: CreditCard, label: "Zahlung" },
           { value: "app", icon: Settings, label: "App" },
           { value: "b2b-management", icon: Briefcase, label: "Management" },
+          { value: "routines", icon: Zap, label: "Routinen" },
         ];
         const visibleTabs = tabFilter
           ? ALL_TAB_DEFS.filter((t) => tabFilter.includes(t.value))
@@ -953,13 +956,17 @@ Steuernummer: 43/150/40518
         <TabsContent value="app" className="mt-6 space-y-6">
           <CommunicationSettingsCard />
           <AppSettingsCard />
-          <KiSettingsCard />
+          <KiSettingsCard userId={user?.id ?? ""} />
           <TutorialSettingsCard />
         </TabsContent>
 
         {/* B2B Management Tab */}
         <TabsContent value="b2b-management" className="mt-6">
           <ManagementTab />
+        </TabsContent>
+
+        <TabsContent value="routines" className="mt-6">
+          <HufiRoutinesManager />
         </TabsContent>
       </Tabs>
         );

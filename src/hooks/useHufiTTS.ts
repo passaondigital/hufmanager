@@ -30,7 +30,7 @@ export function sanitizeForSpeech(input: string): string {
 // Piper TTS: lokaler Server auf demselben VPS (via Nginx-Proxy)
 const PIPER_TTS_URL = "/api/local-tts";
 
-export function useHufiTTS(): UseHufiTTS {
+export function useHufiTTS(userId = ""): UseHufiTTS {
   const synthRef = useRef<SpeechSynthesis | null>(
     typeof window !== "undefined" && "speechSynthesis" in window
       ? window.speechSynthesis
@@ -208,7 +208,7 @@ export function useHufiTTS(): UseHufiTTS {
         setIsSpeaking(true);
         setIsCloudVoice(true);
 
-        const model = modelParam ?? getSelectedModel();
+        const model = modelParam ?? getSelectedModel(userId);
         const controller = new AbortController();
         currentAbortRef.current = controller;
         const resp = await fetch(
@@ -292,7 +292,7 @@ export function useHufiTTS(): UseHufiTTS {
       requestIdRef.current = requestId;
       stopPlayback(false);
 
-      const voiceId = getSelectedVoiceId();
+      const voiceId = getSelectedVoiceId(userId);
       if (voiceId && voiceId !== "browser" && voiceId !== "piper") {
         await speakWithCloud(cleaned, voiceId, requestId, onEnd, fastMode ? "eleven_turbo_v2_5" : undefined);
         return true;
@@ -319,7 +319,7 @@ export function useHufiTTS(): UseHufiTTS {
   return {
     speak,
     cancel,
-    isSupported: browserSupported || !!getSelectedVoiceId(),
+    isSupported: browserSupported || !!getSelectedVoiceId(userId),
     isSpeaking,
     isCloudVoice,
   };
