@@ -205,6 +205,37 @@ async function callClaude(
   }
 }
 
+async function callOllama(
+  systemPrompt: string,
+  messages: Message[],
+  proxyBase: string,
+): Promise<string> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 30_000);
+  try {
+    const ollamaMessages = [
+      { role: "system", content: systemPrompt },
+      ...messages,
+    ];
+    const res = await fetch(`${proxyBase}/api/ollama/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "hufiai-core",
+        messages: ollamaMessages,
+        stream: false,
+        options: { temperature: 0.7, num_predict: 400 },
+      }),
+      signal: ctrl.signal,
+    });
+    if (!res.ok) throw new Error(`Ollama ${res.status}`);
+    const json = await res.json() as { message?: { content: string }; response?: string };
+    return json.message?.content ?? json.response ?? "";
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function jsonErr(msg: string, status: number) {
   return new Response(JSON.stringify({ ok: false, error: msg }), {
     status,
@@ -265,38 +296,40 @@ serve(async (req) => {
   ];
 
   const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+  const OLLAMA_PROXY = Deno.env.get("OLLAMA_PROXY_URL") ?? "";
 
-  if (!ANTHROPIC_API_KEY) {
-    console.error("[hufi-agent] ANTHROPIC_API_KEY nicht gesetzt");
+  let answer = "";
+  let source: "claude" | "ollama" = "claude";
+
+  if (ANTHROPIC_API_KEY) {
+    try {
+      answer = await callClaude(systemPrompt, messages, ANTHROPIC_API_KEY);
+      source = "claude";
+    } catch (e) {
+      console.error("[hufi-agent] Claude Fehler, versuche Ollama:", e);
+    }
+  } else {
+    console.warn("[hufi-agent] ANTHROPIC_API_KEY fehlt, nutze Ollama");
+  }
+
+  if (!answer?.trim() && OLLAMA_PROXY) {
+    try {
+      answer = await callOllama(systemPrompt, messages, OLLAMA_PROXY);
+      source = "ollama";
+    } catch (e) {
+      console.error("[hufi-agent] Ollama Fallback Fehler:", e);
+    }
+  }
+
+  if (!answer?.trim()) {
     return new Response(
       JSON.stringify({
         ok: false,
-        error: "KI-Dienst nicht konfiguriert. Bitte einen Administrator kontaktieren.",
+        error: "Ich erreiche Hufi gerade nicht. Bitte in einigen Sekunden erneut versuchen.",
         source: "none",
       }),
       { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-  }
-
-  let answer: string;
-  let source: "claude" | "ollama" = "claude";
-
-  try {
-    answer = await callClaude(systemPrompt, messages, ANTHROPIC_API_KEY);
-  } catch (e) {
-    console.error("[hufi-agent] Claude Fehler:", e);
-    return new Response(
-      JSON.stringify({
-        ok: false,
-        error: "Der KI-Assistent ist momentan nicht erreichbar. Bitte in einigen Sekunden erneut versuchen.",
-        source: "claude",
-      }),
-      { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
-  }
-
-  if (!answer?.trim()) {
-    answer = "Ich habe deine Anfrage erhalten, konnte aber keine Antwort generieren. Bitte formuliere sie anders.";
   }
 
   return new Response(
