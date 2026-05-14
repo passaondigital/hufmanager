@@ -50,8 +50,15 @@ echo ""
 echo "▶ Lokale Services"
 check_http "Ollama direkt (11434)"  "http://127.0.0.1:11434/api/tags"
 check_http "Piper TTS (5003)"       "http://127.0.0.1:5003/health"
-check_http "Whisper STT (5000)"     "http://127.0.0.1:5000/health"
-check_http "Whisper STT (5000) /v1" "http://127.0.0.1:5000/v1/audio/transcriptions" -X POST
+# Whisper nutzt /transcribe (POST) — kein /health Endpoint implementiert
+WHISPER_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "http://127.0.0.1:5000/transcribe" 2>/dev/null)
+if [[ "$WHISPER_CODE" == "400" || "$WHISPER_CODE" == "422" || "$WHISPER_CODE" == "200" ]]; then
+  ok "Whisper STT (5000/transcribe) — erreichbar (HTTP $WHISPER_CODE)"
+elif [[ "$WHISPER_CODE" == "405" ]]; then
+  ok "Whisper STT (5000/transcribe) — Endpoint vorhanden (405 = POST erwartet)"
+else
+  fail "Whisper STT (5000/transcribe) — HTTP $WHISPER_CODE"
+fi
 
 echo ""
 echo "▶ nginx Proxys (HTTPS)"

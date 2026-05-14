@@ -1129,15 +1129,36 @@ Morgen: ${label(weather.tomorrowCode)}, Niederschlag: ${weather.tomorrowPrecipMm
         await handleNavigationOutcome(outcome);
         return;
       }
-      if (intent.intent === "knowledge" && intent.entities.topic === "weather_query") {
-        await answerWithWeather(cleaned, voiceMode);
+      // Nicht-angemeldete User: lokale Ollama-Pipeline für allgemeine Fragen
+      if (!user?.id) {
+        if (intent.intent === "knowledge" && intent.entities.topic === "weather_query") {
+          await answerWithWeather(cleaned, voiceMode);
+        } else {
+          await answerFromKnowledge(cleaned);
+        }
         return;
       }
-      if (intent.intent === "knowledge") { await answerFromKnowledge(cleaned); return; }
-      if (!user?.id) return;
-      if (intent.intent === "agent_lookup") await answerWithContext(cleaned, intent.entities, voiceMode);
-      else if (intent.intent === "agent_action") await planAndConfirmAction(cleaned, intent.entities);
-      else await answerWithContext(cleaned, intent.entities, voiceMode);
+      // Agent Action → Task-Bestätigungs-UI (eigene Pipeline mit Approve/Reject)
+      if (intent.intent === "agent_action") {
+        await planAndConfirmAction(cleaned, intent.entities);
+        return;
+      }
+      // Alle anderen Fälle (knowledge, weather, agent_lookup, fallback) → zentrale Pipeline
+      const agentHistory = messages
+        .slice(-6)
+        .map((m) => ({
+          role: (m.role === "user" ? "user" : "assistant") as "user" | "assistant",
+          content: m.text,
+        }));
+      const resp = await askHufiAgent({
+        text: cleaned,
+        voiceMode,
+        history: agentHistory,
+        route: window.location.pathname,
+        clientTimestamp: new Date().toISOString(),
+      });
+      addMsg({ role: "ai", text: resp.answer, ts: Date.now() + 1 });
+      learnFromInteraction(user.id, cleaned, resp.answer, "confirmed", sessionId.current);
     } catch (err) {
       const e = err as Error;
       console.error("[Hufi] processChatMessage Fehler:", e?.message ?? e);
