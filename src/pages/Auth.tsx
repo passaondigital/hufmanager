@@ -259,57 +259,6 @@ export default function Auth() {
     setLoading(false);
 
     if (!error) {
-      // Schritt 5: Prüfe bei Client-Login ob der Provider ein Pro-Abo hat
-      const { data: sessionData } = await supabase.auth.getSession();
-      const userId = sessionData?.session?.user?.id;
-      if (userId) {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", userId)
-          .maybeSingle();
-
-        if (profileData?.role === "client") {
-          const { data: grants } = await supabase
-            .from("access_grants")
-            .select("provider_id")
-            .eq("client_id", userId)
-            .eq("status", "active")
-            .eq("is_active", true)
-            .limit(1);
-
-          if (grants && grants.length > 0) {
-            const { data: providerProfile } = await supabase
-              .from("profiles")
-              .select("subscription_plan, plan_override, access_valid_until")
-              .eq("id", grants[0].provider_id)
-              .maybeSingle();
-
-            if (providerProfile) {
-              const hasOverridePro =
-                providerProfile.plan_override !== null &&
-                providerProfile.plan_override !== "standard";
-              const hasValidAccess = providerProfile.access_valid_until
-                ? new Date(providerProfile.access_valid_until) > new Date()
-                : true;
-              const providerIsPro =
-                (hasOverridePro && hasValidAccess) ||
-                ["pro", "duo", "team"].includes(providerProfile.subscription_plan ?? "");
-
-              if (!providerIsPro) {
-                await supabase.auth.signOut();
-                toast.error(
-                  "Dein Hufbearbeiter hat noch kein Pro-Abo aktiv. Bitte wende dich direkt an ihn.",
-                  { duration: 6000 }
-                );
-                setLoading(false);
-                return;
-              }
-            }
-          }
-        }
-      }
-
       // After successful login, process partner invite token
       const partnerToken = sessionStorage.getItem("partner_invite_token");
       if (partnerToken) {
