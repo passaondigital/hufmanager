@@ -57,7 +57,9 @@ import { LinkAppUserModal } from "@/components/customers/LinkAppUserModal";
 import { PendingConnectionRequests } from "@/components/network/PendingConnectionRequests";
 import { ConnectionSearch } from "@/components/network/ConnectionSearch";
 import { VerifiedConnectionBadge } from "@/components/network/VerifiedConnectionBadge";
-import { Link2, Loader2 } from "lucide-react";
+import { Link2, Loader2, Lock } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
+import { ClientAppUpgradeModal } from "@/components/subscription/ClientAppUpgradeModal";
 import { 
   PAYMENT_RATING_OPTIONS, 
   LIFECYCLE_STATUS_OPTIONS,
@@ -68,6 +70,8 @@ import { exportClientData } from "@/lib/customerExport";
 
 const Kunden = () => {
   const { user } = useAuth();
+  const { isPro } = useSubscription();
+  const [showClientAppModal, setShowClientAppModal] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -395,13 +399,13 @@ const Kunden = () => {
           </DropdownMenuContent>
         </DropdownMenu>
         
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           size="sm"
-          className="gap-2" 
-          onClick={() => setShowLinkUserModal(true)}
+          className="gap-2"
+          onClick={() => isPro ? setShowLinkUserModal(true) : setShowClientAppModal(true)}
         >
-          <Link2 className="h-4 w-4" />
+          {isPro ? <Link2 className="h-4 w-4" /> : <Lock className="h-4 w-4 text-muted-foreground" />}
           App-Nutzer verknüpfen
         </Button>
       </div>
@@ -613,16 +617,28 @@ const Kunden = () => {
                           </span>
                         )}
                         
-                        {/* Invite Button - only for non-active clients */}
+                        {/* Invite Button - only for non-active clients, only for Pro */}
                         {!client.has_logged_in && (
-                          <InviteClientButton
-                            clientId={client.id}
-                            clientName={client.full_name}
-                            clientPhone={client.phone}
-                            clientEmail={client.email}
-                            horseName={clientHorses[0]?.name}
-                            compact
-                          />
+                          isPro ? (
+                            <InviteClientButton
+                              clientId={client.id}
+                              clientName={client.full_name}
+                              clientPhone={client.phone}
+                              clientEmail={client.email}
+                              horseName={clientHorses[0]?.name}
+                              compact
+                            />
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1.5 text-xs text-muted-foreground h-7 px-2"
+                              onClick={(e) => { e.stopPropagation(); setShowClientAppModal(true); }}
+                            >
+                              <Lock className="h-3 w-3" />
+                              Kunden einladen
+                            </Button>
+                          )
                         )}
                       </div>
                     </div>
@@ -670,6 +686,12 @@ const Kunden = () => {
         open={showLinkUserModal}
         onClose={() => setShowLinkUserModal(false)}
         onSuccess={handleConnectionStatusChanged}
+      />
+
+      {/* Pro-Tier Upgrade Modal für Kundenapp */}
+      <ClientAppUpgradeModal
+        open={showClientAppModal}
+        onOpenChange={setShowClientAppModal}
       />
 
       {/* New Client Modal */}

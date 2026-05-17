@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
+import { AlertTriangle } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -162,6 +163,7 @@ export default function ClientHome() {
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [showHMCamModal, setShowHMCamModal] = useState(false);
   const [showBusinessForm, setShowBusinessForm] = useState(false);
+  const [providerHasNoPro, setProviderHasNoPro] = useState(false);
   const { showHint, checkAfterHorseCreation, dismiss: dismissHint } = useBusinessUpgradeHint();
 
   const fetchData = async () => {
@@ -195,6 +197,31 @@ export default function ClientHome() {
       .limit(1);
 
     setHasProvider((grants && grants.length > 0) || false);
+
+    // Prüfen ob der verknüpfte Provider ein Pro-Abo hat
+    if (grants && grants.length > 0) {
+      const providerId = grants[0].provider_id;
+      const { data: providerProfile } = await supabase
+        .from("profiles")
+        .select("subscription_plan, plan_override, access_valid_until")
+        .eq("id", providerId)
+        .maybeSingle();
+
+      if (providerProfile) {
+        const hasOverridePro =
+          providerProfile.plan_override !== null &&
+          providerProfile.plan_override !== "standard";
+        const hasValidAccess = providerProfile.access_valid_until
+          ? new Date(providerProfile.access_valid_until) > new Date()
+          : true;
+        const providerIsPro =
+          (hasOverridePro && hasValidAccess) ||
+          providerProfile.subscription_plan === "pro" ||
+          providerProfile.subscription_plan === "duo" ||
+          providerProfile.subscription_plan === "team";
+        setProviderHasNoPro(!providerIsPro);
+      }
+    }
 
     const { data: horsesData, error } = await supabase
       .from("horses")
@@ -252,6 +279,17 @@ export default function ClientHome() {
           {/* === Compact Banners (non-intrusive) === */}
           <ClientPushPermissionBanner />
           <UnconfirmedAppointmentsBanner />
+
+          {/* Hinweis: Provider hat noch kein Pro-Abo */}
+          {providerHasNoPro && (
+            <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
+              <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+              <p className="text-sm text-amber-700 dark:text-amber-400 leading-relaxed">
+                Dein Hufbearbeiter hat noch kein Pro-Abo aktiv. Bitte wende dich
+                direkt an ihn.
+              </p>
+            </div>
+          )}
           <PostAppointmentReviewPrompt />
           <HorseIntervalReminderWidget />
           <HorseTransferReceive />
