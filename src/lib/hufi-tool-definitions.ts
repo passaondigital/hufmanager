@@ -143,7 +143,7 @@ export function toolNameToTaskType(toolName: string): AgentTaskType {
     case "create_invoice":     return "create_invoice";
     case "create_note":        return "create_note";
     case "set_reminder":       return "set_reminder";
-    case "add_expense":        return "generic_action";
+    case "add_expense":        return "add_expense";
     case "set_price_group":    return "set_price_group";
     default:                   return "generic_action";
   }

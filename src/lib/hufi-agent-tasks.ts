@@ -10,6 +10,7 @@ export type AgentTaskType =
   | "set_reminder"
   | "create_note"
   | "set_price_group"
+  | "add_expense"
   | "delete"
   | "generic_action";
 
@@ -46,6 +47,7 @@ export function taskTypeLabel(type: AgentTaskType): string {
     case "set_reminder":       return "Erinnerung setzen";
     case "create_note":        return "Notiz erstellen";
     case "set_price_group":    return "Preisgruppe setzen";
+    case "add_expense":        return "Ausgabe erfassen";
     case "delete":             return "Löschen";
     case "generic_action":     return "Aktion";
   }
@@ -59,6 +61,7 @@ export function taskTypeIcon(type: AgentTaskType): string {
     case "set_reminder":       return "🔔";
     case "create_note":        return "📝";
     case "set_price_group":    return "🏷";
+    case "add_expense":        return "💸";
     case "delete":             return "🗑";
     case "generic_action":     return "⚡";
   }
@@ -72,6 +75,8 @@ export function intentActionToTaskType(action: string): AgentTaskType {
     case "create_appointment": return "create_appointment";
     case "set_reminder":       return "set_reminder";
     case "send_message":       return "send_message";
+    case "add_expense":        return "add_expense";
+    case "set_price_group":    return "set_price_group";
     case "delete":             return "delete";
     default:                   return "generic_action";
   }
@@ -86,6 +91,7 @@ function taskTypeToActionType(type: AgentTaskType): HufiAction["type"] {
     case "set_reminder":       return "remind_dsgvo";
     case "create_note":        return "create_note";
     case "set_price_group":    return "set_price_group";
+    case "add_expense":        return "add_expense";
     case "delete":             return "remind_dsgvo";
     case "generic_action":     return "remind_dsgvo";
   }
