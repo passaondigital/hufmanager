@@ -336,12 +336,12 @@ const signIn = async (email: string, password: string) => {
       // FAST PATH: Read role from user_metadata first (instant, no DB query)
       const metaRole = data.user.user_metadata?.role as UserRole;
       
-      // Run suspension check in parallel with DB role fetch
+      // Run suspension + force_password_reset check in parallel with DB role fetch
       const profilePromise = (async () => {
         try {
           return await supabase
             .from("profiles")
-            .select("is_suspended, suspended_reason")
+            .select("is_suspended, suspended_reason, force_password_reset")
             .eq("id", data.user.id)
             .maybeSingle();
         } catch {
@@ -362,7 +362,7 @@ const signIn = async (email: string, password: string) => {
       ]);
 
       // Check suspension
-      const profile = profileResult?.data as { is_suspended?: boolean; suspended_reason?: string } | null;
+      const profile = profileResult?.data as { is_suspended?: boolean; suspended_reason?: string; force_password_reset?: boolean } | null;
       if (profile?.is_suspended) {
         await supabase.auth.signOut();
         const reason = profile.suspended_reason || "Ihr Konto wurde gesperrt.";
@@ -372,6 +372,11 @@ const signIn = async (email: string, password: string) => {
       // Update with authoritative DB role (may differ from metadata)
       setRole(dbRole);
       setLoading(false);
+
+      // Redirect to password change if first login with temporary password
+      if (profile?.force_password_reset) {
+        navigate("/update-password", { replace: true });
+      }
     }
 
     return { error: null };

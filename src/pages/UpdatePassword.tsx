@@ -72,13 +72,22 @@ export default function UpdatePassword() {
       setLoading(false);
       toast.error(error.message);
     } else {
+      // Clear force_password_reset flag in profiles (fire-and-forget)
+      if (user) {
+        supabase
+          .from("profiles")
+          .update({ force_password_reset: false })
+          .eq("id", user.id)
+          .then(() => {});
+      }
+
       // Send confirmation email in background
       sendPasswordChangedEmail();
-      
+
       setLoading(false);
       toast.success("Passwort erfolgreich geändert!");
       clearPasswordRecovery();
-      
+
       // Redirect based on role
       if (role === "client") {
         navigate("/client-home");
