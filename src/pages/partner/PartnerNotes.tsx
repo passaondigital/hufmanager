@@ -1,14 +1,19 @@
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FileText } from "lucide-react";
+import { FileText, Plus } from "lucide-react";
 import { HelpTip } from "@/components/ui/HelpTip";
+import { PartnerTreatmentNoteModal } from "@/components/partner/PartnerTreatmentNoteModal";
 
 export default function PartnerNotes() {
   const { user } = useAuth();
+  const [showNewNote, setShowNewNote] = useState(false);
+  const [selectedHorseId, setSelectedHorseId] = useState<string | null>(null);
 
   const { data: notes, isLoading } = useQuery({
     queryKey: ["partner-all-notes", user?.id],
@@ -46,13 +51,31 @@ export default function PartnerNotes() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">Behandlungsnotizen <HelpTip id="partner.notizen" /></h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">Behandlungsnotizen <HelpTip id="partner.notizen" /></h1>
+        <Button onClick={() => { setSelectedHorseId(null); setShowNewNote(true); }} className="gap-2">
+          <Plus className="h-4 w-4" /> Neue Notiz
+        </Button>
+      </div>
+
+      {showNewNote && (
+        <PartnerTreatmentNoteModal
+          isOpen={showNewNote}
+          onClose={() => setShowNewNote(false)}
+          horseId={selectedHorseId ?? ""}
+          partnerId={user?.id ?? ""}
+        />
+      )}
 
       {Object.keys(grouped).length === 0 ? (
         <Card className="border-dashed border-2">
-          <CardContent className="p-8 text-center">
-            <FileText className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-            <p className="text-muted-foreground">Noch keine Behandlungsnotizen vorhanden.</p>
+          <CardContent className="p-8 text-center space-y-3">
+            <FileText className="h-10 w-10 mx-auto text-muted-foreground" />
+            <p className="font-medium text-foreground">Noch keine Behandlungsnotizen</p>
+            <p className="text-sm text-muted-foreground">Tippe auf "Neue Notiz" um die erste Behandlung zu dokumentieren.</p>
+            <Button size="sm" onClick={() => setShowNewNote(true)} className="gap-1.5">
+              <Plus className="h-4 w-4" /> Erste Notiz anlegen
+            </Button>
           </CardContent>
         </Card>
       ) : (
@@ -66,17 +89,21 @@ export default function PartnerNotes() {
               {(horseNotes as any[]).map((note) => (
                 <Card key={note.id}>
                   <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
                         <p className="font-semibold text-foreground">{note.title}</p>
                         <p className="text-xs text-muted-foreground">
                           {new Date(note.treatment_date).toLocaleDateString("de-DE")}
                         </p>
+                        {note.findings && (
+                          <p className="text-sm mt-1.5 text-muted-foreground">{note.findings}</p>
+                        )}
                       </div>
+                      <Button size="sm" variant="ghost" className="shrink-0 gap-1 text-xs"
+                        onClick={() => { setSelectedHorseId(note.horse_id); setShowNewNote(true); }}>
+                        <Plus className="h-3.5 w-3.5" /> Folgenotiz
+                      </Button>
                     </div>
-                    {note.findings && (
-                      <p className="text-sm mt-2 text-muted-foreground">{note.findings}</p>
-                    )}
                   </CardContent>
                 </Card>
               ))}

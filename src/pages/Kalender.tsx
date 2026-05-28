@@ -203,8 +203,9 @@ function MobileDayList({
       {dayEvents.length === 0 ? (
         <div className="text-center py-12 space-y-3">
           <CalendarDays className="h-10 w-10 mx-auto text-muted-foreground/50" />
-          <p className="text-sm text-muted-foreground">Keine Termine an diesem Tag</p>
-          <Button size="sm" variant="outline" onClick={onCreateNew} className="gap-1.5">
+          <p className="text-sm font-medium text-foreground">Keine Termine an diesem Tag</p>
+          <p className="text-xs text-muted-foreground">Tippe auf den Button um einen Termin anzulegen.</p>
+          <Button size="sm" onClick={onCreateNew} className="gap-1.5">
             <Plus className="h-4 w-4" /> Termin erstellen
           </Button>
         </div>

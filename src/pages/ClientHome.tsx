@@ -249,6 +249,38 @@ export default function ClientHome() {
         {/* Main Content */}
         <main className="px-4 py-6 max-w-lg mx-auto space-y-5 pb-safe" style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom, 0px))" }}>
 
+          {/* === First-Login Welcome Banner === */}
+          {isFirstLogin && horses.length === 0 && !loading && (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">👋</span>
+                <p className="font-semibold text-foreground">Willkommen, {firstName}!</p>
+              </div>
+              <p className="text-sm text-muted-foreground">3 schnelle Schritte und du bist startklar:</p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2.5 text-sm">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white text-[10px] font-bold shrink-0">1</span>
+                  <span className="text-foreground font-medium">Pferd anlegen</span>
+                  <span className="text-muted-foreground text-xs">→ Hufakte startet sofort</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-sm">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-muted-foreground text-[10px] font-bold shrink-0">2</span>
+                  <span className="text-muted-foreground">Hufprofi verbinden</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-sm">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-muted-foreground text-[10px] font-bold shrink-0">3</span>
+                  <span className="text-muted-foreground">Ersten Termin buchen</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="w-full py-2.5 rounded-lg bg-primary text-white text-sm font-semibold active:opacity-90 transition-opacity"
+              >
+                Jetzt Pferd anlegen →
+              </button>
+            </div>
+          )}
+
           {/* === Compact Banners (non-intrusive) === */}
           <ClientPushPermissionBanner />
           <UnconfirmedAppointmentsBanner />

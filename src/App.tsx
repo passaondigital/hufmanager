@@ -93,6 +93,15 @@ const ClientProfile       = lazy(() => import("@/pages/ClientProfile"));
 const ClientAccountType   = lazy(() => import("@/pages/ClientAccountType"));
 const ClientHorses        = lazy(() => import("@/pages/ClientHorses"));
 const ClientNotifications = lazy(() => import("@/pages/ClientNotifications"));
+const ClientOrders        = lazy(() => import("@/pages/client/ClientOrders"));
+const ClientChat          = lazy(() => import("@/pages/ClientChat"));
+const ClientNetwork       = lazy(() => import("@/pages/client/ClientNetwork"));
+const ClientMarketplace   = lazy(() => import("@/pages/client/ClientMarketplace"));
+const ClientMarketplaceCreate = lazy(() => import("@/pages/client/ClientMarketplaceCreate"));
+const ClientMyListings    = lazy(() => import("@/pages/client/ClientMyListings"));
+const ClientKalender      = lazy(() => import("@/pages/client/ClientKalender"));
+const ClientHistorie      = lazy(() => import("@/pages/client/ClientHistorie"));
+const ClientDokumente     = lazy(() => import("@/pages/client/ClientDokumente"));
 const SearchProviders     = lazy(() => import("@/pages/client/SearchProviders"));
 
 // Admin (unberührt)
@@ -581,6 +590,17 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client-notfall"       element={<EmergencyDashboard />} />
               <Route path="/client/search-providers" element={<SearchProviders />} />
               <Route path="/client-support"       element={<Support />} />
+              {/* Fehlende Client-Routen */}
+              <Route path="/client-orders"        element={<ClientOrders />} />
+              <Route path="/client-chat"          element={<ClientChat />} />
+              <Route path="/client-network"       element={<ClientNetwork />} />
+              <Route path="/client-marketplace"   element={<ClientMarketplace />} />
+              <Route path="/client-marketplace/create" element={<ClientMarketplaceCreate />} />
+              <Route path="/client-marketplace/mine"   element={<ClientMyListings />} />
+              <Route path="/client-kalender"      element={<ClientKalender />} />
+              <Route path="/client-historie"      element={<ClientHistorie />} />
+              <Route path="/client-dokumente"     element={<ClientDokumente />} />
+              <Route path="/client-connect"       element={<Navigate to="/client-network" replace />} />
             </Route>
 
             {/* ── THERAPEUT / PARTNER ────────────────────────────────── */}
@@ -604,6 +624,13 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner-management/abo"          element={<PartnerManagementAbo />} />
               <Route path="/partner-management/business"     element={<PartnerManagementBusinessHub />} />
               <Route path="/partner-management/steuer"       element={<PartnerManagementSteuer />} />
+              {/* Fehlende Partner-Routen → sinnvolle Redirects */}
+              <Route path="/partner-anfragen"     element={<Navigate to="/partner-kunden" replace />} />
+              <Route path="/partner-angebote"     element={<Navigate to="/partner-services" replace />} />
+              <Route path="/partner-tour"         element={<Navigate to="/partner-calendar" replace />} />
+              <Route path="/partner-work-mode"    element={<Navigate to="/partner-calendar" replace />} />
+              <Route path="/partner-feedback"     element={<Navigate to="/partner-home" replace />} />
+              <Route path="/partner-support"      element={<Support />} />
             </Route>
 
             {/* Fallback */}

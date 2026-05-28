@@ -123,9 +123,9 @@ const BOTTOM_NAV_ITEMS = [
 ];
 
 const quickActions = [
-  { label: "Neuer Termin", path: "/partner-calendar", icon: Calendar },
-  { label: "Neuer Kunde", path: "/partner-kunden", icon: User },
-  { label: "Neues Pferd", path: "/partner-pferde", icon: Heart },
+  { label: "Termin planen", path: "/partner-calendar", icon: Calendar },
+  { label: "Notiz eintragen", path: "/partner-notes", icon: MessageSquare },
+  { label: "Meine Pferde", path: "/partner-pferde", icon: Heart },
 ];
 
 export function PartnerAppLayout() {
@@ -334,7 +334,6 @@ export function PartnerAppLayout() {
       </div>
 
       <DemoStickyBanner />
-      null
     </div>
   );
 }

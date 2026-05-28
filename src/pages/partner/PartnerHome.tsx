@@ -113,9 +113,9 @@ export default function PartnerHome() {
 
       {/* ZONE 2 */}
       <KpiGrid items={[
-        { icon: Heart, label: "Pferde", value: horseCount, sub: "zugewiesen", highlight: true },
-        { icon: Calendar, label: "Termine", value: partnerAppointments, sub: "anstehend" },
-        { icon: Users, label: "Empfehlungen", value: referralCount, sub: "Botschafter" },
+        { icon: Heart, label: "Pferde", value: horseCount, sub: "zugewiesen", highlight: true, onClick: () => navigate("/partner-pferde") },
+        { icon: Calendar, label: "Termine", value: partnerAppointments, sub: "anstehend", onClick: () => navigate("/partner-calendar") },
+        { icon: Users, label: "Kunden", value: referralCount, sub: "betreut", onClick: () => navigate("/partner-kunden") },
         { icon: Clock, label: "Letzte Aktivität", value: lastActivity ? formatDistanceToNow(new Date(lastActivity), { locale: de, addSuffix: true }) : "–", sub: "" },
       ]} />
       {/* ZONE 3 — Widget Grid */}

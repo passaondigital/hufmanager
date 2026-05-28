@@ -111,7 +111,7 @@ export default function ManagementHub() {
         <Tile
           icon={<Shield className="w-10 h-10 text-primary" />}
           title="Sicherheit"
-          description="Biometrische Anmeldung — Fingerabdruck, Face ID, Iris-Scan"
+          description="Passwort ändern, E-Mail-Adresse, Zwei-Faktor-Authentifizierung"
           onClick={() => navigate("/management/sicherheit")}
         />
       </TileCategory>
