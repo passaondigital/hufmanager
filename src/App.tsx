@@ -173,15 +173,29 @@ const SupplierPortalDemo     = lazy(() => import("@/pages/portal/demos/SupplierP
 const EducationPortalDemo    = lazy(() => import("@/pages/portal/demos/EducationPortalDemo"));
 const AssociationPortalDemo  = lazy(() => import("@/pages/portal/demos/AssociationPortalDemo"));
 
-// ── DEAKTIVIERT (HufManager-Cleanup) ─────────────────────────────────────────
-// Partner, Mitarbeiter, Stallbetreiber, Botschafter-Portal,
-// Academy, AutoFlow, Marketplace, EmailMarketing, Kalkulator,
-// GeldVerdienen, Hufrente, Hufanalyse, HMConnect, Netzwerk, Team,
-// MeineWebsite, LandingEditor, AboMatrix,
-// Blog, Docs, FAQ, Glossar, Changelog, Statistiken, Vertrauen,
-// Client: Stall-*, Marketplace-*, Network, Botschafter, Kalender, Historie, Dokumente
-// → Alle Importe auskommentiert, Routen nicht registriert.
-// → Für Reaktivierung: Import einkommentieren + Route wieder eintragen.
+// ── THERAPEUTEN / PARTNER ─────────────────────────────────────────────────────
+const PartnerAppLayout        = lazy(() => import("@/components/partner/PartnerAppLayout"));
+const PartnerHome             = lazy(() => import("@/pages/partner/PartnerHome"));
+const PartnerPferde           = lazy(() => import("@/pages/partner/PartnerPferde"));
+const PartnerHorseView        = lazy(() => import("@/pages/partner/PartnerHorseView"));
+const PartnerKunden           = lazy(() => import("@/pages/partner/PartnerKunden"));
+const PartnerCalendar         = lazy(() => import("@/pages/partner/PartnerCalendar"));
+const PartnerChat             = lazy(() => import("@/pages/partner/PartnerChat"));
+const PartnerNotes            = lazy(() => import("@/pages/partner/PartnerNotes"));
+const PartnerTreatmentPlans   = lazy(() => import("@/pages/partner/PartnerTreatmentPlans"));
+const PartnerDocuments        = lazy(() => import("@/pages/partner/PartnerDocuments"));
+const PartnerInvoices         = lazy(() => import("@/pages/partner/PartnerInvoices"));
+const PartnerServices         = lazy(() => import("@/pages/partner/PartnerServices"));
+const PartnerConnect          = lazy(() => import("@/pages/partner/PartnerConnect"));
+const PartnerPublicProfile    = lazy(() => import("@/pages/partner/PartnerPublicProfile"));
+const PartnerProfile          = lazy(() => import("@/pages/partner/PartnerProfile"));
+const PartnerSettings         = lazy(() => import("@/pages/partner/PartnerSettings"));
+const PartnerManagementHub    = lazy(() => import("@/pages/partner/PartnerManagementHub"));
+const PartnerManagementProfil = lazy(() => import("@/pages/partner/PartnerManagementProfil"));
+const PartnerManagementAbo    = lazy(() => import("@/pages/partner/PartnerManagementAbo"));
+const PartnerManagementBusinessHub = lazy(() => import("@/pages/partner/PartnerManagementBusinessHub"));
+const PartnerManagementSteuer = lazy(() => import("@/pages/partner/PartnerManagementSteuer"));
+const PartnerInvite           = lazy(() => import("@/pages/PartnerInvite"));
 
 // ── Suspense Fallback ─────────────────────────────────────────────────────────
 const LazyFallback = () => {
@@ -449,6 +463,8 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
 
             {/* Öffentliche Seiten */}
             <Route path="/bhs"                  element={<BhsLandingPage />} />
+            <Route path="/partner-einladung/:token" element={<PartnerInvite />} />
+            <Route path="/partner/:prid"         element={<PartnerPublicProfile />} />
             <Route path="/p/:slug"              element={<ProviderLanding />} />
             <Route path="/p/:slug/:page"        element={<ProviderLanding />} />
             <Route path="/connect/:slug"        element={<ConnectForm />} />
@@ -562,6 +578,29 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/client-notfall"       element={<EmergencyDashboard />} />
               <Route path="/client/search-providers" element={<SearchProviders />} />
               <Route path="/client-support"       element={<Support />} />
+            </Route>
+
+            {/* ── THERAPEUT / PARTNER ────────────────────────────────── */}
+            <Route element={<ProtectedRoute allowedRoles={["partner", "admin"]}><PartnerAppLayout /></ProtectedRoute>}>
+              <Route path="/partner-home"         element={<PartnerHome />} />
+              <Route path="/partner-pferde"       element={<PartnerPferde />} />
+              <Route path="/partner-pferd/:id"    element={<PartnerHorseView />} />
+              <Route path="/partner-kunden"       element={<PartnerKunden />} />
+              <Route path="/partner-calendar"     element={<PartnerCalendar />} />
+              <Route path="/partner-chat"         element={<PartnerChat />} />
+              <Route path="/partner-notes"        element={<PartnerNotes />} />
+              <Route path="/partner-plans"        element={<PartnerTreatmentPlans />} />
+              <Route path="/partner-documents"    element={<PartnerDocuments />} />
+              <Route path="/partner-invoices"     element={<PartnerInvoices />} />
+              <Route path="/partner-services"     element={<PartnerServices />} />
+              <Route path="/partner-connect"      element={<PartnerConnect />} />
+              <Route path="/partner-profile"      element={<PartnerProfile />} />
+              <Route path="/partner-settings"     element={<PartnerSettings />} />
+              <Route path="/partner-management"              element={<PartnerManagementHub />} />
+              <Route path="/partner-management/profil"       element={<PartnerManagementProfil />} />
+              <Route path="/partner-management/abo"          element={<PartnerManagementAbo />} />
+              <Route path="/partner-management/business"     element={<PartnerManagementBusinessHub />} />
+              <Route path="/partner-management/steuer"       element={<PartnerManagementSteuer />} />
             </Route>
 
             {/* Fallback */}
