@@ -77,6 +77,7 @@ const ManagementSteuer      = lazy(() => import("@/pages/management/ManagementSt
 const ManagementBusinessHub = lazy(() => import("@/pages/management/ManagementBusinessHub"));
 const ManagementSicherheit  = lazy(() => import("@/pages/management/ManagementSicherheit"));
 const ManagementKommunikation = lazy(() => import("@/pages/management/ManagementKommunikation"));
+const ManagementWebsite       = lazy(() => import("@/pages/management/ManagementWebsite"));
 const ImportCenter  = lazy(() => import("@/pages/ImportCenter"));
 const Support       = lazy(() => import("@/pages/Support"));
 
@@ -555,6 +556,8 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/management/rechtliches"    element={<ManagementRechtliches />} />
               <Route path="/management/steuer"         element={<ManagementSteuer />} />
               <Route path="/management/import"         element={<ImportCenter />} />
+              <Route path="/management/website"        element={<ManagementWebsite />} />
+              <Route path="/management/botschafter"    element={<Navigate to="/management" replace />} />
 
               {/* BHS Balance */}
               <Route path="/bhs-balance" element={<BhsBalanceCockpit />} />

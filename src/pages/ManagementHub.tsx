@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { User, Briefcase, Mic, Shield, Smartphone, Share } from "lucide-react";
+import { User, Briefcase, Mic, Shield, Smartphone, Share, Globe, MessageSquare, Scale, Calculator, Upload, LogOut } from "lucide-react";
+import { useLogout } from "@/hooks/useLogout";
 import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
 import { HufiPermissionsSettings } from "@/components/consent/HufiPermissionsSettings";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
@@ -20,6 +21,7 @@ export default function ManagementHub() {
   const [searchParams] = useSearchParams();
   const { canInstall, isInstalled, isIOS, promptInstall } = usePWAInstall();
   const { user } = useAuth();
+  const logout = useLogout();
 
   useEffect(() => {
     const tab = searchParams.get("tab");
@@ -114,21 +116,59 @@ export default function ManagementHub() {
         />
       </TileCategory>
 
-      <TileCategory title="Business-Einstellungen">
+      <TileCategory title="Business">
         <Tile
           icon={<Briefcase className="w-10 h-10 text-primary" />}
-          title="Meine Business-Einstellungen"
-          description="Steuer, MwSt, Website, Abo, Rechnungen, Kommunikation, AGB, Datenschutz, Impressum, Preisanzeige"
+          title="Business-Einstellungen"
+          description="Steuer, MwSt, Rechnungen, Preisanzeige, Bankdaten"
           onClick={() => navigate("/management/business")}
-          colSpan
+        />
+        <Tile
+          icon={<Globe className="w-10 h-10 text-primary" />}
+          title="Meine Website"
+          description="Landingpage, Logo, Farben, Angebot, Impressum"
+          onClick={() => navigate("/management/website")}
+        />
+        <Tile
+          icon={<MessageSquare className="w-10 h-10 text-primary" />}
+          title="Kommunikation"
+          description="E-Mail, WhatsApp, Benachrichtigungen, Erinnerungen"
+          onClick={() => navigate("/management/kommunikation")}
         />
       </TileCategory>
 
-      <TileCategory title="Hufi">
+      <TileCategory title="Recht & Steuer">
+        <Tile
+          icon={<Scale className="w-10 h-10 text-primary" />}
+          title="Rechtliches"
+          description="AGB, Datenschutz, Widerruf, Impressum"
+          onClick={() => navigate("/management/rechtliches")}
+        />
+        <Tile
+          icon={<Calculator className="w-10 h-10 text-primary" />}
+          title="Steuer"
+          description="Steuernummer, MwSt, Kleinunternehmer, DATEV"
+          onClick={() => navigate("/management/steuer")}
+        />
+        <Tile
+          icon={<Upload className="w-10 h-10 text-primary" />}
+          title="Abo & Lizenz"
+          description="Aktueller Plan, Upgrade, Rechnungen, Kündigung"
+          onClick={() => navigate("/management/abo")}
+        />
+      </TileCategory>
+
+      <TileCategory title="Daten & Tools">
+        <Tile
+          icon={<Upload className="w-10 h-10 text-primary" />}
+          title="Import Center"
+          description="Daten importieren aus Excel, CSV, anderen Apps"
+          onClick={() => navigate("/management/import")}
+        />
         <Tile
           icon={<Mic className="w-10 h-10 text-primary" />}
           title="Botschafter werden"
-          description="Provision verdienen, Empfehlungslinks, Statistiken, Auszahlungen, Werbemittel"
+          description="Provision verdienen, Empfehlungslinks, Werbemittel"
           onClick={() => navigate("/management/botschafter")}
         />
       </TileCategory>
@@ -136,6 +176,17 @@ export default function ManagementHub() {
       {/* Berechtigungen & Hufi — inline Einstellungsbereich */}
       <div className="px-1">
         <HufiPermissionsSettings userId={user?.id ?? ""} />
+      </div>
+
+      {/* Abmelden */}
+      <div className="px-1 pb-4">
+        <button
+          onClick={async () => { await logout(); }}
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-destructive/30 text-destructive hover:bg-destructive/5 active:bg-destructive/10 transition-colors text-sm font-medium"
+        >
+          <LogOut className="h-4 w-4" />
+          Abmelden
+        </button>
       </div>
     </div>
   );
