@@ -121,7 +121,7 @@ X-WR-TIMEZONE:Europe/Berlin
       ].filter(Boolean).join("\\n");
 
       icalContent += `BEGIN:VEVENT
-UID:${apt.id}@hufiapp.de
+UID:${apt.id}@hufmanager.de
 DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")}
 DTSTART:${startDate}
 DTEND:${endDate}

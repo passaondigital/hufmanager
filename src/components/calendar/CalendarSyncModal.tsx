@@ -85,7 +85,7 @@ const PLATFORM_GUIDES: Record<
       'Klicke auf das Kalender-Symbol in der Seitenleiste',
       'Klicke auf "Kalender hinzufügen" → "Aus dem Internet abonnieren"',
       "Füge den kopierten Link in das URL-Feld ein",
-      'Gib einen Namen ein (z.B. "Hufi")',
+      'Gib einen Namen ein (z.B. "HufManager")',
       'Klicke auf "Importieren"',
       "✅ Fertig! Termine werden automatisch synchronisiert",
     ],
@@ -184,7 +184,7 @@ export function CalendarSyncModal({
               Kalender synchronisieren
             </DialogTitle>
             <DialogDescription>
-              Verbinde deinen Hufi-Kalender mit deinem Smartphone — ganz einfach.
+              Verbinde deinen HufManager-Kalender mit deinem Smartphone — ganz einfach.
             </DialogDescription>
           </DialogHeader>
 
@@ -193,7 +193,7 @@ export function CalendarSyncModal({
             <div className="rounded-lg bg-primary/5 border border-primary/10 p-3">
               <p className="text-sm text-muted-foreground">
                 <strong className="text-foreground">So funktioniert's:</strong> Dein
-                Hufi-Kalender wird als{" "}
+                HufManager-Kalender wird als{" "}
                 <Badge variant="secondary" className="text-xs">
                   Live-Abo
                 </Badge>{" "}
@@ -346,7 +346,7 @@ export function CalendarSyncModal({
               </p>
               <p>
                 <strong>Kann ich Termine im Handy-Kalender ändern?</strong> Nein, es ist ein
-                Lese-Abo. Änderungen werden immer in Hufi gemacht.
+                Lese-Abo. Änderungen werden immer im HufManager gemacht.
               </p>
               <p>
                 <strong>Muss ich etwas bezahlen?</strong> Nein, die Synchronisation ist
