@@ -1,7 +1,9 @@
 import { useAuth } from "@/hooks/useAuth";
+import { lazy } from "react";
 import { Navigate } from "react-router-dom";
-import WebsiteHome from "@/pages/website/WebsiteHome";
 import { getPostLoginPath } from "@/lib/portal-user-detect";
+
+const WebsiteHome = lazy(() => import("@/pages/website/WebsiteHome"));
 
 // Erkennt ob die App als installiertes PWA läuft (Homescreen-Kachel)
 function isPWAStandalone(): boolean {
@@ -17,21 +19,11 @@ const Index = () => {
   const { user, role, loading } = useAuth();
   const hostname = window.location.hostname;
 
-  // Marketing landing on the bare apex / www; auth flow on app.* and everywhere else.
-  // Legacy hufmanager.de hosts are aliased so existing HufManager users don't
-  // land on the auth screen when they hit their old bookmark.
-  // PWA (standalone) überspringt immer die Landing Page — direkt zur App.
-  const isMainDomain =
-    hostname === "hufiapp.de" ||
-    hostname === "www.hufiapp.de" ||
-    hostname === "hufmanager.de" ||
-    hostname === "www.hufmanager.de";
+  // hufmanager.de = statische Landing/Salespage (eigener Nginx-Block)
+  // app.hufmanager.de = die App → hier landen, direkt zur Auth/App
+  // hufiapp.de leitet per Nginx auf hufmanager.de weiter → kommt nie hier an
 
-  if (isMainDomain && !isPWAStandalone()) {
-    return <WebsiteHome />;
-  }
-
-  // app.hufiapp.de / app.hufmanager.de (or preview/localhost) → auth flow
+  // app.hufmanager.de → auth flow
   // If logged in, redirect to role-specific home
   if (!loading && user && role) {
     return <Navigate to={getPostLoginPath(role, user.email)} replace />;

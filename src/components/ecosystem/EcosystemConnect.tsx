@@ -44,7 +44,7 @@ const ECOSYSTEM_APPS: EcosystemApp[] = [
     icon: "🤖",
   },
   {
-    key: "hufiapp",
+    key: "hufmanager",
     name: "HufiApp",
     description: "Mobile App für Pferdebesitzer",
     idPrefix: "#eqid",

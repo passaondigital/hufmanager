@@ -13,7 +13,7 @@ const faqs = [
   { question: "Ist Hufi DSGVO-konform?", answer: "Vollständig. Deutsche Server in Frankfurt, verschlüsselte Übertragung, AVV inklusive. Deine Daten und die deiner Kunden sind sicher." },
   { question: "Kann ich jederzeit kündigen?", answer: "Ja. Monatlich kündbar, kein Knebelvertrag. Du bleibst, weil es dir hilft – nicht weil du musst." },
   // Client FAQ
-  { question: "Wie sehe ich wann mein Hufprofi kommt?", answer: "In deiner Hufi App siehst du live den Status: Geplant → Unterwegs → Angekommen. Du bekommst auch eine Push-Benachrichtigung wenn er unterwegs zu dir ist." },
+  { question: "Wie sehe ich wann mein Hufprofi kommt?", answer: "In deiner HufManager siehst du live den Status: Geplant → Unterwegs → Angekommen. Du bekommst auch eine Push-Benachrichtigung wenn er unterwegs zu dir ist." },
   { question: "Kann ich einen Termin ablehnen?", answer: "Ja. Wenn ein neuer Termin angelegt wird bekommst du eine Benachrichtigung mit [Bestätigen] und [Absagen] direkt in der App." },
   { question: "Meine Pferde stehen auf verschiedenen Ställen – wie trage ich das ein?", answer: "Unter 'Meine Ställe' kannst du mehrere Standorte anlegen. Jedes Pferd bekommt seinen eigenen Stall zugewiesen." },
   { question: "Muss ich meinen Kunden die App aufzwingen?", answer: "Nein. Die Kunden-App ist ein Service, keine Pflicht. Du kannst Hufi komplett alleine nutzen – auch wenn deine Kunden kein Smartphone haben." },

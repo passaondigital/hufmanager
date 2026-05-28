@@ -133,7 +133,7 @@ export default function BhsBalanceCockpit() {
       {!isSubscribed && (
         <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           <span>
-            Mit einem aktiven Hufi-Abo wird dieser Überblick automatisch aktuell gehalten und mit dem Kalender synchronisiert.
+            Mit einem aktiven HufManager-Abo wird dieser Überblick automatisch aktuell gehalten und mit dem Kalender synchronisiert.
           </span>
           <a
             href="https://hufiapp.de/preise"

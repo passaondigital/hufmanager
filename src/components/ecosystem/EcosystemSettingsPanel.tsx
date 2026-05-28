@@ -9,7 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { Settings, Save, Loader2 } from "lucide-react";
 import type { EcosystemSetting } from "@/hooks/useEcosystemStats";
 
-const APPS = ["hufmanager", "hufiai", "hufiapp", "memberhorse"];
+const APPS = ["hufmanager", "hufiai", "memberhorse"];
 
 interface Props {
   settings: EcosystemSetting[];
