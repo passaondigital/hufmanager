@@ -116,40 +116,42 @@ Antworte NUR als gültiges JSON (kein Markdown, kein Text davor/danach):
 
 async function loadContext(userId: string, supabase: ReturnType<typeof createClient>) {
   const today = new Date().toISOString().slice(0, 10);
+  const in14Days = new Date(Date.now() + 14 * 86_400_000).toISOString().slice(0, 10);
+  const ago7Days = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10);
 
-  const [profileRes, apptRes, invoiceRes, horsesRes, memoryRes, clientCountRes, horseCountRes, bhsSubsRes] = await Promise.allSettled([
+  const [
+    profileRes, apptTodayRes, invoiceRes, memoryRes, bhsSubsRes,
+    apptUpcomingRes, apptRecentRes, clientsWithHorsesRes,
+  ] = await Promise.allSettled([
+    // 1. Eigenes Profil
     supabase.from("profiles").select("full_name, user_type").eq("id", userId).single(),
+
+    // 2. Heutige Termine (mit IDs für Actions)
     supabase
       .from("appointments")
-      .select("date, time, status, horses(name), client:profiles!client_id(full_name)")
+      .select("id, date, time, status, horse_id, client_id, horses(id,name,eqid), client:profiles!client_id(id,full_name,readable_id)")
       .eq("provider_id", userId)
       .eq("date", today)
       .in("status", ["scheduled", "confirmed"])
       .order("time", { ascending: true })
-      .limit(MAX_CTX_ROWS),
+      .limit(10),
+
+    // 3. Offene Rechnungen (Anzahl)
     supabase
       .from("invoices")
       .select("*", { count: "exact", head: true })
       .eq("provider_id", userId)
       .neq("payment_status", "paid"),
-    supabase.from("horses").select("name").eq("owner_id", userId).limit(MAX_CTX_ROWS),
+
+    // 4. Hufi Memory
     supabase
       .from("hufi_memory")
       .select("category, key, value")
       .eq("user_id", userId)
       .order("last_updated", { ascending: false })
       .limit(4),
-    // Kundenzahl: Profiles die dieser Provider angelegt hat
-    supabase
-      .from("profiles")
-      .select("*", { count: "exact", head: true })
-      .eq("created_by_provider_id", userId),
-    // Pferdezahl: Pferde der eigenen Kunden (via appointments distinct horse_id)
-    supabase
-      .from("appointments")
-      .select("horse_id")
-      .eq("provider_id", userId),
-    // BHS Balance Abos des Clients (leer für Provider/Employee wegen RLS)
+
+    // 5. BHS Balance Abos (für Client-Rolle)
     supabase
       .from("bhs_horse_subscriptions")
       .select("interval_weeks, zone, monthly_price, status, next_service_date, horses(name)")
@@ -157,47 +159,114 @@ async function loadContext(userId: string, supabase: ReturnType<typeof createCli
       .in("status", ["active", "pending"])
       .order("next_service_date", { ascending: true })
       .limit(5),
+
+    // 6. Kommende Termine (nächste 14 Tage, mit IDs)
+    supabase
+      .from("appointments")
+      .select("id, date, time, status, horse_id, client_id, horses(id,name), client:profiles!client_id(id,full_name,readable_id)")
+      .eq("provider_id", userId)
+      .gt("date", today)
+      .lte("date", in14Days)
+      .in("status", ["scheduled", "confirmed"])
+      .order("date", { ascending: true })
+      .order("time", { ascending: true })
+      .limit(20),
+
+    // 7. Vergangene Termine (letzte 7 Tage)
+    supabase
+      .from("appointments")
+      .select("id, date, time, status, horse_id, client_id, horses(id,name), client:profiles!client_id(id,full_name)")
+      .eq("provider_id", userId)
+      .gte("date", ago7Days)
+      .lt("date", today)
+      .order("date", { ascending: false })
+      .limit(10),
+
+    // 8. Kunden mit ihren Pferden (für Provider)
+    supabase
+      .from("profiles")
+      .select("id, full_name, readable_id, email, horses(id, name, eqid)")
+      .eq("created_by_provider_id", userId)
+      .order("full_name", { ascending: true })
+      .limit(40),
   ]);
 
   const profile = profileRes.status === "fulfilled" ? profileRes.value.data : null;
 
-  const appointments = apptRes.status === "fulfilled" && apptRes.value.data
-    ? (apptRes.value.data as Array<{
-        date: string; time: string | null;
-        horses: Array<{ name: string }> | { name: string } | null;
-        client: { full_name: string } | null;
-      }>).map((a) => ({
-        date: a.date, time: a.time,
-        horse_name: Array.isArray(a.horses) ? a.horses[0]?.name : (a.horses as { name: string } | null)?.name,
-        client_name: a.client?.full_name,
-      }))
+  type ApptRow = {
+    id: string; date: string; time: string | null; status: string;
+    horse_id: string | null; client_id: string | null;
+    horses: { id: string; name: string; eqid?: string } | Array<{ id: string; name: string; eqid?: string }> | null;
+    client: { id: string; full_name: string; readable_id?: string } | null;
+  };
+
+  function mapAppt(a: ApptRow) {
+    const h = Array.isArray(a.horses) ? a.horses[0] : a.horses;
+    return {
+      id: a.id,
+      date: a.date,
+      time: a.time,
+      status: a.status,
+      horse_id: a.horse_id ?? h?.id ?? null,
+      horse_name: h?.name ?? null,
+      horse_eqid: h?.eqid ?? null,
+      client_id: a.client_id ?? a.client?.id ?? null,
+      client_name: a.client?.full_name ?? null,
+      client_readable_id: a.client?.readable_id ?? null,
+    };
+  }
+
+  const appointments = apptTodayRes.status === "fulfilled" && apptTodayRes.value.data
+    ? (apptTodayRes.value.data as ApptRow[]).map(mapAppt)
+    : [];
+
+  const upcomingAppointments = apptUpcomingRes.status === "fulfilled" && apptUpcomingRes.value.data
+    ? (apptUpcomingRes.value.data as ApptRow[]).map(mapAppt)
+    : [];
+
+  const recentAppointments = apptRecentRes.status === "fulfilled" && apptRecentRes.value.data
+    ? (apptRecentRes.value.data as ApptRow[]).map(mapAppt)
     : [];
 
   const unpaidCount = invoiceRes.status === "fulfilled" ? (invoiceRes.value.count ?? 0) : 0;
-  const horses = horsesRes.status === "fulfilled" && horsesRes.value.data
-    ? (horsesRes.value.data as Array<{ name: string }>)
-    : [];
   const memories = memoryRes.status === "fulfilled" && memoryRes.value.data
     ? (memoryRes.value.data as Array<{ category: string; key: string; value: Record<string, unknown> }>)
     : [];
-  const clientCount = clientCountRes.status === "fulfilled" ? (clientCountRes.value.count ?? null) : null;
-  const horseCount = horseCountRes.status === "fulfilled" && horseCountRes.value.data
-    ? new Set((horseCountRes.value.data as Array<{ horse_id: string | null }>).map((r) => r.horse_id).filter(Boolean)).size
-    : null;
 
   interface BhsSubRow {
-    interval_weeks: number;
-    zone: number;
-    monthly_price: number;
-    status: string;
-    next_service_date: string | null;
+    interval_weeks: number; zone: number; monthly_price: number;
+    status: string; next_service_date: string | null;
     horses: { name: string } | Array<{ name: string }> | null;
   }
   const bhsSubs: BhsSubRow[] = bhsSubsRes.status === "fulfilled" && bhsSubsRes.value.data
-    ? (bhsSubsRes.value.data as BhsSubRow[])
-    : [];
+    ? (bhsSubsRes.value.data as BhsSubRow[]) : [];
 
-  return { userName: profile?.full_name ?? null, userType: profile?.user_type ?? null, appointments, unpaidCount, horses, memories, clientCount, horseCount, bhsSubs };
+  type ClientRow = {
+    id: string; full_name: string | null; readable_id: string | null; email: string | null;
+    horses: Array<{ id: string; name: string; eqid: string | null }> | null;
+  };
+  const clients: ClientRow[] = clientsWithHorsesRes.status === "fulfilled" && clientsWithHorsesRes.value.data
+    ? (clientsWithHorsesRes.value.data as ClientRow[]) : [];
+
+  const clientCount = clients.length || null;
+  const horseCount = clients.reduce((sum, c) => sum + (c.horses?.length ?? 0), 0) || null;
+  // Flache Pferde-Liste für Rückwärtskompatibilität
+  const horses = clients.flatMap((c) => (c.horses ?? []).map((h) => ({ name: h.name })));
+
+  return {
+    userName: profile?.full_name ?? null,
+    userType: profile?.user_type ?? null,
+    appointments,
+    upcomingAppointments,
+    recentAppointments,
+    unpaidCount,
+    horses,
+    clients,
+    memories,
+    clientCount,
+    horseCount,
+    bhsSubs,
+  };
 }
 
 // ── Context Block bauen ────────────────────────────────────────────────────────
@@ -228,9 +297,34 @@ function buildContextBlock(ctx: Awaited<ReturnType<typeof loadContext>>, voiceMo
 
   if (ctx.unpaidCount > 0) lines.push(`Offene Rechnungen: ${ctx.unpaidCount}`);
 
-  if (ctx.clientCount !== null) lines.push(`Kunden im System: ${ctx.clientCount}`);
-  if (ctx.horseCount !== null && ctx.horseCount > 0) lines.push(`Betreute Pferde (alle Termine): ${ctx.horseCount}`);
-  else if (ctx.horses.length > 0) lines.push(`Bekannte Pferde: ${ctx.horses.map((h) => h.name).join(", ")}`);
+  // Kommende Termine (nächste 14 Tage)
+  if (ctx.upcomingAppointments && ctx.upcomingAppointments.length > 0) {
+    const upcoming = ctx.upcomingAppointments.map((a) => {
+      const t = a.time ? a.time.slice(0, 5) : "?";
+      const idHint = voiceMode ? "" : ` [horse_id:${a.horse_id ?? "?"} client_id:${a.client_id ?? "?"}]`;
+      return `${a.date} ${t} ${a.horse_name ?? ""}${a.client_name ? ` (${a.client_name})` : ""}${idHint}`;
+    }).join("\n  ");
+    lines.push(`Kommende Termine (14 Tage):\n  ${upcoming}`);
+  }
+
+  // Vergangene Termine (letzte 7 Tage)
+  if (!voiceMode && ctx.recentAppointments && ctx.recentAppointments.length > 0) {
+    const recent = ctx.recentAppointments.map((a) =>
+      `${a.date} ${a.horse_name ?? ""}${a.client_name ? ` (${a.client_name})` : ""} [horse_id:${a.horse_id ?? "?"} client_id:${a.client_id ?? "?"}]`
+    ).join("\n  ");
+    lines.push(`Letzte Termine (7 Tage):\n  ${recent}`);
+  }
+
+  // Kunden mit Pferden + IDs (für Actions unerlässlich)
+  if (!voiceMode && ctx.clients && ctx.clients.length > 0) {
+    const clientLines = ctx.clients.map((c) => {
+      const horses = (c.horses ?? []).map((h) => `${h.name} [horse_id:${h.id}]`).join(", ");
+      return `${c.full_name ?? "?"} [client_id:${c.id}${c.readable_id ? ` #${c.readable_id}` : ""}]: ${horses || "keine Pferde"}`;
+    }).join("\n  ");
+    lines.push(`KUNDEN & PFERDE (IDs für Actions):\n  ${clientLines}`);
+  } else if (ctx.clientCount !== null) {
+    lines.push(`Kunden: ${ctx.clientCount}, Pferde: ${ctx.horseCount ?? "?"}`);
+  }
 
   if (ctx.memories.length > 0) {
     const memLines = ctx.memories
@@ -359,7 +453,12 @@ serve(async (req) => {
   if (!text?.trim()) return jsonErr("Kein Text", 400);
 
   // Kontext laden
-  let ctx: Awaited<ReturnType<typeof loadContext>> = { userName: null, userType: null, appointments: [], unpaidCount: 0, horses: [], memories: [], clientCount: null, horseCount: null };
+  let ctx: Awaited<ReturnType<typeof loadContext>> = {
+    userName: null, userType: null,
+    appointments: [], upcomingAppointments: [], recentAppointments: [],
+    unpaidCount: 0, horses: [], clients: [], memories: [],
+    clientCount: null, horseCount: null, bhsSubs: [],
+  };
   try { ctx = await loadContext(user.id, supabase); }
   catch (e) { console.warn(`[hufi-agent][${requestId}] Kontext-Fehler:`, e); }
 

@@ -241,22 +241,51 @@ async function _notifyClient(
   payload: Record<string, unknown>,
   userId: string,
 ): Promise<ActionResult> {
+  const clientId = payload.client_id as string | null;
+  const clientName = (payload.client_name as string | null) ?? "Kunde";
+  const message = (payload.message as string | null) ?? "Dein Hufbearbeiter hat dir eine Nachricht hinterlassen.";
+  const horseName = payload.horse_name as string | null;
+
+  const title = horseName ? `Nachricht zu ${horseName}` : "Nachricht von deinem Hufbearbeiter";
+
   try {
+    // Push-Benachrichtigung an Client
+    if (clientId) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push-notification`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            user_id: clientId,
+            title,
+            body: message,
+            url: "/client-horses",
+          }),
+        }).catch(() => null);
+      }
+    }
+
+    // In Hufi Memory loggen
     await updateHufiMemory(
       userId,
       "alert",
-      `notify_${payload.client_id ?? "client"}_${Date.now()}`,
+      `notify_${clientId ?? "client"}_${Date.now()}`,
       {
-        active: false, // informational, not a pending alert
-        message: `Benachrichtigung an ${payload.client_name ?? "Kunde"}: ${payload.message ?? "Befund verfügbar"}`,
-        client_id: payload.client_id,
+        active: false,
+        message: `Benachrichtigung an ${clientName}: ${message}`,
+        client_id: clientId,
         sent_at: new Date().toISOString(),
       },
       "system",
     );
+
     return {
       success: true,
-      message: `💬 ${payload.client_name ?? "Kunde"} wird benachrichtigt.`,
+      message: `💬 ${clientName} wurde benachrichtigt.`,
     };
   } catch {
     return { success: false, message: "Benachrichtigung fehlgeschlagen." };
