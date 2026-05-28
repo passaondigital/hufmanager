@@ -109,7 +109,17 @@ serve(async (req) => {
     if (!ttsResponse.ok) {
       const errText = await ttsResponse.text();
       console.error("[hufi-tts] ElevenLabs error:", ttsResponse.status, errText);
-      return new Response(JSON.stringify({ error: "Sprachsynthese fehlgeschlagen" }), {
+      let detail = "";
+      try {
+        const parsed = JSON.parse(errText);
+        detail = parsed?.detail?.message ?? parsed?.detail ?? parsed?.message ?? "";
+      } catch { /* ignore */ }
+      const statusMsg = ttsResponse.status === 401 ? "API-Key ungültig" :
+                        ttsResponse.status === 404 ? "Stimme nicht gefunden – prüfe ob die Voice-ID zum API-Account gehört" :
+                        ttsResponse.status === 422 ? "Ungültige Parameter" : "";
+      return new Response(JSON.stringify({
+        error: statusMsg || detail || `ElevenLabs Fehler ${ttsResponse.status}`,
+      }), {
         status: 502,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

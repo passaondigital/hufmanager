@@ -185,6 +185,10 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
+  esbuild: {
+    // console.log/warn/error und debugger aus dem Production-Bundle entfernen
+    drop: mode === "production" ? ["console", "debugger"] : [],
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

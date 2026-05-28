@@ -12,7 +12,6 @@ import {
 import type { TourAppointment } from "@/components/tour-manager/TourCard";
 import { TeamOverviewSection } from "./TeamOverviewSection";
 import { HeyHufi } from "@/components/voice/HeyHufi";
-import { useAuth } from "@/hooks/useAuth";
 
 interface CockpitReadyProps {
   appointments: TourAppointment[];
@@ -41,7 +40,6 @@ export function CockpitReady({
   gpsConsentGiven,
   onGpsConsentChange,
 }: CockpitReadyProps) {
-  const { user } = useAuth();
   const fmt = (v: number) =>
     new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(v);
 
@@ -75,8 +73,9 @@ export function CockpitReady({
           </p>
         </div>
         <HeyHufi
-          userName={user?.user_metadata?.full_name || ""}
-          appointmentCount={appointments.length}
+          onWakeWord={() => {
+            // Wake-word erkannt im Cockpit
+          }}
         />
       </div>
 

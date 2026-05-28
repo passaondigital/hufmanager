@@ -154,6 +154,11 @@
   to   { transform: translateY(0);    opacity: 1; }
 }
 
+@keyframes badge-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(249,115,22,0.4); }
+  50%       { box-shadow: 0 0 0 4px rgba(249,115,22,0); }
+}
+
 /* ── Animation Utility Classes ─────────────────────────────── */
 .hufi-anim-fade-up   { animation: hufi-fade-up  0.55s var(--ease-premium) both; }
 .hufi-anim-fade-in   { animation: hufi-fade-in  0.4s  var(--ease-smooth)  both; }

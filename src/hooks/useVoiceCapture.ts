@@ -1,22 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-/**
- * Phase-1 centralised voice capture for Hufi.
- *
- * Wraps: getUserMedia + MediaRecorder + the local Whisper proxy at
- * /api/local-ai/transcribe. Returns a tap-to-toggle interface.
- *
- * Designed so callers never see MediaRecorder details:
- *   const v = useVoiceCapture();
- *   v.startRecording();            // tap 1
- *   v.stopRecording();             // tap 2
- *   useEffect(() => { if (v.transcript) feedToAI(v.transcript); v.reset(); }, [v.transcript]);
- *
- * Error states are surfaced via the `error` field as a stable code so the UI
- * can render appropriate messaging. No silent failures.
- */
-
 const WHISPER_ENDPOINT = "/api/local-ai/transcribe";
+
+// VAD-Parameter — Stille-Erkennung
+const VOICE_THRESHOLD   = 0.018; // RMS-Amplitude: darüber = Sprechen
+const SILENCE_THRESHOLD = 0.012; // RMS-Amplitude: darunter = Stille
+const SILENCE_DURATION  = 1200;  // ms Stille → Auto-Stop (schnell)
+const SPEECH_REQUIRED   = 300;   // ms Sprechen bevor Stille-Timer startet
+const MAX_DURATION      = 15_000; // 15 s Hard-Limit
 
 export type VoiceErrorCode =
   | "microphone_denied"
@@ -32,6 +23,7 @@ export interface UseVoiceCapture {
   transcript: string | null;
   error: VoiceErrorCode | null;
   isSupported: boolean;
+  hasVAD: boolean;
   startRecording: () => Promise<boolean>;
   stopRecording: () => void;
   cancel: () => void;
@@ -42,7 +34,7 @@ function pickMimeType(): string {
   if (typeof MediaRecorder === "undefined") return "audio/webm";
   if (MediaRecorder.isTypeSupported("audio/webm")) return "audio/webm";
   if (MediaRecorder.isTypeSupported("audio/mp4")) return "audio/mp4";
-  return ""; // browser default
+  return "";
 }
 
 export function useVoiceCapture(): UseVoiceCapture {
@@ -51,16 +43,26 @@ export function useVoiceCapture(): UseVoiceCapture {
     !!navigator.mediaDevices?.getUserMedia &&
     typeof MediaRecorder !== "undefined";
 
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const mimeRef = useRef<string>("");
-  const cancelledRef = useRef<boolean>(false);
+  const recorderRef    = useRef<MediaRecorder | null>(null);
+  const streamRef      = useRef<MediaStream | null>(null);
+  const chunksRef      = useRef<Blob[]>([]);
+  const mimeRef        = useRef<string>("");
+  const cancelledRef   = useRef<boolean>(false);
 
-  const [isRecording, setIsRecording] = useState(false);
+  // VAD refs
+  const audioCtxRef    = useRef<AudioContext | null>(null);
+  const rafRef         = useRef<number | null>(null);
+  const maxTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const vadActiveRef   = useRef<boolean>(false);
+  const speechSeenRef  = useRef<boolean>(false);     // hat der User überhaupt gesprochen?
+  const speechMsRef    = useRef<number>(0);           // akkumulierte Sprechzeit
+  const lastSoundRef   = useRef<number>(0);           // Zeitstempel letztes Sprechen
+  const [hasVAD, setHasVAD] = useState(false);
+
+  const [isRecording,  setIsRecording]  = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [transcript, setTranscript] = useState<string | null>(null);
-  const [error, setError] = useState<VoiceErrorCode | null>(null);
+  const [transcript,   setTranscript]   = useState<string | null>(null);
+  const [error,        setError]        = useState<VoiceErrorCode | null>(null);
 
   const releaseStream = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -74,13 +76,97 @@ export function useVoiceCapture(): UseVoiceCapture {
     setError(null);
   }, []);
 
+  // VAD aufräumen
+  function stopVAD() {
+    vadActiveRef.current = false;
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    if (maxTimerRef.current !== null) {
+      clearTimeout(maxTimerRef.current);
+      maxTimerRef.current = null;
+    }
+    try { audioCtxRef.current?.close(); } catch { /* noop */ }
+    audioCtxRef.current = null;
+  }
+
+  // VAD starten — überwacht RMS-Lautstärke und stoppt bei Stille
+  function startVAD(stream: MediaStream, onAutoStop: () => void) {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      audioCtxRef.current = ctx;
+      const src      = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 512;
+      src.connect(analyser);
+      const buf = new Float32Array(analyser.fftSize);
+
+      vadActiveRef.current  = true;
+      speechSeenRef.current = false;
+      speechMsRef.current   = 0;
+      lastSoundRef.current  = Date.now();
+
+      const tick = () => {
+        if (!vadActiveRef.current) return;
+
+        analyser.getFloatTimeDomainData(buf);
+        // RMS berechnen
+        let sum = 0;
+        for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
+        const rms = Math.sqrt(sum / buf.length);
+
+        const now = Date.now();
+
+        if (rms > VOICE_THRESHOLD) {
+          // Sprechen erkannt
+          lastSoundRef.current = now;
+          speechMsRef.current += 16; // ~1 RAF-Frame bei 60fps
+          if (speechMsRef.current >= SPEECH_REQUIRED) {
+            speechSeenRef.current = true;
+          }
+        } else if (rms < SILENCE_THRESHOLD && speechSeenRef.current) {
+          // Stille nach Sprechen
+          if (now - lastSoundRef.current > SILENCE_DURATION) {
+            stopVAD();
+            onAutoStop();
+            return;
+          }
+        }
+
+        rafRef.current = requestAnimationFrame(tick);
+      };
+
+      rafRef.current = requestAnimationFrame(tick);
+
+      // Hard-Limit
+      maxTimerRef.current = setTimeout(() => {
+        if (vadActiveRef.current) {
+          stopVAD();
+          onAutoStop();
+        }
+      }, MAX_DURATION);
+
+      setHasVAD(true);
+    } catch {
+      // AudioContext nicht verfügbar — kein VAD, manueller Stop
+      setHasVAD(false);
+    }
+  }
+
   const transcribe = useCallback(async (blob: Blob): Promise<string> => {
     const form = new FormData();
     form.append("file", blob, `recording.${(blob.type.split("/")[1] ?? "webm").split(";")[0]}`);
     let res: Response;
     try {
-      res = await fetch(WHISPER_ENDPOINT, { method: "POST", body: form });
+      res = await fetch(WHISPER_ENDPOINT, {
+        method: "POST",
+        body: form,
+        signal: AbortSignal.timeout(10_000),
+      });
     } catch (err) {
+      const name = (err as Error)?.name;
+      if (name === "TimeoutError" || name === "AbortError") throw new Error("transcription_unavailable");
       console.warn("[voice-capture] transcription endpoint unreachable", err);
       throw new Error("transcription_unavailable");
     }
@@ -97,10 +183,22 @@ export function useVoiceCapture(): UseVoiceCapture {
     return (json.text ?? "").trim();
   }, []);
 
+  const stopRecording = useCallback(() => {
+    stopVAD();
+    const rec = recorderRef.current;
+    if (rec && rec.state !== "inactive") {
+      try {
+        rec.stop();
+      } catch {
+        releaseStream();
+        setIsRecording(false);
+      }
+    }
+  }, [releaseStream]);
+
   const startRecording = useCallback(async (): Promise<boolean> => {
     if (!isSupported) {
       setError("microphone_missing");
-      console.info("[voice-capture] skip: microphone not supported in this browser");
       return false;
     }
     if (isRecording || isProcessing) return false;
@@ -108,18 +206,16 @@ export function useVoiceCapture(): UseVoiceCapture {
     setError(null);
     setTranscript(null);
     cancelledRef.current = false;
+    setHasVAD(false);
 
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (err: unknown) {
       const name = (err as { name?: string })?.name;
-      if (name === "NotAllowedError" || name === "PermissionDeniedError") {
-        setError("microphone_denied");
-      } else {
-        setError("microphone_missing");
-      }
-      console.info(`[voice-capture] getUserMedia failed: ${name ?? "unknown"}`);
+      setError(name === "NotAllowedError" || name === "PermissionDeniedError"
+        ? "microphone_denied"
+        : "microphone_missing");
       return false;
     }
 
@@ -129,7 +225,9 @@ export function useVoiceCapture(): UseVoiceCapture {
 
     let recorder: MediaRecorder;
     try {
-      recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      recorder = mime
+        ? new MediaRecorder(stream, { mimeType: mime })
+        : new MediaRecorder(stream);
     } catch (err) {
       releaseStream();
       setError("recording_failed");
@@ -152,7 +250,6 @@ export function useVoiceCapture(): UseVoiceCapture {
         cancelledRef.current = false;
         return;
       }
-
       if (!chunks.length) {
         setError("empty_transcript");
         return;
@@ -180,6 +277,7 @@ export function useVoiceCapture(): UseVoiceCapture {
     };
 
     recorder.onerror = () => {
+      stopVAD();
       setError("recording_failed");
       setIsRecording(false);
       releaseStream();
@@ -193,41 +291,37 @@ export function useVoiceCapture(): UseVoiceCapture {
       console.warn("[voice-capture] recorder.start failed", err);
       return false;
     }
+
     recorderRef.current = recorder;
     setIsRecording(true);
+
+    // VAD starten — stoppt Aufnahme automatisch bei Stille
+    startVAD(stream, () => {
+      const rec = recorderRef.current;
+      if (rec && rec.state !== "inactive") {
+        try { rec.stop(); } catch { /* noop */ }
+      }
+    });
+
     return true;
   }, [isSupported, isRecording, isProcessing, releaseStream, transcribe]);
 
-  const stopRecording = useCallback(() => {
-    const rec = recorderRef.current;
-    if (rec && rec.state !== "inactive") {
-      try {
-        rec.stop();
-      } catch {
-        releaseStream();
-        setIsRecording(false);
-      }
-    }
-  }, [releaseStream]);
-
   const cancel = useCallback(() => {
+    stopVAD();
     cancelledRef.current = true;
     const rec = recorderRef.current;
     if (rec && rec.state !== "inactive") {
-      try {
-        rec.stop();
-      } catch {
-        /* fall through */
-      }
+      try { rec.stop(); } catch { /* fall through */ }
     }
     releaseStream();
     setIsRecording(false);
     setIsProcessing(false);
+    setHasVAD(false);
   }, [releaseStream]);
 
   useEffect(() => {
     return () => {
-      // Hard cleanup on unmount
+      stopVAD();
       cancelledRef.current = true;
       const rec = recorderRef.current;
       if (rec && rec.state !== "inactive") {
@@ -243,6 +337,7 @@ export function useVoiceCapture(): UseVoiceCapture {
     transcript,
     error,
     isSupported,
+    hasVAD,
     startRecording,
     stopRecording,
     cancel,

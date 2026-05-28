@@ -166,15 +166,31 @@ export function HufiWeatherWidget({ compact = false }: HufiWeatherWidgetProps) {
 
   useEffect(() => {
     let cancelled = false;
-    fetchWeatherContext().then((result) => {
+
+    async function load() {
+      // Try to get fresh location silently (no prompt if already denied)
+      if ("geolocation" in navigator) {
+        await new Promise<void>((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              localStorage.setItem("hufi_user_lat", String(pos.coords.latitude));
+              localStorage.setItem("hufi_user_lon", String(pos.coords.longitude));
+              resolve();
+            },
+            () => resolve(), // silently ignore errors/denial
+            { timeout: 4000, maximumAge: 30 * 60 * 1000 }, // 30min cache
+          );
+        });
+      }
+      const result = await fetchWeatherContext();
       if (!cancelled) {
         setData(result);
         setLoading(false);
       }
-    });
-    return () => {
-      cancelled = true;
-    };
+    }
+
+    load();
+    return () => { cancelled = true; };
   }, []);
 
   if (loading) {

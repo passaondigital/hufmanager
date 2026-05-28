@@ -18,7 +18,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { OfflineBanner } from "@/components/offline/OfflineBanner";
 import { ConnectionStatus } from "@/components/offline/ConnectionStatus";
 import { SpeedDialFAB } from "@/components/layout/SpeedDialFAB";
-import { DemoStickyBanner } from "@/components/demo";
+import { DemoStickyBanner } from "@/components/demo/DemoStickyBanner";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { FeierabendWaechter } from "@/components/tracking/FeierabendWaechter";
 import { TrialCountdownBanner } from "@/components/subscription/TrialCountdownBanner";

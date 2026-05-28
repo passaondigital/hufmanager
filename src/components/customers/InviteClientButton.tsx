@@ -7,11 +7,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MessageCircle, Mail, Link2, Loader2, Smartphone, Check, Copy } from "lucide-react";
+import { MessageCircle, Mail, Link2, Loader2, Smartphone, Check, Copy, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
+import { useSubscription } from "@/hooks/useSubscription";
+import { ProGateDialog } from "@/components/subscription/ProGateDialog";
 
 interface InviteClientButtonProps {
   clientId: string;
@@ -88,7 +90,9 @@ export function InviteClientButton({
   className,
 }: InviteClientButtonProps) {
   const { user } = useAuth();
+  const { isPro } = useSubscription();
   const [loading, setLoading] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   // Fetch provider name if not passed
   const { data: fetchedProviderName } = useQuery({
@@ -222,6 +226,42 @@ export function InviteClientButton({
       setLoading(false);
     }
   }, [getOrCreateMagicLink, updateSentTracking]);
+
+  if (!isPro) {
+    if (compact) {
+      return (
+        <>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); setUpgradeOpen(true); }}
+            className={`gap-1.5 text-muted-foreground border-muted/60 ${className || ""}`}
+          >
+            <Lock className="h-3.5 w-3.5" />
+            Einladen
+          </Button>
+          <ProGateDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} featureName="Kunden einladen" />
+        </>
+      );
+    }
+
+    return (
+      <div className={`flex flex-col gap-2 ${className || ""}`}>
+        <Button
+          onClick={() => setUpgradeOpen(true)}
+          variant="outline"
+          className="w-full gap-2 min-h-[48px] text-base text-muted-foreground"
+        >
+          <Lock className="h-5 w-5" />
+          Kunden einladen — Pro erforderlich
+        </Button>
+        <p className="text-xs text-center text-muted-foreground">
+          Diese Funktion ist in HufManager Pro enthalten.
+        </p>
+        <ProGateDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} featureName="Kunden einladen" />
+      </div>
+    );
+  }
 
   if (loading) {
     return (

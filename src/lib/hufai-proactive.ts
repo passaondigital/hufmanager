@@ -1,4 +1,5 @@
 import type { HufiContext } from "./hufi-brain";
+import type { BusinessContext } from "./hufi-business-context";
 
 // ── TTL Gate ─────────────────────────────────────────────────────────────────
 // Briefing shows at most once every 4 hours per device.
@@ -92,6 +93,7 @@ export interface BriefingPayload {
 export function buildBriefingPayload(
   ctx: HufiContext,
   weather: WeatherContext | null,
+  bizCtx?: BusinessContext | null,
 ): BriefingPayload {
   const h = new Date().getHours();
   const greet = h < 12 ? "Guten Morgen" : h < 18 ? "Guten Tag" : "Guten Abend";
@@ -131,7 +133,22 @@ export function buildBriefingPayload(
     actions.push({ label: "Rechnungen", route: "/rechnungen" });
   }
 
-  // 5. Leads (providers only)
+  // 5. Low stock warning (from business context)
+  if (bizCtx) {
+    const sym = bizCtx.country === "CH" ? "CHF" : "€";
+    const lowItems = bizCtx.inventory.filter(
+      (i) => i.minStock !== null && i.currentStock <= i.minStock,
+    );
+    if (lowItems.length > 0) {
+      const names = lowItems.slice(0, 2).map((i) => `${i.name} (${i.currentStock} Stk.)`).join(", ");
+      const more  = lowItems.length > 2 ? ` +${lowItems.length - 2}` : "";
+      lines.push(`⚠️ Lager niedrig: ${names}${more}.`);
+      actions.push({ label: "Lager", route: "/lager" });
+      void sym; // suppress unused warning
+    }
+  }
+
+  // 6. Leads (providers only)
   if (ctx.openLeads > 0 && ctx.user.role !== "client") {
     const label = ctx.openLeads === 1 ? "1 neue Anfrage." : `${ctx.openLeads} neue Anfragen.`;
     lines.push(label);

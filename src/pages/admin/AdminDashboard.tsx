@@ -211,6 +211,14 @@ export default function AdminDashboard() {
           </Button>
           <Button
             variant="outline"
+            className="w-full justify-start gap-2"
+            onClick={() => navigate("/admin/hufi-brain")}
+          >
+            <Brain className="w-4 h-4" />
+            Hufi Brain Wissen
+          </Button>
+          <Button
+            variant="outline"
             className="w-full justify-start gap-2 text-destructive hover:text-destructive"
             onClick={() => navigate("/admin/notfall")}
           >

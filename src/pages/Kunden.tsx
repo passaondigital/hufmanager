@@ -24,6 +24,7 @@ import { ListPageHeader } from "@/components/shared/ListPageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ListSkeleton } from "@/components/shared/ListSkeleton";
 import { InviteClientButton, InviteStatusBadge } from "@/components/customers/InviteClientButton";
+import { InviteByEmailModal } from "@/components/customers/InviteByEmailModal";
 import {
   Select,
   SelectContent,
@@ -84,6 +85,7 @@ const Kunden = () => {
 
   // New client modal
   const [showNewClientModal, setShowNewClientModal] = useState(false);
+  const [showInviteByEmailModal, setShowInviteByEmailModal] = useState(false);
   const [savingNewClient, setSavingNewClient] = useState(false);
   const [newClient, setNewClient] = useState({
     first_name: "",
@@ -330,10 +332,20 @@ const Kunden = () => {
         count={clients.length}
         countLabel="Kunden"
         action={
-          <Button className="gap-2 min-h-[44px]" onClick={() => setShowNewClientModal(true)}>
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Neuer Kunde</span>
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="gap-2 min-h-[44px]"
+              onClick={() => setShowInviteByEmailModal(true)}
+            >
+              <Mail className="h-4 w-4" />
+              <span className="hidden sm:inline">Einladen</span>
+            </Button>
+            <Button className="gap-2 min-h-[44px]" onClick={() => setShowNewClientModal(true)}>
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Neuer Kunde</span>
+            </Button>
+          </div>
         }
       />
 
@@ -673,6 +685,11 @@ const Kunden = () => {
       />
 
       {/* New Client Modal */}
+      <InviteByEmailModal
+        open={showInviteByEmailModal}
+        onOpenChange={setShowInviteByEmailModal}
+      />
+
       <Dialog open={showNewClientModal} onOpenChange={(open) => { setShowNewClientModal(open); if (!open) resetNewClientForm(); }}>
         <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>

@@ -49,7 +49,7 @@ export default function Statistiken() {
           <Card className="text-center py-12">
             <CardContent className="space-y-4">
               <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto" />
-              <h2 className="text-xl font-semibold">Coming Soon – Wir sammeln noch Daten</h2>
+              <h2 className="text-xl font-semibold">Statistiken werden aufgebaut</h2>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
                 Sobald genügend Pferdeakten im Netzwerk aktiv sind, veröffentlichen wir hier anonymisierte Branchen-Statistiken.
               </p>
@@ -95,7 +95,6 @@ export default function Statistiken() {
               </p>
             )}
 
-            {/* TODO: Add Recharts for breed distribution, regional distribution, etc. */}
             <Card>
               <CardHeader><CardTitle>Rassen-Verteilung</CardTitle></CardHeader>
               <CardContent>

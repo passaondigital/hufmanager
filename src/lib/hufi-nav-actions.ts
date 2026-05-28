@@ -32,7 +32,14 @@ export type NavActionId =
   | "open_invoices"
   | "open_customers"
   | "open_leads"
-  | "open_settings";
+  | "open_settings"
+  | "open_cockpit"
+  | "open_management"
+  | "open_team"
+  | "open_lager"
+  | "open_hufanalyse"
+  | "open_analyse"
+  | "open_chat";
 
 export interface NavEntity {
   type: "horse" | "customer" | "appointment";
@@ -94,6 +101,16 @@ function routeFor(action: NavActionId, role: ActionRole, horseId?: string): stri
       return "/anfragen";
     case "open_settings":
       return "/einstellungen";
+    case "open_cockpit": return "/tour";
+    case "open_management": return "/management";
+    case "open_team": return "/team";
+    case "open_lager": return "/lager";
+    case "open_hufanalyse": return "/hufanalyse";
+    case "open_analyse": return "/analyse";
+    case "open_chat":
+      if (role === "client") return "/client-chat";
+      if (role === "employee") return "/employee/chat";
+      return "/chat";
   }
 }
 
@@ -202,6 +219,28 @@ export function buildOpenLeads(role: ActionRole): ResolvedNavAction {
 
 export function buildOpenSettings(role: ActionRole): ResolvedNavAction {
   return makeAction("open_settings", role, "Ich öffne deine Einstellungen.", "Einstellungen geöffnet");
+}
+
+export function buildOpenCockpit(role: ActionRole): ResolvedNavAction {
+  return makeAction("open_cockpit", role, "Tages-Cockpit geöffnet.", "Cockpit");
+}
+export function buildOpenManagement(role: ActionRole): ResolvedNavAction {
+  return makeAction("open_management", role, "Management geöffnet.", "Management");
+}
+export function buildOpenTeam(role: ActionRole): ResolvedNavAction {
+  return makeAction("open_team", role, "Team geöffnet.", "Team");
+}
+export function buildOpenLager(role: ActionRole): ResolvedNavAction {
+  return makeAction("open_lager", role, "Lager geöffnet.", "Lager");
+}
+export function buildOpenHufanalyse(role: ActionRole): ResolvedNavAction {
+  return makeAction("open_hufanalyse", role, "Hufanalyse geöffnet.", "Hufanalyse");
+}
+export function buildOpenAnalyse(role: ActionRole): ResolvedNavAction {
+  return makeAction("open_analyse", role, "Analyse geöffnet.", "Analyse");
+}
+export function buildOpenChat(role: ActionRole): ResolvedNavAction {
+  return makeAction("open_chat", role, "Chat geöffnet.", "Chat");
 }
 
 export async function buildOpenHorse(
@@ -340,7 +379,14 @@ export type NavTarget =
   | { kind: "customers" }
   | { kind: "leads" }
   | { kind: "lead_by_name"; query: string }
-  | { kind: "settings" };
+  | { kind: "settings" }
+  | { kind: "cockpit" }
+  | { kind: "management" }
+  | { kind: "team" }
+  | { kind: "lager" }
+  | { kind: "hufanalyse" }
+  | { kind: "analyse" }
+  | { kind: "chat" };
 
 export async function runNavAction(
   target: NavTarget,
@@ -369,5 +415,12 @@ export async function runNavAction(
       return { kind: "ok", action: buildOpenLeads(ctx.role) };
     case "settings":
       return { kind: "ok", action: buildOpenSettings(ctx.role) };
+    case "cockpit":     return { kind: "ok", action: buildOpenCockpit(ctx.role) };
+    case "management":  return { kind: "ok", action: buildOpenManagement(ctx.role) };
+    case "team":        return { kind: "ok", action: buildOpenTeam(ctx.role) };
+    case "lager":       return { kind: "ok", action: buildOpenLager(ctx.role) };
+    case "hufanalyse":  return { kind: "ok", action: buildOpenHufanalyse(ctx.role) };
+    case "analyse":     return { kind: "ok", action: buildOpenAnalyse(ctx.role) };
+    case "chat":        return { kind: "ok", action: buildOpenChat(ctx.role) };
   }
 }

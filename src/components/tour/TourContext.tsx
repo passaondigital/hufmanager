@@ -1,31 +1,18 @@
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode, lazy, Suspense } from 'react';
 import { useLocation } from 'react-router-dom';
-import { SpotlightTour, TourStep } from './SpotlightTour';
-import { DemoWelcomeModal } from './DemoWelcomeModal';
-import { demoTourConfigs, ctaStep, DemoRole } from './demoTourDefinitions';
+import type { TourStep } from './SpotlightTour';
+import type { DemoRole } from './demoTourDefinitions';
 import { useAuth } from '@/hooks/useAuth';
 import { isDemoEmail, DEMO_EMAILS } from '@/lib/demo-accounts';
-import {
-  dashboardTourSteps,
-  customersTourSteps,
-  calendarTourSteps,
-  invoicesTourSteps,
-  partnerTourSteps,
-  employeeTourSteps,
-  clientTourSteps,
-} from './tourDefinitions';
+
+const SpotlightTour = lazy(() =>
+  import('./SpotlightTour').then((m) => ({ default: m.SpotlightTour }))
+);
+const DemoWelcomeModal = lazy(() =>
+  import('./DemoWelcomeModal').then((m) => ({ default: m.DemoWelcomeModal }))
+);
 
 type TourName = 'dashboard' | 'customers' | 'calendar' | 'invoices' | 'partner' | 'employee' | 'client';
-
-const tourMap: Record<TourName, TourStep[]> = {
-  dashboard: dashboardTourSteps,
-  customers: customersTourSteps,
-  calendar: calendarTourSteps,
-  invoices: invoicesTourSteps,
-  partner: partnerTourSteps,
-  employee: employeeTourSteps,
-  client: clientTourSteps,
-};
 
 interface TourContextType {
   startTour: (name: TourName) => void;
@@ -59,8 +46,7 @@ const DEMO_WELCOME_SHOWN_KEY = 'hufmanager_demo_welcome_shown';
 export function TourProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const location = useLocation();
-  const [activeTour, setActiveTour] = useState<TourName | null>(null);
-  const [demoSteps, setDemoSteps] = useState<TourStep[] | null>(null);
+  const [currentSteps, setCurrentSteps] = useState<TourStep[]>([]);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
 
   const isPublicStandalone = location.pathname.startsWith('/pferdeakte');
@@ -84,8 +70,18 @@ export function TourProvider({ children }: { children: ReactNode }) {
   }, [isDemo, demoRole, user?.id, isPublicStandalone]);
 
   const startTour = useCallback((name: TourName) => {
-    setDemoSteps(null);
-    setActiveTour(name);
+    void import('./tourDefinitions').then((m) => {
+      const tourMap: Record<TourName, TourStep[]> = {
+        dashboard: m.dashboardTourSteps,
+        customers: m.customersTourSteps,
+        calendar: m.calendarTourSteps,
+        invoices: m.invoicesTourSteps,
+        partner: m.partnerTourSteps,
+        employee: m.employeeTourSteps,
+        client: m.clientTourSteps,
+      };
+      setCurrentSteps(tourMap[name] || []);
+    });
   }, []);
 
   const openDemoWelcome = useCallback(() => {
@@ -94,16 +90,16 @@ export function TourProvider({ children }: { children: ReactNode }) {
 
   const handleDemoTourStart = useCallback((topicId: string, mode: 'quick' | 'detailed') => {
     if (!demoRole) return;
-    const config = demoTourConfigs[demoRole];
-    const topicSteps = config.steps[topicId]?.[mode];
-    if (!topicSteps) return;
-    setDemoSteps([...topicSteps, ctaStep]);
-    setActiveTour(null);
+    void import('./demoTourDefinitions').then(({ demoTourConfigs, ctaStep }) => {
+      const config = demoTourConfigs[demoRole];
+      const topicSteps = config.steps[topicId]?.[mode];
+      if (!topicSteps) return;
+      setCurrentSteps([...topicSteps, ctaStep]);
+    });
   }, [demoRole]);
 
   const closeTour = useCallback(() => {
-    setActiveTour(null);
-    setDemoSteps(null);
+    setCurrentSteps([]);
   }, []);
 
   // On public standalone pages, render only children with no-op context
@@ -115,25 +111,30 @@ export function TourProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  const isActive = !!activeTour || !!demoSteps;
-  const currentSteps = demoSteps || (activeTour ? tourMap[activeTour] : []);
+  const isActive = currentSteps.length > 0;
 
   return (
     <TourContext.Provider value={{ startTour, isAnyTourActive: isActive, openDemoWelcome }}>
       {children}
-      <SpotlightTour
-        steps={currentSteps}
-        isOpen={isActive}
-        onClose={closeTour}
-        onComplete={closeTour}
-      />
-      {demoRole && (
-        <DemoWelcomeModal
-          role={demoRole}
-          open={welcomeOpen}
-          onClose={() => setWelcomeOpen(false)}
-          onStartTour={handleDemoTourStart}
-        />
+      {isActive && (
+        <Suspense fallback={null}>
+          <SpotlightTour
+            steps={currentSteps}
+            isOpen={isActive}
+            onClose={closeTour}
+            onComplete={closeTour}
+          />
+        </Suspense>
+      )}
+      {demoRole && welcomeOpen && (
+        <Suspense fallback={null}>
+          <DemoWelcomeModal
+            role={demoRole}
+            open={welcomeOpen}
+            onClose={() => setWelcomeOpen(false)}
+            onStartTour={handleDemoTourStart}
+          />
+        </Suspense>
       )}
     </TourContext.Provider>
   );

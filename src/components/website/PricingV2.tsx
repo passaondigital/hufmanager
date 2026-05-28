@@ -1,125 +1,78 @@
-import { Check, X, Play, Users, Star, MessageSquare, Package, UserPlus, Wrench, BarChart3, LifeBuoy } from "lucide-react";
+import { Check, X, Play, Users, Star, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-// Die 5 A's des Workflows
-const FIVE_AS = [
-  {
-    number: 1,
-    name: "Anfragen",
-    icon: MessageSquare,
-    description: "Leads, Posteingang & Kundenkommunikation",
-  },
-  {
-    number: 2,
-    name: "Angebote",
-    icon: Package,
-    description: "Leistungskatalog, Pakete & Preisgestaltung",
-  },
-  {
-    number: 3,
-    name: "Aufnahme",
-    icon: UserPlus,
-    description: "Kunden- & Pferde-Akten, Dokumentation",
-  },
-  {
-    number: 4,
-    name: "Auffassen",
-    icon: Wrench,
-    description: "Termine, Touren, HufCam & Durchführung",
-  },
-  {
-    number: 5,
-    name: "Analyse",
-    icon: BarChart3,
-    description: "Rechnungen, DATEV-Export & Statistiken",
-  },
-];
-
-// Inklusive: 1. Hilfe Kunden Center
-const HILFE_CENTER_FEATURE = {
-  icon: LifeBuoy,
-  name: "1. Hilfe Kunden Center",
-  description: "Login-Hilfe, OTP-Codes, Zuordnungen reparieren & SOS-Support – direkt in der App.",
-};
 
 const plans = [
   {
-    name: "Starter",
+    id: "go",
+    name: "GO",
+    tagline: "Einsteigen & loslegen",
     price: "9,90",
-    horses: "1–10 Pferde",
+    horses: "Bis 10 Pferde",
     highlight: false,
     users: "1 Nutzer",
     checkoutUrl: "https://www.copecart.com/products/8ef10f74/checkout?utm_source=landingpage&utm_medium=pricing&utm_campaign=direktkauf",
+    forWhom: "Für Einsteiger & Nebenberufliche",
     includes: [
-      "Alle 5 Workflow-Stufen",
+      "Terminkalender & Tourenplanung",
+      "Kunden- & Pferdeverwaltung",
+      "Pferdeakte & Befunde",
+      "Rechnungen & Buchhaltung",
       "Offline-Modus & PWA",
-      "DSGVO-konform",
-      "Kunden-App kostenlos",
-      "1. Hilfe Kunden Center",
+      "DSGVO-konform · EU-Server",
+      "Kunden-App für Pferdebesitzer",
     ],
     excludes: [
-      "HM Connect & Netzwerk",
-      "KI-Features & AutoFlow",
-      "Vorlagen & PDF/Export",
-      "2. Benutzer",
-      "Team-Management",
+      "Netzwerk & Hufi Connect",
+      "KI-Features & Sprachsteuerung",
+      "Huf-Analyse KI (HufCam)",
+      "Material-Verwaltung",
+      "Mehrere Benutzer",
     ],
   },
   {
-    name: "Pro",
+    id: "balance",
+    name: "BALANCE",
+    tagline: "Professionell & effizient",
     price: "29",
-    horses: "11–75 Pferde",
+    horses: "Bis 75 Pferde",
     highlight: true,
     users: "1 Nutzer",
     checkoutUrl: "https://www.copecart.com/products/1996da6f/checkout?utm_source=landingpage&utm_medium=pricing&utm_campaign=direktkauf",
+    forWhom: "Für aktive Dienstleister",
     includes: [
-      "Alle 5 Workflow-Stufen",
-      "HM Connect & Netzwerk",
-      "KI-Features & AutoFlow",
-      "Vorlagen & PDF/Export",
+      "Alles aus GO",
+      "Hufi KI & Sprachsteuerung",
+      "Proaktives Tages-Briefing",
+      "AutoFlow — Sprache wird Befund",
+      "Huf-Analyse KI (HufCam Pro)",
+      "Material-Verwaltung",
+      "Netzwerk & Hufi Connect",
+      "Vorlagen & PDF-Export",
       "Prioritäts-Support",
-      "Offline-Modus & PWA",
-      "DSGVO-konform",
-      "1. Hilfe Kunden Center",
     ],
     excludes: [
-      "2. Benutzer",
+      "Mehrere Benutzer",
       "Team-Management",
     ],
   },
   {
-    name: "Duo",
-    price: "49",
-    horses: "76–150 Pferde",
-    highlight: false,
-    users: "2 Nutzer",
-    checkoutUrl: "https://www.copecart.com/products/953da638/checkout?utm_source=landingpage&utm_medium=pricing&utm_campaign=direktkauf",
-    includes: [
-      "Alles aus Pro",
-      "2. Benutzer inklusive",
-      "Gemeinsame Doku & Notizen",
-      "Geteilte Kalender",
-      "1. Hilfe Kunden Center",
-    ],
-    excludes: [
-      "Unbegrenzte Nutzer",
-      "Rollen & Auswertungen",
-    ],
-  },
-  {
-    name: "Team",
+    id: "intensiv",
+    name: "INTENSIV",
+    tagline: "Vollumfänglich & für Teams",
     price: "79",
-    horses: "151+ Pferde",
+    horses: "Unbegrenzt",
     highlight: false,
-    users: "Unbegrenzt",
+    users: "Unbegrenzte Nutzer",
     checkoutUrl: "https://www.copecart.com/products/badae7d2/checkout?utm_source=landingpage&utm_medium=pricing&utm_campaign=direktkauf",
+    forWhom: "Für Teams & Stallbetriebe",
     includes: [
-      "Alles aus Duo",
-      "Unbegrenzte Nutzer",
-      "Rollen & Berechtigungen",
-      "Team-Auswertungen",
+      "Alles aus BALANCE",
+      "Unbegrenzte Nutzer & Rollen",
+      "Team-Kalender & geteilte Doku",
       "Mitarbeiter-Verwaltung",
-      "1. Hilfe Kunden Center",
+      "Team-Auswertungen & Statistiken",
+      "DATEV-Export",
+      "Persönlicher Onboarding-Support",
     ],
     excludes: [],
   },
@@ -128,73 +81,37 @@ const plans = [
 const PricingV2 = () => (
   <section id="pricing" className="py-20 md:py-28 bg-zinc-950">
     <div className="container">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
           <span className="text-primary font-bold text-sm uppercase tracking-widest">Preise</span>
           <h2 className="font-sans text-3xl md:text-4xl lg:text-5xl font-extrabold text-white mt-4 mb-4">
             Einfach. Transparent. Fair.
           </h2>
-          <p className="text-white/60 text-lg max-w-2xl mx-auto">
-            Für Hufbearbeiter, Pferdeosteopathen, Physiotherapeuten, Trainer & alle Pferde-Profis.
-            <br />Monatlich kündbar – kein Vertrag, kein Risiko.
+          <p className="text-white/60 text-base max-w-2xl mx-auto">
+            Für Hufbearbeiter, Hufschmiede, Pferdeosteopathen, Reitlehrer, Stallbetreiber & alle Pferde-Profis.
+            <br className="hidden sm:block" />Monatlich kündbar — kein Vertrag, kein Risiko.
           </p>
         </div>
 
         {/* Free for horse owners badge */}
-        <div className="flex justify-center mb-10">
+        <div className="flex justify-center mb-12">
           <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full border border-primary/30 bg-primary/5">
             <Users className="w-5 h-5 text-primary" />
             <span className="text-white font-medium">
-              Pferdebesitzer nutzen Hufi <strong className="text-primary">kostenlos</strong>
+              Pferdebesitzer nutzen Hufi <strong className="text-primary">immer kostenlos</strong>
             </span>
           </div>
         </div>
 
-        {/* 5As Workflow Glossar */}
-        <div className="mb-14">
-          <h3 className="text-white/50 text-xs font-bold uppercase tracking-widest text-center mb-6">
-            Dein Workflow – Die 5 A's
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            {FIVE_AS.map((a) => (
-              <div
-                key={a.name}
-                className="flex flex-col items-center text-center p-4 rounded-xl border border-white/10 bg-white/[0.02] hover:border-primary/30 transition-colors"
-              >
-                <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center mb-2">
-                  <span className="text-primary font-extrabold text-sm">{a.number}</span>
-                </div>
-                <span className="text-white font-bold text-sm">{a.name}</span>
-                <span className="text-white/40 text-[11px] mt-1 leading-tight">{a.description}</span>
-              </div>
-            ))}
-          </div>
-          <p className="text-center text-white/30 text-xs mt-3">
-            Alle Pläne enthalten den vollständigen 5A-Workflow. Unterschied: Pferde-Limit, KI & Teamgröße.
-          </p>
-
-          {/* 1. Hilfe Kunden Center Highlight */}
-          <div className="mt-6 flex items-center gap-4 p-4 rounded-xl border border-primary/20 bg-primary/5">
-            <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
-              <HILFE_CENTER_FEATURE.icon className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <span className="text-white font-bold text-sm">{HILFE_CENTER_FEATURE.name}</span>
-              <p className="text-white/50 text-xs mt-0.5 leading-relaxed">{HILFE_CENTER_FEATURE.description}</p>
-              <span className="text-primary text-[10px] font-semibold uppercase tracking-wider">In allen Plänen inklusive</span>
-            </div>
-          </div>
-        </div>
-
         {/* Plan Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {plans.map((plan) => (
             <div
-              key={plan.name}
-              className={`rounded-2xl border p-6 flex flex-col ${
+              key={plan.id}
+              className={`rounded-2xl border p-6 flex flex-col relative ${
                 plan.highlight
-                  ? "border-primary bg-gradient-to-b from-primary/15 to-transparent relative"
+                  ? "border-primary bg-gradient-to-b from-primary/15 to-transparent"
                   : "border-white/10 bg-white/[0.02]"
               }`}
             >
@@ -204,15 +121,26 @@ const PricingV2 = () => (
                 </div>
               )}
 
-              <h3 className="text-xl font-bold text-white">{plan.name}</h3>
-              <div className="flex items-baseline gap-1 mt-2 mb-1">
-                <span className="text-4xl font-extrabold text-white">{plan.price}€</span>
-                <span className="text-white/40">/Monat</span>
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-2xl font-black text-white tracking-tight">{plan.name}</h3>
+                  {plan.highlight && <Zap className="w-4 h-4 text-primary fill-primary" />}
+                </div>
+                <p className="text-white/40 text-xs">{plan.tagline}</p>
               </div>
-              <p className="text-primary/80 text-sm font-medium">{plan.horses}</p>
-              <p className="text-white/40 text-xs mb-5">{plan.users}</p>
 
-              {/* Included */}
+              <div className="flex items-baseline gap-1 mb-1">
+                <span className="text-4xl font-extrabold text-white">{plan.price}€</span>
+                <span className="text-white/40 text-sm">/Monat</span>
+              </div>
+              <p className="text-primary/80 text-sm font-semibold mb-0.5">{plan.horses}</p>
+              <p className="text-white/30 text-xs mb-1">{plan.users}</p>
+              <div className="mb-5 mt-1">
+                <span className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.35)" }}>
+                  {plan.forWhom}
+                </span>
+              </div>
+
               <ul className="space-y-2 mb-4 flex-1">
                 {plan.includes.map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-sm">
@@ -227,7 +155,7 @@ const PricingV2 = () => (
                     <div className="w-5 h-5 rounded-full bg-white/5 flex items-center justify-center flex-shrink-0">
                       <X className="w-3 h-3 text-white/20" />
                     </div>
-                    <span className="text-white/30">{f}</span>
+                    <span className="text-white/25">{f}</span>
                   </li>
                 ))}
               </ul>
@@ -253,7 +181,7 @@ const PricingV2 = () => (
                 >
                   <a href="/auth">
                     <Play className="mr-1 h-3 w-3" />
-                    Kostenlos testen
+                    14 Tage kostenlos testen
                   </a>
                 </Button>
               </div>
@@ -266,14 +194,13 @@ const PricingV2 = () => (
           <h3 className="text-white font-semibold text-sm mb-3 uppercase tracking-wider">Hinweis zur Umsatzsteuer</h3>
           <div className="text-white/50 text-sm space-y-2 leading-relaxed">
             <p>
-              Alle Preise beziehen sich auf monatliche Abonnements für Profis (Hufbearbeiter, Pferdeosteopathen,
-              Physiotherapeuten, Trainer & weitere Pferde-Profis). Pferdebesitzer nutzen die Hufi-App
-              weiterhin <strong className="text-white/70">kostenlos</strong>.
+              Alle Preise beziehen sich auf monatliche Abonnements für Profis (Hufbearbeiter, Hufschmiede,
+              Pferdeosteopathen, Physiotherapeuten, Reitlehrer, Trainer & weitere Pferde-Profis).
+              Pferdebesitzer nutzen Hufi <strong className="text-white/70">immer kostenlos</strong>.
             </p>
             <p>
               Hufi ist als Kleinunternehmer nach <strong className="text-white/70">§ 19 UStG</strong> tätig.
-              Aus diesem Grund wird keine Umsatzsteuer (Mehrwertsteuer) auf die Preise erhoben. Die Preise für
-              Profis verstehen sich netto – Endverbraucher zahlen keine gesonderte Umsatzsteuer.
+              Es wird keine Umsatzsteuer erhoben — die Preise sind Endpreise.
             </p>
           </div>
         </div>

@@ -6,6 +6,7 @@ interface HufiVoiceWaveProps {
   height?: number;
   style?: CSSProperties;
   variant?: "wave" | "pulse" | "dots";
+  paused?: boolean; // Idle-Modus: sehr langsame, stille Animation
 }
 
 const BASE_HEIGHTS = [0.3, 0.7, 1, 0.85, 0.5, 0.9, 0.4];
@@ -17,6 +18,7 @@ export function HufiVoiceWave({
   height = 16,
   style,
   variant = "wave",
+  paused = false,
 }: HufiVoiceWaveProps) {
   if (variant === "dots") {
     return (
@@ -76,9 +78,13 @@ export function HufiVoiceWave({
               height: `${Math.round(BASE_HEIGHTS[i % BASE_HEIGHTS.length] * 100)}%`,
               borderRadius: 99,
               background: color,
+              opacity: paused ? 0.25 : 1,
               transformOrigin: "center",
               animationDelay: `${BASE_DELAYS[i % BASE_DELAYS.length]}s`,
-              animationDuration: `${0.75 + (i % 3) * 0.15}s`,
+              animationDuration: paused
+                ? `${3.5 + (i % 3) * 0.8}s`
+                : `${0.75 + (i % 3) * 0.15}s`,
+              transition: "opacity 0.4s, animation-duration 0.4s",
             }}
           />
         ))}

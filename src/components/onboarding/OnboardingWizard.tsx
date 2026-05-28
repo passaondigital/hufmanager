@@ -141,8 +141,8 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
     <div key="welcome" className="text-center space-y-6">
       <div className="relative mx-auto w-32 h-32">
         <img 
-          src="https://upload.assaon.com/files/medien/hufiapp-logo-mit-text-1777028919801-id2zm.png" 
-          alt="Hufi" 
+          src="/hufmanager-logo.png"
+          alt="HufManager"
           className="w-full h-full object-contain"
         />
         <motion.div
@@ -156,7 +156,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
       </div>
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-foreground">
-          Willkommen bei Hufi!
+          Willkommen bei HufManager!
         </h2>
         <p className="text-muted-foreground text-lg">
           Dein digitales Büro ist bereit.
@@ -314,8 +314,8 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
     <div key="welcome" className="text-center space-y-6">
       <div className="relative mx-auto w-32 h-32">
         <img 
-          src="https://upload.assaon.com/files/medien/hufiapp-logo-mit-text-1777028919801-id2zm.png" 
-          alt="Hufi" 
+          src="/hufmanager-logo.png"
+          alt="HufManager"
           className="w-full h-full object-contain"
         />
         <motion.div
@@ -329,7 +329,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
       </div>
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-foreground">
-          Willkommen bei Hufi!
+          Willkommen bei HufManager!
         </h2>
         <p className="text-muted-foreground text-lg">
           Die Daten deines Pferdes – immer griffbereit.

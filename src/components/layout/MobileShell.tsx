@@ -16,6 +16,11 @@ import { streamWithHufAI, ChatMessage as AIChatMessage } from "@/lib/ai-routing"
 import { askHufiAgent } from "@/lib/hufi-agent-client";
 import { } from "@/lib/hufi-tool-definitions";
 import {
+  detectAndCreateTask, executeNextStep, confirmStep, cancelTask,
+  type HufiTask,
+} from "@/lib/hufi-task-engine";
+import { observeInteraction, matchSkills, learnFromSession } from "@/lib/hufi-learning-engine";
+import {
   fetchBusinessContext, type BusinessContext,
 } from "@/lib/hufi-business-context";
 import { buildShortSpokenGreeting, type HufiPresenceLabel } from "@/lib/hufi-runtime";
@@ -33,12 +38,15 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { DsgvoConsentModal } from "@/components/DsgvoConsentModal";
 import { KiHinweisModal } from "@/components/KiHinweisModal";
 import { HufManagerMigrationBanner } from "@/components/migration/HufManagerMigrationBanner";
+import { HufManagerWelcome } from "@/components/migration/HufManagerWelcome";
 import { HufiOnboardingTour } from "@/components/migration/HufiOnboardingTour";
+import { HufiNewUserOnboarding } from "@/components/onboarding/HufiNewUserOnboarding";
 import { detectCommunicationIntent, buildWhatsAppDraft, buildEmailDraft, generateAppointmentReminder } from "@/lib/hufi-communication";
 import type { DraftMessage } from "@/lib/hufi-communication";
 import { DraftMessageCard } from "@/components/communication/DraftMessageCard";
 import { DayRouteCard } from "@/components/route/DayRouteCard";
 import { HufiOnboardingChat } from "@/components/onboarding/HufiOnboardingChat";
+import { detectOnboardingType, markOnboardingComplete } from "@/lib/hufi-onboarding-detector";
 import { updateHufiMemory, deleteLastLearnedMemory } from "@/lib/hufi-brain";
 import {
   HufiFirstRunConsent,
@@ -92,6 +100,8 @@ export function MobileShell() {
   const [showMigrationBanner, setShowMigrationBanner] = useState(false);
   const [showOnboardingTour, setShowOnboardingTour] = useState(false);
   const [showOnboardingChat, setShowOnboardingChat] = useState(false);
+  const [showHufManagerWelcome, setShowHufManagerWelcome] = useState(false);
+  const [showNewUserOnboarding, setShowNewUserOnboarding] = useState(false);
   const [pendingDraft, setPendingDraft] = useState<DraftMessage | null>(null);
   const [pendingRoute, setPendingRoute] = useState<Array<{name: string; address?: string; time?: string; clientName?: string}> | null>(null);
   // Runtime presence: persistent Hufi state label
@@ -125,6 +135,13 @@ export function MobileShell() {
   const voiceSessionRef = useRef<{ active: boolean; texts: string[] } | null>(null);
   // State-based flag so the "Hufi spricht…" banner actually re-renders.
   const [isVoiceSpeaking, setIsVoiceSpeaking] = useState(false);
+
+  // Voice-Loop (Jarvis-Modus): kontinuierlich zuhören bis STOP-Phrase
+  const [voiceLoopActive, setVoiceLoopActive] = useState(false);
+  const voiceLoopRef = useRef(false);
+
+  // Active Hufi Task (Task-Engine)
+  const [_activeHufiTask, setActiveHufiTask] = useState<HufiTask | null>(null);
 
   // Phase D: Hey Hufi wake-word opt-in state.
   const SR_SUPPORTED = typeof window !== "undefined" &&
@@ -205,21 +222,29 @@ export function MobileShell() {
     if (!user?.id || migrationCheckedRef.current) return;
     migrationCheckedRef.current = true;
 
-    // Only show for accounts older than 1 day
-    const createdAt = new Date(user.created_at);
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    if (createdAt >= oneDayAgo) return;
-
-    supabase
-      .from("hufi_memory")
-      .select("key")
-      .eq("user_id", user.id)
-      .eq("category", "migration")
-      .eq("key", "banner_seen")
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!data) setShowMigrationBanner(true);
-      });
+    detectOnboardingType(user.id).then((type) => {
+      if (type === "hufmanager_migration") {
+        // HufManager-User: prüfen ob Banner schon gesehen
+        supabase
+          .from("hufi_memory")
+          .select("key")
+          .eq("user_id", user.id)
+          .eq("category", "migration")
+          .eq("key", "welcome_seen")
+          .maybeSingle()
+          .then(({ data }) => {
+            if (!data) setShowHufManagerWelcome(true);
+            // Fallback: legacy banner_seen ebenfalls prüfen
+            else {
+              supabase.from("hufi_memory").select("key").eq("user_id", user.id)
+                .eq("category", "migration").eq("key", "banner_seen").maybeSingle()
+                .then(({ data: legacy }) => { if (!legacy) setShowMigrationBanner(true); });
+            }
+          });
+      } else if (type === "new_user") {
+        setShowNewUserOnboarding(true);
+      }
+    });
   }, [user?.id, user?.created_at]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleBannerStartTour = () => {
@@ -621,6 +646,25 @@ export function MobileShell() {
     voice.cancel();
   }
 
+  function startVoiceLoop() {
+    voiceLoopRef.current = true;
+    setVoiceLoopActive(true);
+    followUpRoundRef.current = 0;
+    voiceSessionRef.current = { active: true, texts: [] };
+    setHufiPresenceState("hört zu");
+    void voice.startRecording();
+  }
+
+  function stopVoiceLoop() {
+    voiceLoopRef.current = false;
+    setVoiceLoopActive(false);
+    if (followUpTimerRef.current) { clearTimeout(followUpTimerRef.current); followUpTimerRef.current = null; }
+    voiceSessionRef.current = null;
+    if (voice.isRecording) voice.stopRecording();
+    setHufiPresenceState("bereit");
+    void hufiSpeak("Okay. Ich bin bereit wenn du mich brauchst.");
+  }
+
   // VAD Auto-Stop: wenn recording von true → false wechselt (ohne manuellen Stop)
   const prevRecordingRef = useRef(false);
   useEffect(() => {
@@ -707,11 +751,14 @@ export function MobileShell() {
         if (followUpTimerRef.current) clearTimeout(followUpTimerRef.current);
         followUpTimerRef.current = setTimeout(() => {
           followUpTimerRef.current = null;
-          if (followUpRoundRef.current < 5 && !voice.isRecording && !voice.isProcessing && !responding) {
-            followUpRoundRef.current++;
+          const loopShouldContinue = voiceLoopRef.current || followUpRoundRef.current < 5;
+          if (loopShouldContinue && !voice.isRecording && !voice.isProcessing && !responding) {
+            if (!voiceLoopRef.current) followUpRoundRef.current++;
             voiceSessionRef.current = { active: true, texts: [] };
-            voice.startRecording();
+            void voice.startRecording();
             setHufiPresenceState("hört zu");
+          } else if (!voiceLoopRef.current) {
+            setVoiceLoopActive(false);
           }
         }, 800);
       }, /* fastMode */ true);
@@ -1072,6 +1119,56 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
     const cleaned = stripWakeWord(text);
     if (!cleaned) return;
 
+    // Voice-Loop: Stop-Phrase erkennen
+    const STOP_PHRASES = /\b(stop|stopp|danke|tschüss|beenden|aufhören|genug|schluss)\b/i;
+    if (voiceLoopRef.current && STOP_PHRASES.test(cleaned)) {
+      stopVoiceLoop();
+      return;
+    }
+
+    // Skill-Match: bekannte Muster direkt als Task starten
+    if (user?.id) {
+      try {
+        const skill = await matchSkills(cleaned, user.id);
+        if (skill && !skill.ask_first && skill.confidence > 0.7) {
+          const task = await detectAndCreateTask(skill.name, user.id, hufiCtx ?? {});
+          if (task) {
+            addMsg({ role: "user", text: cleaned, ts: Date.now() });
+            const taskTs = Date.now() + 1;
+            setMessages((prev) => [...prev, { role: "ai", text: `⚙️ ${task.title} wird vorbereitet…`, ts: taskTs, hufiTask: task }]);
+            setActiveHufiTask(task);
+            const { task: updatedSkillTask } = await executeNextStep(task, user.id, (_step, progressMsg) => {
+              setMessages((prev) => prev.map((m) => m.ts === taskTs ? { ...m, text: progressMsg } : m));
+            });
+            setMessages((prev) => prev.map((m) => m.ts === taskTs ? { ...m, hufiTask: updatedSkillTask ?? task } : m));
+            setActiveHufiTask(updatedSkillTask);
+            if (updatedSkillTask?.result_summary && voiceLoopRef.current) void hufiSpeak(updatedSkillTask.result_summary + ". Noch etwas?");
+            return;
+          }
+        }
+      } catch { /* non-blocking */ }
+    }
+
+    // Task-Detection: Trigger-Phrasen prüfen
+    if (user?.id) {
+      try {
+        const task = await detectAndCreateTask(cleaned, user.id, hufiCtx ?? {});
+        if (task) {
+          addMsg({ role: "user", text: cleaned, ts: Date.now() });
+          const taskTs = Date.now() + 1;
+          setMessages((prev) => [...prev, { role: "ai", text: `⚙️ ${task.title}`, ts: taskTs, hufiTask: task }]);
+          setActiveHufiTask(task);
+          const { task: updatedTask } = await executeNextStep(task, user.id, (_step, progressMsg) => {
+            setMessages((prev) => prev.map((m) => m.ts === taskTs ? { ...m, text: progressMsg } : m));
+          });
+          setMessages((prev) => prev.map((m) => m.ts === taskTs ? { ...m, hufiTask: updatedTask ?? task } : m));
+          setActiveHufiTask(updatedTask);
+          if (updatedTask?.result_summary && voiceLoopRef.current) void hufiSpeak(updatedTask.result_summary + ". Noch etwas?");
+          return;
+        }
+      } catch { /* non-blocking */ }
+    }
+
     // "Vergiss das" im Chat
     if (isForgetCommand(cleaned) && user?.id) {
       addMsg({ role: "user", text: cleaned, ts: Date.now() });
@@ -1328,6 +1425,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
       });
       addMsg({ role: "ai", text: resp.answer, ts: Date.now() + 1 });
       learnFromInteraction(user.id, cleaned, resp.answer, "confirmed", sessionId.current);
+      void observeInteraction(cleaned, resp.answer, user.id);
     } catch (err) {
       const e = err as Error;
       console.error("[Hufi] processChatMessage Fehler:", e?.message ?? e);
@@ -1437,7 +1535,25 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
           onDecline={handleKiDecline}
         />
       )}
-      {!showFirstRunConsent && showMigrationBanner && !showDsgvoModal && (
+      {!showFirstRunConsent && showHufManagerWelcome && (
+        <HufManagerWelcome
+          userId={user?.id ?? ""}
+          onContinue={() => {
+            if (user?.id) {
+              updateHufiMemory(user.id, "migration", "welcome_seen", { seen: true, ts: new Date().toISOString() }, "system");
+              markOnboardingComplete(user.id);
+            }
+            setShowHufManagerWelcome(false);
+          }}
+        />
+      )}
+      {!showFirstRunConsent && showNewUserOnboarding && (
+        <HufiNewUserOnboarding
+          userId={user?.id ?? ""}
+          onComplete={() => setShowNewUserOnboarding(false)}
+        />
+      )}
+      {!showFirstRunConsent && showMigrationBanner && !showDsgvoModal && !showHufManagerWelcome && (
         <HufManagerMigrationBanner onStartTour={handleBannerStartTour} onSkip={handleBannerSkip} />
       )}
       {showOnboardingTour && (
@@ -1601,6 +1717,27 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
             </button>
           )}
 
+          {/* Voice-Loop-Toggle */}
+          {ttsSupported && user && (
+            <button
+              type="button"
+              onClick={voiceLoopActive ? stopVoiceLoop : startVoiceLoop}
+              title={voiceLoopActive ? "Gespräch beenden" : "Gespräch starten"}
+              style={{
+                height: 28, borderRadius: 8, flexShrink: 0,
+                background: voiceLoopActive ? "#F97316" : "transparent",
+                border: `1px solid ${voiceLoopActive ? "#F97316" : "rgba(249,115,22,0.3)"}`,
+                color: voiceLoopActive ? "#FFFFFF" : "#F97316",
+                cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
+                padding: "0 7px", fontSize: 9, fontWeight: 700, letterSpacing: ".04em",
+                textTransform: "uppercase",
+                animation: voiceLoopActive ? "pulse-rec 1.5s ease-out infinite" : "none",
+              }}
+            >
+              {voiceLoopActive ? "⏹ Stop" : "🎙 Loop"}
+            </button>
+          )}
+
           <NotificationBell className="text-gray-500 hover:text-gray-800 hover:bg-gray-100" />
 
         </div>
@@ -1704,6 +1841,25 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
             onDismissPrompt={(ts) => setMessages((prev) => prev.map((m) => m.ts === ts ? { ...m, actionPrompt: false } : m))}
             showIdleCard={messages.length === 0}
             pendingGreeting={!!pendingSpokenGreeting}
+            onTaskConfirm={async (taskId, stepId) => {
+              if (!user?.id) return;
+              const updated = await confirmStep(taskId, stepId, user.id);
+              if (updated) {
+                setMessages((prev) => prev.map((m) => m.hufiTask?.id === taskId ? { ...m, hufiTask: updated } : m));
+                setActiveHufiTask(updated);
+                if (updated.result_summary && voiceLoopRef.current) void hufiSpeak(updated.result_summary + ". Noch etwas?");
+              }
+            }}
+            onTaskCancel={async (taskId) => {
+              if (!user?.id) return;
+              await cancelTask(taskId, user.id);
+              setMessages((prev) => prev.map((m) =>
+                m.hufiTask?.id === taskId
+                  ? { ...m, hufiTask: m.hufiTask ? { ...m.hufiTask, status: "cancelled" as const } : undefined }
+                  : m
+              ));
+              setActiveHufiTask(null);
+            }}
           />
         </div>
 

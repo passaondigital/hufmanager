@@ -4,8 +4,10 @@ import { useNavigate } from "react-router-dom";
 import { HufiVoiceWave } from "@/components/voice/HufiVoiceWave";
 import { HufiOrb } from "@/components/voice/HufiOrb";
 import { HufiSearchCard } from "@/components/HufiSearchCard";
+import { HufiTaskCard } from "@/components/tasks/HufiTaskCard";
 import type { HufiSearchResult } from "@/lib/hufi-search";
 import type { HufiIntent } from "@/lib/hufi-intent";
+import type { HufiTask } from "@/lib/hufi-task-engine";
 
 // ── Shared types ──────────────────────────────────────────────────────────────
 
@@ -24,6 +26,7 @@ export interface ChatMessage {
   searchResults?: HufiSearchResult[];
   searchSuggestions?: import("@/lib/hufi-search").SearchSuggestion[];
   senderId?: string;
+  hufiTask?: HufiTask;
 }
 
 // ── Voice Section (always visible, replaces floating banner) ─────────────────
@@ -271,6 +274,8 @@ interface MessagesProps {
   onDismissPrompt: (ts: number) => void;
   showIdleCard?: boolean;
   pendingGreeting?: boolean;
+  onTaskConfirm?: (taskId: string, stepId: string) => void;
+  onTaskCancel?: (taskId: string) => void;
 }
 
 export function MobileShellMessages({
@@ -283,6 +288,8 @@ export function MobileShellMessages({
   onDismissPrompt,
   showIdleCard,
   pendingGreeting,
+  onTaskConfirm,
+  onTaskCancel,
 }: MessagesProps) {
   const navigate = useNavigate();
 
@@ -417,6 +424,16 @@ export function MobileShellMessages({
                 {msg.searchResults.map((r, ri) => (
                   <HufiSearchCard key={ri} result={r} />
                 ))}
+              </div>
+            )}
+
+            {msg.hufiTask && onTaskConfirm && onTaskCancel && (
+              <div style={{ marginTop: 8 }}>
+                <HufiTaskCard
+                  task={msg.hufiTask}
+                  onConfirm={onTaskConfirm}
+                  onCancel={onTaskCancel}
+                />
               </div>
             )}
 
