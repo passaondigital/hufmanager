@@ -46,6 +46,7 @@ import {
   DollarSign,
   AlertTriangle,
   Mail,
+  Repeat2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -184,6 +185,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       subItems: [
         { title: "Kunden", url: "/kunden", icon: Users, description: "#kid verwalten" },
         { title: "Pferde", url: "/pferde", icon: UserPlus, description: "#eqid verwalten" },
+        { title: "BHS Balance", url: "/bhs-balance", icon: Repeat2, description: "Pro-Pferd Abo-Cockpit" },
       ]
     },
     { 
@@ -395,15 +397,15 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       {/* Logo */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
         {!collapsed ? (
-          <img 
-            src="https://upload.assaon.com/files/medien/hufiapp-logo-mit-text-1777028919801-id2zm.png" 
-            alt="Hufi" 
+          <img
+            src="/hufmanager-logo.png"
+            alt="HufManager"
             className="h-10 w-auto"
           />
         ) : (
-          <img 
-            src="https://upload.assaon.com/files/medien/hufiapp-logo-mit-text-1777028919801-id2zm.png" 
-            alt="HM" 
+          <img
+            src="/hufmanager-logo.png"
+            alt="HM"
             className="h-8 w-auto"
           />
         )}

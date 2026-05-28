@@ -5,7 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useProfileGuardian } from "@/hooks/useProfileGuardian";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
@@ -20,310 +20,190 @@ import { QUERY_CACHE_MAX_AGE } from "@/lib/offline/offlineConfig";
 import { Loader2 } from "lucide-react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { TourProvider } from "@/components/tour/TourContext";
+import { PWAInstallPrompt } from "@/components/pwa/PWAInstallPrompt";
 
-// Eagerly loaded core pages
 import Index from "@/pages/Index";
 
-// Lazy-loaded pages for code-splitting
-const NotFound = lazy(() => import("@/pages/NotFound"));
-const Auth = lazy(() => import("@/pages/Auth"));
-const AppLayout = lazy(() =>
-  import("@/components/layout/AppLayout").then((m) => ({ default: m.AppLayout }))
-);
-const MobileShell = lazy(() =>
-  import("@/components/layout/MobileShell").then((m) => ({ default: m.MobileShell }))
-);
-const BotschafterLayout = lazy(() =>
-  import("@/components/botschafter/BotschafterLayout").then((m) => ({ default: m.BotschafterLayout }))
-);
-const Anfragen = lazy(() => import("@/pages/Anfragen"));
-const Angebote = lazy(() => import("@/pages/Angebote"));
-const Aufnahme = lazy(() => import("@/pages/Aufnahme"));
-const Pferde = lazy(() => import("@/pages/Pferde"));
-const Auffassen = lazy(() => import("@/pages/Auffassen"));
-const AuffassenHub = lazy(() => import("@/pages/AuffassenHub"));
-const Analyse = lazy(() => import("@/pages/Analyse"));
-const AnalyseHub = lazy(() => import("@/pages/AnalyseHub"));
-const Kalender = lazy(() => import("@/pages/Kalender"));
-const Kunden = lazy(() => import("@/pages/Kunden"));
-const Services = lazy(() => import("@/pages/Services"));
-const MeinAngebot = lazy(() => import("@/pages/MeinAngebot"));
-const Management = lazy(() => import("@/pages/Management"));
-const ManagementHub = lazy(() => import("@/pages/ManagementHub"));
+// ── KERN-PAGES ────────────────────────────────────────────────────────────────
+const NotFound    = lazy(() => import("@/pages/NotFound"));
+const Auth        = lazy(() => import("@/pages/Auth"));
+const AppLayout   = lazy(() => import("@/components/layout/AppLayout").then((m) => ({ default: m.AppLayout })));
+const MobileShell = lazy(() => import("@/components/layout/MobileShell").then((m) => ({ default: m.MobileShell })));
 
-const ManagementProfil = lazy(() => import("@/pages/management/ManagementProfil"));
-const ManagementWebsite = lazy(() => import("@/pages/management/ManagementWebsite"));
-const ManagementKommunikation = lazy(() => import("@/pages/management/ManagementKommunikation"));
-const ManagementAbo = lazy(() => import("@/pages/management/ManagementAbo"));
-const AboSettings = lazy(() => import("@/pages/settings/AboSettings"));
-const ManagementRechtliches = lazy(() => import("@/pages/management/ManagementRechtliches"));
-const ManagementSteuer = lazy(() => import("@/pages/management/ManagementSteuer"));
-const ManagementBusinessHub = lazy(() => import("@/pages/management/ManagementBusinessHub"));
-const ManagementSicherheit = lazy(() => import("@/pages/management/ManagementSicherheit"));
-const Academy = lazy(() => import("@/pages/Academy"));
-const Chat = lazy(() => import("@/pages/Chat"));
-const GeldVerdienen = lazy(() => import("@/pages/GeldVerdienen"));
-const Hufrente = lazy(() => import("@/pages/Hufrente"));
-const Hufanalyse = lazy(() => import("@/pages/Hufanalyse"));
-const Rechnungen = lazy(() => import("@/pages/Rechnungen"));
-const Support = lazy(() => import("@/pages/Support"));
-const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
-const Welcome = lazy(() => import("@/pages/Welcome"));
+// Auth
+const ResetPassword  = lazy(() => import("@/pages/ResetPassword"));
 const UpdatePassword = lazy(() => import("@/pages/UpdatePassword"));
-const ClientHome = lazy(() => import("@/pages/ClientHome"));
-const ClientHorseDetail = lazy(() => import("@/pages/ClientHorseDetail"));
-const ClientInvoices = lazy(() => import("@/pages/ClientInvoices"));
-const ClientPermissions = lazy(() => import("@/pages/ClientPermissions"));
-const ClientBooking = lazy(() => import("@/pages/ClientBooking"));
-const ClientProfile = lazy(() => import("@/pages/ClientProfile"));
-const ClientAccountType = lazy(() => import("@/pages/ClientAccountType"));
-const ClientChat = lazy(() => import("@/pages/ClientChat"));
-const ClientStallBoard = lazy(() => import("@/pages/ClientStallBoard"));
-const ClientHorses = lazy(() => import("@/pages/ClientHorses"));
-const ClientLocations = lazy(() => import("@/pages/ClientLocations"));
-const ClientNotifications = lazy(() => import("@/pages/ClientNotifications"));
-const ClientOrders = lazy(() => import("@/pages/client/ClientOrders"));
-const SearchProviders = lazy(() => import("@/pages/client/SearchProviders"));
-const ProviderLanding = lazy(() => import("@/pages/ProviderLanding"));
-const WidgetPage = lazy(() => import("@/pages/WidgetPage"));
-const MeineWebsite = lazy(() => import("@/pages/MeineWebsite"));
-const LandingEditor = lazy(() => import("@/pages/LandingEditor"));
+const Welcome        = lazy(() => import("@/pages/Welcome"));
+
+// Provider – CRM Kern
+const Pferde      = lazy(() => import("@/pages/Pferde"));
+const Kalender    = lazy(() => import("@/pages/Kalender"));
+const Kunden      = lazy(() => import("@/pages/Kunden"));
+const Rechnungen  = lazy(() => import("@/pages/Rechnungen"));
+const MeinAngebot = lazy(() => import("@/pages/MeinAngebot"));
+const Anfragen    = lazy(() => import("@/pages/Anfragen"));
+const Aufnahme    = lazy(() => import("@/pages/Aufnahme"));
+const Tour        = lazy(() => import("@/pages/Tour"));
+const Lager       = lazy(() => import("@/pages/Lager"));
+const BhsBalanceCockpit = lazy(() => import("@/pages/BhsBalanceCockpit"));
+const BhsLandingPage    = lazy(() => import("@/pages/BhsLandingPage"));
 const ProviderHorseDetail = lazy(() => import("@/pages/ProviderHorseDetail"));
-const ImportCenter = lazy(() => import("@/pages/ImportCenter"));
-const ConnectForm = lazy(() => import("@/pages/ConnectForm"));
-const Netzwerk = lazy(() => import("@/pages/Netzwerk"));
-const MissionControl = lazy(() => import("@/pages/admin/MissionControl"));
-const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
-const FeatureUsageOverview = lazy(() => import("@/pages/admin/FeatureUsageOverview"));
-const ModuleAccessLogs = lazy(() => import("@/pages/admin/ModuleAccessLogs"));
-const Verarbeitungsverzeichnis = lazy(() => import("@/pages/admin/Verarbeitungsverzeichnis"));
-const AdminRoles = lazy(() => import("@/pages/admin/AdminRoles"));
-const SubmitReview = lazy(() => import("@/pages/SubmitReview"));
-const AboMatrix = lazy(() => import("@/pages/AboMatrix"));
-const Kalkulator = lazy(() => import("@/pages/Kalkulator"));
-const Blog = lazy(() => import("@/pages/Blog"));
-const BlogPost = lazy(() => import("@/pages/BlogPost"));
-const WebsiteHome = lazy(() => import("@/pages/website/WebsiteHome"));
-const WebsiteImpressum = lazy(() => import("@/pages/website/Impressum"));
-const WebsiteDatenschutz = lazy(() => import("@/pages/website/Datenschutz"));
-const WebsiteAGB = lazy(() => import("@/pages/website/AGB"));
-const WebsiteVertrauen = lazy(() => import("@/pages/website/Vertrauen"));
-const WebsiteWiderruf = lazy(() => import("@/pages/website/Widerruf"));
-const Glossar = lazy(() => import("@/pages/Glossar"));
-const FAQ = lazy(() => import("@/pages/FAQ"));
-const Changelog = lazy(() => import("@/pages/Changelog"));
-const PferdeakteLanding = lazy(() => import("@/pages/PferdeakteLanding"));
-const PferdeakteBotschafter = lazy(() => import("@/pages/PferdeakteBotschafter"));
-const NotfallZugang = lazy(() => import("@/pages/NotfallZugang"));
-const BotschafterAuth = lazy(() => import("@/pages/botschafter/BotschafterAuth"));
-const BotschafterWarten = lazy(() => import("@/pages/botschafter/BotschafterWarten"));
-const ManagementBotschafter = lazy(() => import("@/pages/provider/ManagementBotschafter"));
-const PartnerManagementBotschafter = lazy(() => import("@/pages/partner/PartnerManagementBotschafter"));
-const EmployeeManagementBotschafter = lazy(() => import("@/pages/employee/EmployeeManagementBotschafter"));
-const ClientBotschafter = lazy(() => import("@/pages/client/ClientBotschafter"));
-const ClientStallManagement = lazy(() => import("@/pages/client/ClientStallManagement"));
-const ClientStallOverview = lazy(() => import("@/pages/client/ClientStallOverview"));
-const ClientStallBoarders = lazy(() => import("@/pages/client/ClientStallBoarders"));
-const ClientStallExperts = lazy(() => import("@/pages/client/ClientStallExperts"));
-const ClientStallStaff = lazy(() => import("@/pages/client/ClientStallStaff"));
-const ClientStallReports = lazy(() => import("@/pages/client/ClientStallReports"));
-const ClientBusinessHub = lazy(() => import("@/pages/client/ClientBusinessHub"));
-const ClientBusinessOverview = lazy(() => import("@/pages/client/ClientBusinessOverview"));
-const ClientNetwork = lazy(() => import("@/pages/client/ClientNetwork"));
-const ClientMarketplace = lazy(() => import("@/pages/client/ClientMarketplace"));
-const ClientMarketplaceCreate = lazy(() => import("@/pages/client/ClientMarketplaceCreate"));
-const ClientMyListings = lazy(() => import("@/pages/client/ClientMyListings"));
-const BotschafterWerbemittelPage = lazy(() => import("@/pages/botschafter/BotschafterWerbemittelPage"));
-const WerbemittelEditor = lazy(() => import("@/pages/botschafter/WerbemittelEditor"));
-const BotschafterNachrichten = lazy(() => import("@/pages/botschafter/BotschafterNachrichten"));
-const BotschafterUebersicht = lazy(() => import("@/pages/botschafter/BotschafterUebersicht"));
-const BotschafterDashboard = lazy(() => import("@/pages/botschafter/BotschafterDashboard"));
-const BotschafterLinks = lazy(() => import("@/pages/botschafter/BotschafterLinks"));
-const BotschafterConversions = lazy(() => import("@/pages/botschafter/BotschafterConversions"));
-const BotschafterUmsaetze = lazy(() => import("@/pages/botschafter/BotschafterUmsaetze"));
-const BotschafterSponsoring = lazy(() => import("@/pages/botschafter/BotschafterSponsoring"));
-const BotschafterInsights = lazy(() => import("@/pages/botschafter/BotschafterInsights"));
-const BotschafterRangliste = lazy(() => import("@/pages/botschafter/BotschafterRangliste"));
-const BotschafterProfil = lazy(() => import("@/pages/botschafter/BotschafterProfil"));
-const BotschafterHufmanager = lazy(() => import("@/pages/botschafter/BotschafterHufmanager"));
-const SponsoringPublic = lazy(() => import("@/pages/botschafter/SponsoringPublic"));
-const Lager = lazy(() => import("@/pages/Lager"));
-const Ausgaben = lazy(() => import("@/pages/Ausgaben"));
-const GuV = lazy(() => import("@/pages/GuV"));
-const WorkMode = lazy(() => import("@/pages/WorkMode"));
-const Tour = lazy(() => import("@/pages/Tour"));
-const Team = lazy(() => import("@/pages/Team"));
-const EmployeeDashboard = lazy(() => import("@/pages/EmployeeDashboard"));
-const EmployeeInvite = lazy(() => import("@/pages/EmployeeInvite"));
-const EmergencyDashboard = lazy(() => import("@/pages/EmergencyDashboard"));
-const PriceGroupManagement = lazy(() => import("@/pages/PriceGroupManagement"));
-const AdminSeedDemo = lazy(() => import("@/pages/AdminSeedDemo"));
-const AdminSmokeTest = lazy(() => import("@/pages/AdminSmokeTest"));
-const EmployeeTour = lazy(() => import("@/pages/EmployeeTour"));
-const EmployeeHorseDetail = lazy(() => import("@/pages/employee/EmployeeHorseDetail"));
-const MeinOffice = lazy(() => import("@/pages/MeinOffice"));
-const OfficeEditor = lazy(() => import("@/pages/OfficeEditor"));
-const Hilfe = lazy(() => import("@/pages/Hilfe"));
-const HufiFAQ = lazy(() => import("@/pages/HufiFAQ"));
-const HufiMemoryPage = lazy(() => import("@/pages/HufiMemoryPage"));
-const Docs = lazy(() => import("@/pages/Docs"));
-const Status = lazy(() => import("@/pages/Status"));
-const HMConnect = lazy(() => import("@/pages/HMConnect"));
-const Archiv = lazy(() => import("@/pages/Archiv"));
-const Business = lazy(() => import("@/pages/Business"));
+const EmergencyDashboard  = lazy(() => import("@/pages/EmergencyDashboard"));
+
+// Provider – Business-Features (Finanzen, Kommunikation, Arbeit)
+const GuV         = lazy(() => import("@/pages/GuV"));
 const Buchhaltung = lazy(() => import("@/pages/Buchhaltung"));
-const Fuhrpark = lazy(() => import("@/pages/Fuhrpark"));
-const AutoFlow = lazy(() => import("@/pages/AutoFlow"));
-const Marketplace = lazy(() => import("@/pages/Marketplace"));
-const AdminNachrichten = lazy(() => import("@/pages/AdminNachrichten"));
-const EmailMarketing = lazy(() => import("@/features/email-marketing/EmailMarketingPage"));
-const SignupFormPage = lazy(() => import("@/features/email-marketing/public/SignupFormPage"));
-const PortalDashboard = lazy(() => import("@/pages/portal/PortalDashboard"));
-const PortalHorseDetail = lazy(() => import("@/pages/portal/PortalHorseDetail"));
-const PortalSettings = lazy(() => import("@/pages/portal/PortalSettings"));
-const PortalCalendar = lazy(() => import("@/pages/portal/PortalCalendar"));
+const Ausgaben    = lazy(() => import("@/pages/Ausgaben"));
+const WorkMode    = lazy(() => import("@/pages/WorkMode"));
+const Chat        = lazy(() => import("@/pages/Chat"));
+const Business    = lazy(() => import("@/pages/Business"));
+const Archiv      = lazy(() => import("@/pages/Archiv"));
+const MeinOffice  = lazy(() => import("@/pages/MeinOffice"));
+const OfficeEditor = lazy(() => import("@/pages/OfficeEditor"));
+const Analyse     = lazy(() => import("@/pages/Analyse"));
+const AnalyseHub  = lazy(() => import("@/pages/AnalyseHub"));
+const Auffassen   = lazy(() => import("@/pages/Auffassen"));
+const AuffassenHub = lazy(() => import("@/pages/AuffassenHub"));
+const Fuhrpark    = lazy(() => import("@/pages/Fuhrpark"));
+const Team        = lazy(() => import("@/pages/Team"));
+
+// Provider – Management
+const ManagementHub         = lazy(() => import("@/pages/ManagementHub"));
+const ManagementProfil      = lazy(() => import("@/pages/management/ManagementProfil"));
+const ManagementAbo         = lazy(() => import("@/pages/management/ManagementAbo"));
+const AboSettings           = lazy(() => import("@/pages/settings/AboSettings"));
+const ManagementRechtliches = lazy(() => import("@/pages/management/ManagementRechtliches"));
+const ManagementSteuer      = lazy(() => import("@/pages/management/ManagementSteuer"));
+const ManagementBusinessHub = lazy(() => import("@/pages/management/ManagementBusinessHub"));
+const ManagementSicherheit  = lazy(() => import("@/pages/management/ManagementSicherheit"));
+const ManagementKommunikation = lazy(() => import("@/pages/management/ManagementKommunikation"));
+const ImportCenter  = lazy(() => import("@/pages/ImportCenter"));
+const Support       = lazy(() => import("@/pages/Support"));
+
+// Client (Pferdebesitzer)
+const ClientAppLayout     = lazy(() => import("@/components/client/ClientAppLayout").then(m => ({ default: m.ClientAppLayout })));
+const ClientHome          = lazy(() => import("@/pages/ClientHome"));
+const ClientHorseDetail   = lazy(() => import("@/pages/ClientHorseDetail"));
+const ClientInvoices      = lazy(() => import("@/pages/ClientInvoices"));
+const ClientBhsAbo        = lazy(() => import("@/pages/ClientBhsAbo"));
+const ClientPermissions   = lazy(() => import("@/pages/ClientPermissions"));
+const ClientBooking       = lazy(() => import("@/pages/ClientBooking"));
+const ClientProfile       = lazy(() => import("@/pages/ClientProfile"));
+const ClientAccountType   = lazy(() => import("@/pages/ClientAccountType"));
+const ClientHorses        = lazy(() => import("@/pages/ClientHorses"));
+const ClientNotifications = lazy(() => import("@/pages/ClientNotifications"));
+const SearchProviders     = lazy(() => import("@/pages/client/SearchProviders"));
+
+// Admin (unberührt)
+const MissionControl           = lazy(() => import("@/pages/admin/MissionControl"));
+const AdminDashboard           = lazy(() => import("@/pages/admin/AdminDashboard"));
+const FeatureUsageOverview     = lazy(() => import("@/pages/admin/FeatureUsageOverview"));
+const ModuleAccessLogs         = lazy(() => import("@/pages/admin/ModuleAccessLogs"));
+const Verarbeitungsverzeichnis = lazy(() => import("@/pages/admin/Verarbeitungsverzeichnis"));
+const AdminRoles               = lazy(() => import("@/pages/admin/AdminRoles"));
+const AdminSeedDemo            = lazy(() => import("@/pages/AdminSeedDemo"));
+const AdminSmokeTest           = lazy(() => import("@/pages/AdminSmokeTest"));
+const AdminOrganizations       = lazy(() => import("@/pages/admin/AdminOrganizations"));
+const HufiBrainAdmin           = lazy(() => import("@/pages/admin/HufiBrainAdmin"));
+const AdminNachrichten         = lazy(() => import("@/pages/AdminNachrichten"));
+
+// Öffentliche Spezial-Routen (Einladungen, Notfall, Pferdeakte)
+const ConnectForm       = lazy(() => import("@/pages/ConnectForm"));
+const SubmitReview      = lazy(() => import("@/pages/SubmitReview"));
+const ProviderLanding   = lazy(() => import("@/pages/ProviderLanding"));
+const WidgetPage        = lazy(() => import("@/pages/WidgetPage"));
+const PreviewLanding    = lazy(() => import("@/pages/PreviewLanding"));
+const PferdeakteLanding = lazy(() => import("@/pages/PferdeakteLanding"));
+const NotfallZugang     = lazy(() => import("@/pages/NotfallZugang"));
+const BotschafterAuth   = lazy(() => import("@/pages/botschafter/BotschafterAuth"));
+const BotschafterWarten = lazy(() => import("@/pages/botschafter/BotschafterWarten"));
+const SponsoringPublic  = lazy(() => import("@/pages/botschafter/SponsoringPublic"));
+
+// Rechtliches (minimal – nur was zwingend erreichbar sein muss)
+const WebsiteImpressum   = lazy(() => import("@/pages/website/Impressum"));
+const WebsiteDatenschutz = lazy(() => import("@/pages/website/Datenschutz"));
+const WebsiteAGB         = lazy(() => import("@/pages/website/AGB"));
+const WebsiteWiderruf    = lazy(() => import("@/pages/website/Widerruf"));
+
+// HufiApp-Landing (bleibt für hufiapp.de Domain)
+const WebsiteHome = lazy(() => import("@/pages/website/WebsiteHome"));
+
+// Subdomain-Routing (Portal, Vet, Marketplace – nur auf Subdomains aktiv)
+const PortalLogin       = lazy(() => import("@/pages/portal/PortalLogin"));
+const MarketplacePublic = lazy(() => import("@/pages/portal/MarketplacePublic"));
+const VetPortalLogin    = lazy(() => import("@/pages/portal/VetPortalLogin"));
+const VetDashboard      = lazy(() => import("@/pages/vet/VetDashboard"));
+const VetSOAPForm       = lazy(() => import("@/pages/vet/VetSOAPForm"));
+const VetPMSConnect     = lazy(() => import("@/pages/vet/VetPMSConnect"));
+const VetCSVImport      = lazy(() => import("@/pages/vet/VetCSVImport"));
+const VetGOTRechner     = lazy(() => import("@/pages/vet/VetGOTRechner"));
+const VetImpfungen      = lazy(() => import("@/pages/vet/VetImpfungen"));
+const TierarztFinder    = lazy(() => import("@/pages/TierarztFinder"));
+const PortalAppLayout   = lazy(() => import("@/components/portal/PortalAppLayout"));
+const PortalDashboard   = lazy(() => import("@/pages/portal/PortalDashboard"));
+const PortalCalendar    = lazy(() => import("@/pages/portal/PortalCalendar"));
 const PortalManagementHub = lazy(() => import("@/pages/portal/PortalManagementHub"));
-const PortalAppLayout = lazy(() => import("@/components/portal/PortalAppLayout"));
+const PortalSettings    = lazy(() => import("@/pages/portal/PortalSettings"));
+const PortalAnalytics   = lazy(() => import("@/pages/portal/PortalAnalytics"));
+const PortalTeam        = lazy(() => import("@/pages/portal/PortalTeam"));
+const PortalConnect     = lazy(() => import("@/pages/portal/PortalConnect"));
+const PortalImport      = lazy(() => import("@/pages/portal/PortalImport"));
 const PortalPlaceholder = lazy(() => import("@/pages/portal/PortalPlaceholder"));
-const PortalTeam = lazy(() => import("@/pages/portal/PortalTeam"));
-const PortalAnalytics = lazy(() => import("@/pages/portal/PortalAnalytics"));
-const PortalConnect = lazy(() => import("@/pages/portal/PortalConnect"));
-const PortalImport = lazy(() => import("@/pages/portal/PortalImport"));
-const PortalPolicen = lazy(() => import("@/pages/portal/modules/PortalPolicen"));
-const PortalClaims = lazy(() => import("@/pages/portal/modules/PortalClaims"));
-const PortalProdukte = lazy(() => import("@/pages/portal/modules/PortalProdukte"));
-const PortalOrders = lazy(() => import("@/pages/portal/modules/PortalOrders"));
-const PortalSchulungen = lazy(() => import("@/pages/portal/modules/PortalSchulungen"));
-const PortalKurse = lazy(() => import("@/pages/portal/modules/PortalKurse"));
-const PortalSchueler = lazy(() => import("@/pages/portal/modules/PortalSchueler"));
-const PortalPruefungen = lazy(() => import("@/pages/portal/modules/PortalPruefungen"));
-const PortalStandards = lazy(() => import("@/pages/portal/modules/PortalStandards"));
-const PortalMitglieder = lazy(() => import("@/pages/portal/modules/PortalMitglieder"));
+const PortalPolicen     = lazy(() => import("@/pages/portal/modules/PortalPolicen"));
+const PortalClaims      = lazy(() => import("@/pages/portal/modules/PortalClaims"));
+const PortalProdukte    = lazy(() => import("@/pages/portal/modules/PortalProdukte"));
+const PortalOrders      = lazy(() => import("@/pages/portal/modules/PortalOrders"));
+const PortalSchulungen  = lazy(() => import("@/pages/portal/modules/PortalSchulungen"));
+const PortalKurse       = lazy(() => import("@/pages/portal/modules/PortalKurse"));
+const PortalSchueler    = lazy(() => import("@/pages/portal/modules/PortalSchueler"));
+const PortalPruefungen  = lazy(() => import("@/pages/portal/modules/PortalPruefungen"));
+const PortalStandards   = lazy(() => import("@/pages/portal/modules/PortalStandards"));
+const PortalMitglieder  = lazy(() => import("@/pages/portal/modules/PortalMitglieder"));
 const PortalStatistiken = lazy(() => import("@/pages/portal/modules/PortalStatistiken"));
-const PortalPatienten = lazy(() => import("@/pages/portal/modules/PortalPatienten"));
-const PortalBefunde = lazy(() => import("@/pages/portal/modules/PortalBefunde"));
-const PortalImpfungen = lazy(() => import("@/pages/portal/modules/PortalImpfungen"));
-const PortalGallery = lazy(() => import("@/pages/portal/PortalGallery"));
+const PortalPatienten   = lazy(() => import("@/pages/portal/modules/PortalPatienten"));
+const PortalBefunde     = lazy(() => import("@/pages/portal/modules/PortalBefunde"));
+const PortalImpfungen   = lazy(() => import("@/pages/portal/modules/PortalImpfungen"));
+const PortalGallery     = lazy(() => import("@/pages/portal/PortalGallery"));
 const PortalApplication = lazy(() => import("@/pages/portal/PortalApplication"));
-const PortalDemo = lazy(() => import("@/pages/portal/PortalDemo"));
-const InsurancePortalDemo = lazy(() => import("@/pages/portal/demos/InsurancePortalDemo"));
+const PortalHorseDetail = lazy(() => import("@/pages/portal/PortalHorseDetail"));
+const InsurancePortalDemo    = lazy(() => import("@/pages/portal/demos/InsurancePortalDemo"));
 const ManufacturerPortalDemo = lazy(() => import("@/pages/portal/demos/ManufacturerPortalDemo"));
-const VetPortalDemo = lazy(() => import("@/pages/portal/demos/VetPortalDemo"));
-const SupplierPortalDemo = lazy(() => import("@/pages/portal/demos/SupplierPortalDemo"));
-const EducationPortalDemo = lazy(() => import("@/pages/portal/demos/EducationPortalDemo"));
-const AssociationPortalDemo = lazy(() => import("@/pages/portal/demos/AssociationPortalDemo"));
-const AdminOrganizations = lazy(() => import("@/pages/admin/AdminOrganizations"));
-const Statistiken = lazy(() => import("@/pages/Statistiken"));
-const EmployeeNotizbuch = lazy(() => import("@/pages/employee/EmployeeNotizbuch"));
-const EmployeeProfil = lazy(() => import("@/pages/employee/EmployeeProfil"));
-const EmployeeMaterial = lazy(() => import("@/pages/employee/EmployeeMaterial"));
-const EmployeeAbwesenheiten = lazy(() => import("@/pages/employee/EmployeeAbwesenheiten"));
-const EmployeeVertrag = lazy(() => import("@/pages/employee/EmployeeVertrag"));
-const EmployeeTimer = lazy(() => import("@/pages/employee/EmployeeTimer"));
-const EmployeeHufCam = lazy(() => import("@/pages/employee/EmployeeHufCam"));
-const EmployeeAnalyse = lazy(() => import("@/pages/employee/EmployeeAnalyse"));
-const EmployeeChat = lazy(() => import("@/pages/employee/EmployeeChat"));
-const EmployeeCalendar = lazy(() => import("@/pages/employee/EmployeeCalendar"));
-const EmployeeManagementHub = lazy(() => import("@/pages/employee/EmployeeManagementHub"));
-const EmployeeManagementProfil = lazy(() => import("@/pages/employee/EmployeeManagementProfil"));
-const EmployeeManagementEinstellungen = lazy(() => import("@/pages/employee/EmployeeManagementEinstellungen"));
-const EmployeePferde = lazy(() => import("@/pages/employee/EmployeePferde"));
-const PartnerHome = lazy(() => import("@/pages/partner/PartnerHome"));
-const PartnerRechtliches = lazy(() => import("@/pages/partner/PartnerRechtliches"));
-const PartnerHorseView = lazy(() => import("@/pages/partner/PartnerHorseView"));
-const PartnerNotes = lazy(() => import("@/pages/partner/PartnerNotes"));
-const PartnerChat = lazy(() => import("@/pages/partner/PartnerChat"));
-const PartnerProfile = lazy(() => import("@/pages/partner/PartnerProfile"));
-const PartnerInvite = lazy(() => import("@/pages/PartnerInvite"));
-const PartnerCalendar = lazy(() => import("@/pages/partner/PartnerCalendar"));
-const PartnerTreatmentPlans = lazy(() => import("@/pages/partner/PartnerTreatmentPlans"));
-const PartnerDocuments = lazy(() => import("@/pages/partner/PartnerDocuments"));
-const PartnerServices = lazy(() => import("@/pages/partner/PartnerServices"));
-const PartnerInvoices = lazy(() => import("@/pages/partner/PartnerInvoices"));
-const PartnerSettings = lazy(() => import("@/pages/partner/PartnerSettings"));
-const PartnerManagementHub = lazy(() => import("@/pages/partner/PartnerManagementHub"));
-const PartnerManagementProfil = lazy(() => import("@/pages/partner/PartnerManagementProfil"));
-const PartnerManagementOeffentlich = lazy(() => import("@/pages/partner/PartnerManagementOeffentlich"));
-const PartnerManagementKommunikation = lazy(() => import("@/pages/partner/PartnerManagementKommunikation"));
-const PartnerManagementAbo = lazy(() => import("@/pages/partner/PartnerManagementAbo"));
-const PartnerManagementRechtliches = lazy(() => import("@/pages/partner/PartnerManagementRechtliches"));
-const PartnerManagementSteuer = lazy(() => import("@/pages/partner/PartnerManagementSteuer"));
-const PartnerManagementBusinessHub = lazy(() => import("@/pages/partner/PartnerManagementBusinessHub"));
-const PartnerPferde = lazy(() => import("@/pages/partner/PartnerPferde"));
-const PartnerKunden = lazy(() => import("@/pages/partner/PartnerKunden"));
-const PartnerConnect = lazy(() => import("@/pages/partner/PartnerConnect"));
-const PartnerPublicProfile = lazy(() => import("@/pages/partner/PartnerPublicProfile"));
-const PreviewLanding = lazy(() => import("@/pages/PreviewLanding"));
+const VetPortalDemo          = lazy(() => import("@/pages/portal/demos/VetPortalDemo"));
+const SupplierPortalDemo     = lazy(() => import("@/pages/portal/demos/SupplierPortalDemo"));
+const EducationPortalDemo    = lazy(() => import("@/pages/portal/demos/EducationPortalDemo"));
+const AssociationPortalDemo  = lazy(() => import("@/pages/portal/demos/AssociationPortalDemo"));
 
-// Layouts (lazy)
-const EmployeeAppLayout = lazy(() => import("@/components/employee/EmployeeAppLayout").then(m => ({ default: m.EmployeeAppLayout })));
-const PartnerAppLayout = lazy(() => import("@/components/partner/PartnerAppLayout").then(m => ({ default: m.PartnerAppLayout })));
-const ClientAppLayout = lazy(() => import("@/components/client/ClientAppLayout").then(m => ({ default: m.ClientAppLayout })));
-const StallbetreiberAppLayout = lazy(() => import("@/components/stallbetreiber/StallbetreiberAppLayout").then(m => ({ default: m.StallbetreiberAppLayout })));
+// ── DEAKTIVIERT (HufManager-Cleanup) ─────────────────────────────────────────
+// Partner, Mitarbeiter, Stallbetreiber, Botschafter-Portal,
+// Academy, AutoFlow, Marketplace, EmailMarketing, Kalkulator,
+// GeldVerdienen, Hufrente, Hufanalyse, HMConnect, Netzwerk, Team,
+// MeineWebsite, LandingEditor, AboMatrix,
+// Blog, Docs, FAQ, Glossar, Changelog, Statistiken, Vertrauen,
+// Client: Stall-*, Marketplace-*, Network, Botschafter, Kalender, Historie, Dokumente
+// → Alle Importe auskommentiert, Routen nicht registriert.
+// → Für Reaktivierung: Import einkommentieren + Route wieder eintragen.
 
-// Stallbetreiber pages (lazy)
-const StallDashboard = lazy(() => import("@/pages/stallbetreiber/StallDashboard"));
-const StallPlaceholder = lazy(() => import("@/pages/stallbetreiber/StallPlaceholder"));
-const StallKalender = lazy(() => import("@/pages/stallbetreiber/StallKalender"));
-const StallCockpit = lazy(() => import("@/pages/stallbetreiber/StallCockpit"));
-const StallLager = lazy(() => import("@/pages/stallbetreiber/StallLager"));
-const StallAnfragen = lazy(() => import("@/pages/stallbetreiber/StallAnfragen"));
-const StallAngebote = lazy(() => import("@/pages/stallbetreiber/StallAngebote"));
-const StallLeistungen = lazy(() => import("@/pages/stallbetreiber/StallLeistungen"));
-const StallSettings = lazy(() => import("@/pages/stallbetreiber/StallSettings"));
-const ClientKalender = lazy(() => import("@/pages/client/ClientKalender"));
-const ClientHistorie = lazy(() => import("@/pages/client/ClientHistorie"));
-const ClientDokumente = lazy(() => import("@/pages/client/ClientDokumente"));
-
-// Global overlays: not needed for first paint
-const PWAInstallPrompt = lazy(() =>
-  import("@/components/pwa/PWAInstallPrompt").then((m) => ({ default: m.PWAInstallPrompt }))
-);
-const VersionChecker = lazy(() =>
-  import("@/components/version/VersionChecker").then((m) => ({ default: m.VersionChecker }))
-);
-const SystemStatusBanner = lazy(() =>
-  import("@/components/notifications/SystemStatusBanner").then((m) => ({ default: m.SystemStatusBanner }))
-);
-const PendingVerificationOverlay = lazy(() =>
-  import("@/components/subscription/PendingVerificationOverlay").then((m) => ({ default: m.PendingVerificationOverlay }))
-);
-
-// Suspense fallback with timeout
+// ── Suspense Fallback ─────────────────────────────────────────────────────────
 const LazyFallback = () => {
   const [timedOut, setTimedOut] = useState(false);
   const [slow, setSlow] = useState(false);
 
   useEffect(() => {
-    const slowTimer = setTimeout(() => setSlow(true), 5000);
-    const hardTimer = setTimeout(() => setTimedOut(true), 25000);
-    return () => { clearTimeout(slowTimer); clearTimeout(hardTimer); };
+    const t1 = setTimeout(() => setSlow(true), 5000);
+    const t2 = setTimeout(() => setTimedOut(true), 25000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
   if (timedOut) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center p-6"
-        style={{ background: "#F8FAFC" }}
-      >
+      <div className="min-h-screen flex items-center justify-center p-6" style={{ background: "#F8FAFC" }}>
         <div className="flex flex-col items-center gap-4 text-center max-w-xs">
-          <div
-            className="w-12 h-12 rounded-2xl flex items-center justify-center"
-            style={{ background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.2)" }}
-          >
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.2)" }}>
             <span style={{ fontSize: 22 }}>⚡</span>
           </div>
-          <div className="space-y-1">
-            <p className="font-semibold text-gray-800 text-sm">Verbindung unterbrochen</p>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Prüfe deine Internetverbindung und lade die Seite neu.
-            </p>
-          </div>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all active:scale-95"
-            style={{ background: "#F97316", boxShadow: "0 4px 16px rgba(249,115,22,0.3)" }}
-          >
+          <p className="font-semibold text-gray-800 text-sm">Verbindung unterbrochen</p>
+          <p className="text-xs text-gray-400 leading-relaxed">Prüfe deine Internetverbindung und lade die Seite neu.</p>
+          <button onClick={() => window.location.reload()} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: "#F97316" }}>
             Neu laden
           </button>
         </div>
@@ -332,44 +212,23 @@ const LazyFallback = () => {
   }
 
   return (
-    <div
-      className="min-h-screen flex flex-col items-center justify-center gap-3"
-      style={{ background: "#F8FAFC" }}
-    >
-      <div
-        className="w-10 h-10 rounded-2xl flex items-center justify-center"
-        style={{ background: "rgba(249,115,22,0.1)" }}
-      >
+    <div className="min-h-screen flex flex-col items-center justify-center gap-3" style={{ background: "#F8FAFC" }}>
+      <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: "rgba(249,115,22,0.1)" }}>
         <Loader2 className="h-5 w-5 animate-spin text-primary" />
       </div>
-      {slow && (
-        <p className="text-xs text-gray-400 animate-pulse">Einen Moment...</p>
-      )}
+      {slow && <p className="text-xs text-gray-400 animate-pulse">Einen Moment...</p>}
     </div>
   );
 };
 
-// Create persister for IndexedDB storage
 const persister = createIDBPersister();
-// Lazy-load portal pages for subdomain routing
-const PortalLogin = lazy(() => import("@/pages/portal/PortalLogin"));
-const MarketplacePublic = lazy(() => import("@/pages/portal/MarketplacePublic"));
-const VetPortalLogin = lazy(() => import("@/pages/portal/VetPortalLogin"));
-const VetDashboard = lazy(() => import("@/pages/vet/VetDashboard"));
-const VetSOAPForm = lazy(() => import("@/pages/vet/VetSOAPForm"));
-const VetPMSConnect = lazy(() => import("@/pages/vet/VetPMSConnect"));
-const VetCSVImport = lazy(() => import("@/pages/vet/VetCSVImport"));
-const VetGOTRechner = lazy(() => import("@/pages/vet/VetGOTRechner"));
-const TierarztFinder = lazy(() => import("@/pages/TierarztFinder"));
-const VetImpfungen = lazy(() => import("@/pages/vet/VetImpfungen"));
 
-/** Intercepts /pferdeakte routes and portal subdomains BEFORE AuthProvider */
+// ── Portal/Subdomain Guard ────────────────────────────────────────────────────
 function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const path = location.pathname;
   const portalMode = detectPortalMode();
 
-  // Subdomain routing: portal.hufiapp.de or versicherung.hufiapp.de
   if (portalMode.mode === 'portal' || portalMode.mode === 'insurance') {
     return (
       <AuthProvider>
@@ -377,28 +236,29 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
           <Routes>
             <Route path="/portal/:slug" element={<PortalAppLayout />}>
               <Route index element={<PortalDashboard />} />
-              <Route path="kalender" element={<PortalCalendar />} />
-              <Route path="management" element={<PortalManagementHub />} />
-              <Route path="settings" element={<PortalSettings />} />
-              <Route path="analytics" element={<PortalAnalytics />} />
-              <Route path="team" element={<PortalTeam />} />
-              <Route path="connect" element={<PortalConnect />} />
-              <Route path="import" element={<PortalImport />} />
-              <Route path="policen" element={<PortalPolicen />} />
-              <Route path="claims" element={<PortalClaims />} />
-              <Route path="produkte" element={<PortalProdukte />} />
-              <Route path="orders" element={<PortalOrders />} />
-              <Route path="schulungen" element={<PortalSchulungen />} />
-              <Route path="kurse" element={<PortalKurse />} />
-              <Route path="schueler" element={<PortalSchueler />} />
-              <Route path="pruefungen" element={<PortalPruefungen />} />
-              <Route path="standards" element={<PortalStandards />} />
-              <Route path="mitglieder" element={<PortalMitglieder />} />
+              <Route path="kalender"    element={<PortalCalendar />} />
+              <Route path="management"  element={<PortalManagementHub />} />
+              <Route path="settings"    element={<PortalSettings />} />
+              <Route path="analytics"   element={<PortalAnalytics />} />
+              <Route path="team"        element={<PortalTeam />} />
+              <Route path="connect"     element={<PortalConnect />} />
+              <Route path="import"      element={<PortalImport />} />
+              <Route path="policen"     element={<PortalPolicen />} />
+              <Route path="claims"      element={<PortalClaims />} />
+              <Route path="produkte"    element={<PortalProdukte />} />
+              <Route path="orders"      element={<PortalOrders />} />
+              <Route path="schulungen"  element={<PortalSchulungen />} />
+              <Route path="kurse"       element={<PortalKurse />} />
+              <Route path="schueler"    element={<PortalSchueler />} />
+              <Route path="pruefungen"  element={<PortalPruefungen />} />
+              <Route path="standards"   element={<PortalStandards />} />
+              <Route path="mitglieder"  element={<PortalMitglieder />} />
               <Route path="statistiken" element={<PortalStatistiken />} />
-              <Route path="patienten" element={<PortalPatienten />} />
-              <Route path="befunde" element={<PortalBefunde />} />
-              <Route path="impfungen" element={<PortalImpfungen />} />
-              <Route path="*" element={<PortalPlaceholder />} />
+              <Route path="patienten"   element={<PortalPatienten />} />
+              <Route path="befunde"     element={<PortalBefunde />} />
+              <Route path="impfungen"   element={<PortalImpfungen />} />
+              <Route path="horse/:id"   element={<PortalHorseDetail />} />
+              <Route path="*"           element={<PortalPlaceholder />} />
             </Route>
             <Route path="*" element={<PortalLogin mode={portalMode.mode} />} />
           </Routes>
@@ -407,7 +267,6 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Subdomain routing: markt.hufiapp.de
   if (portalMode.mode === 'marketplace') {
     return (
       <AuthProvider>
@@ -420,81 +279,77 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Subdomain routing: tierarzt.hufiapp.de
   if (portalMode.mode === 'veterinary') {
     return (
       <AuthProvider>
         <Suspense fallback={<LazyFallback />}>
           <Routes>
-            <Route path="/vet/dashboard" element={<VetDashboard />} />
-            <Route path="/vet/soap" element={<VetSOAPForm />} />
+            <Route path="/vet/dashboard"   element={<VetDashboard />} />
+            <Route path="/vet/soap"        element={<VetSOAPForm />} />
             <Route path="/vet/pms-connect" element={<VetPMSConnect />} />
-            <Route path="/vet/csv-import" element={<VetCSVImport />} />
+            <Route path="/vet/csv-import"  element={<VetCSVImport />} />
             <Route path="/vet/got-rechner" element={<VetGOTRechner />} />
-            <Route path="/vet/impfungen" element={<VetImpfungen />} />
+            <Route path="/vet/impfungen"   element={<VetImpfungen />} />
             <Route path="/tierarzt-finder" element={<TierarztFinder />} />
-            <Route path="*" element={<VetPortalLogin />} />
+            <Route path="*"               element={<VetPortalLogin />} />
           </Routes>
         </Suspense>
       </AuthProvider>
     );
   }
 
-  // Intercept public routes that don't need AuthProvider
-  if (path.startsWith('/pferdeakte') || path.startsWith('/notfall/') || path === '/botschafter/login' || path === '/botschafter/warten' || path.startsWith('/ref/') || path === '/kalkulator') {
+  // Öffentliche Routen ohne AuthProvider
+  if (
+    path.startsWith('/pferdeakte') ||
+    path.startsWith('/notfall/') ||
+    path === '/botschafter/login' ||
+    path === '/botschafter/warten' ||
+    path.startsWith('/ref/')
+  ) {
     return (
       <Suspense fallback={<LazyFallback />}>
         <Routes>
-          <Route path="/pferdeakte" element={<PferdeakteLanding />} />
-          <Route path="/pferdeakte/botschafter" element={<PferdeakteBotschafter />} />
-          <Route path="/pferdeakte/*" element={<PferdeakteLanding />} />
+          <Route path="/pferdeakte"           element={<PferdeakteLanding />} />
+          <Route path="/pferdeakte/botschafter" element={<PferdeakteLanding />} />
+          <Route path="/pferdeakte/*"         element={<PferdeakteLanding />} />
           <Route path="/notfall/:eqid/:token" element={<NotfallZugang />} />
-          <Route path="/botschafter/login" element={<BotschafterAuth />} />
-          <Route path="/botschafter/warten" element={<BotschafterWarten />} />
-           <Route path="/ref/:code" element={<SponsoringPublic />} />
-           <Route path="/kalkulator" element={<Kalkulator />} />
+          <Route path="/botschafter/login"    element={<BotschafterAuth />} />
+          <Route path="/botschafter/warten"   element={<BotschafterWarten />} />
+          <Route path="/ref/:code"            element={<SponsoringPublic />} />
         </Routes>
       </Suspense>
     );
   }
+
   return <>{children}</>;
 }
 
+// ── App Root ──────────────────────────────────────────────────────────────────
 function App() {
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            gcTime: QUERY_CACHE_MAX_AGE, // 7 days
-            staleTime: 1000 * 60 * 5, // 5 minutes default
-            retry: (failureCount, error) => {
-              // Don't retry if offline
-              if (!navigator.onLine) return false;
-              return failureCount < 3;
-            },
-            retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-            networkMode: "offlineFirst",
-            // Silent failures when offline - no error toasts
-            throwOnError: false,
-          },
-          mutations: {
-            networkMode: "offlineFirst",
-            retry: (failureCount, error) => {
-              if (!navigator.onLine) return false;
-              return failureCount < 3;
-            },
-          },
+  const [queryClient] = useState(() =>
+    new QueryClient({
+      defaultOptions: {
+        queries: {
+          gcTime: QUERY_CACHE_MAX_AGE,
+          staleTime: 1000 * 60 * 5,
+          retry: (failureCount) => { if (!navigator.onLine) return false; return failureCount < 3; },
+          retryDelay: (i) => Math.min(1000 * 2 ** i, 30000),
+          networkMode: "offlineFirst",
+          throwOnError: false,
         },
-      })
+        mutations: {
+          networkMode: "offlineFirst",
+          retry: (failureCount) => { if (!navigator.onLine) return false; return failureCount < 3; },
+        },
+      },
+    })
   );
 
   useEffect(() => {
     let cleanupSync: (() => void) | undefined;
     let cleanupImageSync: (() => void) | undefined;
     let cancelled = false;
-
-    const startSyncManagers = async () => {
+    const start = async () => {
       const [{ initSyncManager }, { initImageSyncManager }] = await Promise.all([
         import("@/lib/offline/syncManager"),
         import("@/lib/offline/imageSyncManager"),
@@ -503,36 +358,16 @@ function App() {
       cleanupSync = initSyncManager();
       cleanupImageSync = initImageSyncManager();
     };
-
-    const idleId = "requestIdleCallback" in window
-      ? window.requestIdleCallback(() => { void startSyncManagers(); }, { timeout: 3000 })
-      : window.setTimeout(() => { void startSyncManagers(); }, 1500);
-
+    const id = "requestIdleCallback" in window
+      ? window.requestIdleCallback(() => { void start(); }, { timeout: 3000 })
+      : window.setTimeout(() => { void start(); }, 1500);
     return () => {
       cancelled = true;
-      if ("cancelIdleCallback" in window && typeof idleId === "number") {
-        window.cancelIdleCallback(idleId);
-      } else {
-        clearTimeout(idleId);
-      }
+      if ("cancelIdleCallback" in window && typeof id === "number") window.cancelIdleCallback(id);
+      else clearTimeout(id);
       cleanupSync?.();
       cleanupImageSync?.();
     };
-  }, []);
-
-  // Affiliate ?ref= + ?src= tracking
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const ref = params.get("ref");
-    const src = params.get("src");
-    if (ref && ref.length <= 20 && /^[A-Z0-9-]+$/i.test(ref)) {
-      localStorage.setItem("huf_affiliate_ref", ref.toUpperCase());
-      localStorage.setItem("huf_affiliate_ref_ts", Date.now().toString());
-      if (!sessionStorage.getItem("hm_referral_code")) {
-        sessionStorage.setItem("hm_referral_code", ref.toUpperCase());
-        sessionStorage.setItem("hm_referral_source", src || "direct");
-      }
-    }
   }, []);
 
   return (
@@ -541,13 +376,12 @@ function App() {
       persistOptions={{
         persister,
         maxAge: QUERY_CACHE_MAX_AGE,
-        buster: "v3", // Increment when schema changes – v3: fix stale cockpit cache
+        buster: "v3",
         dehydrateOptions: {
-          shouldDehydrateQuery: (query) => {
-            // Don't persist cockpit queries – they're daily/realtime
-            const key = query.queryKey[0] as string;
+          shouldDehydrateQuery: (q) => {
+            const key = q.queryKey[0] as string;
             if (key?.startsWith("cockpit-")) return false;
-            return query.state.status === "success";
+            return q.state.status === "success";
           },
         },
       }}
@@ -567,18 +401,12 @@ function App() {
   );
 }
 
-// Separate component that can use useAuth and Profile Guardian
+// ── AppContent ────────────────────────────────────────────────────────────────
 function AppContent({ queryClient }: { queryClient: QueryClient }) {
   const { user, loading } = useAuth();
   const { isRepairing, repairError, isProfileReady, retry } = useProfileGuardian(user);
 
-  // Show loading screen while checking authentication
-  if (loading) {
-    return <AuthLoadingScreen />;
-  }
-
-  // Show profile repair screen if authenticated but profile is being repaired
-  // Only block if still repairing AND not yet ready (safety timeout will release)
+  if (loading) return <AuthLoadingScreen />;
   if (user && isRepairing && !isProfileReady) {
     return <ProfileGuardianScreen isRepairing={isRepairing} error={repairError} onRetry={retry} />;
   }
@@ -590,476 +418,155 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        {/* Assistent entfernt */}
-        <Suspense fallback={null}>
-          <PWAInstallPrompt />
-          <VersionChecker />
-          <SystemStatusBanner />
-          <PendingVerificationOverlay />
-        </Suspense>
-        
-        
+        <PWAInstallPrompt />
         <PasswordRecoveryRedirect>
           <Suspense fallback={<LazyFallback />}>
           <Routes>
-            {/* --- 1. ÖFFENTLICHE ROUTES (Kein Login nötig) --- */}
-            {/* WICHTIG: Diese müssen VOR den Protected Routes stehen */}
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/audit" element={<Auth />} />
-            <Route path="/login" element={<Navigate to="/auth?force=login" replace />} />
-            <Route path="/signup" element={<Navigate to="/auth" replace />} />
-            <Route path="/register" element={<Navigate to="/auth" replace />} />
-            <Route path="/welcome" element={<Welcome />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
+
+            {/* ── AUTH ──────────────────────────────────────────────────── */}
+            <Route path="/auth"            element={<Auth />} />
+            <Route path="/audit"           element={<Auth />} />
+            <Route path="/login"           element={<Navigate to="/auth?force=login" replace />} />
+            <Route path="/signup"          element={<Navigate to="/auth" replace />} />
+            <Route path="/register"        element={<Navigate to="/auth" replace />} />
+            <Route path="/welcome"         element={<Welcome />} />
+            <Route path="/reset-password"  element={<ResetPassword />} />
             <Route path="/update-password" element={<UpdatePassword />} />
-             {/* Legacy/alias routes */}
-             <Route path="/dashboard" element={<Navigate to="/home" replace />} />
-             {/* Alias-Routen für fehlende Seiten — kein 404 mehr */}
-             <Route path="/credits" element={<Navigate to="/management/abo" replace />} />
-             <Route path="/meine-zentrale" element={<Navigate to="/management" replace />} />
-             <Route path="/einstellungen" element={<Navigate to="/management" replace />} />
-            
-            {/* Domain-basierte Weiche: www.hufiapp.de → LP, app.hufiapp.de → Dashboard */}
+
+            {/* Redirects für alte / alternative Pfade */}
+            <Route path="/dashboard"      element={<Navigate to="/home" replace />} />
+            <Route path="/credits"        element={<Navigate to="/management/abo" replace />} />
+            <Route path="/meine-zentrale" element={<Navigate to="/management" replace />} />
+            <Route path="/einstellungen"  element={<Navigate to="/management" replace />} />
+            <Route path="/services"       element={<Navigate to="/mein-angebot" replace />} />
+            <Route path="/preise"         element={<Navigate to="/mein-angebot" replace />} />
+            <Route path="/customers"      element={<Navigate to="/kunden" replace />} />
+            <Route path="/calendar"       element={<Navigate to="/kalender" replace />} />
+            <Route path="/horse/:id"      element={<Navigate to="/pferd/:id" replace />} />
+
+            {/* Einstieg: hufiapp.de → LP, rest → direkt /auth */}
             <Route path="/" element={<Index />} />
-            
-            {/* Widget Embeds (öffentlich, kein Auth) */}
-            <Route path="/widget/:slug/:type" element={<WidgetPage />} />
-            
-            {/* Provider Website (Multi-Page) */}
-            <Route path="/p/:slug" element={<ProviderLanding />} />
-            <Route path="/p/:slug/:page" element={<ProviderLanding />} />
-            
-            {/* Preview Links (öffentlich, kein Auth) */}
-            <Route path="/preview/:token" element={<PreviewLanding />} />
 
-            {/* Einladungs-Links für Kunden */}
-            <Route path="/connect/:slug" element={<ConnectForm />} />
-            
-            {/* Partner-Einladung (öffentlich) */}
-            <Route path="/partner-invite/:token" element={<PartnerInvite />} />
-            
-            {/* Öffentliches Partner-Profil (kein Login nötig) */}
-            <Route path="/partner/:prid" element={<PartnerPublicProfile />} />
-            
-            {/* Öffentliche Review-Seite */}
-            <Route path="/submit-review" element={<SubmitReview />} />
+            {/* Öffentliche Seiten */}
+            <Route path="/bhs"                  element={<BhsLandingPage />} />
+            <Route path="/p/:slug"              element={<ProviderLanding />} />
+            <Route path="/p/:slug/:page"        element={<ProviderLanding />} />
+            <Route path="/connect/:slug"        element={<ConnectForm />} />
+            <Route path="/submit-review"        element={<SubmitReview />} />
             <Route path="/bewertung/:providerId" element={<SubmitReview />} />
-            
-            {/* Website / Landing Page Routes */}
-            <Route path="/website" element={<WebsiteHome />} />
-            <Route path="/impressum" element={<WebsiteImpressum />} />
+            <Route path="/preview/:token"       element={<PreviewLanding />} />
+            <Route path="/widget/:slug/:type"   element={<WidgetPage />} />
+
+            {/* Rechtliches (zwingend erreichbar) */}
+            <Route path="/impressum"   element={<WebsiteImpressum />} />
             <Route path="/datenschutz" element={<WebsiteDatenschutz />} />
-            <Route path="/agb" element={<WebsiteAGB />} />
-            <Route path="/vertrauen" element={<WebsiteVertrauen />} />
-            <Route path="/widerruf" element={<WebsiteWiderruf />} />
-            
-            {/* Öffentliche Blog-Seiten */}
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/blog/:slug" element={<BlogPost />} />
-            
-            {/* Öffentliches Glossar */}
-            <Route path="/glossar" element={<Glossar />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/changelog" element={<Changelog />} />
-            <Route path="/statistiken" element={<Statistiken />} />
-            <Route path="/tierarzt-finder" element={<TierarztFinder />} />
-            
-            {/* Öffentliche Newsletter Signup Formulare */}
-            <Route path="/newsletter/:slug" element={<SignupFormPage />} />
-            
-            {/* Vet Portal Routes (accessible from main app too) */}
-            <Route path="/vet/dashboard" element={<VetDashboard />} />
-            <Route path="/vet/soap" element={<VetSOAPForm />} />
-            <Route path="/vet/pms-connect" element={<VetPMSConnect />} />
-            <Route path="/vet/csv-import" element={<VetCSVImport />} />
-            <Route path="/vet/got-rechner" element={<VetGOTRechner />} />
-            <Route path="/vet/impfungen" element={<VetImpfungen />} />
-            
-            {/* Portal Routes (auth required, handled inside component) */}
-            <Route path="/portal/galerie" element={<PortalGallery />} />
-            <Route path="/portal/bewerben" element={<PortalApplication />} />
-            <Route path="/portal/versicherung" element={<InsurancePortalDemo />} />
-            <Route path="/portal/hersteller" element={<ManufacturerPortalDemo />} />
-            <Route path="/portal/tierarzt" element={<VetPortalDemo />} />
-            <Route path="/portal/lieferant" element={<SupplierPortalDemo />} />
-            <Route path="/portal/ausbildung" element={<EducationPortalDemo />} />
-            <Route path="/portal/verband" element={<AssociationPortalDemo />} />
-            <Route path="/portal/:slug" element={<PortalAppLayout />}>
-              <Route index element={<PortalDashboard />} />
-              <Route path="kalender" element={<PortalCalendar />} />
-              <Route path="management" element={<PortalManagementHub />} />
-              <Route path="settings" element={<PortalSettings />} />
-              <Route path="policen" element={<PortalPolicen />} />
-              <Route path="claims" element={<PortalClaims />} />
-              <Route path="analytics" element={<PortalAnalytics />} />
-              <Route path="team" element={<PortalTeam />} />
-              <Route path="connect" element={<PortalConnect />} />
-              <Route path="import" element={<PortalImport />} />
-              <Route path="produkte" element={<PortalProdukte />} />
-              <Route path="schulungen" element={<PortalSchulungen />} />
-              <Route path="orders" element={<PortalOrders />} />
-              <Route path="kurse" element={<PortalKurse />} />
-              <Route path="schueler" element={<PortalSchueler />} />
-              <Route path="pruefungen" element={<PortalPruefungen />} />
-              <Route path="standards" element={<PortalStandards />} />
-              <Route path="mitglieder" element={<PortalMitglieder />} />
-              <Route path="statistiken" element={<PortalStatistiken />} />
-              <Route path="patienten" element={<PortalPatienten />} />
-              <Route path="befunde" element={<PortalBefunde />} />
-              <Route path="impfungen" element={<PortalImpfungen />} />
-              <Route path="horse/:id" element={<PortalHorseDetail />} />
-              <Route path="*" element={<PortalPlaceholder />} />
-            </Route>
-            
-            {/* Pferdeakte is handled by PferdeakteRouteGuard above AppContent */}
-            
-            {/* Öffentliche Dokumentation */}
-            <Route path="/docs" element={<Docs />} />
-            <Route path="/docs/changelog" element={<Docs />} />
+            <Route path="/agb"         element={<WebsiteAGB />} />
+            <Route path="/widerruf"    element={<WebsiteWiderruf />} />
 
-            {/* Botschafter Portal – eigenes Layout */}
-            <Route element={
-              <ProtectedRoute>
-                <BotschafterLayout />
-              </ProtectedRoute>
-            }>
-              <Route path="/botschafter/dashboard" element={<BotschafterDashboard />} />
-              <Route path="/botschafter/uebersicht" element={<Navigate to="/botschafter/dashboard" replace />} />
-              <Route path="/botschafter/links" element={<BotschafterLinks />} />
-              <Route path="/botschafter/conversions" element={<BotschafterConversions />} />
-              <Route path="/botschafter/umsaetze" element={<BotschafterUmsaetze />} />
-              <Route path="/botschafter/sponsoring" element={<BotschafterSponsoring />} />
-              <Route path="/botschafter/insights" element={<BotschafterInsights />} />
-              <Route path="/botschafter/werbemittel" element={<BotschafterWerbemittelPage />} />
-              <Route path="/botschafter/werbemittel/erstellen" element={<WerbemittelEditor />} />
-              <Route path="/botschafter/rangliste" element={<BotschafterRangliste />} />
-              <Route path="/botschafter/profil" element={<BotschafterProfil />} />
-              <Route path="/botschafter/hufmanager" element={<BotschafterHufmanager />} />
-              <Route path="/botschafter/nachrichten" element={<BotschafterNachrichten />} />
-            </Route>
-            
-            {/* Admin Mission Control - nur für Admins */}
-            <Route path="/admin/mission-control" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <MissionControl />
-              </ProtectedRoute>
-            } />
-            
-            {/* God Mode Dashboard - Master Admin */}
-            <Route path="/admin/god-mode" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            } />
+            {/* HufiApp-Landing (nur auf hufiapp.de aktiv via Index.tsx) */}
+            <Route path="/website" element={<WebsiteHome />} />
 
-            {/* Admin Notfall-Dashboard */}
-            <Route path="/admin/notfall" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <EmergencyDashboard />
-              </ProtectedRoute>
-            } />
+            {/* ── ADMIN (unberührt) ──────────────────────────────────── */}
+            <Route path="/admin/mission-control"         element={<ProtectedRoute allowedRoles={["admin"]}><MissionControl /></ProtectedRoute>} />
+            <Route path="/admin/god-mode"                element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/notfall"                 element={<ProtectedRoute allowedRoles={["admin"]}><EmergencyDashboard /></ProtectedRoute>} />
+            <Route path="/admin/feature-usage"          element={<ProtectedRoute allowedRoles={["admin"]}><FeatureUsageOverview /></ProtectedRoute>} />
+            <Route path="/admin/module-access-logs"     element={<ProtectedRoute allowedRoles={["admin"]}><ModuleAccessLogs /></ProtectedRoute>} />
+            <Route path="/admin/verarbeitungsverzeichnis" element={<ProtectedRoute allowedRoles={["admin"]}><Verarbeitungsverzeichnis /></ProtectedRoute>} />
+            <Route path="/admin/rollen"                 element={<ProtectedRoute allowedRoles={["admin"]}><AdminRoles /></ProtectedRoute>} />
+            <Route path="/admin/seed-demo"              element={<ProtectedRoute allowedRoles={["admin"]}><AdminSeedDemo /></ProtectedRoute>} />
+            <Route path="/admin/smoke-test"             element={<ProtectedRoute allowedRoles={["provider", "admin"]}><AdminSmokeTest /></ProtectedRoute>} />
+            <Route path="/admin/organizations"          element={<ProtectedRoute allowedRoles={["admin"]}><AdminOrganizations /></ProtectedRoute>} />
+            <Route path="/admin/hufi-brain"             element={<ProtectedRoute allowedRoles={["admin"]}><HufiBrainAdmin /></ProtectedRoute>} />
+            <Route path="/admin-nachrichten"            element={<ProtectedRoute allowedRoles={["admin"]}><AdminNachrichten /></ProtectedRoute>} />
 
-            {/* Feature Usage Overview - Admin */}
-            <Route path="/admin/feature-usage" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <FeatureUsageOverview />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/module-access-logs" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <ModuleAccessLogs />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/verarbeitungsverzeichnis" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <Verarbeitungsverzeichnis />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/rollen" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminRoles />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/seed-demo" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminSeedDemo />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/smoke-test" element={
+            {/* ── PROVIDER (HUFBEARBEITER) ───────────────────────────── */}
+            <Route path="/home" element={
               <ProtectedRoute allowedRoles={["provider", "admin"]}>
-                <AdminSmokeTest />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/organizations" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminOrganizations />
+                <MobileShell />
               </ProtectedRoute>
             } />
 
-            {/* --- 2. PROVIDER (PROFI) ROUTES --- */}
-            {/* /home uses standalone MobileShell (no AppLayout wrapper) */}
-            <Route
-              path="/home"
-              element={
-                <ProtectedRoute allowedRoles={["provider", "admin"]}>
-                  <MobileShell />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              element={
-                <ProtectedRoute allowedRoles={["provider", "admin"]}>
-                  <AppLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="/anfragen" element={<Anfragen />} />
-              <Route path="/angebote" element={<Angebote />} />
-              <Route path="/aufnahme" element={<Aufnahme />} />
-              <Route path="/pferde" element={<Pferde />} />
-              <Route path="/auffassen" element={<AuffassenHub />} />
-              <Route path="/auffassen/feedback" element={<Auffassen />} />
-              <Route path="/analyse" element={<AnalyseHub />} />
-              <Route path="/analyse/betriebszahlen" element={<Analyse />} />
-              {/* Beide Schreibweisen für Kalender abfangen */}
-              <Route path="/calendar" element={<Kalender />} />
-              <Route path="/kalender" element={<Kalender />} />
-              {/* Beide Schreibweisen für Kunden abfangen */}
-              <Route path="/customers" element={<Kunden />} />
-              <Route path="/kunden" element={<Kunden />} />
-              
-              <Route path="/netzwerk" element={<Netzwerk />} />
-              <Route path="/services" element={<Navigate to="/mein-angebot" replace />} />
-              <Route path="/preise" element={<Navigate to="/mein-angebot" replace />} />
+            <Route element={<ProtectedRoute allowedRoles={["provider", "admin"]}><AppLayout /></ProtectedRoute>}>
+              {/* CRM – Kern */}
+              <Route path="/pferde"       element={<Pferde />} />
+              <Route path="/pferd/:id"    element={<ProviderHorseDetail />} />
+              <Route path="/kunden"       element={<Kunden />} />
+              <Route path="/kalender"     element={<Kalender />} />
+              <Route path="/rechnungen"   element={<Rechnungen />} />
               <Route path="/mein-angebot" element={<MeinAngebot />} />
-              <Route path="/business" element={<Business />} />
-              <Route path="/management" element={<ManagementHub />} />
-              <Route path="/management/profil" element={<ManagementProfil />} />
-              <Route path="/management/sicherheit" element={<ManagementSicherheit />} />
-              <Route path="/management/business" element={<ManagementBusinessHub />} />
-              <Route path="/management/website" element={<ManagementWebsite />} />
-              <Route path="/management/kommunikation" element={<ManagementKommunikation />} />
-              <Route path="/management/abo" element={<ManagementAbo />} />
-              <Route path="/settings/abo" element={<AboSettings />} />
-              <Route path="/management/rechtliches" element={<ManagementRechtliches />} />
-              <Route path="/management/steuer" element={<ManagementSteuer />} />
-              <Route path="/management/import" element={<ImportCenter />} />
-              <Route path="/management/botschafter" element={<ManagementBotschafter />} />
-              <Route path="/academy" element={<Academy />} />
-              <Route path="/chat" element={<Chat />} />
-              <Route path="/partner" element={<GeldVerdienen />} />
-              <Route path="/hufrente" element={<Hufrente />} />
-              <Route path="/hufanalyse" element={<Hufanalyse />} />
+              <Route path="/anfragen"     element={<Anfragen />} />
+              <Route path="/aufnahme"     element={<Aufnahme />} />
+
+              {/* Touren + Material */}
+              <Route path="/tour"    element={<Tour />} />
+              <Route path="/lager"   element={<Lager />} />
               <Route path="/work-mode" element={<WorkMode />} />
-              <Route path="/tour" element={<Tour />} />
-              <Route path="/ausgaben" element={<Ausgaben />} />
-              <Route path="/fuhrpark" element={<Fuhrpark />} />
-              <Route path="/guv" element={<GuV />} />
+
+              {/* Finanzen & Buchhaltung */}
+              <Route path="/ausgaben"   element={<Ausgaben />} />
               <Route path="/buchhaltung" element={<Buchhaltung />} />
-              <Route path="/rechnungen" element={<Rechnungen />} />
-              <Route path="/lager" element={<Lager />} />
-              <Route path="/team" element={<Team />} />
-              <Route path="/mein-office" element={<MeinOffice />} />
+              <Route path="/guv"        element={<GuV />} />
+              <Route path="/business"   element={<Business />} />
+              <Route path="/analyse"    element={<AnalyseHub />} />
+              <Route path="/analyse/betriebszahlen" element={<Analyse />} />
+
+              {/* Kommunikation & Feedback */}
+              <Route path="/chat"               element={<Chat />} />
+              <Route path="/auffassen"          element={<AuffassenHub />} />
+              <Route path="/auffassen/feedback" element={<Auffassen />} />
+
+              {/* Dokumente & Archiv */}
+              <Route path="/mein-office"     element={<MeinOffice />} />
               <Route path="/mein-office/:id" element={<OfficeEditor />} />
-              <Route path="/support" element={<Support />} />
-              <Route path="/hilfe" element={<Hilfe />} />
-              <Route path="/status" element={<Status />} />
-              <Route path="/ecosystem" element={<Navigate to="/hufi-connect" replace />} />
-              <Route path="/hm-connect" element={<Navigate to="/hufi-connect" replace />} />
-              <Route path="/hufi-connect" element={<HMConnect />} />
-              <Route path="/autoflow" element={<AutoFlow />} />
-              <Route path="/archiv" element={<Archiv />} />
-              <Route path="/abo-matrix" element={<AboMatrix />} />
-              <Route path="/marketplace" element={<Marketplace />} />
-              {/* neu: Notfall-Dashboard für Provider */}
+              <Route path="/archiv"          element={<Archiv />} />
+
+              {/* Fuhrpark & Team */}
+              <Route path="/fuhrpark" element={<Fuhrpark />} />
+              <Route path="/team"     element={<Team />} />
+
+              {/* Notfall */}
               <Route path="/notfall" element={<EmergencyDashboard />} />
-              {/* Provider Horse Detail - Direct Access */}
-              <Route path="/horse/:id" element={<ProviderHorseDetail />} />
-              {/* German alias for horse detail */}
-              <Route path="/pferd/:id" element={<ProviderHorseDetail />} />
-              {/* Meine Website - Provider Website Editor */}
-              <Route path="/meine-website" element={<MeineWebsite />} />
-              <Route path="/landing-editor" element={<LandingEditor />} />
-              <Route path="/email-marketing" element={<EmailMarketing />} />
-              <Route path="/admin-nachrichten" element={<AdminNachrichten />} />
-              <Route path="/hufi/faq" element={<HufiFAQ />} />
-              <Route path="/hufi/memory" element={<HufiMemoryPage />} />
+
+              {/* Management / Einstellungen */}
+              <Route path="/management"                element={<ManagementHub />} />
+              <Route path="/management/profil"         element={<ManagementProfil />} />
+              <Route path="/management/sicherheit"     element={<ManagementSicherheit />} />
+              <Route path="/management/business"       element={<ManagementBusinessHub />} />
+              <Route path="/management/kommunikation"  element={<ManagementKommunikation />} />
+              <Route path="/management/abo"            element={<ManagementAbo />} />
+              <Route path="/settings/abo"              element={<AboSettings />} />
+              <Route path="/management/rechtliches"    element={<ManagementRechtliches />} />
+              <Route path="/management/steuer"         element={<ManagementSteuer />} />
+              <Route path="/management/import"         element={<ImportCenter />} />
+
+              {/* BHS Balance */}
+              <Route path="/bhs-balance" element={<BhsBalanceCockpit />} />
+
+              {/* Support */}
+              <Route path="/support" element={<Support />} />
             </Route>
 
-            {/* --- 3. CLIENT (PFERDEBESITZER) ROUTES --- */}
-            <Route
-              element={
-                <ProtectedRoute allowedRoles={["client"]}>
-                  <ClientAppLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="/client-home" element={<ClientHome />} />
-              <Route path="/client-horse/:id" element={<ClientHorseDetail />} />
-              <Route path="/client-invoices" element={<ClientInvoices />} />
-              <Route path="/client-permissions" element={<ClientPermissions />} />
-              <Route path="/client-booking" element={<ClientBooking />} />
-              <Route path="/client-profile" element={<ClientProfile />} />
-              <Route path="/client-account-type" element={<ClientAccountType />} />
-              <Route path="/client-chat" element={<ClientChat />} />
-              <Route path="/client-stall" element={<ClientStallBoard />} />
-              <Route path="/client-stall-management" element={<ClientStallManagement />} />
-              <Route path="/client-stall/overview" element={<ClientStallOverview />} />
-              <Route path="/client-stall/boarders" element={<ClientStallBoarders />} />
-              <Route path="/client-stall/experts" element={<ClientStallExperts />} />
-              <Route path="/client-stall/staff" element={<ClientStallStaff />} />
-              <Route path="/client-stall/reports" element={<ClientStallReports />} />
-              <Route path="/client-business" element={<ClientBusinessHub />} />
-              <Route path="/client-business/overview" element={<ClientBusinessOverview />} />
-              <Route path="/client-horses" element={<ClientHorses />} />
-              <Route path="/client-locations" element={<ClientLocations />} />
+            {/* ── CLIENT (PFERDEBESITZER) ────────────────────────────── */}
+            <Route element={<ProtectedRoute allowedRoles={["client"]}><ClientAppLayout /></ProtectedRoute>}>
+              <Route path="/client-home"          element={<ClientHome />} />
+              <Route path="/client-horses"        element={<ClientHorses />} />
+              <Route path="/client-horse/:id"     element={<ClientHorseDetail />} />
+              <Route path="/client-booking"       element={<ClientBooking />} />
+              <Route path="/client-invoices"      element={<ClientInvoices />} />
+              <Route path="/client-bhs-abo"       element={<ClientBhsAbo />} />
+              <Route path="/client-permissions"   element={<ClientPermissions />} />
+              <Route path="/client-profile"       element={<ClientProfile />} />
+              <Route path="/client-account-type"  element={<ClientAccountType />} />
               <Route path="/client-notifications" element={<ClientNotifications />} />
-              <Route path="/client-orders" element={<ClientOrders />} />
-              <Route path="/client-notfall" element={<EmergencyDashboard />} />
-              <Route path="/client/botschafter" element={<ClientBotschafter />} />
+              <Route path="/client-notfall"       element={<EmergencyDashboard />} />
               <Route path="/client/search-providers" element={<SearchProviders />} />
-              <Route path="/client-connect" element={<HMConnect />} />
-              <Route path="/client-network" element={<ClientNetwork />} />
-              <Route path="/client-marketplace" element={<ClientMarketplace />} />
-              <Route path="/client-marketplace/create" element={<ClientMarketplaceCreate />} />
-              <Route path="/client-marketplace/mine" element={<ClientMyListings />} />
-              <Route path="/client-kalender" element={<ClientKalender />} />
-              <Route path="/client-historie" element={<ClientHistorie />} />
-              <Route path="/client-dokumente" element={<ClientDokumente />} />
-              <Route path="/client-support" element={<Support />} />
-              <Route path="/admin-nachrichten" element={<AdminNachrichten />} />
+              <Route path="/client-support"       element={<Support />} />
             </Route>
 
-            {/* --- 3b. STALLBETREIBER ROUTES --- */}
-            <Route
-              element={
-                <ProtectedRoute allowedRoles={["client"]}>
-                  <StallbetreiberAppLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="/stall/dashboard" element={<StallDashboard />} />
-              <Route path="/stall/anfragen" element={<StallAnfragen />} />
-              <Route path="/stall/buchungsportal" element={<StallPlaceholder />} />
-              <Route path="/stall/angebote" element={<StallAngebote />} />
-              <Route path="/stall/leistungen" element={<StallLeistungen />} />
-              <Route path="/stall/boarders" element={<ClientStallBoarders />} />
-              <Route path="/stall/pferde" element={<ClientHorses />} />
-              <Route path="/stall/overview" element={<ClientStallOverview />} />
-              <Route path="/stall/home" element={<StallCockpit />} />
-              <Route path="/stall/kalender" element={<StallKalender />} />
-              <Route path="/stall/staff" element={<ClientStallStaff />} />
-              <Route path="/stall/lager" element={<StallLager />} />
-              <Route path="/stall/rechnungen" element={<ClientInvoices />} />
-              <Route path="/stall/betrieb" element={<ClientStallOverview />} />
-              <Route path="/stall/reports" element={<ClientStallReports />} />
-              <Route path="/stall/experts" element={<ClientStallExperts />} />
-              <Route path="/stall/connect" element={<HMConnect />} />
-              <Route path="/stall/chat" element={<ClientChat />} />
-              <Route path="/stall/marketplace" element={<ClientMarketplace />} />
-              <Route path="/stall/settings" element={<StallSettings />} />
-              <Route path="/stall/import" element={<ImportCenter />} />
-              <Route path="/stall/profil" element={<ClientProfile />} />
-              <Route path="/stall/support" element={<Support />} />
-            </Route>
-
-            {/* --- 4. EMPLOYEE (MITARBEITER) ROUTES --- */}
-            {/* Employee invite - public route */}
-            <Route path="/employee-invite" element={<EmployeeInvite />} />
-            
-            {/* Employee app - protected with EmployeeAppLayout */}
-            <Route
-              element={
-                <ProtectedRoute allowedRoles={["employee"]}>
-                  <EmployeeAppLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="/employee" element={<EmployeeDashboard />} />
-              <Route path="/employee/tour" element={<EmployeeTour />} />
-              <Route path="/employee/pferd/:id" element={<EmployeeHorseDetail />} />
-              <Route path="/employee/timer" element={<EmployeeTimer />} />
-              <Route path="/employee/hufcam" element={<EmployeeHufCam />} />
-              <Route path="/employee/analyse" element={<EmployeeAnalyse />} />
-              <Route path="/employee/chat" element={<EmployeeChat />} />
-              <Route path="/employee/material" element={<EmployeeMaterial />} />
-              <Route path="/employee/abwesenheiten" element={<EmployeeAbwesenheiten />} />
-              <Route path="/employee/vertrag" element={<EmployeeVertrag />} />
-              <Route path="/employee/angebot" element={<MeinAngebot readOnly />} />
-              <Route path="/employee/notizbuch" element={<EmployeeNotizbuch />} />
-              <Route path="/employee/profil" element={<EmployeeProfil />} />
-              <Route path="/employee/kalender" element={<EmployeeCalendar />} />
-              <Route path="/employee/management" element={<EmployeeManagementHub />} />
-              <Route path="/employee/management/profil" element={<EmployeeManagementProfil />} />
-              <Route path="/employee/management/einstellungen" element={<EmployeeManagementEinstellungen />} />
-              <Route path="/employee/management/botschafter" element={<EmployeeManagementBotschafter />} />
-              <Route path="/employee/support" element={<Support />} />
-              <Route path="/employee/pferde" element={<EmployeePferde />} />
-              <Route path="/employee/connect" element={<HMConnect />} />
-              <Route path="/employee/work-mode" element={<WorkMode />} />
-              <Route path="/employee/lager" element={<Lager />} />
-              <Route path="/employee/fuhrpark" element={<Fuhrpark />} />
-              <Route path="/employee/marketplace" element={<Marketplace />} />
-              <Route path="/employee/notfall" element={<EmergencyDashboard />} />
-              <Route path="/admin-nachrichten" element={<AdminNachrichten />} />
-            </Route>
-
-            {/* --- 5. PARTNER (FACHPARTNER) ROUTES --- */}
-            <Route
-              element={
-                <ProtectedRoute allowedRoles={["partner"]}>
-                  <PartnerAppLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="/partner-home" element={<PartnerHome />} />
-              <Route path="/partner-horse/:id" element={<PartnerHorseView />} />
-              <Route path="/partner-horses" element={<PartnerPferde />} />
-              <Route path="/partner-pferde" element={<PartnerPferde />} />
-              <Route path="/partner-calendar" element={<PartnerCalendar />} />
-              <Route path="/partner-notes" element={<PartnerNotes />} />
-              <Route path="/partner-plans" element={<PartnerTreatmentPlans />} />
-              <Route path="/partner-documents" element={<PartnerDocuments />} />
-              <Route path="/partner-services" element={<PartnerServices />} />
-              <Route path="/partner-invoices" element={<PartnerInvoices />} />
-              <Route path="/partner-website" element={<MeineWebsite />} />
-              <Route path="/partner-chat" element={<PartnerChat />} />
-              <Route path="/partner-settings" element={<PartnerSettings />} />
-              <Route path="/partner-profile" element={<PartnerProfile />} />
-              <Route path="/partner-notfall" element={<EmergencyDashboard />} />
-              <Route path="/partner-connect" element={<Navigate to="/hufi-connect" replace />} />
-              <Route path="/partner-tour" element={<Tour />} />
-              <Route path="/partner-work-mode" element={<WorkMode />} />
-              <Route path="/partner-feedback" element={<Auffassen />} />
-              <Route path="/partner-fuhrpark" element={<Fuhrpark />} />
-              <Route path="/partner-anfragen" element={<Anfragen />} />
-              <Route path="/partner-angebote" element={<Angebote />} />
-              <Route path="/partner-kunden" element={<PartnerKunden />} />
-              <Route path="/partner-ausgaben" element={<Ausgaben />} />
-              <Route path="/partner-buchhaltung" element={<Buchhaltung />} />
-              <Route path="/partner-guv" element={<GuV />} />
-              <Route path="/partner-analyse" element={<Analyse />} />
-              <Route path="/partner-office" element={<MeinOffice />} />
-              <Route path="/partner-office/:id" element={<OfficeEditor />} />
-              <Route path="/partner-lager" element={<Lager />} />
-              <Route path="/partner-autoflow" element={<AutoFlow />} />
-              <Route path="/partner-management" element={<PartnerManagementHub />} />
-              <Route path="/partner-management/profil" element={<PartnerManagementProfil />} />
-              <Route path="/partner-management/business" element={<PartnerManagementBusinessHub />} />
-              <Route path="/partner-management/oeffentlich" element={<PartnerManagementOeffentlich />} />
-              <Route path="/partner-management/kommunikation" element={<PartnerManagementKommunikation />} />
-              <Route path="/partner-management/abo" element={<PartnerManagementAbo />} />
-              <Route path="/partner-management/rechtliches" element={<PartnerManagementRechtliches />} />
-              <Route path="/partner-management/steuer" element={<PartnerManagementSteuer />} />
-              <Route path="/partner-management/botschafter" element={<PartnerManagementBotschafter />} />
-              <Route path="/partner-import" element={<ImportCenter />} />
-              <Route path="/partner-support" element={<Support />} />
-              <Route path="/partner-rechtliches" element={<PartnerRechtliches />} />
-              <Route path="/admin-nachrichten" element={<AdminNachrichten />} />
-            </Route>
-
-            {/* Fallback für alles andere */}
+            {/* Fallback */}
             <Route path="*" element={<NotFound />} />
+
           </Routes>
           </Suspense>
         </PasswordRecoveryRedirect>
@@ -1069,8 +576,5 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
     </SubscriptionProvider>
   );
 }
-
-
-
 
 export default App;

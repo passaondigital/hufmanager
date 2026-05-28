@@ -76,7 +76,19 @@ WICHTIG — Nutzerrolle: MOBILER HUFPFLEGE-DIENSTLEISTER
 WICHTIG — Nutzerrolle: PFERDEBESITZER / KUNDE
 - Sucht Hufpfleger, verfolgt Gesundheit seines Pferdes.
 - Hat keinen eigenen Betrieb, bucht Dienstleister.
-- Braucht: Terminerinnerungen, Pflegehinweise, Impf-/Entwurmungskalender.`,
+- Braucht: Terminerinnerungen, Pflegehinweise, Impf-/Entwurmungskalender.
+
+BHS Balance Abo-Wissen (falls Nutzer ein BHS-Abo hat):
+- BHS Balance = Pro-Pferd Abo für regelmäßige Barhufbearbeitung durch Pascal Schmid.
+- Intervalle: 4, 6 oder 8 Wochen — je nach Wachstumsrate des Pferdes.
+- Zonen: Zone 1 (bis 25 km), Zone 2 (25–50 km) — Fahrtweg ab Stallort.
+- Preise: 4W/Z1=71,10€, 4W/Z2=87,48€, 6W/Z1=53,44€, 6W/Z2=60,56€, 8W/Z1=41,56€, 8W/Z2=47,10€ monatlich.
+- Kündigung: beidseitig mit 4 Wochen Frist, jederzeit möglich.
+- Mehraufwand (stark überwachsen, Erstbearbeitung): wird einmalig separat berechnet, vorher abgesprochen.
+- Abo-Status und nächster Termin sind im APP-KONTEXT sichtbar wenn Daten vorhanden.
+- Wenn next_service_date ≤ 7 Tage: immer proaktiv erwähnen "Dein nächster BHS-Termin steht bald an".
+- Fragen zur Kündigung: Kündigung über App unter "Mein BHS Abo" oder direkt per WhatsApp an Pascal.
+- Pferdeakte wird nach jedem Termin von Pascal aktualisiert.`,
 
   employee: `
 WICHTIG — Nutzerrolle: ANGESTELLTER HUFPFLEGER
@@ -105,7 +117,7 @@ Antworte NUR als gültiges JSON (kein Markdown, kein Text davor/danach):
 async function loadContext(userId: string, supabase: ReturnType<typeof createClient>) {
   const today = new Date().toISOString().slice(0, 10);
 
-  const [profileRes, apptRes, invoiceRes, horsesRes, memoryRes, clientCountRes, horseCountRes] = await Promise.allSettled([
+  const [profileRes, apptRes, invoiceRes, horsesRes, memoryRes, clientCountRes, horseCountRes, bhsSubsRes] = await Promise.allSettled([
     supabase.from("profiles").select("full_name, user_type").eq("id", userId).single(),
     supabase
       .from("appointments")
@@ -137,6 +149,14 @@ async function loadContext(userId: string, supabase: ReturnType<typeof createCli
       .from("appointments")
       .select("horse_id")
       .eq("provider_id", userId),
+    // BHS Balance Abos des Clients (leer für Provider/Employee wegen RLS)
+    supabase
+      .from("bhs_horse_subscriptions")
+      .select("interval_weeks, zone, monthly_price, status, next_service_date, horses(name)")
+      .eq("client_id", userId)
+      .in("status", ["active", "pending"])
+      .order("next_service_date", { ascending: true })
+      .limit(5),
   ]);
 
   const profile = profileRes.status === "fulfilled" ? profileRes.value.data : null;
@@ -165,7 +185,19 @@ async function loadContext(userId: string, supabase: ReturnType<typeof createCli
     ? new Set((horseCountRes.value.data as Array<{ horse_id: string | null }>).map((r) => r.horse_id).filter(Boolean)).size
     : null;
 
-  return { userName: profile?.full_name ?? null, userType: profile?.user_type ?? null, appointments, unpaidCount, horses, memories, clientCount, horseCount };
+  interface BhsSubRow {
+    interval_weeks: number;
+    zone: number;
+    monthly_price: number;
+    status: string;
+    next_service_date: string | null;
+    horses: { name: string } | Array<{ name: string }> | null;
+  }
+  const bhsSubs: BhsSubRow[] = bhsSubsRes.status === "fulfilled" && bhsSubsRes.value.data
+    ? (bhsSubsRes.value.data as BhsSubRow[])
+    : [];
+
+  return { userName: profile?.full_name ?? null, userType: profile?.user_type ?? null, appointments, unpaidCount, horses, memories, clientCount, horseCount, bhsSubs };
 }
 
 // ── Context Block bauen ────────────────────────────────────────────────────────
@@ -208,6 +240,27 @@ function buildContextBlock(ctx: Awaited<ReturnType<typeof loadContext>>, voiceMo
         return `[${m.category}] ${v["content"] ?? v["text"] ?? JSON.stringify(v).slice(0, 60)}`;
       });
     if (memLines.length > 0) lines.push(`Eingemerkt:\n${memLines.join("\n")}`);
+  }
+
+  // BHS Balance Abos (nur für Clients relevant)
+  if (ctx.bhsSubs && ctx.bhsSubs.length > 0) {
+    const today = new Date();
+    const urgentSubs: string[] = [];
+    const subLines = ctx.bhsSubs.map((s) => {
+      const horseName = Array.isArray(s.horses) ? s.horses[0]?.name : (s.horses as { name: string } | null)?.name ?? "Pferd";
+      const price = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(s.monthly_price);
+      const nextDate = s.next_service_date ? new Date(s.next_service_date) : null;
+      const daysUntil = nextDate ? Math.ceil((nextDate.getTime() - today.getTime()) / 86_400_000) : null;
+      const nextStr = nextDate
+        ? `${nextDate.toLocaleDateString("de-DE")}${daysUntil !== null && daysUntil <= 7 ? ` (in ${daysUntil} Tagen!)` : ""}`
+        : "unbekannt";
+      if (daysUntil !== null && daysUntil <= 7) urgentSubs.push(horseName);
+      return `${horseName}: alle ${s.interval_weeks} Wo., Zone ${s.zone}, ${price}/Mo., nächster Termin: ${nextStr}`;
+    });
+    lines.push(`BHS Balance Abos:\n${subLines.join("\n")}`);
+    if (urgentSubs.length > 0) {
+      lines.push(`HINWEIS: Nächster BHS-Termin für ${urgentSubs.join(", ")} steht in ≤7 Tagen an — erwähne das proaktiv!`);
+    }
   }
 
   if (lines.length === 0) return "";

@@ -53,6 +53,7 @@ import { CompanyLocationCard } from "@/components/settings/CompanyLocationCard";
 import { TutorialSettingsCard } from "@/components/settings/TutorialSettingsCard";
 import { ManagementTab } from "@/components/management/ManagementTab";
 import { HufiRoutinesManager } from "@/components/routines/HufiRoutinesManager";
+import { EmailAccountConnect } from "@/components/settings/EmailAccountConnect";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -79,6 +80,7 @@ interface BusinessSettings {
   paypal_link: string | null;
   impressum_text: string | null;
   terms_text: string | null;
+  new_client_days: number[] | null;
 }
 
 interface ManagementProps {
@@ -109,6 +111,7 @@ const Management = ({ tabs: tabFilter, hideChrome }: ManagementProps = {}) => {
     paypal_link: "",
     impressum_text: "",
     terms_text: "",
+    new_client_days: [1, 6] as number[],
   });
 
   const { data: settings, isLoading } = useQuery({
@@ -147,6 +150,7 @@ const Management = ({ tabs: tabFilter, hideChrome }: ManagementProps = {}) => {
         paypal_link: settings.paypal_link || "",
         impressum_text: settings.impressum_text || "",
         terms_text: settings.terms_text || "",
+        new_client_days: settings.new_client_days ?? [1, 6],
       });
     }
   }, [settings]);
@@ -736,6 +740,48 @@ const Management = ({ tabs: tabFilter, hideChrome }: ManagementProps = {}) => {
                 />
               </div>
 
+              <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                <div>
+                  <p className="font-medium text-foreground">Neukundentage (BHS Balance)</p>
+                  <p className="text-sm text-muted-foreground">An diesen Tagen werden neue BHS-Abos im Kalender hervorgehoben</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { iso: 1, label: "Mo" },
+                    { iso: 2, label: "Di" },
+                    { iso: 3, label: "Mi" },
+                    { iso: 4, label: "Do" },
+                    { iso: 5, label: "Fr" },
+                    { iso: 6, label: "Sa" },
+                    { iso: 7, label: "So" },
+                  ].map(({ iso, label }) => {
+                    const active = (formData.new_client_days ?? []).includes(iso);
+                    return (
+                      <button
+                        key={iso}
+                        type="button"
+                        onClick={() => {
+                          const days = formData.new_client_days ?? [];
+                          setFormData({
+                            ...formData,
+                            new_client_days: active
+                              ? days.filter((d) => d !== iso)
+                              : [...days, iso].sort(),
+                          });
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          active
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-background border border-border text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="flex justify-end gap-3">
                 {formData.subdomain && (
                   <Button 
@@ -955,6 +1001,7 @@ Steuernummer: 43/150/40518
         {/* App Settings Tab */}
         <TabsContent value="app" className="mt-6 space-y-6">
           <CommunicationSettingsCard />
+          <EmailAccountConnect userId={user?.id ?? ""} />
           <AppSettingsCard />
           <KiSettingsCard userId={user?.id ?? ""} />
           <TutorialSettingsCard />
