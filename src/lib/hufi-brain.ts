@@ -204,7 +204,10 @@ export async function fetchHufiContext(
   return {
     user: {
       id: userId,
-      name: profile?.full_name ?? null,  // greeting fallback handled in generateHufiGreeting
+      // Immer persönlicher Name (Vorname bevorzugt), nie Firmenname
+      name: profile?.full_name
+        ? profile.full_name.split(" ")[0]  // Nur Vorname für Begrüßung
+        : null,
       role,
       userType: (profile?.user_type as "pro" | "owner" | null) ?? null,
     },
@@ -357,6 +360,56 @@ export async function updateHufiMemory(
   }
 }
 
+// ── deleteHufiMemory ──────────────────────────────────────────────────────────
+
+export async function deleteHufiMemory(
+  userId: string,
+  category?: HufiMemory["category"],
+  key?: string,
+): Promise<number> {
+  try {
+    const from = (table: string) =>
+      (supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }).from(table);
+
+    let q = from("hufi_memory").delete().eq("user_id", userId);
+    if (category) q = (q as unknown as { eq: (k: string, v: string) => typeof q }).eq("category", category);
+    if (key)      q = (q as unknown as { eq: (k: string, v: string) => typeof q }).eq("key", key);
+
+    const { count } = await (q as unknown as { select: (s: string, o: { count: string; head: boolean }) => Promise<{ count: number | null }> })
+      .select("id", { count: "exact", head: true }) as unknown as { count: number | null };
+    await q;
+    return count ?? 0;
+  } catch (err) {
+    console.warn("[HufiBrain] deleteHufiMemory failed:", err);
+    return 0;
+  }
+}
+
+// Löscht den zuletzt gespeicherten horse_pattern- oder routine-Eintrag des Nutzers.
+// Wird aufgerufen wenn Nutzer sagt "vergiss das" / "lösch das" / "nicht speichern".
+export async function deleteLastLearnedMemory(userId: string): Promise<string | null> {
+  try {
+    const from = (table: string) =>
+      (supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }).from(table);
+
+    const { data } = await from("hufi_memory")
+      .select("id, category, key")
+      .eq("user_id", userId)
+      .in("category", ["horse_pattern", "routine", "preference"])
+      .order("last_updated", { ascending: false })
+      .limit(1)
+      .maybeSingle() as { data: { id: string; category: string; key: string } | null };
+
+    if (!data) return null;
+
+    await from("hufi_memory").delete().eq("id", data.id);
+    return data.key;
+  } catch (err) {
+    console.warn("[HufiBrain] deleteLastLearnedMemory failed:", err);
+    return null;
+  }
+}
+
 // ── learnFromInteraction ──────────────────────────────────────────────────────
 
 export async function learnFromInteraction(
@@ -383,11 +436,16 @@ export async function learnFromInteraction(
     });
 
     if (feedback === "confirmed") {
-      // Track horse mentions for pattern learning
-      const horseMatch = userMessage.match(
-        /\b([A-ZÄÖÜ][a-zäöüß]+(?:\s+[A-ZÄÖÜ][a-zäöüß]+)?)\b/,
-      );
-      if (horseMatch) {
+      // Horse-Namen aus Nachricht lernen — nur Wörter ≥4 Zeichen, keine Stoppwörter
+      const STOP = new Set([
+        "hufi","okay","bitte","danke","jetzt","auch","noch","dann","hier",
+        "wufi","nicht","kann","soll","will","das","die","der","den","dem",
+        "ein","eine","und","oder","aber","wenn","schon","mal","mehr","alle",
+      ]);
+      // Strip leading wake-word before pattern matching
+      const cleaned = userMessage.replace(/^(hey\s+hufi|okay\s+hufi|ok\s+hufi|hey\s+wufi)\s*/i, "");
+      const horseMatch = cleaned.match(/\b([A-ZÄÖÜ][a-zäöüß]{3,}(?:\s+[A-ZÄÖÜ][a-zäöüß]{3,})?)\b/);
+      if (horseMatch && !STOP.has(horseMatch[1].toLowerCase())) {
         await updateHufiMemory(
           userId,
           "horse_pattern",
