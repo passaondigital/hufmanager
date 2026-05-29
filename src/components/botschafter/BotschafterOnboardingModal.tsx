@@ -44,7 +44,7 @@ export function BotschafterOnboardingModal({ bid, referralCode, botschafterId, o
           {step === 1 && (
             <div className="flex-1 flex flex-col items-center text-center justify-center">
               <div className="text-6xl mb-4">🎙️</div>
-              <h2 className="text-xl font-bold mb-2">Willkommen als HufManager Botschafter!</h2>
+              <h2 className="text-xl font-bold mb-2">Willkommen als Hufi Botschafter!</h2>
               <p className="text-sm text-muted-foreground">
                 In 3 Minuten weißt du alles was du brauchst.
               </p>

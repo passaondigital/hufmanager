@@ -35,7 +35,7 @@ export function DemoCalendarEntry() {
                 Kopf frei? Dann jetzt mit deinem eigenen Account starten.
               </h4>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Übernimm deine Daten und arbeite in deinem eigenen HufManager.
+                Übernimm deine Daten und arbeite in deinem eigenen Hufi.
               </p>
             </div>
 
@@ -47,7 +47,7 @@ export function DemoCalendarEntry() {
       <PricingModal
         open={isPricingOpen}
         onOpenChange={setIsPricingOpen}
-        title="Bereit für deinen eigenen HufManager?"
+        title="Bereit für deinen eigenen Hufi?"
         description="Übernimm deine Daten aus der Demo und arbeite im eigenen Account."
         showTrialBadge={true}
         isDemoContext={true}

@@ -127,7 +127,7 @@ export default function EducationPortalDemo() {
 
       {tab === "lernfaelle" && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between"><div><h1 className="text-2xl font-bold">Lernfälle</h1><p className="text-sm text-muted-foreground">Praxisfälle in echter HufManager-Umgebung</p></div><Button>+ Lernfall erstellen</Button></div>
+          <div className="flex items-center justify-between"><div><h1 className="text-2xl font-bold">Lernfälle</h1><p className="text-sm text-muted-foreground">Praxisfälle in echter Hufi-Umgebung</p></div><Button>+ Lernfall erstellen</Button></div>
           <div className="grid sm:grid-cols-2 gap-4">
             {LERNFAELLE.map((l) => (
               <Card key={l.id} className="hover:border-primary/40 transition-colors cursor-pointer">

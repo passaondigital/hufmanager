@@ -34,7 +34,7 @@ export function waTextInvoice(name: string, invoiceNumber: string, amount: strin
 }
 
 export function waTextLeadReply(name: string): string {
-  return `Hallo ${name}, danke für deine Anfrage über HufManager! Ich würde mich gerne kurz mit dir abstimmen. Wann passt es dir? 🐴`;
+  return `Hallo ${name}, danke für deine Anfrage über Hufi! Ich würde mich gerne kurz mit dir abstimmen. Wann passt es dir? 🐴`;
 }
 
 export function waTextNextAppointment(name: string, horse: string): string {
@@ -46,7 +46,7 @@ export function waTextPdfShare(name: string, horse: string, date: string): strin
 }
 
 export function waTextInvite(senderName: string): string {
-  return `Hey! Ich nutze HufManager – das digitale Betriebssystem für die Pferdewelt 🐴\n\nPferdeakte, Termine, Dokumente – alles an einem Ort. Kostenlos starten:\nhttps://hufmanager.lovable.app/auth\n\nViele Grüße, ${senderName}`;
+  return `Hey! Ich nutze Hufi – das digitale Betriebssystem für die Pferdewelt 🐴\n\nPferdeakte, Termine, Dokumente – alles an einem Ort. Kostenlos starten:\nhttps://hufiapp.de/auth\n\nViele Grüße, ${senderName}`;
 }
 
 /**

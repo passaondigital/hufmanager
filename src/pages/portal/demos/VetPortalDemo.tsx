@@ -196,7 +196,7 @@ export default function VetPortalDemo() {
 
       {tab === "finder" && (
         <div className="space-y-4">
-          <div><h1 className="text-2xl font-bold">Klinik-Finder</h1><p className="text-sm text-muted-foreground">Ihre Praxis im HufManager-Netzwerk</p></div>
+          <div><h1 className="text-2xl font-bold">Klinik-Finder</h1><p className="text-sm text-muted-foreground">Ihre Praxis im Hufi-Netzwerk</p></div>
           <Card><CardContent className="pt-6">
             {/* OpenStreetMap Embed */}
             <div className="aspect-[16/9] rounded-lg overflow-hidden border">

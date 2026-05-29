@@ -21,7 +21,7 @@ export const WebsiteOnboarding = ({ onComplete }: Props) => {
 
       <Card className="border-primary/20">
         <CardContent className="p-6 space-y-4">
-          <h2 className="font-semibold text-lg text-foreground">Mit HufManager bekommst du eine Website die:</h2>
+          <h2 className="font-semibold text-lg text-foreground">Mit Hufi bekommst du eine Website die:</h2>
           <ul className="space-y-3">
             {[
               "Automatisch mit deinen Kundendaten verbunden ist",
@@ -54,7 +54,7 @@ export const WebsiteOnboarding = ({ onComplete }: Props) => {
                 <tr className="border-b">
                   <th className="text-left py-2 font-medium text-muted-foreground"></th>
                   <th className="text-center py-2 font-medium text-muted-foreground">Wix / WP</th>
-                  <th className="text-center py-2 font-medium text-primary">HufManager</th>
+                  <th className="text-center py-2 font-medium text-primary">Hufi</th>
                 </tr>
               </thead>
               <tbody className="divide-y">

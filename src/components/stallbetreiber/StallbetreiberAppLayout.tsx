@@ -11,7 +11,7 @@ import { useTheme } from "@/components/ThemeProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppSidebar, MobileAppSidebar, NavigationConfig } from "@/components/shared/AppSidebar";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { DemoStickyBanner } from "@/components/demo";
+import { DemoStickyBanner } from "@/components/demo/DemoStickyBanner";
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
@@ -74,7 +74,7 @@ const STALL_NAV: NavigationConfig = {
         {
           id: "auffassen", number: "4", label: "Auffassen", iconName: "Calendar",
           children: [
-            { label: "Tages-Cockpit", path: "/stall/cockpit" },
+            { label: "Tages-Cockpit", path: "/stall/home" },
             { label: "Kalender", path: "/stall/kalender" },
             { label: "Mitarbeiter", path: "/stall/staff" },
             { label: "Lager & Futter", path: "/stall/lager" },
@@ -144,7 +144,7 @@ export function StallbetreiberAppLayout() {
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <AppSidebar
-          appName={`🏇 ${getStallTypeLabel()}`}
+          appName={getStallTypeLabel()}
           userDisplayName={user?.email || "Stallbetreiber"}
           navigationConfig={STALL_NAV}
         />
@@ -156,7 +156,7 @@ export function StallbetreiberAppLayout() {
           <MobileAppSidebar
             open={mobileMenuOpen}
             onOpenChange={setMobileMenuOpen}
-            appName={`🏇 ${getStallTypeLabel()}`}
+            appName={getStallTypeLabel()}
             userDisplayName={user?.email || "Stallbetreiber"}
             navigationConfig={STALL_NAV}
           />
@@ -173,7 +173,7 @@ export function StallbetreiberAppLayout() {
             <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)} className="h-10 w-10" aria-label="Menü öffnen">
               <Menu className="h-5 w-5" />
             </Button>
-            <span className="text-sm font-semibold text-foreground">🏇 {getStallTypeLabel()}</span>
+            <span className="text-sm font-semibold text-foreground">{getStallTypeLabel()}</span>
           </div>
 
           <div className="flex items-center gap-1">
@@ -276,11 +276,11 @@ export function StallbetreiberAppLayout() {
 
       {/* Speed Dial FAB - Desktop */}
       <div className="hidden lg:block">
-        <SpeedDialFAB />
+        {/* SpeedDialFAB entfernt */}
       </div>
 
       <DemoStickyBanner />
-      <AIChatWidget />
+      null
     </div>
   );
 }

@@ -55,7 +55,7 @@ export const STARTER_BLOG_POSTS = [
 <h3>2. Die Bearbeitung</h3>
 <p>Je nach Bedarf wird ausgeschnitten, geraspt und korrigiert. Dabei arbeite ich ruhig und pferdefreundlich.</p>
 <h3>3. Dokumentation & Besprechung</h3>
-<p>Ich dokumentiere alles digital — du bekommst Fotos und Befunde direkt in deine HufManager-App.</p>`,
+<p>Ich dokumentiere alles digital — du bekommst Fotos und Befunde direkt in deine Hufi-App.</p>`,
   },
   {
     title: "So bereitest du dein Pferd auf den Besuch vor",

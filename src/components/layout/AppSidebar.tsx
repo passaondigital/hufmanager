@@ -46,6 +46,7 @@ import {
   DollarSign,
   AlertTriangle,
   Mail,
+  Repeat2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -67,7 +68,7 @@ import {
 } from "@/components/ui/collapsible";
 
 // Stealth feature: Only these emails can see Abo-Matrix
-const STEALTH_EMAILS = ["support@hufmanager.de", "barhufserviceschmid@gmail.com"];
+const STEALTH_EMAILS = ["kontakt@hufiapp.de", "barhufserviceschmid@gmail.com"];
 
 // Hook to get count of new leads
 function useNewLeadsCount() {
@@ -184,6 +185,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       subItems: [
         { title: "Kunden", url: "/kunden", icon: Users, description: "#kid verwalten" },
         { title: "Pferde", url: "/pferde", icon: UserPlus, description: "#eqid verwalten" },
+        { title: "BHS Balance", url: "/bhs-balance", icon: Repeat2, description: "Pro-Pferd Abo-Cockpit" },
       ]
     },
     { 
@@ -215,10 +217,11 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 
   // Erweiterungen - Addon modules (locked based on feature flags)
   const addonItems = [
+    { title: "Hufi Business", icon: DollarSign, locked: false, url: "/business" },
     { title: "Mein Office", icon: FileText, locked: !isFeatureVisible('module_office'), url: "/mein-office" },
     { title: "Lager", icon: Warehouse, locked: !isFeatureVisible('beta_features'), url: "/lager" },
     { title: "Mitarbeiter", icon: UsersRound, locked: !isFeatureVisible('module_team'), url: "/team" },
-    { title: "HM Connect", icon: Link2, locked: !isFeatureVisible('module_network'), url: "/hm-connect" },
+    { title: "Hufi Connect", icon: Link2, locked: !isFeatureVisible('module_network'), url: "/hufi-connect" },
     { title: "AutoFlow", icon: Zap, locked: false, url: "/autoflow" },
     { title: "E-Mail Marketing", icon: Mail, locked: false, url: "/email-marketing" },
   ];
@@ -394,15 +397,15 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       {/* Logo */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
         {!collapsed ? (
-          <img 
-            src="/hufmanager-logo.png" 
-            alt="HufManager" 
+          <img
+            src="/hufmanager-logo.png"
+            alt="HufManager"
             className="h-10 w-auto"
           />
         ) : (
-          <img 
-            src="/hufmanager-logo.png" 
-            alt="HM" 
+          <img
+            src="/hufmanager-logo.png"
+            alt="HM"
             className="h-8 w-auto"
           />
         )}
@@ -542,7 +545,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         {!collapsed && (
           <div className="flex items-center justify-center gap-1.5 pt-2 text-[10px] text-sidebar-foreground/40">
             <a 
-              href="https://hufmanager.de/impressum" 
+              href="https://hufiapp.de/impressum" 
               target="_blank" 
               rel="noopener noreferrer"
               className="hover:text-sidebar-foreground hover:underline"
@@ -551,7 +554,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
             </a>
             <span>·</span>
             <a 
-              href="https://hufmanager.de/datenschutz" 
+              href="https://hufiapp.de/datenschutz" 
               target="_blank" 
               rel="noopener noreferrer"
               className="hover:text-sidebar-foreground hover:underline"

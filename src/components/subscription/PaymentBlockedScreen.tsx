@@ -11,7 +11,7 @@ export function PaymentBlockedScreen({ portalUrl }: PaymentBlockedScreenProps) {
     if (portalUrl) {
       window.open(portalUrl, "_blank");
     } else {
-      window.open("https://hufmanager.de/billing", "_blank");
+      window.open("https://hufiapp.de/billing", "_blank");
     }
   };
 
@@ -32,7 +32,7 @@ export function PaymentBlockedScreen({ portalUrl }: PaymentBlockedScreenProps) {
         <CardContent className="space-y-6">
           <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
             <p>
-              Die letzte Zahlung für dein HufManager-Abo konnte nicht verarbeitet werden. 
+              Die letzte Zahlung für dein Hufi-Abo konnte nicht verarbeitet werden. 
               Bitte aktualisiere deine Zahlungsinformationen, um den vollen Zugang wiederherzustellen.
             </p>
           </div>
@@ -48,7 +48,7 @@ export function PaymentBlockedScreen({ portalUrl }: PaymentBlockedScreenProps) {
             </Button>
             
             <a 
-              href="mailto:support@hufmanager.de"
+              href="mailto:kontakt@hufiapp.de"
               className="block text-center text-sm text-primary hover:underline"
             >
               Hilfe benötigt? Kontaktiere den Support

@@ -124,7 +124,7 @@ serve(async (req: Request) => {
             </p>
 
             <div style="text-align:center;margin-top:24px;">
-              <a href="https://hufmanager.lovable.app/home" 
+              <a href="https://hufiapp.de/home" 
                  style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
                 Rechnung im Profil einsehen
               </a>
@@ -133,7 +133,7 @@ serve(async (req: Request) => {
 
           <div style="border-top:1px solid #e5e7eb;padding-top:16px;margin-top:24px;text-align:center;">
             <p style="font-size:12px;color:#9ca3af;margin:0;">
-              HufManager | support@hufmanager.de | hufmanager.de<br/>
+              HufManager | support@hufiapp.de | hufiapp.de<br/>
               Gemäß §19 UStG wird keine Umsatzsteuer berechnet und ausgewiesen.
             </p>
           </div>
@@ -143,9 +143,9 @@ serve(async (req: Request) => {
     `;
 
     const emailPayload: any = {
-      from: "HufManager <support@hufmanager.de>",
+      from: "HufManager <support@hufiapp.de>",
       to: [recipient_email],
-      cc: ["support@hufmanager.de"],
+      cc: ["support@hufiapp.de"],
       subject: `Ihre Rechnung von HufManager – Nr. ${invoice_number}`,
       html: htmlBody,
     };

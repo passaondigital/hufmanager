@@ -32,7 +32,7 @@ export function ClientTypeSelection({ value, onChange }: ClientTypeSelectionProp
   return (
     <div className="space-y-4">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-foreground">Wie nutzt du HufManager?</h2>
+        <h2 className="text-2xl font-bold text-foreground">Wie nutzt du Hufi?</h2>
       </div>
       <div className="space-y-3">
         {OPTIONS.map((opt) => (

@@ -9,8 +9,8 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
 
     const { contacts, existingContacts } = await req.json();
 
@@ -53,79 +53,76 @@ ${JSON.stringify(batch, null, 2)}
 ${existingContacts?.length > 0 ? `Existierende Kontakte (${existingContacts.length}):
 ${JSON.stringify(existingContacts.slice(0, 100), null, 2)}` : "Keine existierenden Kontakte."}`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": ANTHROPIC_KEY,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
+        model: "claude-sonnet-4-6",
+        max_tokens: 4096,
+        system: systemPrompt,
         tools: [
           {
-            type: "function",
-            function: {
-              name: "process_import",
-              description: "Process and optimize contact import data",
-              parameters: {
-                type: "object",
-                properties: {
-                  contacts: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        id: { type: "string", description: "Original contact ID" },
-                        full_name: { type: "string" },
-                        email: { type: "string" },
-                        phone: { type: "string" },
-                        company_name: { type: "string" },
-                        street: { type: "string" },
-                        notes: { type: "string" },
-                        suggested_category: { type: "string", enum: ["client", "partner", "supplier", "lead"] },
-                        status: { type: "string", enum: ["valid", "warning", "error"] },
-                        changes_made: {
-                          type: "array",
-                          items: { type: "string" },
-                          description: "List of changes the AI made"
-                        },
-                        duplicate_of: { type: "string", description: "ID of existing contact if duplicate" },
-                        confidence: { type: "number", description: "Confidence score 0-1" },
-                      },
-                      required: ["id", "full_name", "suggested_category", "status", "confidence"],
-                    },
-                  },
-                  summary: {
+            name: "process_import",
+            description: "Process and optimize contact import data",
+            input_schema: {
+              type: "object",
+              properties: {
+                contacts: {
+                  type: "array",
+                  items: {
                     type: "object",
                     properties: {
-                      total: { type: "number" },
-                      valid: { type: "number" },
-                      warnings: { type: "number" },
-                      errors: { type: "number" },
-                      duplicates: { type: "number" },
-                      categories: {
-                        type: "object",
-                        properties: {
-                          client: { type: "number" },
-                          partner: { type: "number" },
-                          supplier: { type: "number" },
-                          lead: { type: "number" },
-                        },
+                      id: { type: "string", description: "Original contact ID" },
+                      full_name: { type: "string" },
+                      email: { type: "string" },
+                      phone: { type: "string" },
+                      company_name: { type: "string" },
+                      street: { type: "string" },
+                      notes: { type: "string" },
+                      suggested_category: { type: "string", enum: ["client", "partner", "supplier", "lead"] },
+                      status: { type: "string", enum: ["valid", "warning", "error"] },
+                      changes_made: {
+                        type: "array",
+                        items: { type: "string" },
+                        description: "List of changes the AI made"
                       },
+                      duplicate_of: { type: "string", description: "ID of existing contact if duplicate" },
+                      confidence: { type: "number", description: "Confidence score 0-1" },
                     },
-                    required: ["total", "valid", "warnings", "errors", "duplicates"],
+                    required: ["id", "full_name", "suggested_category", "status", "confidence"],
                   },
                 },
-                required: ["contacts", "summary"],
+                summary: {
+                  type: "object",
+                  properties: {
+                    total: { type: "number" },
+                    valid: { type: "number" },
+                    warnings: { type: "number" },
+                    errors: { type: "number" },
+                    duplicates: { type: "number" },
+                    categories: {
+                      type: "object",
+                      properties: {
+                        client: { type: "number" },
+                        partner: { type: "number" },
+                        supplier: { type: "number" },
+                        lead: { type: "number" },
+                      },
+                    },
+                  },
+                  required: ["total", "valid", "warnings", "errors", "duplicates"],
+                },
               },
+              required: ["contacts", "summary"],
             },
           },
         ],
-        tool_choice: { type: "function", function: { name: "process_import" } },
+        tool_choice: { type: "tool", name: "process_import" },
+        messages: [{ role: "user", content: userPrompt }],
       }),
     });
 
@@ -136,24 +133,18 @@ ${JSON.stringify(existingContacts.slice(0, 100), null, 2)}` : "Keine existierend
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Credits aufgebraucht." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
       const errText = await response.text();
-      console.error("AI gateway error:", response.status, errText);
-      throw new Error("AI gateway error");
+      console.error("Anthropic API error:", response.status, errText);
+      throw new Error("Anthropic API error");
     }
 
     const data = await response.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall?.function?.arguments) {
+    const toolBlock = data.content?.find((b: any) => b.type === "tool_use");
+    if (!toolBlock?.input) {
       throw new Error("No tool call response from AI");
     }
 
-    const result = JSON.parse(toolCall.function.arguments);
+    const result = toolBlock.input;
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

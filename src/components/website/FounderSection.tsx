@@ -9,7 +9,7 @@ const websiteIntro = `Ich bin seit fast 20 Jahren in der Pferdebranche — pers�
 
 Nicht als Theoretiker von außen. Sondern mittendrin.`;
 
-const pferdeakteIntro = `Ich entwickle HufManager nicht als Außenstehender.
+const pferdeakteIntro = `Ich entwickle Hufi nicht als Außenstehender.
 
 Ich bin seit fast 20 Jahren Teil dieser Welt — als Hufbearbeiter, als Pferdeliebhaber, als jemand der die Branche von innen kennt.`;
 
@@ -21,7 +21,7 @@ Ich fange erst jetzt richtig an zu brennen.
 
 Was ich tue, tue ich seit über 10 Jahren aus tiefer Dankbarkeit gegenüber dieser Branche und den Menschen und Pferden darin.
 
-HufManager ist kein Startup-Produkt das von außen in eine Welt reingrätscht.
+Hufi ist kein Startup-Produkt das von außen in eine Welt reingrätscht.
 
 Es ist das was diese Branche verdient hat — gebaut von jemandem der sie liebt.`;
 
@@ -41,7 +41,7 @@ export default function FounderSection({ variant = "website" }: FounderSectionPr
             className="inline-block text-xs font-bold uppercase tracking-widest mb-4"
             style={{ color: "#f97316" }}
           >
-            {variant === "website" ? "Warum HufManager?" : "Über den Gründer"}
+            {variant === "website" ? "Warum Hufi?" : "Über den Gründer"}
           </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white leading-tight">
             {variant === "website" ? (
@@ -84,7 +84,7 @@ export default function FounderSection({ variant = "website" }: FounderSectionPr
             <div className="md:pl-8 mt-10 pt-6 border-t border-white/10">
               <p className="text-white font-bold text-lg">Pascal Schmid</p>
               <p className="text-sm" style={{ color: "rgba(255,255,255,.45)" }}>
-                Gründer HufManager · Hufbearbeiter &amp; Barhufexperte
+                Gründer Hufi · Hufbearbeiter &amp; Barhufexperte
               </p>
             </div>
           </div>
@@ -98,7 +98,7 @@ export default function FounderSection({ variant = "website" }: FounderSectionPr
               />
               <img
                 src={pascalImage}
-                alt="Pascal Schmid – Gründer HufManager"
+                alt="Pascal Schmid – Gründer Hufi"
                 className="relative w-full aspect-[3/4] object-cover rounded-2xl border border-white/10"
                 loading="lazy"
               />

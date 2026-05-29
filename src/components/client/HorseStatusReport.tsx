@@ -198,7 +198,7 @@ export function HorseStatusReport({ horseId, horseName, reportType, onComplete, 
         <div className="bg-muted/50 border border-border rounded-lg p-3 text-sm">
           <p className="font-medium mb-1">ℹ️ Datenschutzhinweis:</p>
           <p className="text-muted-foreground">
-            HufManager gibt Daten über dieses Pferd nur mit richterlichem Beschluss an Behörden weiter.
+            Hufi gibt Daten über dieses Pferd nur mit richterlichem Beschluss an Behörden weiter.
           </p>
         </div>
 

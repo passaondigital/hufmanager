@@ -23,7 +23,7 @@ const excludeItems = [
   "Nicht für außerhalb DACH — internationale Märkte folgen",
 ];
 
-const WhatIsHufManagerSection = () => {
+const WhatIsHufiSection = () => {
   const { ref: headerRef, revealed: headerRevealed } = useScrollReveal();
   const { ref: leftRef, revealed: leftRevealed } = useScrollReveal();
   const { ref: rightRef, revealed: rightRevealed } = useScrollReveal();
@@ -45,7 +45,7 @@ const WhatIsHufManagerSection = () => {
             Eine App. Alles drin.
           </h2>
           <p className="text-lg md:text-xl text-zinc-500 max-w-2xl mx-auto">
-            HufManager ist dein digitales Cockpit —
+            Hufi ist dein digitales Cockpit —
             <br className="hidden md:block" />
             vom ersten Termin bis zur bezahlten Rechnung.
           </p>
@@ -63,7 +63,7 @@ const WhatIsHufManagerSection = () => {
             }}
           >
             <h3 className="text-xl font-bold text-zinc-900 mb-6">
-              Was HufManager ist:
+              Was Hufi ist:
             </h3>
             <ul className="space-y-3">
               {includeItems.map((item, i) => (
@@ -88,7 +88,7 @@ const WhatIsHufManagerSection = () => {
             }}
           >
             <h3 className="text-xl font-bold text-zinc-900 mb-6">
-              Was HufManager nicht ist:
+              Was Hufi nicht ist:
             </h3>
             <ul className="space-y-3">
               {excludeItems.map((item, i) => (
@@ -112,7 +112,7 @@ const WhatIsHufManagerSection = () => {
         >
           <hr className="border-zinc-200 mb-6" />
           <p className="text-center text-zinc-500 text-base md:text-lg">
-            HufManager ergänzt was du hast —
+            Hufi ergänzt was du hast —
             <br />
             und ersetzt was dich aufhält.
           </p>
@@ -122,4 +122,4 @@ const WhatIsHufManagerSection = () => {
   );
 };
 
-export default WhatIsHufManagerSection;
+export default WhatIsHufiSection;

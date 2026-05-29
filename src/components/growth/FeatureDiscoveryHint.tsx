@@ -41,7 +41,7 @@ const featureHints: FeatureHint[] = [
   {
     id: "hufi",
     title: "Frag einfach — Hufi weiß Bescheid",
-    description: "Frag einfach — Hufi kennt HufManager besser als jedes Handbuch.",
+    description: "Frag einfach — Hufi kennt Hufi besser als jedes Handbuch.",
     cta: "Hufi fragen",
     navigateTo: "/hufi",
     requiredDaysActive: 3,
@@ -57,7 +57,7 @@ const featureHints: FeatureHint[] = [
   {
     id: "website",
     title: "Deine eigene Webseite — kostenlos",
-    description: "HufManager erstellt automatisch eine professionelle Webseite für dich. Kunden können dort direkt Termine anfragen.",
+    description: "Hufi erstellt automatisch eine professionelle Webseite für dich. Kunden können dort direkt Termine anfragen.",
     cta: "Webseite ansehen",
     navigateTo: "/website",
     requiredDaysActive: 10,

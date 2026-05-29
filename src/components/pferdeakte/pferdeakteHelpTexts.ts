@@ -72,7 +72,7 @@ export const PFERDEAKTE_HELP = {
     },
     documentUpload: {
       title: "Dokument hochladen",
-      content: "Unterstützte Formate: PDF, JPG, PNG. Max. 10 MB pro Datei. Dokumente werden verschlüsselt im HufManager-Tresor gespeichert.",
+      content: "Unterstützte Formate: PDF, JPG, PNG. Max. 10 MB pro Datei. Dokumente werden verschlüsselt im Hufi-Tresor gespeichert.",
     },
     diary: {
       title: "Tagebuch",

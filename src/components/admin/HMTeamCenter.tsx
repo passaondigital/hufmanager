@@ -108,7 +108,7 @@ export function HMTeamCenter() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">👥 HufManager Team</h2>
+          <h2 className="text-2xl font-bold">👥 Hufi Team</h2>
           <p className="text-muted-foreground">Internes Team verwalten</p>
         </div>
         <div className="flex items-center gap-4">
@@ -144,7 +144,7 @@ export function HMTeamCenter() {
               <div className="p-3 bg-amber-500/10 rounded-full"><Shield className="w-6 h-6 text-amber-600" /></div>
               <div className="flex-1">
                 <p className="font-bold">Pascal Schmid</p>
-                <p className="text-sm text-muted-foreground">support@hufmanager.de</p>
+                <p className="text-sm text-muted-foreground">kontakt@hufiapp.de</p>
               </div>
               <Badge className="bg-amber-500/10 text-amber-600">Founder</Badge>
               <Badge variant="default">Aktiv</Badge>

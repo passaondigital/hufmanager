@@ -1,6 +1,5 @@
-import { Play, Clock } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Clock } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface VideoHelpItem {
   title: string;
@@ -16,33 +15,30 @@ interface VideoHelpSectionProps {
 
 /**
  * Eingebettete Video-Hilfe pro Modul.
- * Zeigt YouTube/Loom-Videos oder "[VIDEO FOLGT]" Placeholder.
+ * Rendert nur freigeschaltete YouTube/Loom-Videos.
  */
 export function VideoHelpSection({ title = 'Video-Anleitungen', videos }: VideoHelpSectionProps) {
+  const availableVideos = videos.filter(
+    (video): video is VideoHelpItem & { videoUrl: string } => Boolean(video.videoUrl)
+  );
+
+  if (availableVideos.length === 0) return null;
+
   return (
     <div className="space-y-3">
       <h3 className="text-base font-semibold text-foreground">{title}</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {videos.map((video, i) => (
+        {availableVideos.map((video, i) => (
           <Card key={i} className="overflow-hidden">
-            {video.videoUrl ? (
-              <div className="aspect-video">
-                <iframe
-                  src={video.videoUrl}
-                  className="w-full h-full"
-                  allowFullScreen
-                  title={video.title}
-                  loading="lazy"
-                />
-              </div>
-            ) : (
-              <div className="aspect-video bg-muted/50 flex flex-col items-center justify-center gap-2">
-                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                  <Play className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <Badge variant="secondary" className="text-xs">VIDEO FOLGT</Badge>
-              </div>
-            )}
+            <div className="aspect-video">
+              <iframe
+                src={video.videoUrl}
+                className="w-full h-full"
+                allowFullScreen
+                title={video.title}
+                loading="lazy"
+              />
+            </div>
             <CardContent className="p-3">
               <p className="font-medium text-sm text-foreground">{video.title}</p>
               <div className="flex items-center gap-2 mt-1">

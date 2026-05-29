@@ -154,10 +154,10 @@ export function BotschafterReminder() {
           <Megaphone className="h-6 w-6 text-primary shrink-0 mt-0.5" />
           <div className="min-w-0">
             <p className="text-foreground font-bold text-[15px] leading-tight">
-              🐴 Werde HufManager Botschafter — bis zu 50% Provision
+              🐴 Werde Hufi Botschafter — bis zu 50% Provision
             </p>
             <p className="text-muted-foreground text-[13px] mt-0.5 leading-snug">
-              Empfehle HufManager und verdiene. Die Kunden-App ist kostenlos — du verdienst wenn Profis buchen.
+              Empfehle Hufi und verdiene. Die Kunden-App ist kostenlos — du verdienst wenn Profis buchen.
             </p>
           </div>
         </div>

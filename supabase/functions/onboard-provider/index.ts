@@ -218,9 +218,9 @@ serve(async (req: Request) => {
       try {
         const resend = new Resend(resendKey);
         await resend.emails.send({
-          from: "HufManager <support@hufmanager.de>",
+          from: "HufManager <support@hufiapp.de>",
           to: [profile.email],
-          cc: ["support@hufmanager.de"],
+          cc: ["support@hufiapp.de"],
           subject: "Dein HufManager-Nutzungsvertrag",
           html: `
             <!DOCTYPE html>
@@ -234,7 +234,7 @@ serve(async (req: Request) => {
                   <p>dein Nutzungsvertrag für das <strong>${planName}</strong>-Paket wurde erstellt.</p>
                   <p>Bitte unterzeichne ihn digital in deinem HufManager-Profil.</p>
                   <div style="text-align:center;margin:32px 0;">
-                    <a href="https://hufmanager.lovable.app/management/abo"
+                    <a href="https://hufiapp.de/management/abo"
                        style="display:inline-block;background:#1a1a1a;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;">
                       Jetzt unterzeichnen
                     </a>
@@ -242,7 +242,7 @@ serve(async (req: Request) => {
                   <p style="font-size:14px;color:#6b7280;">Vertragsnummer: ${contract.contract_number}</p>
                 </div>
                 <div style="border-top:1px solid #e5e7eb;padding-top:16px;text-align:center;">
-                  <p style="font-size:12px;color:#9ca3af;">HufManager · support@hufmanager.de · hufmanager.de</p>
+                  <p style="font-size:12px;color:#9ca3af;">HufManager · support@hufiapp.de · hufiapp.de</p>
                 </div>
               </div>
             </body></html>

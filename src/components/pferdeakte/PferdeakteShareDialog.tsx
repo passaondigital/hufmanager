@@ -126,7 +126,7 @@ export function PferdeakteShareDialog({ horseId, horseName, children }: Props) {
           </div>
 
           <p className="text-xs text-muted-foreground text-center">
-            Empfänger benötigen ein HufManager-Konto, um die geteilten Daten einzusehen.
+            Empfänger benötigen ein Hufi-Konto, um die geteilten Daten einzusehen.
           </p>
         </div>
       </DialogContent>

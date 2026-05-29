@@ -2,15 +2,19 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Share2, Copy, Check, Link as LinkIcon } from 'lucide-react';
+import { Share2, Copy, Check, Link as LinkIcon, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
+import { useSubscription } from '@/hooks/useSubscription';
+import { ProGateDialog } from '@/components/subscription/ProGateDialog';
 
 export function ShareInviteLinkCard() {
   const { user } = useAuth();
+  const { isPro } = useSubscription();
   const [readableId, setReadableId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   useEffect(() => {
     const fetchReadableId = async () => {
@@ -56,8 +60,8 @@ export function ShareInviteLinkCard() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'HufManager Einladung',
-          text: 'Registriere dich bei HufManager und verbinde dich direkt mit mir!',
+          title: 'Hufi Einladung',
+          text: 'Registriere dich bei Hufi und verbinde dich direkt mit mir!',
           url: inviteUrl,
         });
       } catch (error: any) {
@@ -72,6 +76,32 @@ export function ShareInviteLinkCard() {
   };
 
   if (!readableId) return null;
+
+  if (!isPro) {
+    return (
+      <>
+        <Card
+          className="border-dashed border-2 border-muted bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
+          onClick={() => setUpgradeOpen(true)}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                <Lock className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-foreground text-sm">Kunden einladen</p>
+                <p className="text-xs text-muted-foreground">
+                  In HufManager Pro enthalten — jetzt upgraden
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <ProGateDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} featureName="Kunden einladen" />
+      </>
+    );
+  }
 
   return (
     <Card className="border-dashed border-2 border-primary/30 bg-primary/5">

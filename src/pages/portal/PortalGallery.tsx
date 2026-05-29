@@ -41,7 +41,7 @@ const PORTALS = [
     id: "ausbildung",
     icon: GraduationCap,
     title: "Ausbildungs-Portal",
-    features: ["Kurse", "Lernfälle", "Prüfungen in echter HufManager-Umgebung"],
+    features: ["Kurse", "Lernfälle", "Prüfungen in echter Hufi-Umgebung"],
     examples: "DHG-Schulen, Hufakademien",
     path: "/portal/ausbildung",
   },
@@ -69,7 +69,7 @@ export default function PortalGallery() {
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
               <Landmark className="h-5 w-5 text-primary" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">HufManager Business Portal</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Hufi Business Portal</h1>
           </div>
           <p className="text-muted-foreground max-w-xl">
             Wähle das Portal das zu dir passt. Erkunde die Features im Demo-Modus oder bewirb dich für dein eigenes Portal.
@@ -118,7 +118,7 @@ export default function PortalGallery() {
         {/* CTA */}
         <div className="mt-10 rounded-2xl border-2 border-primary/30 bg-primary/5 p-6 sm:p-8 text-center space-y-4">
           <h2 className="text-xl font-bold text-foreground">
-            Du möchtest ein eigenes Portal auf der HufManager-Plattform betreiben?
+            Du möchtest ein eigenes Portal auf der Hufi-Plattform betreiben?
           </h2>
           <p className="text-muted-foreground max-w-lg mx-auto">
             Versicherungen, Hersteller, Verbände, Kliniken, Schulen und Lieferanten –

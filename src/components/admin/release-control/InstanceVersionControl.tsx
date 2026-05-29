@@ -23,7 +23,7 @@ interface VersionSetting {
 const INSTANCE_CONFIGS = [
   { versionKey: 'app_version_provider', maintenanceKey: 'maintenance_mode_app', label: 'App – Provider (#PID)', icon: Briefcase, description: 'Mindestversion für Hufbearbeiter' },
   { versionKey: 'app_version_client', maintenanceKey: 'maintenance_mode_app', label: 'App – Client (#KID)', icon: Smartphone, description: 'Mindestversion für Pferdebesitzer' },
-  { versionKey: 'app_version_landingpage', maintenanceKey: 'maintenance_mode_landingpage', label: 'Landingpage', icon: Globe, description: 'www.hufmanager.de' },
+  { versionKey: 'app_version_landingpage', maintenanceKey: 'maintenance_mode_landingpage', label: 'Landingpage', icon: Globe, description: 'www.hufiapp.de' },
   { versionKey: 'app_version_demo', maintenanceKey: 'maintenance_mode_demo', label: 'Demo-Zugänge', icon: Eye, description: 'Alle 4 Demo-Rollen' },
   { versionKey: 'app_version_mission_control', maintenanceKey: 'maintenance_mode_mission_control', label: 'Mission Control', icon: Shield, description: 'Admin-Bereich' },
 ];

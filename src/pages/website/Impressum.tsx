@@ -22,7 +22,7 @@ const Impressum = () => (
             <h2 className="text-xl font-semibold text-white mb-2">Kontakt</h2>
             <p>
               Telefon: 015209007017<br />
-              E-Mail: support@hufmanager.de
+              E-Mail: kontakt@hufiapp.de
             </p>
           </div>
 

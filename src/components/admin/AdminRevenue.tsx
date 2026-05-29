@@ -342,7 +342,7 @@ export function AdminRevenue() {
   // ── Exports ──
   const exportCSV = () => {
     const rows = [
-      ["=== HufManager Finanz-Export (verifiziert) ===", "", "", "", format(new Date(), "dd.MM.yyyy HH:mm")],
+      ["=== Hufi Finanz-Export (verifiziert) ===", "", "", "", format(new Date(), "dd.MM.yyyy HH:mm")],
       [""],
       ["=== VERIFIZIERTE EINNAHMEN ==="],
       ["MRR (verifiziert)", `${verified.verifiedMRR.toFixed(2)} €`],

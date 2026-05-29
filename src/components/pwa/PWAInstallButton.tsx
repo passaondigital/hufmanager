@@ -40,7 +40,7 @@ export function PWAInstallButton({ className, collapsed = false }: PWAInstallBut
         </TooltipTrigger>
         <TooltipContent side="right" className="max-w-[250px]">
           <p className="text-sm">
-            <strong>Tipp:</strong> Klicke auf Teilen → Zum Dock hinzufügen, um HufManager als App zu nutzen
+            <strong>Tipp:</strong> Klicke auf Teilen → Zum Dock hinzufügen, um Hufi als App zu nutzen
           </p>
         </TooltipContent>
       </Tooltip>

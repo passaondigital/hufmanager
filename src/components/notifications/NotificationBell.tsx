@@ -29,9 +29,10 @@ interface Notification {
 
 interface NotificationBellProps {
   collapsed?: boolean;
+  className?: string;
 }
 
-export function NotificationBell({ collapsed = false }: NotificationBellProps) {
+export function NotificationBell({ collapsed = false, className }: NotificationBellProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -112,13 +113,34 @@ export function NotificationBell({ collapsed = false }: NotificationBellProps) {
           size="icon"
           aria-label={`Benachrichtigungen${unreadCount > 0 ? ` (${unreadCount} ungelesen)` : ""}`}
           className={cn(
-            "relative text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+            "relative",
+            className
+              ? className
+              : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent",
             collapsed && "mx-auto"
           )}
         >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+            <span
+              className="absolute"
+              style={{
+                top: -2, right: -2,
+                background: "#F97316",
+                color: "#FFFFFF",
+                fontSize: 9,
+                fontWeight: 800,
+                minWidth: 16,
+                height: 16,
+                borderRadius: 8,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "0 4px",
+                boxShadow: "0 0 0 2px #fff",
+                animation: "badge-pulse 2s ease-in-out infinite",
+              }}
+            >
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}

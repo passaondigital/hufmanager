@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Supabase CLI workspace artifacts (link state, version probes, etc.)
+# Never commit these; they are local to whichever machine ran `supabase link`.
+supabase/.temp/*
+!supabase/.temp/.gitkeep

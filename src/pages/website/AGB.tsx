@@ -8,7 +8,7 @@ const AGB = () => (
       <div className="max-w-3xl mx-auto">
         <h1 className="text-4xl font-bold mb-4 text-white">Allgemeine Geschäftsbedingungen</h1>
         <p className="text-white/60 mb-10 leading-relaxed">
-          für die Erbringung von Dienstleistungen von Barhufserviceschmid, Emsdettener Str. 10, c/o Postflex #10643, 48268 Greven, E-Mail: support@hufmanager.de (nachfolgend „Auftragnehmer") gegenüber seinen Kunden (nachfolgend „Auftraggeber")
+          für die Erbringung von Dienstleistungen von Barhufserviceschmid, Emsdettener Str. 10, c/o Postflex #10643, 48268 Greven, E-Mail: kontakt@hufiapp.de (nachfolgend „Auftragnehmer") gegenüber seinen Kunden (nachfolgend „Auftraggeber")
         </p>
 
         <div className="rounded-xl border border-white/10 bg-white/5 p-6 md:p-8 space-y-10 text-white/70 text-sm leading-relaxed">
@@ -25,7 +25,7 @@ const AGB = () => (
           <section className="space-y-4">
             <h2 className="text-xl font-semibold text-white">2. Vertragsgegenstand und Leistungsumfang</h2>
             <p>2.1 Der Auftragnehmer erbringt als selbständiger Unternehmer folgende Leistungen gegenüber dem Auftraggeber:</p>
-            <p>HufManager ist eine webbasierte SaaS-Plattform für das Hufpflegemanagement. Die Plattform ermöglicht Hufbearbeitern, Tierärzten, Physiotherapeuten und Pferdebesitzern die digitale Verwaltung von Terminen, Behandlungen, Pferdeakten und Kundendaten.</p>
+            <p>Hufi (hufiapp.de) ist eine webbasierte App-Plattform für mobile Pferdeprofis. Die Plattform ermöglicht Hufbearbeitern, Tierärzten, Physiotherapeuten und Pferdebesitzern die digitale Verwaltung von Terminen, Behandlungen, Pferdeakten und Kundendaten.</p>
             <p>2.2 Der spezifische Leistungsumfang ist Gegenstand von Individualvereinbarungen zwischen Auftragnehmer und dem Auftraggeber.</p>
             <p>2.3 Der Auftragnehmer erbringt die vertragsgemäßen Leistungen mit größtmöglicher Sorgfalt und Gewissenhaftigkeit nach dem jeweils neuesten Stand, neuesten Regeln und Erkenntnissen.</p>
             <p>2.4 Der Auftragnehmer ist zur Erbringung der vertragsgemäß geschuldeten Leistungen verpflichtet. Bei der Durchführung seiner Tätigkeit ist er jedoch etwaigen Weisungen im Hinblick auf die Art der Erbringung seiner Leistungen nicht unterworfen. Die Leistungserbringung durch den Auftragnehmer erfolgt lediglich in Abstimmung und in Koordination mit dem Auftraggeber.</p>

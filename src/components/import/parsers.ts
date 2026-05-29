@@ -1,4 +1,3 @@
-import * as XLSX from "xlsx";
 import type { ParsedContact } from "./types";
 
 const genId = () => crypto.randomUUID();
@@ -54,7 +53,8 @@ export function parseCSV(text: string): ParsedContact[] {
 }
 
 // Excel parser
-export function parseExcel(data: ArrayBuffer): ParsedContact[] {
+export async function parseExcel(data: ArrayBuffer): Promise<ParsedContact[]> {
+  const XLSX = await import("xlsx");
   const wb = XLSX.read(data, { type: "array" });
   const sheet = wb.Sheets[wb.SheetNames[0]];
   const csv = XLSX.utils.sheet_to_csv(sheet, { FS: ";" });
@@ -141,7 +141,7 @@ export function parsePlainText(text: string): ParsedContact[] {
 }
 
 // Detect format and parse
-export function parseFile(file: File, content: string | ArrayBuffer): ParsedContact[] {
+export async function parseFile(file: File, content: string | ArrayBuffer): Promise<ParsedContact[]> {
   const ext = file.name.toLowerCase().split(".").pop();
   if (ext === "xlsx" || ext === "xls") return parseExcel(content as ArrayBuffer);
   if (ext === "vcf") return parseVCard(content as string);

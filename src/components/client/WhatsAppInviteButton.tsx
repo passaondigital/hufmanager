@@ -43,7 +43,7 @@ export function WhatsAppInviteButton({
   }, [user?.id]);
 
   const inviteText = waTextInvite(fullName || "Ein Pferdefreund");
-  const inviteLink = "https://hufmanager.lovable.app/auth";
+  const inviteLink = "https://hufiapp.de/auth";
 
   const handleWhatsAppShare = () => {
     shareViaWhatsApp(inviteText);
@@ -73,7 +73,7 @@ export function WhatsAppInviteButton({
         </DialogHeader>
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Teile HufManager mit deinen Stallkollegen, Reitbeteiligungen oder Pferdefreunden.
+            Teile Hufi mit deinen Stallkollegen, Reitbeteiligungen oder Pferdefreunden.
           </p>
 
           <div className="p-3 rounded-lg bg-muted/50 text-sm text-foreground whitespace-pre-line">

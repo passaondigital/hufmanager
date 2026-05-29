@@ -109,7 +109,7 @@ const FAQ_DATA: FAQCategory[] = [
         answer: 'Öffne den Termin → "Abschließen" → optional Unterschrift und Fotos hinzufügen → Rechnung erstellen. Fertig.',
       },
       {
-        question: 'Erinnert HufManager mich an fällige Pferde?',
+        question: 'Erinnert Hufi mich an fällige Pferde?',
         answer: 'Ja! Im Dashboard erscheinen automatisch Pferde die bald wieder dran sind. Du siehst auf einen Blick wer nachbearbeitet werden muss.',
         navigateTo: '/home',
         navigateLabel: 'Zum Dashboard',
@@ -231,7 +231,7 @@ const FAQ_DATA: FAQCategory[] = [
     items: [
       {
         question: 'Was ist ein Behandlungsauftrag?',
-        answer: 'Ein digitaler Auftrag dokumentiert was du mit einem Dienstleister vereinbart hast. Beide Parteien bestätigen den Auftrag. HufManager ist nicht Vertragspartei.',
+        answer: 'Ein digitaler Auftrag dokumentiert was du mit einem Dienstleister vereinbart hast. Beide Parteien bestätigen den Auftrag. Hufi ist nicht Vertragspartei.',
       },
       {
         question: 'Kann ich einen Auftrag stornieren?',
@@ -246,15 +246,15 @@ const FAQ_DATA: FAQCategory[] = [
     items: [
       {
         question: 'Wie übertrage ich mein Pferd an einen neuen Besitzer?',
-        answer: 'Gehe zur Pferdeakte → Status ändern → Pferd verkaufen. Der neue Besitzer muss einen HufManager Account haben. Beide Parteien müssen den Transfer mit einem gemeinsamen Passwort und Kaufvertrag bestätigen.',
+        answer: 'Gehe zur Pferdeakte → Status ändern → Pferd verkaufen. Der neue Besitzer muss einen Hufi Account haben. Beide Parteien müssen den Transfer mit einem gemeinsamen Passwort und Kaufvertrag bestätigen.',
       },
       {
         question: 'Was passiert mit der Pferdeakte nach einem Verkauf?',
         answer: 'Der neue Besitzer erhält Zugriff auf die gesamte Akte. Dein Zugriff wird sofort entzogen. Private Notizen die du gemacht hast werden nicht übertragen.',
       },
       {
-        question: 'Was wenn der Käufer keinen HufManager Account hat?',
-        answer: 'Der Käufer kann sich kostenlos registrieren unter hufmanager.de/auth. Die Basis-Registrierung ist kostenlos.',
+        question: 'Was wenn der Käufer keinen Hufi Account hat?',
+        answer: 'Der Käufer kann sich kostenlos registrieren unter hufiapp.de. Die Basis-Registrierung ist kostenlos.',
       },
     ],
   },
@@ -265,7 +265,7 @@ const FAQ_DATA: FAQCategory[] = [
     items: [
       {
         question: 'Wer bekommt Zugriff auf meine Daten bei Behördenanfragen?',
-        answer: 'HufManager gibt Daten nur mit richterlichem Beschluss heraus. Eine einfache Behördenanfrage reicht nicht aus.',
+        answer: 'Hufi gibt Daten nur mit richterlichem Beschluss heraus. Eine einfache Behördenanfrage reicht nicht aus.',
       },
       {
         question: 'Wie lange werden Daten nach dem Tod eines Pferdes gespeichert?',

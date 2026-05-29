@@ -37,7 +37,7 @@ export function HufrenteWidget() {
               <>
                 <p className="text-sm font-semibold text-foreground">Hufrente aktivieren</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Sichere dein Einkommen ab — empfiehl HufManager und verdiene dauerhaft.
+                  Sichere dein Einkommen ab — empfiehl Hufi und verdiene dauerhaft.
                 </p>
               </>
             )}

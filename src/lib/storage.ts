@@ -2,10 +2,11 @@ import { supabase } from "@/integrations/supabase/client";
 
 // Buckets that should use signed URLs (private access)
 const PRIVATE_BUCKETS = [
-  'horse-documents', 'hoof_photos', 'hoof_images', 'legal-documents', 
+  'horse-documents', 'hoof_photos', 'hoof_images', 'legal-documents',
   'signatures', 'completion-reports', 'chat-images', 'employee-avatars',
   'documents', 'pdfs', 'feedback-screenshots', 'partner-documents',
-  'expense-receipts', 'emergency-logs', 'horse-photos'
+  'expense-receipts', 'emergency-logs', 'horse-photos',
+  'horse-media', // Phase F-1: HufiCam photos/videos per horse
 ];
 
 // Buckets that are intentionally public

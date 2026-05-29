@@ -29,10 +29,10 @@ interface EcosystemLink {
 const ECOSYSTEM_APPS: EcosystemApp[] = [
   {
     key: "hufmanager",
-    name: "HufManager",
+    name: "Hufi",
     description: "Professionelle Hufbearbeiter-Software",
     idPrefix: "#pid",
-    url: "https://hufmanager.de",
+    url: "https://hufiapp.de",
     icon: "🐴",
   },
   {
@@ -40,11 +40,11 @@ const ECOSYSTEM_APPS: EcosystemApp[] = [
     name: "HufiAi",
     description: "KI-gestützte Hufanalyse",
     idPrefix: "#kid",
-    url: "https://hufiai.lovable.app",
+    url: "https://hufiapp.de",
     icon: "🤖",
   },
   {
-    key: "hufiapp",
+    key: "hufmanager",
     name: "HufiApp",
     description: "Mobile App für Pferdebesitzer",
     idPrefix: "#eqid",

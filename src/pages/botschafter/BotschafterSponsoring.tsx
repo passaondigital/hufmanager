@@ -66,7 +66,7 @@ export default function BotschafterSponsoring() {
     try {
       const { data: result } = await supabase.functions.invoke("generate-werbemittel", {
         body: {
-          prompt: `Persönlicher Text für eine Sponsoring-Seite eines HufManager Botschafters namens ${displayName}. Typ: ${bot?.type}. Kurz, authentisch, 2-3 Sätze.`,
+          prompt: `Persönlicher Text für eine Sponsoring-Seite eines Hufi Botschafters namens ${displayName}. Typ: ${bot?.type}. Kurz, authentisch, 2-3 Sätze.`,
           audiences: "Pferdebesitzer",
           tone: "Persönlich & authentisch",
         },
@@ -112,7 +112,7 @@ export default function BotschafterSponsoring() {
               onChange={e => setBio(e.target.value)}
               rows={4}
               className="w-full rounded-lg p-3 text-sm resize-none bg-[#0a0700] border border-[#2a2a1f] text-white focus:outline-none focus:border-[#F5970A]"
-              placeholder="Warum empfiehlst du HufManager?"
+              placeholder="Warum empfiehlst du Hufi?"
             />
             <Button size="sm" variant="ghost" onClick={generateBio} disabled={generating} className="mt-1 text-xs" style={{ color: "#F5970A" }}>
               <Sparkles className="w-3 h-3 mr-1" /> {generating ? "Generiert..." : "Text mit KI generieren"}

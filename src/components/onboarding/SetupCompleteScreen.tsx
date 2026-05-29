@@ -29,7 +29,7 @@ export function SetupCompleteScreen({
   const handleWhatsAppInvite = () => {
     const providerName = displayName;
     const horseText = horseName ? ` für ${horseName}` : '';
-    const message = `Hallo${clientName ? ` ${clientName.split(' ')[0]}` : ''}! 🐴\n\nIch nutze jetzt den HufManager${horseText}. Damit hast du alle Infos zu deinem Pferd direkt auf dem Handy – Termine, Befunde und mehr.\n\nHier ist dein Zugang:\nhttps://hufmanager.lovable.app\n\nViele Grüße,\n${providerName}`;
+    const message = `Hallo${clientName ? ` ${clientName.split(' ')[0]}` : ''}! 🐴\n\nIch nutze jetzt den Hufi${horseText}. Damit hast du alle Infos zu deinem Pferd direkt auf dem Handy – Termine, Befunde und mehr.\n\nHier ist dein Zugang:\nhttps://hufiapp.de\n\nViele Grüße,\n${providerName}`;
     const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };
@@ -93,7 +93,7 @@ export function SetupCompleteScreen({
               </div>
             ) : (
               <p className="text-lg text-muted-foreground">
-                Dein HufManager ist eingerichtet und bereit.
+                Dein Hufi ist eingerichtet und bereit.
               </p>
             )}
           </motion.div>

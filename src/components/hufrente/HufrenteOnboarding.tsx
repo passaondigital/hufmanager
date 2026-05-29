@@ -21,7 +21,7 @@ const screens = [
     icon: Users,
     title: "Wie funktioniert es?",
     description:
-      "Du empfiehlst → Kollege nutzt HufManager → du bekommst 20% seiner Monatsgebühr — dauerhaft.",
+      "Du empfiehlst → Kollege nutzt Hufi → du bekommst 20% seiner Monatsgebühr — dauerhaft.",
     color: "text-amber-500",
     bg: "bg-amber-500/10",
   },

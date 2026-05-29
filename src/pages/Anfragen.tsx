@@ -40,13 +40,35 @@ interface Lead {
   status: string;
   source: string | null;
   created_at: string;
+  plan_tier: string | null;
+}
+
+const TIER_OPTIONS: { value: string; label: string; className: string; activeClass: string }[] = [
+  { value: "go",       label: "GO",       className: "border-blue-200 text-blue-500",   activeClass: "bg-blue-500 text-white border-blue-500" },
+  { value: "balance",  label: "BALANCE",  className: "border-green-200 text-green-600", activeClass: "bg-green-600 text-white border-green-600" },
+  { value: "intensiv", label: "INTENSIV", className: "border-orange-200 text-orange-500", activeClass: "bg-orange-500 text-white border-orange-500" },
+  { value: "unklar",   label: "?",        className: "border-gray-200 text-gray-400",   activeClass: "bg-gray-200 text-gray-600 border-gray-300" },
+];
+
+function getNextStepHint(lead: Lead): { text: string; className: string } | null {
+  if (lead.status === 'gewonnen' || lead.status === 'accepted' || lead.status === 'verloren') return null;
+  if (lead.status === 'angebot_gesendet') return { text: "→ Auf Rückmeldung warten", className: "text-amber-500" };
+  if (!lead.plan_tier)                   return { text: "Bitte klassifizieren",       className: "text-gray-400" };
+  if (lead.plan_tier === 'unklar')       return { text: "→ Rückfrage stellen",        className: "text-gray-500" };
+  if (lead.plan_tier === 'go')           return { text: "→ Ersttermin buchen",        className: "text-blue-600" };
+  if (lead.plan_tier === 'balance')      return { text: "→ Abo-Gespräch / Tourenplatz prüfen", className: "text-green-600" };
+  if (lead.plan_tier === 'intensiv')     return { text: "→ Bewerbungsgespräch / Video anfordern", className: "text-orange-500" };
+  return null;
 }
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   neu: { label: "Neu", className: "bg-primary/10 text-primary" },
+  new: { label: "Neu", className: "bg-primary/10 text-primary" },
   kontaktiert: { label: "Kontaktiert", className: "bg-blue-500/10 text-blue-600" },
+  pending: { label: "Kontaktiert", className: "bg-blue-500/10 text-blue-600" },
   angebot_gesendet: { label: "Angebot gesendet", className: "bg-amber-500/10 text-amber-600" },
   gewonnen: { label: "Gewonnen", className: "bg-accent/10 text-accent" },
+  accepted: { label: "Gewonnen", className: "bg-accent/10 text-accent" },
   verloren: { label: "Verloren", className: "bg-muted text-muted-foreground" },
 };
 
@@ -66,13 +88,15 @@ const Anfragen = () => {
   const queryClient = useQueryClient();
 
   const { data: leads = [], isLoading } = useQuery({
-    queryKey: ['leads'],
+    queryKey: ['leads', user?.id],
+    enabled: !!user?.id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('leads')
         .select('*')
+        .eq('provider_id', user!.id)
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
       return data as Lead[];
     },
@@ -83,17 +107,37 @@ const Anfragen = () => {
       const { error } = await supabase
         .from('leads')
         .update({ status })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('provider_id', user!.id);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['leads', user?.id] });
       toast({ title: "Status aktualisiert" });
     },
   });
 
+  const updateTier = useMutation({
+    mutationFn: async ({ id, plan_tier }: { id: string; plan_tier: string | null }) => {
+      const { error } = await supabase
+        .from('leads')
+        .update({ plan_tier })
+        .eq('id', id)
+        .eq('provider_id', user!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads', user?.id] });
+    },
+  });
+
   const filteredLeads = leads.filter(lead => {
-    if (filter !== 'alle' && lead.status !== filter) return false;
+    if (filter !== 'alle') {
+      if (filter === 'neu' && lead.status !== 'neu' && lead.status !== 'new') return false;
+      if (filter === 'kontaktiert' && lead.status !== 'kontaktiert' && lead.status !== 'pending') return false;
+      if (filter === 'gewonnen' && lead.status !== 'gewonnen' && lead.status !== 'accepted') return false;
+      if (filter !== 'neu' && filter !== 'kontaktiert' && filter !== 'gewonnen' && lead.status !== filter) return false;
+    }
     if (search) {
       const searchLower = search.toLowerCase();
       return (
@@ -240,6 +284,33 @@ const Anfragen = () => {
                       </Badge>
                       <span className="text-sm text-muted-foreground">{formatDate(lead.created_at)}</span>
                     </div>
+
+                    <div className="flex items-center gap-1">
+                      {TIER_OPTIONS.map((tier) => (
+                        <button
+                          key={tier.value}
+                          onClick={() => updateTier.mutate({
+                            id: lead.id,
+                            plan_tier: lead.plan_tier === tier.value ? null : tier.value,
+                          })}
+                          className={cn(
+                            "px-2 py-0.5 rounded text-xs font-semibold border transition-colors",
+                            lead.plan_tier === tier.value ? tier.activeClass : tier.className
+                          )}
+                        >
+                          {tier.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {(() => {
+                      const hint = getNextStepHint(lead);
+                      return hint ? (
+                        <p className={cn("text-xs font-medium", hint.className)}>
+                          {hint.text}
+                        </p>
+                      ) : null;
+                    })()}
 
                     <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                       {lead.phone && (

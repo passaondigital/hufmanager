@@ -76,7 +76,7 @@ import { CustomerGalleryPreview } from "@/components/customers/CustomerGalleryPr
 import { GhostProfileBanner, InviteClientButton } from "@/components/customers/InviteClientButton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   PAYMENT_RATING_OPTIONS,
   LIFECYCLE_STATUS_OPTIONS,
@@ -149,6 +149,19 @@ const EQUINE_TYPE_LABELS: Record<string, string> = {
 
 export function CustomerDetailModal({ customer, horses, open, onClose, onAddHorse }: Props) {
   const queryClient = useQueryClient();
+
+  const { data: customPriceGroups = [] } = useQuery({
+    queryKey: ["price-groups-modal"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      const { data } = await supabase
+        .from("price_groups").select("name, label").eq("provider_id", user.id);
+      return (data ?? []) as { name: string; label: string }[];
+    },
+    staleTime: 60_000,
+  });
+
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [horseToDelete, setHorseToDelete] = useState<Horse | null>(null);
@@ -695,6 +708,9 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                           <SelectContent>
                             {PRICE_GROUPS.map((g) => (
                               <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
+                            ))}
+                            {customPriceGroups.map((g) => (
+                              <SelectItem key={g.name} value={g.name.toLowerCase().replace(/\s/g, "_")}>{g.label || g.name}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>

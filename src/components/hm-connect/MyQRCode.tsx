@@ -59,8 +59,8 @@ export function MyQRCode() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `HufManager verbinden`,
-          text: `Verbinde dich mit mir auf HufManager: ${profile.readable_id}`,
+          title: `Hufi verbinden`,
+          text: `Verbinde dich mit mir auf Hufi: ${profile.readable_id}`,
           url: connectUrl,
         });
       } catch {

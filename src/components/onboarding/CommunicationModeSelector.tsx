@@ -91,7 +91,7 @@ export function CommunicationModeSelector({
             <p className="text-lg font-semibold text-foreground">
               {selected === "whatsapp"
                 ? "WhatsApp ist aktiviert! 🟢"
-                : "HufManager Chat ist aktiviert! 🐴"}
+                : "Hufi Chat ist aktiviert! 🐴"}
             </p>
             <p className="text-sm text-muted-foreground">
               {selected === "whatsapp"
@@ -145,7 +145,7 @@ export function CommunicationModeSelector({
                 </div>
               </button>
 
-              {/* HufManager Tile */}
+              {/* Hufi Tile */}
               <button
                 type="button"
                 onClick={() => handleSelect("hufmanager")}
@@ -166,7 +166,7 @@ export function CommunicationModeSelector({
                 )}
                 <div className="space-y-3">
                   <span className="text-2xl">🐴</span>
-                  <h3 className="font-bold text-foreground">HufManager Chat</h3>
+                  <h3 className="font-bold text-foreground">Hufi Chat</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     Alles an einem Ort – Termine, Dokumente, Nachrichten direkt teilbar.
                   </p>

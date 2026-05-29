@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,46 +25,92 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import AdminBlogManager from "@/components/admin/AdminBlogManager";
-import MissionControlKPIsV2 from "@/components/admin/MissionControlKPIsV2";
-import AdminActivityLogViewer from "@/components/admin/AdminActivityLogViewer";
-import AdminBroadcastCard from "@/components/admin/AdminBroadcastCard";
-import AdminFeedbackViewer from "@/components/admin/AdminFeedbackViewer";
 import { useAdminActivityLog } from "@/hooks/useAdminActivityLog";
-import { ReleaseControlCenter } from "@/components/admin/release-control/ReleaseControlCenter";
-import { DemoAnalyticsDashboard } from "@/components/admin/DemoAnalyticsDashboard";
-import { DemoAccountsManager } from "@/components/admin/DemoAccountsManager";
-import { AdminGlossaryManager } from "@/components/admin/AdminGlossaryManager";
-import { FunnelCockpit } from "@/components/admin/FunnelCockpit";
-import AdminPartnerOverview from "@/components/admin/AdminPartnerOverview";
-import AdminEmployeeOverview from "@/components/admin/AdminEmployeeOverview";
-import { AdminRevenue } from "@/components/admin/AdminRevenue";
-import { RetentionDashboard } from "@/components/admin/RetentionDashboard";
-import { AdminHufrenteOverview } from "@/components/admin/AdminHufrenteOverview";
-import { AdminManualPayments } from "@/components/admin/AdminManualPayments";
-import { AdminContractTracking } from "@/components/admin/AdminContractTracking";
-import { AdminBrowserAnalytics } from "@/components/admin/AdminBrowserAnalytics";
-import { AdminInvoices } from "@/components/admin/AdminInvoices";
-import { AdminContractManager } from "@/components/admin/AdminContractManager";
-import { AdminTransfersOverview } from "@/components/admin/AdminTransfersOverview";
-import { AdminQuickMessage } from "@/components/admin/AdminQuickMessage";
 import { isDemoEmail } from "@/lib/demo-accounts";
-import { PlatformSuccession } from "@/components/admin/PlatformSuccession";
-import { AdminEmailAnalytics } from "@/features/email-marketing/admin/AdminEmailAnalytics";
 import { MissionControlNav, MissionControlNavMobile } from "@/components/admin/MissionControlNav";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { FeatureStatuses, migrateBooleanToStatus } from "@/types/featureFlags";
 import { ProviderFeatureEditor } from "@/components/admin/ProviderFeatureEditor";
-import { GlobalFeatureFlagsManager } from "@/components/admin/GlobalFeatureFlagsManager";
-import { FeatureRolloutDashboard } from "@/components/admin/FeatureRolloutDashboard";
 import { AdminProviderTab, ProviderData, PLAN_OVERRIDE_OPTIONS } from "@/components/admin/AdminProviderTab";
-import { AdminStatsTab } from "@/components/admin/AdminStatsTab";
-import { AdminPlatformOverview } from "@/components/admin/AdminPlatformOverview";
-import { AdminCopecartReconciliation } from "@/components/admin/AdminCopecartReconciliation";
-import { AdminIssuerSettings } from "@/components/admin/AdminIssuerSettings";
-import AdminMessaging from "@/components/admin/AdminMessaging";
-import { Switch } from "@/components/ui/switch";
+
+const MissionControlKPIsV2 = lazy(() => import("@/components/admin/MissionControlKPIsV2"));
+const AdminBlogManager = lazy(() => import("@/components/admin/AdminBlogManager"));
+const AdminActivityLogViewer = lazy(() => import("@/components/admin/AdminActivityLogViewer"));
+const AdminBroadcastCard = lazy(() => import("@/components/admin/AdminBroadcastCard"));
+const AdminFeedbackViewer = lazy(() => import("@/components/admin/AdminFeedbackViewer"));
+const ReleaseControlCenter = lazy(() =>
+  import("@/components/admin/release-control/ReleaseControlCenter").then((m) => ({ default: m.ReleaseControlCenter }))
+);
+const DemoAnalyticsDashboard = lazy(() =>
+  import("@/components/admin/DemoAnalyticsDashboard").then((m) => ({ default: m.DemoAnalyticsDashboard }))
+);
+const DemoAccountsManager = lazy(() =>
+  import("@/components/admin/DemoAccountsManager").then((m) => ({ default: m.DemoAccountsManager }))
+);
+const AdminGlossaryManager = lazy(() =>
+  import("@/components/admin/AdminGlossaryManager").then((m) => ({ default: m.AdminGlossaryManager }))
+);
+const FunnelCockpit = lazy(() =>
+  import("@/components/admin/FunnelCockpit").then((m) => ({ default: m.FunnelCockpit }))
+);
+const AdminPartnerOverview = lazy(() => import("@/components/admin/AdminPartnerOverview"));
+const AdminEmployeeOverview = lazy(() => import("@/components/admin/AdminEmployeeOverview"));
+const AdminRevenue = lazy(() =>
+  import("@/components/admin/AdminRevenue").then((m) => ({ default: m.AdminRevenue }))
+);
+const RetentionDashboard = lazy(() =>
+  import("@/components/admin/RetentionDashboard").then((m) => ({ default: m.RetentionDashboard }))
+);
+const AdminHufrenteOverview = lazy(() =>
+  import("@/components/admin/AdminHufrenteOverview").then((m) => ({ default: m.AdminHufrenteOverview }))
+);
+const AdminManualPayments = lazy(() =>
+  import("@/components/admin/AdminManualPayments").then((m) => ({ default: m.AdminManualPayments }))
+);
+const AdminContractTracking = lazy(() =>
+  import("@/components/admin/AdminContractTracking").then((m) => ({ default: m.AdminContractTracking }))
+);
+const AdminBrowserAnalytics = lazy(() =>
+  import("@/components/admin/AdminBrowserAnalytics").then((m) => ({ default: m.AdminBrowserAnalytics }))
+);
+const AdminInvoices = lazy(() =>
+  import("@/components/admin/AdminInvoices").then((m) => ({ default: m.AdminInvoices }))
+);
+const AdminContractManager = lazy(() =>
+  import("@/components/admin/AdminContractManager").then((m) => ({ default: m.AdminContractManager }))
+);
+const AdminTransfersOverview = lazy(() =>
+  import("@/components/admin/AdminTransfersOverview").then((m) => ({ default: m.AdminTransfersOverview }))
+);
+const AdminQuickMessage = lazy(() =>
+  import("@/components/admin/AdminQuickMessage").then((m) => ({ default: m.AdminQuickMessage }))
+);
+const PlatformSuccession = lazy(() =>
+  import("@/components/admin/PlatformSuccession").then((m) => ({ default: m.PlatformSuccession }))
+);
+const AdminEmailAnalytics = lazy(() =>
+  import("@/features/email-marketing/admin/AdminEmailAnalytics").then((m) => ({ default: m.AdminEmailAnalytics }))
+);
+const GlobalFeatureFlagsManager = lazy(() =>
+  import("@/components/admin/GlobalFeatureFlagsManager").then((m) => ({ default: m.GlobalFeatureFlagsManager }))
+);
+const FeatureRolloutDashboard = lazy(() =>
+  import("@/components/admin/FeatureRolloutDashboard").then((m) => ({ default: m.FeatureRolloutDashboard }))
+);
+const AdminStatsTab = lazy(() =>
+  import("@/components/admin/AdminStatsTab").then((m) => ({ default: m.AdminStatsTab }))
+);
+const AdminPlatformOverview = lazy(() =>
+  import("@/components/admin/AdminPlatformOverview").then((m) => ({ default: m.AdminPlatformOverview }))
+);
+const AdminCopecartReconciliation = lazy(() =>
+  import("@/components/admin/AdminCopecartReconciliation").then((m) => ({ default: m.AdminCopecartReconciliation }))
+);
+const AdminIssuerSettings = lazy(() =>
+  import("@/components/admin/AdminIssuerSettings").then((m) => ({ default: m.AdminIssuerSettings }))
+);
+const AdminMessaging = lazy(() => import("@/components/admin/AdminMessaging"));
 
 const DEFAULT_FEATURE_STATUSES: FeatureStatuses = {
   module_invoicing: 'public', module_chat: 'public', module_maps: 'public',
@@ -77,6 +123,17 @@ const DEFAULT_FEATURE_FLAGS = {
   module_academy: true, module_hufanalyse: true, module_network: true,
   module_analytics: true, beta_features: false,
 };
+
+function AdminTabFallback() {
+  return (
+    <Card>
+      <CardContent className="py-10 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Bereich wird geladen...
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function MissionControl() {
   const { user } = useAuth();
@@ -365,7 +422,9 @@ export default function MissionControl() {
       <div className="container mx-auto px-4 py-4">
         {/* KPIs - Compact */}
         <div className="mb-5">
-          <MissionControlKPIsV2 />
+          <Suspense fallback={<AdminTabFallback />}>
+            <MissionControlKPIsV2 />
+          </Suspense>
         </div>
 
         {/* Layout: Sidebar + Content */}
@@ -409,50 +468,52 @@ export default function MissionControl() {
             )}
 
             {/* Tab Content */}
-            {activeTab === "providers" && (
-              <AdminProviderTab
-                providers={providers}
-                onRefresh={fetchProviders}
-                onEditProvider={openEditDialog}
-                onQuickView={(p) => { setSelectedProvider(p); setQuickViewOpen(true); }}
-              />
-            )}
+            <Suspense fallback={<AdminTabFallback />}>
+              {activeTab === "providers" && (
+                <AdminProviderTab
+                  providers={providers}
+                  onRefresh={fetchProviders}
+                  onEditProvider={openEditDialog}
+                  onQuickView={(p) => { setSelectedProvider(p); setQuickViewOpen(true); }}
+                />
+              )}
 
-            {activeTab === "platform" && <AdminPlatformOverview />}
-            {activeTab === "stats" && <AdminStatsTab providers={providers} />}
-            {activeTab === "blog" && <AdminBlogManager />}
-            {activeTab === "activity" && <AdminActivityLogViewer limit={100} />}
-            {activeTab === "tools" && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <AdminBroadcastCard />
-                <AdminFeedbackViewer />
-              </div>
-            )}
-            {activeTab === "versions" && <ReleaseControlCenter />}
-            {activeTab === "rollout" && (
-              <div className="space-y-6">
-                <GlobalFeatureFlagsManager />
-                <FeatureRolloutDashboard providers={providers} onProviderClick={(id) => { const p = providers.find(x => x.id === id); if (p) openEditDialog(p); }} />
-              </div>
-            )}
-            {activeTab === "demo" && <div className="space-y-6"><DemoAccountsManager /><DemoAnalyticsDashboard /></div>}
-            {activeTab === "glossary" && <AdminGlossaryManager />}
-            {activeTab === "funnel" && <FunnelCockpit />}
-            {activeTab === "revenue" && <AdminRevenue />}
-            {activeTab === "retention" && <RetentionDashboard />}
-            {activeTab === "hufrente" && <AdminHufrenteOverview />}
-            {activeTab === "payments" && <AdminManualPayments />}
-            {activeTab === "invoices" && <AdminInvoices />}
-            {activeTab === "contracts" && <AdminContractManager />}
-            {activeTab === "compliance" && <div className="space-y-6"><AdminContractTracking /><AdminTransfersOverview /></div>}
-            {activeTab === "browsers" && <AdminBrowserAnalytics />}
-            {activeTab === "succession" && <PlatformSuccession />}
-            {activeTab === "email-marketing" && <AdminEmailAnalytics />}
-            {activeTab === "partners" && <AdminPartnerOverview />}
-            {activeTab === "employees" && <AdminEmployeeOverview />}
-            {activeTab === "copecart" && <AdminCopecartReconciliation />}
-            {activeTab === "issuer" && <AdminIssuerSettings />}
-            {activeTab === "messaging" && <AdminMessaging />}
+              {activeTab === "platform" && <AdminPlatformOverview />}
+              {activeTab === "stats" && <AdminStatsTab providers={providers} />}
+              {activeTab === "blog" && <AdminBlogManager />}
+              {activeTab === "activity" && <AdminActivityLogViewer limit={100} />}
+              {activeTab === "tools" && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <AdminBroadcastCard />
+                  <AdminFeedbackViewer />
+                </div>
+              )}
+              {activeTab === "versions" && <ReleaseControlCenter />}
+              {activeTab === "rollout" && (
+                <div className="space-y-6">
+                  <GlobalFeatureFlagsManager />
+                  <FeatureRolloutDashboard providers={providers} onProviderClick={(id) => { const p = providers.find(x => x.id === id); if (p) openEditDialog(p); }} />
+                </div>
+              )}
+              {activeTab === "demo" && <div className="space-y-6"><DemoAccountsManager /><DemoAnalyticsDashboard /></div>}
+              {activeTab === "glossary" && <AdminGlossaryManager />}
+              {activeTab === "funnel" && <FunnelCockpit />}
+              {activeTab === "revenue" && <AdminRevenue />}
+              {activeTab === "retention" && <RetentionDashboard />}
+              {activeTab === "hufrente" && <AdminHufrenteOverview />}
+              {activeTab === "payments" && <AdminManualPayments />}
+              {activeTab === "invoices" && <AdminInvoices />}
+              {activeTab === "contracts" && <AdminContractManager />}
+              {activeTab === "compliance" && <div className="space-y-6"><AdminContractTracking /><AdminTransfersOverview /></div>}
+              {activeTab === "browsers" && <AdminBrowserAnalytics />}
+              {activeTab === "succession" && <PlatformSuccession />}
+              {activeTab === "email-marketing" && <AdminEmailAnalytics />}
+              {activeTab === "partners" && <AdminPartnerOverview />}
+              {activeTab === "employees" && <AdminEmployeeOverview />}
+              {activeTab === "copecart" && <AdminCopecartReconciliation />}
+              {activeTab === "issuer" && <AdminIssuerSettings />}
+              {activeTab === "messaging" && <AdminMessaging />}
+            </Suspense>
 
             {activeTab === "escalations" && (
               <Card>
@@ -537,12 +598,14 @@ export default function MissionControl() {
                 <div className="flex justify-between"><span className="text-muted-foreground">Erstellt</span><span>{format(new Date(selectedProvider.created_at), "dd.MM.yyyy", { locale: de })}</span></div>
               </div>
               <Separator />
-              <AdminQuickMessage
-                recipientId={selectedProvider.id}
-                recipientName={selectedProvider.full_name || "Unbekannt"}
-                recipientEmail={selectedProvider.email}
-                recipientReadableId={selectedProvider.readable_id}
-              />
+              <Suspense fallback={null}>
+                <AdminQuickMessage
+                  recipientId={selectedProvider.id}
+                  recipientName={selectedProvider.full_name || "Unbekannt"}
+                  recipientEmail={selectedProvider.email}
+                  recipientReadableId={selectedProvider.readable_id}
+                />
+              </Suspense>
               <Button className="w-full" onClick={() => { setQuickViewOpen(false); openEditDialog(selectedProvider); }}>Bearbeiten</Button>
             </div>
           )}
@@ -569,7 +632,7 @@ export default function MissionControl() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2 col-span-2"><Label className="flex items-center gap-2"><Building2 className="w-4 h-4" />Firmenname</Label><Input value={editBusinessName} onChange={(e) => setEditBusinessName(e.target.value)} /></div>
                   <div className="space-y-2 col-span-2"><Label className="flex items-center gap-2"><Globe className="w-4 h-4" />Subdomain</Label>
-                    <div className="flex items-center gap-2"><span className="text-sm text-muted-foreground">hufmanager.de/p/</span><Input value={editSubdomain} onChange={(e) => setEditSubdomain(e.target.value)} className="flex-1" /></div>
+                    <div className="flex items-center gap-2"><span className="text-sm text-muted-foreground">hufiapp.de/p/</span><Input value={editSubdomain} onChange={(e) => setEditSubdomain(e.target.value)} className="flex-1" /></div>
                     {editSubdomain && <a href={`/p/${editSubdomain}`} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">Landingpage öffnen →</a>}
                   </div>
                   <div className="space-y-2 col-span-2"><Label>Hero-Headline</Label><Input value={editHeroHeadline} onChange={(e) => setEditHeroHeadline(e.target.value)} /></div>

@@ -33,7 +33,7 @@ export function HelpArticleView({ article, onBack, isAdmin }: HelpArticleViewPro
 
   const generateScript = () => {
     const steps = article.solution_steps?.join(", ") || article.content.slice(0, 200);
-    return `Hey Leute, heute zeige ich euch: ${article.title}.\n\nKennt ihr das Problem? ${article.hook || "Viele kennen das..."}\n\nMit HufManager geht das so: ${steps}\n\nCool, oder? ${article.call_to_action || "Probier es jetzt aus!"}`;
+    return `Hey Leute, heute zeige ich euch: ${article.title}.\n\nKennt ihr das Problem? ${article.hook || "Viele kennen das..."}\n\nMit Hufi geht das so: ${steps}\n\nCool, oder? ${article.call_to_action || "Probier es jetzt aus!"}`;
   };
 
   const copyAsSlide = async () => {

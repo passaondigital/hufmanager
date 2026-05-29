@@ -65,7 +65,7 @@ export default function BotschafterWarten() {
           <Link to="/pferdeakte" className="text-sm font-medium hover:text-[#f97316] transition-colors" style={{ color: "#6b7280" }}>
             ← Zur Pferdeakte
           </Link>
-          <span className="text-xl font-bold tracking-tight">HufManager</span>
+          <span className="text-xl font-bold tracking-tight">Hufi</span>
           <div className="w-24" />
         </div>
       </nav>

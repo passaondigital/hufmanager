@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Shield, Server, Smartphone, Lock } from "lucide-react";
-import logo from "@/assets/lp/hufmanager-logo.png";
+import logo from "@/assets/lp/hufi-logo.svg";
 import erecht24Agentur from "@/assets/erecht24-agenturpartner.png";
 import erecht24Impressum from "@/assets/erecht24-impressum.png";
 import erecht24Datenschutz from "@/assets/erecht24-datenschutz.png";
@@ -37,7 +37,7 @@ const FooterNew = () => (
             {/* Brand */}
             <div className="space-y-3">
               <Link to="/" className="flex items-center gap-2">
-                <img src={logo} alt="HufManager Logo" className="h-10 w-auto brightness-0 invert" />
+                <img src={logo} alt="Hufi Logo" className="h-10 w-auto" />
               </Link>
               <p className="text-white/40 text-sm leading-relaxed">
                 Entwickelt in Deutschland 🇩🇪
@@ -69,8 +69,8 @@ const FooterNew = () => (
             {/* Contact */}
             <div className="space-y-2">
               <p className="text-white/60 text-xs font-bold uppercase tracking-wider mb-3">Kontakt</p>
-              <a href="mailto:support@hufmanager.de" className="block text-white/50 hover:text-white transition-colors text-sm">
-                support@hufmanager.de
+              <a href="mailto:kontakt@hufiapp.de" className="block text-white/50 hover:text-white transition-colors text-sm">
+                kontakt@hufiapp.de
               </a>
               <p className="text-white/40 text-xs mt-3 leading-relaxed">
                 Pascal Schmid<br />
@@ -86,7 +86,7 @@ const FooterNew = () => (
 
           <div className="mt-10 pt-6 border-t border-white/5 text-center">
             <p className="text-white/30 text-xs">
-              © {new Date().getFullYear()} HufManager. Alle Rechte vorbehalten. Vom Stall für den Stall.
+              © {new Date().getFullYear()} Hufi · Pascal Schmid · Barhufserviceschmid. Vom Stall für den Stall.
             </p>
           </div>
         </div>

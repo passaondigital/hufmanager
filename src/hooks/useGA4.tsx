@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { initGA4, trackPageView } from "@/lib/analytics";
 
-// HufManager Plattform GA4 ID – wird nach Cookie-Consent geladen
+// Hufi Plattform GA4 ID – wird nach Cookie-Consent geladen
 const PLATFORM_GA4_ID = ""; // TODO: Deine GA4 Measurement ID hier eintragen (z.B. "G-XXXXXXXXXX")
 
 /**

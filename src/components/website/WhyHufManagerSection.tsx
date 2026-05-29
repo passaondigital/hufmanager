@@ -57,11 +57,11 @@ const founderParagraphs = [
   "Und ich bin nicht müde. Nicht ausgebrannt. Vielleicht körperlich manchmal — aber nicht im Herzen und nicht im Bewusstsein.",
   "Ich fange erst jetzt richtig an zu brennen.",
   "Was ich tue, tue ich seit über 10 Jahren aus tiefer Dankbarkeit gegenüber dieser Branche und den Menschen und Pferden darin.",
-  "HufManager ist kein Startup-Produkt das von außen in eine Welt reingrätscht.",
+  "Hufi ist kein Startup-Produkt das von außen in eine Welt reingrätscht.",
   "Es ist das was diese Branche verdient hat — gebaut von jemandem der sie liebt.",
 ];
 
-export default function WhyHufManagerSection() {
+export default function WhyHufiSection() {
   const rIntro = useReveal();
   const rCard0 = useReveal();
   const rCard1 = useReveal();
@@ -127,7 +127,7 @@ export default function WhyHufManagerSection() {
             <p className="text-sm md:text-base max-w-xl mx-auto" style={{ color: "#6b7280" }}>
               Das sind keine Ausnahmen. Das ist Pferdealltag.
               <br />
-              Darum gibt es HufManager.
+              Darum gibt es Hufi.
             </p>
           </div>
         </div>
@@ -248,7 +248,7 @@ export default function WhyHufManagerSection() {
                 <div className="md:pl-8 mt-10 pt-6 border-t border-white/10">
                   <p className="text-white font-bold text-lg">Pascal Schmid</p>
                   <p className="text-sm" style={{ color: "rgba(255,255,255,.45)" }}>
-                    Gründer HufManager · Hufbearbeiter &amp; Barhufexperte
+                    Gründer Hufi · Hufbearbeiter &amp; Barhufexperte
                   </p>
                 </div>
               </div>
@@ -262,7 +262,7 @@ export default function WhyHufManagerSection() {
                   />
                   <img
                     src={pascalImage}
-                    alt="Pascal Schmid – Gründer HufManager"
+                    alt="Pascal Schmid – Gründer Hufi"
                     className="relative w-full aspect-[3/4] object-cover rounded-2xl border border-white/10"
                     loading="lazy"
                   />

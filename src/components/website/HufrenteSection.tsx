@@ -17,7 +17,7 @@ const HufrenteSection = () => {
             <div className="md:col-span-2 relative">
               <div className="absolute inset-0 bg-primary/15 blur-[60px] scale-75" />
               <div className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-white/10">
-                <img src={pascalImage} alt="Pascal Schmid – Gründer HufManager" className="w-full h-full object-cover" loading="lazy" />
+                <img src={pascalImage} alt="Pascal Schmid – Gründer Hufi" className="w-full h-full object-cover" loading="lazy" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               </div>
             </div>
@@ -29,7 +29,7 @@ const HufrenteSection = () => {
                   Als Selbstständige:r weißt du: Ein Ausfall kann alles ins Wanken bringen. Genau deshalb gibt es die <span className="text-white font-semibold">Hufrente</span>.
                 </p>
                 <p>
-                  Empfehle den HufManager an Kolleginnen und Kollegen – und solange sie aktive Nutzer:innen sind, erhältst du <span className="text-white font-semibold">20% ihrer Monatsgebühr als Provision</span>. Automatisch. Monatlich. Dauerhaft.
+                  Empfehle den Hufi an Kolleginnen und Kollegen – und solange sie aktive Nutzer:innen sind, erhältst du <span className="text-white font-semibold">20% ihrer Monatsgebühr als Provision</span>. Automatisch. Monatlich. Dauerhaft.
                 </p>
               </div>
 
@@ -81,7 +81,7 @@ const HufrenteSection = () => {
                 </div>
                 {referrals[0] >= 5 && (
                   <p className="text-xs text-white/50 text-center">
-                    Ab {referrals[0]} Empfehlungen ist HufManager für dich kostenlos.
+                    Ab {referrals[0]} Empfehlungen ist Hufi für dich kostenlos.
                     {net > 0 && ` Plus ${net.toFixed(2)}€ passives Einkommen.`}
                   </p>
                 )}
@@ -97,7 +97,7 @@ const HufrenteSection = () => {
                 <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-black font-bold text-lg">PS</div>
                 <div>
                   <p className="font-sans text-lg font-bold text-white">Pascal Schmid</p>
-                  <p className="text-sm text-white/50">Gründer, HufManager</p>
+                  <p className="text-sm text-white/50">Gründer, Hufi</p>
                 </div>
               </div>
             </div>

@@ -61,10 +61,10 @@ const Datenschutz = () => (
               c/o Postflex #10643<br />
               Emsdettener Str. 10<br />
               48268 Greven<br />
-              <a href="https://www.hufmanager.de" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">www.hufmanager.de</a><br />
-              <a href="mailto:support@hufmanager.de" className="text-primary hover:underline">support@hufmanager.de</a><br />
+              <a href="https://hufiapp.de" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">www.hufiapp.de</a><br />
+              <a href="mailto:kontakt@hufiapp.de" className="text-primary hover:underline">kontakt@hufiapp.de</a><br />
               Telefon: 015209007017<br />
-              E-Mail: <a href="mailto:support@hufmanager.de" className="text-primary hover:underline">support@hufmanager.de</a>
+              E-Mail: <a href="mailto:kontakt@hufiapp.de" className="text-primary hover:underline">kontakt@hufiapp.de</a>
             </p>
 
             <h3 className="text-xl font-semibold mb-2">SSL- bzw. TLS-Verschlüsselung</h3>
@@ -88,7 +88,7 @@ const Datenschutz = () => (
             <p className="mb-4">Wenn Sie uns per Kontaktformular Anfragen zukommen lassen, werden Ihre Angaben aus dem Anfrageformular inklusive der von Ihnen dort angegebenen Kontaktdaten zwecks Bearbeitung der Anfrage bei uns gespeichert. Diese Daten geben wir nicht ohne Ihre Einwilligung weiter.</p>
 
             <h3 className="text-xl font-semibold mb-2">Einsatz von KI auf der Website</h3>
-            <p className="mb-4">Auf der Website wird der KI-Assistent „Hufi" eingesetzt, der auf der Claude-API von Anthropic (Anthropic PBC, 548 Market St, PMB 90375, San Francisco, CA 94104, USA) basiert. Hufi beantwortet allgemeine Fragen zur Plattform HufManager und unterstützt Nutzer bei der Orientierung auf der Website. Wenn Sie mit Hufi interagieren, werden Ihre Eingaben inklusive Metadaten verarbeitet, um eine passende Antwort zu generieren. Die Nutzung erfolgt auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO.</p>
+            <p className="mb-4">Auf der Website wird der KI-Assistent „Hufi" eingesetzt, der auf der Claude-API von Anthropic (Anthropic PBC, 548 Market St, PMB 90375, San Francisco, CA 94104, USA) basiert. Hufi beantwortet allgemeine Fragen zur Plattform Hufi (hufiapp.de) und unterstützt Nutzer bei der Orientierung auf der Website. Wenn Sie mit Hufi interagieren, werden Ihre Eingaben inklusive Metadaten verarbeitet, um eine passende Antwort zu generieren. Die Nutzung erfolgt auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO.</p>
 
             <h3 className="text-xl font-semibold mb-2">Einsatz von KI zur Beantwortung von Kundenanfragen</h3>
             <p className="mb-4">Wir setzen KI-gestützte Software zur Bearbeitung und Beantwortung von Kundenanfragen ein. Die Verwendung erfolgt auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO.</p>

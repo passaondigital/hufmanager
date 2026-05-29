@@ -17,7 +17,7 @@ export function DataSovereigntyBadge() {
           </h3>
           
           <p className="text-muted-foreground leading-relaxed">
-            Im HufManager hat der Pferdebesitzer die vollständige Datenhoheit über sein Pferd.
+            Im Hufi hat der Pferdebesitzer die vollständige Datenhoheit über sein Pferd.
             Das bedeutet konkret:
           </p>
           

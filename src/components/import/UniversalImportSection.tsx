@@ -64,11 +64,11 @@ const UniversalImportSection = () => {
     setFileName(file.name);
     const isExcel = /\.(xlsx|xls)$/i.test(file.name);
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const result = e.target?.result;
         if (!result) return;
-        const parsed = parseFile(file, result);
+        const parsed = await parseFile(file, result);
         if (parsed.length === 0) {
           toast({ title: "Keine Daten erkannt", description: "Die Datei enthält keine verwertbaren Kontakte.", variant: "destructive" });
           return;

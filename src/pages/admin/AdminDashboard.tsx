@@ -118,7 +118,7 @@ export default function AdminDashboard() {
     setIsAdmin(!!data);
     
     // Check if master admin
-    setIsMasterAdmin(user.email === "support@hufmanager.de");
+    setIsMasterAdmin(user.email === "kontakt@hufiapp.de");
   };
 
   const handleViewChange = (view: AdminView) => {
@@ -208,6 +208,14 @@ export default function AdminDashboard() {
           >
             <Plus className="w-4 h-4" />
             Quick Note
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full justify-start gap-2"
+            onClick={() => navigate("/admin/hufi-brain")}
+          >
+            <Brain className="w-4 h-4" />
+            Hufi Brain Wissen
           </Button>
           <Button
             variant="outline"

@@ -174,7 +174,7 @@ export default function NotfallZugang() {
           <AlertTriangle className="h-5 w-5 flex-shrink-0" />
           <div className="flex-1">
             <p className="text-sm font-bold">NOTFALL-ZUGANG</p>
-            <p className="text-xs opacity-80">HufManager Pferdeakte</p>
+            <p className="text-xs opacity-80">Hufi Pferdeakte</p>
           </div>
         </div>
       </div>
@@ -309,10 +309,10 @@ export default function NotfallZugang() {
         <div className="text-center pt-6 pb-4 space-y-1">
           <p className="text-xs text-muted-foreground">
             Diese Notfall-Seite wird durch die digitale Pferdeakte von{" "}
-            <span className="font-semibold text-foreground">HufManager</span> bereitgestellt.
+            <span className="font-semibold text-foreground">Hufi</span> bereitgestellt.
           </p>
-          <a href="https://hufmanager.de" className="text-xs text-primary hover:underline">
-            hufmanager.de
+          <a href="https://hufiapp.de" className="text-xs text-primary hover:underline">
+            hufiapp.de
           </a>
         </div>
       </main>

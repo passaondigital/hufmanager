@@ -125,7 +125,7 @@ export function DomainSection({ subdomain }: DomainSectionProps) {
           <CardDescription>
             {subdomain ? (
               <>
-                Statt <code className="text-xs font-mono">hufmanager.de/p/{subdomain}</code> → <strong>www.dein-name.de</strong>
+                Statt <code className="text-xs font-mono">hufiapp.de/p/{subdomain}</code> → <strong>www.dein-name.de</strong>
               </>
             ) : (
               "Verbinde eine eigene Domain mit deinem Profil"
@@ -222,7 +222,7 @@ export function DomainSection({ subdomain }: DomainSectionProps) {
               <div className="font-mono text-xs space-y-1 text-muted-foreground">
                 <p>Typ: <strong className="text-foreground">CNAME</strong></p>
                 <p>Name: <strong className="text-foreground">www</strong></p>
-                <p>Wert: <strong className="text-foreground">hufmanager.de</strong></p>
+                <p>Wert: <strong className="text-foreground">hufiapp.de</strong></p>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
                 Die DNS-Änderung kann bis zu 48 Stunden dauern. Wir prüfen automatisch ob die Domain korrekt konfiguriert ist.

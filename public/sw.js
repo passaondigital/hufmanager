@@ -1,11 +1,11 @@
-// HufManager Service Worker for Push Notifications & Offline Support
+// Hufi Service Worker for Push Notifications & Offline Support
 
-const CACHE_NAME = 'hufmanager-v2';
-const TILE_CACHE_NAME = 'hufmanager-tiles-v1';
+const CACHE_NAME = 'hufi-v2';
+const TILE_CACHE_NAME = 'hufi-tiles-v1';
 
 // Static assets to cache immediately
 const STATIC_ASSETS = [
-  '/hufmanager-logo.png',
+  '/hufi-logo.svg',
   '/favicon.ico',
 ];
 
@@ -129,9 +129,9 @@ self.addEventListener('push', (event) => {
   console.log('Push event received:', event);
 
   let data = {
-    title: 'HufManager',
+    title: 'Hufi',
     body: 'Du hast eine neue Benachrichtigung',
-    icon: '/hufmanager-logo.png',
+    icon: '/hufi-logo.svg',
     url: '/',
   };
 
@@ -145,8 +145,8 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: data.body,
-    icon: data.icon || '/hufmanager-logo.png',
-    badge: '/hufmanager-logo.png',
+    icon: data.icon || '/hufi-logo.svg',
+    badge: '/icon-96.png',
     vibrate: [100, 50, 100],
     data: {
       url: data.url || '/',
@@ -162,7 +162,7 @@ self.addEventListener('push', (event) => {
       },
     ],
     requireInteraction: false,
-    tag: 'hufmanager-notification',
+    tag: 'hufi-notification',
     renotify: true,
   };
 
@@ -212,7 +212,7 @@ self.addEventListener('notificationclose', (event) => {
 self.addEventListener('sync', (event) => {
   console.log('Background sync event:', event.tag);
   
-  if (event.tag === 'hufmanager-sync') {
+  if (event.tag === 'hufi-sync') {
     event.waitUntil(
       // Notify the app to process the sync queue
       clients.matchAll().then((clients) => {

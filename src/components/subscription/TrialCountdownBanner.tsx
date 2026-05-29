@@ -84,7 +84,7 @@ export function TrialCountdownBanner() {
         open={pricingOpen}
         onOpenChange={setPricingOpen}
         title="Paket wählen"
-        description="Sicher dir deinen HufManager – alle Pakete 14 Tage kostenlos."
+        description="Sicher dir deinen Hufi – alle Pakete 14 Tage kostenlos."
         currentPlan={plan}
       />
     </>

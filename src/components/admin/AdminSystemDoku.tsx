@@ -273,7 +273,7 @@ const DATA_FLOW = [
     action: "Generiert",
     to: "Landing Page",
     toIcon: Globe,
-    description: "Öffentliche Website unter subdomain.hufmanager.de"
+    description: "Öffentliche Website unter subdomain.hufiapp.de"
   },
   {
     step: 3,
@@ -387,7 +387,7 @@ const ROLLOUT_PLAN: PlanStep[] = [
       "CREATE TABLE admin_revenue_log (Copecart-Transaktionen)",
       "CREATE TABLE admin_expenses (Ausgaben-Tracking)",
       "RLS auf agent_data_hub aktivieren (nur Admins)",
-      "support@hufmanager.de in master_admins eintragen",
+      "kontakt@hufiapp.de in master_admins eintragen",
     ],
   },
   {
@@ -452,7 +452,7 @@ const ROLLOUT_PLAN: PlanStep[] = [
     details: [
       "HOPE-Codewort auf Auth-Seite → Magic-Link für Master-Admins",
       "isMasterAdmin über DB statt Hardcoded-Email",
-      "2. Master-Admin: support@hufmanager.de",
+      "2. Master-Admin: kontakt@hufiapp.de",
       "Zurück-Button im Admin verbessern",
     ],
   },
@@ -911,7 +911,7 @@ export function AdminSystemDoku() {
                 Datenfluss – Von Einrichtung bis Client-Nutzung
               </CardTitle>
               <CardDescription>
-                Schritt-für-Schritt Ablauf im HufManager
+                Schritt-für-Schritt Ablauf im Hufi
               </CardDescription>
             </CardHeader>
             <CardContent>

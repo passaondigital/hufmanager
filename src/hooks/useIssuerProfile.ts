@@ -16,9 +16,9 @@ export interface IssuerProfile {
 
 const DEFAULT_ISSUER: IssuerProfile = {
   name: "Pascal Christian Schmid",
-  company: "HufManager",
+  company: "Hufi",
   address: "Pascal Schmid c/o Postflex #10643, Emsdettener Str. 10, 48268 Greven",
-  email: "support@hufmanager.de",
+  email: "kontakt@hufiapp.de",
   phone: "0152 0900 7017",
   iban: "DE66 2020 2080 0002 8383 704",
   bic: "SXPYDEHH",

@@ -88,7 +88,7 @@ export function LeadsTab() {
         {/* Landingpage Sync */}
         <Card className="bg-white rounded-xl shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base text-black">HufManager Landingpage Sync</CardTitle>
+            <CardTitle className="text-base text-black">Hufi Landingpage Sync</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between">

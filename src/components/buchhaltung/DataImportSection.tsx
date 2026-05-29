@@ -183,7 +183,7 @@ export function DataImportSection() {
           <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
           <p>
             Ihre importierten Daten werden <strong>ausschließlich in Ihrem Konto</strong> gespeichert. 
-            HufManager hat keinen Zugriff auf die importierten Inhalte. Die Datei wird nur lokal 
+            Hufi hat keinen Zugriff auf die importierten Inhalte. Die Datei wird nur lokal 
             in Ihrem Browser verarbeitet und nicht an unsere Server übertragen.
           </p>
         </div>

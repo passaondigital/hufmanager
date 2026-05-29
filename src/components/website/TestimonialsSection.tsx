@@ -13,21 +13,42 @@ const testimonials: Testimonial[] = [
     name: "Heiko W.",
     role: "Hufpfleger",
     region: "Norddeutschland",
-    quote: "Endlich alles an einem Ort. Die Tourenplanung spart mir jeden Tag mindestens 30 Minuten.",
+    quote: "Früher hab ich nach dem letzten Pferd noch eine Stunde am Schreibtisch gesessen. Heute fahr ich heim — Hufi hat die Rechnung schon raus.",
     placeholder: true,
   },
   {
     name: "Sandra M.",
     role: "Pferdeosteopathin",
     region: "Bayern",
-    quote: "Meine Kunden lieben die App. Die bekommen jetzt automatisch Updates – ich spar mir 20 WhatsApp-Nachrichten am Tag.",
+    quote: "Die Pferdeakte ist Gold wert. Ich sehe auf einen Blick was der Hufpfleger vor mir dokumentiert hat — das spart Zeit und schützt das Pferd.",
     placeholder: true,
   },
   {
     name: "Tim K.",
     role: "Hufschmied",
     region: "NRW",
-    quote: "Rechnungen in 2 Klicks statt Excel-Chaos. Allein dafür lohnt sich HufManager.",
+    quote: "\"Neue Rechnung für Bella\" — Hufi macht den Rest. Das klingt simpel, aber das ist genau das was ich nach einem 10-Stunden-Tag brauche.",
+    placeholder: true,
+  },
+  {
+    name: "Melanie R.",
+    role: "Reitlehrerin & Stallbetreiberin",
+    region: "Baden-Württemberg",
+    quote: "Ich manage 30 Pferde und 5 Dienstleister. Vorher: Chaos in drei WhatsApp-Gruppen. Jetzt: Ein Blick auf Hufi und ich weiß alles.",
+    placeholder: true,
+  },
+  {
+    name: "Jonas F.",
+    role: "Hufpfleger",
+    region: "Sachsen",
+    quote: "Die Tourenplanung allein hat mein Leben verändert. 4 Stops weniger Umweg pro Woche — das sind 2 Stunden die ich mit meiner Familie bin.",
+    placeholder: true,
+  },
+  {
+    name: "Petra N.",
+    role: "Pferdebesitzerin",
+    region: "Hessen",
+    quote: "Als Pferdebesitzerin kostenlos dabei zu sein war ich skeptisch. Aber die Pferdeakte für meine Stute ist einfach perfekt — alles an einem Ort.",
     placeholder: true,
   },
 ];
@@ -43,7 +64,7 @@ const TestimonialsSection = () => (
           </h2>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {testimonials.map((t) => (
             <div
               key={t.name}

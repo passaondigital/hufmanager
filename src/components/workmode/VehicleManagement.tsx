@@ -432,7 +432,7 @@ function VehicleForm({ formData, setFormData, onSubmit, isLoading, onCancel }: V
                 />
               </div>
               <p className="col-span-3 text-xs text-muted-foreground">
-                Mit Anhänger plant HufManager deine Route ohne Unterführungen und Höhenbeschränkungen.
+                Mit Anhänger plant Hufi deine Route ohne Unterführungen und Höhenbeschränkungen.
               </p>
             </div>
           )}

@@ -41,7 +41,7 @@ const ROLE_LABELS: Record<string, { label: string; description: string; emoji: s
 
 const NEXT_STEPS = [
   { icon: "📧", title: "Einladung teilen", desc: "Kopiere den Link oder teile ihn per WhatsApp" },
-  { icon: "📱", title: "Registrierung", desc: "Dein Kontakt erstellt sich kostenlos ein HufManager-Konto" },
+  { icon: "📱", title: "Registrierung", desc: "Dein Kontakt erstellt sich kostenlos ein Hufi-Konto" },
   { icon: "🔗", title: "Automatisch verbunden", desc: "Nach der Registrierung seid ihr sofort vernetzt" },
   { icon: "🐴", title: "Loslegen", desc: "Pferde teilen, Termine buchen, Befunde einsehen" },
 ];
@@ -149,7 +149,7 @@ export function InviteWithGuidedFlow() {
 
   const shareWhatsApp = (token: string, name: string) => {
     const senderName = profile?.full_name || "Ein Pferdefreund";
-    const text = `Hey ${name}! 🐴\n\nIch nutze HufManager für alles rund ums Pferd – Termine, Befunde, Dokumente.\n\nRegistriere dich kostenlos über meinen Einladungslink:\n${getInviteLink(token)}\n\nViele Grüße, ${senderName}`;
+    const text = `Hey ${name}! 🐴\n\nIch nutze Hufi für alles rund ums Pferd – Termine, Befunde, Dokumente.\n\nRegistriere dich kostenlos über meinen Einladungslink:\n${getInviteLink(token)}\n\nViele Grüße, ${senderName}`;
     shareViaWhatsApp(text);
   };
 
@@ -157,8 +157,8 @@ export function InviteWithGuidedFlow() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "HufManager Einladung",
-          text: `Hey ${name}, ich lade dich zu HufManager ein – dem digitalen Betriebssystem für die Pferdewelt 🐴`,
+          title: "Hufi Einladung",
+          text: `Hey ${name}, ich lade dich zu Hufi ein – dem digitalen Betriebssystem für die Pferdewelt 🐴`,
           url: getInviteLink(token),
         });
       } catch {}
@@ -282,7 +282,7 @@ export function InviteWithGuidedFlow() {
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <UserPlus className="h-5 w-5 text-primary" />
-              Zum HufManager einladen
+              Zum Hufi einladen
             </CardTitle>
             <CardDescription>
               Lade Stallkollegen, Reitbeteiligungen oder Dienstleister ein. 
@@ -332,7 +332,7 @@ export function InviteWithGuidedFlow() {
             <div>
               <label className="text-sm font-medium mb-1.5 block">Persönliche Nachricht (optional)</label>
               <Textarea
-                placeholder="Hey! Meld dich bei HufManager an, dann können wir uns dort vernetzen..."
+                placeholder="Hey! Meld dich bei Hufi an, dann können wir uns dort vernetzen..."
                 value={form.message}
                 onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
                 rows={2}

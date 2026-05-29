@@ -1,7 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
@@ -12,13 +11,12 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "robots.txt", "hufmanager-logo.png"],
+      includeAssets: ["favicon.ico", "robots.txt", "hufi-logo.svg", "apple-touch-icon.png"],
       workbox: {
         // Limit auf 6 MB erhöht für große Bundles
-        maximumFileSizeToCacheInBytes: 6000000,
+        maximumFileSizeToCacheInBytes: 15000000,
         
         // Force new service worker to activate immediately
         skipWaiting: true,
@@ -91,11 +89,11 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       manifest: {
-        name: "HufManager",
-        short_name: "HufManager",
-        description: "Professionelle Hufpflege-Verwaltung für Hufbearbeiter",
-        theme_color: "#000000",
-        background_color: "#000000",
+        name: "Hufi",
+        short_name: "Hufi",
+        description: "App für mobile Pferdeprofis — Kunden, Pferde, Termine, Navigation & KI",
+        theme_color: "#0a0700",
+        background_color: "#0a0700",
         display: "standalone",
         orientation: "portrait",
         start_url: "/home",
@@ -163,19 +161,34 @@ export default defineConfig(({ mode }) => ({
             sizes: "1920x1080",
             type: "image/png",
             form_factor: "wide",
-            label: "HufManager Dashboard",
+            label: "Hufi Dashboard",
           },
           {
             src: "/screenshot-mobile.png",
             sizes: "1080x1920",
             type: "image/png",
             form_factor: "narrow",
-            label: "HufManager Mobile",
+            label: "Hufi Mobile",
           },
         ],
       },
     }),
   ].filter(Boolean),
+  build: {
+    rollupOptions: {
+      output: {
+        // No manualChunks — Rollup's manual chunk splitting consistently
+        // creates circular cross-chunk dependencies between vendor packages
+        // (CJS interop helpers, shared utilities) and app chunks, leaving
+        // React undefined when Radix evaluates at module top-level.
+        // Vite's default splitting (by dynamic import boundary) is cycle-free.
+      },
+    },
+  },
+  esbuild: {
+    // console.log/warn/error und debugger aus dem Production-Bundle entfernen
+    drop: mode === "production" ? ["console", "debugger"] : [],
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

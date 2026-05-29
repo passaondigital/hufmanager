@@ -20,17 +20,16 @@ const passwordSchema = z.object({
 
 export default function UpdatePassword() {
   const navigate = useNavigate();
-  const { user, role, isPasswordRecovery, clearPasswordRecovery } = useAuth();
+  const { user, role, isPasswordRecovery, forcePasswordChange, clearPasswordRecovery, clearForcePasswordChange } = useAuth();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Redirect if not in password recovery mode and not authenticated
   useEffect(() => {
-    if (!isPasswordRecovery && !user) {
+    if (!isPasswordRecovery && !forcePasswordChange && !user) {
       navigate("/auth");
     }
-  }, [isPasswordRecovery, user, navigate]);
+  }, [isPasswordRecovery, forcePasswordChange, user, navigate]);
 
   const sendPasswordChangedEmail = async () => {
     if (!user?.email) return;
@@ -72,14 +71,23 @@ export default function UpdatePassword() {
       setLoading(false);
       toast.error(error.message);
     } else {
-      // Send confirmation email in background
       sendPasswordChangedEmail();
-      
+
+      // Clear force_password_reset flag in profile (fire-and-forget)
+      if (forcePasswordChange && user) {
+        supabase
+          .from("profiles")
+          .update({ force_password_reset: false } as any)
+          .eq("id", user.id)
+          .then(() => {})
+          .catch(() => {});
+        clearForcePasswordChange();
+      }
+
       setLoading(false);
       toast.success("Passwort erfolgreich geändert!");
       clearPasswordRecovery();
-      
-      // Redirect based on role
+
       if (role === "client") {
         navigate("/client-home");
       } else {

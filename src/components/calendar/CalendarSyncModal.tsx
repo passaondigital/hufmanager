@@ -346,7 +346,7 @@ export function CalendarSyncModal({
               </p>
               <p>
                 <strong>Kann ich Termine im Handy-Kalender ändern?</strong> Nein, es ist ein
-                Lese-Abo. Änderungen werden immer in HufManager gemacht.
+                Lese-Abo. Änderungen werden immer im HufManager gemacht.
               </p>
               <p>
                 <strong>Muss ich etwas bezahlen?</strong> Nein, die Synchronisation ist

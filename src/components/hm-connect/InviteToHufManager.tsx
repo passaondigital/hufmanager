@@ -155,7 +155,7 @@ export function InviteToHufManager() {
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-primary" />
-            Zum HufManager einladen
+            Zum Hufi einladen
           </CardTitle>
           <CardDescription>
             Lade Kollegen, Kunden oder Fachpartner ein. Wenn sie noch kein Konto haben, können sie sich über deinen Link registrieren.
@@ -204,7 +204,7 @@ export function InviteToHufManager() {
           <div>
             <label className="text-sm font-medium mb-1.5 block">Persönliche Nachricht (optional)</label>
             <Textarea
-              placeholder="Hey! Ich nutze HufManager für meine Hufbearbeitung – probier's mal aus..."
+              placeholder="Hey! Ich nutze Hufi für meine Hufbearbeitung – probier's mal aus..."
               value={form.message}
               onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
               rows={2}
@@ -227,7 +227,7 @@ export function InviteToHufManager() {
           <div className="text-sm">
             <p className="font-medium text-foreground">Das Netzwerk wächst mit dir</p>
             <p className="text-muted-foreground mt-1">
-              Jede Einladung stärkt das HufManager-Netzwerk. Eingeladene Nutzer werden automatisch mit dir verbunden – 
+              Jede Einladung stärkt das Hufi-Netzwerk. Eingeladene Nutzer werden automatisch mit dir verbunden – 
               sobald sie sich registriert haben. Später folgen Affiliate-Belohnungen & Listings auf deiner Landingpage.
             </p>
           </div>

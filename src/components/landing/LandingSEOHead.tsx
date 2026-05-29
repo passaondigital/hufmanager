@@ -90,7 +90,7 @@ export const LandingSEOHead = ({ settings, currentPage }: LandingSEOHeadProps) =
   const title = settings.business_name || settings.owner_name || "Hufbearbeitung";
   const description = settings.meta_description || settings.hero_headline || "Professionelle Hufpflege für Ihr Pferd";
   const pageUrl = settings.subdomain
-    ? `https://hufmanager.de/p/${settings.subdomain}${currentPage ? `/${currentPage}` : ""}`
+    ? `https://hufiapp.de/p/${settings.subdomain}${currentPage ? `/${currentPage}` : ""}`
     : "";
 
   useEffect(() => {
@@ -164,7 +164,7 @@ export const LandingSEOHead = ({ settings, currentPage }: LandingSEOHeadProps) =
     }
 
     return () => {
-      document.title = "HufManager";
+      document.title = "Hufi";
       const ldScript = document.querySelector("#landing-jsonld");
       if (ldScript) ldScript.remove();
     };

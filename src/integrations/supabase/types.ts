@@ -1204,6 +1204,141 @@ export type Database = {
           },
         ]
       }
+      agent_tasks: {
+        Row: {
+          created_at: string | null
+          executed_at: string | null
+          explanation: string | null
+          id: string
+          payload: Json
+          result: Json | null
+          session_id: string | null
+          status: string
+          type: string
+          updated_at: string | null
+          user_id: string
+          user_message: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          executed_at?: string | null
+          explanation?: string | null
+          id?: string
+          payload?: Json
+          result?: Json | null
+          session_id?: string | null
+          status?: string
+          type: string
+          updated_at?: string | null
+          user_id: string
+          user_message?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          executed_at?: string | null
+          explanation?: string | null
+          id?: string
+          payload?: Json
+          result?: Json | null
+          session_id?: string | null
+          status?: string
+          type?: string
+          updated_at?: string | null
+          user_id?: string
+          user_message?: string | null
+        }
+        Relationships: []
+      }
+      ai_befunde: {
+        Row: {
+          befund_text: string | null
+          created_at: string | null
+          fachbegriffe: string[] | null
+          horse_id: string | null
+          id: string
+          massnahme: string | null
+          model_used: string | null
+          naechster_termin: string | null
+          pferd_name: string | null
+          processing_status: string | null
+          structured_output: Json | null
+          transcript: string
+          updated_at: string | null
+          user_id: string
+          voice_session_id: string | null
+        }
+        Insert: {
+          befund_text?: string | null
+          created_at?: string | null
+          fachbegriffe?: string[] | null
+          horse_id?: string | null
+          id?: string
+          massnahme?: string | null
+          model_used?: string | null
+          naechster_termin?: string | null
+          pferd_name?: string | null
+          processing_status?: string | null
+          structured_output?: Json | null
+          transcript: string
+          updated_at?: string | null
+          user_id: string
+          voice_session_id?: string | null
+        }
+        Update: {
+          befund_text?: string | null
+          created_at?: string | null
+          fachbegriffe?: string[] | null
+          horse_id?: string | null
+          id?: string
+          massnahme?: string | null
+          model_used?: string | null
+          naechster_termin?: string | null
+          pferd_name?: string | null
+          processing_status?: string | null
+          structured_output?: Json | null
+          transcript?: string
+          updated_at?: string | null
+          user_id?: string
+          voice_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_befunde_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_befunde_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_befunde_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_befunde_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_befunde_voice_session_id_fkey"
+            columns: ["voice_session_id"]
+            isOneToOne: false
+            referencedRelation: "voice_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_chat_messages: {
         Row: {
           content: string
@@ -1704,35 +1839,37 @@ export type Database = {
       autoflow_log: {
         Row: {
           action_type: string
-          created_at: string
-          details: Json | null
-          entity_id: string | null
-          entity_type: string | null
+          executed_at: string | null
           id: string
-          provider_id: string
-          status: string
+          payload: Json | null
+          session_id: string | null
+          status: string | null
         }
         Insert: {
           action_type: string
-          created_at?: string
-          details?: Json | null
-          entity_id?: string | null
-          entity_type?: string | null
+          executed_at?: string | null
           id?: string
-          provider_id: string
-          status?: string
+          payload?: Json | null
+          session_id?: string | null
+          status?: string | null
         }
         Update: {
           action_type?: string
-          created_at?: string
-          details?: Json | null
-          entity_id?: string | null
-          entity_type?: string | null
+          executed_at?: string | null
           id?: string
-          provider_id?: string
-          status?: string
+          payload?: Json | null
+          session_id?: string | null
+          status?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "autoflow_log_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "voice_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       autoflow_settings: {
         Row: {
@@ -1807,6 +1944,120 @@ export type Database = {
             columns: ["default_service_id"]
             isOneToOne: false
             referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bhs_horse_subscriptions: {
+        Row: {
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          client_id: string
+          copecart_subscription_id: string | null
+          created_at: string
+          horse_id: string
+          id: string
+          interval_weeks: number
+          monthly_price: number
+          next_service_date: string | null
+          product_variant: string
+          provider_id: string
+          started_at: string | null
+          status: string
+          zone: number
+        }
+        Insert: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          client_id: string
+          copecart_subscription_id?: string | null
+          created_at?: string
+          horse_id: string
+          id?: string
+          interval_weeks: number
+          monthly_price: number
+          next_service_date?: string | null
+          product_variant: string
+          provider_id: string
+          started_at?: string | null
+          status?: string
+          zone: number
+        }
+        Update: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          client_id?: string
+          copecart_subscription_id?: string | null
+          created_at?: string
+          horse_id?: string
+          id?: string
+          interval_weeks?: number
+          monthly_price?: number
+          next_service_date?: string | null
+          product_variant?: string
+          provider_id?: string
+          started_at?: string | null
+          status?: string
+          zone?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bhs_horse_subscriptions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bhs_horse_subscriptions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bhs_horse_subscriptions_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bhs_horse_subscriptions_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bhs_horse_subscriptions_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bhs_horse_subscriptions_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bhs_horse_subscriptions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bhs_horse_subscriptions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2385,6 +2636,7 @@ export type Database = {
           logo_url: string | null
           meta_description: string | null
           mwst_pflichtig: boolean | null
+          new_client_days: number[] | null
           owner_name: string | null
           paypal_link: string | null
           phone: string | null
@@ -2472,6 +2724,7 @@ export type Database = {
           logo_url?: string | null
           meta_description?: string | null
           mwst_pflichtig?: boolean | null
+          new_client_days?: number[] | null
           owner_name?: string | null
           paypal_link?: string | null
           phone?: string | null
@@ -2559,6 +2812,7 @@ export type Database = {
           logo_url?: string | null
           meta_description?: string | null
           mwst_pflichtig?: boolean | null
+          new_client_days?: number[] | null
           owner_name?: string | null
           paypal_link?: string | null
           phone?: string | null
@@ -4251,6 +4505,60 @@ export type Database = {
           },
         ]
       }
+      email_accounts: {
+        Row: {
+          created_at: string | null
+          display_name: string | null
+          email_address: string
+          id: string
+          is_active: boolean | null
+          is_verified: boolean | null
+          last_used_at: string | null
+          provider: string
+          smtp_host: string | null
+          smtp_password: string | null
+          smtp_port: number | null
+          smtp_secure: boolean | null
+          smtp_user: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_name?: string | null
+          email_address: string
+          id?: string
+          is_active?: boolean | null
+          is_verified?: boolean | null
+          last_used_at?: string | null
+          provider: string
+          smtp_host?: string | null
+          smtp_password?: string | null
+          smtp_port?: number | null
+          smtp_secure?: boolean | null
+          smtp_user?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string | null
+          email_address?: string
+          id?: string
+          is_active?: boolean | null
+          is_verified?: boolean | null
+          last_used_at?: string | null
+          provider?: string
+          smtp_host?: string | null
+          smtp_password?: string | null
+          smtp_port?: number | null
+          smtp_secure?: boolean | null
+          smtp_user?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_automation_steps: {
         Row: {
           automation_id: string
@@ -5876,6 +6184,45 @@ export type Database = {
         }
         Relationships: []
       }
+      equine_ontology: {
+        Row: {
+          aliases: string[] | null
+          autoflow_action: string | null
+          autoflow_field: string | null
+          category: string
+          created_at: string | null
+          description: string | null
+          formal_term: string | null
+          id: string
+          tags: string[] | null
+          term: string
+        }
+        Insert: {
+          aliases?: string[] | null
+          autoflow_action?: string | null
+          autoflow_field?: string | null
+          category: string
+          created_at?: string | null
+          description?: string | null
+          formal_term?: string | null
+          id?: string
+          tags?: string[] | null
+          term: string
+        }
+        Update: {
+          aliases?: string[] | null
+          autoflow_action?: string | null
+          autoflow_field?: string | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          formal_term?: string | null
+          id?: string
+          tags?: string[] | null
+          term?: string
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number
@@ -7054,6 +7401,36 @@ export type Database = {
           },
         ]
       }
+      horse_completeness: {
+        Row: {
+          horse_id: string
+          id: string
+          last_reminder_at: string | null
+          missing_fields: Json | null
+          score: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          horse_id: string
+          id?: string
+          last_reminder_at?: string | null
+          missing_fields?: Json | null
+          score?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          horse_id?: string
+          id?: string
+          last_reminder_at?: string | null
+          missing_fields?: Json | null
+          score?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       horse_deworming: {
         Row: {
           active_substance: string | null
@@ -7753,6 +8130,83 @@ export type Database = {
           },
           {
             foreignKeyName: "horse_lab_results_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      horse_media: {
+        Row: {
+          ai_status: string | null
+          bucket_path: string
+          captured_at: string | null
+          captured_by: string | null
+          created_at: string | null
+          horse_id: string
+          id: string
+          mime_type: string | null
+          notes: string | null
+          owner_id: string
+          size_bytes: number | null
+          tags: string[] | null
+          type: string
+        }
+        Insert: {
+          ai_status?: string | null
+          bucket_path: string
+          captured_at?: string | null
+          captured_by?: string | null
+          created_at?: string | null
+          horse_id: string
+          id?: string
+          mime_type?: string | null
+          notes?: string | null
+          owner_id: string
+          size_bytes?: number | null
+          tags?: string[] | null
+          type: string
+        }
+        Update: {
+          ai_status?: string | null
+          bucket_path?: string
+          captured_at?: string | null
+          captured_by?: string | null
+          created_at?: string | null
+          horse_id?: string
+          id?: string
+          mime_type?: string | null
+          notes?: string | null
+          owner_id?: string
+          size_bytes?: number | null
+          tags?: string[] | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horse_media_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_media_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_media_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "horse_media_horse_id_fkey"
             columns: ["horse_id"]
             isOneToOne: false
             referencedRelation: "safe_horses"
@@ -8861,6 +9315,1203 @@ export type Database = {
           },
         ]
       }
+      hufcam_analyses: {
+        Row: {
+          alert_triggered: boolean | null
+          analysis_type: string | null
+          compare_summary: string | null
+          crack_analysis: string | null
+          crack_detected: boolean | null
+          created_at: string | null
+          description: string | null
+          horse_id: string | null
+          id: string
+          image_id: string
+          model_used: string | null
+          prev_image_id: string | null
+          tags: string[] | null
+          user_id: string
+        }
+        Insert: {
+          alert_triggered?: boolean | null
+          analysis_type?: string | null
+          compare_summary?: string | null
+          crack_analysis?: string | null
+          crack_detected?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          horse_id?: string | null
+          id?: string
+          image_id: string
+          model_used?: string | null
+          prev_image_id?: string | null
+          tags?: string[] | null
+          user_id: string
+        }
+        Update: {
+          alert_triggered?: boolean | null
+          analysis_type?: string | null
+          compare_summary?: string | null
+          crack_analysis?: string | null
+          crack_detected?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          horse_id?: string | null
+          id?: string
+          image_id?: string
+          model_used?: string | null
+          prev_image_id?: string | null
+          tags?: string[] | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hufcam_analyses_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufcam_analyses_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufcam_analyses_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufcam_analyses_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufcam_analyses_image_id_fkey"
+            columns: ["image_id"]
+            isOneToOne: false
+            referencedRelation: "hufcam_images"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufcam_analyses_prev_image_id_fkey"
+            columns: ["prev_image_id"]
+            isOneToOne: false
+            referencedRelation: "hufcam_images"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hufcam_images: {
+        Row: {
+          created_at: string | null
+          file_size: number | null
+          horse_id: string | null
+          id: string
+          position: string | null
+          storage_path: string
+          thumb_path: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          file_size?: number | null
+          horse_id?: string | null
+          id?: string
+          position?: string | null
+          storage_path: string
+          thumb_path?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          file_size?: number | null
+          horse_id?: string | null
+          id?: string
+          position?: string | null
+          storage_path?: string
+          thumb_path?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hufcam_images_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufcam_images_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufcam_images_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufcam_images_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hufi_context_log: {
+        Row: {
+          action_taken: string | null
+          context_snapshot: Json | null
+          created_at: string | null
+          id: string
+          session_id: string | null
+          trigger: string | null
+          user_feedback: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_taken?: string | null
+          context_snapshot?: Json | null
+          created_at?: string | null
+          id?: string
+          session_id?: string | null
+          trigger?: string | null
+          user_feedback?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_taken?: string | null
+          context_snapshot?: Json | null
+          created_at?: string | null
+          id?: string
+          session_id?: string | null
+          trigger?: string | null
+          user_feedback?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      hufi_conversations: {
+        Row: {
+          created_at: string | null
+          id: string
+          status: string
+          summary: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          status?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          status?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      hufi_credit_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          stripe_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          stripe_id?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          stripe_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      hufi_credits: {
+        Row: {
+          balance: number
+          total_purchased: number
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          total_purchased?: number
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          total_purchased?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      hufi_equipment: {
+        Row: {
+          category: string
+          description: string | null
+          for_roles: string[] | null
+          id: string
+          is_active: boolean | null
+          name: string
+          name_en: string | null
+        }
+        Insert: {
+          category: string
+          description?: string | null
+          for_roles?: string[] | null
+          id: string
+          is_active?: boolean | null
+          name: string
+          name_en?: string | null
+        }
+        Update: {
+          category?: string
+          description?: string | null
+          for_roles?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_en?: string | null
+        }
+        Relationships: []
+      }
+      hufi_faq: {
+        Row: {
+          active: boolean | null
+          answer: string
+          category: string
+          created_at: string | null
+          id: string
+          question: string
+          sort_order: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          answer: string
+          category: string
+          created_at?: string | null
+          id?: string
+          question: string
+          sort_order?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          answer?: string
+          category?: string
+          created_at?: string | null
+          id?: string
+          question?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      hufi_feedback: {
+        Row: {
+          appointment_id: string | null
+          horse_name: string | null
+          id: string
+          rating: number | null
+          responded_at: string | null
+          response: string | null
+          scheduled_at: string
+          sent: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          horse_name?: string | null
+          id?: string
+          rating?: number | null
+          responded_at?: string | null
+          response?: string | null
+          scheduled_at: string
+          sent?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          horse_name?: string | null
+          id?: string
+          rating?: number | null
+          responded_at?: string | null
+          response?: string | null
+          scheduled_at?: string
+          sent?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hufi_feedback_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufi_feedback_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments_partner_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufi_feedback_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "safe_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufi_feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufi_feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hufi_health_conditions: {
+        Row: {
+          aliases: string[] | null
+          category: string
+          description: string | null
+          hoof_relevance: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          name_en: string | null
+          name_latin: string | null
+          symptoms: string[] | null
+          treatment_notes: string | null
+          urgency: string | null
+        }
+        Insert: {
+          aliases?: string[] | null
+          category: string
+          description?: string | null
+          hoof_relevance?: string | null
+          id: string
+          is_active?: boolean | null
+          name: string
+          name_en?: string | null
+          name_latin?: string | null
+          symptoms?: string[] | null
+          treatment_notes?: string | null
+          urgency?: string | null
+        }
+        Update: {
+          aliases?: string[] | null
+          category?: string
+          description?: string | null
+          hoof_relevance?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_en?: string | null
+          name_latin?: string | null
+          symptoms?: string[] | null
+          treatment_notes?: string | null
+          urgency?: string | null
+        }
+        Relationships: []
+      }
+      hufi_horse_breeds: {
+        Row: {
+          aliases: string[] | null
+          category: string
+          characteristics: string[] | null
+          common_uses: string[] | null
+          health_notes: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          name_en: string | null
+          origin: string | null
+        }
+        Insert: {
+          aliases?: string[] | null
+          category: string
+          characteristics?: string[] | null
+          common_uses?: string[] | null
+          health_notes?: string | null
+          id: string
+          is_active?: boolean | null
+          name: string
+          name_en?: string | null
+          origin?: string | null
+        }
+        Update: {
+          aliases?: string[] | null
+          category?: string
+          characteristics?: string[] | null
+          common_uses?: string[] | null
+          health_notes?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_en?: string | null
+          origin?: string | null
+        }
+        Relationships: []
+      }
+      hufi_keywords: {
+        Row: {
+          entity_id: string
+          entity_type: string
+          id: string
+          is_active: boolean | null
+          keyword: string
+          language: string | null
+        }
+        Insert: {
+          entity_id: string
+          entity_type: string
+          id?: string
+          is_active?: boolean | null
+          keyword: string
+          language?: string | null
+        }
+        Update: {
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          is_active?: boolean | null
+          keyword?: string
+          language?: string | null
+        }
+        Relationships: []
+      }
+      hufi_memories: {
+        Row: {
+          content: string
+          created_at: string | null
+          exportable: boolean | null
+          horse_id: string | null
+          id: string
+          last_updated_by: string | null
+          memory_type: string
+          updated_at: string | null
+          user_id: string
+          version: number | null
+          visible_to_owner: boolean | null
+        }
+        Insert: {
+          content?: string
+          created_at?: string | null
+          exportable?: boolean | null
+          horse_id?: string | null
+          id?: string
+          last_updated_by?: string | null
+          memory_type: string
+          updated_at?: string | null
+          user_id: string
+          version?: number | null
+          visible_to_owner?: boolean | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          exportable?: boolean | null
+          horse_id?: string | null
+          id?: string
+          last_updated_by?: string | null
+          memory_type?: string
+          updated_at?: string | null
+          user_id?: string
+          version?: number | null
+          visible_to_owner?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hufi_memories_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufi_memories_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufi_memories_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufi_memories_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hufi_memory: {
+        Row: {
+          category: string
+          confidence: number | null
+          expires_at: string | null
+          id: string
+          key: string
+          last_updated: string | null
+          source: string | null
+          user_id: string | null
+          value: Json | null
+        }
+        Insert: {
+          category: string
+          confidence?: number | null
+          expires_at?: string | null
+          id?: string
+          key: string
+          last_updated?: string | null
+          source?: string | null
+          user_id?: string | null
+          value?: Json | null
+        }
+        Update: {
+          category?: string
+          confidence?: number | null
+          expires_at?: string | null
+          id?: string
+          key?: string
+          last_updated?: string | null
+          source?: string | null
+          user_id?: string | null
+          value?: Json | null
+        }
+        Relationships: []
+      }
+      hufi_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hufi_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "hufi_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hufi_observations: {
+        Row: {
+          context: Json | null
+          conversation_id: string | null
+          first_seen_at: string | null
+          id: string
+          last_seen_at: string | null
+          observation_type: string
+          occurrence_count: number | null
+          pattern: string | null
+          skill_id: string | null
+          user_id: string
+        }
+        Insert: {
+          context?: Json | null
+          conversation_id?: string | null
+          first_seen_at?: string | null
+          id?: string
+          last_seen_at?: string | null
+          observation_type: string
+          occurrence_count?: number | null
+          pattern?: string | null
+          skill_id?: string | null
+          user_id: string
+        }
+        Update: {
+          context?: Json | null
+          conversation_id?: string | null
+          first_seen_at?: string | null
+          id?: string
+          last_seen_at?: string | null
+          observation_type?: string
+          occurrence_count?: number | null
+          pattern?: string | null
+          skill_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hufi_observations_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "hufi_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufi_observations_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "hufi_skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hufi_offers: {
+        Row: {
+          client_id: string | null
+          created_at: string | null
+          expires_at: string | null
+          horse_name: string | null
+          id: string
+          message: string | null
+          price_estimate: number | null
+          provider_id: string | null
+          service_type: string
+          status: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          horse_name?: string | null
+          id?: string
+          message?: string | null
+          price_estimate?: number | null
+          provider_id?: string | null
+          service_type: string
+          status?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          horse_name?: string | null
+          id?: string
+          message?: string | null
+          price_estimate?: number | null
+          provider_id?: string | null
+          service_type?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hufi_offers_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufi_offers_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufi_offers_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufi_offers_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hufi_professions: {
+        Row: {
+          category: string
+          common_problems: string[] | null
+          delivery: string | null
+          environment: string | null
+          hufi_tips: string[] | null
+          id: string
+          is_active: boolean | null
+          key_tools: string[] | null
+          name: string
+          name_alternatives: string[] | null
+          pricing_models: string[] | null
+          relevant_keywords: string[] | null
+          scopes: string[] | null
+          seasonal_patterns: string[] | null
+          sort_order: number | null
+          team_sizes: string[] | null
+          typical_clients: string[] | null
+          typical_services: string[] | null
+          updated_at: string | null
+          work_location: string
+        }
+        Insert: {
+          category: string
+          common_problems?: string[] | null
+          delivery?: string | null
+          environment?: string | null
+          hufi_tips?: string[] | null
+          id: string
+          is_active?: boolean | null
+          key_tools?: string[] | null
+          name: string
+          name_alternatives?: string[] | null
+          pricing_models?: string[] | null
+          relevant_keywords?: string[] | null
+          scopes?: string[] | null
+          seasonal_patterns?: string[] | null
+          sort_order?: number | null
+          team_sizes?: string[] | null
+          typical_clients?: string[] | null
+          typical_services?: string[] | null
+          updated_at?: string | null
+          work_location?: string
+        }
+        Update: {
+          category?: string
+          common_problems?: string[] | null
+          delivery?: string | null
+          environment?: string | null
+          hufi_tips?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          key_tools?: string[] | null
+          name?: string
+          name_alternatives?: string[] | null
+          pricing_models?: string[] | null
+          relevant_keywords?: string[] | null
+          scopes?: string[] | null
+          seasonal_patterns?: string[] | null
+          sort_order?: number | null
+          team_sizes?: string[] | null
+          typical_clients?: string[] | null
+          typical_services?: string[] | null
+          updated_at?: string | null
+          work_location?: string
+        }
+        Relationships: []
+      }
+      hufi_routes: {
+        Row: {
+          created_at: string | null
+          date: string
+          estimated_duration_min: number | null
+          google_maps_url: string | null
+          id: string
+          optimized: boolean | null
+          provider_id: string | null
+          stops: Json
+          total_distance_km: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          estimated_duration_min?: number | null
+          google_maps_url?: string | null
+          id?: string
+          optimized?: boolean | null
+          provider_id?: string | null
+          stops?: Json
+          total_distance_km?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          estimated_duration_min?: number | null
+          google_maps_url?: string | null
+          id?: string
+          optimized?: boolean | null
+          provider_id?: string | null
+          stops?: Json
+          total_distance_km?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hufi_routes_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufi_routes_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hufi_routines: {
+        Row: {
+          action_config: Json
+          action_type: string
+          color: string | null
+          created_at: string | null
+          description: string | null
+          enabled: boolean | null
+          icon: string | null
+          id: string
+          label: string
+          last_triggered_at: string | null
+          next_trigger_at: string | null
+          template_key: string | null
+          trigger_config: Json
+          trigger_count: number | null
+          trigger_type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          action_config?: Json
+          action_type: string
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean | null
+          icon?: string | null
+          id?: string
+          label: string
+          last_triggered_at?: string | null
+          next_trigger_at?: string | null
+          template_key?: string | null
+          trigger_config?: Json
+          trigger_count?: number | null
+          trigger_type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          action_config?: Json
+          action_type?: string
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean | null
+          icon?: string | null
+          id?: string
+          label?: string
+          last_triggered_at?: string | null
+          next_trigger_at?: string | null
+          template_key?: string | null
+          trigger_config?: Json
+          trigger_count?: number | null
+          trigger_type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      hufi_service_relationships: {
+        Row: {
+          active: boolean | null
+          client_id: string | null
+          created_at: string | null
+          horse_id: string | null
+          id: string
+          last_service_date: string | null
+          next_service_due: string | null
+          notes: string | null
+          provider_id: string | null
+          service_interval_weeks: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          client_id?: string | null
+          created_at?: string | null
+          horse_id?: string | null
+          id?: string
+          last_service_date?: string | null
+          next_service_due?: string | null
+          notes?: string | null
+          provider_id?: string | null
+          service_interval_weeks?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          client_id?: string | null
+          created_at?: string | null
+          horse_id?: string | null
+          id?: string
+          last_service_date?: string | null
+          next_service_due?: string | null
+          notes?: string | null
+          provider_id?: string | null
+          service_interval_weeks?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hufi_service_relationships_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufi_service_relationships_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufi_service_relationships_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufi_service_relationships_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufi_service_relationships_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufi_service_relationships_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufi_service_relationships_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufi_service_relationships_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "safe_provider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hufi_skills: {
+        Row: {
+          action_config: Json
+          action_type: string
+          active: boolean | null
+          confidence: number | null
+          created_at: string | null
+          description: string | null
+          id: string
+          learned_from: string | null
+          name: string
+          suggested_at: string | null
+          times_confirmed: number | null
+          times_rejected: number | null
+          times_used: number | null
+          trigger_pattern: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          action_config?: Json
+          action_type: string
+          active?: boolean | null
+          confidence?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          learned_from?: string | null
+          name: string
+          suggested_at?: string | null
+          times_confirmed?: number | null
+          times_rejected?: number | null
+          times_used?: number | null
+          trigger_pattern: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          action_config?: Json
+          action_type?: string
+          active?: boolean | null
+          confidence?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          learned_from?: string | null
+          name?: string
+          suggested_at?: string | null
+          times_confirmed?: number | null
+          times_rejected?: number | null
+          times_used?: number | null
+          trigger_pattern?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      hufi_task_queue: {
+        Row: {
+          completed_at: string | null
+          context: Json | null
+          created_at: string | null
+          current_step: number | null
+          description: string | null
+          id: string
+          priority: number | null
+          result_summary: string | null
+          scheduled_for: string | null
+          started_at: string | null
+          status: string
+          steps: Json
+          title: string
+          trigger_phrase: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          context?: Json | null
+          created_at?: string | null
+          current_step?: number | null
+          description?: string | null
+          id?: string
+          priority?: number | null
+          result_summary?: string | null
+          scheduled_for?: string | null
+          started_at?: string | null
+          status?: string
+          steps?: Json
+          title: string
+          trigger_phrase?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          context?: Json | null
+          created_at?: string | null
+          current_step?: number | null
+          description?: string | null
+          id?: string
+          priority?: number | null
+          result_summary?: string | null
+          scheduled_for?: string | null
+          started_at?: string | null
+          status?: string
+          steps?: Json
+          title?: string
+          trigger_phrase?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      hufi_terminology: {
+        Row: {
+          category: string
+          definition: string
+          id: string
+          is_active: boolean | null
+          related_terms: string[] | null
+          term_de: string
+          term_en: string | null
+          term_latin: string | null
+        }
+        Insert: {
+          category: string
+          definition: string
+          id: string
+          is_active?: boolean | null
+          related_terms?: string[] | null
+          term_de: string
+          term_en?: string | null
+          term_latin?: string | null
+        }
+        Update: {
+          category?: string
+          definition?: string
+          id?: string
+          is_active?: boolean | null
+          related_terms?: string[] | null
+          term_de?: string
+          term_en?: string | null
+          term_latin?: string | null
+        }
+        Relationships: []
+      }
       hufrente_referrals: {
         Row: {
           activated_at: string | null
@@ -9472,6 +11123,7 @@ export type Database = {
           lead_score: number | null
           lead_type: string
           message: string | null
+          metadata: Json | null
           name: string | null
           phone: string | null
           postal_code: string | null
@@ -9488,6 +11140,7 @@ export type Database = {
           lead_score?: number | null
           lead_type?: string
           message?: string | null
+          metadata?: Json | null
           name?: string | null
           phone?: string | null
           postal_code?: string | null
@@ -9504,6 +11157,7 @@ export type Database = {
           lead_score?: number | null
           lead_type?: string
           message?: string | null
+          metadata?: Json | null
           name?: string | null
           phone?: string | null
           postal_code?: string | null
@@ -12283,6 +13937,7 @@ export type Database = {
           business_capacity: number | null
           business_hours: Json | null
           business_name: string | null
+          business_size: string | null
           business_type: string | null
           cancellation_policy: string | null
           city: string | null
@@ -12307,9 +13962,11 @@ export type Database = {
           first_name: string | null
           force_password_reset: boolean | null
           full_name: string | null
+          gender: string | null
           geo_lat: number | null
           geo_lng: number | null
           has_logged_in: boolean | null
+          horse_breeds_specialty: string[] | null
           house_number: string | null
           hufiai_training_consent: boolean | null
           iban: string | null
@@ -12337,7 +13994,10 @@ export type Database = {
           notification_language: string | null
           notification_preference: string | null
           onboarding_completed: boolean | null
+          onboarding_data: Json | null
           onboarding_dismissed: boolean | null
+          onboarding_profession_done: boolean | null
+          onboarding_step: number | null
           order_authorization: boolean | null
           org_role: Database["public"]["Enums"]["organization_role"] | null
           organization_id: string | null
@@ -12360,6 +14020,7 @@ export type Database = {
           primary_emergency_relationship: string | null
           primary_emergency_verified: boolean | null
           primary_emergency_verify_token: string | null
+          profession_slug: string | null
           profession_type: string | null
           readable_id: string | null
           referred_at: string | null
@@ -12370,6 +14031,9 @@ export type Database = {
           reminder_evening: boolean | null
           reminder_text: string | null
           role: string | null
+          salutation: string | null
+          service_area_description: string | null
+          service_area_radius_km: number | null
           service_radius_km: number | null
           service_types: string[] | null
           show_cooperation_badges: boolean | null
@@ -12392,9 +14056,13 @@ export type Database = {
           trial_started_at: string | null
           updated_at: string
           vat_number: string | null
+          vault_billing_cycle: string | null
           vault_failed_attempts: number | null
           vault_locked_until: string | null
           vault_pin: string | null
+          vault_plan: string | null
+          vault_plan_status: string | null
+          vault_subscription_id: string | null
           vehicle_consumption_per_100km: number | null
           vehicle_name: string | null
           vehicle_plate: string | null
@@ -12405,7 +14073,12 @@ export type Database = {
           verification_status: string | null
           verification_submitted_at: string | null
           website: string | null
+          work_environment: string[] | null
+          work_location: string[] | null
+          work_scale: string | null
+          work_structure: string | null
           working_conditions: string | null
+          years_experience: number | null
           zip_code: string | null
         }
         Insert: {
@@ -12422,6 +14095,7 @@ export type Database = {
           business_capacity?: number | null
           business_hours?: Json | null
           business_name?: string | null
+          business_size?: string | null
           business_type?: string | null
           cancellation_policy?: string | null
           city?: string | null
@@ -12446,9 +14120,11 @@ export type Database = {
           first_name?: string | null
           force_password_reset?: boolean | null
           full_name?: string | null
+          gender?: string | null
           geo_lat?: number | null
           geo_lng?: number | null
           has_logged_in?: boolean | null
+          horse_breeds_specialty?: string[] | null
           house_number?: string | null
           hufiai_training_consent?: boolean | null
           iban?: string | null
@@ -12476,7 +14152,10 @@ export type Database = {
           notification_language?: string | null
           notification_preference?: string | null
           onboarding_completed?: boolean | null
+          onboarding_data?: Json | null
           onboarding_dismissed?: boolean | null
+          onboarding_profession_done?: boolean | null
+          onboarding_step?: number | null
           order_authorization?: boolean | null
           org_role?: Database["public"]["Enums"]["organization_role"] | null
           organization_id?: string | null
@@ -12499,6 +14178,7 @@ export type Database = {
           primary_emergency_relationship?: string | null
           primary_emergency_verified?: boolean | null
           primary_emergency_verify_token?: string | null
+          profession_slug?: string | null
           profession_type?: string | null
           readable_id?: string | null
           referred_at?: string | null
@@ -12509,6 +14189,9 @@ export type Database = {
           reminder_evening?: boolean | null
           reminder_text?: string | null
           role?: string | null
+          salutation?: string | null
+          service_area_description?: string | null
+          service_area_radius_km?: number | null
           service_radius_km?: number | null
           service_types?: string[] | null
           show_cooperation_badges?: boolean | null
@@ -12531,9 +14214,13 @@ export type Database = {
           trial_started_at?: string | null
           updated_at?: string
           vat_number?: string | null
+          vault_billing_cycle?: string | null
           vault_failed_attempts?: number | null
           vault_locked_until?: string | null
           vault_pin?: string | null
+          vault_plan?: string | null
+          vault_plan_status?: string | null
+          vault_subscription_id?: string | null
           vehicle_consumption_per_100km?: number | null
           vehicle_name?: string | null
           vehicle_plate?: string | null
@@ -12544,7 +14231,12 @@ export type Database = {
           verification_status?: string | null
           verification_submitted_at?: string | null
           website?: string | null
+          work_environment?: string[] | null
+          work_location?: string[] | null
+          work_scale?: string | null
+          work_structure?: string | null
           working_conditions?: string | null
+          years_experience?: number | null
           zip_code?: string | null
         }
         Update: {
@@ -12561,6 +14253,7 @@ export type Database = {
           business_capacity?: number | null
           business_hours?: Json | null
           business_name?: string | null
+          business_size?: string | null
           business_type?: string | null
           cancellation_policy?: string | null
           city?: string | null
@@ -12585,9 +14278,11 @@ export type Database = {
           first_name?: string | null
           force_password_reset?: boolean | null
           full_name?: string | null
+          gender?: string | null
           geo_lat?: number | null
           geo_lng?: number | null
           has_logged_in?: boolean | null
+          horse_breeds_specialty?: string[] | null
           house_number?: string | null
           hufiai_training_consent?: boolean | null
           iban?: string | null
@@ -12615,7 +14310,10 @@ export type Database = {
           notification_language?: string | null
           notification_preference?: string | null
           onboarding_completed?: boolean | null
+          onboarding_data?: Json | null
           onboarding_dismissed?: boolean | null
+          onboarding_profession_done?: boolean | null
+          onboarding_step?: number | null
           order_authorization?: boolean | null
           org_role?: Database["public"]["Enums"]["organization_role"] | null
           organization_id?: string | null
@@ -12638,6 +14336,7 @@ export type Database = {
           primary_emergency_relationship?: string | null
           primary_emergency_verified?: boolean | null
           primary_emergency_verify_token?: string | null
+          profession_slug?: string | null
           profession_type?: string | null
           readable_id?: string | null
           referred_at?: string | null
@@ -12648,6 +14347,9 @@ export type Database = {
           reminder_evening?: boolean | null
           reminder_text?: string | null
           role?: string | null
+          salutation?: string | null
+          service_area_description?: string | null
+          service_area_radius_km?: number | null
           service_radius_km?: number | null
           service_types?: string[] | null
           show_cooperation_badges?: boolean | null
@@ -12670,9 +14372,13 @@ export type Database = {
           trial_started_at?: string | null
           updated_at?: string
           vat_number?: string | null
+          vault_billing_cycle?: string | null
           vault_failed_attempts?: number | null
           vault_locked_until?: string | null
           vault_pin?: string | null
+          vault_plan?: string | null
+          vault_plan_status?: string | null
+          vault_subscription_id?: string | null
           vehicle_consumption_per_100km?: number | null
           vehicle_name?: string | null
           vehicle_plate?: string | null
@@ -12683,7 +14389,12 @@ export type Database = {
           verification_status?: string | null
           verification_submitted_at?: string | null
           website?: string | null
+          work_environment?: string[] | null
+          work_location?: string[] | null
+          work_scale?: string | null
+          work_structure?: string | null
           working_conditions?: string | null
+          years_experience?: number | null
           zip_code?: string | null
         }
         Relationships: [
@@ -16005,6 +17716,33 @@ export type Database = {
           },
         ]
       }
+      voice_sessions: {
+        Row: {
+          audio_url: string | null
+          created_at: string | null
+          id: string
+          processed_status: string | null
+          transcript: string
+          user_id: string | null
+        }
+        Insert: {
+          audio_url?: string | null
+          created_at?: string | null
+          id?: string
+          processed_status?: string | null
+          transcript: string
+          user_id?: string | null
+        }
+        Update: {
+          audio_url?: string | null
+          created_at?: string | null
+          id?: string
+          processed_status?: string | null
+          transcript?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       website_leads: {
         Row: {
           breed: string | null
@@ -17080,6 +18818,15 @@ export type Database = {
         Args: { p_token: string; p_user_id: string }
         Returns: Json
       }
+      add_hufi_credits: {
+        Args: {
+          p_amount: number
+          p_description?: string
+          p_stripe_id?: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       admin_repair_user_role: {
         Args: {
           p_admin_id: string
@@ -17340,6 +19087,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_vault_access: { Args: { _user_id: string }; Returns: boolean }
       increment_magic_link_uses: {
         Args: { link_id: string }
         Returns: undefined
@@ -17406,6 +19154,10 @@ export type Database = {
       sync_affiliate_stats: {
         Args: { p_provider_id: string }
         Returns: undefined
+      }
+      use_hufi_credit: {
+        Args: { p_model?: string; p_user_id: string }
+        Returns: boolean
       }
       validate_magic_link: { Args: { slug_input: string }; Returns: Json }
     }

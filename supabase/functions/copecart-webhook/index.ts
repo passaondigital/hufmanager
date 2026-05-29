@@ -140,6 +140,152 @@ function getPlanOverrideFromProductId(productId: string): string | null {
   return PRODUCT_PLAN_OVERRIDE_MAP[productId] || null;
 }
 
+// ─── Pferdeakte Tresor (Vault) products ─────────────────────────────────────
+// Standalone subscription for the document vault. Separate monetisation from
+// the HufManager provider plans above. Add the real CopeCart product IDs once
+// the products are created in CopeCart. Until then this map is empty and the
+// frontend (TresorPricing) shows a waitlist instead of a checkout link.
+type VaultPlanTier = 'light' | 'pro' | 'gestuet' | 'unlimited';
+type VaultBillingCycle = 'monthly' | 'yearly';
+
+interface VaultProductMeta {
+  plan: VaultPlanTier;
+  cycle: VaultBillingCycle;
+}
+
+const VAULT_PRODUCT_MAP: Record<string, VaultProductMeta> = {
+  // Example shape — uncomment and replace with real CopeCart product IDs:
+  // "abcd1234": { plan: "light",     cycle: "monthly" },
+  // "abcd1235": { plan: "light",     cycle: "yearly"  },
+  // "abcd1236": { plan: "pro",       cycle: "monthly" },
+  // "abcd1237": { plan: "pro",       cycle: "yearly"  },
+  // "abcd1238": { plan: "gestuet",   cycle: "monthly" },
+  // "abcd1239": { plan: "gestuet",   cycle: "yearly"  },
+  // "abcd1240": { plan: "unlimited", cycle: "monthly" },
+  // "abcd1241": { plan: "unlimited", cycle: "yearly"  },
+};
+
+function isVaultProduct(productId: string): boolean {
+  return productId !== "" && productId in VAULT_PRODUCT_MAP;
+}
+
+function getVaultProductMeta(productId: string): VaultProductMeta | null {
+  return VAULT_PRODUCT_MAP[productId] ?? null;
+}
+
+// ─── BHS Balance Produkte ─────────────────────────────────────────────────────
+// Pro-Pferd Abo: 3 Intervalle × 2 Zonen = 6 Varianten
+// TODO: Platzhalter-IDs durch echte CopeCart-Produkt-IDs ersetzen
+//       nach Anlage der Produkte im CopeCart-Dashboard.
+interface BhsProductMeta {
+  intervalWeeks: number; // 4 | 6 | 8
+  zone: number;          // 1 | 2
+  monthlyPrice: number;
+  variant: string;       // z.B. "BHS_4W_Z1"
+}
+
+const BHS_PRODUCT_MAP: Record<string, BhsProductMeta> = {
+  // TODO: Echte CopeCart-Produkt-IDs nach Produktanlage eintragen
+  "BHS_4W_Z1": { intervalWeeks: 4, zone: 1, monthlyPrice: 71.10, variant: "BHS_4W_Z1" },
+  "BHS_4W_Z2": { intervalWeeks: 4, zone: 2, monthlyPrice: 87.48, variant: "BHS_4W_Z2" },
+  "BHS_6W_Z1": { intervalWeeks: 6, zone: 1, monthlyPrice: 53.44, variant: "BHS_6W_Z1" },
+  "BHS_6W_Z2": { intervalWeeks: 6, zone: 2, monthlyPrice: 60.56, variant: "BHS_6W_Z2" },
+  "BHS_8W_Z1": { intervalWeeks: 8, zone: 1, monthlyPrice: 41.56, variant: "BHS_8W_Z1" },
+  "BHS_8W_Z2": { intervalWeeks: 8, zone: 2, monthlyPrice: 47.10, variant: "BHS_8W_Z2" },
+};
+
+function isBhsProduct(productId: string): boolean {
+  return productId !== "" && productId in BHS_PRODUCT_MAP;
+}
+
+function getBhsProductMeta(productId: string): BhsProductMeta | null {
+  return BHS_PRODUCT_MAP[productId] ?? null;
+}
+
+// Generiert eine Pferde-ID im Format EQ-XXXXXXXX
+function generateEqid(): string {
+  const hex = Array.from(crypto.getRandomValues(new Uint8Array(4)))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .toUpperCase();
+  return `EQ-${hex}`;
+}
+
+// Sendet die BHS-Welcome-Email an den neuen Kunden
+async function sendBhsWelcomeEmail(
+  resend: InstanceType<typeof Resend>,
+  to: string,
+  clientName: string,
+  horseName: string,
+  intervalWeeks: number,
+  zone: number,
+  monthlyPrice: number,
+  tempPassword: string | null,
+): Promise<void> {
+  const zoneLabel = zone === 1 ? "Zone 1 (bis 25 km)" : zone === 2 ? "Zone 2 (25–50 km)" : `Zone ${zone}`;
+  const priceFormatted = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(monthlyPrice);
+  const loginHint = tempPassword
+    ? `\n\nIhr Zugang zu HufiApp: https://hufiapp.de\nE-Mail: ${to}\nTemporäres Passwort: ${tempPassword}\n(Bitte beim ersten Login ändern)`
+    : "";
+
+  const plainText =
+    `Willkommen beim BHS Balance Abo!\n\n` +
+    `Guten Tag ${clientName},\n\n` +
+    `vielen Dank für Ihr Vertrauen. Ihr BHS Balance Abo für ${horseName} ist jetzt aktiv.\n\n` +
+    `Abo-Details:\n` +
+    `  Pferd: ${horseName}\n` +
+    `  Intervall: alle ${intervalWeeks} Wochen\n` +
+    `  Zone: ${zoneLabel}\n` +
+    `  Monatlicher Beitrag: ${priceFormatted}\n` +
+    `  Kündigung: jederzeit mit 4 Wochen Frist möglich\n` +
+    loginHint +
+    `\n\nBei Fragen stehe ich Ihnen jederzeit zur Verfügung.\n\n` +
+    `Mit freundlichen Grüßen\nPascal Schmid – Barhufservice Schmid`;
+
+  try {
+    await resend.emails.send({
+      from: "Barhufservice Schmid <onboarding@resend.dev>",
+      to: [to],
+      subject: `🐴 Ihr BHS Balance Abo für ${horseName} ist aktiv`,
+      text: plainText,
+      html: `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"></head>
+<body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#111;">
+  <h2 style="color:#92400e;">🐴 Willkommen beim BHS Balance Abo</h2>
+  <p>Guten Tag ${escapeHtml(clientName)},</p>
+  <p>vielen Dank für Ihr Vertrauen. Ihr BHS Balance Abo für <strong>${escapeHtml(horseName)}</strong> ist jetzt aktiv.</p>
+  <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+    <tr><td style="padding:8px;border:1px solid #e5e7eb;color:#6b7280;">Pferd</td><td style="padding:8px;border:1px solid #e5e7eb;font-weight:600;">${escapeHtml(horseName)}</td></tr>
+    <tr><td style="padding:8px;border:1px solid #e5e7eb;color:#6b7280;">Intervall</td><td style="padding:8px;border:1px solid #e5e7eb;">alle ${intervalWeeks} Wochen</td></tr>
+    <tr><td style="padding:8px;border:1px solid #e5e7eb;color:#6b7280;">Zone</td><td style="padding:8px;border:1px solid #e5e7eb;">${zoneLabel}</td></tr>
+    <tr><td style="padding:8px;border:1px solid #e5e7eb;color:#6b7280;">Monatlicher Beitrag</td><td style="padding:8px;border:1px solid #e5e7eb;font-weight:600;">${priceFormatted}</td></tr>
+    <tr><td style="padding:8px;border:1px solid #e5e7eb;color:#6b7280;">Kündigung</td><td style="padding:8px;border:1px solid #e5e7eb;">4 Wochen Frist</td></tr>
+  </table>
+  ${tempPassword ? `<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:16px;margin:16px 0;">
+    <p style="margin:0 0 8px;font-weight:600;">Ihr HufiApp-Zugang</p>
+    <p style="margin:0;">E-Mail: ${escapeHtml(to)}<br>Temporäres Passwort: <strong>${escapeHtml(tempPassword)}</strong></p>
+    <p style="margin:8px 0 0;font-size:12px;color:#92400e;">Bitte beim ersten Login unter <a href="https://hufiapp.de">hufiapp.de</a> ändern.</p>
+  </div>` : ""}
+  <p>Bei Fragen stehe ich Ihnen jederzeit zur Verfügung.</p>
+  <p>Mit freundlichen Grüßen<br><strong>Pascal Schmid – Barhufservice Schmid</strong></p>
+</body></html>`,
+    });
+    console.log("[copecart][bhs] Welcome email sent to:", to);
+  } catch (err) {
+    console.error("[copecart][bhs] Welcome email failed:", err);
+  }
+}
+
+// Hilfsfunktion escapeHtml (aus invite-client-with-password übernommen)
+function escapeHtml(str: string | null | undefined): string {
+  if (!str) return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 // Constant-time string comparison to prevent timing attacks
 function constantTimeCompare(a: string, b: string): boolean {
   const encoder = new TextEncoder();
@@ -565,11 +711,12 @@ const handler = async (req: Request): Promise<Response> => {
     // Determine plan from product
     const subscriptionPlan = getPlanFromProductId(productId);
     const planOverride = getPlanOverrideFromProductId(productId);
+    const vaultMeta = getVaultProductMeta(productId);
 
     // Handle payment/order events - these are when we should create users
     const isPaymentEvent = [
       "order_created",
-      "order.created", 
+      "order.created",
       "subscription_payment_succeeded",
       "subscription.payment.succeeded",
       "payment_completed",
@@ -577,6 +724,322 @@ const handler = async (req: Request): Promise<Response> => {
       "purchase",
       "sale",
     ].includes(eventType);
+
+    const isCancellationEvent = [
+      "subscription_cancelled",
+      "subscription.cancelled",
+      "subscription.canceled",
+      "subscription_expired",
+      "subscription.expired",
+      "refund_created",
+      "refund.created",
+      "refund",
+    ].includes(eventType);
+
+    const isPaymentFailureEvent = [
+      "payment_failed",
+      "payment.failed",
+      "subscription_payment_failed",
+      "subscription.payment.failed",
+    ].includes(eventType);
+
+    // ─── VAULT PRODUCT BRANCH ──────────────────────────────────────────────
+    // Standalone Tresor subscription. Touches only the vault_* columns and
+    // leaves HufManager subscription_plan / plan_override untouched. We do not
+    // auto-create user accounts for vault purchases — the user must already
+    // exist as a registered owner. If not, we acknowledge the webhook and
+    // log a warning so support can reach out.
+    if (vaultMeta) {
+      if (!profile) {
+        console.warn("[copecart][vault] No profile found for vault purchase:", customerEmail, "| Product:", productId);
+        return new Response(JSON.stringify({
+          success: true,
+          warning: "Vault product purchased but no matching user account found",
+          email: customerEmail,
+        }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      let vaultUpdate: {
+        vault_plan?: VaultPlanTier | null;
+        vault_plan_status?: string | null;
+        vault_subscription_id?: string | null;
+        vault_billing_cycle?: VaultBillingCycle | null;
+      } = {};
+
+      if (isPaymentEvent) {
+        vaultUpdate = {
+          vault_plan: vaultMeta.plan,
+          vault_plan_status: "active",
+          vault_subscription_id: subscriptionId,
+          vault_billing_cycle: vaultMeta.cycle,
+        };
+      } else if (isPaymentFailureEvent) {
+        vaultUpdate = { vault_plan_status: "past_due" };
+      } else if (isCancellationEvent) {
+        vaultUpdate = { vault_plan_status: "cancelled" };
+      } else {
+        console.log("[copecart][vault] Unhandled event type for vault product:", eventType);
+        return new Response(JSON.stringify({ success: true, message: "Event type not handled" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      const { error: vaultErr } = await supabase
+        .from("profiles")
+        .update(vaultUpdate)
+        .eq("id", profile.id);
+
+      if (vaultErr) {
+        console.error("[copecart][vault] Profile update failed:", vaultErr.message);
+        return new Response(JSON.stringify({ error: "Vault update failed" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      console.log("[copecart][vault] Profile updated:", profile.id, vaultUpdate);
+      return new Response(JSON.stringify({
+        success: true,
+        scope: "vault",
+        plan: vaultMeta.plan,
+        cycle: vaultMeta.cycle,
+        status: vaultUpdate.vault_plan_status ?? null,
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // ─── BHS BALANCE BRANCH ──────────────────────────────────────────────────
+    // Pro-Pferd Abo für Barhufbearbeiter-Kunden.
+    // Legt Client-Account + Pferd + Abo-Eintrag an; berührt keine Provider-Logik.
+    const bhsMeta = getBhsProductMeta(productId);
+    if (bhsMeta) {
+      console.log("[copecart][bhs] BHS Balance purchase detected:", productId);
+
+      // Provider-ID: aus Env-Var (Pascal = Alleinbetreiber in Phase 1)
+      // TODO: Wenn Mehrprovider-Support benötigt, aus payload.metadata.provider_id lesen
+      const bhsProviderId = Deno.env.get("BHS_DEFAULT_PROVIDER_ID") ?? null;
+      if (!bhsProviderId) {
+        console.error("[copecart][bhs] BHS_DEFAULT_PROVIDER_ID not configured");
+        return new Response(JSON.stringify({ error: "BHS provider not configured" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      // Pferdename aus CopeCart Custom Fields (buyer füllt bei Kauf aus)
+      const horseName: string =
+        payload.custom_field_1 ||
+        payload.metadata?.horse_name ||
+        payload.custom?.horse_name ||
+        "Pferd";
+
+      // Kündigung via CopeCart
+      if (isCancellationEvent) {
+        if (subscriptionId) {
+          const { error: cancelErr } = await supabase
+            .from("bhs_horse_subscriptions")
+            .update({
+              status: "cancelled",
+              cancelled_by: "client",
+              cancelled_at: new Date().toISOString(),
+              cancellation_reason: "CopeCart-Kündigung",
+            })
+            .eq("copecart_subscription_id", subscriptionId)
+            .eq("provider_id", bhsProviderId);
+
+          if (cancelErr) {
+            console.error("[copecart][bhs] Cancellation update failed:", cancelErr.message);
+          } else {
+            console.log("[copecart][bhs] Subscription cancelled:", subscriptionId);
+
+            // Push an Provider
+            await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${supabaseServiceKey}` },
+              body: JSON.stringify({
+                user_id: bhsProviderId,
+                title: "BHS Balance gekündigt",
+                body: `Ein BHS Balance Abo wurde vom Kunden gekündigt (${subscriptionId.slice(0, 8)})`,
+                url: "/bhs-balance",
+              }),
+            }).catch((e) => console.error("[copecart][bhs] Provider push failed:", e));
+          }
+        }
+        return new Response(JSON.stringify({ success: true, scope: "bhs_balance", action: "cancelled" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      // Nur Kaufereignisse weiter verarbeiten
+      if (!isPaymentEvent) {
+        console.log("[copecart][bhs] Unhandled event type:", eventType);
+        return new Response(JSON.stringify({ success: true, message: "Event type not handled" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      // 1. Client-Account: vorhanden oder neu anlegen
+      let clientId: string;
+      let tempPassword: string | null = null;
+
+      if (profile) {
+        clientId = profile.id;
+        console.log("[copecart][bhs] Existing client found:", clientId);
+      } else {
+        // Neuen Client anlegen mit zufälligem Passwort
+        const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+        tempPassword = Array.from(crypto.getRandomValues(new Uint8Array(6)))
+          .map((b) => chars[b % chars.length])
+          .join("");
+
+        const nameParts = customerName.trim().split(/\s+/);
+        const { data: newUser, error: createErr } = await supabase.auth.admin.createUser({
+          email: customerEmail,
+          password: tempPassword,
+          email_confirm: true,
+          user_metadata: {
+            full_name: customerName || "Neuer Kunde",
+            role: "client",
+          },
+        });
+
+        if (createErr) {
+          // Schon registriert → trotzdem fortfahren
+          if (createErr.message.includes("already been registered") || createErr.message.includes("already registered")) {
+            const { data: existingProfile } = await supabase
+              .from("profiles")
+              .select("id")
+              .eq("email", customerEmail)
+              .maybeSingle();
+            if (!existingProfile) {
+              console.error("[copecart][bhs] Cannot find or create client:", createErr.message);
+              return new Response(JSON.stringify({ error: "Client creation failed" }), {
+                status: 500,
+                headers: { "Content-Type": "application/json", ...corsHeaders },
+              });
+            }
+            clientId = existingProfile.id;
+            tempPassword = null;
+            console.log("[copecart][bhs] Existing user found via fallback:", clientId);
+          } else {
+            console.error("[copecart][bhs] createUser error:", createErr.message);
+            return new Response(JSON.stringify({ error: "Client creation failed" }), {
+              status: 500,
+              headers: { "Content-Type": "application/json", ...corsHeaders },
+            });
+          }
+        } else {
+          clientId = newUser!.user.id;
+          // Kurz warten bis Trigger die Profile-Zeile angelegt hat
+          await new Promise((r) => setTimeout(r, 800));
+          await supabase.from("profiles").update({
+            full_name: customerName || nameParts[0] || "Neuer Kunde",
+          }).eq("id", clientId);
+          await supabase.from("user_roles").upsert(
+            { user_id: clientId, role: "client" },
+            { onConflict: "user_id,role" },
+          );
+          console.log("[copecart][bhs] New client account created:", clientId);
+        }
+      }
+
+      // 2. Pferd anlegen
+      const eqid = generateEqid();
+      const { data: horse, error: horseErr } = await supabase
+        .from("horses")
+        .insert({
+          owner_id: clientId,
+          name: horseName,
+          eqid,
+        })
+        .select("id")
+        .single();
+
+      if (horseErr) {
+        console.error("[copecart][bhs] Horse creation failed:", horseErr.message);
+        return new Response(JSON.stringify({ error: "Horse creation failed" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+      console.log("[copecart][bhs] Horse created:", horse.id, eqid);
+
+      // 3. bhs_horse_subscriptions anlegen
+      const startedAt = new Date();
+      const nextServiceDate = new Date(startedAt);
+      nextServiceDate.setDate(nextServiceDate.getDate() + bhsMeta.intervalWeeks * 7);
+
+      const { error: subErr } = await supabase
+        .from("bhs_horse_subscriptions")
+        .insert({
+          horse_id: horse.id,
+          provider_id: bhsProviderId,
+          client_id: clientId,
+          interval_weeks: bhsMeta.intervalWeeks,
+          zone: bhsMeta.zone,
+          monthly_price: bhsMeta.monthlyPrice,
+          product_variant: bhsMeta.variant,
+          copecart_subscription_id: subscriptionId,
+          status: "active",
+          started_at: startedAt.toISOString(),
+          next_service_date: nextServiceDate.toISOString().split("T")[0],
+        });
+
+      if (subErr) {
+        console.error("[copecart][bhs] Subscription insert failed:", subErr.message);
+      } else {
+        console.log("[copecart][bhs] Subscription created for horse:", horse.id);
+      }
+
+      // 4. Welcome-Email an Client
+      if (resend) {
+        await sendBhsWelcomeEmail(
+          resend,
+          customerEmail,
+          customerName || "Kunde",
+          horseName,
+          bhsMeta.intervalWeeks,
+          bhsMeta.zone,
+          bhsMeta.monthlyPrice,
+          tempPassword,
+        );
+      } else {
+        console.log("[copecart][bhs] Resend not configured, skipping welcome email");
+      }
+
+      // 5. Push-Notification an Provider
+      await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${supabaseServiceKey}` },
+        body: JSON.stringify({
+          user_id: bhsProviderId,
+          title: "🐴 Neues BHS Balance Abo",
+          body: `${customerName || customerEmail} – ${horseName} (${bhsMeta.intervalWeeks}W, Zone ${bhsMeta.zone}, ${bhsMeta.monthlyPrice}€/Monat)`,
+          url: "/bhs-balance",
+        }),
+      }).catch((e) => console.error("[copecart][bhs] Provider push failed:", e));
+
+      return new Response(JSON.stringify({
+        success: true,
+        scope: "bhs_balance",
+        clientId,
+        horseId: horse.id,
+        eqid,
+        variant: bhsMeta.variant,
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+    // ─── Ende BHS BALANCE BRANCH ─────────────────────────────────────────────
 
     // If user doesn't exist and this is a payment event, create the user
     if (!profile && isPaymentEvent) {
@@ -595,7 +1058,7 @@ const handler = async (req: Request): Promise<Response> => {
             full_name: customerName || `${firstName} ${lastName}`,
             role: "provider",
           },
-          redirectTo: "https://hufmanager.de/auth",
+          redirectTo: "https://hufiapp.de/auth",
         }
       );
 

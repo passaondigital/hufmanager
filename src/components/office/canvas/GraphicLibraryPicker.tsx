@@ -111,7 +111,7 @@ export function GraphicLibraryPicker({ currentType, currentCustomUrl, onSelectSy
         const spacing = fontSize * 4;
         for (let y = -img.height; y < img.height; y += spacing) {
           for (let x = -img.width; x < img.width; x += spacing * 2.5) {
-            ctx.fillText("HufManager", x, y);
+            ctx.fillText("Hufi", x, y);
           }
         }
         ctx.restore();

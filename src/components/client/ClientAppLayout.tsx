@@ -11,7 +11,7 @@ import { useTheme } from "@/components/ThemeProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppSidebar, MobileAppSidebar, NavigationConfig } from "@/components/shared/AppSidebar";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { DemoStickyBanner } from "@/components/demo";
+import { DemoStickyBanner } from "@/components/demo/DemoStickyBanner";
 import { AIChatWidget } from "@/components/chat/AIChatWidget";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
@@ -69,6 +69,7 @@ function getClientNavigationConfig(mode: ClientModeType, isVerified: boolean): N
           { id: "booking", label: "Buchen", iconName: "Calendar", path: "/client-booking" },
           { id: "orders", label: "Aufträge", iconName: "ClipboardList", path: "/client-orders" },
           { id: "invoices", label: "Rechnungen", iconName: "Receipt", path: "/client-invoices" },
+          { id: "bhs-abo", label: "Mein BHS Abo", iconName: "Repeat2", path: "/client-bhs-abo" },
         ],
       },
       {
@@ -88,15 +89,15 @@ function getClientNavigationConfig(mode: ClientModeType, isVerified: boolean): N
       ...(isStall
         ? [
           {
-            label: "🏇 Stallbetrieb",
+            label: "Stallbetrieb",
             items: [
               { id: "stall-mgmt", label: "Stallverwaltung", iconName: "Building2", path: "/client-stall-management" },
-              { id: "stall-cockpit", label: "Tages-Cockpit", iconName: "LayoutDashboard", path: "/client-stall/cockpit" },
+              { id: "stall-cockpit", label: "Tages-Cockpit", iconName: "LayoutDashboard", path: "/client-stall/home" },
               { id: "stall-kalender", label: "Kalender", iconName: "CalendarDays", path: "/client-stall/kalender" },
             ],
           },
           {
-            label: "📋 Anfrage & Aufnahme",
+            label: "Anfrage & Aufnahme",
             items: [
               { id: "stall-anfragen", label: "Anfragen & Leads", iconName: "Search", path: "/client-stall/anfragen" },
               { id: "stall-buchung", label: "Buchungsportal", iconName: "Send", path: "/client-stall/buchungsportal" },
@@ -106,7 +107,7 @@ function getClientNavigationConfig(mode: ClientModeType, isVerified: boolean): N
             ],
           },
           {
-            label: "📊 Analyse & Betrieb",
+            label: "Analyse & Betrieb",
             items: [
               { id: "stall-overview", label: "Betriebsübersicht", iconName: "BarChart3", path: "/client-stall/overview" },
               { id: "stall-staff", label: "Mitarbeiter", iconName: "UserPlus", path: "/client-stall/staff" },
@@ -121,7 +122,7 @@ function getClientNavigationConfig(mode: ClientModeType, isVerified: boolean): N
       // --- Gewerblich-Bereich ---
       ...(isCommercial
         ? [{
-            label: "🏢 Gewerbebetrieb",
+            label: "Gewerbebetrieb",
             items: [
               { id: "business-hub", label: "Gewerbeverwaltung", iconName: "Briefcase", path: "/client-business" },
               { id: "business-overview", label: "Betriebsübersicht", iconName: "BarChart3", path: "/client-business/overview" },
@@ -332,12 +333,6 @@ export function ClientAppLayout() {
   const displayName = user?.email?.split("@")[0] || "Pferdebesitzer";
   const clientNavigationConfig = getClientNavigationConfig(mode, modeInfo.isVerified);
 
-  const MODE_ICONS: Record<ClientModeType, string> = {
-    private: "🏠",
-    stall: "🏇",
-    commercial: "🏢",
-  };
-
   const isActive = (path: string, match?: string) => {
     if (location.pathname === path) return true;
     if (match && location.pathname.startsWith(match)) return true;
@@ -349,7 +344,7 @@ export function ClientAppLayout() {
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <AppSidebar
-          appName={`${MODE_ICONS[mode]} ${modeInfo.label}`}
+          appName={modeInfo.label}
           userDisplayName={displayName}
           navigationConfig={clientNavigationConfig}
         />
@@ -359,7 +354,7 @@ export function ClientAppLayout() {
       <MobileAppSidebar
         open={mobileMenuOpen}
         onOpenChange={setMobileMenuOpen}
-        appName={`${MODE_ICONS[mode]} ${modeInfo.label}`}
+        appName={modeInfo.label}
         userDisplayName={displayName}
         navigationConfig={clientNavigationConfig}
       />
@@ -374,7 +369,7 @@ export function ClientAppLayout() {
             <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)} className="h-10 w-10" aria-label="Menü öffnen">
               <Menu className="h-5 w-5" />
             </Button>
-            <img src="/hufmanager-logo.png" alt="HufManager" className="h-7 w-auto" />
+            <img src="https://upload.assaon.com/files/medien/hufiapp-logo-mit-text-1777028919801-id2zm.png" alt="Hufi" className="h-7 w-auto" />
           </div>
 
           <div className="flex items-center gap-1">
@@ -475,7 +470,6 @@ export function ClientAppLayout() {
       </QuickSheet>
 
       <DemoStickyBanner />
-      <AIChatWidget />
     </div>
   );
 }

@@ -185,7 +185,7 @@ export default function StatusPage() {
             </h1>
             <p className="text-muted-foreground mt-1">
               {hasActiveIncident ? 'Alle Daten sind sicher. Wir beheben das Problem so schnell wie möglich.' :
-               overallStatus === 'operational' ? 'HufManager funktioniert einwandfrei.' :
+               overallStatus === 'operational' ? 'Hufi funktioniert einwandfrei.' :
                'Wir arbeiten daran, das Problem zu beheben.'}
             </p>
           </div>

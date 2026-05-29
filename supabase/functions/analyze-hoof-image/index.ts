@@ -31,7 +31,7 @@ serve(async (req) => {
 
   try {
     const { imageBase64, hoofPosition, viewAngle, horseName } = await req.json();
-    
+
     if (!imageBase64) {
       return new Response(
         JSON.stringify({ error: "No image provided" }),
@@ -39,12 +39,17 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_KEY) {
+      throw new Error("ANTHROPIC_API_KEY is not configured");
     }
 
-    const systemPrompt = `Du bist ein Experte für Hufanalyse und Fotodokumentation. 
+    // Strip data URL prefix if present
+    const rawBase64 = imageBase64.startsWith("data:")
+      ? imageBase64.split(",")[1]
+      : imageBase64;
+
+    const systemPrompt = `Du bist ein Experte für Hufanalyse und Fotodokumentation.
 Analysiere das Huf-Foto und bewerte folgende Kriterien:
 
 1. **Bildqualität**: Schärfe, Belichtung, Abstand
@@ -56,7 +61,7 @@ Antworte NUR im folgenden JSON-Format:
   "isAcceptable": true/false,
   "quality": {
     "sharpness": "good" | "acceptable" | "poor",
-    "lighting": "good" | "acceptable" | "poor", 
+    "lighting": "good" | "acceptable" | "poor",
     "distance": "good" | "too_close" | "too_far"
   },
   "perspective": {
@@ -71,19 +76,29 @@ Antworte NUR im folgenden JSON-Format:
   "score": 0-100
 }`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": ANTHROPIC_KEY,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 500,
+        system: systemPrompt,
         messages: [
-          { role: "system", content: systemPrompt },
           {
             role: "user",
             content: [
+              {
+                type: "image",
+                source: {
+                  type: "base64",
+                  media_type: "image/jpeg",
+                  data: rawBase64,
+                },
+              },
               {
                 type: "text",
                 text: `Analysiere dieses Huf-Foto.
@@ -93,46 +108,29 @@ Ansicht: ${viewAngle}
 
 Bitte gib eine JSON-Analyse zurück.`,
               },
-              {
-                type: "image_url",
-                image_url: {
-                  url: imageBase64.startsWith("data:") ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`,
-                },
-              },
             ],
           },
         ],
-        max_tokens: 500,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("AI Gateway error:", response.status, errorText);
-      
+      console.error("Anthropic API error:", response.status, errorText);
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Bitte versuche es später erneut." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "API-Credits aufgebraucht. Bitte laden Sie Credits nach." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
-      throw new Error(`AI Gateway error: ${response.status}`);
+      throw new Error(`Anthropic API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || "";
+    const content = data.content?.[0]?.text || "";
 
-    // Parse JSON from response
     let analysis: AnalysisResult;
     try {
-      // Extract JSON from the response (might be wrapped in markdown code blocks)
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         analysis = JSON.parse(jsonMatch[0]);
@@ -141,7 +139,6 @@ Bitte gib eine JSON-Analyse zurück.`,
       }
     } catch (parseError) {
       console.error("Failed to parse AI response:", content);
-      // Return a default acceptable result if parsing fails
       analysis = {
         isAcceptable: true,
         quality: { sharpness: "acceptable", lighting: "acceptable", distance: "good" },
@@ -158,9 +155,8 @@ Bitte gib eine JSON-Analyse zurück.`,
   } catch (error) {
     console.error("analyze-hoof-image error:", error);
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: error instanceof Error ? error.message : "Unknown error",
-        // Fallback to allow photo capture even if analysis fails
         isAcceptable: true,
         overallFeedback: "Analyse nicht verfügbar. Foto wurde trotzdem gespeichert."
       }),

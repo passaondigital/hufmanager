@@ -166,8 +166,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
     { icon: Receipt, label: "Rechnungen", path: "/rechnungen" },
     { icon: MessageSquare, label: "Chat", path: "/chat" },
     { icon: FileText, label: "Anfragen", path: "/anfragen" },
-    // Academy removed from navigation - Coming Soon
-    { icon: Settings, label: "Einstellungen", path: "/management" },
+    { icon: Settings, label: "Management", path: "/management" },
     { icon: HelpCircle, label: "Support", path: "/support" },
   ];
 

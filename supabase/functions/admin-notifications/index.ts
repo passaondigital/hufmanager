@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const ADMIN_EMAILS = [
-  "support@hufmanager.de",
+  "support@hufiapp.de",
 ];
 
 type NotificationType =
@@ -224,7 +224,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "HufManager System <info@hufmanager.de>",
+        from: "HufManager System <info@hufiapp.de>",
         to: ADMIN_EMAILS,
         subject,
         html,

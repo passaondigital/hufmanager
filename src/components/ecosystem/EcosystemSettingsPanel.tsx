@@ -9,7 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { Settings, Save, Loader2 } from "lucide-react";
 import type { EcosystemSetting } from "@/hooks/useEcosystemStats";
 
-const APPS = ["hufmanager", "hufiai", "hufiapp", "memberhorse"];
+const APPS = ["hufmanager", "hufiai", "memberhorse"];
 
 interface Props {
   settings: EcosystemSetting[];
@@ -122,8 +122,8 @@ export function EcosystemSettingsPanel({ settings, onUpdate }: Props) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="push">Push (→ HufManager)</SelectItem>
-                      <SelectItem value="pull">Pull (← HufManager)</SelectItem>
+                      <SelectItem value="push">Push (→ Hufi)</SelectItem>
+                      <SelectItem value="pull">Pull (← Hufi)</SelectItem>
                       <SelectItem value="bidirectional">Bidirektional (↔)</SelectItem>
                     </SelectContent>
                   </Select>

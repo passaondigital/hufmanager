@@ -416,7 +416,7 @@ export function AccessGrantModal({ open, onClose, horseId, horseName, onGranted 
               </div>
 
               <p className="text-xs text-muted-foreground">
-                Du kannst diesen Zugriff jederzeit widerrufen. HufManager übernimmt keine Haftung
+                Du kannst diesen Zugriff jederzeit widerrufen. Hufi übernimmt keine Haftung
                 für die Verwendung der Daten durch den Empfänger.
               </p>
 

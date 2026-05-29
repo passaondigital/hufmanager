@@ -131,7 +131,7 @@ serve(async (req) => {
 
       <!-- CTA -->
       <div style="text-align:center;margin:30px 0 20px;">
-        <a href="https://hufmanager.lovable.app/home" style="display:inline-block;background:#F5970A;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;">
+        <a href="https://hufiapp.de/home" style="display:inline-block;background:#F5970A;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;">
           Jetzt einloggen & Einstellungen prüfen
         </a>
       </div>
@@ -152,7 +152,7 @@ serve(async (req) => {
     <div style="background:#f3f4f6;border-radius:0 0 12px 12px;padding:20px;text-align:center;border:1px solid #e5e7eb;border-top:none;">
       <p style="color:#9ca3af;font-size:11px;margin:0;">
         HufManager – Die Nr. 1 Software für Hufbearbeiter<br/>
-        © ${new Date().getFullYear()} HufManager · <a href="https://www.hufmanager.de/datenschutz" style="color:#9ca3af;">Datenschutz</a> · <a href="https://www.hufmanager.de/impressum" style="color:#9ca3af;">Impressum</a>
+        © ${new Date().getFullYear()} HufManager · <a href="https://www.hufiapp.de/datenschutz" style="color:#9ca3af;">Datenschutz</a> · <a href="https://www.hufiapp.de/impressum" style="color:#9ca3af;">Impressum</a>
       </p>
       <p style="color:#d1d5db;font-size:10px;margin:8px 0 0;">
         Du erhältst diese E-Mail weil du bei HufManager registriert bist.
@@ -190,7 +190,7 @@ serve(async (req) => {
         batch.map(async (user: any) => {
           try {
             await resend.emails.send({
-              from: "HufManager <info@hufmanager.de>",
+              from: "HufManager <info@hufiapp.de>",
               to: [user.email],
               subject: "🐴 HufManager Update – Neue Steuer- & Rechtsform-Einstellungen",
               html: buildHtml(user.full_name, user.role),

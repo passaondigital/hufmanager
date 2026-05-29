@@ -118,7 +118,7 @@ export function BotschafterRegistration({ sourceRole }: Props) {
     toast.success("Registrierung eingegangen!");
   };
 
-  const referralLink = existing ? `https://hufmanager.de/pferdeakte?ref=${existing.referral_code}` : "";
+  const referralLink = existing ? `https://hufiapp.de/pferdeakte?ref=${existing.referral_code}` : "";
 
   const handleCopy = () => {
     navigator.clipboard.writeText(referralLink);
@@ -207,16 +207,16 @@ export function BotschafterRegistration({ sourceRole }: Props) {
         <CardContent className="pt-6 space-y-6">
           <div>
             <Badge className="bg-orange-500/20 text-orange-500 border-orange-500/30 mb-3">BOTSCHAFTER-PROGRAMM</Badge>
-            <h2 className="text-xl font-bold">Werde HufManager Botschafter</h2>
+            <h2 className="text-xl font-bold">Werde Hufi Botschafter</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Empfehle HufManager und verdiene bis zu 50% Provision auf jedes gebuchte Paket. Deine #BID verknüpft sich automatisch mit deinem bestehenden Account.
+              Empfehle Hufi und verdiene bis zu 50% Provision auf jedes gebuchte Paket. Deine #BID verknüpft sich automatisch mit deinem bestehenden Account.
             </p>
           </div>
 
           <div className="space-y-1">
             {[
               "Bis 50% Provision pro Empfehlung",
-              "Top 10 Empfehler: HufManager Pro 1 Jahr kostenlos",
+              "Top 10 Empfehler: Hufi Pro 1 Jahr kostenlos",
               "Eigenes Dashboard mit KI-Werbemittel-Generator",
             ].map(text => (
               <div key={text} className="flex items-center gap-2 text-sm">
@@ -291,7 +291,7 @@ export function BotschafterRegistration({ sourceRole }: Props) {
             />
             <label htmlFor="privacy" className="text-sm text-muted-foreground cursor-pointer">
               Ich habe die{" "}
-              <a href="https://hufmanager.de/datenschutz" target="_blank" rel="noopener noreferrer" className="underline text-primary">
+              <a href="https://hufiapp.de/datenschutz" target="_blank" rel="noopener noreferrer" className="underline text-primary">
                 Datenschutzerklärung
               </a>{" "}
               gelesen und stimme zu.

@@ -1,22 +1,29 @@
 import { useAuth } from "@/hooks/useAuth";
+import { lazy } from "react";
 import { Navigate } from "react-router-dom";
-import WebsiteHome from "@/pages/website/WebsiteHome";
 import { getPostLoginPath } from "@/lib/portal-user-detect";
+
+const WebsiteHome = lazy(() => import("@/pages/website/WebsiteHome"));
+
+// Erkennt ob die App als installiertes PWA läuft (Homescreen-Kachel)
+function isPWAStandalone(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (window.navigator as any).standalone === true ||
+    document.referrer.startsWith("android-app://")
+  );
+}
 
 const Index = () => {
   const { user, role, loading } = useAuth();
   const hostname = window.location.hostname;
 
-  // www.hufmanager.de or hufmanager.de → always landing page, no auth check
-  const isMainDomain =
-    hostname === "www.hufmanager.de" ||
-    hostname === "hufmanager.de";
+  // hufmanager.de = statische Landing/Salespage (eigener Nginx-Block)
+  // app.hufmanager.de = die App → hier landen, direkt zur Auth/App
+  // hufiapp.de leitet per Nginx auf hufmanager.de weiter → kommt nie hier an
 
-  if (isMainDomain) {
-    return <WebsiteHome />;
-  }
-
-  // app.hufmanager.de (or preview/localhost) → auth flow
+  // app.hufmanager.de → auth flow
   // If logged in, redirect to role-specific home
   if (!loading && user && role) {
     return <Navigate to={getPostLoginPath(role, user.email)} replace />;

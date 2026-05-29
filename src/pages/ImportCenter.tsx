@@ -1,33 +1,27 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { lazy, Suspense } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Link2,
-  MessageCircle,
   Contact,
   FileSpreadsheet,
-  Copy,
-  Share2,
-  Check,
-  RefreshCw,
-  Upload,
-  Users,
-  Briefcase,
-  Truck,
-  UserPlus,
   Wand2,
 } from "lucide-react";
-import MagicLinkSection from "@/components/import/MagicLinkSection";
-import ContactPickerSection from "@/components/import/ContactPickerSection";
-import UniversalImportSection from "@/components/import/UniversalImportSection";
-import ImportWizard from "@/components/import/ImportWizard";
+
+const MagicLinkSection = lazy(() => import("@/components/import/MagicLinkSection"));
+const ContactPickerSection = lazy(() => import("@/components/import/ContactPickerSection"));
+const UniversalImportSection = lazy(() => import("@/components/import/UniversalImportSection"));
+const ImportWizard = lazy(() => import("@/components/import/ImportWizard"));
+
+function ImportTabFallback() {
+  return (
+    <Card>
+      <CardContent className="py-10 text-center text-sm text-muted-foreground">
+        Import-Modul wird geladen...
+      </CardContent>
+    </Card>
+  );
+}
 
 const ImportCenter = () => {
   const { user } = useAuth();
@@ -89,21 +83,29 @@ const ImportCenter = () => {
         <TabsContent value="wizard">
           <Card>
             <CardContent className="pt-6">
-              <ImportWizard />
+              <Suspense fallback={<ImportTabFallback />}>
+                <ImportWizard />
+              </Suspense>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="import">
-          <UniversalImportSection />
+          <Suspense fallback={<ImportTabFallback />}>
+            <UniversalImportSection />
+          </Suspense>
         </TabsContent>
 
         <TabsContent value="magic-link">
-          <MagicLinkSection />
+          <Suspense fallback={<ImportTabFallback />}>
+            <MagicLinkSection />
+          </Suspense>
         </TabsContent>
 
         <TabsContent value="contacts">
-          <ContactPickerSection />
+          <Suspense fallback={<ImportTabFallback />}>
+            <ContactPickerSection />
+          </Suspense>
         </TabsContent>
       </Tabs>
     </div>

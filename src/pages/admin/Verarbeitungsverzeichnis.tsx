@@ -200,7 +200,7 @@ export default function Verarbeitungsverzeichnis() {
     doc.text("Verzeichnis von Verarbeitungstätigkeiten", 14, 15);
     doc.setFontSize(10);
     doc.text("gemäß Art. 30 DSGVO (EU 2016/679)", 14, 22);
-    doc.text(`Verantwortlicher: HufManager – Pascal Schmid`, 14, 28);
+    doc.text(`Verantwortlicher: Hufi – Pascal Schmid`, 14, 28);
     doc.text(`Stand: ${format(new Date(lastModified), "dd.MM.yyyy HH:mm", { locale: de })} Uhr`, 14, 34);
     doc.text(`Exportiert am: ${format(new Date(), "dd.MM.yyyy HH:mm", { locale: de })} Uhr`, 14, 40);
 
@@ -267,9 +267,9 @@ export default function Verarbeitungsverzeichnis() {
 
         {/* Info */}
         <div className="rounded-lg border bg-muted/50 p-4 text-sm text-muted-foreground">
-          <strong>Verantwortlicher:</strong> Pascal Schmid (HufManager) · 
-          <strong> Datenschutzbeauftragter:</strong> datenschutz@hufmanager.de · 
-          <strong> System:</strong> HufManager (hufmanager.lovable.app) · 
+          <strong>Verantwortlicher:</strong> Pascal Schmid (Hufi) · 
+          <strong> Datenschutzbeauftragter:</strong> kontakt@hufiapp.de · 
+          <strong> System:</strong> Hufi (hufiapp.de) · 
           <strong> Infrastruktur:</strong> Supabase (eu-central-1, Frankfurt)
         </div>
 

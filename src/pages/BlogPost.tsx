@@ -104,7 +104,7 @@ export default function BlogPost() {
   useEffect(() => {
     if (post) {
       // Update page title and meta
-      document.title = post.meta_title || post.title + " | Hufmanager Blog";
+      document.title = post.meta_title || post.title + " | Hufi Blog";
       const metaDesc = document.querySelector('meta[name="description"]');
       if (metaDesc && post.meta_description) {
         metaDesc.setAttribute("content", post.meta_description);
@@ -164,19 +164,19 @@ export default function BlogPost() {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/blog" className="flex items-center gap-2">
             <img 
-              src="/hufmanager-logo.png" 
-              alt="Hufmanager" 
+              src="https://upload.assaon.com/files/medien/hufiapp-logo-mit-text-1777028919801-id2zm.png" 
+              alt="Hufi" 
               className="h-8 w-auto"
             />
           </Link>
           <nav className="hidden md:flex items-center gap-8">
-            <a href="https://www.hufmanager.de/#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <a href="https://hufiapp.de/#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Features
             </a>
-            <a href="https://www.hufmanager.de/#preise" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <a href="https://hufiapp.de/#preise" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Preise
             </a>
-            <a href="https://www.hufmanager.de/kalkulator" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <a href="https://hufiapp.de/kalkulator" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Kalkulator
             </a>
             <Link to="/blog" className="text-sm font-medium text-foreground">
@@ -187,7 +187,7 @@ export default function BlogPost() {
             <Link to="/auth">
               <Button variant="ghost" size="sm">Login</Button>
             </Link>
-            <a href="https://www.hufmanager.de/#preise">
+            <a href="https://hufiapp.de/#preise">
               <Button size="sm" className="bg-primary hover:bg-primary/90">
                 Kostenlos testen
               </Button>
@@ -277,12 +277,12 @@ export default function BlogPost() {
       {/* Footer */}
       <footer className="border-t py-8">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} Hufmanager. Alle Rechte vorbehalten.</p>
+          <p>© {new Date().getFullYear()} Hufi. Alle Rechte vorbehalten.</p>
           <div className="flex justify-center gap-4 mt-4">
-            <a href="https://www.hufmanager.de/impressum" className="hover:text-foreground">
+            <a href="https://hufiapp.de/impressum" className="hover:text-foreground">
               Impressum
             </a>
-            <a href="https://www.hufmanager.de/datenschutz" className="hover:text-foreground">
+            <a href="https://hufiapp.de/datenschutz" className="hover:text-foreground">
               Datenschutz
             </a>
           </div>

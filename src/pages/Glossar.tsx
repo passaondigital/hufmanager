@@ -154,7 +154,7 @@ export default function Glossar() {
             <div>
               <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
                 <BookOpen className="h-6 w-6 text-primary" />
-                HufManager Glossar
+                Hufi Glossar
               </h1>
               <p className="text-sm text-muted-foreground">
                 {entries.length} Funktionen & Begriffe • {categories.length} Kategorien

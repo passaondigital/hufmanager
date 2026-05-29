@@ -26,7 +26,7 @@ const PainSolutionSection = () => (
         <div className="text-center mb-14">
           <span className="text-[#F5970A] font-bold text-sm uppercase tracking-widest">Vorher → Nachher</span>
           <h2 className="font-sans text-3xl md:text-4xl lg:text-5xl font-extrabold text-white mt-4">
-            Dein Alltag – mit und ohne HufManager
+            Dein Alltag – mit und ohne Hufi
           </h2>
         </div>
 

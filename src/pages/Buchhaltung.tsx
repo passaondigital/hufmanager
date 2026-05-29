@@ -48,7 +48,7 @@ export default function Buchhaltung() {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                HufManager hat <strong>keinen Zugriff</strong> auf Ihre Buchhaltungsdaten. Alle Daten werden verschlüsselt gespeichert und sind ausschließlich für Sie einsehbar.
+                Hufi hat <strong>keinen Zugriff</strong> auf Ihre Buchhaltungsdaten. Alle Daten werden verschlüsselt gespeichert und sind ausschließlich für Sie einsehbar.
               </p>
 
               {showPrivacy && (
@@ -57,7 +57,7 @@ export default function Buchhaltung() {
                     {[
                       {
                         icon: EyeOff,
-                        title: "Kein Zugriff durch HufManager",
+                        title: "Kein Zugriff durch Hufi",
                         desc: "Wir können Ihre Rechnungen, Ausgaben und Belege weder einsehen noch verarbeiten. Ihre Daten werden nicht für Marketing, Analysen oder andere Zwecke genutzt.",
                       },
                       {
@@ -68,7 +68,7 @@ export default function Buchhaltung() {
                       {
                         icon: Scale,
                         title: "Keine steuerliche Beratung",
-                        desc: "HufManager bietet Werkzeuge zur Buchhaltungs-Unterstützung, ersetzt jedoch keine steuerliche Beratung. Für verbindliche Auskünfte wenden Sie sich an Ihren Steuerberater.",
+                        desc: "Hufi bietet Werkzeuge zur Buchhaltungs-Unterstützung, ersetzt jedoch keine steuerliche Beratung. Für verbindliche Auskünfte wenden Sie sich an Ihren Steuerberater.",
                       },
                       {
                         icon: ShieldCheck,
@@ -89,7 +89,7 @@ export default function Buchhaltung() {
                   <div className="p-3 rounded-lg bg-muted text-xs text-muted-foreground">
                     <p className="font-medium text-foreground mb-1">Rechtlicher Hinweis</p>
                     <p>
-                      Die Nutzung der Buchhaltungsfunktionen erfolgt auf eigene Verantwortung. HufManager übernimmt 
+                      Die Nutzung der Buchhaltungsfunktionen erfolgt auf eigene Verantwortung. Hufi übernimmt 
                       keine Haftung für die Richtigkeit oder Vollständigkeit der erfassten Daten. Die bereitgestellten 
                       Übersichten (EÜR, USt-VA) dienen ausschließlich als Hilfestellung und ersetzen keine 
                       ordnungsgemäße Buchführung durch einen Steuerberater. Für die Erfüllung steuerlicher Pflichten 

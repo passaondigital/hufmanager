@@ -5,8 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const ADMIN_EMAIL = "support@hufmanager.de";
-const CC_EMAIL = "support@hufmanager.de";
+const ADMIN_EMAIL = "support@hufiapp.de";
+const CC_EMAIL = "support@hufiapp.de";
 
 const DUNNING_CONFIG = [
   { level: 1, daysOverdue: 3, fee: 0, subject: "Zahlungserinnerung", tone: "freundlich" },
@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
                   method: "POST",
                   headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
                   body: JSON.stringify({
-                    from: "HufManager <noreply@hufmanager.de>",
+                    from: "HufManager <noreply@hufiapp.de>",
                     to: [CC_EMAIL],
                     subject: `🚨 2. Mahnung – ${invoice.invoice_number} (${invoice.provider_name})`,
                     html: `<p>Die 2. Mahnung für Rechnung <strong>${invoice.invoice_number}</strong> (${invoice.provider_name}) wurde erstellt.</p><p>${daysOverdue} Tage überfällig. Betrag: ${invoice.total}€</p>`,

@@ -10,12 +10,12 @@ serve(async (req) => {
 
   try {
     const { prompt, audiences, tone } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_KEY) throw new Error("ANTHROPIC_API_KEY is not configured");
 
-    const systemPrompt = `Du bist Marketing-Experte für Pferdeprodukte im DACH-Raum. Erstelle 3 verschiedene Marketing-Textvarianten für HufManager - die digitale Pferdeakte.
+    const systemPrompt = `Du bist Marketing-Experte für Pferdeprodukte im DACH-Raum. Erstelle 3 verschiedene Marketing-Textvarianten für Hufi - die digitale Pferdeakte.
 
-Leitbild HufManager: Pferdeschutz & Datenschutz sind dasselbe.
+Leitbild Hufi: Pferdeschutz & Datenschutz sind dasselbe.
 USP: Pferdebesitzer behalten absolute Datensouveränität.
 Die Kunden-App ist kostenlos.
 
@@ -26,18 +26,18 @@ Antworte NUR als valides JSON ohne Markdown-Backticks:
 Zielgruppe: ${audiences || "Pferdebesitzer"}
 Ton: ${tone || "Emotional & herzlich"}`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": ANTHROPIC_KEY,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userMessage },
-        ],
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 512,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userMessage }],
       }),
     });
 
@@ -47,32 +47,25 @@ Ton: ${tone || "Emotional & herzlich"}`;
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "KI-Kontingent aufgebraucht." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
       const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
+      console.error("Anthropic API error:", response.status, t);
       return new Response(JSON.stringify({ error: "KI-Fehler" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || "";
+    const content = data.content?.[0]?.text || "";
 
-    // Try to parse JSON from content
     let variants;
     try {
       const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
       variants = JSON.parse(cleaned).variants;
     } catch {
-      // Fallback variants
       variants = [
         { headline: "Dein Pferd verdient mehr", subtext: "Die digitale Pferdeakte — alle Daten sicher, immer dabei.", cta: "Jetzt entdecken" },
         { headline: "Sicherheit für dein Pferd", subtext: "Impfpass, Befunde, Behandlungen — alles an einem Ort.", cta: "Kostenlos starten" },
-        { headline: "Schütze was du liebst", subtext: "Mit HufManager behältst du den Überblick über die Gesundheit deines Pferdes.", cta: "Mehr erfahren" },
+        { headline: "Schütze was du liebst", subtext: "Mit Hufi behältst du den Überblick über die Gesundheit deines Pferdes.", cta: "Mehr erfahren" },
       ];
     }
 

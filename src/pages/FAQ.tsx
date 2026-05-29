@@ -36,7 +36,7 @@ export default function FAQ() {
             Häufig gestellte Fragen
           </h1>
           <p className="text-muted-foreground mt-2">
-            Finde schnell Antworten zu HufManager
+            Finde schnell Antworten zu Hufi
           </p>
         </div>
 
@@ -119,7 +119,7 @@ export default function FAQ() {
               variant="outline"
               className="gap-2"
               onClick={() =>
-                (window.location.href = "mailto:support@hufmanager.de")
+                (window.location.href = "mailto:kontakt@hufiapp.de")
               }
             >
               E-Mail an Support

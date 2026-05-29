@@ -1,7 +1,5 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { Calendar, dateFnsLocalizer, Views, SlotInfo } from "react-big-calendar";
-import withDragAndDrop, { EventInteractionArgs } from "react-big-calendar/lib/addons/dragAndDrop";
-import { format, parse, startOfWeek, getDay, addMinutes, subMonths, addMonths, startOfDay, addDays, isSameDay, endOfWeek, eachDayOfInterval } from "date-fns";
+import { useState, useCallback, useMemo, useRef, useEffect, lazy, Suspense } from "react";
+import { format, startOfWeek, addMinutes, subMonths, addMonths, addDays, isSameDay, endOfWeek, eachDayOfInterval, getISODay } from "date-fns";
 import { de } from "date-fns/locale";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,30 +26,33 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useServicePresets } from "@/hooks/useServicePresets";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { AppointmentFormModal } from "@/components/calendar/AppointmentFormModal";
-import { CalendarSyncModal } from "@/components/calendar/CalendarSyncModal";
-import { AppointmentTooltip } from "@/components/calendar/AppointmentTooltip";
-import { AppointmentDetailSheet } from "@/components/calendar/AppointmentDetailSheet";
 import { NearbyDueClientsPanel } from "@/components/calendar/NearbyDueClientsPanel";
-import { TourMapView } from "@/components/calendar/TourMapView";
 import { CalendarFilterBar, type CalendarFilters } from "@/components/calendar/CalendarFilterBar";
-import { CalendarWeekStats } from "@/components/calendar/CalendarWeekStats";
-import { BulkActionsBar } from "@/components/calendar/BulkActionsBar";
-import { AssignEmployeeModal } from "@/components/team/AssignEmployeeModal";
 
-import "react-big-calendar/lib/css/react-big-calendar.css";
-import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
-
-const locales = { de };
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: 1 }),
-  getDay,
-  locales,
-});
-
-const DnDCalendar = withDragAndDrop(Calendar);
+const DesktopBigCalendarView = lazy(() =>
+  import("@/components/calendar/DesktopBigCalendarView").then((m) => ({ default: m.DesktopBigCalendarView }))
+);
+const TourMapView = lazy(() =>
+  import("@/components/calendar/TourMapView").then((m) => ({ default: m.TourMapView }))
+);
+const AppointmentFormModal = lazy(() =>
+  import("@/components/calendar/AppointmentFormModal").then((m) => ({ default: m.AppointmentFormModal }))
+);
+const CalendarSyncModal = lazy(() =>
+  import("@/components/calendar/CalendarSyncModal").then((m) => ({ default: m.CalendarSyncModal }))
+);
+const AppointmentDetailSheet = lazy(() =>
+  import("@/components/calendar/AppointmentDetailSheet").then((m) => ({ default: m.AppointmentDetailSheet }))
+);
+const CalendarWeekStats = lazy(() =>
+  import("@/components/calendar/CalendarWeekStats").then((m) => ({ default: m.CalendarWeekStats }))
+);
+const BulkActionsBar = lazy(() =>
+  import("@/components/calendar/BulkActionsBar").then((m) => ({ default: m.BulkActionsBar }))
+);
+const AssignEmployeeModal = lazy(() =>
+  import("@/components/team/AssignEmployeeModal").then((m) => ({ default: m.AssignEmployeeModal }))
+);
 
 const FALLBACK_COLORS: Record<string, { bg: string; border: string }> = {
   Barhuf: { bg: "hsl(142, 76%, 36%)", border: "hsl(142, 76%, 26%)" },
@@ -81,22 +82,6 @@ interface CalendarEvent {
   };
 }
 
-const messages = {
-  allDay: "Ganztägig",
-  previous: "Zurück",
-  next: "Weiter",
-  today: "Heute",
-  month: "Monat",
-  week: "Woche",
-  day: "Tag",
-  agenda: "Agenda",
-  date: "Datum",
-  time: "Zeit",
-  event: "Termin",
-  noEventsInRange: "Keine Termine in diesem Zeitraum.",
-  showMore: (total: number) => `+${total} weitere`,
-};
-
 // --- Mobile Day List View ---
 function MobileDayList({
   currentDate,
@@ -105,6 +90,7 @@ function MobileDayList({
   onDateChange,
   onCreateNew,
   presetColors,
+  newClientDays = [1, 6],
 }: {
   currentDate: Date;
   events: CalendarEvent[];
@@ -112,6 +98,7 @@ function MobileDayList({
   onDateChange: (date: Date) => void;
   onCreateNew: () => void;
   presetColors: Record<string, string>;
+  newClientDays?: number[];
 }) {
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
@@ -162,16 +149,19 @@ function MobileDayList({
           const isActive = isSameDay(day, currentDate);
           const isToday = isSameDay(day, new Date());
           const hasEvents = events.some((e) => isSameDay(e.start, day));
+          const isNewClientDay = newClientDays.includes(getISODay(day));
           return (
             <button
               key={day.toISOString()}
               onClick={() => onDateChange(day)}
               className={cn(
-                "flex flex-col items-center min-w-[48px] py-2 px-2 rounded-xl transition-all",
+                "flex flex-col items-center min-w-[48px] py-2 px-2 rounded-xl transition-all relative",
                 isActive
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : isToday
                   ? "bg-primary/10 text-primary"
+                  : isNewClientDay
+                  ? "bg-amber-50 text-amber-700 hover:bg-amber-100 ring-1 ring-amber-200"
                   : "text-muted-foreground hover:bg-muted"
               )}
             >
@@ -181,8 +171,14 @@ function MobileDayList({
               <span className={cn("text-lg font-bold", isActive ? "" : "text-foreground")}>
                 {format(day, "d")}
               </span>
-              {hasEvents && !isActive && (
+              {isNewClientDay && !isActive && (
+                <span className="text-[8px] font-semibold text-amber-600 leading-tight mt-0.5">NK</span>
+              )}
+              {hasEvents && !isActive && !isNewClientDay && (
                 <div className="h-1 w-1 rounded-full bg-primary mt-0.5" />
+              )}
+              {hasEvents && !isActive && isNewClientDay && (
+                <div className="h-1 w-1 rounded-full bg-amber-500 mt-0" />
               )}
             </button>
           );
@@ -207,8 +203,9 @@ function MobileDayList({
       {dayEvents.length === 0 ? (
         <div className="text-center py-12 space-y-3">
           <CalendarDays className="h-10 w-10 mx-auto text-muted-foreground/50" />
-          <p className="text-sm text-muted-foreground">Keine Termine an diesem Tag</p>
-          <Button size="sm" variant="outline" onClick={onCreateNew} className="gap-1.5">
+          <p className="text-sm font-medium text-foreground">Keine Termine an diesem Tag</p>
+          <p className="text-xs text-muted-foreground">Tippe auf den Button um einen Termin anzulegen.</p>
+          <Button size="sm" onClick={onCreateNew} className="gap-1.5">
             <Plus className="h-4 w-4" /> Termin erstellen
           </Button>
         </div>
@@ -281,7 +278,7 @@ const Kalender = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
-  const [currentView, setCurrentView] = useState<typeof Views[keyof typeof Views]>(Views.WEEK);
+  const [currentView, setCurrentView] = useState("week");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [preselectedHorseId, setPreselectedHorseId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("calendar");
@@ -341,6 +338,21 @@ const Kalender = () => {
         .single();
       setIcalToken(data?.ical_token || null);
       return data?.ical_token;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Neukundentage aus business_settings laden
+  const { data: newClientDays = [1, 6] } = useQuery<number[]>({
+    queryKey: ["new-client-days", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [1, 6];
+      const { data } = await supabase
+        .from("business_settings")
+        .select("new_client_days")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      return (data?.new_client_days as number[] | null) ?? [1, 6];
     },
     enabled: !!user?.id,
   });
@@ -434,7 +446,7 @@ const Kalender = () => {
     };
   }, [selectedIds, presetColors]);
 
-  const handleSelectSlot = useCallback((slotInfo: SlotInfo) => {
+  const handleSelectSlot = useCallback((slotInfo: any) => {
     setSelectedDate(slotInfo.start);
     setPreselectedHorseId(null);
     setIsFormOpen(true);
@@ -461,7 +473,7 @@ const Kalender = () => {
   }, []);
 
   const handleEventDrop = useCallback(
-    async ({ event, start }: EventInteractionArgs<CalendarEvent>) => {
+    async ({ event, start }: { event: CalendarEvent; start: Date }) => {
       try {
         const newDate = format(start as Date, "yyyy-MM-dd");
         const newTime = format(start as Date, "HH:mm");
@@ -552,11 +564,15 @@ const Kalender = () => {
       />
 
       {/* Bulk Actions */}
-      <BulkActionsBar
-        selectedIds={selectedIds}
-        onClearSelection={() => setSelectedIds([])}
-        appointments={appointments}
-      />
+      {selectedIds.length > 0 && (
+        <Suspense fallback={null}>
+          <BulkActionsBar
+            selectedIds={selectedIds}
+            onClearSelection={() => setSelectedIds([])}
+            appointments={appointments}
+          />
+        </Suspense>
+      )}
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -588,6 +604,7 @@ const Kalender = () => {
                     onDateChange={setCurrentDate}
                     onCreateNew={handleCreateNew}
                     presetColors={presetColors}
+                    newClientDays={newClientDays}
                   />
                 )}
               </CardContent>
@@ -603,53 +620,21 @@ const Kalender = () => {
                     </div>
                   ) : (
                     <div className="h-[700px]">
-                      <DnDCalendar
-                        localizer={localizer}
-                        events={events}
-                        view={currentView}
-                        onView={setCurrentView}
-                        date={currentDate}
-                        onNavigate={setCurrentDate}
-                        onSelectSlot={handleSelectSlot}
-                        onSelectEvent={handleSelectEvent}
-                        onEventDrop={handleEventDrop}
-                        eventPropGetter={eventStyleGetter}
-                        selectable
-                        resizable={false}
-                        messages={messages}
-                        culture="de"
-                        step={30}
-                        timeslots={2}
-                        min={new Date(2000, 0, 1, 6, 0)}
-                        max={new Date(2000, 0, 1, 21, 0)}
-                        className="rounded-lg"
-                        components={{
-                          event: ({ event }) => (
-                            <AppointmentTooltip
-                              appointment={event.resource}
-                              onAssign={(id) => handleAssignFromSheet(id)}
-                            >
-                              <div className="px-1 py-0.5 text-xs truncate">
-                                {event.resource.is_confirmed_by_client && (
-                                  <CheckCircle2 className="h-3 w-3 inline mr-1" />
-                                )}
-                                {event.resource.price_group_applied && (
-                                  <span className="bg-white/30 rounded px-1 mr-1 text-[10px] font-bold">
-                                    {event.resource.price_group_applied === "vip"
-                                      ? "VIP"
-                                      : event.resource.price_group_applied === "grossstall"
-                                      ? "GS"
-                                      : event.resource.price_group_applied === "individuell"
-                                      ? "IND"
-                                      : ""}
-                                  </span>
-                                )}
-                                {event.title}
-                              </div>
-                            </AppointmentTooltip>
-                          ),
-                        }}
-                      />
+                      <Suspense fallback={<div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}>
+                        <DesktopBigCalendarView
+                          events={events}
+                          currentView={currentView}
+                          onView={setCurrentView}
+                          currentDate={currentDate}
+                          onNavigate={setCurrentDate}
+                          onSelectSlot={handleSelectSlot}
+                          onSelectEvent={handleSelectEvent}
+                          onEventDrop={handleEventDrop}
+                          eventStyleGetter={eventStyleGetter}
+                          onAssign={handleAssignFromSheet}
+                          newClientDays={newClientDays}
+                        />
+                      </Suspense>
                     </div>
                   )}
                 </CardContent>
@@ -657,7 +642,9 @@ const Kalender = () => {
 
               {showStats && (
                 <div className="w-full lg:w-[260px] shrink-0">
-                  <CalendarWeekStats appointments={appointments} currentDate={currentDate} />
+                  <Suspense fallback={null}>
+                    <CalendarWeekStats appointments={appointments} currentDate={currentDate} />
+                  </Suspense>
                 </div>
               )}
             </div>
@@ -665,11 +652,13 @@ const Kalender = () => {
         </TabsContent>
 
         <TabsContent value="map" className="mt-4">
-          <TourMapView
-            appointments={appointmentsForMap as any}
-            selectedDate={currentDate}
-            isLoading={isLoading}
-          />
+          <Suspense fallback={<Card><CardContent className="py-10 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></CardContent></Card>}>
+            <TourMapView
+              appointments={appointmentsForMap as any}
+              selectedDate={currentDate}
+              isLoading={isLoading}
+            />
+          </Suspense>
         </TabsContent>
       </Tabs>
 
@@ -684,43 +673,57 @@ const Kalender = () => {
       />
 
       {/* Detail Sheet */}
-      <AppointmentDetailSheet
-        appointment={detailEvent}
-        isOpen={detailOpen}
-        onClose={() => {
-          setDetailOpen(false);
-          setDetailEvent(null);
-        }}
-        onAssign={handleAssignFromSheet}
-      />
+      {detailOpen && (
+        <Suspense fallback={null}>
+          <AppointmentDetailSheet
+            appointment={detailEvent}
+            isOpen={detailOpen}
+            onClose={() => {
+              setDetailOpen(false);
+              setDetailEvent(null);
+            }}
+            onAssign={handleAssignFromSheet}
+          />
+        </Suspense>
+      )}
 
       {/* Form Modal */}
-      <AppointmentFormModal
-        isOpen={isFormOpen}
-        onClose={() => {
-          setIsFormOpen(false);
-          setPreselectedHorseId(null);
-        }}
-        selectedDate={selectedDate}
-        existingAppointments={appointments}
-        preselectedHorseId={preselectedHorseId}
-      />
+      {isFormOpen && (
+        <Suspense fallback={null}>
+          <AppointmentFormModal
+            isOpen={isFormOpen}
+            onClose={() => {
+              setIsFormOpen(false);
+              setPreselectedHorseId(null);
+            }}
+            selectedDate={selectedDate}
+            existingAppointments={appointments}
+            preselectedHorseId={preselectedHorseId}
+          />
+        </Suspense>
+      )}
 
       {/* Sync Modal */}
-      <CalendarSyncModal
-        isOpen={isSyncModalOpen}
-        onClose={() => setIsSyncModalOpen(false)}
-        icalToken={icalToken}
-      />
+      {isSyncModalOpen && (
+        <Suspense fallback={null}>
+          <CalendarSyncModal
+            isOpen={isSyncModalOpen}
+            onClose={() => setIsSyncModalOpen(false)}
+            icalToken={icalToken}
+          />
+        </Suspense>
+      )}
 
       {/* Assign Employee Modal */}
       {assignAppointmentId && (
-        <AssignEmployeeModal
-          open={assignModalOpen}
-          onOpenChange={setAssignModalOpen}
-          appointmentId={assignAppointmentId}
-          appointmentInfo={assignAppointmentInfo}
-        />
+        <Suspense fallback={null}>
+          <AssignEmployeeModal
+            open={assignModalOpen}
+            onOpenChange={setAssignModalOpen}
+            appointmentId={assignAppointmentId}
+            appointmentInfo={assignAppointmentInfo}
+          />
+        </Suspense>
       )}
 
       {/* Bulk selection hint - desktop only */}

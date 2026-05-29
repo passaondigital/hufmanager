@@ -476,7 +476,7 @@ export function LTZPdfExport({ analysis, horseName, ownerName, providerName, var
     </div>
 
     <div class="footer">
-      <span>LTZ Bearbeitungsbogen - Generiert mit HufManager</span>
+      <span>LTZ Bearbeitungsbogen - Generiert mit Hufi</span>
       <span>Seite 1 von 1</span>
     </div>
   </div>

@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, HardHat } from "lucide-react";
 import { LandingHero } from "@/components/landing/sections/LandingHero";
 import { LandingAbout } from "@/components/landing/sections/LandingAbout";
 import { LandingServices } from "@/components/landing/sections/LandingServices";
@@ -271,7 +271,7 @@ const ProviderLanding = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="text-center max-w-md">
-          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-6"><span className="text-3xl">🔧</span></div>
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-6"><HardHat className="h-8 w-8 text-muted-foreground" /></div>
           <h1 className="text-2xl font-bold text-foreground mb-3">Profil wird eingerichtet</h1>
           <p className="text-muted-foreground">Dieses Profil ist noch nicht vollständig eingerichtet. Bitte schauen Sie später noch einmal vorbei.</p>
         </div>

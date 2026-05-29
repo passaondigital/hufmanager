@@ -291,14 +291,14 @@ serve(async (req: Request) => {
           type: "magiclink",
           email: email,
           options: {
-            redirectTo: "https://hufmanager.de/auth",
+            redirectTo: "https://hufiapp.de/auth",
           },
         });
 
         if (linkError) {
           console.error("Error generating magic link:", linkError);
         } else {
-          const magicLinkUrl = linkData.properties?.action_link || "https://hufmanager.de/auth";
+          const magicLinkUrl = linkData.properties?.action_link || "https://hufiapp.de/auth";
           const planDisplayName = getPlanDisplayName(planOverride);
           
           // Escape all user-controlled data
@@ -421,7 +421,7 @@ serve(async (req: Request) => {
                   </div>
                   
                   <p style="color: #666;">
-                    Bei Fragen erreichst du uns unter <a href="mailto:support@hufmanager.de" style="color: #F47B20;">support@hufmanager.de</a>
+                    Bei Fragen erreichst du uns unter <a href="mailto:support@hufiapp.de" style="color: #F47B20;">support@hufiapp.de</a>
                   </p>
                 </div>
                 <div class="footer">
@@ -438,7 +438,7 @@ serve(async (req: Request) => {
           // Send invitation email via Resend
           console.log("Sending provider invitation email via Resend to:", email);
           const emailResponse = await resend.emails.send({
-            from: "HufManager <info@hufmanager.de>",
+            from: "HufManager <info@hufiapp.de>",
             to: [email],
             subject: `🐴 Willkommen bei HufManager – Dein Account ist bereit!`,
             html: emailHtml,

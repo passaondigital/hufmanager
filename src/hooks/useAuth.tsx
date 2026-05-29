@@ -13,7 +13,9 @@ interface AuthContextType {
   role: UserRole;
   loading: boolean;
   isPasswordRecovery: boolean;
+  forcePasswordChange: boolean;
   clearPasswordRecovery: () => void;
+  clearForcePasswordChange: () => void;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName: string, role?: "provider" | "client" | "partner") => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -30,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<UserRole>(null);
   const [loading, setLoading] = useState(true);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+  const [forcePasswordChange, setForcePasswordChange] = useState(false);
 
   const fetchUserRole = async (userId: string): Promise<UserRole> => {
     const { data, error } = await supabase
@@ -76,9 +79,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const clearPasswordRecovery = () => {
-    setIsPasswordRecovery(false);
-  };
+  const clearPasswordRecovery = () => setIsPasswordRecovery(false);
+  const clearForcePasswordChange = () => setForcePasswordChange(false);
 
   // Process invite code after successful login
   const processInviteCode = async (userId: string) => {
@@ -205,8 +207,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setTimeout(async () => {
             if (!isMounted) return;
             const fetchedRole = await fetchRoleGuarded(session.user.id);
-            if (isMounted && fetchedRole !== null) {
-              setRole(fetchedRole);
+            if (isMounted) {
+              if (fetchedRole !== null) setRole(fetchedRole);
               setLoading(false);
             }
             // Process invite code on sign in
@@ -273,6 +275,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   sessionStorage.removeItem("hm_pending_client_type");
                 }
               }
+              // Process pending profession_type from registration (providers only)
+              const pendingProfessionType = sessionStorage.getItem("hm_pending_profession_type");
+              if (pendingProfessionType) {
+                try {
+                  await supabase.from("profiles").update({
+                    profession_type: pendingProfessionType,
+                  } as any).eq("id", session.user.id);
+                  const { data: bsExisting } = await supabase
+                    .from("business_settings")
+                    .select("id")
+                    .eq("user_id", session.user.id)
+                    .maybeSingle();
+                  if (bsExisting) {
+                    await supabase.from("business_settings").update({
+                      profession_type: pendingProfessionType,
+                    } as any).eq("user_id", session.user.id);
+                  }
+                  await supabase.rpc("create_default_service_presets", {
+                    _provider_id: session.user.id,
+                    _profession_type: pendingProfessionType,
+                  });
+                } catch (err) {
+                  console.error("Error setting profession_type:", err);
+                } finally {
+                  sessionStorage.removeItem("hm_pending_profession_type");
+                }
+              }
+              const pendingSalutation = sessionStorage.getItem("hm_pending_salutation");
+              if (pendingSalutation) {
+                const { error: salErr } = await supabase
+                  .from("profiles")
+                  .update({ salutation: pendingSalutation } as any)
+                  .eq("id", session.user.id);
+                if (salErr) {
+                  console.warn("salutation not written (column may not exist yet):", salErr.message);
+                }
+                sessionStorage.removeItem("hm_pending_salutation");
+              }
             }
           }, 0);
         } else {
@@ -293,8 +333,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (session?.user) {
         fetchRoleGuarded(session.user.id).then((r) => {
-          if (isMounted && r !== null) {
-            setRole(r);
+          if (isMounted) {
+            if (r !== null) setRole(r);
             setLoading(false);
           }
         });
@@ -327,7 +367,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    
+
     if (error) {
       return { error };
     }
@@ -335,13 +375,13 @@ const signIn = async (email: string, password: string) => {
     if (data.user) {
       // FAST PATH: Read role from user_metadata first (instant, no DB query)
       const metaRole = data.user.user_metadata?.role as UserRole;
-      
-      // Run suspension check in parallel with DB role fetch
+
+      // Fetch profile + role in parallel
       const profilePromise = (async () => {
         try {
           return await supabase
             .from("profiles")
-            .select("is_suspended, suspended_reason")
+            .select("is_suspended, suspended_reason, force_password_reset, created_by_provider_id")
             .eq("id", data.user.id)
             .maybeSingle();
         } catch {
@@ -349,33 +389,86 @@ const signIn = async (email: string, password: string) => {
         }
       })();
 
-      // If we have a meta role, use it immediately for fast redirect
       if (metaRole) {
         setRole(metaRole);
         setLoading(false);
       }
 
-      // Still fetch the authoritative role from DB in parallel
       const [profileResult, dbRole] = await Promise.all([
         profilePromise,
         fetchUserRole(data.user.id),
       ]);
 
-      // Check suspension
-      const profile = profileResult?.data as { is_suspended?: boolean; suspended_reason?: string } | null;
+      const profile = profileResult?.data as {
+        is_suspended?: boolean;
+        suspended_reason?: string;
+        force_password_reset?: boolean;
+        created_by_provider_id?: string;
+      } | null;
+
+      // 1. Suspension check
       if (profile?.is_suspended) {
         await supabase.auth.signOut();
         const reason = profile.suspended_reason || "Ihr Konto wurde gesperrt.";
         return { error: new Error(`Konto gesperrt: ${reason}`) };
       }
 
-      // Update with authoritative DB role (may differ from metadata)
-      setRole(dbRole);
+      // 2. Client Pro check — block login if provider doesn't have Pro
+      if (dbRole === "client" && profile?.created_by_provider_id) {
+        const { data: providerProfile } = await supabase
+          .from("profiles")
+          .select("subscription_plan, subscription_status, plan_override, access_valid_until, email")
+          .eq("id", profile.created_by_provider_id)
+          .maybeSingle();
+
+        if (providerProfile) {
+          const providerHasPro = _checkProviderHasPro(providerProfile);
+          if (!providerHasPro) {
+            // Notify provider (fire-and-forget, session still valid)
+            supabase.functions.invoke("notify-provider-client-blocked", {
+              body: { providerEmail: providerProfile.email, clientEmail: data.user.email },
+            }).catch(() => {});
+
+            await supabase.auth.signOut();
+            return {
+              error: new Error(`PROVIDER_NO_PRO:${providerProfile.email || ""}`),
+            };
+          }
+        }
+      }
+
+      // 3. Force password change
+      if (profile?.force_password_reset) {
+        if (dbRole !== null) setRole(dbRole);
+        setLoading(false);
+        setForcePasswordChange(true);
+        return { error: null };
+      }
+
+      if (dbRole !== null) setRole(dbRole);
       setLoading(false);
     }
 
     return { error: null };
   };
+
+// Pure helper — not a hook method, no state side-effects
+function _checkProviderHasPro(provider: {
+  subscription_plan: string | null;
+  subscription_status: string | null;
+  plan_override: string | null;
+  access_valid_until: string | null;
+}): boolean {
+  const { subscription_plan, subscription_status, plan_override, access_valid_until } = provider;
+  if (plan_override && plan_override !== "standard") {
+    const validUntil = access_valid_until ? new Date(access_valid_until) : null;
+    return validUntil ? validUntil > new Date() : true;
+  }
+  return (
+    ["pro", "advanced", "duo", "team"].includes(subscription_plan || "") ||
+    subscription_status === "lifetime"
+  );
+}
 
   const signUp = async (email: string, password: string, fullName: string, role: "provider" | "client" | "partner" = "client") => {
     const redirectUrl = `${window.location.origin}/home`;
@@ -430,16 +523,18 @@ const signIn = async (email: string, password: string) => {
     navigate("/auth", { replace: true });
   };
 
-  const value = { 
-    user, 
-    session, 
-    role, 
-    loading, 
-    isPasswordRecovery, 
-    clearPasswordRecovery, 
-    signIn, 
-    signUp, 
-    signOut 
+  const value = {
+    user,
+    session,
+    role,
+    loading,
+    isPasswordRecovery,
+    forcePasswordChange,
+    clearPasswordRecovery,
+    clearForcePasswordChange,
+    signIn,
+    signUp,
+    signOut,
   };
 
   return (

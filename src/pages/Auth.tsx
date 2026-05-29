@@ -16,7 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, Hammer, Heart, Package, Rocket, KeyRound, Users, Stethoscope, Link2 } from "lucide-react";
+import { Loader2, Hammer, Heart, Rocket, KeyRound, Link2 } from "lucide-react";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,8 +42,8 @@ const signupSchema = z.object({
     .regex(/[0-9]/, "Mindestens eine Zahl"),
 });
 
-type RoleOption = "provider" | "client";
-type LoginMode = "provider" | "client" | "team";
+type RoleOption = "provider" | "client" | "partner";
+type LoginMode = "provider" | "client" | "partner" | "team";
 
 const SWITCH_ACCOUNT_STORAGE_KEY = "hm_switch_account_target";
 const AUTH_STORAGE_PRESERVE_KEYS = ["theme", "vite-ui-theme"];
@@ -79,8 +79,13 @@ async function clearClientSessionState() {
   }
 }
 
+// Public 1-click demo logins from the HufManager era. Disabled while Hufi
+// stabilizes for paying users. Flip to true to re-enable; no demo account
+// or data has been removed, the cards just don't render.
+const SHOW_DEMO_LOGIN = false;
+
 export default function Auth() {
-  const { user, role, loading: authLoading, signIn, signUp } = useAuth();
+  const { user, role, loading: authLoading, signIn, signUp, forcePasswordChange } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [showMultiStepSignup, setShowMultiStepSignup] = useState(false);
@@ -214,18 +219,21 @@ export default function Auth() {
   if (signingOut || isSwitchingAccount) {
     return (
       <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
-        <img src="/hufmanager-logo.png" alt="HufManager" className="h-24 w-auto animate-pulse" />
+        <span style={{ fontSize: "2rem", fontWeight: 900, letterSpacing: "-0.03em", color: "#1A1A1A" }}>Huf<span style={{ color: "#F97316" }}>Manager</span></span>
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (!authLoading && user && role && !isSwitchingAccount) {
+    if (forcePasswordChange) {
+      return <Navigate to="/update-password" replace />;
+    }
     if (role === "provider" && !onboardingChecked && !isPortalBusinessEmail(user.email) && !isStallbetreiberDemoEmail(user.email)) {
       // Show loading while checking onboarding status
       return (
         <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
-          <img src="/hufmanager-logo.png" alt="HufManager" className="h-24 w-auto animate-pulse" />
+          <span style={{ fontSize: "2rem", fontWeight: 900, letterSpacing: "-0.03em", color: "#1A1A1A" }}>Huf<span style={{ color: "#F97316" }}>Manager</span></span>
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       );
@@ -285,8 +293,15 @@ export default function Auth() {
     }
 
     if (error) {
-      // Check if account is suspended
-      if (error.message.includes("Konto gesperrt")) {
+      if (error.message.startsWith("PROVIDER_NO_PRO:")) {
+        const providerEmail = error.message.replace("PROVIDER_NO_PRO:", "");
+        toast.error("Kein Pro-Abo aktiv", {
+          duration: 10000,
+          description: providerEmail
+            ? `Dein Hufbearbeiter (${providerEmail}) hat noch kein Pro-Abo. Bitte wende dich direkt an ihn.`
+            : "Dein Hufbearbeiter hat noch kein Pro-Abo. Bitte wende dich direkt an ihn.",
+        });
+      } else if (error.message.includes("Konto gesperrt")) {
         toast.error(error.message, {
           duration: 8000,
           description: "Bitte kontaktieren Sie den Support.",
@@ -413,8 +428,8 @@ export default function Auth() {
     return (
       <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
         <img 
-          src="/hufmanager-logo.png" 
-          alt="HufManager" 
+          src="/hufmanager-logo.png"
+          alt="HufManager"
           className="h-24 w-auto animate-pulse"
         />
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -458,15 +473,15 @@ export default function Auth() {
           </div>
         )}
         <CardHeader className="text-center pb-2 pt-4">
-          <img 
-            src="/hufmanager-logo.png" 
-            alt="HufManager Logo" 
-            className="mx-auto h-16 sm:h-20 w-auto mb-2"
-          />
+          <div className="mx-auto mb-3 select-none">
+            <span style={{ fontSize: "1.9rem", fontWeight: 900, letterSpacing: "-0.03em", color: "#1A1A1A" }}>
+              Huf<span style={{ color: "#F97316" }}>Manager</span>
+            </span>
+          </div>
           <CardTitle className="text-2xl font-bold text-foreground sr-only">HufManager</CardTitle>
           <CardDescription className="text-sm text-muted-foreground">
-            {pferdeakteSource 
-              ? "Erstelle dein Konto und leg deine erste Pferdeakte an" 
+            {pferdeakteSource
+              ? "Erstelle dein Konto und leg deine erste Pferdeakte an"
               : "Für alle Rollen – du wirst automatisch weitergeleitet"}
           </CardDescription>
         </CardHeader>
@@ -478,6 +493,45 @@ export default function Auth() {
             </TabsList>
             
             <TabsContent value="login" className="mt-6">
+              {/* Rollenauswahl-Toggle */}
+              <div className="flex gap-2 mb-5">
+                <button
+                  type="button"
+                  onClick={() => setLoginMode("provider")}
+                  className={cn(
+                    "flex-1 py-2 rounded-lg text-sm font-semibold border transition-all",
+                    loginMode === "provider"
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-transparent text-muted-foreground border-border hover:border-primary/50"
+                  )}
+                >
+                  Hufbearbeiter
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLoginMode("client")}
+                  className={cn(
+                    "flex-1 py-2 rounded-lg text-sm font-semibold border transition-all",
+                    loginMode === "client"
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-transparent text-muted-foreground border-border hover:border-primary/50"
+                  )}
+                >
+                  Pferdebesitzer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLoginMode("partner")}
+                  className={cn(
+                    "flex-1 py-2 rounded-lg text-sm font-semibold border transition-all",
+                    loginMode === "partner"
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-transparent text-muted-foreground border-border hover:border-primary/50"
+                  )}
+                >
+                  Therapeut
+                </button>
+              </div>
               <form onSubmit={handleLogin} autoComplete="off" className="space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="login-email" className="text-foreground font-medium text-sm">E-Mail</Label>
@@ -549,6 +603,12 @@ export default function Auth() {
                       if (data.clientType) {
                         sessionStorage.setItem("hm_pending_client_type", data.clientType);
                       }
+                      if (data.professionType) {
+                        sessionStorage.setItem("hm_pending_profession_type", data.professionType);
+                      }
+                      if (data.salutation) {
+                        sessionStorage.setItem("hm_pending_salutation", data.salutation);
+                      }
                       // Store country for profile update after email confirmation
                       sessionStorage.setItem("hm_pending_country", data.country);
                       // Store widerrufsausschluss consent for logging after email confirmation
@@ -580,6 +640,7 @@ export default function Auth() {
       </Card>
 
       {/* Demo Access Cards */}
+      {SHOW_DEMO_LOGIN && (
       <DemoAccessCards
         onSelectAccount={async (email, password) => {
           setLoginEmail(email);
@@ -617,6 +678,7 @@ export default function Auth() {
           }
         }}
       />
+      )}
 
       {/* Info Footer */}
       <div className="mt-4 max-w-md w-full">
@@ -625,19 +687,15 @@ export default function Auth() {
           <div className="grid grid-cols-1 gap-1.5 text-[11px] text-muted-foreground">
             <div className="flex items-start gap-2">
               <Hammer className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
-              <span><strong className="text-foreground">HufbearbeiterInnen</strong> – Betrieb, Termine, Kunden & Rechnungen verwalten</span>
+              <span><strong className="text-foreground">Hufbearbeiter/innen</strong> – Betrieb, Termine, Kunden & Rechnungen</span>
             </div>
             <div className="flex items-start gap-2">
               <Heart className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
-              <span><strong className="text-foreground">PferdebesitzerInnen</strong> – Pferde-Akte, Termine einsehen & Profis kontaktieren</span>
+              <span><strong className="text-foreground">Pferdebesitzer/innen</strong> – Pferdeakte, Termine & Kommunikation</span>
             </div>
             <div className="flex items-start gap-2">
-              <Users className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
-              <span><strong className="text-foreground">MitarbeiterInnen</strong> – Vom Betrieb eingeladen, Aufträge & Tour ausführen</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <Stethoscope className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
-              <span><strong className="text-foreground">TherapeutInnen & TierärztInnen</strong> – Per Einladung freigeschaltet, Befunde & Behandlungen</span>
+              <Rocket className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
+              <span><strong className="text-foreground">Therapeuten</strong> – Tierärzte, Physiotherapeuten, Osteopathen & Co.</span>
             </div>
           </div>
         </div>

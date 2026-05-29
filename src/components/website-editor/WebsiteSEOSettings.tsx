@@ -59,7 +59,7 @@ export const WebsiteSEOSettings = ({ settings }: Props) => {
                 {businessName} — Hufpfleger{city ? ` in ${city}` : ""} | Professionelle Hufbearbeitung
               </p>
               <p className="text-xs text-green-600 truncate">
-                hufmanager.de/p/{settings?.subdomain || "dein-name"}
+                hufiapp.de/p/{settings?.subdomain || "dein-name"}
               </p>
               <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                 {metaDesc || `Professionelle Hufpflege von ${businessName}. Termine online buchen, Bewertungen lesen, Leistungen ansehen.`}
@@ -95,7 +95,7 @@ export const WebsiteSEOSettings = ({ settings }: Props) => {
   name: businessName,
   address: settings?.address || "(Adresse hinterlegen)",
   telephone: settings?.phone || "(Telefon hinterlegen)",
-  url: `hufmanager.de/p/${settings?.subdomain || "..."}`,
+  url: `hufiapp.de/p/${settings?.subdomain || "..."}`,
 }, null, 2)}
             </pre>
           </div>

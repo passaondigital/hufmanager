@@ -31,7 +31,7 @@ export default function Statistiken() {
         <div className="max-w-5xl mx-auto px-6 py-16 text-center space-y-4">
           <h1 className="text-3xl sm:text-4xl font-bold">
             <BarChart3 className="inline h-8 w-8 mr-2 text-primary" />
-            HufManager Branchen-Report
+            Hufi Branchen-Report
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Live-Daten aus dem Netzwerk – anonymisiert und aggregiert. Ein Blick auf die Hufbearbeitungs-Branche im DACH-Raum.
@@ -49,7 +49,7 @@ export default function Statistiken() {
           <Card className="text-center py-12">
             <CardContent className="space-y-4">
               <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto" />
-              <h2 className="text-xl font-semibold">Coming Soon – Wir sammeln noch Daten</h2>
+              <h2 className="text-xl font-semibold">Statistiken werden aufgebaut</h2>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
                 Sobald genügend Pferdeakten im Netzwerk aktiv sind, veröffentlichen wir hier anonymisierte Branchen-Statistiken.
               </p>
@@ -95,7 +95,6 @@ export default function Statistiken() {
               </p>
             )}
 
-            {/* TODO: Add Recharts for breed distribution, regional distribution, etc. */}
             <Card>
               <CardHeader><CardTitle>Rassen-Verteilung</CardTitle></CardHeader>
               <CardContent>
@@ -108,7 +107,7 @@ export default function Statistiken() {
         {/* CTA */}
         <div className="text-center py-8 space-y-4">
           <p className="text-sm font-medium">
-            Powered by HufManager · {stats?.horse_count || 0} Pferdeakten
+            Powered by Hufi · {stats?.horse_count || 0} Pferdeakten
           </p>
           <Link to="/auth">
             <Button size="lg">Werde Teil des Netzwerks – Kostenlos registrieren</Button>

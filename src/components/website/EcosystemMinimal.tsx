@@ -34,7 +34,7 @@ export default function EcosystemHeader() {
           <p className="text-base md:text-lg max-w-2xl mx-auto" style={{ color: "rgba(255,255,255,0.5)" }}>
             Hufbearbeiter, Tierarzt, Physiotherapeut, Besitzer — jeder hat seinen Ausschnitt.
             <br className="hidden md:block" />
-            HufManager verbindet sie alle.
+            Hufi verbindet sie alle.
           </p>
         </div>
       </div>

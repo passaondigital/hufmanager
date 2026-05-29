@@ -9,12 +9,12 @@ const IdentitySection = () => (
         </h2>
         <div className="space-y-4 text-white/70 text-lg leading-relaxed max-w-2xl mx-auto">
           <p>
-            HufManager wurde gegründet von einem Pferdeprofi mit fast 20 Jahren Erfahrung in der Pferdebranche. Nicht aus einem Büro heraus. Aus dem Stall. Von der Praxis – für die Praxis. Für die Menschen, die täglich mit Pferden leben und arbeiten.
+            Hufi wurde gegründet von einem Pferdeprofi mit fast 20 Jahren Erfahrung in der Pferdebranche. Nicht aus einem Büro heraus. Aus dem Stall. Von der Praxis – für die Praxis. Für die Menschen, die täglich mit Pferden leben und arbeiten.
           </p>
         </div>
         <div className="pt-4">
           <p className="text-white font-semibold text-xl">Pascal Schmid</p>
-          <p className="text-white/50 text-sm">Gründer HufManager · Barhufpfleger & Equine Tech Founder</p>
+          <p className="text-white/50 text-sm">Gründer Hufi · Barhufpfleger & Equine Tech Founder</p>
         </div>
       </div>
     </div>

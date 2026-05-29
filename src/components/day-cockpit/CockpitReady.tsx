@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import {
   Play, MapPin, Clock, Route, Fuel, Loader2, WifiOff,
-  AlertTriangle, Timer
+  AlertTriangle, Timer, Navigation
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { TourAppointment } from "@/components/tour-manager/TourCard";
 import { TeamOverviewSection } from "./TeamOverviewSection";
+import { HeyHufi } from "@/components/voice/HeyHufi";
 
 interface CockpitReadyProps {
   appointments: TourAppointment[];
@@ -22,6 +23,8 @@ interface CockpitReadyProps {
   isOnline: boolean;
   geocodeProgress: { current: number; total: number } | null;
   onStartTour: () => void;
+  gpsConsentGiven: boolean;
+  onGpsConsentChange: (v: boolean) => void;
 }
 
 export function CockpitReady({
@@ -34,6 +37,8 @@ export function CockpitReady({
   isOnline,
   geocodeProgress,
   onStartTour,
+  gpsConsentGiven,
+  onGpsConsentChange,
 }: CockpitReadyProps) {
   const fmt = (v: number) =>
     new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(v);
@@ -60,11 +65,18 @@ export function CockpitReady({
       )}
 
       {/* Header */}
-      <div className="pl-14 pr-5 pt-5 pb-1">
-        <h1 className="text-2xl font-bold text-white">Tages-Cockpit</h1>
-        <p className="text-sm mt-0.5" style={{ color: "#999" }}>
-          {new Date().toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}
-        </p>
+      <div className="pl-14 pr-5 pt-5 pb-1 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Tages-Cockpit</h1>
+          <p className="text-sm mt-0.5" style={{ color: "#999" }}>
+            {new Date().toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}
+          </p>
+        </div>
+        <HeyHufi
+          onWakeWord={() => {
+            // Wake-word erkannt im Cockpit
+          }}
+        />
       </div>
 
       {/* Stats */}
@@ -84,6 +96,22 @@ export function CockpitReady({
         {estimatedFuelCost !== null && (
           <Stat icon={<Fuel className="h-4 w-4" />} label={fmt(estimatedFuelCost)} />
         )}
+      </div>
+
+      {/* GPS Consent Toggle */}
+      <div className="px-5 pb-2">
+        <button
+          onClick={() => onGpsConsentChange(!gpsConsentGiven)}
+          className="flex items-center gap-2 px-3 h-8 rounded-full text-xs font-medium transition-colors"
+          style={{
+            background: gpsConsentGiven ? "rgba(245,151,10,0.15)" : "#1a1a1a",
+            color: gpsConsentGiven ? "#F5970A" : "#666",
+            border: gpsConsentGiven ? "1px solid rgba(245,151,10,0.3)" : "1px solid #333",
+          }}
+        >
+          <Navigation className="h-3 w-3" />
+          GPS {gpsConsentGiven ? "aktiv" : "aktivieren"}
+        </button>
       </div>
 
       {/* Team overview */}

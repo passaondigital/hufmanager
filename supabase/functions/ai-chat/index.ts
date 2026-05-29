@@ -112,24 +112,24 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+
+    if (!ANTHROPIC_KEY) {
+      throw new Error("ANTHROPIC_API_KEY is not configured");
     }
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": ANTHROPIC_KEY,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          {
-            role: "system",
-            content: `Du bist Hufi, der KI-Assistent von HufManager — einer Software für alle mobilen Pferdeprofis (Hufbearbeiter, Osteopathen, Physiotherapeuten, Equine Dentisten, Reitlehrer, Sattler, mobile Tierärzte und weitere).
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 1024,
+        stream: true,
+        system: `Du bist Hufi, der KI-Assistent von Hufi — einer Software für alle mobilen Pferdeprofis (Hufbearbeiter, Osteopathen, Physiotherapeuten, Equine Dentisten, Reitlehrer, Sattler, mobile Tierärzte und weitere).
 
 DEINE ROLLE:
 Du kennst das gesamte HufManager-System und hilfst Nutzern bei allen Fragen. Du antwortest wie ein erfahrener Kollege — klar, direkt, praxisnah. Kein Tech-Speak.
@@ -189,7 +189,7 @@ HÄUFIGE WORKFLOWS:
 7. Abo verwalten: Management → Abo & Zahlung
 8. Website bearbeiten: Management → Meine Website
 9. Impressum hinterlegen: Management → Rechtliches
-6. Fahrtenbuch exportieren: Cockpit → Tour beenden → Zusammenfassung → Export als PDF/CSV
+10. Fahrtenbuch exportieren: Cockpit → Tour beenden → Zusammenfassung → Export als PDF/CSV
 
 GLOSSAR:
 - Tages-Cockpit: Zentrale Steuereinheit für den Arbeitstag (Route + Navigation + Timer + Fahrtenbuch)
@@ -208,11 +208,8 @@ WICHTIGE REGELN:
 - Verwende Hufpflege-Fachsprache nur wenn der Nutzer sie benutzt
 - Für Kunden: Einfache Sprache, keine Fachbegriffe, bei Gesundheitsfragen immer an Tierarzt verweisen
 - Sage "Ich bin mir nicht sicher" wenn du etwas nicht weißt — rate nicht
-- Bei Support-Anfragen verweise auf: support@hufmanager.de`
-          },
-          ...messages,
-        ],
-        stream: true,
+- Bei Support-Anfragen verweise auf: kontakt@hufiapp.de`,
+        messages,
       }),
     });
 
@@ -223,20 +220,50 @@ WICHTIGE REGELN:
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Guthaben aufgebraucht. Bitte laden Sie Ihr Lovable AI Guthaben auf." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      console.error("[ai-chat] AI gateway error:", response.status);
+      console.error("[ai-chat] Anthropic API error:", response.status);
       return new Response(JSON.stringify({ error: "KI-Dienst nicht erreichbar" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    return new Response(response.body, {
+    // Translate Anthropic SSE → OpenAI-compatible SSE (frontend expects choices[0].delta.content)
+    const { readable, writable } = new TransformStream();
+    const writer = writable.getWriter();
+    const encoder = new TextEncoder();
+
+    (async () => {
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split("\n");
+          buf = lines.pop() ?? "";
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const json = line.slice(6).trim();
+            if (!json || json === "[DONE]") continue;
+            try {
+              const ev = JSON.parse(json);
+              if (ev.type === "content_block_delta" && ev.delta?.type === "text_delta") {
+                const out = { choices: [{ delta: { content: ev.delta.text } }] };
+                await writer.write(encoder.encode(`data: ${JSON.stringify(out)}\n\n`));
+              } else if (ev.type === "message_stop") {
+                await writer.write(encoder.encode("data: [DONE]\n\n"));
+              }
+            } catch { /* skip malformed */ }
+          }
+        }
+      } finally {
+        await writer.close().catch(() => {});
+      }
+    })();
+
+    return new Response(readable, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {

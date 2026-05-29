@@ -255,7 +255,7 @@ export function PaymentSettingsCard() {
                   <div>
                     <p className="font-medium">Schnittstelle einrichten</p>
                     <p className="text-muted-foreground">
-                      Damit der HufManager deine Zahlungen automatisch erkennt, musst du die IPN-Benachrichtigung aktivieren.
+                      Damit der Hufi deine Zahlungen automatisch erkennt, musst du die IPN-Benachrichtigung aktivieren.
                     </p>
                   </div>
                 </div>

@@ -92,7 +92,7 @@ export function AffiliateCenter() {
   };
 
   const copyLink = (code: string) => {
-    navigator.clipboard.writeText(`https://hufmanager.de/?ref=${code}`);
+    navigator.clipboard.writeText(`https://hufiapp.de/?ref=${code}`);
     toast.success("Link kopiert!");
   };
 

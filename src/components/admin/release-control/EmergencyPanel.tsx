@@ -19,8 +19,8 @@ interface MaintenanceSetting {
 }
 
 const INSTANCES = [
-  { key: 'maintenance_mode_app', label: 'App (Provider & Client)', icon: Power, description: 'app.hufmanager.de sperren' },
-  { key: 'maintenance_mode_landingpage', label: 'Landingpage', icon: Globe, description: 'www.hufmanager.de sperren' },
+  { key: 'maintenance_mode_app', label: 'App (Provider & Client)', icon: Power, description: 'app.hufiapp.de sperren' },
+  { key: 'maintenance_mode_landingpage', label: 'Landingpage', icon: Globe, description: 'www.hufiapp.de sperren' },
   { key: 'maintenance_mode_demo', label: 'Demo-Zugänge', icon: Eye, description: 'Alle Demo-Accounts deaktivieren' },
   { key: 'maintenance_mode_mission_control', label: 'Mission Control', icon: Shield, description: 'Admin-Bereich sperren (Vorsicht!)' },
 ] as const;

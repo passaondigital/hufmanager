@@ -14,7 +14,7 @@ export default function FeatureNavigationSection() {
           <div className="order-1 md:order-2 space-y-6">
             <span className="text-primary font-bold text-sm uppercase tracking-widest">Navigation</span>
             <h2 className="font-sans text-3xl md:text-4xl font-extrabold text-white">
-              Turn-by-Turn direkt im HufManager – <span className="text-primary">kein Google Maps nötig.</span>
+              Turn-by-Turn direkt im Hufi – <span className="text-primary">kein Google Maps nötig.</span>
             </h2>
             <p className="text-white/60 text-lg leading-relaxed">
               Sprachansagen auf Deutsch, optimierte Routen für Transporter und Anhänger, und vollständig DSGVO-konform auf EU-Servern.

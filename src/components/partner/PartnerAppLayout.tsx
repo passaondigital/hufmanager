@@ -18,7 +18,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { OfflineBanner } from "@/components/offline/OfflineBanner";
 import { ConnectionStatus } from "@/components/offline/ConnectionStatus";
 import { SpeedDialFAB } from "@/components/layout/SpeedDialFAB";
-import { DemoStickyBanner } from "@/components/demo";
+import { DemoStickyBanner } from "@/components/demo/DemoStickyBanner";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { FeierabendWaechter } from "@/components/tracking/FeierabendWaechter";
 import { TrialCountdownBanner } from "@/components/subscription/TrialCountdownBanner";
@@ -123,9 +123,9 @@ const BOTTOM_NAV_ITEMS = [
 ];
 
 const quickActions = [
-  { label: "Neuer Termin", path: "/partner-calendar", icon: Calendar },
-  { label: "Neuer Kunde", path: "/partner-kunden", icon: User },
-  { label: "Neues Pferd", path: "/partner-pferde", icon: Heart },
+  { label: "Termin planen", path: "/partner-calendar", icon: Calendar },
+  { label: "Notiz eintragen", path: "/partner-notes", icon: MessageSquare },
+  { label: "Meine Pferde", path: "/partner-pferde", icon: Heart },
 ];
 
 export function PartnerAppLayout() {
@@ -184,7 +184,7 @@ export function PartnerAppLayout() {
             <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)} className="h-10 w-10" aria-label="Menü öffnen">
               <Menu className="h-5 w-5" />
             </Button>
-            <img src="/hufmanager-logo.png" alt="HufManager" className="h-7 w-auto" />
+            <img src="https://upload.assaon.com/files/medien/hufiapp-logo-mit-text-1777028919801-id2zm.png" alt="Hufi" className="h-7 w-auto" />
           </div>
 
           <div className="flex items-center gap-1">
@@ -330,11 +330,10 @@ export function PartnerAppLayout() {
 
       {/* Speed Dial FAB - Desktop */}
       <div className="hidden lg:block">
-        <SpeedDialFAB />
+        {/* SpeedDialFAB entfernt */}
       </div>
 
       <DemoStickyBanner />
-      <AIChatWidget />
     </div>
   );
 }

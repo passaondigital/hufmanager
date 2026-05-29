@@ -52,7 +52,7 @@ export function PartnerOnboarding({ onComplete }: PartnerOnboardingProps) {
       <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
         <Stethoscope className="h-10 w-10 text-primary" />
       </div>
-      <h2 className="text-2xl font-bold text-foreground">Willkommen im HufManager-Netzwerk!</h2>
+      <h2 className="text-2xl font-bold text-foreground">Willkommen im Hufi-Netzwerk!</h2>
       <p className="text-muted-foreground">Dokumentiere deine Befunde digital.</p>
       <Button onClick={() => setStep(1)} className="gap-2">
         Los geht's <ChevronRight className="h-4 w-4" />

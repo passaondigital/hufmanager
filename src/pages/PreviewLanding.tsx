@@ -110,7 +110,7 @@ const PreviewLanding = () => {
           Hufpflege-Profi suchst, findest du hier Profis in deiner Nähe:
         </p>
         <Button asChild>
-          <Link to="/website">hufmanager.de entdecken</Link>
+          <Link to="/website">hufiapp.de entdecken</Link>
         </Button>
       </div>
     );
@@ -235,7 +235,7 @@ const PreviewLanding = () => {
         <p className="text-[10px] text-muted-foreground">
           Powered by{" "}
           <a href="/website" className="text-primary hover:underline font-medium">
-            HufManager
+            Hufi
           </a>
         </p>
       </div>

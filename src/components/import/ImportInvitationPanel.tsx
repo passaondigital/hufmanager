@@ -55,7 +55,7 @@ const ImportInvitationPanel = ({ results }: ImportInvitationPanelProps) => {
     }
     const c = contacts[0].contact;
     const msg = encodeURIComponent(
-      `Hallo ${c.full_name}! 🐴\n\nIch nutze den HufManager für die Verwaltung meiner Pferde-Termine. Damit du als Pferdebesitzer alle Infos direkt auf dem Handy hast, registriere dich hier:\n\n${registrationUrl}\n\nDort kannst du deine digitale Pferdeakte anlegen und Termine verwalten.`
+      `Hallo ${c.full_name}! 🐴\n\nIch nutze den Hufi für die Verwaltung meiner Pferde-Termine. Damit du als Pferdebesitzer alle Infos direkt auf dem Handy hast, registriere dich hier:\n\n${registrationUrl}\n\nDort kannst du deine digitale Pferdeakte anlegen und Termine verwalten.`
     );
     const phone = c.phone?.replace(/[^\d+]/g, "");
     window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
@@ -72,7 +72,7 @@ const ImportInvitationPanel = ({ results }: ImportInvitationPanelProps) => {
     const c = contacts[0].contact;
     const phone = c.phone?.replace(/[^\d+]/g, "");
     const msg = encodeURIComponent(
-      `Hallo ${c.full_name}! Registriere dich beim HufManager: ${registrationUrl}`
+      `Hallo ${c.full_name}! Registriere dich beim Hufi: ${registrationUrl}`
     );
     window.open(`sms:${phone}?body=${msg}`, "_self");
     setSentIds(prev => new Set([...prev, c.id]));
@@ -86,9 +86,9 @@ const ImportInvitationPanel = ({ results }: ImportInvitationPanelProps) => {
     }
     // Open mailto for now (batch)
     const emails = withEmail.map(r => r.contact.email).join(",");
-    const subject = encodeURIComponent("Einladung zum HufManager – Deine digitale Pferdeakte");
+    const subject = encodeURIComponent("Einladung zum Hufi – Deine digitale Pferdeakte");
     const body = encodeURIComponent(
-      `Hallo!\n\nIch nutze den HufManager für die professionelle Pferdepflege und möchte dich einladen.\n\nRegistriere dich hier und lege deine digitale Pferdeakte an:\n${registrationUrl}\n\nBis bald!`
+      `Hallo!\n\nIch nutze den Hufi für die professionelle Pferdepflege und möchte dich einladen.\n\nRegistriere dich hier und lege deine digitale Pferdeakte an:\n${registrationUrl}\n\nBis bald!`
     );
     window.open(`mailto:${emails}?subject=${subject}&body=${body}`, "_self");
     const ids = new Set([...sentIds, ...withEmail.map(r => r.contact.id)]);

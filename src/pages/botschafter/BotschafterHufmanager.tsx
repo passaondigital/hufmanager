@@ -46,20 +46,20 @@ export default function BotschafterHufmanager() {
 
   return (
     <div className="p-4 md:p-6 space-y-5 max-w-2xl mx-auto">
-      <h1 className="text-xl font-bold">🐴 HufManager-Account</h1>
+      <h1 className="text-xl font-bold">🐴 Hufi-Account</h1>
 
       {hasProfile ? (
         <Card style={{ backgroundColor: "#1a1a12", borderColor: "#2a2a1f" }}>
           <CardContent className="p-5 space-y-4">
             <div className="flex items-center gap-2">
               <Check className="w-5 h-5" style={{ color: "#22c55e" }} />
-              <p className="font-medium">Du hast bereits einen HufManager-Account</p>
+              <p className="font-medium">Du hast bereits einen Hufi-Account</p>
             </div>
             <p className="text-sm" style={{ color: "#9ca3af" }}>
               Rolle: {profileRole === "provider" ? "Hufbearbeiter" : profileRole === "client" ? "Pferdebesitzer" : profileRole === "partner" ? "Fachpartner" : profileRole}
             </p>
             <Button onClick={goToDashboard} style={{ backgroundColor: "#F5970A", color: "#0a0700" }}>
-              Zum HufManager Dashboard →
+              Zum Hufi Dashboard →
             </Button>
           </CardContent>
         </Card>
@@ -67,7 +67,7 @@ export default function BotschafterHufmanager() {
         <Card style={{ backgroundColor: "#1a1a12", borderColor: "#2a2a1f" }}>
           <CardContent className="p-5 space-y-4">
             <p className="text-sm" style={{ color: "#d1d5db" }}>
-              Als Botschafter nutzt du HufManager kostenlos mit erweiterter Trial-Phase (90 statt 30 Tage).
+              Als Botschafter nutzt du Hufi kostenlos mit erweiterter Trial-Phase (90 statt 30 Tage).
             </p>
 
             <div className="grid grid-cols-3 gap-2">
@@ -89,7 +89,7 @@ export default function BotschafterHufmanager() {
             </div>
 
             <div className="space-y-2 text-xs" style={{ color: "#9ca3af" }}>
-              <p className="font-medium" style={{ color: "#F5970A" }}>💡 Botschafter-Vorteile im HufManager:</p>
+              <p className="font-medium" style={{ color: "#F5970A" }}>💡 Botschafter-Vorteile im Hufi:</p>
               <p>✓ 90 Tage Trial (statt 30)</p>
               <p>✓ "Botschafter" Badge im Profil</p>
               <p>✓ Zugang zu Beta-Features</p>

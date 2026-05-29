@@ -124,7 +124,7 @@ export function AIChatWidget() {
     return (
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-24 md:bottom-6 right-4 md:right-6 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 z-50"
+        className="hidden md:inline-flex fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 z-50"
         size="icon"
       >
         <Sparkles className="h-6 w-6" />
@@ -148,10 +148,24 @@ export function AIChatWidget() {
       {/* Messages */}
       <ScrollArea className="flex-1 p-4" ref={scrollRef}>
         {messages.length === 0 && (
-          <div className="text-center text-muted-foreground py-8">
+          <div className="text-center text-muted-foreground py-6">
             <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>Hallo! Wie kann ich dir helfen?</p>
-            <p className="text-sm mt-2">Frag mich zu Terminen, Kunden oder Hufpflege.</p>
+            <div className="flex flex-wrap gap-2 justify-center mt-4">
+              {[
+                "Neuen Kunden anlegen?",
+                "Letzte Rechnung ansehen?",
+                "Oder einfach plaudern?",
+              ].map((chip) => (
+                <button
+                  key={chip}
+                  onClick={() => setInput(chip)}
+                  className="text-xs px-3 py-1.5 rounded-full border border-border hover:bg-accent transition-colors"
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
           </div>
         )}
         <div className="space-y-4">

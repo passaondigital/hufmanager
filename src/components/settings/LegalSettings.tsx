@@ -277,7 +277,7 @@ export function LegalSettings() {
           <p className="font-medium mb-1">Warum ist das wichtig?</p>
           <ul className="list-disc ml-4 space-y-1">
             <li>
-              <strong>AVV:</strong> Pflicht nach DSGVO, wenn du Kundendaten in HufManager verarbeitest
+              <strong>AVV:</strong> Pflicht nach DSGVO, wenn du Kundendaten in Hufi verarbeitest
             </li>
             <li>
               <strong>AGB:</strong> Schützen dich rechtlich und regeln die Geschäftsbeziehung mit deinen Kunden

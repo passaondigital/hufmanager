@@ -202,8 +202,8 @@ export function AppSidebar({ appName, userDisplayName, navigationConfig, mobile 
       {/* Logo Header */}
       <div className="h-16 flex items-center px-4 border-b border-sidebar-border shrink-0">
         <img
-          src="/hufmanager-logo.png"
-          alt="HufManager"
+          src="https://upload.assaon.com/files/medien/hufiapp-logo-mit-text-1777028919801-id2zm.png"
+          alt="Hufi"
           className="h-10 w-auto"
         />
       </div>
@@ -268,11 +268,11 @@ export function AppSidebar({ appName, userDisplayName, navigationConfig, mobile 
         </button>
 
         <div className="flex items-center justify-center gap-1.5 pt-2 text-[10px] text-sidebar-foreground/40">
-          <a href="https://hufmanager.de/impressum" target="_blank" rel="noopener noreferrer" className="hover:text-sidebar-foreground hover:underline">
+          <a href="https://hufiapp.de/impressum" target="_blank" rel="noopener noreferrer" className="hover:text-sidebar-foreground hover:underline">
             Impressum
           </a>
           <span>·</span>
-          <a href="https://hufmanager.de/datenschutz" target="_blank" rel="noopener noreferrer" className="hover:text-sidebar-foreground hover:underline">
+          <a href="https://hufiapp.de/datenschutz" target="_blank" rel="noopener noreferrer" className="hover:text-sidebar-foreground hover:underline">
             Datenschutz
           </a>
         </div>
