@@ -47,7 +47,9 @@ import {
   AlertTriangle,
   Mail,
   Repeat2,
+  Smartphone,
 } from "lucide-react";
+import { ClientAppUpgradeModal } from "@/components/subscription/ClientAppUpgradeModal";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -153,6 +155,8 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
   
   const isAdmin = role === "admin";
   const canSeeAboMatrix = user?.email && STEALTH_EMAILS.includes(user.email);
+  const { isPro } = useSubscription();
+  const [showClientAppModal, setShowClientAppModal] = useState(false);
 
   // Track which menus are open
   const [openMenus, setOpenMenus] = useState<Record<number, boolean>>({});
@@ -218,6 +222,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
   // Erweiterungen - Addon modules (locked based on feature flags)
   const addonItems = [
     { title: "Hufi Business", icon: DollarSign, locked: false, url: "/business" },
+    { title: "Kundenapp", icon: Smartphone, locked: !isPro, url: "/kunden", proLock: true },
     { title: "Mein Office", icon: FileText, locked: !isFeatureVisible('module_office'), url: "/mein-office" },
     { title: "Lager", icon: Warehouse, locked: !isFeatureVisible('beta_features'), url: "/lager" },
     { title: "Mitarbeiter", icon: UsersRound, locked: !isFeatureVisible('module_team'), url: "/team" },
@@ -348,11 +353,11 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
   };
 
   // Addon item (locked or unlocked based on feature flags)
-  const AddonItem = ({ item }: { item: { title: string; icon: React.ComponentType<{ className?: string }>; locked: boolean; url: string } }) => {
+  const AddonItem = ({ item }: { item: { title: string; icon: React.ComponentType<{ className?: string }>; locked: boolean; url: string; proLock?: boolean } }) => {
     if (item.locked) {
       return (
         <button
-          onClick={() => handleLockedClick(item.title)}
+          onClick={() => item.proLock ? setShowClientAppModal(true) : handleLockedClick(item.title)}
           className={cn(
             "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 min-h-[48px]",
             "text-sidebar-foreground/40 hover:bg-sidebar-accent/50 cursor-not-allowed"
@@ -388,6 +393,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
   };
 
   return (
+    <>
     <aside
       className={cn(
         "fixed left-0 top-0 z-40 h-screen bg-sidebar flex flex-col transition-all duration-300 border-r border-sidebar-border",
@@ -565,5 +571,11 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         )}
       </div>
     </aside>
+
+    <ClientAppUpgradeModal
+      open={showClientAppModal}
+      onOpenChange={setShowClientAppModal}
+    />
+    </>
   );
 }

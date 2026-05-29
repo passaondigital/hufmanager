@@ -5,15 +5,24 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MessageCircle, Mail, Link2, Loader2, Smartphone, Check, Copy, Lock } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { MessageCircle, Mail, Loader2, Smartphone, Check, Copy, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
-import { useSubscription } from "@/hooks/useSubscription";
-import { ProGateDialog } from "@/components/subscription/ProGateDialog";
 
 interface InviteClientButtonProps {
   clientId: string;
@@ -92,7 +101,10 @@ export function InviteClientButton({
   const { user } = useAuth();
   const { isPro } = useSubscription();
   const [loading, setLoading] = useState(false);
-  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [createAccountOpen, setCreateAccountOpen] = useState(false);
+  const [createAccountEmail, setCreateAccountEmail] = useState(clientEmail || "");
+  const [createAccountName, setCreateAccountName] = useState(clientName || "");
+  const [createAccountLoading, setCreateAccountLoading] = useState(false);
 
   // Fetch provider name if not passed
   const { data: fetchedProviderName } = useQuery({
@@ -227,41 +239,28 @@ export function InviteClientButton({
     }
   }, [getOrCreateMagicLink, updateSentTracking]);
 
-  if (!isPro) {
-    if (compact) {
-      return (
-        <>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={(e) => { e.stopPropagation(); setUpgradeOpen(true); }}
-            className={`gap-1.5 text-muted-foreground border-muted/60 ${className || ""}`}
-          >
-            <Lock className="h-3.5 w-3.5" />
-            Einladen
-          </Button>
-          <ProGateDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} featureName="Kunden einladen" />
-        </>
-      );
+  const handleCreateAccount = useCallback(async () => {
+    if (!createAccountEmail || !createAccountName) {
+      toast.error("Name und E-Mail sind erforderlich");
+      return;
     }
-
-    return (
-      <div className={`flex flex-col gap-2 ${className || ""}`}>
-        <Button
-          onClick={() => setUpgradeOpen(true)}
-          variant="outline"
-          className="w-full gap-2 min-h-[48px] text-base text-muted-foreground"
-        >
-          <Lock className="h-5 w-5" />
-          Kunden einladen — Pro erforderlich
-        </Button>
-        <p className="text-xs text-center text-muted-foreground">
-          Diese Funktion ist in HufManager Pro enthalten.
-        </p>
-        <ProGateDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} featureName="Kunden einladen" />
-      </div>
-    );
-  }
+    setCreateAccountLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("invite-client", {
+        body: { email: createAccountEmail.trim(), fullName: createAccountName.trim() },
+      });
+      if (error || data?.error) {
+        toast.error(data?.error || error?.message || "Fehler beim Erstellen des Kontos");
+      } else {
+        toast.success(`Konto erstellt – Zugangsdaten wurden an ${createAccountEmail} gesendet`);
+        setCreateAccountOpen(false);
+      }
+    } catch (err) {
+      toast.error("Unerwarteter Fehler");
+    } finally {
+      setCreateAccountLoading(false);
+    }
+  }, [createAccountEmail, createAccountName]);
 
   if (loading) {
     return (
@@ -274,70 +273,181 @@ export function InviteClientButton({
 
   if (compact) {
     return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className={`gap-1.5 text-green-600 border-green-200 hover:bg-green-50 hover:border-green-300 ${className || ""}`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Smartphone className="h-3.5 w-3.5" />
-            Einladen
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-          <DropdownMenuItem onClick={handleWhatsApp} className="gap-2">
-            <MessageCircle className="h-4 w-4 text-green-500" />
-            WhatsApp
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleEmail} className="gap-2" disabled={!clientEmail}>
-            <Mail className="h-4 w-4 text-blue-500" />
-            E-Mail
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleCopyLink} className="gap-2">
-            <Copy className="h-4 w-4 text-muted-foreground" />
-            Link kopieren
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={`gap-1.5 text-green-600 border-green-200 hover:bg-green-50 hover:border-green-300 ${className || ""}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Smartphone className="h-3.5 w-3.5" />
+              Einladen
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+            {isPro && (
+              <>
+                <DropdownMenuItem onClick={() => setCreateAccountOpen(true)} className="gap-2 text-primary">
+                  <UserPlus className="h-4 w-4" />
+                  Account erstellen & einladen
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
+            <DropdownMenuItem onClick={handleWhatsApp} className="gap-2">
+              <MessageCircle className="h-4 w-4 text-green-500" />
+              WhatsApp-Link senden
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleEmail} className="gap-2" disabled={!clientEmail}>
+              <Mail className="h-4 w-4 text-blue-500" />
+              E-Mail-Link senden
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleCopyLink} className="gap-2">
+              <Copy className="h-4 w-4 text-muted-foreground" />
+              Link kopieren
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <CreateAccountDialog
+          open={createAccountOpen}
+          onOpenChange={setCreateAccountOpen}
+          email={createAccountEmail}
+          onEmailChange={setCreateAccountEmail}
+          name={createAccountName}
+          onNameChange={setCreateAccountName}
+          onSubmit={handleCreateAccount}
+          loading={createAccountLoading}
+        />
+      </>
     );
   }
 
   return (
-    <div className={`flex flex-col gap-2 ${className || ""}`}>
-      {/* Primary: WhatsApp */}
-      <Button
-        onClick={handleWhatsApp}
-        className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white min-h-[48px] text-base"
-      >
-        <MessageCircle className="h-5 w-5" />
-        Per WhatsApp einladen
-      </Button>
+    <>
+      <div className={`flex flex-col gap-2 ${className || ""}`}>
+        {isPro && (
+          <Button
+            onClick={() => setCreateAccountOpen(true)}
+            variant="outline"
+            className="w-full gap-2 border-primary/40 text-primary hover:bg-primary/5 min-h-[48px] text-base"
+          >
+            <UserPlus className="h-5 w-5" />
+            Account erstellen & einladen
+          </Button>
+        )}
 
-      {/* Secondary: Email + Link */}
-      <div className="grid grid-cols-2 gap-2">
+        {/* Primary: WhatsApp */}
         <Button
-          variant="outline"
-          size="sm"
-          onClick={handleEmail}
-          disabled={!clientEmail}
-          className="gap-1.5 min-h-[40px]"
+          onClick={handleWhatsApp}
+          className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white min-h-[48px] text-base"
         >
-          <Mail className="h-4 w-4" />
-          E-Mail
+          <MessageCircle className="h-5 w-5" />
+          Per WhatsApp einladen
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleCopyLink}
-          className="gap-1.5 min-h-[40px]"
-        >
-          <Copy className="h-4 w-4" />
-          Link kopieren
-        </Button>
+
+        {/* Secondary: Email + Link */}
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleEmail}
+            disabled={!clientEmail}
+            className="gap-1.5 min-h-[40px]"
+          >
+            <Mail className="h-4 w-4" />
+            E-Mail
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCopyLink}
+            className="gap-1.5 min-h-[40px]"
+          >
+            <Copy className="h-4 w-4" />
+            Link kopieren
+          </Button>
+        </div>
       </div>
-    </div>
+
+      <CreateAccountDialog
+        open={createAccountOpen}
+        onOpenChange={setCreateAccountOpen}
+        email={createAccountEmail}
+        onEmailChange={setCreateAccountEmail}
+        name={createAccountName}
+        onNameChange={setCreateAccountName}
+        onSubmit={handleCreateAccount}
+        loading={createAccountLoading}
+      />
+    </>
+  );
+}
+
+function CreateAccountDialog({
+  open,
+  onOpenChange,
+  email,
+  onEmailChange,
+  name,
+  onNameChange,
+  onSubmit,
+  loading,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  email: string;
+  onEmailChange: (v: string) => void;
+  name: string;
+  onNameChange: (v: string) => void;
+  onSubmit: () => void;
+  loading: boolean;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <UserPlus className="h-5 w-5 text-primary" />
+            Kunden-Account erstellen
+          </DialogTitle>
+          <DialogDescription>
+            Ein Konto wird automatisch erstellt und die Zugangsdaten per E-Mail gesendet.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="invite-name">Name</Label>
+            <Input
+              id="invite-name"
+              placeholder="Vorname Nachname"
+              value={name}
+              onChange={(e) => onNameChange(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="invite-email">E-Mail-Adresse</Label>
+            <Input
+              id="invite-email"
+              type="email"
+              placeholder="kunde@beispiel.de"
+              value={email}
+              onChange={(e) => onEmailChange(e.target.value)}
+            />
+          </div>
+          <Button
+            className="w-full"
+            onClick={onSubmit}
+            disabled={loading || !email || !name}
+          >
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Account erstellen & E-Mail senden
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

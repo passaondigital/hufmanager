@@ -84,6 +84,7 @@ export default function UpdatePassword() {
         clearForcePasswordChange();
       }
 
+
       setLoading(false);
       toast.success("Passwort erfolgreich geändert!");
       clearPasswordRecovery();

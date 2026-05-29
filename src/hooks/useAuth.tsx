@@ -376,6 +376,7 @@ const signIn = async (email: string, password: string) => {
       // FAST PATH: Read role from user_metadata first (instant, no DB query)
       const metaRole = data.user.user_metadata?.role as UserRole;
 
+
       // Fetch profile + role in parallel
       const profilePromise = (async () => {
         try {
@@ -447,6 +448,11 @@ const signIn = async (email: string, password: string) => {
 
       if (dbRole !== null) setRole(dbRole);
       setLoading(false);
+
+      // Redirect to password change if first login with temporary password
+      if (profile?.force_password_reset) {
+        navigate("/update-password", { replace: true });
+      }
     }
 
     return { error: null };
