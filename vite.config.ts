@@ -14,6 +14,7 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "robots.txt", "hufi-logo.svg", "apple-touch-icon.png"],
+      cacheId: "hufmanager-v1",
       workbox: {
         // Limit auf 6 MB erhöht für große Bundles
         maximumFileSizeToCacheInBytes: 15000000,

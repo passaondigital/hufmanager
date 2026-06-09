@@ -2,6 +2,32 @@
 <html lang="de">
   <head>
     <meta charset="UTF-8" />
+    <!-- SW-Konflikt-Bereinigung: Fremde Service Worker (z.B. HufiApp) entfernen -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          var hadForeign = false;
+          registrations.forEach(function(reg) {
+            var swUrl = (reg.active && reg.active.scriptURL) || (reg.installing && reg.installing.scriptURL) || '';
+            if (!swUrl.includes('app.hufmanager.de')) {
+              reg.unregister();
+              hadForeign = true;
+            }
+          });
+          if (hadForeign) {
+            caches.keys().then(function(keys) {
+              keys.forEach(function(key) {
+                if (!key.includes('hufmanager')) caches.delete(key);
+              });
+            });
+            if (!sessionStorage.getItem('sw_cleaned')) {
+              sessionStorage.setItem('sw_cleaned', '1');
+              window.location.reload();
+            }
+          }
+        });
+      }
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0, user-scalable=yes" />
     <title>HufManager — Software für Hufbearbeiter</title>
     <meta name="description" content="HufManager ist die Branchensoftware für Hufbearbeiter. Kunden, Pferde, Termine, Rechnungen und Touren — alles in einer App." />
