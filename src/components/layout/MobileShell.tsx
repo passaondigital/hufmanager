@@ -192,11 +192,11 @@ export function MobileShell() {
     setHeyHufiEnabled(SR_SUPPORTED && ulget(user.id, USER_STORAGE_KEYS.HEY_HUFI) === "1");
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── First-run consent gate (overrides legacy DSGVO modal for new users) ────
+  // ── First-run consent gate (HufiApp-Onboarding, im HufManager deaktiviert) ──
   useEffect(() => {
     if (!user?.id) return;
     if (!hasCompletedFirstRun(user.id)) {
-      setShowFirstRunConsent(true);
+      // HufiApp-Onboarding-Modal im HufManager nicht zeigen
       return;
     }
     // Returning user: check DSGVO via DB as before
