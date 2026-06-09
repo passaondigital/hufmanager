@@ -1609,19 +1609,29 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
             <Grid3X3 size={15} style={{ color: "#374151" }} />
           </button>
 
-          {/* Logo + Titel + Presence-State — tippbar zum Aktivieren */}
+          {/* App-Titel: HufManager Branding */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, overflow: "hidden",
+          }}>
+            <img src="/hufmanager-logo.png" alt="HufManager" style={{ width: 26, height: 26, objectFit: "contain", flexShrink: 0 }} />
+            <span style={{ fontSize: 14, fontWeight: 800, color: "#1A1A1A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              HufManager
+            </span>
+          </div>
+
+          {/* Jarvis-Button: Hufi KI-Assistent — kompakt rechts */}
           <button
             onClick={activateHufi}
-            title="Hufi aktivieren"
+            title="Hufi KI-Assistent aktivieren"
             style={{
-              display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, overflow: "hidden",
-              background: "transparent", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit",
-              textAlign: "left",
+              display: "flex", alignItems: "center", gap: 5, flexShrink: 0,
+              background: "transparent", border: "none", cursor: "pointer", padding: "0 2px",
+              fontFamily: "inherit",
             }}
           >
             <div style={{
-              width: 30, height: 30, borderRadius: 9, background: "#F97316",
-              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 5,
+              width: 28, height: 28, borderRadius: 8, background: "#F97316",
+              display: "flex", alignItems: "center", justifyContent: "center", padding: 5,
               boxShadow: hufiPresenceState === "bereit" && SR_SUPPORTED
                 ? "0 0 0 0 rgba(249,115,22,0.4)"
                 : "none",
@@ -1631,30 +1641,19 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
             }}>
               <img src="https://upload.assaon.com/files/medien/hufiapp-logo-ohne-text-1777028918553-0kdje.png" alt="Hufi" style={{ width: "100%", height: "100%", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
             </div>
-            <div style={{ minWidth: 0, overflow: "hidden" }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: "#1A1A1A", lineHeight: 1 }}>Hufi</div>
-              {/* Runtime Presence Chip */}
+            {(hufiPresenceState !== "bereit" || pendingSpokenGreeting) && (
               <div style={{
                 fontSize: 9, fontWeight: 700, letterSpacing: ".04em",
                 textTransform: "uppercase" as const,
-                color: hufiPresenceState === "bereit" ? "#9CA3AF" : "#F97316",
-                display: "flex", alignItems: "center", gap: 3, marginTop: 1,
+                color: "#F97316", display: "flex", alignItems: "center", gap: 3,
                 whiteSpace: "nowrap",
               }}>
                 {(hufiPresenceState === "hört zu" || hufiPresenceState === "transkribiert" || hufiPresenceState === "denkt" || hufiPresenceState === "führt aus" || hufiPresenceState === "spricht") && (
-                  <div style={{
-                    width: 5, height: 5, borderRadius: "50%",
-                    background: "currentColor",
-                    animation: "pulse-rec 1s ease-out infinite",
-                  }} />
+                  <div style={{ width: 5, height: 5, borderRadius: "50%", background: "currentColor", animation: "pulse-rec 1s ease-out infinite" }} />
                 )}
-                {pendingSpokenGreeting
-                  ? <span style={{ color: "#F97316", animation: "pulse-rec 1.5s ease-out infinite" }}>tippen zum hören</span>
-                  : hufiPresenceState === "bereit" && SR_SUPPORTED
-                  ? <span style={{ color: "#9CA3AF" }}>tippen oder hey hufi</span>
-                  : hufiPresenceState}
+                {pendingSpokenGreeting ? "tippen" : hufiPresenceState}
               </div>
-            </div>
+            )}
           </button>
 
           {/* Kompakte Aktions-Chips rechts — nur das Wichtigste */}
