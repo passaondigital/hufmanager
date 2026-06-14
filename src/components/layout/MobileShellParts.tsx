@@ -303,7 +303,7 @@ export function MobileShellMessages({
         }}>
           {/* Hufi Pferd */}
           <img
-            src="https://upload.assaon.com/files/medien/goldenespferd.png"
+            src="/hufi-splash.webp"
             alt=""
             style={{ width: 64, height: 64, objectFit: "contain", opacity: 0.9 }}
           />

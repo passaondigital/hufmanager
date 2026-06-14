@@ -21,7 +21,7 @@ export function AuthLoadingScreen() {
 
       <div style={{ animation: "hufi-breath 2.8s ease-in-out infinite", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <img
-          src="https://upload.assaon.com/files/medien/goldenespferd.png"
+          src="/hufi-splash.webp"
           alt="Hufi"
           style={{ width: 130, height: 130, objectFit: "contain" }}
         />

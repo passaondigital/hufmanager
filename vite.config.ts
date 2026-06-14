@@ -3,6 +3,31 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { VitePWA } from "vite-plugin-pwa";
 
+// Marken-Flavor zur Build-Zeit (hufiapp-Build setzt VITE_APP_FLAVOR=hufiapp;
+// Default hufmanager hält den HufManager-Build unverändert).
+const APP_FLAVOR = process.env.VITE_APP_FLAVOR === "hufiapp" ? "hufiapp" : "hufmanager";
+
+const PWA_ICONS_HUFIAPP = [
+  { src: "/hufi-icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+  { src: "/hufi-icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+  { src: "/hufi-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+];
+
+const PWA_ICONS_HUFMANAGER = [
+  { src: "/icon-72.png", sizes: "72x72", type: "image/png", purpose: "any" },
+  { src: "/icon-96.png", sizes: "96x96", type: "image/png", purpose: "any" },
+  { src: "/icon-128.png", sizes: "128x128", type: "image/png", purpose: "any" },
+  { src: "/icon-144.png", sizes: "144x144", type: "image/png", purpose: "any" },
+  { src: "/icon-152.png", sizes: "152x152", type: "image/png", purpose: "any" },
+  { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+  { src: "/icon-384.png", sizes: "384x384", type: "image/png", purpose: "any" },
+  { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+  { src: "/maskable-icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+];
+
+const BRAND_NAME = APP_FLAVOR === "hufiapp" ? "Hufi" : "HufManager";
+const PWA_ICONS = APP_FLAVOR === "hufiapp" ? PWA_ICONS_HUFIAPP : PWA_ICONS_HUFMANAGER;
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
@@ -11,6 +36,19 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    {
+      // index.html-Branding pro Flavor (Titel + Apple-Touch-Icon)
+      name: "html-flavor-branding",
+      transformIndexHtml(html) {
+        if (APP_FLAVOR !== "hufiapp") return html;
+        return html
+          .replace(
+            /<title>[\s\S]*?<\/title>/,
+            "<title>Hufi — Dein KI-Assistent für Pferdeprofis</title>"
+          )
+          .replace(/href="\/apple-touch-icon\.png"/g, 'href="/hufi-apple-touch-icon.png"');
+      },
+    },
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "robots.txt", "hufi-logo.svg", "apple-touch-icon.png"],
@@ -89,8 +127,8 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       manifest: {
-        name: "Hufi",
-        short_name: "Hufi",
+        name: BRAND_NAME,
+        short_name: BRAND_NAME,
         description: "App für mobile Pferdeprofis — Kunden, Pferde, Termine, Navigation & KI",
         theme_color: "#0a0700",
         background_color: "#0a0700",
@@ -99,62 +137,7 @@ export default defineConfig(({ mode }) => ({
         start_url: "/home",
         scope: "/",
         categories: ["business", "productivity"],
-        icons: [
-          {
-            src: "/icon-72.png",
-            sizes: "72x72",
-            type: "image/png",
-            purpose: "any",
-          },
-          {
-            src: "/icon-96.png",
-            sizes: "96x96",
-            type: "image/png",
-            purpose: "any",
-          },
-          {
-            src: "/icon-128.png",
-            sizes: "128x128",
-            type: "image/png",
-            purpose: "any",
-          },
-          {
-            src: "/icon-144.png",
-            sizes: "144x144",
-            type: "image/png",
-            purpose: "any",
-          },
-          {
-            src: "/icon-152.png",
-            sizes: "152x152",
-            type: "image/png",
-            purpose: "any",
-          },
-          {
-            src: "/icon-192.png",
-            sizes: "192x192",
-            type: "image/png",
-            purpose: "any",
-          },
-          {
-            src: "/icon-384.png",
-            sizes: "384x384",
-            type: "image/png",
-            purpose: "any",
-          },
-          {
-            src: "/icon-512.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "any",
-          },
-          {
-            src: "/maskable-icon-512.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "maskable",
-          },
-        ],
+        icons: PWA_ICONS,
         screenshots: [
           {
             src: "/screenshot-wide.png",

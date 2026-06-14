@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { FLAVOR_CONFIG } from '@/config/appFlavor';
 import { toast } from 'sonner';
 import { CountrySelectionStep } from './CountrySelectionStep';
 import { CommunicationModeSelector } from './CommunicationModeSelector';
@@ -235,7 +236,7 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
 
           <div className="space-y-3">
             <h1 className="text-3xl font-bold text-foreground">
-              Willkommen bei HufManager!
+              Willkommen bei {FLAVOR_CONFIG.appName}!
             </h1>
             <p className="text-xl text-muted-foreground">
               Hallo {displayName}!
