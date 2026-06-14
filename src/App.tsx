@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useProfileGuardian } from "@/hooks/useProfileGuardian";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { FLAVOR_CONFIG } from "@/config/appFlavor";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PasswordRecoveryRedirect } from "@/components/auth/PasswordRecoveryRedirect";
 import { CockpitFullscreenProvider } from "@/components/day-cockpit/CockpitFullscreenContext";
@@ -411,7 +412,7 @@ function App() {
       }}
     >
       <ErrorBoundary name="App">
-        <ThemeProvider defaultTheme="dark">
+        <ThemeProvider defaultTheme={FLAVOR_CONFIG.defaultTheme}>
           <BrowserRouter>
             <PferdeakteRouteGuard>
               <AuthProvider>

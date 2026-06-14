@@ -28,6 +28,8 @@ export async function askHufiAgent(params: {
   route?: string;
   mode?: "chat" | "action";
   clientTimestamp?: string;
+  clientTimezone?: string;
+  clientLocation?: { lat: number; lon: number };
 }): Promise<HufiAgentResponse> {
   const {
     data: { session },
@@ -54,6 +56,8 @@ export async function askHufiAgent(params: {
           route: params.route,
           mode: params.mode ?? "chat",
           clientTimestamp: params.clientTimestamp ?? new Date().toISOString(),
+          clientTimezone: params.clientTimezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+          clientLocation: params.clientLocation,
         }),
       },
     );

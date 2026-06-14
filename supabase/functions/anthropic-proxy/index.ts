@@ -46,6 +46,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
+    const isStreaming = body.stream === true;
 
     const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -56,6 +57,13 @@ serve(async (req) => {
       },
       body: JSON.stringify(body),
     });
+
+    if (isStreaming) {
+      return new Response(anthropicResponse.body, {
+        status: anthropicResponse.status,
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
+      });
+    }
 
     const data = await anthropicResponse.json();
 

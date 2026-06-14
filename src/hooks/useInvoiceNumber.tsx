@@ -25,19 +25,15 @@ export function useInvoiceNumber(userId: string | undefined) {
 
       if (rpcError) {
         console.error("Invoice number generation error:", rpcError);
-        // Fallback: generate a simple number based on timestamp
-        const fallbackNumber = `RE-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
-        setError(`Automatische Nummerierung fehlgeschlagen. Fallback: ${fallbackNumber}`);
-        return fallbackNumber;
+        setError("Rechnungsnummer konnte nicht vergeben werden. Bitte erneut versuchen.");
+        return null;
       }
 
       return data as string;
     } catch (err) {
       console.error("Invoice number generation failed:", err);
-      // Fallback
-      const fallbackNumber = `RE-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
-      setError(`Fehler bei Nummerierung. Fallback: ${fallbackNumber}`);
-      return fallbackNumber;
+      setError("Rechnungsnummer konnte nicht vergeben werden. Bitte erneut versuchen.");
+      return null;
     } finally {
       setLoading(false);
     }

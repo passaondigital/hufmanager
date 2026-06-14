@@ -25,6 +25,8 @@ interface RequestBody {
   route?: string;
   mode?: "chat" | "action";
   clientTimestamp?: string;
+  clientTimezone?: string;
+  clientLocation?: { lat: number; lon: number };
 }
 
 interface ActionPlan {
@@ -217,6 +219,29 @@ const HUFI_TOOLS = [
     },
   },
 ];
+
+// ── Wetter-Fetch (wttr.in, kein API-Key) ─────────────────────────────────────
+
+async function fetchWeather(lat: number, lon: number): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://wttr.in/${lat},${lon}?format=j1`,
+      { headers: { "User-Agent": "HufManager/2.5" }, signal: AbortSignal.timeout(3000) },
+    );
+    if (!res.ok) return null;
+    const j = await res.json() as {
+      current_condition?: Array<{ temp_C: string; weatherDesc: Array<{ value: string }> }>;
+      nearest_area?: Array<{ areaName: Array<{ value: string }> }>;
+    };
+    const cc = j.current_condition?.[0];
+    const city = j.nearest_area?.[0]?.areaName?.[0]?.value ?? null;
+    if (!cc) return null;
+    const desc = cc.weatherDesc?.[0]?.value ?? "–";
+    return `${city ? city + ": " : ""}${desc}, ${cc.temp_C}°C`;
+  } catch {
+    return null;
+  }
+}
 
 // ── Tool-Ausführung (Service Role) ─────────────────────────────────────────────
 
@@ -806,13 +831,37 @@ serve(async (req) => {
   try { body = await req.json() as RequestBody; }
   catch { return jsonErr("Ungültige Anfrage", 400); }
 
-  const { text, voiceMode = false, history = [], route, mode = "chat" } = body;
+  const { text, voiceMode = false, history = [], route, mode = "chat", clientTimestamp, clientTimezone, clientLocation } = body;
   if (!text?.trim()) return jsonErr("Kein Text", 400);
 
-  // Leichtgewichtiger Kontext (heute + 7 Tage, für schnelle Antworten)
-  let ctx: Awaited<ReturnType<typeof loadLightContext>> = { userName: null, userType: null, appts: [], unpaidCount: 0, memories: [], bhsSubs: [] };
-  try { ctx = await loadLightContext(user.id, supabase); }
-  catch (e) { console.warn(`[hufi-agent][${requestId}] Kontext-Fehler:`, e); }
+  // ── Lokale Zeit aus Client-Timestamp + Zeitzone ────────────────────────────
+  const ts = clientTimestamp ? new Date(clientTimestamp) : new Date();
+  const tz = clientTimezone ?? "Europe/Berlin";
+  const localTimeStr = new Intl.DateTimeFormat("de-DE", {
+    timeZone: tz,
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(ts);
+
+  // ── Wetter + Kontext parallel laden ────────────────────────────────────────
+  const [ctxResult, weatherStr] = await Promise.allSettled([
+    loadLightContext(user.id, supabase).catch((e) => {
+      console.warn(`[hufi-agent][${requestId}] Kontext-Fehler:`, e);
+      return { userName: null, userType: null, appts: [], unpaidCount: 0, memories: [], bhsSubs: [] };
+    }),
+    clientLocation?.lat && clientLocation?.lon
+      ? fetchWeather(clientLocation.lat, clientLocation.lon)
+      : Promise.resolve(null),
+  ]);
+
+  const ctx = ctxResult.status === "fulfilled"
+    ? ctxResult.value
+    : { userName: null, userType: null, appts: [], unpaidCount: 0, memories: [], bhsSubs: [] };
+  const weather = weatherStr.status === "fulfilled" ? weatherStr.value : null;
 
   const contextBlock = buildLightContextBlock(ctx, voiceMode, route);
   const roleInstr = ROLE_INSTRUCTIONS[ctx.userType ?? ""] ?? "";
@@ -822,6 +871,8 @@ serve(async (req) => {
     HUFI_BASE,
     roleInstr,
     horseKnowledge,
+    `Aktuelle Zeit: ${localTimeStr}`,
+    weather ? `Aktuelles Wetter: ${weather}` : null,
     contextBlock,
     !voiceMode ? "WICHTIG: Für Detaildaten (Pferdeakte, voller Kalender, Rechnungen) nutze die bereitgestellten Tools. Für Namen-Auflösung IMMER search_entity aufrufen." : "",
   ].filter(Boolean).join("\n\n");
