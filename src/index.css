@@ -4,12 +4,116 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    /* ── Core ─────────────────────────────────────────────────── */
+    --background: 210 40% 98%;      /* #F8FAFC = slate-50 */
     --foreground: 20 14.3% 4.1%;
+
+    /* ── Card / Popover ───────────────────────────────────────── */
+    --card: 0 0% 100%;
+    --card-foreground: 20 14.3% 4.1%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 14.3% 4.1%;
+
+    /* ── Primary (Amber) ──────────────────────────────────────── */
     --primary: 38 92% 50%;
     --primary-foreground: 0 0% 100%;
+
+    /* ── Secondary ────────────────────────────────────────────── */
+    --secondary: 60 4.8% 95.9%;
+    --secondary-foreground: 24 9.8% 10%;
+
+    /* ── Muted ────────────────────────────────────────────────── */
+    --muted: 60 4.8% 95.9%;
+    --muted-foreground: 25 5.3% 44.7%;
+
+    /* ── Accent ───────────────────────────────────────────────── */
+    --accent: 60 4.8% 95.9%;
+    --accent-foreground: 24 9.8% 10%;
+
+    /* ── Destructive ──────────────────────────────────────────── */
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 60 9.1% 97.8%;
+
+    /* ── Form elements ────────────────────────────────────────── */
     --border: 20 5.9% 92%;
+    --input: 20 5.9% 90%;
+    --ring: 38 92% 50%;
+
+    /* ── Radius ───────────────────────────────────────────────── */
     --radius: 1.25rem;
+
+    /* ── Brand colors ─────────────────────────────────────────── */
+    --copper: 30 65% 42%;
+    --copper-light: 30 65% 58%;
+    --copper-dark: 30 65% 30%;
+    --forest: 144 45% 35%;
+    --forest-light: 144 45% 48%;
+    --cream: 40 30% 96%;
+
+    /* ── Sidebar ──────────────────────────────────────────────── */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 38 92% 50%;
+  }
+
+  .dark {
+    /* ── Core (Mission-Control-Palette) ───────────────────────── */
+    --background: 42 100% 2%;       /* #0a0700 */
+    --foreground: 40 29% 92%;       /* #f0ece4 */
+
+    /* ── Card / Popover ───────────────────────────────────────── */
+    --card: 42 22% 9%;              /* #1c1912 */
+    --card-foreground: 40 29% 92%;
+    --popover: 47 32% 6%;           /* #13110a */
+    --popover-foreground: 40 29% 92%;
+
+    /* ── Primary (Amber) ──────────────────────────────────────── */
+    --primary: 36 92% 50%;          /* #F5970A */
+    --primary-foreground: 42 100% 2%;
+
+    /* ── Secondary ────────────────────────────────────────────── */
+    --secondary: 47 32% 6%;         /* #13110a */
+    --secondary-foreground: 42 12% 68%; /* #b8b2a4 */
+
+    /* ── Muted ────────────────────────────────────────────────── */
+    --muted: 41 21% 12%;            /* #262219 */
+    --muted-foreground: 44 8% 44%;  /* #7a7568 */
+
+    /* ── Accent ───────────────────────────────────────────────── */
+    --accent: 41 21% 12%;           /* #262219 */
+    --accent-foreground: 36 92% 50%; /* #F5970A */
+
+    /* ── Destructive ──────────────────────────────────────────── */
+    --destructive: 5 78% 60%;       /* #e8564a */
+    --destructive-foreground: 40 29% 92%;
+
+    /* ── Form elements ────────────────────────────────────────── */
+    --border: 44 18% 15%;           /* #2e2a20 */
+    --input: 44 18% 15%;
+    --ring: 36 92% 50%;             /* #F5970A */
+
+    /* ── Brand colors ─────────────────────────────────────────── */
+    --copper: 36 92% 50%;           /* amber als Kupfer-Proxy */
+    --copper-light: 36 92% 65%;
+    --copper-dark: 36 80% 35%;
+    --forest: 144 51% 38%;          /* basierend auf #3dba6f */
+    --forest-light: 144 51% 48%;
+    --cream: 40 29% 92%;
+
+    /* ── Sidebar ──────────────────────────────────────────────── */
+    --sidebar-background: 47 32% 6%;
+    --sidebar-foreground: 40 29% 92%;
+    --sidebar-primary: 36 92% 50%;
+    --sidebar-primary-foreground: 42 100% 2%;
+    --sidebar-accent: 41 21% 12%;
+    --sidebar-accent-foreground: 40 29% 92%;
+    --sidebar-border: 44 18% 15%;
+    --sidebar-ring: 36 92% 50%;
   }
 
   * {
@@ -24,8 +128,8 @@
   }
 
   body {
-    @apply bg-slate-50 text-foreground antialiased;
-    background-color: #F8FAFC !important;
+    @apply text-foreground antialiased;
+    background-color: hsl(var(--background));
     font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
   }
 }

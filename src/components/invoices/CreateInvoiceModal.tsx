@@ -107,7 +107,7 @@ const invoiceSchema = z.object({
   invoice_number: z.string().max(50, "Rechnungsnummer zu lang").optional(),
   issue_date: z.string().min(1, "Bitte wählen Sie ein Datum"),
   due_date: z.string().optional(),
-  status: z.enum(["pending", "paid", "overdue"]),
+  status: z.enum(["sent", "paid", "overdue"]),
   notes: z.string().max(1000, "Notizen zu lang").optional(),
 });
 
@@ -151,7 +151,7 @@ export function CreateInvoiceModal({
     invoice_number: "",
     issue_date: new Date().toISOString().split("T")[0],
     due_date: "",
-    status: "pending" as "pending" | "paid" | "overdue",
+    status: "sent" as "sent" | "paid" | "overdue",
     payment_method: "" as "" | "Überweisung" | "Bar" | "PayPal" | "CopeCart",
     customer_type: "privat" as "privat" | "gewerbe" | "kleinunternehmer",
     notes: "",
@@ -690,7 +690,7 @@ export function CreateInvoiceModal({
         invoice_number: "",
         issue_date: new Date().toISOString().split("T")[0],
         due_date: "",
-        status: "pending",
+        status: "sent",
         payment_method: "",
         customer_type: "privat",
         notes: "",
@@ -871,13 +871,13 @@ export function CreateInvoiceModal({
           <Label htmlFor="status">Status</Label>
           <Select
             value={formData.status}
-            onValueChange={(value: "pending" | "paid" | "overdue") => setFormData(prev => ({ ...prev, status: value }))}
+            onValueChange={(value: "sent" | "paid" | "overdue") => setFormData(prev => ({ ...prev, status: value }))}
           >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="pending">Offen</SelectItem>
+              <SelectItem value="sent">Offen</SelectItem>
               <SelectItem value="paid">Bezahlt</SelectItem>
               <SelectItem value="overdue">Überfällig</SelectItem>
             </SelectContent>

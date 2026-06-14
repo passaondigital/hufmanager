@@ -5,6 +5,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { CreateInvoiceModal } from "@/components/invoices/CreateInvoiceModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -43,6 +44,7 @@ import {
   Edit3,
   ArrowLeftRight,
   StickyNote,
+  FileText,
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -59,6 +61,8 @@ interface AppointmentDetailSheetProps {
     end: Date;
     resource: {
       id: string;
+      client_id?: string | null;
+      horse_id?: string | null;
       time: string | null;
       duration: number | null;
       service_type: string | null;
@@ -97,6 +101,7 @@ export function AppointmentDetailSheet({
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleTime, setRescheduleTime] = useState("");
   const [editedNotes, setEditedNotes] = useState("");
+  const [createInvoiceOpen, setCreateInvoiceOpen] = useState(false);
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
@@ -447,6 +452,16 @@ export function AppointmentDetailSheet({
 
             {/* Action buttons */}
             <div className="space-y-2 pb-4">
+              {resource.status === "completed" && resource.client_id && (
+                <Button
+                  className="w-full justify-start gap-2 h-12"
+                  onClick={() => setCreateInvoiceOpen(true)}
+                >
+                  <FileText className="h-4 w-4" />
+                  Rechnung erstellen →
+                </Button>
+              )}
+
               {!isRescheduling && (
                 <Button
                   variant="outline"
@@ -492,6 +507,15 @@ export function AppointmentDetailSheet({
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Create Invoice Modal */}
+      <CreateInvoiceModal
+        open={createInvoiceOpen}
+        onClose={() => setCreateInvoiceOpen(false)}
+        onSuccess={() => setCreateInvoiceOpen(false)}
+        preSelectedClientId={resource.client_id ?? null}
+        preSelectedHorseId={resource.horse_id ?? null}
+      />
 
       {/* Delete Confirmation */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

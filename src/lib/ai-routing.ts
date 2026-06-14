@@ -3,7 +3,7 @@ import { RecognizedEntity, buildB2BReportContext } from "./ontology-service";
 
 const WHISPER_ENDPOINT = "/api/local-ai/transcribe";
 const OLLAMA_ENDPOINT = "/api/ollama/api/chat";
-const ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages";
+const PROXY_ENDPOINT = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/anthropic-proxy`;
 
 const CLAUDE_HAIKU  = "claude-haiku-4-5-20251001";
 const CLAUDE_SONNET = "claude-sonnet-4-6";
@@ -44,9 +44,9 @@ export async function checkAndUseCredit(
   }
 }
 
-function anthropicKey(): string | null {
-  const k = import.meta.env.VITE_ANTHROPIC_API_KEY as string | undefined;
-  return k?.trim() || null;
+async function getAuthToken(): Promise<string | null> {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? null;
 }
 
 function toClaudeModel(hint: string | null | undefined): string {
@@ -54,20 +54,21 @@ function toClaudeModel(hint: string | null | undefined): string {
   return CLAUDE_SONNET;
 }
 
-// ── Claude API ────────────────────────────────────────────────────────────────
+// ── Claude API (via anthropic-proxy Edge Function) ────────────────────────────
 async function callClaude(messages: ChatMessage[], model: string): Promise<string> {
-  const key = anthropicKey()!;
+  const token = await getAuthToken();
+  if (!token) throw new Error("Nicht angemeldet");
+
   const systemMsg = messages.find((m) => m.role === "system");
   const chatMsgs   = messages.filter((m) => m.role !== "system");
 
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 10_000);
   try {
-    const res = await fetch(ANTHROPIC_ENDPOINT, {
+    const res = await fetch(PROXY_ENDPOINT, {
       method: "POST",
       headers: {
-        "x-api-key": key,
-        "anthropic-version": "2023-06-01",
+        "Authorization": `Bearer ${token}`,
         "content-type": "application/json",
       },
       body: JSON.stringify({
@@ -114,19 +115,19 @@ async function callOllama(messages: ChatMessage[], model: string): Promise<strin
 /**
  * Route: Claude Haiku  (forceModel="hufiai-fast" / knowledge)
  *        Claude Sonnet (default / agent_lookup / agent_action / B2B)
- *        Ollama        (fallback when VITE_ANTHROPIC_API_KEY not set)
+ *        Ollama        (fallback when kein Supabase-Session vorhanden)
  */
 export async function chatWithHufAI(
   messages: ChatMessage[],
   userId: string,
   forceModel?: string,
 ): Promise<string> {
-  // Deduct credit for authenticated users (fail open if table not ready)
   if (userId && userId !== "anonymous") {
     await checkAndUseCredit(userId, forceModel === "hufiai-fast" ? "fast" : "smart");
   }
 
-  if (anthropicKey()) {
+  const token = await getAuthToken();
+  if (token) {
     return callClaude(messages, toClaudeModel(forceModel));
   }
 
@@ -162,22 +163,20 @@ export async function streamWithHufAI(
     await checkAndUseCredit(userId, forceModel === "hufiai-fast" ? "fast" : "smart", bypassCredit);
   }
 
-  if (!anthropicKey()) {
-    // Ollama has no easy browser-side streaming — return full response and emit as one chunk
+  const token = await getAuthToken();
+  if (!token) {
     const reply = await callOllama(messages, forceModel ?? "hufiai-core");
     onChunk?.(reply);
     return reply;
   }
 
-  const key = anthropicKey()!;
   const systemMsg = messages.find((m) => m.role === "system");
   const chatMsgs   = messages.filter((m) => m.role !== "system");
 
-  const res = await fetch(ANTHROPIC_ENDPOINT, {
+  const res = await fetch(PROXY_ENDPOINT, {
     method: "POST",
     headers: {
-      "x-api-key": key,
-      "anthropic-version": "2023-06-01",
+      "Authorization": `Bearer ${token}`,
       "content-type": "application/json",
     },
     body: JSON.stringify({
@@ -260,20 +259,19 @@ export async function callClaudeWithTools(
     await checkAndUseCredit(userId, "fast");
   }
 
-  if (!anthropicKey()) {
+  const token = await getAuthToken();
+  if (!token) {
     return { type: "text", text: "" };
   }
 
-  const key = anthropicKey()!;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 15_000);
 
   try {
-    const res = await fetch(ANTHROPIC_ENDPOINT, {
+    const res = await fetch(PROXY_ENDPOINT, {
       method: "POST",
       headers: {
-        "x-api-key": key,
-        "anthropic-version": "2023-06-01",
+        "Authorization": `Bearer ${token}`,
         "content-type": "application/json",
       },
       body: JSON.stringify({

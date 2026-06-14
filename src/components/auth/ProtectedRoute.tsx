@@ -77,7 +77,10 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
 
   // Check for payment issues (only for providers)
   if (role === "provider" && status === "past_due") {
-    return <PaymentBlockedScreen />;
+    return <PaymentBlockedScreen variant="past_due" />;
+  }
+  if (role === "provider" && status === "cancelled") {
+    return <PaymentBlockedScreen variant="trial_expired" />;
   }
 
   // Check if user has allowed role
