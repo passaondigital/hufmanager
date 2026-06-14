@@ -1,16 +1,19 @@
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Lock, ShieldAlert, ArrowRight } from "lucide-react";
+import { ArrowRight, X, Sparkles } from "lucide-react";
+import { useState } from "react";
 
 /**
- * Shows a paywall overlay when account_status is 'expired'.
+ * Nicht-blockierender Hinweis-Banner, wenn account_status 'expired' ist.
+ * Trial-Ablauf = Downgrade auf Starter (Limits greifen automatisch über
+ * feature_statuses), KEINE Sperre — gemäß Trial-Downgrade-Policy.
+ * Echte Kündigungen laufen über subscription_status='cancelled' (separat).
  */
 export function TrialPaywall() {
   const { user } = useAuth();
+  const [dismissed, setDismissed] = useState(false);
 
   const { data: profile } = useQuery({
     queryKey: ["profile-trial-status", user?.id],
@@ -27,58 +30,31 @@ export function TrialPaywall() {
     staleTime: 1000 * 60 * 5,
   });
 
-  if (!profile || (profile as any).account_status !== "expired") return null;
-
-  const plans = [
-    { name: "Starter", price: "29€/Monat", url: "https://www.copecart.com/products/8ef10f74/checkout" },
-    { name: "Pro", price: "29€/Monat", url: "https://www.copecart.com/products/1996da6f/checkout" },
-    { name: "Duo", price: "49€/Monat", url: "https://www.copecart.com/products/953da638/checkout" },
-    { name: "Team", price: "79€/Monat", url: "https://www.copecart.com/products/badae7d2/checkout" },
-  ];
+  if (dismissed || !profile || (profile as any).account_status !== "expired") return null;
 
   return (
-    <AlertDialog open>
-      <AlertDialogContent className="max-w-lg">
-        <AlertDialogHeader>
-          <div className="flex items-center gap-2 mb-2">
-            <ShieldAlert className="h-6 w-6 text-primary" />
-            <AlertDialogTitle>Testzeitraum abgelaufen</AlertDialogTitle>
-          </div>
-          <AlertDialogDescription asChild>
-            <div className="space-y-4">
-              <p>
-                Dein 30-tägiger Testzeitraum ist abgelaufen. Deine Daten sind sicher und bleiben erhalten. 
-                Wähle einen Plan um alle Features wieder freizuschalten.
-              </p>
-
-              <div className="grid grid-cols-2 gap-2">
-                {plans.map(p => (
-                  <Card key={p.name} className="cursor-pointer hover:border-primary transition-colors">
-                    <CardContent className="p-3 text-center">
-                      <p className="font-semibold text-sm">{p.name}</p>
-                      <p className="text-xs text-muted-foreground">{p.price}</p>
-                      <Button 
-                        size="sm" 
-                        className="mt-2 w-full gap-1 text-xs h-7"
-                        onClick={() => window.open(p.url, "_blank")}
-                      >
-                        Wählen <ArrowRight className="h-3 w-3" />
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              <div className="flex items-start gap-2 p-3 rounded-lg border bg-muted/30">
-                <Lock className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                <p className="text-xs text-muted-foreground">
-                  Deine Daten bleiben 12 Monate gespeichert. Du kannst sie jederzeit einsehen aber keine neuen Einträge erstellen.
-                </p>
-              </div>
-            </div>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-      </AlertDialogContent>
-    </AlertDialog>
+    <div className="fixed bottom-0 inset-x-0 z-40 px-3 pb-3 pointer-events-none">
+      <div className="pointer-events-auto mx-auto max-w-2xl rounded-xl border bg-background/95 backdrop-blur shadow-lg px-4 py-3 flex items-center gap-3">
+        <Sparkles className="h-5 w-5 text-primary shrink-0" />
+        <p className="text-sm text-foreground flex-1 leading-snug">
+          <span className="font-medium">Testzeitraum beendet</span> — Starter-Limits gelten jetzt.
+          <span className="text-muted-foreground"> Jetzt upgraden für mehr.</span>
+        </p>
+        <Button
+          size="sm"
+          className="gap-1 shrink-0"
+          onClick={() => window.open("https://hufiapp.de/#preise", "_blank")}
+        >
+          Upgraden <ArrowRight className="h-4 w-4" />
+        </Button>
+        <button
+          aria-label="Hinweis schließen"
+          onClick={() => setDismissed(true)}
+          className="text-muted-foreground hover:text-foreground shrink-0"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
   );
 }
