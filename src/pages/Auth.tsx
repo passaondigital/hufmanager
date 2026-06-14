@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { FLAVOR_CONFIG } from "@/config/appFlavor";
 import { isDemoEmail } from "@/lib/demo-accounts";
 import { isPortalBusinessEmail, isStallbetreiberDemoEmail, getPostLoginPath } from "@/lib/portal-user-detect";
 import { Navigate, useSearchParams, useNavigate } from "react-router-dom";
@@ -428,8 +429,8 @@ export default function Auth() {
     return (
       <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
         <img 
-          src="/hufmanager-logo.png"
-          alt="HufManager"
+          src={FLAVOR_CONFIG.logo}
+          alt={FLAVOR_CONFIG.appName}
           className="h-24 w-auto animate-pulse"
         />
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -478,7 +479,7 @@ export default function Auth() {
               Huf<span style={{ color: "#F97316" }}>Manager</span>
             </span>
           </div>
-          <CardTitle className="text-2xl font-bold text-foreground sr-only">HufManager</CardTitle>
+          <CardTitle className="text-2xl font-bold text-foreground sr-only">{FLAVOR_CONFIG.appName}</CardTitle>
           <CardDescription className="text-sm text-muted-foreground">
             {pferdeakteSource
               ? "Erstelle dein Konto und leg deine erste Pferdeakte an"
@@ -703,27 +704,27 @@ export default function Auth() {
 
       {/* Legal Links */}
       <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground pb-4">
-        <a 
-          href="https://hufmanager.de/impressum" 
-          target="_blank" 
+        <a
+          href={`${FLAVOR_CONFIG.legalBaseUrl}/impressum`}
+          target="_blank"
           rel="noopener noreferrer"
           className="hover:text-primary transition-colors min-h-[44px] inline-flex items-center"
         >
           Impressum
         </a>
         <span className="text-border">•</span>
-        <a 
-          href="https://hufmanager.de/datenschutz" 
-          target="_blank" 
+        <a
+          href={`${FLAVOR_CONFIG.legalBaseUrl}/datenschutz`}
+          target="_blank"
           rel="noopener noreferrer"
           className="hover:text-primary transition-colors min-h-[44px] inline-flex items-center"
         >
           Datenschutz
         </a>
         <span className="text-border">•</span>
-        <a 
-          href="https://hufmanager.de/agb" 
-          target="_blank" 
+        <a
+          href={`${FLAVOR_CONFIG.legalBaseUrl}/agb`}
+          target="_blank"
           rel="noopener noreferrer"
           className="hover:text-primary transition-colors min-h-[44px] inline-flex items-center"
         >

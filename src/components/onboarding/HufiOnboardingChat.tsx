@@ -194,7 +194,7 @@ export function HufiOnboardingChat({ userId, onComplete }: HufiOnboardingChatPro
           }}
         >
           <img
-            src="https://upload.assaon.com/files/medien/goldenespferd.png"
+            src="/hufi-splash.webp"
             alt="Hufi"
             style={{ width: "28px", height: "28px", borderRadius: "50%", objectFit: "cover" }}
           />

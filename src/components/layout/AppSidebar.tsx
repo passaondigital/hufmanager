@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { FLAVOR_CONFIG } from "@/config/appFlavor";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -404,14 +405,14 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
         {!collapsed ? (
           <img
-            src="/hufmanager-logo.png"
-            alt="HufManager"
+            src={FLAVOR_CONFIG.logo}
+            alt={FLAVOR_CONFIG.appName}
             className="h-10 w-auto"
           />
         ) : (
           <img
-            src="/hufmanager-logo.png"
-            alt="HM"
+            src={FLAVOR_CONFIG.logoMark}
+            alt={FLAVOR_CONFIG.appName}
             className="h-8 w-auto"
           />
         )}
