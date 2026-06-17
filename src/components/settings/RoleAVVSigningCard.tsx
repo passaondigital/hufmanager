@@ -45,9 +45,8 @@ und
 
 Barhufserviceschmid
 Pascal Schmid
-Emsdettener Str. 10
-c/o Postflex #10643
-48268 Greven
+Hauptstraße 19
+54426 Talling
 
 nachfolgend „Auftragnehmer"
 
@@ -395,8 +394,8 @@ export function RoleAVVSigningCard({ role }: RoleAVVSigningCardProps) {
     doc.text("Auftragsverarbeiter:", margin, 85);
     doc.setFont("helvetica", "normal");
     doc.text("Pascal Schmid (Barhufserviceschmid)", margin, 92);
-    doc.text("c/o Postflex #10643, Emsdettener Str. 10", margin, 99);
-    doc.text("48268 Greven", margin, 106);
+    doc.text("Hauptstraße 19", margin, 99);
+    doc.text("54426 Talling", margin, 106);
 
     doc.setFontSize(9);
     let yPos = 120;

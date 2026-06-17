@@ -415,7 +415,7 @@ const Vertrauen = () => (
             </div>
             <div>
               <p className="text-white/40 text-xs uppercase tracking-wide mb-1">Adresse</p>
-              <p className="text-white text-sm">c/o Postflex #10643, Emsdettener Str. 10, 48268 Greven</p>
+              <p className="text-white text-sm">Hauptstraße 19, 54426 Talling</p>
             </div>
             <div>
               <p className="text-white/40 text-xs uppercase tracking-wide mb-1">E-Mail</p>

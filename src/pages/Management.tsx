@@ -887,9 +887,8 @@ const Management = ({ tabs: tabFilter, hideChrome }: ManagementProps = {}) => {
                 placeholder={`Beispiel:
 
 Pascal Schmid
-c/o Postflex #10643
-Emsdettener Str. 10
-48268 Greven
+Hauptstraße 19
+54426 Talling
 
 Telefon: 015209007017
 E-Mail: kontakt@hufiapp.de
