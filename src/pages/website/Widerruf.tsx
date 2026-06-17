@@ -63,7 +63,7 @@ const Widerruf = () => {
             <p>Sie haben das Recht, binnen 14 Tagen ohne Angabe von Gründen diesen Vertrag zu widerrufen. Die Widerrufsfrist beträgt 14 Tage ab dem Tag des Vertragsabschlusses.</p>
 
             <p>
-              Um Ihr Widerrufsrecht auszuüben, müssen Sie uns (Barhufserviceschmid, c/o Postflex #10643, Emsdettener Str. 10, 48268 Greven, Telefon: 015209007017, E-Mail: kontakt@hufiapp.de) mittels einer eindeutigen Erklärung (z.&nbsp;B. ein mit der Post versandter Brief oder eine E-Mail) über Ihren Entschluss, diesen Vertrag zu widerrufen, informieren. Sie können dafür das beigefügte Muster-Widerrufsformular verwenden, das jedoch nicht vorgeschrieben ist. Sie können das Muster-Widerrufsformular oder eine andere eindeutige Erklärung auch auf unserer Webseite (<a href="https://hufiapp.de/widerruf" className="text-[#F5970A] underline">https://hufiapp.de/widerruf</a>) elektronisch ausfüllen und übermitteln. Machen Sie von dieser Möglichkeit Gebrauch, so werden wir Ihnen unverzüglich (z.&nbsp;B. per E-Mail) eine Bestätigung über den Eingang eines solchen Widerrufs übermitteln.
+              Um Ihr Widerrufsrecht auszuüben, müssen Sie uns (Barhufserviceschmid, Hauptstraße 19, 54426 Talling, Telefon: 015209007017, E-Mail: kontakt@hufiapp.de) mittels einer eindeutigen Erklärung (z.&nbsp;B. ein mit der Post versandter Brief oder eine E-Mail) über Ihren Entschluss, diesen Vertrag zu widerrufen, informieren. Sie können dafür das beigefügte Muster-Widerrufsformular verwenden, das jedoch nicht vorgeschrieben ist. Sie können das Muster-Widerrufsformular oder eine andere eindeutige Erklärung auch auf unserer Webseite (<a href="https://hufiapp.de/widerruf" className="text-[#F5970A] underline">https://hufiapp.de/widerruf</a>) elektronisch ausfüllen und übermitteln. Machen Sie von dieser Möglichkeit Gebrauch, so werden wir Ihnen unverzüglich (z.&nbsp;B. per E-Mail) eine Bestätigung über den Eingang eines solchen Widerrufs übermitteln.
             </p>
 
             <p>Zur Wahrung der Widerrufsfrist reicht es aus, dass Sie die Mitteilung über die Ausübung des Widerrufsrechts vor Ablauf der Widerrufsfrist absenden.</p>
@@ -79,9 +79,8 @@ const Widerruf = () => {
               <div className="bg-white/5 rounded-lg p-5 space-y-2 font-mono text-xs text-white/50">
                 <p className="text-white/70 font-sans text-sm font-semibold">An</p>
                 <p>Barhufserviceschmid</p>
-                <p>c/o Postflex #10643</p>
-                <p>Emsdettener Str. 10</p>
-                <p>48268 Greven</p>
+                <p>Hauptstraße 19</p>
+                <p>54426 Talling</p>
                 <p>E-Mail: kontakt@hufiapp.de</p>
                 <br />
                 <p>Hiermit widerrufe(n) ich/wir den von mir/uns abgeschlossenen Vertrag über die Bereitstellung des Zugangs zu folgenden digitalen Inhalten (Bezeichnung, ggf. Bestellnummer und Preis):</p>

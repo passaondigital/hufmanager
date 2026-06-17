@@ -74,9 +74,8 @@ const FooterNew = () => (
               </a>
               <p className="text-white/40 text-xs mt-3 leading-relaxed">
                 Pascal Schmid<br />
-                c/o Postflex #10643<br />
-                Emsdettener Str. 10<br />
-                48268 Greven
+                Hauptstraße 19<br />
+                54426 Talling
               </p>
               <p className="text-white/30 text-[10px] mt-2 leading-relaxed">
                 Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.
