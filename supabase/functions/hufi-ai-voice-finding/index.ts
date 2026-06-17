@@ -100,77 +100,16 @@ serve(async (req) => {
       });
     }
 
-    let finalTranscript = transcript || "";
+    const finalTranscript = (transcript || "").trim();
 
-    // Step 1: Transcribe audio using ElevenLabs STT if we have audio but no transcript
-    if (!finalTranscript && (audioBlob || audio_url)) {
-      const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
-
-      if (ELEVENLABS_API_KEY) {
-        try {
-          let audioData: Blob;
-
-          if (audioBlob) {
-            audioData = audioBlob;
-          } else if (audio_url) {
-            // Download audio from URL
-            const audioResp = await fetch(audio_url);
-            if (!audioResp.ok) throw new Error("Audio-Download fehlgeschlagen");
-            audioData = await audioResp.blob();
-          } else {
-            throw new Error("Keine Audio-Daten");
-          }
-
-          console.log("[voice-finding] Transcribing with ElevenLabs STT, size:", audioData.size);
-
-          const sttFormData = new FormData();
-          sttFormData.append("file", audioData, "recording.webm");
-          sttFormData.append("model_id", "scribe_v2");
-          sttFormData.append("language_code", "deu");
-
-          const sttResp = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
-            method: "POST",
-            headers: {
-              "xi-api-key": ELEVENLABS_API_KEY,
-            },
-            body: sttFormData,
-          });
-
-          if (!sttResp.ok) {
-            const errText = await sttResp.text();
-            console.error("[voice-finding] ElevenLabs STT error:", sttResp.status, errText);
-            throw new Error(`STT failed: ${sttResp.status}`);
-          }
-
-          const sttResult = await sttResp.json();
-          finalTranscript = sttResult.text || "";
-          console.log("[voice-finding] Transcription result:", finalTranscript.substring(0, 100));
-        } catch (sttErr) {
-          console.error("[voice-finding] STT error:", sttErr);
-          return new Response(JSON.stringify({
-            success: false,
-            error: "Spracherkennung fehlgeschlagen. Bitte versuche die Texteingabe.",
-          }), {
-            status: 200,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-      } else {
-        console.warn("[voice-finding] No ELEVENLABS_API_KEY set, cannot transcribe audio");
-        return new Response(JSON.stringify({
-          success: false,
-          error: "Spracherkennung nicht konfiguriert. Bitte Text eingeben.",
-        }), {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-    }
-
+    // DSGVO: Diese Funktion verarbeitet KEIN Audio mehr extern. Die Transkription
+    // erfolgt ausschließlich clientseitig über das eigene Whisper (EU/eigener VPS,
+    // /api/local-ai/transcribe). Sprachaufnahmen werden niemals an Dritte (ElevenLabs)
+    // übermittelt. Hier kommt nur noch der fertige Transcript an.
     if (!finalTranscript) {
       return new Response(JSON.stringify({
         success: false,
-        error: "Keine Sprach- oder Textdaten empfangen.",
+        error: "Kein Transcript übergeben. Bitte erneut aufnehmen oder Text eingeben.",
       }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
