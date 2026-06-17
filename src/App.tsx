@@ -139,6 +139,9 @@ const WebsiteWiderruf    = lazy(() => import("@/pages/website/Widerruf"));
 // HufiApp-Landing (bleibt für hufiapp.de Domain)
 const WebsiteHome = lazy(() => import("@/pages/website/WebsiteHome"));
 
+// DSGVO: Memory-Viewer (Auskunft/Löschung dessen, was Hufi gespeichert hat)
+const HufiMemoryPage = lazy(() => import("@/pages/HufiMemoryPage"));
+
 // Subdomain-Routing (Portal, Vet, Marketplace – nur auf Subdomains aktiv)
 const PortalLogin       = lazy(() => import("@/pages/portal/PortalLogin"));
 const MarketplacePublic = lazy(() => import("@/pages/portal/MarketplacePublic"));
@@ -503,6 +506,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/admin/rollen"                 element={<ProtectedRoute allowedRoles={["admin"]}><AdminRoles /></ProtectedRoute>} />
             <Route path="/admin/seed-demo"              element={<ProtectedRoute allowedRoles={["admin"]}><AdminSeedDemo /></ProtectedRoute>} />
             <Route path="/admin/smoke-test"             element={<ProtectedRoute allowedRoles={["provider", "admin"]}><AdminSmokeTest /></ProtectedRoute>} />
+            <Route path="/hufi/memory"                  element={<ProtectedRoute allowedRoles={["provider", "admin"]}><HufiMemoryPage /></ProtectedRoute>} />
             <Route path="/admin/organizations"          element={<ProtectedRoute allowedRoles={["admin"]}><AdminOrganizations /></ProtectedRoute>} />
             <Route path="/admin/hufi-brain"             element={<ProtectedRoute allowedRoles={["admin"]}><HufiBrainAdmin /></ProtectedRoute>} />
             <Route path="/admin-nachrichten"            element={<ProtectedRoute allowedRoles={["admin"]}><AdminNachrichten /></ProtectedRoute>} />

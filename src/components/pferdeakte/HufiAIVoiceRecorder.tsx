@@ -97,41 +97,35 @@ export function HufiAIVoiceRecorder({ horseId, appointmentId, onFindingGenerated
 
   const processAudio = async (blob: Blob) => {
     try {
-      // Convert blob to base64 and send directly to edge function for STT + analysis
-      const arrayBuffer = await blob.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuffer);
-      let binary = "";
-      for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
-      const audioBase64 = btoa(binary);
+      // DSGVO/Datenminimierung: Audio zuerst über das EIGENE Whisper (EU/eigener VPS,
+      // /api/local-ai/transcribe) transkribieren — es verlässt damit NICHT die eigene
+      // Infrastruktur. An die Edge Function geht nur noch der fertige Transcript.
+      const form = new FormData();
+      form.append("file", blob, `recording.${(blob.type.split("/")[1] ?? "webm").split(";")[0]}`);
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error("Nicht eingeloggt");
-
-      const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hufi-ai-voice-finding`,
-        {
+      let whisperRes: Response;
+      try {
+        whisperRes = await fetch("/api/local-ai/transcribe", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            horse_id: horseId,
-            appointment_id: appointmentId,
-            audio_base64: audioBase64,
-            audio_mime: blob.type,
-          }),
-        }
-      );
-
-      const data = await resp.json();
-      if (!resp.ok || !data?.success) {
-        throw new Error(data?.error || "AI-Analyse fehlgeschlagen");
+          body: form,
+          signal: AbortSignal.timeout(15_000),
+        });
+      } catch {
+        throw new Error("Transkription nicht erreichbar. Bitte die Texteingabe nutzen.");
       }
+      if (!whisperRes.ok) throw new Error("Transkription fehlgeschlagen. Bitte die Texteingabe nutzen.");
 
-      setTranscript(data.transcript || "");
+      const whisperJson = await whisperRes.json().catch(() => ({} as { text?: string }));
+      const spokenText = (whisperJson?.text ?? "").trim();
+      if (!spokenText) throw new Error("Nichts verstanden. Bitte die Texteingabe nutzen.");
+
+      const { data, error } = await supabase.functions.invoke("hufi-ai-voice-finding", {
+        body: { horse_id: horseId, appointment_id: appointmentId, transcript: spokenText },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "AI-Analyse fehlgeschlagen");
+
+      setTranscript(spokenText);
       setFinding(data.finding);
       setState("result");
     } catch (err: any) {

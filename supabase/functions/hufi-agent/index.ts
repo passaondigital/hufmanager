@@ -224,8 +224,12 @@ const HUFI_TOOLS = [
 
 async function fetchWeather(lat: number, lon: number): Promise<string | null> {
   try {
+    // DSGVO/Datenminimierung: nur grobe Region an den externen Wetterdienst senden,
+    // niemals die exakten GPS-Koordinaten. 1 Nachkommastelle ≈ Stadtebene (~11 km).
+    const coarseLat = Math.round(lat * 10) / 10;
+    const coarseLon = Math.round(lon * 10) / 10;
     const res = await fetch(
-      `https://wttr.in/${lat},${lon}?format=j1`,
+      `https://wttr.in/${coarseLat},${coarseLon}?format=j1`,
       { headers: { "User-Agent": "HufManager/2.5" }, signal: AbortSignal.timeout(3000) },
     );
     if (!res.ok) return null;
