@@ -211,6 +211,27 @@ const PartnerManagementBusinessHub = lazy(() => import("@/pages/partner/PartnerM
 const PartnerManagementSteuer = lazy(() => import("@/pages/partner/PartnerManagementSteuer"));
 const PartnerInvite           = lazy(() => import("@/pages/PartnerInvite"));
 
+// ── Employee (Mitarbeiter) ────────────────────────────────────────────────────
+const EmployeeAppLayout       = lazy(() => import("@/components/employee/EmployeeAppLayout").then(m => ({ default: m.EmployeeAppLayout })));
+const EmployeeDashboard       = lazy(() => import("@/pages/EmployeeDashboard"));
+const EmployeeTour            = lazy(() => import("@/pages/EmployeeTour"));
+const EmployeeCalendar        = lazy(() => import("@/pages/employee/EmployeeCalendar"));
+const EmployeePferde          = lazy(() => import("@/pages/employee/EmployeePferde"));
+const EmployeeHorseDetail     = lazy(() => import("@/pages/employee/EmployeeHorseDetail"));
+const EmployeeHufCam          = lazy(() => import("@/pages/employee/EmployeeHufCam"));
+const EmployeeChat            = lazy(() => import("@/pages/employee/EmployeeChat"));
+const EmployeeNotizbuch       = lazy(() => import("@/pages/employee/EmployeeNotizbuch"));
+const EmployeeMaterial        = lazy(() => import("@/pages/employee/EmployeeMaterial"));
+const EmployeeTimer           = lazy(() => import("@/pages/employee/EmployeeTimer"));
+const EmployeeAnalyse         = lazy(() => import("@/pages/employee/EmployeeAnalyse"));
+const EmployeeAbwesenheiten   = lazy(() => import("@/pages/employee/EmployeeAbwesenheiten"));
+const EmployeeVertrag         = lazy(() => import("@/pages/employee/EmployeeVertrag"));
+const EmployeeProfil          = lazy(() => import("@/pages/employee/EmployeeProfil"));
+const EmployeeManagementHub   = lazy(() => import("@/pages/employee/EmployeeManagementHub"));
+const EmployeeManagementProfil = lazy(() => import("@/pages/employee/EmployeeManagementProfil"));
+const EmployeeManagementEinstellungen = lazy(() => import("@/pages/employee/EmployeeManagementEinstellungen"));
+const EmployeeManagementBotschafter = lazy(() => import("@/pages/employee/EmployeeManagementBotschafter"));
+
 // ── Suspense Fallback ─────────────────────────────────────────────────────────
 const LazyFallback = () => {
   const [timedOut, setTimedOut] = useState(false);
@@ -636,6 +657,31 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/partner-work-mode"    element={<Navigate to="/partner-calendar" replace />} />
               <Route path="/partner-feedback"     element={<Navigate to="/partner-home" replace />} />
               <Route path="/partner-support"      element={<Support />} />
+            </Route>
+
+            {/* ── Employee / Mitarbeiter (eigene App-Shell) ───────────────── */}
+            <Route element={<ProtectedRoute allowedRoles={["employee", "admin"]}><EmployeeAppLayout /></ProtectedRoute>}>
+              <Route path="/employee"                          element={<EmployeeDashboard />} />
+              <Route path="/employee/tour"                     element={<EmployeeTour />} />
+              <Route path="/employee/kalender"                 element={<EmployeeCalendar />} />
+              <Route path="/employee/pferde"                   element={<EmployeePferde />} />
+              <Route path="/employee/pferd/:id"                element={<EmployeeHorseDetail />} />
+              <Route path="/employee/hufcam"                   element={<EmployeeHufCam />} />
+              <Route path="/employee/chat"                     element={<EmployeeChat />} />
+              <Route path="/employee/notizbuch"                element={<EmployeeNotizbuch />} />
+              <Route path="/employee/material"                 element={<EmployeeMaterial />} />
+              <Route path="/employee/timer"                    element={<EmployeeTimer />} />
+              <Route path="/employee/analyse"                  element={<EmployeeAnalyse />} />
+              <Route path="/employee/abwesenheiten"            element={<EmployeeAbwesenheiten />} />
+              <Route path="/employee/vertrag"                  element={<EmployeeVertrag />} />
+              <Route path="/employee/profil"                   element={<EmployeeProfil />} />
+              <Route path="/employee/management"               element={<EmployeeManagementHub />} />
+              <Route path="/employee/management/profil"        element={<EmployeeManagementProfil />} />
+              <Route path="/employee/management/einstellungen" element={<EmployeeManagementEinstellungen />} />
+              <Route path="/employee/management/botschafter"   element={<EmployeeManagementBotschafter />} />
+              <Route path="/employee/support"                  element={<Support />} />
+              {/* Kein eigenes Connect-Modul → sinnvoller Redirect */}
+              <Route path="/employee/connect"                  element={<Navigate to="/employee/chat" replace />} />
             </Route>
 
             {/* Fallback */}
