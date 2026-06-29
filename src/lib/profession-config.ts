@@ -2,6 +2,14 @@ export interface ProfessionConfig {
   type: string;
   label: string;
   emoji: string;
+  // Capability-Keys, die berufsspezifische UI-Bausteine freischalten.
+  // Universelle Business-Tools (Kalender, Kunden, Rechnungen, Buchhaltung …) sind NICHT
+  // gegated und immer sichtbar. Gegated werden nur die hier gelisteten Features:
+  //   "hufcam"  → HufCam Pro (Huf-Fotodokumentation)
+  //   "analyse" → Hufanalyse / LTZ-Bögen
+  //   "bhs"     → BHS Balance (Pro-Pferd-Beschlag-Abo)
+  //   "connect" → Hufi Connect (Partner-/Therapeuten-Netzwerk)
+  //   "lager"   → Lager / Materialverwaltung
   menuItems: string[];
   dashboardWidgets: string[];
   serviceLabel: string;
@@ -14,17 +22,27 @@ export const PROFESSION_CONFIGS: Record<string, ProfessionConfig> = {
     type: "hoof_care",
     label: "Hufbearbeiter",
     emoji: "🐴",
-    menuItems: ["cockpit", "kalender", "kunden", "pferde", "rechnungen", "hufcam", "business", "connect", "analyse"],
+    menuItems: ["hufcam", "analyse", "bhs", "connect", "lager"],
     dashboardWidgets: ["next-appointment", "tour-planner", "open-invoices", "hoof-stats"],
     serviceLabel: "Hufbearbeitung",
     appointmentDuration: 60,
+    documentTypes: ["huf-befund", "huf-foto", "beschlag-protokoll"],
+  },
+  farrier: {
+    type: "farrier",
+    label: "Hufschmied",
+    emoji: "🔨",
+    menuItems: ["hufcam", "analyse", "bhs", "connect", "lager"],
+    dashboardWidgets: ["next-appointment", "tour-planner", "open-invoices", "hoof-stats"],
+    serviceLabel: "Beschlag",
+    appointmentDuration: 90,
     documentTypes: ["huf-befund", "huf-foto", "beschlag-protokoll"],
   },
   osteopath: {
     type: "osteopath",
     label: "Osteopath",
     emoji: "🦴",
-    menuItems: ["cockpit", "kalender", "kunden", "pferde", "rechnungen", "business", "connect", "analyse"],
+    menuItems: ["connect"],
     dashboardWidgets: ["next-appointment", "tour-planner", "open-invoices", "treatment-stats"],
     serviceLabel: "Behandlung",
     appointmentDuration: 90,
@@ -34,7 +52,7 @@ export const PROFESSION_CONFIGS: Record<string, ProfessionConfig> = {
     type: "physiotherapist",
     label: "Physiotherapeut",
     emoji: "💆",
-    menuItems: ["cockpit", "kalender", "kunden", "pferde", "rechnungen", "business", "connect", "analyse"],
+    menuItems: ["connect"],
     dashboardWidgets: ["next-appointment", "tour-planner", "open-invoices", "treatment-stats"],
     serviceLabel: "Therapie",
     appointmentDuration: 75,
@@ -44,7 +62,7 @@ export const PROFESSION_CONFIGS: Record<string, ProfessionConfig> = {
     type: "dentist",
     label: "Equine Dentist",
     emoji: "🦷",
-    menuItems: ["cockpit", "kalender", "kunden", "pferde", "rechnungen", "business", "connect"],
+    menuItems: ["connect"],
     dashboardWidgets: ["next-appointment", "tour-planner", "open-invoices"],
     serviceLabel: "Zahnbehandlung",
     appointmentDuration: 45,
@@ -54,7 +72,7 @@ export const PROFESSION_CONFIGS: Record<string, ProfessionConfig> = {
     type: "riding_instructor",
     label: "Reitlehrer",
     emoji: "🏇",
-    menuItems: ["cockpit", "kalender", "kunden", "pferde", "rechnungen", "business"],
+    menuItems: [],
     dashboardWidgets: ["next-appointment", "open-invoices", "student-stats"],
     serviceLabel: "Reitstunde",
     appointmentDuration: 60,
@@ -64,7 +82,7 @@ export const PROFESSION_CONFIGS: Record<string, ProfessionConfig> = {
     type: "saddler",
     label: "Sattler",
     emoji: "🪡",
-    menuItems: ["cockpit", "kalender", "kunden", "pferde", "rechnungen", "lager", "business"],
+    menuItems: ["connect", "lager"],
     dashboardWidgets: ["next-appointment", "open-invoices", "material-stock"],
     serviceLabel: "Sattelanpassung",
     appointmentDuration: 90,
@@ -74,7 +92,7 @@ export const PROFESSION_CONFIGS: Record<string, ProfessionConfig> = {
     type: "massage",
     label: "Pferdemassage",
     emoji: "💬",
-    menuItems: ["cockpit", "kalender", "kunden", "pferde", "rechnungen", "business", "connect"],
+    menuItems: ["connect"],
     dashboardWidgets: ["next-appointment", "open-invoices"],
     serviceLabel: "Massage",
     appointmentDuration: 60,
@@ -84,7 +102,7 @@ export const PROFESSION_CONFIGS: Record<string, ProfessionConfig> = {
     type: "vet_mobile",
     label: "Mobiler Tierarzt",
     emoji: "🩺",
-    menuItems: ["cockpit", "kalender", "kunden", "pferde", "rechnungen", "lager", "business", "connect", "analyse"],
+    menuItems: ["connect", "lager"],
     dashboardWidgets: ["next-appointment", "tour-planner", "open-invoices", "emergency-contacts"],
     serviceLabel: "Behandlung",
     appointmentDuration: 45,
@@ -94,7 +112,7 @@ export const PROFESSION_CONFIGS: Record<string, ProfessionConfig> = {
     type: "other",
     label: "Sonstiges",
     emoji: "⚙️",
-    menuItems: ["cockpit", "kalender", "kunden", "pferde", "rechnungen", "business", "connect"],
+    menuItems: ["connect"],
     dashboardWidgets: ["next-appointment", "open-invoices"],
     serviceLabel: "Termin",
     appointmentDuration: 60,
@@ -107,4 +125,16 @@ export function getProfessionConfig(professionType?: string | null): ProfessionC
     return PROFESSION_CONFIGS[professionType];
   }
   return PROFESSION_CONFIGS.hoof_care;
+}
+
+/**
+ * Prüft, ob ein Beruf ein gegatetes Feature freischaltet.
+ * Universelle Tools (nicht in menuItems gelistet) sind immer sichtbar — siehe
+ * Sidebar-Filterlogik: nur Einträge MIT featureKey werden überhaupt geprüft.
+ */
+export function professionHasFeature(
+  config: ProfessionConfig,
+  featureKey: string,
+): boolean {
+  return config.menuItems.includes(featureKey);
 }
