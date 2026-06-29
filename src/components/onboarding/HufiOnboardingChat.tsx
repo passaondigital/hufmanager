@@ -14,7 +14,19 @@ interface Message {
   id: number;
 }
 
-const ROLES = ["Hufschmied", "Hufpfleger", "Tierarzt"];
+// Labels für den Chat → kanonische profession-config-Keys (siehe profession-config.ts).
+const ROLES: { label: string; key: string }[] = [
+  { label: "Hufbearbeiter", key: "hoof_care" },
+  { label: "Hufschmied", key: "farrier" },
+  { label: "Osteopath", key: "osteopath" },
+  { label: "Physiotherapeut", key: "physiotherapist" },
+  { label: "Equine Dentist", key: "dentist" },
+  { label: "Sattler", key: "saddler" },
+  { label: "Mobiler Tierarzt", key: "vet_mobile" },
+  { label: "Reitlehrer", key: "riding_instructor" },
+  { label: "Pferdemassage", key: "massage" },
+  { label: "Sonstiges", key: "other" },
+];
 
 const fadeInStyle: React.CSSProperties = {
   animation: "hufi-fadein 0.35s ease both",
@@ -26,6 +38,7 @@ export function HufiOnboardingChat({ userId, onComplete }: HufiOnboardingChatPro
   const [inputValue, setInputValue] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
+  const [professionKey, setProfessionKey] = useState("");
   const [region, setRegion] = useState("");
   const [saving, setSaving] = useState(false);
   const msgCounter = useRef(0);
@@ -70,14 +83,15 @@ export function HufiOnboardingChat({ userId, onComplete }: HufiOnboardingChatPro
     setStep(1);
     setTimeout(() => {
       addHufi(
-        `Schön, ${trimmed}! Arbeitest du als Hufschmied, Hufpfleger oder Tierarzt?`
+        `Schön, ${trimmed}! Welcher Beruf beschreibt dich am besten?`
       );
     }, 500);
   }
 
-  function handleRoleSelect(selectedRole: string) {
-    setRole(selectedRole);
-    addUser(selectedRole);
+  function handleRoleSelect(opt: { label: string; key: string }) {
+    setRole(opt.label);
+    setProfessionKey(opt.key);
+    addUser(opt.label);
     setStep(2);
     setTimeout(() => {
       addHufi("In welchem Ort oder Region bist du hauptsächlich tätig?");
@@ -110,15 +124,36 @@ export function HufiOnboardingChat({ userId, onComplete }: HufiOnboardingChatPro
 
   async function handleFinish() {
     setSaving(true);
+    const professionType = professionKey || "hoof_care";
     try {
       await supabase
         .from("profiles")
         .update({
           onboarding_step: 5,
           onboarding_completed: true,
+          profession_type: professionType,
+          profession_slug: professionType,
           onboarding_data: { name, role, region },
         })
         .eq("id", userId);
+
+      // profession_type auch in business_settings spiegeln (Upsert)
+      const { data: existing } = await supabase
+        .from("business_settings")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (existing) {
+        await supabase.from("business_settings").update({ profession_type: professionType } as any).eq("user_id", userId);
+      } else {
+        await supabase.from("business_settings").insert({ user_id: userId, profession_type: professionType } as any);
+      }
+
+      // Berufsspezifische Default-Service-Presets anlegen
+      await supabase.rpc("create_default_service_presets", {
+        _provider_id: userId,
+        _profession_type: professionType,
+      });
     } catch (err) {
       console.warn("[HufiOnboarding] save failed:", err);
     } finally {
@@ -265,8 +300,8 @@ export function HufiOnboardingChat({ userId, onComplete }: HufiOnboardingChatPro
           {step === 1 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", ...fadeInStyle }}>
               {ROLES.map((r) => (
-                <button key={r} style={roleButtonStyle} onClick={() => handleRoleSelect(r)}>
-                  {r}
+                <button key={r.key} style={roleButtonStyle} onClick={() => handleRoleSelect(r)}>
+                  {r.label}
                 </button>
               ))}
             </div>

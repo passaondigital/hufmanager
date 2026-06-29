@@ -40,7 +40,6 @@ import { KiHinweisModal } from "@/components/KiHinweisModal";
 import { HufManagerMigrationBanner } from "@/components/migration/HufManagerMigrationBanner";
 import { HufManagerWelcome } from "@/components/migration/HufManagerWelcome";
 import { HufiOnboardingTour } from "@/components/migration/HufiOnboardingTour";
-import { HufiNewUserOnboarding } from "@/components/onboarding/HufiNewUserOnboarding";
 import { detectCommunicationIntent, buildWhatsAppDraft, buildEmailDraft, generateAppointmentReminder } from "@/lib/hufi-communication";
 import type { DraftMessage } from "@/lib/hufi-communication";
 import { DraftMessageCard } from "@/components/communication/DraftMessageCard";
@@ -101,7 +100,6 @@ export function MobileShell() {
   const [showOnboardingTour, setShowOnboardingTour] = useState(false);
   const [showOnboardingChat, setShowOnboardingChat] = useState(false);
   const [showHufManagerWelcome, setShowHufManagerWelcome] = useState(false);
-  const [showNewUserOnboarding, setShowNewUserOnboarding] = useState(false);
   const [pendingDraft, setPendingDraft] = useState<DraftMessage | null>(null);
   const [pendingRoute, setPendingRoute] = useState<Array<{name: string; address?: string; time?: string; clientName?: string}> | null>(null);
   // Runtime presence: persistent Hufi state label
@@ -221,17 +219,9 @@ export function MobileShell() {
       if (!consented) setShowDsgvoModal(true);
       else bootGreeting(user.id, true);
     });
-    // Onboarding-Chat wenn Profil noch nicht onboarded
-    supabase
-      .from("profiles")
-      .select("onboarding_completed")
-      .eq("id", user.id)
-      .maybeSingle()
-      .then(({ data: prof }) => {
-        if (prof && prof.onboarding_completed === false) {
-          setShowOnboardingChat(true);
-        }
-      });
+    // HINWEIS: Der Onboarding-Einstieg wird AUSSCHLIESSLICH im Detector-Effekt unten
+    // entschieden (detectOnboardingType) — kein separater onboarding_completed-Trigger
+    // mehr, sonst feuern zwei Onboardings gleichzeitig.
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Migration banner check (existing users only, shown once) ─────────────
@@ -259,7 +249,8 @@ export function MobileShell() {
             }
           });
       } else if (type === "new_user") {
-        setShowNewUserOnboarding(true);
+        // Neukunde → genau EIN Flow: konversationelles Chat-Onboarding (deckt alle Berufe ab)
+        setShowOnboardingChat(true);
       }
     });
   }, [user?.id, user?.created_at]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1572,19 +1563,13 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
           }}
         />
       )}
-      {!showFirstRunConsent && showNewUserOnboarding && (
-        <HufiNewUserOnboarding
-          userId={user?.id ?? ""}
-          onComplete={() => setShowNewUserOnboarding(false)}
-        />
-      )}
       {!showFirstRunConsent && showMigrationBanner && !showDsgvoModal && !showHufManagerWelcome && (
         <HufManagerMigrationBanner onStartTour={handleBannerStartTour} onSkip={handleBannerSkip} />
       )}
-      {showOnboardingTour && (
+      {!showFirstRunConsent && showOnboardingTour && (
         <HufiOnboardingTour onComplete={handleTourComplete} />
       )}
-      {showOnboardingChat && (
+      {!showFirstRunConsent && !showDsgvoModal && showOnboardingChat && (
         <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "#FFFFFF", overflowY: "auto" }}>
           <HufiOnboardingChat
             userId={user?.id ?? ""}
