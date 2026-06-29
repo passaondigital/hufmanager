@@ -31,9 +31,20 @@ export function HufiNewUserOnboarding({ userId, onComplete }: Props) {
   const [zipCode, setZipCode] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Dieser (Hufi-Marken-)Flow bietet nur Huf-Varianten an. profession_type muss
+  // einen kanonischen profession-config-Key halten (sonst Fallback-Chaos beim UI-Gating),
+  // der granulare Slug bleibt zusätzlich in profession_slug erhalten.
+  const PROFESSION_TYPE_BY_SLUG: Record<string, string> = {
+    hufpfleger: "hoof_care",
+    hufbearbeiter: "hoof_care",
+    barhufpfleger: "hoof_care",
+    huforthopaedin: "hoof_care",
+  };
+
   async function saveProfession(slug: string) {
     setProfession(slug);
-    await supabase.from("profiles").update({ profession_type: slug, profession_slug: slug }).eq("id", userId);
+    const professionType = PROFESSION_TYPE_BY_SLUG[slug] ?? "hoof_care";
+    await supabase.from("profiles").update({ profession_type: professionType, profession_slug: slug }).eq("id", userId);
     setStep("country");
   }
 
