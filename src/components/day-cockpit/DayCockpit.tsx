@@ -21,6 +21,7 @@ import { DelayReportSheet } from "./DelayReportSheet";
 import { NoShowSheet } from "./NoShowSheet";
 import { EmergencyAppointmentSheet, type EmergencyFormData } from "./EmergencyAppointmentSheet";
 import { PreTourChecklistSheet } from "./PreTourChecklistSheet";
+import { updateHufiMemory } from "@/lib/hufi-brain";
 
 export type CockpitState = "ready" | "underway" | "complete";
 
@@ -313,6 +314,15 @@ export function DayCockpit() {
   const handleGpsConsentChange = (v: boolean) => {
     localStorage.setItem("hufi_gps_consent", v ? "1" : "0");
     setGpsConsentGiven(v);
+    if (user?.id) {
+      updateHufiMemory(
+        user.id,
+        "permission",
+        "gps_tracking_consent",
+        { granted: v, ts: new Date().toISOString() },
+        "manual",
+      );
+    }
   };
 
   // GPS tracking during tour (pauses when isPaused, requires user consent)
