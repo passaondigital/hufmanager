@@ -26,11 +26,11 @@ const Impressum = () => (
           </div>
 
           <div>
-            <h2 className="text-xl font-semibold text-white mb-2">Umsatzsteuer-ID</h2>
+            <h2 className="text-xl font-semibold text-white mb-2">Steuernummer</h2>
             <p>
-              Umsatzsteuer-Identifikationsnummer gemäß § 27 a Umsatzsteuergesetz:<br /><br />
               Steuernummer: 43/150/40518<br /><br />
-              Gemäß § 19 UStG wird keine Umsatzsteuer ausgewiesen.
+              Gemäß § 19 UStG wird keine Umsatzsteuer ausgewiesen, daher liegt keine
+              Umsatzsteuer-Identifikationsnummer vor.
             </p>
           </div>
 
@@ -47,6 +47,22 @@ const Impressum = () => (
               Pascal Schmid<br />
               Hauptstraße 19<br />
               54426 Talling
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-xl font-semibold text-white mb-2">EU-Streitschlichtung</h2>
+            <p>
+              Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit: {" "}
+              <a
+                href="https://ec.europa.eu/consumers/odr/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                https://ec.europa.eu/consumers/odr/
+              </a>
+              . Unsere E-Mail-Adresse finden Sie oben im Impressum.
             </p>
           </div>
 
