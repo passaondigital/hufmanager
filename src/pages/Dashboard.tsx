@@ -13,6 +13,7 @@ import { PferdeakteInsights } from "@/components/dashboard/PferdeakteInsights";
 import { RecentPferdeakten } from "@/components/dashboard/RecentPferdeakten";
 import { InsuranceInsights } from "@/components/dashboard/InsuranceInsights";
 import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
+import { useProfessionConfig } from "@/hooks/useProfessionConfig";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { format } from "date-fns";
 import { CalendarPlus, UserPlus, Route, Calendar, Users, FileText, Inbox } from "lucide-react";
@@ -25,11 +26,12 @@ const Dashboard = () => {
   const { showOnboarding, completeOnboarding } = useOnboarding();
   const isMobile = useIsMobile();
   const todayStr = format(new Date(), "yyyy-MM-dd");
+  const professionConfig = useProfessionConfig();
 
   const {
     widgets, isLoading: widgetsLoading,
     updateWidget, addWidget, removeWidget, resetWidgets,
-  } = useDashboardWidgets("provider");
+  } = useDashboardWidgets("provider", professionConfig.dashboardWidgets);
 
   const { data: profileData } = useQuery({
     queryKey: ["provider-profile-id", user?.id],

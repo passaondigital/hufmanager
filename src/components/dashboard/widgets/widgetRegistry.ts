@@ -83,6 +83,51 @@ export const DEFAULT_EMPLOYEE_WIDGETS: Omit<DashboardWidgetData, "id" | "user_id
   { widget_type: "arbeitszeit", position_x: 1, position_y: 1, width: 1, height: 1, is_active: true, settings: {} },
 ];
 
+/**
+ * Bildet die generischen dashboardWidgets-IDs aus profession-config.ts auf konkrete
+ * widget_type-Werte hier ab. Nur IDs mit einer echten Entsprechung werden gemappt —
+ * Berufe ohne passendes Widget (z.B. "treatment-stats") fallen auf die Rollen-Defaults zurück.
+ */
+export const PROFESSION_WIDGET_MAP: Record<string, string> = {
+  "next-appointment": "naechste_termine",
+  "tour-planner": "kalender_woche",
+  "open-invoices": "offene_rechnungen",
+  "hoof-stats": "huf_status",
+};
+
+/**
+ * Seed-Reihenfolge für neue Nutzer: berufsspezifische Widgets (sofern eine Entsprechung
+ * existiert) zuerst, danach die verbleibenden Rollen-Standard-Widgets.
+ */
+export function buildSeedWidgets(
+  role: "provider" | "partner" | "employee" | "client",
+  roleDefaults: Omit<DashboardWidgetData, "id" | "user_id">[],
+  professionDashboardWidgets: string[] = [],
+): Omit<DashboardWidgetData, "id" | "user_id">[] {
+  const mappedTypes = professionDashboardWidgets
+    .map((id) => PROFESSION_WIDGET_MAP[id])
+    .filter((type): type is string => !!type && getWidgetsForRole(role).some((w) => w.type === type));
+
+  const orderedTypes = [
+    ...mappedTypes,
+    ...roleDefaults.map((w) => w.widget_type).filter((type) => !mappedTypes.includes(type)),
+  ];
+
+  return orderedTypes.map((type, index) => {
+    const existing = roleDefaults.find((w) => w.widget_type === type);
+    const def = getWidgetDef(type);
+    return {
+      widget_type: type,
+      position_x: index % 2,
+      position_y: Math.floor(index / 2),
+      width: existing?.width ?? def?.defaultWidth ?? 1,
+      height: existing?.height ?? def?.defaultHeight ?? 1,
+      is_active: true,
+      settings: existing?.settings ?? {},
+    };
+  });
+}
+
 export const DEFAULT_CLIENT_WIDGETS: Omit<DashboardWidgetData, "id" | "user_id">[] = [
   { widget_type: "client_naechster_termin", position_x: 0, position_y: 0, width: 2, height: 1, is_active: true, settings: {} },
   { widget_type: "client_pferde", position_x: 0, position_y: 1, width: 2, height: 1, is_active: true, settings: {} },

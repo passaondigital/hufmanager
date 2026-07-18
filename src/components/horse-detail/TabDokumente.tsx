@@ -13,6 +13,7 @@ import { de } from "date-fns/locale";
 import { getStorageUrl, uploadFile } from "@/lib/storage";
 import { useStorageQuota, formatBytes } from "@/hooks/useStorageQuota";
 import { StorageQuotaCard } from "@/components/storage/StorageQuotaCard";
+import { useProfessionConfig } from "@/hooks/useProfessionConfig";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,9 +47,18 @@ const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
   DOCUMENT_CATEGORIES.map(c => [c.value, c.label])
 );
 
+/** Wandelt einen kebab-case/snake_case Kategorie-Slug (z.B. aus profession-config.ts
+ *  documentTypes) in einen lesbaren Anzeige-Namen um, falls kein fester Label existiert. */
+function humanizeCategory(category: string): string {
+  return category
+    .split(/[-_]/)
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join("-");
+}
+
 function getCategoryLabel(category: string | null): string {
   if (!category) return "Sonstiges";
-  return CATEGORY_LABELS[category] || category;
+  return CATEGORY_LABELS[category] || humanizeCategory(category);
 }
 
 function getCategoryColor(category: string | null): string {
@@ -72,6 +82,13 @@ interface TabDokumenteProps {
 }
 
 export function TabDokumente({ horseId, hoofPhotos, documents, onRefresh }: TabDokumenteProps) {
+  const { documentTypes: professionDocumentTypes } = useProfessionConfig();
+  const categoryOptions = [
+    ...professionDocumentTypes
+      .filter(dt => !DOCUMENT_CATEGORIES.some(c => c.value === dt))
+      .map(dt => ({ value: dt, label: humanizeCategory(dt) })),
+    ...DOCUMENT_CATEGORIES,
+  ];
   const [uploading, setUploading] = useState(false);
   const [deleteDoc, setDeleteDoc] = useState<HorseDocument | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
@@ -302,7 +319,7 @@ export function TabDokumente({ horseId, hoofPhotos, documents, onRefresh }: TabD
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger><SelectValue placeholder="Kategorie wählen" /></SelectTrigger>
                 <SelectContent>
-                  {DOCUMENT_CATEGORIES.map(c => (
+                  {categoryOptions.map(c => (
                     <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                   ))}
                 </SelectContent>

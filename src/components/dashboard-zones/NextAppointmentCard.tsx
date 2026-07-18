@@ -4,6 +4,7 @@ import { format, differenceInCalendarDays } from "date-fns";
 import { de } from "date-fns/locale";
 import { Calendar, MapPin, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useProfessionConfig } from "@/hooks/useProfessionConfig";
 
 interface NextAppointmentCardProps {
   userId: string;
@@ -16,6 +17,7 @@ interface NextAppointmentCardProps {
 
 export function NextAppointmentCard({ userId, role, employeeProfileId, onNavigate, onDetails }: NextAppointmentCardProps) {
   const todayStr = format(new Date(), "yyyy-MM-dd");
+  const { serviceLabel } = useProfessionConfig();
 
   const { data: appointment } = useQuery({
     queryKey: ["next-appointment", userId, role, todayStr],
@@ -70,7 +72,7 @@ export function NextAppointmentCard({ userId, role, employeeProfileId, onNavigat
         <div className="flex-1 min-w-0">
           <p className="text-[10px] uppercase tracking-wider text-primary font-semibold mb-1">Nächster Termin</p>
           <p className="text-sm font-semibold text-foreground truncate">
-            {horseName || appointment.service_type || "Termin"}
+            {horseName || appointment.service_type || serviceLabel}
           </p>
           <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
             <Calendar className="h-3 w-3 flex-shrink-0" />

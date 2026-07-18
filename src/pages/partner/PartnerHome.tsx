@@ -7,8 +7,9 @@ import { CompactOnboardingBanner } from "@/components/dashboard/CompactOnboardin
 import { WidgetGrid } from "@/components/dashboard/widgets/WidgetGrid";
 import { DashboardSidebar } from "@/components/dashboard/sidebar/DashboardSidebar";
 import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
+import { useProfessionConfig } from "@/hooks/useProfessionConfig";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Heart, Calendar, FileText, Users, Clock, Upload } from "lucide-react";
+import { Heart, Calendar, FileText, Users, Clock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
 import { NextAppointmentCard } from "@/components/dashboard-zones/NextAppointmentCard";
@@ -19,8 +20,9 @@ export default function PartnerHome() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const professionConfig = useProfessionConfig();
 
-  const { widgets, isLoading: widgetsLoading, updateWidget, addWidget, removeWidget, resetWidgets } = useDashboardWidgets("partner");
+  const { widgets, isLoading: widgetsLoading, updateWidget, addWidget, removeWidget, resetWidgets } = useDashboardWidgets("partner", professionConfig.dashboardWidgets);
 
   const { data: profileData } = useQuery({
     queryKey: ["partner-profile-name", user?.id],
@@ -98,13 +100,12 @@ export default function PartnerHome() {
           <NextAppointmentCard
             userId={user.id}
             role="provider"
-            onNavigate={() => navigate("/partner-horses")}
-            onDetails={() => navigate("/partner-horses")}
+            onNavigate={() => navigate("/partner-pferde")}
+            onDetails={() => navigate("/partner-pferde")}
           />
         )}
         <QuickActionBar actions={[
-          { key: "pferde", label: "Betreute Pferde", icon: Heart, primary: true, onClick: () => navigate("/partner-horses") },
-          { key: "import", label: "Import Center", icon: Upload, onClick: () => navigate("/partner-import") },
+          { key: "pferde", label: "Betreute Pferde", icon: Heart, primary: true, onClick: () => navigate("/partner-pferde") },
         ]} />
       </DashboardHero>
 

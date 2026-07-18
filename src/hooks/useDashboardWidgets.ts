@@ -8,11 +8,12 @@ import {
   DEFAULT_PARTNER_WIDGETS,
   DEFAULT_EMPLOYEE_WIDGETS,
   DEFAULT_CLIENT_WIDGETS,
+  buildSeedWidgets,
 } from "@/components/dashboard/widgets/widgetRegistry";
 
 type Role = "provider" | "partner" | "employee" | "client";
 
-function getDefaults(role: Role) {
+function getRoleDefaults(role: Role) {
   switch (role) {
     case "partner": return DEFAULT_PARTNER_WIDGETS;
     case "employee": return DEFAULT_EMPLOYEE_WIDGETS;
@@ -21,7 +22,17 @@ function getDefaults(role: Role) {
   }
 }
 
-export function useDashboardWidgets(role: Role = "provider") {
+/**
+ * Beruf beeinflusst nur die Seed-Reihenfolge für Provider/Partner/Employee (Dienstleister-Rollen).
+ * Für Kunden gibt es kein profession_type → immer Rollen-Standard.
+ */
+function getDefaults(role: Role, professionDashboardWidgets: string[] = []) {
+  const roleDefaults = getRoleDefaults(role);
+  if (role === "client" || professionDashboardWidgets.length === 0) return roleDefaults;
+  return buildSeedWidgets(role, roleDefaults, professionDashboardWidgets);
+}
+
+export function useDashboardWidgets(role: Role = "provider", professionDashboardWidgets: string[] = []) {
   const { user } = useAuth();
   const qc = useQueryClient();
   const queryKey = ["dashboard-widgets", user?.id, role];
@@ -39,7 +50,7 @@ export function useDashboardWidgets(role: Role = "provider") {
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        const defaults = getDefaults(role);
+        const defaults = getDefaults(role, professionDashboardWidgets);
         const inserts = defaults.map((w) => ({
           ...w,
           user_id: user!.id,
@@ -106,7 +117,7 @@ export function useDashboardWidgets(role: Role = "provider") {
   const resetWidgets = useMutation({
     mutationFn: async () => {
       await supabase.from("dashboard_widgets").delete().eq("user_id", user!.id);
-      const defaults = getDefaults(role);
+      const defaults = getDefaults(role, professionDashboardWidgets);
       const inserts = defaults.map((w) => ({
         ...w,
         user_id: user!.id,

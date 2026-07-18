@@ -337,7 +337,7 @@ function HufiHero() {
                 className="hufi-anim-blink"
                 style={{ width: 6, height: 6, borderRadius: "50%", background: "#F97316", display: "inline-block", flexShrink: 0 }}
               />
-              Horse Industry OS · KI-Assistent · Jetzt live
+              Für Hufbearbeiter & Hufschmiede · KI-Assistent · Jetzt live
             </div>
 
             {/* Headline */}
@@ -544,9 +544,9 @@ function EcosystemHeader() {
   const rCards = useReveal();
   const rNote = useReveal();
   const roles = [
-    { icon: "🔧", title: "Hufpfleger & Hufschmiede", desc: "Termine, Touren, Befunde, Rechnungen — und Hufi dokumentiert per Sprache mit. Kein Tippen im Stall." },
+    { icon: "🔧", title: "Hufpfleger & Hufschmiede", desc: "Termine, Touren, Befunde, Rechnungen — und Hufi dokumentiert per Sprache mit. Kein Tippen im Stall.", primary: true },
+    { icon: "👥", title: "Tierärzte, Osteopathen & Physiotherapeuten", desc: "Auch für dich: Befunde einsehen, eigene Diagnosen ergänzen — mit Freigabe des Besitzers." },
     { icon: "🐎", title: "Reitlehrer & Trainer", desc: "Stundenpläne, Pferdefortschritt, Rechnungen. Alle Kunden auf einen Blick." },
-    { icon: "👥", title: "Tierärzte & Osteopathen", desc: "Befunde einsehen, eigene Diagnosen ergänzen — mit Freigabe des Besitzers." },
     { icon: "🏢", title: "Stallbetreiber & Herden", desc: "Alle Pferde, alle Dienstleister, ein Dashboard. Nichts geht verloren." },
     { icon: "🐴", title: "Pferdebesitzer", desc: "Digitale Pferdeakte, Befunde vom Profi, Dienstleister finden — komplett kostenlos." },
   ];
@@ -556,13 +556,17 @@ function EcosystemHeader() {
         <div ref={rHead.ref} className={`text-center mb-12 ${rc(rHead.visible)}`}>
           <span className="text-[#f97316] font-bold text-xs uppercase tracking-widest mb-3 block">Für wen ist Hufi?</span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-3">
-            Egal ob Hufbearbeiter, Reitlehrer<br className="hidden sm:block" /> oder Stallbetreiber.
+            Gebaut für Hufbearbeiter.<br className="hidden sm:block" /> Offen für deine ganze Pferdewelt.
           </h2>
           <p className="text-white/50 text-sm sm:text-base max-w-xl mx-auto">Das Pferd im Mittelpunkt. Alle Beteiligten verbunden. Jeder sieht genau das, was er sehen darf.</p>
         </div>
         <div ref={rCards.ref} className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 ${rc(rCards.visible)}`}>
           {roles.map((role) => (
-            <div key={role.title} className="hufi-card-dark p-6 rounded-2xl" style={{ cursor: "default" }}>
+            <div
+              key={role.title}
+              className="hufi-card-dark p-6 rounded-2xl"
+              style={{ cursor: "default", border: role.primary ? "1px solid rgba(249,115,22,0.35)" : undefined }}
+            >
               <div className="text-2xl mb-3">{role.icon}</div>
               <h3 className="text-white font-bold text-sm mb-2">{role.title}</h3>
               <p className="text-white/40 text-xs leading-relaxed mb-3">{role.desc}</p>
@@ -921,7 +925,7 @@ const WebsiteHome = () => {
         url: "https://hufiapp.de",
         applicationCategory: "BusinessApplication",
         operatingSystem: "Web, iOS, Android",
-        offers: { "@type": "AggregateOffer", lowPrice: "9.90", highPrice: "79.00", priceCurrency: "EUR" },
+        offers: { "@type": "Offer", price: "9.95", priceCurrency: "EUR" },
         author: { "@type": "Person", name: "Pascal Schmid" },
       });
       document.head.appendChild(ld);
@@ -939,26 +943,6 @@ const WebsiteHome = () => {
       <EcosystemHeader />
       <FeaturesComparisonSection />
       <HufiFeatureGrid />
-      <section style={{ padding: "40px 20px", textAlign: "center", background: "#FFF7ED" }}>
-        <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1A1A1A", marginBottom: 8 }}>
-          Häufige Fragen
-        </h2>
-        <p style={{ fontSize: 14, color: "#6B7280", marginBottom: 20 }}>
-          Alles was du über Hufi wissen willst
-        </p>
-        <a href="/faq" style={{
-          display: "inline-block",
-          background: "#F97316",
-          color: "#FFFFFF",
-          padding: "12px 28px",
-          borderRadius: 12,
-          fontWeight: 700,
-          fontSize: 14,
-          textDecoration: "none",
-        }}>
-          Alle Fragen ansehen →
-        </a>
-      </section>
       <HufAISection />
       <DataSovereigntySection />
       <FounderSection />

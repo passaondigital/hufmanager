@@ -58,6 +58,11 @@ Tool-Nutzung:
 - get_client_overview → bei Kunden-Anfragen
 - send_notification → wenn Benachrichtigung erwünscht
 - create/update/cancel_appointment → bei Termin-Actions (nach Bestätigung)
+- create_invoice → wenn eine Rechnung erstellt werden soll (nach Bestätigung)
+- create_note → wenn eine Beobachtung/ein Befund zu einem Pferd/Kunden notiert werden soll
+- create_horse → wenn ein neues Pferd angelegt werden soll (owner_id vorher per search_entity klären)
+- create_contact → wenn ein neuer Kunde angelegt werden soll (erst search_entity prüfen ob er schon existiert)
+- add_expense → wenn eine Betriebsausgabe erfasst werden soll
 
 Fachgebiete: Hufpflege, Huforthopädie, Stallmanagement, Kundenkommunikation, Betriebsorganisation.`;
 
@@ -218,6 +223,95 @@ const HUFI_TOOLS = [
       required: ["appointment_id"],
     },
   },
+  {
+    name: "create_invoice",
+    description: "Rechnung (Entwurf) anlegen — mit Positionen. horse_id/client_id vorher per search_entity auflösen. Zieht bei inventory_item_id automatisch Lagerbestand ab.",
+    input_schema: {
+      type: "object",
+      properties: {
+        horse_id:   { type: "string", description: "UUID des Pferdes (optional)" },
+        client_id:  { type: "string", description: "UUID des Kunden (optional)" },
+        service_type: { type: "string", description: "Leistungsart z.B. 'Barhufpflege' (nur Notiz-Text)" },
+        notes:      { type: "string", description: "Notiz auf der Rechnung (optional)" },
+        line_items: {
+          type: "array",
+          description: "Rechnungspositionen. Wenn leer: einzelne Position aus 'amount' erzeugt.",
+          items: {
+            type: "object",
+            properties: {
+              title:              { type: "string" },
+              quantity:           { type: "number" },
+              unit_price:         { type: "number" },
+              inventory_item_id:  { type: "string", description: "UUID des Lagerartikels, falls Bestand abgezogen werden soll (optional)" },
+            },
+          },
+        },
+        amount: { type: "number", description: "Fallback-Gesamtbetrag, falls keine line_items angegeben werden" },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "create_note",
+    description: "Notiz/Befund zu einem Pferd oder Kunden speichern (z.B. Beobachtung während des Termins).",
+    input_schema: {
+      type: "object",
+      properties: {
+        note_text:   { type: "string", description: "Inhalt der Notiz" },
+        horse_name:  { type: "string", description: "Name des Pferdes, auf das sich die Notiz bezieht (optional)" },
+        client_name: { type: "string", description: "Name des Kunden, auf den sich die Notiz bezieht (optional)" },
+      },
+      required: ["note_text"],
+    },
+  },
+  {
+    name: "create_horse",
+    description: "Neues Pferd anlegen. owner_id (Kunde) ist Pflicht — vorher per search_entity auflösen oder mit create_contact anlegen.",
+    input_schema: {
+      type: "object",
+      properties: {
+        owner_id:         { type: "string", description: "UUID des Besitzers (Kunde)" },
+        name:             { type: "string", description: "Name des Pferdes" },
+        breed:            { type: "string", description: "Rasse (optional)" },
+        birth_year:       { type: "number", description: "Geburtsjahr (optional)" },
+        gender:           { type: "string", description: "Geschlecht (optional)" },
+        color:            { type: "string", description: "Farbe (optional)" },
+        shoeing_interval: { type: "number", description: "Hufpflege-Intervall in Wochen (optional, Standard 8)" },
+        special_notes:    { type: "string", description: "Besonderheiten (optional)" },
+      },
+      required: ["owner_id", "name"],
+    },
+  },
+  {
+    name: "create_contact",
+    description: "Neuen Kunden (Kontakt) anlegen, wenn noch kein Profil existiert (search_entity liefert keinen Treffer).",
+    input_schema: {
+      type: "object",
+      properties: {
+        full_name: { type: "string", description: "Vollständiger Name des Kunden" },
+        email:     { type: "string", description: "E-Mail (optional)" },
+        phone:     { type: "string", description: "Telefon (optional)" },
+        street:    { type: "string", description: "Straße (optional)" },
+        zip_code:  { type: "string", description: "PLZ (optional)" },
+        city:      { type: "string", description: "Ort (optional)" },
+      },
+      required: ["full_name"],
+    },
+  },
+  {
+    name: "add_expense",
+    description: "Betriebsausgabe erfassen (z.B. Materialkosten, Sprit).",
+    input_schema: {
+      type: "object",
+      properties: {
+        amount:      { type: "number", description: "Betrag in Euro" },
+        description: { type: "string", description: "Kurzbeschreibung der Ausgabe" },
+        category:    { type: "string", description: "Kategorie (optional, Standard: sonstiges)" },
+        date:        { type: "string", description: "Datum YYYY-MM-DD (optional, Standard: heute)" },
+      },
+      required: ["amount", "description"],
+    },
+  },
 ];
 
 // ── Wetter-Fetch (wttr.in, kein API-Key) ─────────────────────────────────────
@@ -256,7 +350,9 @@ async function executeTool(
   supabaseAdmin: ReturnType<typeof createClient>,
   supabaseUrl: string,
   supabaseServiceKey: string,
+  professionType: string | null = null,
 ): Promise<string> {
+  const professionProfile = (professionType && PROFESSION_PROFILES[professionType]) || DEFAULT_PROFESSION_PROFILE;
   const today = new Date().toISOString().slice(0, 10);
   const ago12M = new Date(Date.now() - 365 * 86_400_000).toISOString().slice(0, 10);
   const in12M  = new Date(Date.now() + 365 * 86_400_000).toISOString().slice(0, 10);
@@ -301,8 +397,8 @@ async function executeTool(
         if (type === "partner" || type === "any") {
           const { data } = await supabaseAdmin
             .from("profiles")
-            .select("id, full_name, readable_id, user_type")
-            .eq("user_type", "partner")
+            .select("id, full_name, readable_id, role")
+            .eq("role", "partner")
             .ilike("full_name", q)
             .limit(5);
           (data ?? []).forEach((r: Record<string,unknown>) =>
@@ -509,9 +605,9 @@ async function executeTool(
             client_id:    input.client_id  ?? null,
             date:         String(input.date),
             time:         input.time        ? String(input.time) : null,
-            service_type: input.service_type ? String(input.service_type) : "Barhufpflege",
+            service_type: input.service_type ? String(input.service_type) : professionProfile.serviceLabel,
             notes:        input.notes       ? String(input.notes) : null,
-            duration:     input.duration    ? Number(input.duration) : 60,
+            duration:     input.duration    ? Number(input.duration) : professionProfile.appointmentDuration,
             status:       "scheduled",
           })
           .select("id")
@@ -567,6 +663,173 @@ async function executeTool(
         return `✅ Termin ${aptId} (${aptData.date}) storniert.${input.notify_client ? " Kunden benachrichtigt." : ""}`;
       }
 
+      // ── create_invoice ────────────────────────────────────────────────────
+      case "create_invoice": {
+        interface LineItem { title: string; quantity: number; unit_price: number; inventory_item_id: string | null; }
+        const rawItems = input.line_items;
+        let lineItems: LineItem[];
+        if (Array.isArray(rawItems) && rawItems.length > 0) {
+          lineItems = rawItems.map((item) => {
+            const i = item as Record<string, unknown>;
+            return {
+              title: String(i.title ?? "Position"),
+              quantity: Number(i.quantity ?? 1),
+              unit_price: Number(i.unit_price ?? 0),
+              inventory_item_id: (i.inventory_item_id as string | null) ?? null,
+            };
+          });
+        } else {
+          const title = input.service_type ? String(input.service_type) : "Leistung";
+          const amount = Number(input.amount ?? 0);
+          lineItems = amount > 0 ? [{ title, quantity: 1, unit_price: amount, inventory_item_id: null }] : [];
+        }
+        const totalNetto = lineItems.reduce((s, i) => s + i.quantity * i.unit_price, 0);
+        const invoiceNumber = `HF-${Date.now().toString(36).toUpperCase()}`;
+
+        const { data: inv, error: invErr } = await supabaseAdmin
+          .from("invoices")
+          .insert({
+            provider_id: providerId,
+            client_id: input.client_id ?? null,
+            horse_id: input.horse_id ?? null,
+            invoice_number: invoiceNumber,
+            issue_date: today,
+            total_amount: totalNetto > 0 ? totalNetto : Number(input.amount ?? 0),
+            status: "draft",
+            payment_status: null,
+            customer_type: "client",
+            notes: input.notes ? String(input.notes) : null,
+          })
+          .select("id")
+          .single();
+        if (invErr) return `Rechnung konnte nicht erstellt werden: ${invErr.message}`;
+        const invoiceId = (inv as Record<string,unknown>).id as string;
+
+        if (lineItems.length > 0) {
+          const itemRows = lineItems.map((li) => ({
+            invoice_id: invoiceId,
+            inventory_item_id: li.inventory_item_id,
+            title: li.title,
+            quantity: li.quantity,
+            unit_price: li.unit_price,
+            total_price: li.quantity * li.unit_price,
+          }));
+          const { error: itemsErr } = await supabaseAdmin.from("invoice_items").insert(itemRows);
+          if (itemsErr) console.error("[hufi-agent] invoice_items insert error:", itemsErr.message);
+        }
+
+        let deducted = 0;
+        for (const li of lineItems.filter((l) => l.inventory_item_id)) {
+          const { data: stockRow } = await supabaseAdmin
+            .from("inventory_items")
+            .select("current_stock")
+            .eq("id", li.inventory_item_id!)
+            .eq("user_id", providerId)
+            .maybeSingle();
+          if (stockRow) {
+            const newStock = Math.max(0, (stockRow as Record<string,unknown>).current_stock as number - li.quantity);
+            await supabaseAdmin.from("inventory_items").update({ current_stock: newStock }).eq("id", li.inventory_item_id!).eq("user_id", providerId);
+            deducted++;
+          }
+        }
+
+        const posText = lineItems.length > 0 ? ` (${lineItems.length} Pos., ${totalNetto.toFixed(2)}€)` : "";
+        return `🧾 Rechnung ${invoiceNumber}${posText} als Entwurf angelegt${deducted > 0 ? ` — ${deducted} Lagerartikel abgezogen` : ""} | invoice_id:${invoiceId}`;
+      }
+
+      // ── create_note ───────────────────────────────────────────────────────
+      case "create_note": {
+        const key = `note_${input.horse_name ? String(input.horse_name).toLowerCase().replace(/\s+/g, "_") : "allgemein"}_${Date.now()}`;
+        const { error } = await supabaseAdmin.from("hufi_memory").insert({
+          user_id: providerId,
+          category: "preference",
+          key,
+          value: {
+            note_text: input.note_text ?? "",
+            horse_name: input.horse_name ?? null,
+            client_name: input.client_name ?? null,
+            created_at: new Date().toISOString(),
+          },
+          source: "ai",
+          confidence: 0.5,
+          last_updated: new Date().toISOString(),
+        });
+        if (error) return `Notiz konnte nicht gespeichert werden: ${error.message}`;
+        return `📝 Notiz gespeichert${input.horse_name ? ` für ${input.horse_name}` : ""}.`;
+      }
+
+      // ── create_horse ──────────────────────────────────────────────────────
+      case "create_horse": {
+        if (!input.owner_id || !input.name) return "owner_id und name sind Pflicht.";
+        const { data, error } = await supabaseAdmin
+          .from("horses")
+          .insert({
+            owner_id: String(input.owner_id),
+            name: String(input.name),
+            equine_type: "horse",
+            breed: input.breed ? String(input.breed) : null,
+            birth_year: input.birth_year ? Number(input.birth_year) : null,
+            gender: input.gender ? String(input.gender) : null,
+            color: input.color ? String(input.color) : null,
+            shoeing_interval: input.shoeing_interval ? Number(input.shoeing_interval) : null,
+            special_notes: input.special_notes ? String(input.special_notes) : null,
+          })
+          .select("id")
+          .single();
+        if (error) return `Pferd konnte nicht angelegt werden: ${error.message}`;
+        return `✅ Pferd "${input.name}" angelegt | horse_id:${(data as Record<string,unknown>).id}`;
+      }
+
+      // ── create_contact ────────────────────────────────────────────────────
+      case "create_contact": {
+        if (!input.full_name) return "full_name ist Pflicht.";
+        const newId = crypto.randomUUID();
+        const fullName = String(input.full_name);
+        const { error: profileErr } = await supabaseAdmin.from("profiles").insert({
+          id: newId,
+          full_name: fullName,
+          email: input.email ? String(input.email) : null,
+          phone: input.phone ? String(input.phone) : null,
+          street: input.street ? String(input.street) : null,
+          zip_code: input.zip_code ? String(input.zip_code) : null,
+          city: input.city ? String(input.city) : null,
+          created_by_provider_id: providerId,
+          onboarding_completed: false,
+          has_logged_in: false,
+        });
+        if (profileErr) return `Kunde konnte nicht angelegt werden: ${profileErr.message}`;
+
+        const { error: contactErr } = await supabaseAdmin.from("contacts").insert({
+          provider_id: providerId,
+          full_name: fullName,
+          email: input.email ? String(input.email) : null,
+          phone: input.phone ? String(input.phone) : null,
+          category: "client",
+          profile_id: newId,
+        });
+        if (contactErr) console.error("[hufi-agent] contacts insert error:", contactErr.message);
+
+        return `✅ Kunde "${fullName}" angelegt | client_id:${newId}`;
+      }
+
+      // ── add_expense ───────────────────────────────────────────────────────
+      case "add_expense": {
+        const amount = Number(input.amount ?? 0);
+        const description = input.description ? String(input.description) : "";
+        if (!amount || amount <= 0) return "Bitte einen gültigen Betrag angeben.";
+        if (!description) return "Bitte die Ausgabe kurz beschreiben.";
+        const { error } = await supabaseAdmin.from("expenses").insert({
+          user_id: providerId,
+          amount,
+          category: input.category ? String(input.category) : "sonstiges",
+          description,
+          expense_date: input.date ? String(input.date) : today,
+          is_recurring: false,
+        });
+        if (error) return `Ausgabe konnte nicht gespeichert werden: ${error.message}`;
+        return `✅ Ausgabe von ${amount.toFixed(2)}€ (${description}) erfasst.`;
+      }
+
       default:
         return `Unbekanntes Tool: ${toolName}`;
     }
@@ -582,8 +845,9 @@ async function loadLightContext(userId: string, supabase: ReturnType<typeof crea
   const today = new Date().toISOString().slice(0, 10);
   const in7   = new Date(Date.now() +  7 * 86_400_000).toISOString().slice(0, 10);
 
-  const [profileRes, apptTodayRes, invoiceRes, memoryRes, bhsSubsRes] = await Promise.allSettled([
-    supabase.from("profiles").select("full_name, user_type, profession_type").eq("id", userId).single(),
+  const [profileRes, apptTodayRes, invoiceRes, memoryRes, bhsSubsRes, leadsRes, ordersRes, completedApptsRes, befundeRes] = await Promise.allSettled([
+    // Hinweis: Spalte hieß früher "user_type", wurde clientseitig bereits auf "role" umgestellt — hier nachgezogen.
+    supabase.from("profiles").select("full_name, role, profession_type").eq("id", userId).single(),
     supabase.from("appointments")
       .select("id,date,time,status,horse_id,client_id,horses(id,name,eqid),client:profiles!client_id(id,full_name,readable_id)")
       .eq("provider_id", userId).gte("date", today).lte("date", in7)
@@ -593,6 +857,15 @@ async function loadLightContext(userId: string, supabase: ReturnType<typeof crea
     supabase.from("bhs_horse_subscriptions")
       .select("interval_weeks,zone,monthly_price,status,next_service_date,horses(name)")
       .eq("client_id", userId).in("status", ["active","pending"]).order("next_service_date").limit(5),
+    supabase.from("leads").select("*", { count: "exact", head: true }).eq("provider_id", userId).eq("status", "neu"),
+    supabase.from("service_orders").select("*", { count: "exact", head: true }).eq("provider_id", userId).in("order_status", ["pending", "open", "in_progress"]),
+    supabase.from("appointments")
+      .select("horse_id,date,horses(id,name,shoeing_interval)")
+      .eq("provider_id", userId).eq("status", "completed")
+      .order("date", { ascending: false }).limit(100),
+    supabase.from("ai_befunde")
+      .select("id,created_at,pferd_name,befund_text,massnahme,naechster_termin")
+      .eq("user_id", userId).order("created_at", { ascending: false }).limit(5),
   ]);
 
   const profile = profileRes.status === "fulfilled" ? profileRes.value.data as Record<string,unknown>|null : null;
@@ -614,67 +887,122 @@ async function loadLightContext(userId: string, supabase: ReturnType<typeof crea
   interface BhsSubRow { interval_weeks: number; zone: number; monthly_price: number; status: string; next_service_date: string | null; horses: unknown; }
   const bhsSubs: BhsSubRow[] = bhsSubsRes.status === "fulfilled" && bhsSubsRes.value.data ? (bhsSubsRes.value.data as BhsSubRow[]) : [];
 
-  return { userName: profile?.full_name as string|null ?? null, userType: profile?.user_type as string|null ?? null, professionType: profile?.profession_type as string|null ?? null, appts, unpaidCount, memories, bhsSubs };
+  const leadsCount = leadsRes.status === "fulfilled" ? (leadsRes.value.count ?? 0) : 0;
+  const ordersCount = ordersRes.status === "fulfilled" ? (ordersRes.value.count ?? 0) : 0;
+
+  // Überfällige Pferde: pro Pferd nach INDIVIDUELLEM shoeing_interval (Wochen), nicht nach festem Pauschalwert.
+  interface CompletedApptRow { horse_id: string | null; date: string; horses: unknown; }
+  const completedAppts = completedApptsRes.status === "fulfilled" && completedApptsRes.value.data
+    ? (completedApptsRes.value.data as CompletedApptRow[])
+    : [];
+  const seenHorses = new Set<string>();
+  const overdueHorses: Array<{ id: string; name: string; weeksOverdue: number }> = [];
+  for (const row of completedAppts) {
+    if (!row.horse_id || seenHorses.has(row.horse_id)) continue;
+    seenHorses.add(row.horse_id);
+    const h = Array.isArray(row.horses) ? row.horses[0] : row.horses as Record<string,unknown> | null;
+    const name = (h as Record<string,unknown>|null)?.name as string | undefined;
+    const intervalWeeks = (h as Record<string,unknown>|null)?.shoeing_interval as number | null | undefined;
+    if (!name) continue;
+    const intervalDays = intervalWeeks ? intervalWeeks * 7 : 56;
+    const daysSince = Math.floor((Date.now() - new Date(row.date).getTime()) / 86_400_000);
+    if (daysSince >= intervalDays - 7) {
+      overdueHorses.push({ id: row.horse_id, name, weeksOverdue: Math.floor(daysSince / 7) });
+      if (overdueHorses.length >= 5) break;
+    }
+  }
+
+  const lastBefunde = befundeRes.status === "fulfilled" && befundeRes.value.data
+    ? (befundeRes.value.data as Array<{ id: string; created_at: string; pferd_name: string | null; befund_text: string | null; massnahme: string | null; naechster_termin: string | null }>)
+    : [];
+
+  return {
+    userName: profile?.full_name as string|null ?? null,
+    userType: profile?.role as string|null ?? null,
+    professionType: profile?.profession_type as string|null ?? null,
+    appts, unpaidCount, memories, bhsSubs,
+    leadsCount, ordersCount, overdueHorses, lastBefunde,
+  };
 }
 
 // ── Berufsprofile: Leistungen / Materialien / Workflow pro Beruf ───────────────
 // Server-seitiges Pendant zu src/lib/profession-config.ts + PROFESSION_5A.
-const PROFESSION_PROFILES: Record<string, { label: string; services: string; materials: string; workflow: string }> = {
+const PROFESSION_PROFILES: Record<string, { label: string; services: string; materials: string; workflow: string; serviceLabel: string; appointmentDuration: number }> = {
   hoof_care: {
     label: "Hufbearbeiter / Hufpfleger",
     services: "Barhufe/Natürliche Hufpflege, Beschlag (Eisen), Klebebeschlag (Composite), Hufschutz, Trachtenkeil, Spezialbeschlag",
     materials: "Klemmplatten (E4/E6/E8), UV-Kleber, Glasfaser-Patches, Hufeisen (Stahl/Alu), Nägel, Laschen, Hufschuhe, Hufversiegelung, Hufmesser, Hufbalsam",
     workflow: "1.AUFNAHME: Pferd/Kunde anlegen, Erstbefund · 2.ANGEBOT: Leistungspaket (Natur/Beschlag/Klebe) · 3.AUFTRAG: Termin, Tour-Route · 4.ABRECHNUNG: Rechnung aus Termin+Materialien · 5.ANALYSE: Huf-Entwicklung, Wirtschaftlichkeit",
+    serviceLabel: "Hufbearbeitung",
+    appointmentDuration: 60,
   },
   farrier: {
     label: "Hufschmied / Beschlagschmied",
     services: "Handgeschmiedeter Beschlag, Ortho-Beschlag, Eisen zurichten, Nageln, Klebebeschlag",
     materials: "Roheisen, Schmiedekohle, Borax, Hufeisen-Rohlinge, Nägel (E-Nägel), Stollen, Herzstollen",
     workflow: "1.AUFNAHME: Pferd, Klauenformular · 2.ANGEBOT: Standard/Ortho/Sport · 3.AUFTRAG: Schmiedebesuch · 4.ABRECHNUNG: Eisen+Arbeit · 5.ANALYSE: Beschlags-Intervalle",
+    serviceLabel: "Beschlag",
+    appointmentDuration: 90,
   },
   osteopath: {
     label: "Osteopath / Tierheilpraktiker",
     services: "Osteopathische Behandlung, Cranio-Sacrale Therapie, Faszienmobilisation, Wirbelsäulenbehandlung",
     materials: "Therapieöl, Handtücher, Dokumentationsformulare",
     workflow: "1.AUFNAHME: Anamnese · 2.ANGEBOT: Therapieplan · 3.AUFTRAG: Behandlungstermin · 4.ABRECHNUNG: Behandlung · 5.ANALYSE: Therapieerfolg",
+    serviceLabel: "Behandlung",
+    appointmentDuration: 90,
   },
   physiotherapist: {
     label: "Physiotherapeut",
     services: "Physiotherapie, Magnetfeldtherapie, Laser, Massage, Kinesiotaping",
     materials: "Tape, Elektroden, Lasergerät, Massageöl",
     workflow: "1.AUFNAHME: Befundaufnahme · 2.ANGEBOT: Therapieplan · 3.AUFTRAG: Behandlung · 4.ABRECHNUNG: Therapieleistung · 5.ANALYSE: Fortschritt",
+    serviceLabel: "Therapie",
+    appointmentDuration: 75,
   },
   saddler: {
     label: "Sattler",
     services: "Sattelanpassung, Sattelreparatur, Neupolsterung, Lederarbeit, Gurte",
     materials: "Leder, Wolle, Schaumstoff, Nähgarn, Schnallen, Klett, Lederöl",
     workflow: "1.AUFNAHME: Rücken-Scan · 2.ANGEBOT: Anpassungs-/Neuanfertigung · 3.AUFTRAG: Werkstatt/Hausbesuch · 4.ABRECHNUNG: Material+Arbeit · 5.ANALYSE: Auftragsverlauf",
+    serviceLabel: "Sattelanpassung",
+    appointmentDuration: 90,
   },
   vet_mobile: {
     label: "Mobiler Tierarzt",
     services: "Impfung, Blutentnahme, Sedierung, Wundversorgung, Zahnbehandlung (Equine), Ultraschall",
     materials: "Impfstoffe, Spritzen, Kanülen, Sedativa, Antibiotika, Verbandsmaterial",
     workflow: "1.AUFNAHME: Patientenakte · 2.ANGEBOT: Behandlungsplan · 3.AUFTRAG: Hausbesuch · 4.ABRECHNUNG: Behandlung+Medikamente · 5.ANALYSE: Bestandsführung, GOT-Abrechnung",
+    serviceLabel: "Behandlung",
+    appointmentDuration: 45,
   },
   dentist: {
     label: "Equine Dentist / Pferdezahnarzt",
     services: "Zahnkontrolle, Raspen, Hakenzähne, Wolfszähne, Sedierung",
     materials: "Raspeln, Mundspülungen, Sedativa",
     workflow: "1.AUFNAHME: Gebiss-Foto · 2.ANGEBOT: Jahresplan · 3.AUFTRAG: Behandlungstermin · 4.ABRECHNUNG: Leistung+Sedierung · 5.ANALYSE: Zahnentwicklung",
+    serviceLabel: "Zahnbehandlung",
+    appointmentDuration: 45,
   },
   riding_instructor: {
     label: "Reitlehrer / Trainer",
     services: "Einzel-Reitstunde, Gruppenunterricht, Turniervorbereitung, Longier-Stunde",
     materials: "Longe, Kappzaum, Seitenzügel",
     workflow: "1.AUFNAHME: Reit-Niveau · 2.ANGEBOT: Kurspakete · 3.AUFTRAG: Stundenplan · 4.ABRECHNUNG: Stunden/Pakete · 5.ANALYSE: Schüler-Fortschritt",
+    serviceLabel: "Reitstunde",
+    appointmentDuration: 60,
   },
   massage: {
     label: "Pferde-Masseur/in",
     services: "Klassische Massage, Lymphdrainage, Faszientechniken, Dehnung",
     materials: "Massageöl, Handtücher, Faszienrolle",
     workflow: "1.AUFNAHME: Spannungsbefund · 2.ANGEBOT: Behandlungspaket · 3.AUFTRAG: Termin · 4.ABRECHNUNG: Behandlung · 5.ANALYSE: Verlauf",
+    serviceLabel: "Massage",
+    appointmentDuration: 60,
   },
 };
+
+const DEFAULT_PROFESSION_PROFILE = { serviceLabel: "Termin", appointmentDuration: 60 };
 
 function buildProfessionBlock(professionType: string | null): string {
   const prof = professionType ? PROFESSION_PROFILES[professionType] : null;
@@ -712,6 +1040,17 @@ function buildLightContextBlock(ctx: Awaited<ReturnType<typeof loadLightContext>
     lines.push(`Nächste 7 Tage: ${upcomingAppts.slice(0,5).map(a => `${a.date} ${a.horse_name ?? "?"}${a.client_name ? ` (${a.client_name})` : ""} [apt_id:${a.id}]`).join(", ")}`);
   }
   if (ctx.unpaidCount > 0) lines.push(`Offene Rechnungen: ${ctx.unpaidCount}`);
+  if (ctx.leadsCount > 0) lines.push(`Neue Leads: ${ctx.leadsCount}`);
+  if (ctx.ordersCount > 0) lines.push(`Offene Aufträge: ${ctx.ordersCount}`);
+
+  if (ctx.overdueHorses.length > 0) {
+    lines.push(`Überfällige Pferde (individuelles Intervall): ${ctx.overdueHorses.map(h => `${h.name} (${h.weeksOverdue} Wochen überfällig)`).join(", ")}`);
+  }
+
+  if (ctx.lastBefunde.length > 0) {
+    const befundLines = ctx.lastBefunde.map(b => `${b.pferd_name ?? "?"}: ${(b.befund_text ?? "").slice(0, 80)}${b.massnahme ? ` → ${b.massnahme}` : ""}`);
+    lines.push(`Letzte Befunde:\n${befundLines.join("\n")}`);
+  }
 
   if (ctx.memories.length > 0) {
     const memLines = ctx.memories.filter(m => m.value && typeof m.value === "object").map(m => {
@@ -749,6 +1088,7 @@ async function callClaudeWithTools(
   supabaseUrl: string,
   supabaseServiceKey: string,
   voiceMode: boolean,
+  professionType: string | null = null,
 ): Promise<string> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 55_000);
@@ -807,6 +1147,7 @@ async function callClaudeWithTools(
           supabaseAdmin,
           supabaseUrl,
           supabaseServiceKey,
+          professionType,
         );
         console.log(`[hufi-agent] Tool result (${block.name}): ${result.slice(0, 100)}`);
         toolResults.push({
@@ -928,7 +1269,7 @@ serve(async (req) => {
   const [ctxResult, weatherStr] = await Promise.allSettled([
     loadLightContext(user.id, supabase).catch((e) => {
       console.warn(`[hufi-agent][${requestId}] Kontext-Fehler:`, e);
-      return { userName: null, userType: null, professionType: null, appts: [], unpaidCount: 0, memories: [], bhsSubs: [] };
+      return { userName: null, userType: null, professionType: null, appts: [], unpaidCount: 0, memories: [], bhsSubs: [], leadsCount: 0, ordersCount: 0, overdueHorses: [], lastBefunde: [] };
     }),
     clientLocation?.lat && clientLocation?.lon
       ? fetchWeather(clientLocation.lat, clientLocation.lon)
@@ -937,7 +1278,7 @@ serve(async (req) => {
 
   const ctx = ctxResult.status === "fulfilled"
     ? ctxResult.value
-    : { userName: null, userType: null, professionType: null, appts: [], unpaidCount: 0, memories: [], bhsSubs: [] };
+    : { userName: null, userType: null, professionType: null, appts: [], unpaidCount: 0, memories: [], bhsSubs: [], leadsCount: 0, ordersCount: 0, overdueHorses: [], lastBefunde: [] };
   const weather = weatherStr.status === "fulfilled" ? weatherStr.value : null;
 
   const contextBlock = buildLightContextBlock(ctx, voiceMode, route);
@@ -977,6 +1318,7 @@ serve(async (req) => {
       rawAnswer = await callClaudeWithTools(
         systemPrompt, messages, ANTHROPIC_KEY, model,
         user.id, supabaseAdmin, supabaseUrl, supabaseServiceKey, voiceMode,
+        ctx.professionType,
       );
       source = "claude";
     } catch (e) {

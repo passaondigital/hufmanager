@@ -46,6 +46,7 @@ import { de } from "date-fns/locale";
 import { uploadFile } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { useServicePresets } from "@/hooks/useServicePresets";
+import { useProfessionConfig } from "@/hooks/useProfessionConfig";
 import { sendTypedPush, resolveProviderDisplayName } from "@/lib/pushNotificationService";
 
 const appointmentSchema = z.object({
@@ -96,6 +97,7 @@ export function AppointmentFormModal({
   preselectedHorseId,
 }: AppointmentFormModalProps) {
   const { user } = useAuth();
+  const professionConfig = useProfessionConfig();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -115,7 +117,7 @@ export function AppointmentFormModal({
     serviceType: "Barhuf",
     notes: "",
     location: "",
-    duration: 60,
+    duration: professionConfig.appointmentDuration,
     isSeriesAppointment: false,
     seriesCurrent: 1,
     seriesTotal: 5,
@@ -455,7 +457,7 @@ export function AppointmentFormModal({
       serviceType: "Barhuf",
       notes: "",
       location: "",
-      duration: 60,
+      duration: professionConfig.appointmentDuration,
       isSeriesAppointment: false,
       seriesCurrent: 1,
       seriesTotal: 5,

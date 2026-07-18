@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import { Footprints, ClipboardCheck, Syringe, Users, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useProfessionConfig } from "@/hooks/useProfessionConfig";
 
 const FIELDS = ["name", "breed", "gender", "birth_year", "chip_number", "passport_number", "contacts", "insurance_company"] as const;
 
@@ -28,6 +29,7 @@ function daysAgoLabel(dateStr: string) {
 export function PferdeakteInsights() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { serviceLabel } = useProfessionConfig();
 
   const { data, isLoading } = useQuery({
     queryKey: ["pferdeakte-insights", user?.id],
@@ -63,7 +65,7 @@ export function PferdeakteInsights() {
           id: a.id,
           horseId: a.horse_id,
           horseName: nameMap.get(a.horse_id) || "Pferd",
-          type: a.service_type || "Termin",
+          type: a.service_type || serviceLabel,
           date: a.date,
         })),
       };
