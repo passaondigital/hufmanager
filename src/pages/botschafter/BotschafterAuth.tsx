@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Eye, EyeOff, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { getAttribution } from "@/lib/attribution";
 
 function generateRef(): string {
   return Math.random().toString(36).substring(2, 10).toUpperCase();
@@ -209,6 +210,7 @@ export default function BotschafterAuth() {
         data: {
           full_name: `${regForm.first_name} ${regForm.last_name}`,
           role: "client", // Base role for auth metadata
+          ...getAttribution(),
         },
       },
     });

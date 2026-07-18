@@ -18,6 +18,30 @@ const ROLE_LABELS: Record<string, string> = {
   admin: "🛡️ Admin",
 };
 
+const APP_LABELS: Record<string, string> = {
+  hufiapp: "🌿 Hufi",
+  hufmanager: "📊 HufManager",
+};
+
+/** Menschlich lesbare Herkunft: UTM > Referrer-Host > Direkt. */
+function describeSource(attr: {
+  utm_source?: string | null;
+  utm_campaign?: string | null;
+  signup_referrer?: string | null;
+}): string {
+  if (attr.utm_source) {
+    return attr.utm_campaign ? `${attr.utm_source} · ${attr.utm_campaign}` : attr.utm_source;
+  }
+  if (attr.signup_referrer) {
+    try {
+      return new URL(attr.signup_referrer).hostname.replace(/^www\./, "");
+    } catch {
+      return attr.signup_referrer;
+    }
+  }
+  return "Direkt / unbekannt";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -51,6 +75,24 @@ Deno.serve(async (req) => {
     const roleLabel = ROLE_LABELS[role] || role;
     const now = new Date().toLocaleString("de-DE", { timeZone: "Europe/Berlin" });
 
+    // Attribution (App/Herkunft) aus profiles nachladen
+    const supabase = createClient(supabaseUrl, serviceKey);
+    let appLabel = "–";
+    let sourceLabel = "–";
+    try {
+      const { data: attr } = await supabase
+        .from("profiles")
+        .select("signup_app, utm_source, utm_campaign, signup_referrer")
+        .eq("id", user_id)
+        .maybeSingle();
+      if (attr) {
+        appLabel = attr.signup_app ? (APP_LABELS[attr.signup_app] || attr.signup_app) : "–";
+        sourceLabel = describeSource(attr);
+      }
+    } catch (e) {
+      console.error("Attribution lookup failed:", e);
+    }
+
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #1a1a2e; border-bottom: 2px solid #F5970A; padding-bottom: 10px;">
@@ -70,13 +112,21 @@ Deno.serve(async (req) => {
             <td style="padding: 8px; font-size: 16px;">${roleLabel}</td>
           </tr>
           <tr>
+            <td style="padding: 8px; font-weight: bold; color: #555;">App:</td>
+            <td style="padding: 8px; font-size: 16px;">${appLabel}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; font-weight: bold; color: #555;">Herkunft:</td>
+            <td style="padding: 8px;">${sourceLabel}</td>
+          </tr>
+          <tr>
             <td style="padding: 8px; font-weight: bold; color: #555;">Zeitpunkt:</td>
             <td style="padding: 8px;">${now}</td>
           </tr>
         </table>
-        <a href="https://app.hufiapp.de/admin/god-mode?view=registrations" 
+        <a href="https://hufiapp.de/admin/mission-control"
            style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: #F5970A; color: #0a0700; text-decoration: none; border-radius: 6px; font-weight: bold;">
-          → Im God Mode öffnen
+          → Im Mission Control öffnen
         </a>
         <p style="margin-top: 30px; color: #888; font-size: 12px;">
           Automatische Benachrichtigung von HufManager
@@ -84,6 +134,7 @@ Deno.serve(async (req) => {
       </div>
     `;
 
+    const resendResults: Array<Record<string, unknown>> = [];
     if (resendKey) {
       for (const notifyEmail of NOTIFY_EMAILS) {
         try {
@@ -94,25 +145,28 @@ Deno.serve(async (req) => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              from: "HufManager <noreply@hufiapp.de>",
+              from: "HufManager <noreply@hufmanager.de>",
               to: [notifyEmail],
-              subject: `🆕 Neue Registrierung: ${full_name || email || "Unbekannt"} (${roleLabel})`,
+              subject: `🆕 Neue Registrierung [${appLabel}]: ${full_name || email || "Unbekannt"} (${roleLabel})`,
               html: emailHtml,
             }),
           });
+          const respText = await res.text();
+          resendResults.push({ to: notifyEmail, status: res.status, ok: res.ok, body: respText.slice(0, 300) });
           if (!res.ok) {
-            console.error(`Email to ${notifyEmail} failed:`, await res.text());
+            console.error(`Email to ${notifyEmail} failed:`, respText);
           }
         } catch (e) {
+          resendResults.push({ to: notifyEmail, error: String(e) });
           console.error(`Failed to send to ${notifyEmail}:`, e);
         }
       }
     } else {
+      resendResults.push({ skipped: "RESEND_API_KEY not set" });
       console.warn("RESEND_API_KEY not set — skipping email notifications");
     }
 
     // Also create in-app notifications for admin users
-    const supabase = createClient(supabaseUrl, serviceKey);
     for (const adminEmail of NOTIFY_EMAILS) {
       try {
         const { data: adminProfile } = await supabase
@@ -125,9 +179,9 @@ Deno.serve(async (req) => {
           await supabase.from("notifications").insert({
             user_id: adminProfile.id,
             title: "Neue Registrierung",
-            message: `${full_name || email || "Neuer Nutzer"} hat sich als ${roleLabel} registriert`,
+            message: `${full_name || email || "Neuer Nutzer"} hat sich als ${roleLabel} registriert (${appLabel} · ${sourceLabel})`,
             type: "new_registration",
-            link: "/admin/god-mode?view=registrations",
+            link: "/admin/mission-control",
           });
         }
       } catch (e) {
@@ -135,7 +189,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ success: true, appLabel, sourceLabel, resend: resendResults }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
