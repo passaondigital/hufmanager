@@ -46,6 +46,17 @@ export const FEATURE_FLAGS = {
     enabled: false,
     beschreibung: "Pferdemarkt-Browse-Ansicht (Demo-Modus) — hinter Feature-Flag verborgen bis fertig",
   },
+  // Wake-Word-Aktivierung ("Hey Hufi") via webkitSpeechRecognition. Temporär
+  // deaktiviert: kollidiert auf Chrome/Android/ChromeOS mit dem MediaRecorder-
+  // Mikrofonzugriff der eigentlichen Sprachaufnahme (kein zentrales
+  // Mic-Arbitrierung — siehe HUFI_TODO.md "useMicArbiter"). Tippen und der
+  // manuelle Mic-Button (useVoiceCapture) sind NICHT betroffen und bleiben
+  // voll funktionsfähig. Consent-Infrastruktur (KiSettingsCard, localStorage)
+  // bleibt erhalten für die spätere Reaktivierung.
+  wakeWordEnabled: {
+    enabled: false,
+    beschreibung: "Hey-Hufi-Wake-Word — temporär hinter Feature-Flag deaktiviert (Mikrofon-Kollision mit Sprachaufnahme), Tippen/Mic-Button unberührt",
+  },
 } as const satisfies Record<string, FeatureFlag>;
 
 export type FeatureFlagKey = keyof typeof FEATURE_FLAGS;

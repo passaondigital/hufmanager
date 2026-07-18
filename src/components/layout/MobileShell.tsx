@@ -34,6 +34,8 @@ import {
   intentActionToTaskType, taskTypeLabel, taskTypeIcon,
 } from "@/lib/hufi-agent-tasks";
 import { HeyHufi } from "@/components/voice/HeyHufi";
+import { FEATURE_FLAGS } from "@/config/featureFlags";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { DsgvoConsentModal } from "@/components/DsgvoConsentModal";
 import { KiHinweisModal } from "@/components/KiHinweisModal";
@@ -1751,13 +1753,19 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
           {/* Kompakte Aktions-Chips rechts — nur das Wichtigste */}
           <HufiWeatherWidget compact={true} />
 
-          {/* Hey Hufi — immer aktiv wenn SR unterstützt (Stimme wird in Einstellungen gesteuert) */}
-          {SR_SUPPORTED && user && (
-            <HeyHufi
-              enabled={!recording && !transcribing && !responding && !isTtsSpeaking && !isVoiceSpeaking}
-              isSpeaking={isTtsSpeaking || isVoiceSpeaking}
-              onWakeWord={activateHufi}
-            />
+          {/* Hey Hufi — hinter Feature-Flag (Mikrofon-Kollision, siehe HUFI_TODO.md)
+              UND an die Nutzer-Zustimmung aus den Einstellungen gebunden. Eigene
+              Error-Boundary mit leerem Fallback: HeyHufi rendert ohnehin nichts
+              sichtbares (return null) — ein Absturz hier darf nie den ganzen
+              Screen runterreißen, sondern verschwindet einfach lautlos. */}
+          {FEATURE_FLAGS.wakeWordEnabled.enabled && SR_SUPPORTED && user && (
+            <ErrorBoundary name="HeyHufi" fallback={null}>
+              <HeyHufi
+                enabled={heyHufiEnabled && !recording && !transcribing && !responding && !isTtsSpeaking && !isVoiceSpeaking}
+                isSpeaking={isTtsSpeaking || isVoiceSpeaking}
+                onWakeWord={activateHufi}
+              />
+            </ErrorBoundary>
           )}
 
           {user && <HufiVoiceCreditBadge onClick={() => navigate("/management/guthaben")} />}

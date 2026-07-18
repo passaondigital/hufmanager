@@ -2,6 +2,53 @@
 
 Offene Punkte aus laufenden Sessions. Nächste Session: zuerst hier lesen.
 
+## Hey Hufi — zentraler Mic-State-Manager (useMicArbiter), geparkt (18.07.2026)
+
+**Kontext:** Hey Hufi (Wake-Word, `HeyHufi.tsx`) ist seit diesem Datum hinter
+`featureFlags.ts` → `wakeWordEnabled` (default `false`) deaktiviert, weil
+`webkitSpeechRecognition` (Wake-Word-Listener) und `MediaRecorder`
+(eigentliche Sprachaufnahme, `useVoiceCapture.ts`) um dasselbe Mikrofon
+konkurrieren — auf Chrome/Android/ChromeOS führt das zu Kollisionen
+(Mic-Ping-Loop, im schlimmsten Fall ein React-Error-Boundary-Crash, da die
+App-weite Boundary in `App.tsx` keine lokale Abgrenzung hatte — dafür gibt
+es seit diesem Fix immerhin schon eine lokale `ErrorBoundary` NUR um
+`<HeyHufi>` mit leerem Fallback, das mindert die Symptome, behebt aber
+nicht die Ursache).
+
+**Bisheriger Workaround (bleibt bestehen):** Fail-Counter in `HeyHufi.tsx`
+(`MAX_CONSECUTIVE_FAILURES`), der eine *unendliche* Neustart-Schleife
+verhindert. Verhindert aber nicht die eigentliche Kollision in den ersten
+Sekunden nach dem Wake-Word.
+
+**Kern-Learning für den richtigen Fix:** `SpeechRecognition.stop()` gibt
+KEINE Fertigstellungs-Garantie — `onend` feuert irgendwann, aber ob die
+Audio-Session auf OS-Ebene zu diesem Zeitpunkt wirklich freigegeben ist,
+ist nicht beobachtbar. Ein reiner Timing-Puffer (z. B. "warte 500ms nach
+onend, dann starte MediaRecorder") ist daher bestenfalls Symptom-Linderung,
+keine Garantie. Es gibt aktuell KEINE zentrale Instanz, die weiß "wer hat
+gerade das Mikrofon" — `HeyHufi` (eigener `recRef`/`runningRef`) und
+`useVoiceCapture` (eigener `streamRef`/`recorderRef`) verwalten ihren
+Zustand komplett unabhängig voneinander, nur lose über einen aus fünf
+Booleans abgeleiteten `enabled`-Prop in `MobileShell.tsx` verbunden.
+
+**Der eigentliche Fix (nicht jetzt, eigener Task):** Ein zentraler
+`useMicArbiter`-Hook/Context, der Mikrofon-Zugriffe serialisiert: nur ein
+Consumer darf gleichzeitig "das Mikrofon halten", Consumer melden sich
+an/ab, Übergänge laufen über echte Promises mit Bestätigung statt über
+verstreute Boolean-Kombinationen mit Zeitpuffer. Sollte auch das
+Consent-Gating gleich mit übernehmen (ein Ort, der entscheidet "darf
+gerade jemand lauschen"). Geschätzter Aufwand: knapp 1 Tag inkl. Testzeit
+auf echtem Android/ChromeOS-Gerät (das Kollisionsverhalten lässt sich auf
+Desktop-Chrome nicht zuverlässig reproduzieren).
+
+**Reaktivierung, wenn `useMicArbiter` fertig ist:** `wakeWordEnabled` in
+`featureFlags.ts` auf `true`. Die komplette Consent-Infrastruktur
+(`KiSettingsCard.tsx`, `USER_STORAGE_KEYS.HEY_HUFI` in localStorage) ist
+unverändert erhalten geblieben — bereits erteilte Zustimmungen bleiben
+gespeichert und greifen sofort wieder, kein Re-Consent nötig. Der Toggle
+in den Einstellungen zeigt bis dahin "Bald verfügbar" und ist eingefroren
+(nicht klickbar), verändert aber den gespeicherten Consent-Wert nicht.
+
 ## Store-Fahrplan Schritt 3C — 🟡-Funde abgearbeitet (19.07.2026)
 
 **Gefixt + verifiziert (Angriff-vorher/-nachher + Legit-Check), Migrationen in

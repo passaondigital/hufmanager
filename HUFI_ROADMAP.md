@@ -464,6 +464,73 @@ Damit ist die Sicherheits-/Rechts-Härtung aus dem Store-Fahrplan (Schritt
 3A-3C) vollständig — bis auf die drei bewusst geparkten/vorgelegten Punkte
 oben.
 
+### ✅ Schritt 18: 8 liegengebliebene Feature-Commits inventarisiert, geprüft, committet & deployed (18.07.2026)
+
+Im Working Directory lagen ~128 uncommittete Dateien aus abgebrochenen
+Vorsessions (Signup-Attribution, Voice-Credits, Multi-Beruf-Verkabelung,
+Resend-Domain-Fix, Rebranding, Lern-Loop/Task-Queue-Konsolidierung,
+diverse Cleanups). Vollständige Inventur (Details:
+`WORKING_DIR_INVENTORY.md`) ergab: Backend/DB-Anteil größtenteils bereits
+seit 12.–17.07. live deployed, nur nie committet; `tsc --noEmit` 0 Fehler,
+keine Regression gegen unsere Security-/UI-Arbeit. In 8 thematisch
+sauberen Commits nachgezogen (`fe415261` … `74c54307`) und anschließend
+über einen isolierten `git worktree`-Build deployed — Live-Stand jetzt
+Commit `74c54307`.
+
+**Korrektur-Notiz zu Schritt 15 (Attrappen-Triage) / Schritt 2:** Die
+damalige Prüfung hatte zwei Fake-Inhalte als "entfernt" dokumentiert —
+das stimmte nur für einen uncommitteten Arbeitsstand, nicht für das, was
+tatsächlich live lief. Bis zu diesem Deploy zeigte die Landingpage
+weiterhin `TestimonialsSection.tsx` mit 6 komplett erfundenen Namen/
+Zitaten/5-Sterne-Bewertungen (nur mit einem kaum sichtbaren "Echtes Zitat
+folgt"-Hinweis), und `PartnerPublicProfile.tsx`s Kontaktformular
+simulierte den Versand nur (`setTimeout` statt echtem Request), ohne dass
+je eine Mail rausging. Beides ist jetzt — mit diesem Deploy — tatsächlich
+live behoben, nicht nur im Code.
+
+Verifiziert nach Deploy: `hufiapp.de` HTTP 200, Fake-Testimonial-Strings
+im Live-Bundle nicht mehr auffindbar, ehrliche Ersatzmeldung vorhanden,
+"HufManager Pro" durch "Hufi Early Bird" ersetzt, Voice-Credit-Badge im
+MobileShell-Bundle vorhanden. Bundle-Secret-Scan sauber (kein
+service_role-Key, kein Drittanbieter-Secret).
+
+Weiterhin bewusst uncommitted: `src/config/appMap.ts` (0 Importe im
+gesamten Repo, wartet auf den noch nicht gebauten Support-Layer, der es
+konsumieren soll — eigenes Thema).
+
+### ✅ Schritt 19: Hey Hufi — Consent-Bug gefixt, Wake-Word temporär geflaggt (18.07.2026)
+
+Diagnose ergab zwei getrennte Probleme (Details siehe Session-Log): (1)
+`webkitSpeechRecognition` (Wake-Word) und `MediaRecorder`
+(Sprachaufnahme) konkurrieren ohne zentrale Koordination um dasselbe
+Mikrofon — kein `useMicArbiter`, nur ein aus fünf Booleans abgeleiteter
+`enabled`-Prop. (2) Der Consent-Schalter aus den Einstellungen
+(`heyHufiEnabled`) wurde zwar eingelesen, aber nie tatsächlich in die
+`enabled`-Bedingung von `<HeyHufi>` verdrahtet — Hey Hufi lauschte im
+Hintergrund für JEDEN Chrome-Nutzer, unabhängig von Zustimmung.
+
+**Gefixt:**
+- Consent korrekt verdrahtet (`heyHufiEnabled` jetzt Teil der
+  `enabled`-Bedingung).
+- Neues Flag `wakeWordEnabled` in `featureFlags.ts` (default `false`) —
+  `<HeyHufi>` wird nicht mehr gemountet, solange das Flag aus ist. Damit
+  ist die kollidierende `webkitSpeechRecognition`-API komplett aus dem
+  Bild. Tippen und der manuelle Mikrofon-Button (`useVoiceCapture`,
+  unabhängiger Pfad) sind unverändert voll funktionsfähig.
+- Toggle in `KiSettingsCard.tsx` bleibt sichtbar, zeigt bei
+  deaktiviertem Flag ein "Bald verfügbar"-Badge und ist eingefroren
+  (nicht klickbar) — der gespeicherte Consent-Wert in localStorage wird
+  dabei NICHT verändert, damit bereits erteilte Zustimmungen bei
+  Reaktivierung sofort wieder greifen.
+- Lokale `ErrorBoundary` (leerer Fallback) NUR um `<HeyHufi>` ergänzt —
+  ein künftiger Absturz dort reißt nicht mehr den ganzen Screen runter.
+
+**Bewusst nicht jetzt:** der eigentliche Fix (zentraler
+`useMicArbiter`-Hook, der Mikrofon-Zugriffe seriell mit echter
+Bestätigung statt Timing-Puffer vergibt) — als eigener Task mit
+Kern-Learning in `HUFI_TODO.md` dokumentiert. Reaktivierung dann: Flag
+auf `true`, keine weiteren Schritte nötig.
+
 ## PFLEGE-REGEL (verbindlich ab 18.07.2026)
 Jede neue Route oder Funktion aktualisiert `src/config/appMap.ts` im selben Sprint.
 Die Map ist die Single Source of Truth für Navigation, FAQ und Reifegrad-Tracking.

@@ -9,6 +9,7 @@ import { useHufiTTS } from "@/hooks/useHufiTTS";
 import { toast } from "sonner";
 import { ulget, ulset, ulremove, USER_STORAGE_KEYS } from "@/lib/user-storage";
 import { Link } from "react-router-dom";
+import { FEATURE_FLAGS } from "@/config/featureFlags";
 
 export function KiSettingsCard({ userId = "" }: { userId?: string }) {
   const { kiEnabled, isLoading, setKiEnabled, isToggling } = useKiSettings();
@@ -148,8 +149,16 @@ export function KiSettingsCard({ userId = "" }: { userId?: string }) {
               <p className="text-sm font-medium flex items-center gap-1.5">
                 <Mic className="h-4 w-4 text-muted-foreground" />
                 Hey Hufi aktivieren
+                {!FEATURE_FLAGS.wakeWordEnabled.enabled && (
+                  <Badge variant="secondary" className="text-[10px] font-normal">Bald verfügbar</Badge>
+                )}
               </p>
-              {srSupported ? (
+              {!FEATURE_FLAGS.wakeWordEnabled.enabled ? (
+                <p className="text-xs text-muted-foreground">
+                  Freisprech-Aktivierung per Zuruf kommt wieder — aktuell nutze bitte
+                  Tippen oder den Mikrofon-Button.
+                </p>
+              ) : srSupported ? (
                 <p className="text-xs text-muted-foreground">
                   Sag <span className="font-medium">"Hey Hufi"</span>,{" "}
                   <span className="font-medium">"Hufi"</span> oder{" "}
@@ -164,11 +173,11 @@ export function KiSettingsCard({ userId = "" }: { userId?: string }) {
             <Switch
               checked={(heyHufi || heyHufiPendingConsent) && srSupported}
               onCheckedChange={handleHeyHufiToggle}
-              disabled={!srSupported}
+              disabled={!srSupported || !FEATURE_FLAGS.wakeWordEnabled.enabled}
             />
           </div>
 
-          {heyHufiPendingConsent && (
+          {FEATURE_FLAGS.wakeWordEnabled.enabled && heyHufiPendingConsent && (
             <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 space-y-2">
               <div className="flex items-start gap-2">
                 <ShieldCheck className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
