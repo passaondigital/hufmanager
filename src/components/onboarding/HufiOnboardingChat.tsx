@@ -1,15 +1,21 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Play, Square } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getProfessionDiscovery, buildValuePitch } from "@/lib/profession-discovery";
 import { updateHufiMemory } from "@/lib/hufi-brain";
+import { HUFI_VOICES, setSelectedVoice, DEFAULT_MODEL, type HufiVoice } from "@/lib/hufi-voice-config";
+import { previewVoice } from "@/components/voice/HufiVoiceSelector";
 
 interface HufiOnboardingChatProps {
   userId: string;
   onComplete: (data: { name: string; role: string; region: string }) => void;
 }
 
-// 0 Name · 1 Beruf · 2 Use-Case · 3 Herausforderungen · 4 Pitch+Finish
-type Step = 0 | 1 | 2 | 3 | 4;
+// 0 Name · 1 Beruf · 2 Use-Case · 3 Herausforderungen · 4 Pitch · 5 Stimme · 6 Bereit
+type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+// Die beiden Basis-Stimmen (nicht Basis+/Premium) für die Onboarding-Auswahl.
+const ONBOARDING_VOICES = HUFI_VOICES.filter((v) => !v.premium);
 
 interface Message {
   from: "hufi" | "user";
@@ -36,6 +42,7 @@ const fadeInStyle: React.CSSProperties = {
 };
 
 export function HufiOnboardingChat({ userId, onComplete }: HufiOnboardingChatProps) {
+  const [started, setStarted] = useState(false);
   const [step, setStep] = useState<Step>(0);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -44,6 +51,8 @@ export function HufiOnboardingChat({ userId, onComplete }: HufiOnboardingChatPro
   const [professionKey, setProfessionKey] = useState("");
   const [useCaseAnswer, setUseCaseAnswer] = useState("");
   const [challenges, setChallenges] = useState<string[]>([]);
+  const [selectedVoiceName, setSelectedVoiceName] = useState<string | null>(null);
+  const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const msgCounter = useRef(0);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -61,8 +70,9 @@ export function HufiOnboardingChat({ userId, onComplete }: HufiOnboardingChatPro
     setMessages((prev) => [...prev, { from: "user", text, id: nextId() }]);
   }
 
-  // Initial Hufi greeting
+  // Initial Hufi greeting — erst NACH dem Willkommens-Screen (started === true)
   useEffect(() => {
+    if (!started) return;
     const timer = setTimeout(() => {
       addHufi(
         "Hallo! Ich bin Hufi – dein persönlicher Assistent für alles rund ums Pferd. " +
@@ -71,7 +81,32 @@ export function HufiOnboardingChat({ userId, onComplete }: HufiOnboardingChatPro
     }, 400);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [started]);
+
+  async function handleVoiceSelect(voice: HufiVoice) {
+    setSelectedVoice(voice, userId);
+    setSelectedVoiceName(voice.name);
+    addUser(voice.name);
+    setStep(6);
+    setTimeout(() => {
+      addHufi(`Perfekt, ${name}. Alles eingerichtet — ich bin bereit für dich.`);
+    }, 500);
+  }
+
+  async function handleVoicePreview(voice: HufiVoice) {
+    if (playingVoiceId) {
+      window.speechSynthesis?.cancel();
+      setPlayingVoiceId(null);
+      return;
+    }
+    await previewVoice(
+      voice,
+      DEFAULT_MODEL,
+      () => setPlayingVoiceId(voice.id),
+      () => setPlayingVoiceId(null),
+      () => setPlayingVoiceId(null),
+    );
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -153,12 +188,13 @@ export function HufiOnboardingChat({ userId, onComplete }: HufiOnboardingChatPro
         addHufi(`${name}, genau dafür bin ich da:`);
         pitches.forEach((p, i) => setTimeout(() => addHufi(`• ${p}`), 350 * (i + 1)));
         setTimeout(
-          () => addHufi("Und ich lerne mit jeder Aufgabe dazu. Los geht's?"),
+          () => addHufi("Und ich lerne mit jeder Aufgabe dazu. Wie soll ich klingen, wenn ich mit dir spreche?"),
           350 * (pitches.length + 1)
         );
       } else {
-        addHufi(`${name}, ich begleite dich Schritt für Schritt — und lerne mit jeder Aufgabe dazu. Los geht's?`);
+        addHufi(`${name}, ich begleite dich Schritt für Schritt — und lerne mit jeder Aufgabe dazu. Wie soll ich klingen, wenn ich mit dir spreche?`);
       }
+      setStep(5);
     }, 500);
   }
 
@@ -169,11 +205,12 @@ export function HufiOnboardingChat({ userId, onComplete }: HufiOnboardingChatPro
       await supabase
         .from("profiles")
         .update({
-          onboarding_step: 5,
+          onboarding_step: 7,
           onboarding_completed: true,
+          full_name: name,
           profession_type: professionType,
           profession_slug: professionType,
-          onboarding_data: { name, role, useCase: useCaseAnswer, challenges },
+          onboarding_data: { name, role, useCase: useCaseAnswer, challenges, voice: selectedVoiceName },
         })
         .eq("id", userId);
 
@@ -260,6 +297,51 @@ export function HufiOnboardingChat({ userId, onComplete }: HufiOnboardingChatPro
   };
 
   const disc = getProfessionDiscovery(professionKey);
+
+  // Schritt 0: Willkommens-Screen — noch kein Chat, nur ein Einstieg.
+  if (!started) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100%",
+          maxWidth: "440px",
+          margin: "0 auto",
+          padding: "32px 24px",
+          boxSizing: "border-box",
+          textAlign: "center",
+          gap: "20px",
+        }}
+      >
+        <img
+          src="/hufi-splash.webp"
+          alt="Hufi"
+          style={{ width: "88px", height: "88px", objectFit: "contain" }}
+        />
+        <div>
+          <h1 style={{ fontSize: "22px", fontWeight: 800, color: "#1A1A1A", margin: "0 0 8px" }}>
+            Willkommen bei HufiApp
+          </h1>
+          <p style={{ fontSize: "14px", color: "#6B7280", lineHeight: 1.6, margin: 0 }}>
+            Ich bin Hufi, dein proaktiver Mitarbeiter — ich behalte Termine, Kunden und Pferde im Blick, damit du dich um dein Handwerk kümmern kannst.
+          </p>
+        </div>
+        <button
+          style={{
+            background: "#F97316", color: "#FFFFFF", border: "none",
+            borderRadius: "10px", padding: "13px 28px", fontSize: "15px",
+            fontWeight: 700, cursor: "pointer",
+          }}
+          onClick={() => setStarted(true)}
+        >
+          Los geht's →
+        </button>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -405,8 +487,59 @@ export function HufiOnboardingChat({ userId, onComplete }: HufiOnboardingChatPro
             </div>
           )}
 
-          {step === 4 && (
+          {step === 5 && (
+            <div style={{ ...fadeInStyle, display: "flex", flexDirection: "column", gap: "8px" }}>
+              {ONBOARDING_VOICES.map((voice) => (
+                <div
+                  key={voice.id}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "10px",
+                    border: "1.5px solid #F97316", borderRadius: "10px",
+                    padding: "10px 12px",
+                  }}
+                >
+                  <button
+                    style={{ ...roleButtonStyle, margin: 0, flex: 1, textAlign: "left" }}
+                    onClick={() => handleVoiceSelect(voice)}
+                  >
+                    🎙️ {voice.name.replace("Hufi ", "")}
+                  </button>
+                  <button
+                    onClick={() => handleVoicePreview(voice)}
+                    aria-label={`${voice.name} anhören`}
+                    style={{
+                      width: "34px", height: "34px", borderRadius: "8px",
+                      background: playingVoiceId === voice.id ? "#EF4444" : "#FFF7ED",
+                      border: "none", display: "flex", alignItems: "center", justifyContent: "center",
+                      cursor: "pointer", flexShrink: 0,
+                    }}
+                  >
+                    {playingVoiceId === voice.id
+                      ? <Square size={14} color="#FFFFFF" fill="#FFFFFF" />
+                      : <Play size={14} color="#F97316" fill="#F97316" />
+                    }
+                  </button>
+                </div>
+              ))}
+              <p style={{ fontSize: "11px", color: "#9CA3AF", textAlign: "center", margin: "4px 0 0" }}>
+                Später jederzeit in den Einstellungen änderbar.
+              </p>
+            </div>
+          )}
+
+          {step === 6 && (
             <div style={fadeInStyle}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "12px" }}>
+                {[
+                  "Sag „Hey Hufi“ oder tippe in das Textfeld",
+                  "Probier: „Zeig mir meine Termine“",
+                  "Oder tippe auf einen der Quick-Buttons",
+                ].map((hint) => (
+                  <div key={hint} style={{ fontSize: "12.5px", color: "#6B7280", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ color: "#F97316" }}>•</span> {hint}
+                  </div>
+                ))}
+              </div>
               <button
                 style={{
                   ...nextBtnStyle,
@@ -418,7 +551,7 @@ export function HufiOnboardingChat({ userId, onComplete }: HufiOnboardingChatPro
                 onClick={handleFinish}
                 disabled={saving}
               >
-                {saving ? "Wird gespeichert..." : "Los geht's"}
+                {saving ? "Wird gespeichert..." : "HufiApp starten 🚀"}
               </button>
             </div>
           )}

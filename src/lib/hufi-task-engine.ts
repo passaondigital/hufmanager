@@ -1,4 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
+import { executeHufiAction, type HufiAction } from "./hufi-actions";
+import {
+  type AgentTaskType, taskTypeLabel, taskTypeToActionType,
+} from "./hufi-agent-tasks";
 
 export type TaskStatus =
   | "pending" | "running" | "awaiting_confirm" | "done" | "failed" | "cancelled";
@@ -251,6 +255,19 @@ async function executeTool(
       return { questions, count: questions.length };
     }
 
+    // Einzelaktion, die der Agent vorschlägt (ehem. agent_tasks) — jetzt ein
+    // gewöhnlicher Ein-Schritt-Task in derselben Queue.
+    case "execute_agent_action": {
+      const action: HufiAction = {
+        type: params.actionType as HufiAction["type"],
+        payload: (params.payload as Record<string, unknown>) ?? {},
+        requiresConfirmation: false, // bereits durch requires_confirm+confirmStep bestätigt
+        dsgvoRelevant: params.actionType === "notify_client" || params.actionType === "send_invoice",
+        explanation: (params.explanation as string) ?? "",
+      };
+      return await executeHufiAction(action, userId);
+    }
+
     default:
       throw new Error(`Unbekanntes Tool: ${tool}`);
   }
@@ -393,8 +410,52 @@ function buildSummary(title: string, steps: TaskStep[]): string {
       return `Route mit ${r.waypoints} Stationen optimiert.`;
     if (step.tool === "get_incomplete_horses" && r.count !== undefined)
       return `${r.count} unvollständige Pferdeakten gefunden.`;
+    if (step.tool === "execute_agent_action" && typeof r.message === "string")
+      return r.message;
   }
   return `${title} abgeschlossen (${done} Schritte).`;
+}
+
+// ── Einzelaktionen (ehem. agent_tasks) als Ein-Schritt-Task ────────────────────
+
+export async function createActionTask(
+  userId: string,
+  type: AgentTaskType,
+  payload: Record<string, unknown>,
+  explanation: string,
+  userMessage: string,
+  sessionId?: string,
+): Promise<HufiTask | null> {
+  const step: TaskStep = {
+    id: makeid(),
+    tool: "execute_agent_action",
+    description: explanation,
+    params: { actionType: taskTypeToActionType(type), payload, explanation },
+    status: "pending",
+    requires_confirm: true,
+  };
+
+  const { data, error } = await supabase
+    .from("hufi_task_queue")
+    .insert({
+      user_id: userId,
+      title: taskTypeLabel(type),
+      description: explanation,
+      trigger_phrase: userMessage.slice(0, 200),
+      status: "pending",
+      priority: 5,
+      steps: [step],
+      current_step: 0,
+      context: { sessionId: sessionId ?? null, taskType: type },
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("[hufi-task-engine] createActionTask failed:", error.message);
+    return null;
+  }
+  return data as unknown as HufiTask;
 }
 
 export async function confirmStep(

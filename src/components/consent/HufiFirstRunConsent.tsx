@@ -17,6 +17,7 @@ interface Props {
 }
 
 import { ulget, ulset, USER_STORAGE_KEYS } from "@/lib/user-storage";
+import { updateHufiMemory } from "@/lib/hufi-brain";
 
 const STORAGE_KEY = USER_STORAGE_KEYS.FIRST_RUN;
 
@@ -31,6 +32,25 @@ export function hasCompletedFirstRun(userId = ""): boolean {
 export function saveFirstRunConsent(choices: HufiConsentChoices, userId = "") {
   ulset(userId, STORAGE_KEY, JSON.stringify({ ...choices, ts: Date.now() }));
   if (choices.ai) ulset(userId, USER_STORAGE_KEYS.KI_CONSENT, "granted");
+
+  // Spiegeln in hufi_memory, damit ein neues Gerät / Inkognito-Fenster /
+  // Clear-Storage den Onboarding-Flow nicht erneut auslöst.
+  if (userId) {
+    updateHufiMemory(
+      userId,
+      "permission",
+      "first_run_completed",
+      { completed: true, choices, ts: new Date().toISOString() },
+      "manual",
+    );
+    updateHufiMemory(
+      userId,
+      "permission",
+      "ki_consent",
+      { granted: choices.ai, ts: new Date().toISOString() },
+      "manual",
+    );
+  }
 }
 
 export function loadSavedConsent(userId = ""): HufiConsentChoices | null {
