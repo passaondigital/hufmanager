@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Crown, Sparkles, Zap, ArrowRight, Info } from "lucide-react";
+import { Check, Sparkles, ArrowRight, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDemoActivityTracker } from "@/hooks/useDemoActivityTracker";
 import { WiderrufsausschlussCheckbox } from "@/components/consent/WiderrufsausschlussCheckbox";
@@ -26,74 +26,24 @@ interface PricingModalProps {
 
 const PRICING_PLANS = [
   {
-    id: "starter",
-    name: "Starter",
-    price: "9,90",
-    period: "pro Monat",
-    description: "Für Einsteiger mit bis zu 10 Pferden",
-    features: [
-      "Kalender & Termine",
-      "Kundenverwaltung (bis 10 Pferde)",
-      "Digitale Pferdeakte",
-      "Mein Office & Lager",
-      "Basis-Support",
-    ],
-    checkoutUrl: "https://www.copecart.com/products/8ef10f74/checkout?utm_source=app&utm_medium=pricing&utm_campaign=direktkauf",
-    icon: Zap,
-    highlighted: false,
-  },
-  {
     id: "pro",
-    name: "Pro",
-    price: "29",
+    name: "Early Bird",
+    price: "9,95",
     period: "pro Monat",
-    description: "Für aktive Betriebe mit bis zu 75 Pferden",
+    description: "Voller Zugang für Hufbearbeiter, Hufschmiede & Pferde-Profis",
     features: [
-      "Alles aus Starter",
-      "Bis zu 75 Pferde",
-      "AutoFlow-Automatisierung",
-      "HM Connect & Netzwerk",
-      "GPS-Navigation & Karten",
-      "Prioritäts-Support",
+      "Kalender & smarte Tourenplanung",
+      "Kunden- & Pferdeverwaltung",
+      "Vollständige Pferdeakte & Befunde",
+      "Rechnungen in Sekunden",
+      "Hufi KI-Assistent & Sprachsteuerung",
+      "AutoFlow, HM Connect & Netzwerk",
+      "Unbegrenzt Pferde",
     ],
-    checkoutUrl: "https://www.copecart.com/products/1996da6f/checkout?utm_source=app&utm_medium=pricing&utm_campaign=direktkauf",
+    checkoutUrl: "https://www.copecart.com/products/0a0921ba/checkout?utm_source=app&utm_medium=pricing&utm_campaign=direktkauf",
     icon: Sparkles,
     highlighted: true,
-    badge: "Meistgewählt",
-  },
-  {
-    id: "duo",
-    name: "Duo",
-    price: "49",
-    period: "pro Monat",
-    description: "Für wachsende Betriebe mit bis zu 150 Pferden",
-    features: [
-      "Alles aus Pro",
-      "Bis zu 150 Pferde",
-      "Mitarbeiter-App (bis 2 MA)",
-      "Team-Management",
-      "Premium-Support",
-    ],
-    checkoutUrl: "https://www.copecart.com/products/953da638/checkout?utm_source=app&utm_medium=pricing&utm_campaign=direktkauf",
-    icon: Crown,
-    highlighted: false,
-  },
-  {
-    id: "team",
-    name: "Team",
-    price: "79",
-    period: "pro Monat",
-    description: "Für große Betriebe – unbegrenzt",
-    features: [
-      "Alles aus Duo",
-      "Unbegrenzt Pferde",
-      "Unbegrenzt Mitarbeiter",
-      "Erweiterte Analysen",
-      "Dedicated Support",
-    ],
-    checkoutUrl: "https://www.copecart.com/products/badae7d2/checkout?utm_source=app&utm_medium=pricing&utm_campaign=direktkauf",
-    icon: Crown,
-    highlighted: false,
+    badge: "Early Bird",
   },
 ];
 
@@ -126,13 +76,7 @@ export function PricingModal({
     onOpenChange(false);
   };
 
-  // Filter plans based on current plan for upgrade view
-  const availablePlans = currentPlan
-    ? PRICING_PLANS.filter((plan) => {
-        const planOrder = ["starter", "pro", "duo", "team"];
-        return planOrder.indexOf(plan.id) > planOrder.indexOf(currentPlan);
-      })
-    : PRICING_PLANS;
+  const availablePlans = PRICING_PLANS;
 
   return (
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) { setWiderrufAccepted(false); setWiderrufError(false); } }}>

@@ -1,14 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Crown, ExternalLink, Check, AlertCircle, Clock, Loader2, ArrowUpRight } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { PricingModal } from "./PricingModal";
 
 const PLAN_NAMES: Record<string, string> = {
@@ -25,64 +20,14 @@ const STATUS_CONFIG: Record<string, { label: string; variant: "default" | "secon
   lifetime: { label: "Lifetime", variant: "default", icon: Crown },
 };
 
+const COPECART_LOGIN_URL = "https://copecart.com/login";
+
 export function SubscriptionCard() {
   const { status, plan, loading } = useSubscription();
-  const { user } = useAuth();
-  const [portalUrl, setPortalUrl] = useState<string>("");
-  const [saving, setSaving] = useState(false);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchPortalUrl = async () => {
-      if (!user?.id) return;
-      
-      // Fetch from the new secure provider_portal_credentials table
-      const { data } = await supabase
-        .from("provider_portal_credentials")
-        .select("copecart_customer_portal_url")
-        .eq("provider_id", user.id)
-        .maybeSingle();
-      
-      if (data?.copecart_customer_portal_url) {
-        setPortalUrl(data.copecart_customer_portal_url);
-      }
-    };
-
-    fetchPortalUrl();
-  }, [user?.id]);
-
-  const handleSavePortalUrl = async () => {
-    if (!user?.id) return;
-    
-    setSaving(true);
-    try {
-      // Use upsert to handle both insert and update
-      const { error } = await supabase
-        .from("provider_portal_credentials")
-        .upsert({ 
-          provider_id: user.id, 
-          copecart_customer_portal_url: portalUrl,
-          updated_at: new Date().toISOString()
-        }, { 
-          onConflict: 'provider_id' 
-        });
-
-      if (error) throw error;
-      toast.success("Portal-URL gespeichert");
-    } catch (error) {
-      console.error("Error saving portal URL:", error);
-      toast.error("Fehler beim Speichern");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleManageSubscription = () => {
-    if (portalUrl) {
-      window.open(portalUrl, "_blank");
-    } else {
-      toast.error("Bitte hinterlege zuerst deine Copecart Portal-URL");
-    }
+    window.open(COPECART_LOGIN_URL, "_blank");
   };
 
   if (loading) {
@@ -195,39 +140,17 @@ export function SubscriptionCard() {
             </div>
           )}
 
-          {/* Portal URL Configuration */}
-          <div className="space-y-3">
-            <Label htmlFor="portal-url">Copecart Kundenportal URL</Label>
-            <div className="flex gap-2">
-              <Input
-                id="portal-url"
-                type="url"
-                placeholder="https://copecart.com/portal/..."
-                value={portalUrl}
-                onChange={(e) => setPortalUrl(e.target.value)}
-              />
-              <Button 
-                variant="outline" 
-                onClick={handleSavePortalUrl}
-                disabled={saving}
-              >
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Speichern"}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Die URL zu deinem Copecart Kundenportal für Rechnungen und Abo-Verwaltung.
-            </p>
-          </div>
-
           {/* Manage Subscription Button */}
-          <Button 
+          <Button
             onClick={handleManageSubscription}
             className="w-full gap-2"
-            variant={portalUrl ? "default" : "outline"}
           >
             Abo verwalten & Rechnungen
             <ExternalLink className="h-4 w-4" />
           </Button>
+          <p className="text-xs text-muted-foreground text-center">
+            Öffnet das CopeCart-Kundenportal — melde dich dort mit deiner E-Mail-Adresse an.
+          </p>
         </CardContent>
       </Card>
 

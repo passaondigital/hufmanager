@@ -8,9 +8,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Lock, Check, ArrowRight, Sparkles, Crown, Zap } from "lucide-react";
+import { Lock, Check, ArrowRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useSubscription } from "@/hooks/useSubscription";
 import { WiderrufsausschlussCheckbox } from "@/components/consent/WiderrufsausschlussCheckbox";
 import { logConsent } from "@/lib/consent";
 
@@ -23,43 +22,21 @@ interface UpgradeModalProps {
 
 const PLANS = [
   {
-    id: "starter",
-    name: "Anfänger",
-    price: "19",
-    icon: Zap,
-    features: ["Kalender & Termine", "Kundenverwaltung", "Digitale Pferdeakte"],
-    checkoutUrl: "https://www.copecart.com/products/8ef10f74/checkout?utm_source=app&utm_medium=upgrade&utm_campaign=direktkauf",
-  },
-  {
-    id: "advanced",
-    name: "Fortgeschritten",
-    price: "49",
-    icon: Sparkles,
-    badge: "Empfohlen",
-    features: ["Alles aus Anfänger", "GPS-Navigation", "Erinnerungen", "Kunden-Chat"],
-    checkoutUrl: "https://www.copecart.com/products/1996da6f/checkout?utm_source=app&utm_medium=upgrade&utm_campaign=direktkauf",
-  },
-  {
     id: "pro",
-    name: "Profi",
-    price: "99",
-    icon: Crown,
-    features: ["Alles aus Fortgeschritten", "KI-Assistent", "Academy", "Team-Management"],
-    checkoutUrl: "https://www.copecart.com/products/953da638/checkout?utm_source=app&utm_medium=upgrade&utm_campaign=direktkauf",
+    name: "Early Bird",
+    price: "9,95",
+    icon: Sparkles,
+    badge: "Early Bird",
+    features: ["Kalender & Tourenplanung", "KI-Assistent (Hufi)", "GPS-Navigation", "Rechnungen & mehr"],
+    checkoutUrl: "https://www.copecart.com/products/0a0921ba/checkout?utm_source=app&utm_medium=upgrade&utm_campaign=direktkauf",
   },
 ];
 
-const PLAN_ORDER = ["starter", "advanced", "pro"];
-
 export function UpgradeModal({ open, onOpenChange, featureName, requiredPlan = "pro" }: UpgradeModalProps) {
-  const { plan } = useSubscription();
   const [widerrufAccepted, setWiderrufAccepted] = useState(false);
   const [widerrufError, setWiderrufError] = useState(false);
 
-  // Show only plans above current
-  const currentIndex = plan ? PLAN_ORDER.indexOf(plan) : -1;
-  const requiredIndex = PLAN_ORDER.indexOf(requiredPlan);
-  const upgradePlans = PLANS.filter((_, i) => i > currentIndex && i >= requiredIndex);
+  const upgradePlans = PLANS;
 
   const handleUpgrade = async (checkoutUrl: string) => {
     if (!widerrufAccepted) {

@@ -131,6 +131,7 @@ export default function Auth() {
   const redirectTo = searchParams.get("redirect");
   const forceLogin = searchParams.get("force") === "login";
   const pferdeakteSource = searchParams.get("source") === "pferdeakte";
+  const [activeAuthTab, setActiveAuthTab] = useState<"login" | "signup">(pferdeakteSource ? "signup" : "login");
   const currentEntryPath = window.location.pathname === "/audit" ? "/audit" : "/auth";
   const pendingSwitchTarget = sessionStorage.getItem(SWITCH_ACCOUNT_STORAGE_KEY);
   const isSwitchingAccount = forceLogin || pendingSwitchTarget === currentEntryPath;
@@ -220,7 +221,7 @@ export default function Auth() {
   if (signingOut || isSwitchingAccount) {
     return (
       <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
-        <span style={{ fontSize: "2rem", fontWeight: 900, letterSpacing: "-0.03em", color: "#1A1A1A" }}>Huf<span style={{ color: "#F97316" }}>Manager</span></span>
+        <span style={{ fontSize: "2rem", fontWeight: 900, letterSpacing: "-0.03em", color: "#1A1A1A" }}>{FLAVOR_CONFIG.appName.slice(0, 3)}<span style={{ color: "#F97316" }}>{FLAVOR_CONFIG.appName.slice(3)}</span></span>
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -234,7 +235,7 @@ export default function Auth() {
       // Show loading while checking onboarding status
       return (
         <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
-          <span style={{ fontSize: "2rem", fontWeight: 900, letterSpacing: "-0.03em", color: "#1A1A1A" }}>Huf<span style={{ color: "#F97316" }}>Manager</span></span>
+          <span style={{ fontSize: "2rem", fontWeight: 900, letterSpacing: "-0.03em", color: "#1A1A1A" }}>{FLAVOR_CONFIG.appName.slice(0, 3)}<span style={{ color: "#F97316" }}>{FLAVOR_CONFIG.appName.slice(3)}</span></span>
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       );
@@ -476,7 +477,7 @@ export default function Auth() {
         <CardHeader className="text-center pb-2 pt-4">
           <div className="mx-auto mb-3 select-none">
             <span style={{ fontSize: "1.9rem", fontWeight: 900, letterSpacing: "-0.03em", color: "#1A1A1A" }}>
-              Huf<span style={{ color: "#F97316" }}>Manager</span>
+              {FLAVOR_CONFIG.appName.slice(0, 3)}<span style={{ color: "#F97316" }}>{FLAVOR_CONFIG.appName.slice(3)}</span>
             </span>
           </div>
           <CardTitle className="text-2xl font-bold text-foreground sr-only">{FLAVOR_CONFIG.appName}</CardTitle>
@@ -487,7 +488,7 @@ export default function Auth() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue={pferdeakteSource ? "signup" : "login"} className="w-full">
+          <Tabs value={activeAuthTab} onValueChange={(v) => setActiveAuthTab(v as "login" | "signup")} className="w-full">
             <TabsList className="grid w-full grid-cols-2 h-12 bg-muted">
               <TabsTrigger value="login" className="h-10 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Anmelden</TabsTrigger>
               <TabsTrigger value="signup" className="h-10 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Registrieren</TabsTrigger>
@@ -622,11 +623,7 @@ export default function Auth() {
                     setLoading(false);
                   }
                 }}
-                onCancel={() => {
-                  // Switch back to login tab
-                  const loginTab = document.querySelector('[value="login"]') as HTMLButtonElement;
-                  loginTab?.click();
-                }}
+                onCancel={() => setActiveAuthTab("login")}
               />
               {/* CopeCart-Kauf Hinweis */}
               <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3 text-center">

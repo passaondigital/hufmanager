@@ -24,8 +24,8 @@ export function KiHinweisModal({ open, userId, onConsent, onDecline }: Props) {
     if (userId) {
       updateHufiMemory(
         userId,
-        "dsgvo",
-        "ki_consent_anthropic",
+        "permission",
+        "ki_consent",
         { granted, ts: new Date().toISOString(), provider: "anthropic" },
         "system",
       );

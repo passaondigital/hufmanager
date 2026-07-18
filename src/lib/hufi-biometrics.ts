@@ -58,7 +58,7 @@ export async function registerBiometric(opts: {
       publicKey: {
         challenge,
         rp: {
-          name: "HufManager",
+          name: "Hufi",
           id: window.location.hostname,
         },
         user: {

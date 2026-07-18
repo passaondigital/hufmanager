@@ -31,7 +31,7 @@ export function AuthLoadingScreen() {
         Hufi
       </div>
       <div style={{ fontSize: 12, color: "#9CA3AF", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 32 }}>
-        Dein Hufpflege-Assistent
+        Dein proaktiver Mitarbeiter
       </div>
 
       {/* Wave bars */}
