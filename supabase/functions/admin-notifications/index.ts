@@ -224,7 +224,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "HufManager System <info@hufiapp.de>",
+        from: "HufManager System <info@hufmanager.de>",
         to: ADMIN_EMAILS,
         subject,
         html,

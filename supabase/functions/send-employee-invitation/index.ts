@@ -91,7 +91,7 @@ const handler = async (req: Request): Promise<Response> => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "HufManager <noreply@hufiapp.de>",
+          from: "HufManager <noreply@hufmanager.de>",
           to: [employee.email],
           subject: `Einladung ins Team von ${employee.provider?.full_name || "deinem Arbeitgeber"}`,
           html: `

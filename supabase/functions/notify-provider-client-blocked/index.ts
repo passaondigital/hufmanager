@@ -37,7 +37,7 @@ serve(async (req: Request): Promise<Response> => {
 
     const safeProviderEmail = escapeHtml(providerEmail);
     const safeClientEmail = escapeHtml(clientEmail || "");
-    const upgradeUrl = "https://www.copecart.com/products/1996da6f/checkout?utm_source=app&utm_medium=provider-notify&utm_campaign=client-blocked";
+    const upgradeUrl = "https://www.copecart.com/products/0a0921ba/checkout?utm_source=app&utm_medium=provider-notify&utm_campaign=client-blocked";
 
     const emailHtml = `<!DOCTYPE html>
 <html>
@@ -85,7 +85,7 @@ serve(async (req: Request): Promise<Response> => {
 </html>`;
 
     await resend.emails.send({
-      from: "HufManager <info@hufiapp.de>",
+      from: "HufManager <info@hufmanager.de>",
       to: [providerEmail],
       subject: "🐴 Dein Kunde möchte die App nutzen — jetzt upgraden",
       html: emailHtml,

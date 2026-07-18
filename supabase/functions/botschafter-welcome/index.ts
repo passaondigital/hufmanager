@@ -43,7 +43,7 @@ serve(async (req) => {
     const resend = new Resend(RESEND_API_KEY);
 
     const { error: emailError } = await resend.emails.send({
-      from: "HufManager <info@hufiapp.de>",
+      from: "HufManager <info@hufmanager.de>",
       to: [email],
       subject: `Willkommen als HufManager Botschafter, ${first_name}!`,
       html: `
