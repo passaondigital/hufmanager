@@ -190,7 +190,7 @@ serve(async (req) => {
         batch.map(async (user: any) => {
           try {
             await resend.emails.send({
-              from: "HufManager <info@hufiapp.de>",
+              from: "HufManager <info@hufmanager.de>",
               to: [user.email],
               subject: "🐴 HufManager Update – Neue Steuer- & Rechtsform-Einstellungen",
               html: buildHtml(user.full_name, user.role),

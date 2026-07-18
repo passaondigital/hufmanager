@@ -153,7 +153,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'HufManager <noreply@hufiapp.de>',
+        from: 'HufManager <noreply@hufmanager.de>',
         to: [to],
         subject: finalSubject,
         html: finalHtml,

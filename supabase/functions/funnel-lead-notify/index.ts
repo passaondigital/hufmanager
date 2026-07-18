@@ -109,7 +109,7 @@ serve(async (req) => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              from: 'HufManager <noreply@hufiapp.de>',
+              from: 'HufManager <noreply@hufmanager.de>',
               to: [email],
               subject: `🎯 Neue Anfrage: ${lead.full_name} – ${topicLabels[lead.topic] || lead.topic}`,
               html: emailHtml,

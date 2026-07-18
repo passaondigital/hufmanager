@@ -297,7 +297,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (client?.email) {
       await resend.emails.send({
-        from: "HufManager <info@hufiapp.de>",
+        from: "HufManager <info@hufmanager.de>",
         to: [client.email],
         subject: `Behandlungsbericht: ${safeHorseName} - ${safeDate}`,
         html: `

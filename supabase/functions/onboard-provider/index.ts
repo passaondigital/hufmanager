@@ -218,7 +218,7 @@ serve(async (req: Request) => {
       try {
         const resend = new Resend(resendKey);
         await resend.emails.send({
-          from: "HufManager <support@hufiapp.de>",
+          from: "HufManager <support@hufmanager.de>",
           to: [profile.email],
           cc: ["support@hufiapp.de"],
           subject: "Dein HufManager-Nutzungsvertrag",

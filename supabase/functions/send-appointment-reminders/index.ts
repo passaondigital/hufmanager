@@ -413,7 +413,7 @@ async function sendReminderEmail(
   `;
 
   return resend.emails.send({
-    from: "HufManager <info@hufiapp.de>",
+    from: "HufManager <info@hufmanager.de>",
     to: [owner.email],
     subject: `🐴 ${safeIntervalLabel}: Termin für ${safeHorseName} am ${safeDateStr}`,
     html: emailHtml,

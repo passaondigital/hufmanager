@@ -194,7 +194,7 @@ serve(async (req: Request): Promise<Response> => {
     // Send invitation email
     console.log("Sende Email via Resend an:", email);
     const emailResponse = await resend.emails.send({
-      from: `HufManager <info@hufiapp.de>`,
+      from: `HufManager <info@hufmanager.de>`,
       to: [email],
       subject: `🐴 ${safeBusinessName} lädt Sie zur HufManager KundenApp ein`,
       html: emailHtml,

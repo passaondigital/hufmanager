@@ -143,7 +143,7 @@ serve(async (req: Request) => {
     `;
 
     const emailPayload: any = {
-      from: "HufManager <support@hufiapp.de>",
+      from: "HufManager <support@hufmanager.de>",
       to: [recipient_email],
       cc: ["support@hufiapp.de"],
       subject: `Ihre Rechnung von HufManager – Nr. ${invoice_number}`,
