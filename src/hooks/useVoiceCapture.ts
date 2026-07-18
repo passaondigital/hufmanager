@@ -162,7 +162,7 @@ export function useVoiceCapture(): UseVoiceCapture {
       res = await fetch(WHISPER_ENDPOINT, {
         method: "POST",
         body: form,
-        signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(45_000),
       });
     } catch (err) {
       const name = (err as Error)?.name;

@@ -182,7 +182,7 @@ export default function PartnerConnect() {
                       {searchResult.role && <Badge variant="secondary" className="text-[10px]">{searchResult.role}</Badge>}
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" className="gap-1">
+                  <Button variant="outline" size="sm" className="gap-1" disabled title="Bald verfügbar">
                     <UserPlus className="h-3.5 w-3.5" /> Verbinden
                   </Button>
                 </div>

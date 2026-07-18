@@ -38,14 +38,15 @@ import {
 import { useEffect } from "react";
 import { useClientMode } from "@/hooks/useClientMode";
 import { WhatsAppInviteButton } from "@/components/client/WhatsAppInviteButton";
+import { FEATURE_FLAGS } from "@/config/featureFlags";
 
 // ── Navigation Config (dynamic based on client mode) ──────────────────────────────────
 
 type ClientModeType = "private" | "stall" | "commercial";
 
 function getClientNavigationConfig(mode: ClientModeType, isVerified: boolean): NavigationConfig {
-  const isStall = mode === "stall";
-  const isCommercial = mode === "commercial";
+  const isStall = mode === "stall" && FEATURE_FLAGS.stallbetreiberRolle.enabled;
+  const isCommercial = mode === "commercial" && FEATURE_FLAGS.stallbetreiberRolle.enabled;
   const isBusiness = isStall || isCommercial;
   const verified = isBusiness && isVerified;
 
@@ -79,7 +80,9 @@ function getClientNavigationConfig(mode: ClientModeType, isVerified: boolean): N
           { id: "notifications", label: "Benachrichtigungen", iconName: "Bell", path: "/client-notifications" },
           { id: "connect", label: "HM Connect", iconName: "Link2", path: "/client-connect" },
           { id: "network", label: "Netzwerk", iconName: "Users", path: "/client-network" },
-          { id: "marketplace", label: "Pferdemarkt", iconName: "Store", path: "/client-marketplace" },
+          ...(FEATURE_FLAGS.clientMarketplaceBrowse.enabled
+            ? [{ id: "marketplace", label: "Pferdemarkt", iconName: "Store", path: "/client-marketplace" }]
+            : []),
           ...(isBusiness
             ? [{ id: "my-listings", label: "Meine Inserate", iconName: "Tag", path: "/client-marketplace/mine" }]
             : []),
@@ -136,7 +139,6 @@ function getClientNavigationConfig(mode: ClientModeType, isVerified: boolean): N
         label: "Verwaltung",
         items: [
           { id: "permissions", label: "Berechtigungen", iconName: "Shield", path: "/client-permissions" },
-          { id: "locations", label: "Standorte", iconName: "MapPin", path: "/client-locations" },
           { id: "notfall", label: "Notfall", iconName: "AlertTriangle", path: "/client-notfall" },
           { id: "search-providers", label: "Experten-Verzeichnis", iconName: "Search", path: "/client/search-providers" },
         ],
@@ -146,7 +148,9 @@ function getClientNavigationConfig(mode: ClientModeType, isVerified: boolean): N
         items: [
           { id: "profile", label: "Profil", iconName: "User", path: "/client-profile" },
           { id: "account-type", label: "Account-Typ", iconName: "Settings2", path: "/client-account-type" },
-          { id: "botschafter", label: "Botschafter", iconName: "Megaphone", path: "/client/botschafter" },
+          ...(FEATURE_FLAGS.botschafterDashboard.enabled
+            ? [{ id: "botschafter", label: "Botschafter", iconName: "Megaphone", path: "/client/botschafter" }]
+            : []),
           { id: "support", label: "Hilfe & Support", iconName: "LifeBuoy", path: "/client-support" },
         ],
       },

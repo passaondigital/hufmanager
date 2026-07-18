@@ -15,7 +15,6 @@ serve(async (req: Request): Promise<Response> => {
 
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
   const today    = new Date().toISOString().split("T")[0];
-  const eightWeeksAgo = new Date(Date.now() - 56 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   // Alle Provider holen
   const { data: providers } = await supabase
@@ -33,8 +32,8 @@ serve(async (req: Request): Promise<Response> => {
 
   for (const { user_id } of providers) {
     try {
-      await sendBriefingForProvider(supabase, user_id, today, eightWeeksAgo);
-      sentCount++;
+      const sent = await sendBriefingForProvider(supabase, user_id, today);
+      if (sent) sentCount++;
     } catch (e) {
       console.error(`Briefing failed for ${user_id}:`, e);
     }
@@ -51,8 +50,7 @@ async function sendBriefingForProvider(
   supabase: ReturnType<typeof createClient>,
   userId: string,
   today: string,
-  eightWeeksAgo: string,
-): Promise<void> {
+): Promise<boolean> {
 
   // 1. Heutiger Name
   const { data: profile } = await supabase
@@ -90,26 +88,38 @@ async function sendBriefingForProvider(
     (s: number, i: Record<string, number>) => s + (i.total_amount ?? 0), 0,
   );
 
-  // 4. Überfällige Pferde (> 8 Wochen kein Termin)
+  // 4. Überfällige Pferde: pro Pferd nach INDIVIDUELLEM shoeing_interval (Wochen),
+  // nicht nach festem 8-Wochen-Pauschalwert (Hebel 4 / Schritt 4 HUFI_ROADMAP.md).
   const { data: recentAppts } = await supabase
     .from("appointments")
-    .select("horse_id, date, horses(id, name)")
+    .select("horse_id, date, horses(id, name, shoeing_interval)")
     .eq("provider_id", userId)
     .eq("status", "completed")
-    .lt("date", eightWeeksAgo)
     .order("date", { ascending: false })
-    .limit(60);
+    .limit(150);
 
+  interface OverdueHorse { id: string; name: string; weeksOverdue: number; suggestedDate: string; }
   const seen = new Set<string>();
-  const overdueHorses: string[] = [];
-  for (const a of (recentAppts ?? []) as Array<{ horse_id: string; horses: unknown }>) {
-    if (seen.has(a.horse_id) || overdueHorses.length >= 3) continue;
+  const overdueHorses: OverdueHorse[] = [];
+  for (const a of (recentAppts ?? []) as Array<{ horse_id: string; date: string; horses: unknown }>) {
+    if (!a.horse_id || seen.has(a.horse_id)) continue;
     seen.add(a.horse_id);
-    const name = Array.isArray(a.horses)
-      ? (a.horses[0] as Record<string, string>)?.name
-      : (a.horses as Record<string, string> | null)?.name;
-    if (name) overdueHorses.push(name);
+    const h = Array.isArray(a.horses) ? a.horses[0] : a.horses as Record<string, unknown> | null;
+    const name = (h as Record<string, unknown> | null)?.name as string | undefined;
+    const intervalWeeks = (h as Record<string, unknown> | null)?.shoeing_interval as number | null | undefined;
+    if (!name) continue;
+    const intervalDays = intervalWeeks ? intervalWeeks * 7 : 56;
+    const lastDate = new Date(a.date);
+    const daysSince = Math.floor((Date.now() - lastDate.getTime()) / 86_400_000);
+    if (daysSince >= intervalDays - 7) {
+      const suggestedDate = new Date(lastDate.getTime() + intervalDays * 86_400_000).toISOString().split("T")[0];
+      overdueHorses.push({ id: a.horse_id, name, weeksOverdue: Math.floor(daysSince / 7), suggestedDate });
+    }
+    if (overdueHorses.length >= 10) break;
   }
+
+  // Vorschläge persistieren (data_write) + Dedup: ein Pferd wird nur alle 6 Tage erneut erwähnt.
+  const toMention = await upsertFollowupSuggestions(supabase, userId, overdueHorses);
 
   // 5. Niedriger Lagerbestand
   const { data: lowStock } = await supabase
@@ -123,7 +133,16 @@ async function sendBriefingForProvider(
       i.min_stock !== null && (i.current_stock ?? 0) <= (i.min_stock ?? 0),
   ).slice(0, 3);
 
-  // 6. Claude AI Briefing-Text
+  // 6. Relevanz-Check: nur senden, wenn es wirklich etwas zu berichten gibt.
+  // "Keine Termine, keine Rechnungen, nichts fällig" ist Spam — dann bleibt Hufi still
+  // (UI-Aufräumen, 17.07.2026 — Punkt 6: Morgen-Briefing-Notifications).
+  const hasRelevantContent =
+    apptCount > 0 || openInvCount > 0 || toMention.length > 0 || lowStockItems.length > 0;
+
+  if (!hasRelevantContent) return false;
+
+  // 7. Claude AI Briefing-Text
+  const overdueForText = toMention.map((h) => `${h.name} (Folgetermin-Vorschlag: ${formatDateDe(h.suggestedDate)})`);
   const briefingText = await generateAiBriefing({
     firstName,
     apptCount,
@@ -131,12 +150,12 @@ async function sendBriefingForProvider(
     firstTime: firstAppt?.time?.slice(0, 5) ?? null,
     openInvCount,
     openInvTotal,
-    overdueHorses,
+    overdueHorses: overdueForText,
     lowStockItems: lowStockItems.map((i: Record<string, unknown>) => String(i.product_name ?? "")),
     today,
   });
 
-  // 7. In-App-Benachrichtigung anlegen
+  // 8. In-App-Benachrichtigung anlegen
   await supabase.from("notifications").insert({
     user_id: userId,
     title: "🌅 Morgen-Briefing",
@@ -146,7 +165,7 @@ async function sendBriefingForProvider(
     is_read: false,
   });
 
-  // 8. Push Notification
+  // 9. Push Notification
   const { data: subs } = await supabase
     .from("push_subscriptions")
     .select("subscription")
@@ -167,11 +186,71 @@ async function sendBriefingForProvider(
       body: JSON.stringify({ userId, title: pushTitle, body: pushBody }),
     });
   }
+
+  return true;
 }
 
 function firstTime(appt: Record<string, unknown> | undefined): string | null {
   if (!appt?.time) return null;
   return String(appt.time).slice(0, 5);
+}
+
+function formatDateDe(isoDate: string): string {
+  const d = new Date(isoDate);
+  return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+}
+
+// ── Folgetermin-Vorschläge: persistieren + Dedup (Hebel 4 / Schritt 4) ─────────
+// Schreibt/aktualisiert je überfälligem Pferd einen Vorschlag (die bisher fehlende
+// "data_write"-Routine) und liefert nur die Pferde zurück, die HEUTE erwähnt werden
+// sollen — neue Vorschläge sofort, bereits genannte erst wieder nach 6 Tagen.
+async function upsertFollowupSuggestions(
+  supabase: ReturnType<typeof createClient>,
+  providerId: string,
+  overdueHorses: Array<{ id: string; name: string; weeksOverdue: number; suggestedDate: string }>,
+): Promise<Array<{ id: string; name: string; weeksOverdue: number; suggestedDate: string }>> {
+  if (overdueHorses.length === 0) return [];
+
+  const { error: upsertError } = await supabase
+    .from("hufi_followup_suggestions")
+    .upsert(
+      overdueHorses.map((h) => ({
+        horse_id: h.id,
+        provider_id: providerId,
+        suggested_date: h.suggestedDate,
+        weeks_overdue: h.weeksOverdue,
+      })),
+      { onConflict: "horse_id" },
+    );
+  if (upsertError) {
+    console.error("upsertFollowupSuggestions failed:", upsertError.message);
+    return overdueHorses.slice(0, 3);
+  }
+
+  const { data: existing } = await supabase
+    .from("hufi_followup_suggestions")
+    .select("horse_id, last_notified_at")
+    .in("horse_id", overdueHorses.map((h) => h.id));
+
+  const lastNotifiedMap = new Map<string, string | null>(
+    ((existing ?? []) as Array<{ horse_id: string; last_notified_at: string | null }>)
+      .map((r) => [r.horse_id, r.last_notified_at]),
+  );
+  const sixDaysAgo = Date.now() - 6 * 24 * 60 * 60 * 1000;
+
+  const toMention = overdueHorses.filter((h) => {
+    const lastNotified = lastNotifiedMap.get(h.id);
+    return !lastNotified || new Date(lastNotified).getTime() < sixDaysAgo;
+  }).slice(0, 3);
+
+  if (toMention.length > 0) {
+    await supabase
+      .from("hufi_followup_suggestions")
+      .update({ status: "notified", last_notified_at: new Date().toISOString() })
+      .in("horse_id", toMention.map((h) => h.id));
+  }
+
+  return toMention;
 }
 
 // ── Claude AI Text-Generierung ─────────────────────────────────────────────────
@@ -196,7 +275,7 @@ async function generateAiBriefing(data: {
   if (data.apptCount > 0) ctx.push(`${data.apptCount} Termin${data.apptCount > 1 ? "e" : ""} heute${data.firstHorse ? `, erster: ${data.firstHorse}` : ""}${data.firstTime ? ` um ${data.firstTime}` : ""}`);
   else ctx.push("keine Termine heute");
   if (data.openInvCount > 0) ctx.push(`${data.openInvCount} offene Rechnungen (${data.openInvTotal.toFixed(2)} €)`);
-  if (data.overdueHorses.length > 0) ctx.push(`überfällige Pferde (> 8 Wo): ${data.overdueHorses.join(", ")}`);
+  if (data.overdueHorses.length > 0) ctx.push(`fällige Pferde mit Folgetermin-Vorschlag: ${data.overdueHorses.join(", ")}`);
   if (data.lowStockItems.length > 0) ctx.push(`niedriger Lagerbestand: ${data.lowStockItems.join(", ")}`);
 
   const systemMsg = `Du bist Hufi, ein KI-Assistent für Hufpfleger. Erstelle ein sehr kurzes Morgen-Briefing (2–4 Sätze, max. 200 Zeichen). Sei direkt, klar, kein Smalltalk. Kein Emoji. Nur das Wichtigste. Datum: ${date}.`;
@@ -246,7 +325,7 @@ function buildFallbackBriefing(data: {
   if (data.openInvCount > 0)
     parts.push(`${data.openInvCount} offene Rechnungen (${data.openInvTotal.toFixed(2)} €).`);
   if (data.overdueHorses.length > 0)
-    parts.push(`Überfällig: ${data.overdueHorses.join(", ")}.`);
+    parts.push(`Folgetermin fällig: ${data.overdueHorses.join(", ")}.`);
   if (data.lowStockItems.length > 0)
     parts.push(`Lager niedrig: ${data.lowStockItems.join(", ")}.`);
   return parts.join(" ");

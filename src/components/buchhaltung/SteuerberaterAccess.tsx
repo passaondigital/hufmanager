@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Share2, Copy, Link2, CheckCircle2, Clock, Trash2, UserCheck, Mail } from "lucide-react";
+import { Share2, Copy, CheckCircle2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -16,10 +16,7 @@ export function SteuerberaterAccess() {
   const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [copied, setCopied] = useState(false);
 
-  // For now, we store tax advisor info in business_settings or use a simple local approach
-  // In a real app, this would create a read-only access token/link
   const { data: businessSettings } = useQuery({
     queryKey: ["business-settings-stb", user?.id],
     queryFn: async () => {
@@ -33,32 +30,6 @@ export function SteuerberaterAccess() {
     },
     enabled: !!user,
   });
-
-  // Generate a shareable summary export link concept
-  const generateShareLink = () => {
-    // In production, this would create a time-limited access token
-    const shareId = btoa(`${user!.id}:${Date.now()}`).replace(/[=+/]/g, "").substring(0, 20);
-    return `${window.location.origin}/stb-zugang/${shareId}`;
-  };
-
-  const handleCopyLink = () => {
-    const link = generateShareLink();
-    navigator.clipboard.writeText(link);
-    setCopied(true);
-    toast.success("Link kopiert! Senden Sie diesen Link an Ihren Steuerberater.");
-    setTimeout(() => setCopied(false), 3000);
-  };
-
-  const handleSendByEmail = () => {
-    if (!email) {
-      toast.error("Bitte E-Mail-Adresse eingeben");
-      return;
-    }
-    // In production, this would send an email with the access link
-    toast.success(`Zugangslink wird an ${email} gesendet`);
-    setEmail("");
-    setName("");
-  };
 
   return (
     <div className="space-y-6">
@@ -106,13 +77,13 @@ export function SteuerberaterAccess() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
-            <Button onClick={handleSendByEmail} className="gap-2 flex-1" disabled={!email}>
+            <Button className="gap-2 flex-1" disabled title="Bald verfügbar">
               <Mail className="h-4 w-4" />
               Per E-Mail einladen
             </Button>
-            <Button variant="outline" onClick={handleCopyLink} className="gap-2">
-              {copied ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
-              {copied ? "Kopiert!" : "Link kopieren"}
+            <Button variant="outline" className="gap-2" disabled title="Bald verfügbar">
+              <Copy className="h-4 w-4" />
+              Link kopieren
             </Button>
           </div>
         </CardContent>
