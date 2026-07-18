@@ -30,7 +30,6 @@ import {
   Globe,
   Link2,
   ShoppingBag,
-  ClipboardList,
   User,
   Car,
   CreditCard,
@@ -43,7 +42,6 @@ import {
   Map,
   Wallet,
   Scale,
-  Zap,
   DollarSign,
   AlertTriangle,
   Mail,
@@ -189,7 +187,6 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       icon: FileText,
       subItems: [
         { title: "Mein Angebot", url: "/mein-angebot", icon: ShoppingBag, description: "Leistungen, Preise & Gruppen" },
-        { title: "Offene Angebote", url: "/angebote", icon: ClipboardList, description: "Kostenvoranschläge" },
       ]
     },
     { 
@@ -238,7 +235,6 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
     { title: "Lager", icon: Warehouse, locked: !isFeatureVisible('beta_features'), url: "/lager", featureKey: "lager" },
     { title: "Mitarbeiter", icon: UsersRound, locked: !isFeatureVisible('module_team'), url: "/team" },
     { title: "Hufi Connect", icon: Link2, locked: !isFeatureVisible('module_network'), url: "/hufi-connect", featureKey: "connect" },
-    { title: "AutoFlow", icon: Zap, locked: false, url: "/autoflow" },
     { title: "E-Mail Marketing", icon: Mail, locked: false, url: "/email-marketing" },
   ].filter((item) => hasFeature((item as { featureKey?: string }).featureKey));
 
@@ -521,7 +517,22 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
           </NavLink>
         )}
 
-        {/* Admin Link removed - access only via Auth page rocket icon */}
+        {/* Mission Control - nur für Admins sichtbar */}
+        {isAdmin && (
+          <NavLink
+            to="/admin/mission-control"
+            onClick={onNavigate}
+            className={cn(
+              "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-200",
+              isActive("/admin/mission-control")
+                ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                : "text-sidebar-accent-foreground hover:bg-sidebar-accent"
+            )}
+          >
+            <Shield className={cn("h-4 w-4 flex-shrink-0", collapsed && "mx-auto")} />
+            {!collapsed && <span className="text-sm">Mission Control</span>}
+          </NavLink>
+        )}
 
         {/* Management - Single Link */}
         <NavLink

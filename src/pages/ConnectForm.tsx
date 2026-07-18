@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getAttribution } from "@/lib/attribution";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle, Loader2, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { z } from "zod";
@@ -150,6 +151,7 @@ const ConnectForm = () => {
           data: {
             full_name: result.data.name,
             role: "client",
+            ...getAttribution(),
           },
         },
       });

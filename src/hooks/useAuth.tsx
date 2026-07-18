@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { clear } from "idb-keyval";
+import { getAttribution } from "@/lib/attribution";
 
 type UserRole = "provider" | "client" | "admin" | "employee" | "partner" | null;
 
@@ -487,6 +488,7 @@ function _checkProviderHasPro(provider: {
         data: {
           full_name: fullName,
           role: role,
+          ...getAttribution(),
         },
       },
     });
