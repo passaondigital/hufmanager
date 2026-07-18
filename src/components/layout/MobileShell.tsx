@@ -5,8 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { Grid3X3, Volume2 } from "lucide-react";
-import { MobileShellVoiceSection, MobileShellInputBar, MobileShellMessages, type ChatAction, type ChatMessage } from "./MobileShellParts";
+import { MobileShellVoiceSection, MobileShellInputBar, MobileShellMessages, HufiVoiceCreditBadge, type ChatAction, type ChatMessage } from "./MobileShellParts";
 import { toast } from "sonner";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { useViewMode } from "@/hooks/useViewMode";
@@ -16,10 +15,13 @@ import { streamWithHufAI, ChatMessage as AIChatMessage } from "@/lib/ai-routing"
 import { askHufiAgent } from "@/lib/hufi-agent-client";
 import { } from "@/lib/hufi-tool-definitions";
 import {
-  detectAndCreateTask, executeNextStep, confirmStep, cancelTask,
+  detectAndCreateTask, executeNextStep, confirmStep, cancelTask, createActionTask,
   type HufiTask,
 } from "@/lib/hufi-task-engine";
-import { observeInteraction, matchSkills, learnFromSession } from "@/lib/hufi-learning-engine";
+import {
+  observeInteraction, matchSkills, learnFromSession,
+  getPendingSkillSuggestion, confirmSkill, processSkillFeedback,
+} from "@/lib/hufi-learning-engine";
 import {
   fetchBusinessContext, type BusinessContext,
 } from "@/lib/hufi-business-context";
@@ -29,9 +31,7 @@ import { detectIntent, type HufiIntent } from "@/lib/hufi-intent";
 import { matchScenario } from "@/lib/hufi-scenarios";
 import { runNavAction, type ActionOutcome, type ActionRole } from "@/lib/hufi-nav-actions";
 import {
-  createAgentTask, approveAndExecuteTask, rejectTask,
   intentActionToTaskType, taskTypeLabel, taskTypeIcon,
-  type AgentTask,
 } from "@/lib/hufi-agent-tasks";
 import { HeyHufi } from "@/components/voice/HeyHufi";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
@@ -46,7 +46,7 @@ import { DraftMessageCard } from "@/components/communication/DraftMessageCard";
 import { DayRouteCard } from "@/components/route/DayRouteCard";
 import { HufiOnboardingChat } from "@/components/onboarding/HufiOnboardingChat";
 import { detectOnboardingType, markOnboardingComplete } from "@/lib/hufi-onboarding-detector";
-import { updateHufiMemory, deleteLastLearnedMemory } from "@/lib/hufi-brain";
+import { updateHufiMemory, deleteLastLearnedMemory, hydrateUserSettingsFromDB } from "@/lib/hufi-brain";
 import {
   HufiFirstRunConsent,
   hasCompletedFirstRun,
@@ -94,6 +94,10 @@ export function MobileShell() {
   const [inputText, setInputText] = useState("");
   const [responding, setResponding] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const messagesRef = useRef<ChatMessage[]>([]);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+  const userIdRef = useRef<string | undefined>(undefined);
+  useEffect(() => { userIdRef.current = user?.id; }, [user?.id]);
   const [showDsgvoModal, setShowDsgvoModal] = useState(false);
   const [showFirstRunConsent, setShowFirstRunConsent] = useState(false);
   const [showMigrationBanner, setShowMigrationBanner] = useState(false);
@@ -117,6 +121,7 @@ export function MobileShell() {
   const greetingSetRef = useRef(false);
   const bizCtxRef = useRef<BusinessContext | null>(null);
   const shownAlertsRef = useRef<Set<string>>(new Set());
+  const skillSuggestionShownRef = useRef(false);
   const migrationCheckedRef = useRef(false);
   const followUpTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const followUpRoundRef = useRef(0); // max follow-up rounds per wake session
@@ -210,18 +215,21 @@ export function MobileShell() {
   // ── First-run consent gate (overrides legacy DSGVO modal for new users) ────
   useEffect(() => {
     if (!user?.id) return;
-    if (!hasCompletedFirstRun(user.id)) {
-      setShowFirstRunConsent(true);
-      return;
-    }
-    // Returning user: check DSGVO via DB as before
-    checkDsgvoConsent(user.id).then((consented) => {
-      if (!consented) setShowDsgvoModal(true);
-      else bootGreeting(user.id, true);
+    const uid = user.id;
+    hydrateUserSettingsFromDB(uid).then(() => {
+      if (!hasCompletedFirstRun(uid)) {
+        setShowFirstRunConsent(true);
+        return;
+      }
+      // Returning user: check DSGVO via DB as before
+      checkDsgvoConsent(uid).then((consented) => {
+        if (!consented) setShowDsgvoModal(true);
+        else bootGreeting(uid, true);
+      });
+      // HINWEIS: Der Onboarding-Einstieg wird AUSSCHLIESSLICH im Detector-Effekt unten
+      // entschieden (detectOnboardingType) — kein separater onboarding_completed-Trigger
+      // mehr, sonst feuern zwei Onboardings gleichzeitig.
     });
-    // HINWEIS: Der Onboarding-Einstieg wird AUSSCHLIESSLICH im Detector-Effekt unten
-    // entschieden (detectOnboardingType) — kein separater onboarding_completed-Trigger
-    // mehr, sonst feuern zwei Onboardings gleichzeitig.
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Migration banner check (existing users only, shown once) ─────────────
@@ -351,7 +359,7 @@ export function MobileShell() {
       // C) Nach Begrüßung automatisch in Listening wechseln
       hufiSpeak(text, () => {
         setPendingSpokenGreeting(null);
-        if (SR_SUPPORTED && !voice.isRecording && !voice.isProcessing) {
+        if (SR_SUPPORTED && !voice.isRecording && !voice.isProcessing && !isTtsSpeaking) {
           setTimeout(() => {
             voiceSessionRef.current = { active: true, texts: [] };
             void voice.startRecording();
@@ -374,6 +382,31 @@ export function MobileShell() {
     };
   }, [pendingSpokenGreeting, user?.id, hufiSpeak]);
 
+  // Audio-Unlock: erste Nutzer-Geste irgendwo in der App primed die Media-Wiedergabe,
+  // damit ElevenLabs (Cloud-Audio) danach auch OHNE Klick auf "Hufi" automatisch spielt
+  // (Briefing, Voice-Antworten). Ohne dieses Priming blockieren Browser-Autoplay-Regeln
+  // den ersten programmatischen audio.play()-Aufruf.
+  useEffect(() => {
+    if (!user?.id) return;
+    let unlocked = false;
+    const unlock = () => {
+      if (unlocked) return;
+      unlocked = true;
+      const silent = new Audio(
+        "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA="
+      );
+      silent.play().then(() => silent.pause()).catch(() => {});
+      cleanup();
+    };
+    const cleanup = () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("keydown", unlock, { once: true });
+    return cleanup;
+  }, [user?.id]);
+
   async function bootGreeting(userId: string, consented: boolean) {
     if (greetingSetRef.current) return;
     greetingSetRef.current = true;
@@ -394,7 +427,11 @@ export function MobileShell() {
 
       if (shouldShowBriefing()) {
         fetchWeatherContext().then((weather) => {
-          setProactiveBriefing(buildBriefingPayload(ctx, weather, bizCtxRef.current));
+          const briefing = buildBriefingPayload(ctx, weather, bizCtxRef.current);
+          // Nur zeigen wenn relevanter Inhalt — wenn nur Greeting, still halten
+          if (briefing.lines.length > 1) {
+            setProactiveBriefing(briefing);
+          }
         });
       }
 
@@ -403,7 +440,10 @@ export function MobileShell() {
       if (briefingTime && userId && !hasBriefingShownToday(userId, briefingTime)) {
         markBriefingShown(userId, briefingTime);
         const timeBriefing = buildDailyBriefing(ctx, briefingTime, null);
-        setProactiveBriefing((prev) => prev ?? timeBriefing);
+        // Nur zeigen wenn relevanter Inhalt — wenn nichts los ist, still halten
+        if (timeBriefing.totalItems > 0) {
+          setProactiveBriefing((prev) => prev ?? timeBriefing);
+        }
       }
 
       // TTS greeting — opt-in only, fires on first user gesture
@@ -428,6 +468,24 @@ export function MobileShell() {
         unpaidInvoices: ctx.unpaidInvoices,
       });
       queueSpokenGreetingIfEligible(userId, spokenGreeting);
+
+      // Lern-Loop schließen: beobachten (observeInteraction) → vorschlagen (suggestSkill)
+      // → HIER bestätigen/ablehnen (confirmSkill/processSkillFeedback).
+      if (!skillSuggestionShownRef.current) {
+        skillSuggestionShownRef.current = true;
+        getPendingSkillSuggestion(userId).then((skill) => {
+          if (!skill) return;
+          addMsg({
+            role: "ai",
+            text: `💡 Ich habe bemerkt, dass du öfter "${skill.description ?? skill.name}" machst.\n\nSoll ich das ab jetzt automatisch für dich vorbereiten?`,
+            ts: Date.now(),
+            actions: [
+              { label: "✓ Ja, übernehmen", actionKey: `skill_confirm:${skill.id}` },
+              { label: "✗ Nein danke",     actionKey: `skill_reject:${skill.id}` },
+            ],
+          });
+        }).catch(() => {});
+      }
     } catch {
       // silently fail — no error bubble on startup
     }
@@ -671,7 +729,29 @@ export function MobileShell() {
     if (voice.isRecording) voice.stopRecording();
     setHufiPresenceState("bereit");
     void hufiSpeak("Okay. Ich bin bereit wenn du mich brauchst.");
+    triggerSessionLearning();
   }
+
+  // Fire-and-forget: am Session-Ende aus den beobachteten Patterns lernen und ggf. Skills vorschlagen.
+  // Non-blocking und fehlertolerant — learnFromSession() fängt eigene Fehler bereits intern ab.
+  // Nutzt Refs statt State-Closures, damit sie auch aus dem Unmount-Cleanup sicher aktuelle Werte sieht.
+  function triggerSessionLearning() {
+    const userId = userIdRef.current;
+    if (!userId) return;
+    const snapshot = messagesRef.current;
+    if (snapshot.length === 0) return;
+    const completedTaskTypes = snapshot
+      .filter((m) => m.hufiTask?.status === "executed")
+      .map((m) => m.hufiTask!.type);
+    void learnFromSession(userId, null, snapshot, completedTaskTypes).catch(() => {});
+  }
+
+  // Session-Ende beim Verlassen der Chat-Ansicht (z.B. Tab-Wechsel innerhalb der App) — deckt auch
+  // reine Text-Chats ohne aktiven Voice-Loop ab.
+  useEffect(() => {
+    return () => { triggerSessionLearning(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // VAD Auto-Stop: wenn recording von true → false wechselt (ohne manuellen Stop)
   const prevRecordingRef = useRef(false);
@@ -823,31 +903,21 @@ export function MobileShell() {
 
   async function handleMsgAction(key: string, msg: ChatMessage) {
     // ── Agent Task: Bestätigen ────────────────────────────────────────────────
+    // (Einzelaktionen laufen als Ein-Schritt-Task über hufi_task_queue — actionKey: task_approve:<taskId>:<stepId>)
     if (key.startsWith("task_approve:") && user?.id) {
-      const taskId = key.slice("task_approve:".length);
+      const [taskId, stepId] = key.slice("task_approve:".length).split(":");
       setMessages((prev) => prev.map((m) =>
         m.ts === msg.ts ? { ...m, actions: undefined, text: m.text + "\n\n⏳ Wird ausgeführt…" } : m
       ));
-      const fakeTask: AgentTask = {
-        id: taskId,
-        user_id: user.id,
-        session_id: sessionId.current,
-        type: "generic_action",
-        status: "approved",
-        payload: {},
-        explanation: null,
-        user_message: null,
-        result: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        executed_at: null,
-      };
-      // Fetch real task to get type + payload
-      const { data } = await supabase.from("agent_tasks").select("*").eq("id", taskId).maybeSingle();
-      const realTask = (data as AgentTask | null) ?? fakeTask;
-      let result: { success: boolean; message: string };
+      let result = { success: false, message: "Fehler beim Ausführen." };
       try {
-        result = await approveAndExecuteTask(realTask, user.id);
+        const updated = await confirmStep(taskId, stepId, user.id);
+        const step = updated?.steps.find((s) => s.id === stepId);
+        const stepResult = step?.result as { success?: boolean; message?: string } | undefined;
+        result = {
+          success: !!stepResult?.success,
+          message: stepResult?.message ?? step?.error ?? (step?.status === "done" ? "Erledigt." : "Fehler beim Ausführen."),
+        };
       } catch (err) {
         result = { success: false, message: (err as Error)?.message ?? "Fehler beim Ausführen." };
       }
@@ -862,11 +932,29 @@ export function MobileShell() {
     }
 
     // ── Agent Task: Ablehnen ──────────────────────────────────────────────────
-    if (key.startsWith("task_reject:")) {
-      const taskId = key.slice("task_reject:".length);
-      await rejectTask(taskId);
+    if (key.startsWith("task_reject:") && user?.id) {
+      const [taskId] = key.slice("task_reject:".length).split(":");
+      await cancelTask(taskId, user.id);
       setMessages((prev) => prev.map((m) =>
         m.ts === msg.ts ? { ...m, actions: undefined, text: m.text + "\n\n✖ Abgebrochen." } : m
+      ));
+      return;
+    }
+
+    // ── Skill-Vorschlag: Bestätigen/Ablehnen (Lern-Loop schließen) ─────────────
+    if (key.startsWith("skill_confirm:") && user?.id) {
+      const skillId = key.slice("skill_confirm:".length);
+      await confirmSkill(skillId, user.id);
+      setMessages((prev) => prev.map((m) =>
+        m.ts === msg.ts ? { ...m, actions: undefined, text: m.text + "\n\n✅ Erledigt — ich mache das ab jetzt automatisch." } : m
+      ));
+      return;
+    }
+    if (key.startsWith("skill_reject:") && user?.id) {
+      const skillId = key.slice("skill_reject:".length);
+      await processSkillFeedback(skillId, user.id, false);
+      setMessages((prev) => prev.map((m) =>
+        m.ts === msg.ts ? { ...m, actions: undefined, text: m.text + "\n\n✖ Alles klar, mache ich nicht automatisch." } : m
       ));
       return;
     }
@@ -1065,7 +1153,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
       console.warn("[Hufi] Action-Plan Fallback auf Keywords:", e);
     }
 
-    const task  = await createAgentTask(user.id, taskType, payload, explanation, text, sessionId.current);
+    const task  = await createActionTask(user.id, taskType, payload, explanation, text, sessionId.current);
     const icon  = taskTypeIcon(taskType);
     const label = taskTypeLabel(taskType);
 
@@ -1078,12 +1166,13 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
       return;
     }
 
+    const stepId = task.steps[0]?.id ?? "";
     addMsg({
       role: "ai",
       text: `${icon} ${label}\n\n${explanation}`,
       ts: Date.now(),
       actions: [
-        { label: "✓ Bestätigen", actionKey: `task_approve:${task.id}` },
+        { label: "✓ Bestätigen", actionKey: `task_approve:${task.id}:${stepId}` },
         { label: "✗ Ablehnen",   actionKey: `task_reject:${task.id}` },
       ],
     });
@@ -1472,6 +1561,9 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
   function handleKiConsent() {
     setKiConsent("granted");
     ulset(user?.id ?? "", USER_STORAGE_KEYS.KI_CONSENT, "granted");
+    if (user?.id) {
+      updateHufiMemory(user.id, "permission", "ki_consent", { granted: true, ts: new Date().toISOString() }, "manual");
+    }
     setShowKiModal(false);
     const pending = pendingChatText;
     setPendingChatText("");
@@ -1481,6 +1573,9 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
   function handleKiDecline() {
     setKiConsent("denied");
     ulset(user?.id ?? "", USER_STORAGE_KEYS.KI_CONSENT, "denied");
+    if (user?.id) {
+      updateHufiMemory(user.id, "permission", "ki_consent", { granted: false, ts: new Date().toISOString() }, "manual");
+    }
     setShowKiModal(false);
     setPendingChatText("");
   }
@@ -1605,20 +1700,6 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
           maxWidth: "100vw",
           boxSizing: "border-box",
         }}>
-          {/* Grid-Menü → /management — ERSTES Element ganz links */}
-          <button
-            onClick={() => navigate("/management")}
-            title="Menü"
-            style={{
-              width: 30, height: 30, borderRadius: 8,
-              background: "#F3F4F6", border: "none",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", flexShrink: 0,
-            }}
-          >
-            <Grid3X3 size={15} style={{ color: "#374151" }} />
-          </button>
-
           {/* Logo + Titel + Presence-State — tippbar zum Aktivieren */}
           <button
             onClick={activateHufi}
@@ -1670,31 +1751,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
           {/* Kompakte Aktions-Chips rechts — nur das Wichtigste */}
           <HufiWeatherWidget compact={true} />
 
-          {/* TTS-Replay — sichtbar wenn Greeting vorhanden (hasGreeting = state, nicht ref) */}
-          {ttsSupported && hasGreeting && (
-            <button
-              type="button"
-              onClick={replayGreeting}
-              title="Begrüßung erneut sprechen"
-              aria-label="Begrüßung erneut sprechen"
-              style={{
-                height: 28, borderRadius: 8,
-                background: pendingSpokenGreeting ? "#F97316" : "rgba(249,115,22,0.1)",
-                border: `1px solid ${pendingSpokenGreeting ? "#F97316" : "rgba(249,115,22,0.2)"}`,
-                color: pendingSpokenGreeting ? "#FFFFFF" : "#F97316",
-                cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-                flexShrink: 0,
-                padding: pendingSpokenGreeting ? "0 8px" : "0 6px",
-                fontSize: 10, fontWeight: 700,
-              }}
-            >
-              <Volume2 size={12} />
-              {pendingSpokenGreeting && <span>Hören</span>}
-            </button>
-          )}
-
-          {/* Hey Hufi — immer aktiv wenn SR unterstützt */}
+          {/* Hey Hufi — immer aktiv wenn SR unterstützt (Stimme wird in Einstellungen gesteuert) */}
           {SR_SUPPORTED && user && (
             <HeyHufi
               enabled={!recording && !transcribing && !responding && !isTtsSpeaking && !isVoiceSpeaking}
@@ -1703,50 +1760,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
             />
           )}
 
-          {/* Profi ↔ Privat — nur für Provider */}
-          {role === "provider" && (
-            <button
-              onClick={() => {
-                const next = isPrivat ? "pro" : "privat";
-                setViewMode(next);
-                navigate(next === "privat" ? "/client-home" : "/home");
-              }}
-              title={isPrivat ? "Zurück zum Profi-Modus" : "Privat-Modus (eigene Pferde)"}
-              style={{
-                height: 24, borderRadius: 20, flexShrink: 0,
-                background: isPrivat ? "rgba(139,92,246,0.12)" : "rgba(249,115,22,0.1)",
-                border: `1px solid ${isPrivat ? "rgba(139,92,246,0.35)" : "rgba(249,115,22,0.25)"}`,
-                color: isPrivat ? "#8B5CF6" : "#F97316",
-                padding: "0 7px", fontSize: 8, fontWeight: 700,
-                letterSpacing: ".05em", textTransform: "uppercase" as const,
-                cursor: "pointer", fontFamily: "inherit",
-                display: "flex", alignItems: "center", gap: 3,
-              }}
-            >
-              {isPrivat ? "Privat" : "Profi"}
-            </button>
-          )}
-
-          {/* Voice-Loop-Toggle */}
-          {ttsSupported && user && (
-            <button
-              type="button"
-              onClick={voiceLoopActive ? stopVoiceLoop : startVoiceLoop}
-              title={voiceLoopActive ? "Gespräch beenden" : "Gespräch starten"}
-              style={{
-                height: 28, borderRadius: 8, flexShrink: 0,
-                background: voiceLoopActive ? "#F97316" : "transparent",
-                border: `1px solid ${voiceLoopActive ? "#F97316" : "rgba(249,115,22,0.3)"}`,
-                color: voiceLoopActive ? "#FFFFFF" : "#F97316",
-                cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
-                padding: "0 7px", fontSize: 9, fontWeight: 700, letterSpacing: ".04em",
-                textTransform: "uppercase",
-                animation: voiceLoopActive ? "pulse-rec 1.5s ease-out infinite" : "none",
-              }}
-            >
-              {voiceLoopActive ? "⏹ Stop" : "🎙 Loop"}
-            </button>
-          )}
+          {user && <HufiVoiceCreditBadge onClick={() => navigate("/management/guthaben")} />}
 
           <NotificationBell className="text-gray-500 hover:text-gray-800 hover:bg-gray-100" />
 
@@ -1788,56 +1802,38 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
               alt=""
             />
           </div>
-          {/* Next appointment card */}
+          {/* Next appointment — schmale Zeile, kein großer Block (UI-Aufräumen, 17.07.2026) */}
           {nextAppt && horse && (
             <button
               onClick={() => navigate("/kalender")}
               className="msg-in"
               style={{
-                background: "linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)",
+                background: "rgba(249,115,22,0.06)",
                 border: "1px solid rgba(249,115,22,0.15)",
-                borderRadius: 18,
-                boxShadow: "0 2px 12px rgba(249,115,22,0.08)",
-                padding: "12px 14px",
+                borderRadius: 12,
+                padding: "7px 12px",
                 display: "flex",
                 alignItems: "center",
-                gap: 12,
+                gap: 8,
                 cursor: "pointer",
                 width: "100%",
                 textAlign: "left",
               }}
             >
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: "#F3F4F6", border: "1px solid #E5E7EB", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, overflow: "hidden", flexShrink: 0 }}>
-                {(horse as { photo_url?: string }).photo_url
-                  ? <img src={(horse as { photo_url: string }).photo_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  : "🐴"}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase" as const, color: "#F97316", marginBottom: 3 }}>
-                  Nächster Termin
-                </div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#1A1A1A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {(horse as { name?: string }).name}
-                  {(nextAppt.client as { full_name?: string } | null)?.full_name
-                    ? ` · ${(nextAppt.client as { full_name: string }).full_name}` : ""}
-                </div>
-                <div style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>
-                  {dateLabel}{nextAppt.time ? ` · ${nextAppt.time.slice(0, 5)} Uhr` : ""}
-                </div>
-              </div>
-              <div style={{
-                background: isToday ? "#F97316" : "#F3F4F6",
-                color: isToday ? "#FFFFFF" : "#6B7280",
-                borderRadius: 20,
-                padding: "3px 9px",
-                fontSize: 9,
-                fontWeight: 700,
-                letterSpacing: ".06em",
-                textTransform: "uppercase" as const,
-                flexShrink: 0,
-              }}>
-                {isToday ? "Heute" : "Nächster"}
-              </div>
+              <span style={{ fontSize: 13, flexShrink: 0 }}>🐴</span>
+              <span style={{ fontSize: 12, color: "#1A1A1A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: 1, minWidth: 0 }}>
+                <span style={{ fontWeight: 700 }}>{(horse as { name?: string }).name}</span>
+                {" · "}{dateLabel}{nextAppt.time ? `, ${nextAppt.time.slice(0, 5)} Uhr` : ""}
+              </span>
+              {isToday && (
+                <span style={{
+                  background: "#F97316", color: "#FFFFFF", borderRadius: 20,
+                  padding: "2px 8px", fontSize: 9, fontWeight: 700,
+                  letterSpacing: ".06em", textTransform: "uppercase" as const, flexShrink: 0,
+                }}>
+                  Heute
+                </span>
+              )}
             </button>
           )}
 
