@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Building2, CalendarDays, Bell, Globe, Star, Smartphone,
-  CreditCard, FileText, Scale, LifeBuoy, MessageSquare,
+  CreditCard, FileText, Scale, LifeBuoy,
 } from "lucide-react";
 import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
 
@@ -125,13 +125,7 @@ export default function ManagementOverview() {
           icon={<LifeBuoy className={`${ic} text-muted-foreground`} />}
           title="1. Hilfe Kundencenter"
           description="FAQ & Hilfe"
-          onClick={() => navigate("/management/hilfe")}
-        />
-        <Tile
-          icon={<MessageSquare className={`${ic} text-muted-foreground`} />}
-          title="Feedback geben"
-          description="Feature-Wünsche & Verbesserungen"
-          onClick={() => navigate("/management/feedback")}
+          onClick={() => navigate("/support")}
         />
       </TileCategory>
     </div>

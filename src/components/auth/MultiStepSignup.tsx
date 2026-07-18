@@ -12,6 +12,7 @@ import { DACH_COUNTRIES, type DachCountry } from "@/lib/dach";
 import { WiderrufsausschlussCheckbox } from "@/components/consent/WiderrufsausschlussCheckbox";
 import { ClientTypeSelection, type ClientType } from "@/components/auth/ClientTypeSelection";
 import { useHufiTTS } from "@/hooks/useHufiTTS";
+import { useAuth } from "@/hooks/useAuth";
 
 type Salutation = "herr" | "frau" | "divers" | "none";
 
@@ -82,7 +83,8 @@ const SALUTATION_OPTIONS = [
 ] as const;
 
 export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: MultiStepSignupProps) {
-  const { speak, isSupported } = useHufiTTS();
+  const { user } = useAuth();
+  const { speak, isSupported } = useHufiTTS(user?.id ?? "");
   const [step, setStep] = useState(0);
   const [fullName, setFullName] = useState("");
   const [salutation, setSalutation] = useState<Salutation>("none");

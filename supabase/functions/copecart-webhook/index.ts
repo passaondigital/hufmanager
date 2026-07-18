@@ -8,30 +8,29 @@ const corsHeaders = {
 };
 
 // Map Copecart product IDs to subscription plans
-// HufManager Copecart Products (NEW – March 2026):
-// - Starter (9,90€): 8ef10f74
-// - Pro (29€): 1996da6f
-// - Duo (49€): 953da638
-// - Team (79€): badae7d2
-// Legacy IDs kept for backward compatibility:
+// HufManager Copecart Products (NEW – Juli 2026):
+// - Early Bird Abo (9,95€): 0a0921ba → voller Zugang, gemappt auf "pro"-Feature-Set
+// Legacy IDs kept for backward compatibility with existing subscriptions:
 const PRODUCT_PLAN_MAP: Record<string, string> = {
-  // New product IDs
-  "8ef10f74": "starter",      // Starter 9,90€/Monat
-  "1996da6f": "pro",          // Pro 29€/Monat
-  "953da638": "duo",          // Duo 49€/Monat
-  "badae7d2": "team",         // Team 79€/Monat
+  // Aktuelles Produkt
+  "0a0921ba": "pro",          // Early Bird 9,95€/Monat – voller Zugang
   // Legacy product IDs (keep for existing subscriptions)
+  "8ef10f74": "starter",
+  "1996da6f": "pro",
+  "953da638": "duo",
+  "badae7d2": "team",
   "9bb65569": "starter",
   "ec500b5e": "pro",
   "483bbb5b": "pro",
 };
 
 const PRODUCT_PLAN_OVERRIDE_MAP: Record<string, string> = {
+  "0a0921ba": "copecart_pro",
+  // Legacy
   "8ef10f74": "copecart_starter",
   "1996da6f": "copecart_pro",
   "953da638": "copecart_duo",
   "badae7d2": "copecart_team",
-  // Legacy
   "9bb65569": "copecart_starter",
   "ec500b5e": "copecart_pro",
   "483bbb5b": "copecart_pro",
@@ -171,6 +170,21 @@ function isVaultProduct(productId: string): boolean {
 
 function getVaultProductMeta(productId: string): VaultProductMeta | null {
   return VAULT_PRODUCT_MAP[productId] ?? null;
+}
+
+// ─── Voice-Guthaben-Produkte ────────────────────────────────────────────────
+// 1 Einheit = 1 Cent = 1 Sekunde Premium-Voice (siehe consume_hufi_voice_credit
+// in der Migration 20260717120000_hufi_voice_credits.sql). Die Cent-Beträge
+// hier entsprechen also direkt dem Kaufpreis in Euro-Cent, nicht 1:1 den
+// tatsächlichen ElevenLabs-Kosten.
+const VOICE_CREDIT_PRODUCT_MAP: Record<string, number> = {
+  "d0cdf68a": 500,   // 5€ Guthaben
+  "023890f8": 1000,  // 10€ Guthaben
+  "2556cac0": 2500,  // 25€ Guthaben
+};
+
+function getVoiceCreditAmountCents(productId: string): number | null {
+  return VOICE_CREDIT_PRODUCT_MAP[productId] ?? null;
 }
 
 // ─── BHS Balance Produkte ─────────────────────────────────────────────────────
@@ -808,6 +822,58 @@ const handler = async (req: Request): Promise<Response> => {
         plan: vaultMeta.plan,
         cycle: vaultMeta.cycle,
         status: vaultUpdate.vault_plan_status ?? null,
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // ─── VOICE-GUTHABEN BRANCH ──────────────────────────────────────────────
+    // Einmalkauf von Zusatz-Guthaben (5€/10€/25€). Berührt weder
+    // subscription_plan noch plan_override — reines Add-on. Nutzer muss
+    // bereits registriert sein (kein Auto-Signup für einen Guthaben-Kauf).
+    const voiceCreditAmount = getVoiceCreditAmountCents(productId);
+    if (voiceCreditAmount !== null) {
+      if (!profile) {
+        console.warn("[copecart][voice-credit] No profile found:", customerEmail, "| Product:", productId);
+        return new Response(JSON.stringify({
+          success: true,
+          warning: "Voice-Guthaben gekauft, aber kein passender Account gefunden",
+          email: customerEmail,
+        }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      if (!isPaymentEvent) {
+        console.log("[copecart][voice-credit] Unhandled event type for credit product:", eventType);
+        return new Response(JSON.stringify({ success: true, message: "Event type not handled" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      const { error: creditErr } = await supabase.rpc("add_purchased_voice_credits", {
+        p_user_id: profile.id,
+        p_amount_cents: voiceCreditAmount,
+        p_copecart_order_id: subscriptionId ?? null,
+        p_description: `Guthaben-Kauf (${(voiceCreditAmount / 100).toFixed(2)}€)`,
+      });
+
+      if (creditErr) {
+        console.error("[copecart][voice-credit] Gutschrift fehlgeschlagen:", creditErr.message);
+        return new Response(JSON.stringify({ error: "Voice-Guthaben-Gutschrift fehlgeschlagen" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      console.log("[copecart][voice-credit] Gutgeschrieben:", profile.id, voiceCreditAmount, "Cent");
+      return new Response(JSON.stringify({
+        success: true,
+        scope: "voice_credit",
+        amount_cents: voiceCreditAmount,
       }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },

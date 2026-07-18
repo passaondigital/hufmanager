@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { X, Volume2, CalendarDays, Receipt, CloudSun, Lightbulb } from "lucide-react";
 import { useHufiTTS } from "@/hooks/useHufiTTS";
+import { useAuth } from "@/hooks/useAuth";
 import { markBriefingShown, type BriefingPayload } from "@/lib/hufai-proactive";
 
 interface Props {
@@ -13,7 +14,8 @@ const LINE_ICONS = [CalendarDays, Receipt, CloudSun, Lightbulb];
 
 export function ProactiveBriefing({ payload, onDismiss }: Props) {
   const navigate = useNavigate();
-  const { speak, cancel, isSupported } = useHufiTTS();
+  const { user } = useAuth();
+  const { speak, cancel, isSupported } = useHufiTTS(user?.id ?? "");
 
   useEffect(() => {
     markBriefingShown();

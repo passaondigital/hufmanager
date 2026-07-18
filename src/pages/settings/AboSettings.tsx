@@ -1,81 +1,28 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Crown, Check, ExternalLink, Mail, Shield, Server, CreditCard, Zap, Users } from "lucide-react";
+import { ArrowLeft, Crown, Check, ExternalLink, Mail, Shield, Server, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useSubscription, PLAN_HORSE_LIMITS } from "@/hooks/useSubscription";
 import { cn } from "@/lib/utils";
 
-const PLANS = [
-  {
-    id: "starter",
-    name: "Starter",
-    price: "9,90",
-    interval: "monatlich",
-    maxHorses: 10,
-    users: 1,
-    highlight: false,
-    features: [
-      "Kalender & Terminverwaltung",
-      "Kundenverwaltung",
-      "Digitale Pferdeakte",
-      "Bis zu 10 Pferde",
-    ],
-    copecartId: "hufi-starter",
-  },
-  {
-    id: "pro",
-    name: "PRO",
-    price: "29",
-    interval: "monatlich",
-    maxHorses: 75,
-    users: 1,
-    highlight: true,
-    features: [
-      "Alles aus Starter",
-      "GPS-Navigation & Tour",
-      "KI-Assistent (Hufi Brain)",
-      "Automatische Erinnerungen",
-      "Rechnungen & Buchhaltung",
-      "Analyse & Statistiken",
-      "Bis zu 75 Pferde",
-    ],
-    copecartId: "hufi-pro",
-  },
-  {
-    id: "duo",
-    name: "DUO",
-    price: "49",
-    interval: "monatlich",
-    maxHorses: 150,
-    users: 2,
-    highlight: false,
-    features: [
-      "Alles aus PRO",
-      "2 Nutzer-Accounts",
-      "Team-Kalender",
-      "Bis zu 150 Pferde",
-    ],
-    copecartId: "hufi-duo",
-  },
-  {
-    id: "team",
-    name: "TEAM",
-    price: "79",
-    interval: "monatlich",
-    maxHorses: Infinity,
-    users: Infinity,
-    highlight: false,
-    features: [
-      "Alles aus DUO",
-      "Unbegrenzte Nutzer",
-      "Erweiterte Analysen",
-      "Unbegrenzte Pferde",
-      "Priority Support",
-    ],
-    copecartId: "hufi-team",
-  },
-];
+const EARLY_BIRD_CHECKOUT_URL = "https://copecart.com/products/0a0921ba/checkout";
+
+const EARLY_BIRD_PLAN = {
+  name: "Early Bird",
+  price: "9,95",
+  interval: "monatlich",
+  features: [
+    "Kalender & smarte Tourenplanung",
+    "Kunden- & Pferdeverwaltung",
+    "Vollständige Pferdeakte & Befunde",
+    "Rechnungen in Sekunden",
+    "Hufi KI-Assistent & Sprachsteuerung",
+    "Material-Verwaltung",
+    "Offline-Modus & PWA",
+    "Voller Zugang, unbegrenzt Pferde",
+  ],
+};
 
 const PLAN_LABELS: Record<string, string> = {
   starter: "Starter",
@@ -92,8 +39,8 @@ export default function AboSettings() {
   const currentPlanLabel = plan ? (PLAN_LABELS[plan] ?? plan) : "Starter";
   const isLifetime = status === "lifetime" || planOverride === "lifetime_grant";
 
-  const handleUpgrade = (copecartId: string) => {
-    window.open(`https://copecart.com/products/${copecartId}/checkout`, "_blank");
+  const handleUpgrade = () => {
+    window.open(EARLY_BIRD_CHECKOUT_URL, "_blank");
   };
 
   const handleKuendigung = () => {
@@ -156,7 +103,7 @@ export default function AboSettings() {
         <CardContent className="space-y-4">
           {/* Features checklist */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {(PLANS.find(p => p.id === plan || (plan === "advanced" && p.id === "pro"))?.features ?? PLANS[0].features).map((f) => (
+            {EARLY_BIRD_PLAN.features.map((f) => (
               <div key={f} className="flex items-center gap-2 text-sm">
                 <Check className="h-4 w-4 text-green-600 shrink-0" />
                 <span>{f}</span>
@@ -186,65 +133,38 @@ export default function AboSettings() {
         </CardContent>
       </Card>
 
-      {/* Upgrade Options */}
-      {!isLifetime && (
+      {/* Upgrade Option */}
+      {!isLifetime && plan !== "pro" && plan !== "advanced" && (
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold">Weitere Pakete</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {PLANS.filter(p => p.id !== plan && !(plan === "advanced" && p.id === "pro")).map((p) => (
-              <Card
-                key={p.id}
-                className={cn(
-                  "relative border transition-shadow hover:shadow-md",
-                  p.highlight && "border-primary/60"
+          <h2 className="text-lg font-semibold">Early Bird Paket</h2>
+          <Card className="relative border border-primary/60 transition-shadow hover:shadow-md">
+            <div className="absolute -top-2.5 left-4">
+              <Badge className="bg-primary text-white text-xs">Early Bird</Badge>
+            </div>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">{EARLY_BIRD_PLAN.name}</CardTitle>
+                <span className="text-lg font-bold">{EARLY_BIRD_PLAN.price}€<span className="text-xs font-normal text-muted-foreground">/Monat</span></span>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <ul className="space-y-1">
+                {EARLY_BIRD_PLAN.features.slice(0, 3).map((f) => (
+                  <li key={f} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Check className="h-3 w-3 text-primary shrink-0" />
+                    {f}
+                  </li>
+                ))}
+                {EARLY_BIRD_PLAN.features.length > 3 && (
+                  <li className="text-xs text-muted-foreground pl-4">+{EARLY_BIRD_PLAN.features.length - 3} weitere</li>
                 )}
-              >
-                {p.highlight && (
-                  <div className="absolute -top-2.5 left-4">
-                    <Badge className="bg-primary text-white text-xs">Beliebteste Wahl</Badge>
-                  </div>
-                )}
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">{p.name}</CardTitle>
-                    <span className="text-lg font-bold">{p.price}€<span className="text-xs font-normal text-muted-foreground">/Monat</span></span>
-                  </div>
-                  <CardDescription className="flex items-center gap-3 text-xs">
-                    <span className="flex items-center gap-1">
-                      <Zap className="h-3 w-3" />
-                      {p.maxHorses === Infinity ? "∞" : p.maxHorses} Pferde
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Users className="h-3 w-3" />
-                      {p.users === Infinity ? "∞" : p.users} {p.users === 1 ? "Nutzer" : "Nutzer"}
-                    </span>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <ul className="space-y-1">
-                    {p.features.slice(0, 3).map((f) => (
-                      <li key={f} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <Check className="h-3 w-3 text-primary shrink-0" />
-                        {f}
-                      </li>
-                    ))}
-                    {p.features.length > 3 && (
-                      <li className="text-xs text-muted-foreground pl-4">+{p.features.length - 3} weitere</li>
-                    )}
-                  </ul>
-                  <Button
-                    size="sm"
-                    className="w-full"
-                    variant={p.highlight ? "default" : "outline"}
-                    onClick={() => handleUpgrade(p.copecartId)}
-                  >
-                    Auf {p.name} wechseln
-                    <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+              </ul>
+              <Button size="sm" className="w-full" onClick={handleUpgrade}>
+                Jetzt upgraden
+                <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       )}
 

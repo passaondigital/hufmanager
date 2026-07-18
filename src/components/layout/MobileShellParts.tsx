@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { Loader2, X, CalendarPlus, Receipt, MessageSquare, Send, Camera } from "lucide-react";
+import { Loader2, X, CalendarPlus, Receipt, MessageSquare, Send, Camera, Mic } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { HufiVoiceWave } from "@/components/voice/HufiVoiceWave";
 import { HufiOrb } from "@/components/voice/HufiOrb";
@@ -8,6 +8,31 @@ import { HufiTaskCard } from "@/components/tasks/HufiTaskCard";
 import type { HufiSearchResult } from "@/lib/hufi-search";
 import type { HufiIntent } from "@/lib/hufi-intent";
 import type { HufiTask } from "@/lib/hufi-task-engine";
+import { useHufiVoiceCredits, formatMinSec } from "@/hooks/useHufiVoiceCredits";
+
+// ── Voice-Guthaben-Badge (Header) ─────────────────────────────────────────────
+
+export function HufiVoiceCreditBadge({ onClick }: { onClick: () => void }) {
+  const { totalAvailableCents, isLow, isLoading } = useHufiVoiceCredits();
+  if (isLoading) return null;
+  return (
+    <button
+      onClick={onClick}
+      title="Voice-Guthaben"
+      style={{
+        height: 28, borderRadius: 8, flexShrink: 0,
+        background: isLow ? "rgba(239,68,68,0.08)" : "rgba(249,115,22,0.06)",
+        border: `1px solid ${isLow ? "rgba(239,68,68,0.3)" : "rgba(249,115,22,0.18)"}`,
+        color: isLow ? "#EF4444" : "#F97316",
+        cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
+        padding: "0 8px", fontSize: 11, fontWeight: 700, fontFamily: "inherit",
+      }}
+    >
+      <Mic size={11} />
+      {formatMinSec(totalAvailableCents)}
+    </button>
+  );
+}
 
 // ── Shared types ──────────────────────────────────────────────────────────────
 
@@ -333,7 +358,7 @@ export function MobileShellMessages({
               { label: "Nächster Termin", route: "/kalender" },
               { label: "Offene Rechnungen", route: "/rechnungen" },
               { label: "Heute planen", route: "/kalender" },
-              { label: "FAQ & Hilfe", route: "/hufi/faq" },
+              { label: "FAQ & Hilfe", route: "/support" },
             ].map((q) => (
               <button
                 key={q.label}
@@ -342,7 +367,8 @@ export function MobileShellMessages({
                   background: "rgba(249,115,22,0.06)",
                   border: "1px solid rgba(249,115,22,0.18)",
                   borderRadius: 14,
-                  padding: "10px 16px",
+                  padding: "13px 16px",
+                  minHeight: 44,
                   fontSize: 13,
                   fontWeight: 600,
                   color: "#F97316",

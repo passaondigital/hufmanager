@@ -22,6 +22,7 @@ import { Loader2 } from "lucide-react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { TourProvider } from "@/components/tour/TourContext";
 import { PWAInstallPrompt } from "@/components/pwa/PWAInstallPrompt";
+import { FEATURE_FLAGS } from "@/config/featureFlags";
 
 import Index from "@/pages/Index";
 
@@ -34,6 +35,7 @@ const MobileShell = lazy(() => import("@/components/layout/MobileShell").then((m
 // Auth
 const ResetPassword  = lazy(() => import("@/pages/ResetPassword"));
 const UpdatePassword = lazy(() => import("@/pages/UpdatePassword"));
+const EmployeeInvite  = lazy(() => import("@/pages/EmployeeInvite"));
 const Welcome        = lazy(() => import("@/pages/Welcome"));
 
 // Provider – CRM Kern
@@ -72,6 +74,7 @@ const Team        = lazy(() => import("@/pages/Team"));
 const ManagementHub         = lazy(() => import("@/pages/ManagementHub"));
 const ManagementProfil      = lazy(() => import("@/pages/management/ManagementProfil"));
 const ManagementAbo         = lazy(() => import("@/pages/management/ManagementAbo"));
+const ManagementGuthaben    = lazy(() => import("@/pages/management/ManagementGuthaben"));
 const AboSettings           = lazy(() => import("@/pages/settings/AboSettings"));
 const ManagementRechtliches = lazy(() => import("@/pages/management/ManagementRechtliches"));
 const ManagementSteuer      = lazy(() => import("@/pages/management/ManagementSteuer"));
@@ -278,6 +281,15 @@ function PferdeakteRouteGuard({ children }: { children: React.ReactNode }) {
   const path = location.pathname;
   const portalMode = detectPortalMode();
 
+  if ((portalMode.mode === 'portal' || portalMode.mode === 'insurance') && !FEATURE_FLAGS.portalWhiteLabel.enabled) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-2 text-center px-6" style={{ background: "#F8FAFC" }}>
+        <p className="text-sm font-medium text-foreground">Dieser Bereich ist noch nicht verfügbar.</p>
+        <p className="text-xs text-muted-foreground">Bitte wende dich an deinen Ansprechpartner bei Hufi.</p>
+      </div>
+    );
+  }
+
   if (portalMode.mode === 'portal' || portalMode.mode === 'insurance') {
     return (
       <AuthProvider>
@@ -481,6 +493,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/welcome"         element={<Welcome />} />
             <Route path="/reset-password"  element={<ResetPassword />} />
             <Route path="/update-password" element={<UpdatePassword />} />
+            <Route path="/employee-invite" element={<EmployeeInvite />} />
 
             {/* Redirects für alte / alternative Pfade */}
             <Route path="/dashboard"      element={<Navigate to="/home" replace />} />
@@ -587,6 +600,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
               <Route path="/management/business"       element={<ManagementBusinessHub />} />
               <Route path="/management/kommunikation"  element={<ManagementKommunikation />} />
               <Route path="/management/abo"            element={<ManagementAbo />} />
+              <Route path="/management/guthaben"       element={<ManagementGuthaben />} />
               <Route path="/settings/abo"              element={<AboSettings />} />
               <Route path="/management/rechtliches"    element={<ManagementRechtliches />} />
               <Route path="/management/steuer"         element={<ManagementSteuer />} />

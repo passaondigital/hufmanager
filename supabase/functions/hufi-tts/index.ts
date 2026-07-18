@@ -75,6 +75,22 @@ serve(async (req) => {
       });
     }
 
+    // ── Voice-Guthaben prüfen (separat vom KI-Text-Credit-System) ────────────
+    // Bewusst VOR dem ElevenLabs-Call, um bei leerem Guthaben keine unnötigen
+    // API-Kosten zu verursachen — Client fällt bei jedem Fehler automatisch
+    // auf Piper zurück (useHufiTTS.speakWithCloud), NIE auf die Browser-Stimme.
+    const { data: credits } = await supabase.rpc("get_hufi_voice_credits", { p_user_id: user.id });
+    const purchasedUsable = credits?.purchased_expires_at && new Date(credits.purchased_expires_at) < new Date()
+      ? 0
+      : (credits?.purchased_balance_cents ?? 0);
+    const availableCents = (credits?.monthly_balance_cents ?? 0) + purchasedUsable;
+    if (availableCents <= 0) {
+      return new Response(
+        JSON.stringify({ error: "Voice-Guthaben aufgebraucht", code: "credits_exhausted" }),
+        { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     // ── ElevenLabs TTS ─────────────────────────────────────────────────────
     const apiKey = Deno.env.get("ELEVENLABS_API_KEY");
     if (!apiKey) {
@@ -127,6 +143,18 @@ serve(async (req) => {
 
     // Audio als Stream direkt weiterleiten
     const audioBuffer = await ttsResponse.arrayBuffer();
+
+    // ── Verbrauch verbuchen ────────────────────────────────────────────────
+    // Echte Audiodauer wird nicht dekodiert (kein MP3-Parser im Edge-Runtime) —
+    // Schätzung über Zeichen/Sekunde ist für Guthaben-Zwecke ausreichend genau.
+    const CHARS_PER_SECOND = 14;
+    const estimatedSeconds = Math.max(text.length / CHARS_PER_SECOND, 1);
+    const { error: consumeError } = await supabase.rpc("consume_hufi_voice_credit", {
+      p_user_id: user.id,
+      p_seconds: estimatedSeconds,
+      p_description: `TTS (${model_id})`,
+    });
+    if (consumeError) console.error("[hufi-tts] Guthaben-Verbuchung fehlgeschlagen:", consumeError);
 
     return new Response(audioBuffer, {
       status: 200,

@@ -21,6 +21,7 @@ export interface HufiVoice {
   previewText: string;
   previewUrl?: string;
   recommended?: boolean;
+  premium?: boolean;
   isCustom?: boolean;
 }
 
@@ -36,27 +37,11 @@ export const HUFI_VOICE_BROWSER: HufiVoice = {
 // ─── ElevenLabs Stimmen ───────────────────────────────────────────────────────
 // Voice-IDs direkt von https://elevenlabs.io/voice-library eintragen.
 // Die "recommended"-Stimme wird im Selector zuerst angezeigt.
+//
+// HINWEIS: Nur die eigens für Hufi erstellten Stimmen werden hier gelistet.
+// Generische ElevenLabs-Bibliotheksstimmen sind bewusst NICHT enthalten —
+// sie waren für Nutzer nicht unterscheidbar/relevant (UI-Aufräumen, 17.07.2026).
 export const HUFI_VOICES: HufiVoice[] = [
-  // ── Eigene Hufi-Stimmen (von ElevenLabs erstellt) ─────────────────────────
-  {
-    id: "1VD2QCeh67YqFnF8DXdR",
-    name: "Hufi Weiblich Basis+",
-    description: "Eigene Hufi-Stimme, weiblich, erweiterte Version.",
-    gender: "weiblich",
-    style: "Hufi",
-    previewText: "Guten Morgen! Ich bin Hufi, dein Assistent für alles rund ums Pferd.",
-    recommended: true,
-    isCustom: true,
-  },
-  {
-    id: "PbWcy4kYbh61Dn96ilSR",
-    name: "Hufi Männlich Basis+",
-    description: "Eigene Hufi-Stimme, männlich, erweiterte Version.",
-    gender: "männlich",
-    style: "Hufi",
-    previewText: "Guten Morgen! Ich bin Hufi, dein Assistent für alles rund ums Pferd.",
-    isCustom: true,
-  },
   {
     id: "LASNcPBkwqNMJ0w8CTBT",
     name: "Hufi Männlich Basis",
@@ -64,6 +49,7 @@ export const HUFI_VOICES: HufiVoice[] = [
     gender: "männlich",
     style: "Hufi",
     previewText: "Drei Termine heute. Der erste um acht Uhr dreißig. Alles vorbereitet.",
+    recommended: true,
     isCustom: true,
   },
   {
@@ -75,98 +61,36 @@ export const HUFI_VOICES: HufiVoice[] = [
     previewText: "Befund gespeichert. Soll ich einen Termin in sechs Wochen anlegen?",
     isCustom: true,
   },
-  // ── ElevenLabs Bibliothek-Stimmen ─────────────────────────────────────────
   {
-    id: "DEZHhPbmb8LVZmWufkCh",
-    name: "Bibliothek 1",
-    description: "ElevenLabs Bibliotheksstimme.",
-    gender: "neutral",
-    style: "Standard",
-    previewText: "Guten Morgen! Dein nächster Termin ist um 9 Uhr. Soll ich die Route öffnen?",
+    id: "PbWcy4kYbh61Dn96ilSR",
+    name: "Hufi Männlich Basis+",
+    description: "Eigene Hufi-Stimme, männlich, erweiterte Version.",
+    gender: "männlich",
+    style: "Hufi",
+    previewText: "Guten Morgen! Ich bin Hufi, dein Assistent für alles rund ums Pferd.",
+    premium: true,
+    isCustom: true,
   },
   {
-    id: "E13qNLHLLuVPKQvesCoy",
-    name: "Bibliothek 2",
-    description: "ElevenLabs Bibliotheksstimme.",
-    gender: "neutral",
-    style: "Standard",
-    previewText: "Ich habe den Befund gespeichert. Soll ich einen Termin in sechs Wochen anlegen?",
-  },
-  {
-    id: "buUrS4YSeOZtlCKnzwkC",
-    name: "Bibliothek 3",
-    description: "ElevenLabs Bibliotheksstimme.",
-    gender: "neutral",
-    style: "Standard",
-    previewText: "Erledigt! Rechnung erstellt. Noch etwas?",
-  },
-  {
-    id: "mmAbrxFQ9xjByXyBpqrK",
-    name: "Bibliothek 4",
-    description: "ElevenLabs Bibliotheksstimme.",
-    gender: "neutral",
-    style: "Standard",
-    previewText: "Drei Termine heute. Der erste um acht Uhr dreißig.",
-  },
-  {
-    id: "XJ6WvkWn5AiImouUWf8S",
-    name: "Bibliothek 5",
-    description: "ElevenLabs Bibliotheksstimme.",
-    gender: "neutral",
-    style: "Standard",
-    previewText: "Ich empfehle in diesem Fall einen Tierarzt hinzuzuziehen.",
-  },
-  {
-    id: "nGISSznGHAgSTKaMXEPO",
-    name: "Bibliothek 6",
-    description: "ElevenLabs Bibliotheksstimme.",
-    gender: "neutral",
-    style: "Standard",
-    previewText: "Guten Morgen! Ich bin Hufi, dein Assistent.",
-  },
-  {
-    id: "CVcPLXStXPeDxhrSflDZ",
-    name: "Bibliothek 7",
-    description: "ElevenLabs Bibliotheksstimme.",
-    gender: "neutral",
-    style: "Standard",
-    previewText: "Befund gespeichert. Soll ich einen Folgetermin anlegen?",
-  },
-  {
-    id: "3kaQumuvT4NtcZsw8RVS",
-    name: "Bibliothek 8",
-    description: "ElevenLabs Bibliotheksstimme.",
-    gender: "neutral",
-    style: "Standard",
-    previewText: "Dein Lagerbestand ist niedrig. Soll ich eine Bestellung vorschlagen?",
-  },
-  {
-    id: "3t6439mGAsHvQFPpoPdf",
-    name: "Bibliothek 9",
-    description: "ElevenLabs Bibliotheksstimme.",
-    gender: "neutral",
-    style: "Standard",
-    previewText: "Route optimiert: Müller — Schmidt — Koch. 47 Kilometer.",
-  },
-  {
-    id: "HRIShmNY56JGHVU1vXIt",
-    name: "Bibliothek 10",
-    description: "ElevenLabs Bibliotheksstimme.",
-    gender: "neutral",
-    style: "Standard",
-    previewText: "Ich bin Hufi. Was kann ich heute für dich tun?",
+    id: "1VD2QCeh67YqFnF8DXdR",
+    name: "Hufi Weiblich Basis+",
+    description: "Eigene Hufi-Stimme, weiblich, erweiterte Version.",
+    gender: "weiblich",
+    style: "Hufi",
+    previewText: "Guten Morgen! Ich bin Hufi, dein Assistent für alles rund ums Pferd.",
+    premium: true,
+    isCustom: true,
   },
 ];
 
-// Piper: lokale Open-Source TTS Stimme (Überbrücke bis ElevenLabs konfiguriert)
+// Piper: lokale Open-Source TTS Stimme — Offline-Fallback, wenn keine Internetverbindung besteht.
 export const HUFI_VOICE_PIPER: HufiVoice = {
   id: "piper",
-  name: "Hufi Stimme (lokal)",
+  name: "Hufi Stimme lokal",
   description: "Natürliche deutsche Stimme, direkt auf dem Server. Kein Internet nötig, schnell, kostenlos.",
   gender: "männlich",
   style: "Natürlich",
   previewText: "Guten Morgen! Ich bin Hufi, dein Assistent für alles rund ums Pferd.",
-  recommended: true,
 };
 
 export const STORAGE_KEY_VOICE_ID = "hufi_elevenlabs_voice_id";
@@ -176,6 +100,7 @@ export const STORAGE_KEY_MODEL = "hufi_elevenlabs_model";
 export const DEFAULT_MODEL = "eleven_multilingual_v2";
 
 import { ulget, ulset, ulremove } from "@/lib/user-storage";
+import { updateHufiMemory } from "@/lib/hufi-brain";
 
 export function getSelectedVoiceId(userId = ""): string | null {
   const id = ulget(userId, STORAGE_KEY_VOICE_ID);
@@ -199,6 +124,7 @@ export function setSelectedVoice(voice: HufiVoice, userId = "") {
     ulset(userId, STORAGE_KEY_VOICE_ID, voice.id);
     ulset(userId, STORAGE_KEY_VOICE_NAME, voice.name);
   }
+  persistVoiceToDB(userId);
 }
 
 export function getSelectedModel(userId = ""): string {
@@ -207,6 +133,24 @@ export function getSelectedModel(userId = ""): string {
 
 export function setSelectedModel(model: string, userId = "") {
   ulset(userId, STORAGE_KEY_MODEL, model);
+  persistVoiceToDB(userId);
+}
+
+// Spiegelt die aktuelle Stimmen-Auswahl in hufi_memory, damit sie ein neues
+// Gerät / Inkognito-Fenster / Clear-Storage überlebt.
+function persistVoiceToDB(userId: string) {
+  if (!userId) return;
+  updateHufiMemory(
+    userId,
+    "preference",
+    "voice",
+    {
+      id: ulget(userId, STORAGE_KEY_VOICE_ID) ?? "browser",
+      name: ulget(userId, STORAGE_KEY_VOICE_NAME) ?? "Browser-Stimme",
+      model: ulget(userId, STORAGE_KEY_MODEL) ?? DEFAULT_MODEL,
+    },
+    "manual",
+  );
 }
 
 export function getAllVoices(): HufiVoice[] {

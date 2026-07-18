@@ -1,11 +1,20 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { User, Briefcase, Mic, Shield, Smartphone, Share, Globe, MessageSquare, Scale, Calculator, Upload, LogOut } from "lucide-react";
+import { User, Briefcase, Mic, Shield, Smartphone, Share, Globe, MessageSquare, Scale, Calculator, Upload, LogOut, XCircle, Trash2, Loader2 } from "lucide-react";
 import { useLogout } from "@/hooks/useLogout";
 import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
 import { HufiPermissionsSettings } from "@/components/consent/HufiPermissionsSettings";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+
+const COPECART_FALLBACK_LOGIN = "https://copecart.com/login";
 
 const TAB_REDIRECTS: Record<string, string> = {
   profil: "/management/profil",
@@ -23,12 +32,39 @@ export default function ManagementHub() {
   const { user } = useAuth();
   const logout = useLogout();
 
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
   useEffect(() => {
     const tab = searchParams.get("tab");
     if (tab && TAB_REDIRECTS[tab]) {
       navigate(TAB_REDIRECTS[tab], { replace: true });
     }
   }, [searchParams, navigate]);
+
+  function handleCancelConfirm() {
+    setCancelDialogOpen(false);
+    window.open(COPECART_FALLBACK_LOGIN, "_blank", "noopener,noreferrer");
+  }
+
+  async function handleDeleteAccount() {
+    if (deleteConfirmText !== "LÖSCHEN" || !user?.id) return;
+    setDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-my-account");
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success("Dein Account wurde vollständig gelöscht.");
+      await supabase.auth.signOut();
+      navigate("/auth", { replace: true });
+    } catch (err) {
+      console.error("[ManagementHub] Account-Löschung fehlgeschlagen:", err);
+      toast.error("Löschung fehlgeschlagen. Bitte versuch es erneut oder kontaktiere den Support.");
+      setDeleting(false);
+    }
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -156,6 +192,12 @@ export default function ManagementHub() {
           description="Aktueller Plan, Upgrade, Rechnungen, Kündigung"
           onClick={() => navigate("/management/abo")}
         />
+        <Tile
+          icon={<Mic className="w-10 h-10 text-primary" />}
+          title="Voice-Guthaben"
+          description="Guthabenstand, Verlauf, Aufladen"
+          onClick={() => navigate("/management/guthaben")}
+        />
       </TileCategory>
 
       <TileCategory title="Daten & Tools">
@@ -179,7 +221,7 @@ export default function ManagementHub() {
       </div>
 
       {/* Abmelden */}
-      <div className="px-1 pb-4">
+      <div className="px-1 pb-2">
         <button
           onClick={async () => { await logout(); }}
           className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-destructive/30 text-destructive hover:bg-destructive/5 active:bg-destructive/10 transition-colors text-sm font-medium"
@@ -188,6 +230,77 @@ export default function ManagementHub() {
           Abmelden
         </button>
       </div>
+
+      {/* Danger Zone: Abo kündigen + Account löschen */}
+      <div className="px-1 pb-4 space-y-2">
+        <button
+          onClick={() => setCancelDialogOpen(true)}
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-border text-muted-foreground hover:bg-muted/50 transition-colors text-sm font-medium"
+        >
+          <XCircle className="h-4 w-4" />
+          Abo kündigen
+        </button>
+        <button
+          onClick={() => setDeleteDialogOpen(true)}
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-destructive/30 text-destructive hover:bg-destructive/5 active:bg-destructive/10 transition-colors text-sm font-medium"
+        >
+          <Trash2 className="h-4 w-4" />
+          Account und alle Daten löschen
+        </button>
+      </div>
+
+      {/* Abo kündigen — Bestätigung */}
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Abo kündigen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Dein Abo läuft bis zum Ende des aktuellen Abrechnungszeitraums weiter.
+              Bestehendes Voice-Guthaben bleibt bis zum Ablaufdatum nutzbar.
+              Du wirst jetzt zum CopeCart-Kundenportal weitergeleitet, wo du die
+              Kündigung selbst abschließt.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCancelConfirm}>
+              Weiter zu CopeCart
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Account löschen — doppelte Bestätigung */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => { setDeleteDialogOpen(open); if (!open) setDeleteConfirmText(""); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bist du sicher?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ALLE Daten werden unwiderruflich gelöscht: Pferde, Kunden, Termine,
+              Rechnungen, Einstellungen. Diese Aktion kann nicht rückgängig gemacht
+              werden.
+              <br /><br />
+              Gib zur Bestätigung <strong>LÖSCHEN</strong> ein:
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            placeholder="LÖSCHEN"
+            autoFocus
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleDeleteAccount(); }}
+              disabled={deleteConfirmText !== "LÖSCHEN" || deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Endgültig löschen"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

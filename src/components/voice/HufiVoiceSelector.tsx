@@ -17,7 +17,7 @@ const MODELS = [
   { id: "eleven_turbo_v2_5",      label: "Turbo v2.5",      desc: "Ultra-schnell · Für Live-Dialog" },
 ];
 
-async function previewVoice(
+export async function previewVoice(
   voice: HufiVoice,
   model: string,
   onStart: () => void,
@@ -199,15 +199,17 @@ export function HufiVoiceSelector({ userId = "" }: { userId?: string }) {
         {voices.map((voice) => {
           const isSelected = selectedId === voice.id;
           const isPlaying = playing === voice.id;
+          const isBrowser = voice.id === "browser";
           return (
             <div
               key={voice.id}
               style={{
-                background: isSelected ? "#FFF7ED" : "#F9FAFB",
+                background: isBrowser ? "#F9FAFB" : isSelected ? "#FFF7ED" : "#F9FAFB",
                 border: `1.5px solid ${isSelected ? "#F97316" : "#E5E7EB"}`,
                 borderRadius: 14, padding: "12px 14px",
                 display: "flex", alignItems: "center", gap: 12,
                 transition: "border-color .15s, background .15s",
+                opacity: isBrowser ? 0.55 : 1,
               }}
             >
               {/* Auswahl-Kreis */}
@@ -249,6 +251,14 @@ export function HufiVoiceSelector({ userId = "" }: { userId?: string }) {
                   }}>
                     {voice.style}
                   </span>
+                  {voice.premium && (
+                    <span style={{
+                      fontSize: 9, fontWeight: 700, letterSpacing: ".04em",
+                      textTransform: "uppercase",
+                      background: "#FDF4E7", color: "#B45309",
+                      borderRadius: 6, padding: "2px 6px",
+                    }}>Premium</span>
+                  )}
                   {voice.recommended && (
                     <span style={{
                       fontSize: 9, fontWeight: 700, letterSpacing: ".04em",
@@ -259,7 +269,7 @@ export function HufiVoiceSelector({ userId = "" }: { userId?: string }) {
                   )}
                 </div>
                 <div style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.4, marginTop: 3 }}>
-                  {voice.description}
+                  {isBrowser ? "Nur wenn keine andere Stimme verfügbar." : voice.description}
                 </div>
               </button>
 

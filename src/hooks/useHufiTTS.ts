@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getSelectedVoiceId, getSelectedModel } from "@/lib/hufi-voice-config";
+import { toast } from "sonner";
 
 interface UseHufiTTS {
   speak: (text: string, onEnd?: () => void, fastMode?: boolean) => boolean;
@@ -66,6 +67,17 @@ export function sanitizeForSpeech(input: string): string {
 
 // Piper TTS: lokaler Server auf demselben VPS (via Nginx-Proxy)
 const PIPER_TTS_URL = "/api/local-tts";
+
+// Nur einmal alle 5 Minuten anzeigen — sonst spammt jede weitere Hufi-Antwort den Toast
+let lastCreditsExhaustedToast = 0;
+function notifyCreditsExhausted() {
+  const now = Date.now();
+  if (now - lastCreditsExhaustedToast < 5 * 60 * 1000) return;
+  lastCreditsExhaustedToast = now;
+  toast.info("Dein Voice-Guthaben ist aufgebraucht. Lade auf für Premium-Stimme.", {
+    action: { label: "Aufladen", onClick: () => { window.location.href = "/management/guthaben"; } },
+  });
+}
 
 export function useHufiTTS(userId = ""): UseHufiTTS {
   const synthRef = useRef<SpeechSynthesis | null>(
@@ -262,6 +274,10 @@ export function useHufiTTS(userId = ""): UseHufiTTS {
         );
         if (currentAbortRef.current === controller) currentAbortRef.current = null;
 
+        if (resp.status === 402) {
+          notifyCreditsExhausted();
+          throw new Error("credits_exhausted");
+        }
         if (!resp.ok) throw new Error(`ElevenLabs TTS ${resp.status}`);
 
         const blob = await resp.blob();
