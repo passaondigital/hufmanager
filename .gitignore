@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Nie committen — auch wenn der aktuelle Inhalt nur unkritische VITE_-Variablen
+# enthält, soll hier künftig kein Secret aus Versehen mitgecommittet werden.
+.env
+.env.*
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
