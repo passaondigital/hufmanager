@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { MessageCircle, HelpCircle, Mail, PlayCircle } from "lucide-react";
+import { MessageCircle, Mail } from "lucide-react";
 import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
 import { Badge } from "@/components/ui/badge";
 
@@ -34,22 +34,10 @@ const Support = ({ basePath }: SupportProps) => {
           onClick={handleChatOpen}
         />
         <Tile
-          icon={<HelpCircle className="w-10 h-10 text-primary" />}
-          title="FAQ"
-          description="Häufige Fragen, Anleitungen, Problemlösungen"
-          onClick={() => navigate("/faq")}
-        />
-        <Tile
           icon={<Mail className="w-10 h-10 text-primary" />}
           title="E-Mail"
           description="Persönlicher Support, Feedback, Fehlermeldungen"
           onClick={() => window.location.href = "mailto:kontakt@hufiapp.de"}
-        />
-        <Tile
-          icon={<PlayCircle className="w-10 h-10 text-primary" />}
-          title="Video-Tutorials"
-          description="Schritt-für-Schritt, Einrichtung, Tipps & Tricks"
-          onClick={() => navigate("/hilfe?section=videos")}
         />
       </TileCategory>
     </div>

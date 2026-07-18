@@ -92,7 +92,7 @@ function routeFor(action: NavActionId, role: ActionRole, horseId?: string): stri
       if (role === "partner") return "/partner-tour";
       return "/tour";
     case "open_invoices":
-      if (role === "client") return "/stall/rechnungen";
+      if (role === "client") return "/client-invoices";
       return "/rechnungen";
     case "open_customers":
       if (role === "partner") return "/partner-kunden";
@@ -105,7 +105,7 @@ function routeFor(action: NavActionId, role: ActionRole, horseId?: string): stri
     case "open_management": return "/management";
     case "open_team": return "/team";
     case "open_lager": return "/lager";
-    case "open_hufanalyse": return "/hufanalyse";
+    case "open_hufanalyse": return "/work-mode";
     case "open_analyse": return "/analyse";
     case "open_chat":
       if (role === "client") return "/client-chat";

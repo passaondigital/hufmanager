@@ -50,7 +50,7 @@ export function HufrenteShareSheet({
       label: "Social Media",
       emoji: "📱",
       action: "copy",
-      text: `Als Hufpfleger/Therapeut/Trainer kennst du das: nach dem letzten Pferd fängt die eigentliche Arbeit erst an.\n\nHufManager hat das bei mir geändert — alles digital, offline-fähig, DSGVO-konform.\n\nSchau mal rein: ${referralLink} #Hufi #ZukunftPferd2030`,
+      text: `Als Hufpfleger/Therapeut/Trainer kennst du das: nach dem letzten Pferd fängt die eigentliche Arbeit erst an.\n\nHufi hat das bei mir geändert — alles digital, offline-fähig, DSGVO-konform.\n\nSchau mal rein: ${referralLink} #Hufi #ZukunftPferd2030`,
     },
   ];
 

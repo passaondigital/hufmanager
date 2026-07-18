@@ -114,7 +114,7 @@ const PartnerPferde = () => {
   const HorseCard = ({ horse, showAccess }: { horse: any; showAccess?: boolean }) => {
     const age = getAge(horse.birth_year);
     return (
-      <Card className="hover:shadow-lg transition-all cursor-pointer group animate-slide-up" onClick={() => navigate(`/partner-horse/${horse.id}`)}>
+      <Card className="hover:shadow-lg transition-all cursor-pointer group animate-slide-up" onClick={() => navigate(`/partner-pferd/${horse.id}`)}>
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
             <div className="w-14 h-14 rounded-xl overflow-hidden bg-muted shrink-0">

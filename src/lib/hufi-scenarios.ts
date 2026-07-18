@@ -171,7 +171,7 @@ export const SCENARIOS: Scenario[] = [
     match: () => ({
       text: "Im FAQ findest du Antworten auf häufige Fragen.",
       spoken: "Im FAQ findest du alle Antworten.",
-      actions: [{ label: "FAQ öffnen", route: "/hufi/faq" }],
+      actions: [{ label: "FAQ öffnen", route: "/support" }],
     }),
   },
   {

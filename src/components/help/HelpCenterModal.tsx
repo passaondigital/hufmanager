@@ -47,8 +47,7 @@ const ROUTE_CATEGORY_MAP: Record<string, string[]> = {
   "/rechnungen": ["Finanzen"],
   "/analyse": ["Finanzen", "Workflow"],
   "/tour": ["Navigation"],
-  "/work-mode": ["Navigation", "Erste Schritte"],
-  "/hufanalyse": ["HufCam"],
+  "/work-mode": ["Navigation", "Erste Schritte", "HufCam"],
   "/client-home": ["Für Kunden"],
   "/client-invoices": ["Für Kunden"],
 };

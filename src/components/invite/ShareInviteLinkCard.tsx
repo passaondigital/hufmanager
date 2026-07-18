@@ -92,7 +92,7 @@ export function ShareInviteLinkCard() {
               <div className="flex-1">
                 <p className="font-medium text-foreground text-sm">Kunden einladen</p>
                 <p className="text-xs text-muted-foreground">
-                  In HufManager Pro enthalten — jetzt upgraden
+                  Im Hufi Early Bird enthalten — jetzt upgraden
                 </p>
               </div>
             </div>
