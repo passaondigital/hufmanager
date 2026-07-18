@@ -41,12 +41,41 @@ export default defineConfig(({ mode }) => ({
       name: "html-flavor-branding",
       transformIndexHtml(html) {
         if (APP_FLAVOR !== "hufiapp") return html;
+        const TITLE = "Hufi — Dein KI-Assistent für Pferdeprofis";
+        const DESC =
+          "Hufi ist dein KI-Assistent für Pferdeprofis — Kunden, Pferde, Termine, Rechnungen, Touren & Navigation in einer App.";
         return html
+          .replace(/<title>[\s\S]*?<\/title>/, `<title>${TITLE}</title>`)
+          .replace(/href="\/apple-touch-icon\.png"/g, 'href="/hufi-apple-touch-icon.png"')
+          // Apple PWA-Titel
           .replace(
-            /<title>[\s\S]*?<\/title>/,
-            "<title>Hufi — Dein KI-Assistent für Pferdeprofis</title>"
+            /(<meta name="apple-mobile-web-app-title" content=")[^"]*(")/,
+            `$1Hufi$2`
           )
-          .replace(/href="\/apple-touch-icon\.png"/g, 'href="/hufi-apple-touch-icon.png"');
+          // Meta-Description
+          .replace(
+            /(<meta name="description" content=")[^"]*(")/,
+            `$1${DESC}$2`
+          )
+          // Open Graph
+          .replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${TITLE}$2`)
+          .replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${DESC}$2`)
+          .replace(
+            /(<meta property="og:url" content=")[^"]*(")/,
+            `$1https://hufiapp.de$2`
+          )
+          .replace(/(<meta property="og:site_name" content=")[^"]*(")/, `$1Hufi$2`)
+          // Twitter Card
+          .replace(/(<meta name="twitter:title" content=")[^"]*(")/, `$1${TITLE}$2`)
+          .replace(
+            /(<meta name="twitter:description" content=")[^"]*(")/,
+            `$1${DESC}$2`
+          )
+          // Sentry: hufiapp.de ebenfalls als Production werten
+          .replace(
+            /window\.location\.hostname === "app\.hufmanager\.de"/,
+            `["app.hufmanager.de", "hufiapp.de", "www.hufiapp.de"].includes(window.location.hostname)`
+          );
       },
     },
     VitePWA({
@@ -108,22 +137,10 @@ export default defineConfig(({ mode }) => ({
               },
             },
           },
-          {
-            // Network first for Supabase API calls (NOT auth) - fallback to cache
-            urlPattern: ({ url }: { url: URL }) => {
-              return url.hostname.endsWith('.supabase.co') && 
-                     !url.pathname.startsWith('/auth/');
-            },
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "supabase-cache",
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24, // 1 day
-              },
-              networkTimeoutSeconds: 10,
-            },
-          },
+          // Supabase API calls (/rest/v1, /functions/v1, …) werden NICHT gecacht.
+          // Ein SW-Cache auf authentifizierte GETs lieferte replayte Antworten
+          // ohne apikey-Header → "No API key found in request". Requests gehen
+          // jetzt immer direkt ans Netzwerk (supabase-js setzt den Key selbst).
         ],
       },
       manifest: {

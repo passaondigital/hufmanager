@@ -135,11 +135,6 @@ export function AppHeader() {
                 {mode === m && <Check className="h-3.5 w-3.5 ml-auto text-primary" />}
               </DropdownMenuItem>
             ))}
-            <DropdownMenuSeparator className="bg-border" />
-            <DropdownMenuItem onClick={() => navigate("/autoflow")} className="h-10 cursor-pointer text-xs text-muted-foreground">
-              <Settings className="h-3.5 w-3.5 mr-2" />
-              AutoFlow konfigurieren
-            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 

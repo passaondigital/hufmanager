@@ -144,7 +144,7 @@ function MobileDayList({
       className="space-y-3"
     >
       {/* Day selector strip */}
-      <div className="flex items-center gap-1 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
         {weekDays.map((day) => {
           const isActive = isSameDay(day, currentDate);
           const isToday = isSameDay(day, new Date());
@@ -217,7 +217,7 @@ function MobileDayList({
               <button
                 key={event.id}
                 onClick={() => onSelectEvent(event)}
-                className="w-full text-left p-4 rounded-xl border border-border bg-card hover:bg-muted/50 transition-all active:scale-[0.98] shadow-sm"
+                className="w-full text-left p-4 rounded-2xl border border-border bg-card hover:bg-muted/50 transition-all active:scale-[0.98] shadow-md"
               >
                 <div className="flex items-start gap-3">
                   {/* Time block */}
@@ -278,7 +278,7 @@ const Kalender = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
-  const [currentView, setCurrentView] = useState("week");
+  const [currentView, setCurrentView] = useState("day");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [preselectedHorseId, setPreselectedHorseId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("calendar");

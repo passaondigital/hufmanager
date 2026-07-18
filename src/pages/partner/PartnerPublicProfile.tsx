@@ -93,7 +93,7 @@ export default function PartnerPublicProfile() {
     enabled: !!prid,
   });
 
-  const handleContact = async (e: React.FormEvent) => {
+  const handleContact = (e: React.FormEvent) => {
     e.preventDefault();
     if (!contactForm.name || !contactForm.email || !contactForm.message) {
       toast.error("Bitte alle Felder ausfüllen");
@@ -103,11 +103,16 @@ export default function PartnerPublicProfile() {
       toast.error("Bitte stimme der Datenschutzerklärung zu.");
       return;
     }
+    if (!data?.email) {
+      toast.error("Für dieses Profil ist noch keine Kontakt-E-Mail hinterlegt.");
+      return;
+    }
     setSending(true);
-    await new Promise((r) => setTimeout(r, 800));
+    const subject = `Kontaktanfrage über Hufi von ${contactForm.name}`;
+    const body = `${contactForm.message}\n\n— ${contactForm.name} (${contactForm.email})`;
+    window.location.href = `mailto:${data.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     setSent(true);
     setSending(false);
-    toast.success("Nachricht gesendet!");
   };
 
   if (isLoading) {
@@ -339,8 +344,8 @@ export default function PartnerPublicProfile() {
               {sent ? (
                 <div className="text-center py-8">
                   <CheckCircle2 className="h-12 w-12 mx-auto mb-4" style={{ color: primaryColor }} />
-                  <p className="text-lg font-semibold text-foreground">Nachricht gesendet!</p>
-                  <p className="text-sm text-muted-foreground mt-2">{data.full_name} wird sich bei Ihnen melden.</p>
+                  <p className="text-lg font-semibold text-foreground">E-Mail-Programm geöffnet</p>
+                  <p className="text-sm text-muted-foreground mt-2">Bitte sende die vorausgefüllte Nachricht in deinem E-Mail-Programm ab, um {data.full_name} zu erreichen.</p>
                 </div>
               ) : (
                 <form onSubmit={handleContact} className="space-y-4">

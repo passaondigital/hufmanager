@@ -62,27 +62,27 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-[300px] flex items-center justify-center p-6">
-          <Card className="max-w-md w-full border-destructive/30">
+        <div className="min-h-[300px] w-full flex items-center justify-center p-6 bg-white">
+          <Card className="max-w-md w-full border-red-200 bg-white">
             <CardContent className="pt-6 text-center space-y-4">
-              <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
-                <AlertTriangle className="h-6 w-6 text-destructive" />
+              <div className="mx-auto w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">
+                <AlertTriangle className="h-6 w-6 text-red-500" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg text-foreground">
+                <h3 className="font-semibold text-lg text-slate-900">
                   Etwas ist schiefgelaufen
                 </h3>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-sm text-slate-500 mt-1">
                   Ein unerwarteter Fehler ist aufgetreten. Versuche es erneut oder lade die Seite neu.
                 </p>
               </div>
 
               {import.meta.env.DEV && this.state.error && (
-                <details className="text-left text-xs bg-muted/50 rounded-lg p-3 max-h-32 overflow-auto">
-                  <summary className="cursor-pointer font-medium text-muted-foreground">
+                <details className="text-left text-xs bg-slate-50 rounded-lg p-3 max-h-32 overflow-auto">
+                  <summary className="cursor-pointer font-medium text-slate-500">
                     Fehlerdetails
                   </summary>
-                  <pre className="mt-2 whitespace-pre-wrap break-words text-destructive">
+                  <pre className="mt-2 whitespace-pre-wrap break-words text-red-500">
                     {this.state.error.message}
                     {this.state.errorInfo?.componentStack}
                   </pre>

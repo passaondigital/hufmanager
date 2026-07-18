@@ -53,7 +53,6 @@ const FooterNew = () => (
               <Link to="/impressum" className="block text-white/50 hover:text-white transition-colors text-sm">Impressum</Link>
               <Link to="/datenschutz" className="block text-white/50 hover:text-white transition-colors text-sm">Datenschutz</Link>
               <Link to="/agb" className="block text-white/50 hover:text-white transition-colors text-sm">AGB</Link>
-              <Link to="/vertrauen" className="block text-white/50 hover:text-white transition-colors text-sm">Trust & Security</Link>
               <Link to="/widerruf" className="block text-white/50 hover:text-white transition-colors text-sm">Widerruf</Link>
               <div className="flex flex-wrap gap-3 pt-3">
                 <Link to="/impressum">
