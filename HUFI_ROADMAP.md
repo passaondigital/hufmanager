@@ -531,6 +531,36 @@ Bestätigung statt Timing-Puffer vergibt) — als eigener Task mit
 Kern-Learning in `HUFI_TODO.md` dokumentiert. Reaktivierung dann: Flag
 auf `true`, keine weiteren Schritte nötig.
 
+## AUSFALL 19.07.2026: WEISSER SCREEN + FIX (deploy.sh)
+**Was passierte:** hufiapp.de zeigte weißen Screen, Konsole:
+`Uncaught Error: supabaseUrl is required`.
+
+**Ursache:** Am 18.07.2026 wurde `.env` korrekt aus dem Git-Tracking
+entfernt (gehört in `.gitignore`, war schon richtig so). Der Deploy
+danach baute aus einem sauberen `git worktree` — dort existiert die
+jetzt un-getrackte `.env` nicht, also fehlten beim Build alle
+`VITE_`-Variablen. Das Bundle enthielt keine Supabase-URL. Niemand
+prüfte NACH dem Build, ob die URL überhaupt im Bundle steckte — nur
+HTTP 200 wurde gecheckt, und der war auch beim kaputten Stand grün.
+
+**Sofort-Fix:** Build im Worktree wiederholt, `.env` vorher manuell
+hineinkopiert, verifiziert (Playwright-Live-Check: `root`-DOM gefüllt,
+keine `pageerror`, kein `supabaseUrl is required` mehr), neu deployt.
+
+**Dauerhafter Fix:** `deploy.sh` im Repo-Root angelegt. Kapselt den
+kompletten Ablauf: Worktree anlegen → `.env` aus dem Haupt-Directory
+hineinkopieren (wird NICHT committet) → `npm ci` → `npm run build` →
+**PFLICHT-GATE**: Supabase-Host muss im `dist/assets/*.js` vorkommen,
+sonst bricht das Skript ab und deployed NICHTS → Bundle-Secret-Scan
+(kein `service_role`/Private-Key im Client-Bundle) → `rsync` nach
+`/var/www/hufiapps/v25/` → Worktree-Cleanup (auch bei Abbruch via
+`trap`). Getestet: sowohl der Erfolgspfad als auch der Abbruch bei
+fehlender `.env` funktionieren wie vorgesehen.
+
+**Ab jetzt gilt:** hufiapp.de wird NUR noch über `./deploy.sh` deployt,
+nicht mehr per Hand-Kommandos. Wer manuell baut/rsynct, riskiert genau
+diesen Ausfall erneut.
+
 ## PFLEGE-REGEL (verbindlich ab 18.07.2026)
 Jede neue Route oder Funktion aktualisiert `src/config/appMap.ts` im selben Sprint.
 Die Map ist die Single Source of Truth für Navigation, FAQ und Reifegrad-Tracking.

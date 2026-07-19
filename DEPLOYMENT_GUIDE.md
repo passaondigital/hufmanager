@@ -74,16 +74,24 @@ Deine Änderungen sind bereits im Code:
 - `/src/App.tsx` ✅ Routing integriert
 - `/src/components/layout/AppSidebar.tsx` ✅ Navigation hinzugefügt
 
-### Deployment (abhängig von deinem Setup):
+### Deployment:
 
-**Wenn mit Vercel/Netlify:**
+**hufiapp.de wird NICHT über Vercel/Netlify/GitHub Actions deployt.**
+Der `.github/workflows/deploy.yml`-Workflow baut das Frontend nur zu
+Testzwecken (kein `VITE_`-Secret gesetzt, das Artifact ist nicht
+live-tauglich) — er deployt nichts. Der **einzige** erlaubte Weg auf
+Produktion ist `./deploy.sh` direkt auf dem Server:
+
 ```bash
-# Deine CI/CD sollte automatisch deployen wenn du pushst
-git add .
-git commit -m "feat: Add Emergency OTP + Price Group Management"
-git push
-# → Vercel/Netlify baut automatisch neu
+cd /root/hufmanager_v25/production
+./deploy.sh
 ```
+
+Das Skript baut in einem sauberen Worktree, prüft hart, dass alle
+kritischen `VITE_`-Variablen im Bundle stecken, sichert den aktuellen
+Live-Stand, deployt per rsync und rollt bei fehlgeschlagenem
+Smoke-Test automatisch zurück. Details: `HUFI_ROADMAP.md`
+("Ausfall 19.07.2026") und `ROBUSTHEIT_ANALYSE.md`.
 
 **Wenn lokal testen:**
 ```bash

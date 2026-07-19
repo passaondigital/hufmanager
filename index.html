@@ -62,7 +62,44 @@
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root"><div id="hufi-boot-fallback" style="min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:#FFFFFF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:24px;text-align:center;box-sizing:border-box;">
+      <style>
+        @keyframes hufi-boot-spin { to { transform: rotate(360deg); } }
+        #hufi-boot-spinner {
+          width: 40px; height: 40px; border-radius: 50%;
+          border: 3px solid #F3E8DC; border-top-color: #F97316;
+          animation: hufi-boot-spin 0.9s linear infinite;
+        }
+      </style>
+      <div id="hufi-boot-spinner"></div>
+      <div>
+        <div style="font-size:20px;font-weight:800;color:#1A1A1A;letter-spacing:-0.02em;margin-bottom:6px;">Hufi</div>
+        <p id="hufi-boot-message" style="font-size:14px;color:#6B7280;margin:0;max-width:320px;">Einen Moment — Hufi wird geladen …</p>
+      </div>
+      <div id="hufi-boot-timeout-actions" style="display:none;">
+        <button onclick="window.location.reload()" style="font-size:14px;font-weight:600;color:#fff;background:#F97316;border:none;border-radius:8px;padding:10px 20px;cursor:pointer;">
+          Seite neu laden
+        </button>
+      </div>
+    </div></div>
+    <script>
+      (function () {
+        // Statisches Fallback, unabhängig vom React-Bundle: greift, wenn die
+        // App aus irgendeinem Grund nicht mountet (z.B. Fehler beim Modul-Init,
+        // BEVOR React überhaupt rendert — React ersetzt #root beim Mount und
+        // entfernt dieses Markup automatisch, wenn alles gut geht).
+        setTimeout(function () {
+          var el = document.getElementById("hufi-boot-fallback");
+          if (!el) return; // React hat schon erfolgreich gemountet
+          var msg = document.getElementById("hufi-boot-message");
+          if (msg) msg.textContent = "Hufi ist gerade nicht erreichbar. Bitte lade die Seite neu.";
+          var spinner = document.getElementById("hufi-boot-spinner");
+          if (spinner) spinner.style.display = "none";
+          var actions = document.getElementById("hufi-boot-timeout-actions");
+          if (actions) actions.style.display = "block";
+        }, 15000);
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

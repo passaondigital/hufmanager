@@ -1,4 +1,10 @@
-name: CI & Deploy
+# WICHTIG: Dieser Workflow baut NUR (+ optionale DB-Migration) und deployt
+# NICHT auf hufiapp.de. Er läuft ohne VITE_-Secrets, das Build-Artifact ist
+# also NIE für einen echten Deploy geeignet (fehlende Supabase-URL/-Key
+# führen zu genau dem weißen-Screen-Fehlertyp vom 19.07.2026). Der einzige
+# erlaubte Produktions-Deploy-Weg ist ./deploy.sh auf dem Server — siehe
+# HUFI_ROADMAP.md ("Ausfall 19.07.2026") und ROBUSTHEIT_ANALYSE.md.
+name: CI Build-Check (kein Live-Deploy)
 
 on:
   push:
@@ -6,7 +12,7 @@ on:
 
 jobs:
   build:
-    name: Build frontend
+    name: Build frontend (nur Artifact, deployt nicht)
     runs-on: ubuntu-latest
     env:
       NODE_VERSION: '20'
