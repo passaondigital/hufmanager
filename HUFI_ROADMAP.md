@@ -561,6 +561,44 @@ fehlender `.env` funktionieren wie vorgesehen.
 nicht mehr per Hand-Kommandos. Wer manuell baut/rsynct, riskiert genau
 diesen Ausfall erneut.
 
+### Nachgezogene Robustheits-Härtung (19.07.2026, Folgesession)
+Vollständige Analyse in `ROBUSTHEIT_ANALYSE.md` (3 Verteidigungslinien:
+verhindern / früh fangen / sanft auffangen). Alle 5 empfohlenen
+Härtungen umgesetzt:
+1. **Statisches HTML-Fallback** in `index.html` — ein `#hufi-boot-fallback`-
+   Div liegt initial IN `#root`, wird von React beim erfolgreichen Mount
+   automatisch entfernt; ein Timeout-Handler zeigt nach kurzer Wartezeit
+   eine freundliche Meldung + Reload-Button, falls React nie mountet
+   (deckt exakt die Fehlerklasse "Crash vor React-Mount" ab, die am
+   19.07.2026 zum weißen Screen führte).
+2. **Env-Gate erweitert:** `deploy.sh` prüft jetzt sowohl
+   `VITE_SUPABASE_URL` als auch `VITE_SUPABASE_PUBLISHABLE_KEY` (Key-
+   Fingerprint) im gebauten Bundle, nicht mehr nur die URL.
+3. **Backup + Rollback:** `deploy.sh` sichert vor jedem `rsync --delete`
+   den aktuellen Live-Stand nach `v25-backup-<timestamp>` (letzte 5
+   werden behalten), `./deploy.sh --rollback` spielt den letzten Stand
+   manuell zurück.
+4. **Smoke-Test fest verankert:** `smoke-test.mjs` (Playwright, global
+   installiert) läuft jetzt automatisch NACH dem `rsync` in `deploy.sh`
+   gegen `https://hufiapp.de/` — prüft `#root`-Füllung (>500 Zeichen)
+   und dass keine Uncaught-/Console-Errors auftreten. Bei Fehlschlag
+   rollt `deploy.sh` automatisch auf das eben erstellte Backup zurück
+   und bricht mit Exit-Code 1 ab, statt still "✅ Deployment
+   abgeschlossen" zu melden. Erfolgs- und Fehlschlag-Pfad isoliert
+   getestet (u. a. simulierter Rollback mit Marker-Dateien) und beim
+   finalen End-to-End-Deploy live verifiziert.
+5. **GitHub-Actions-Pfad entschärft:** `.github/workflows/deploy.yml`
+   umbenannt zu "CI Build-Check (kein Live-Deploy)" + Kommentar, dass er
+   ohne `VITE_`-Secrets läuft und nie deployt. `DEPLOYMENT_GUIDE.md`
+   korrigiert (verwies fälschlich auf automatisches Vercel/Netlify-
+   CI/CD-Deployment via `git push`, das für dieses Setup nie existierte).
+
+**Abschluss-Deploy (19.07.2026, 14:14 Uhr):** ein sauberer Lauf über das
+erweiterte `deploy.sh` — Gate ✓, Backup ✓, rsync ✓, Smoke-Test ✓
+(root-Länge 84.694 Zeichen, 0 Fehler), live auf Commit `4182c056`
+verifiziert. Fallback-Markup live im ausgelieferten HTML bestätigt
+(`curl` zeigt `hufi-boot-fallback`).
+
 ## PFLEGE-REGEL (verbindlich ab 18.07.2026)
 Jede neue Route oder Funktion aktualisiert `src/config/appMap.ts` im selben Sprint.
 Die Map ist die Single Source of Truth für Navigation, FAQ und Reifegrad-Tracking.
