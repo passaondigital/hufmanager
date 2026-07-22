@@ -34,7 +34,7 @@ import {
   intentActionToTaskType, taskTypeLabel, taskTypeIcon,
 } from "@/lib/hufi-agent-tasks";
 import { HeyHufi } from "@/components/voice/HeyHufi";
-import { FEATURE_FLAGS } from "@/config/featureFlags";
+import { isWakeWordEnabled } from "@/config/featureFlags";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { DsgvoConsentModal } from "@/components/DsgvoConsentModal";
@@ -151,7 +151,6 @@ export function MobileShell() {
   // Phase D: Hey Hufi wake-word opt-in state.
   const SR_SUPPORTED = typeof window !== "undefined" &&
     !!(window.SpeechRecognition || (window as any).webkitSpeechRecognition);
-  const [heyHufiEnabled, setHeyHufiEnabled] = useState(false);
 
   // Derived state shorthands for UI/legacy code that referenced `recording` / `transcribing`.
   const recording = voice.isRecording;
@@ -194,7 +193,6 @@ export function MobileShell() {
   useEffect(() => {
     if (!user?.id) return;
     setKiConsent(ulget(user.id, USER_STORAGE_KEYS.KI_CONSENT) as "granted" | "denied" | null);
-    setHeyHufiEnabled(SR_SUPPORTED && ulget(user.id, USER_STORAGE_KEYS.HEY_HUFI) === "1");
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Standort einmalig täglich holen (nur mit KI-Consent) ─────────────────
@@ -1758,10 +1756,14 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
               Error-Boundary mit leerem Fallback: HeyHufi rendert ohnehin nichts
               sichtbares (return null) — ein Absturz hier darf nie den ganzen
               Screen runterreißen, sondern verschwindet einfach lautlos. */}
-          {FEATURE_FLAGS.wakeWordEnabled.enabled && SR_SUPPORTED && user && (
+          {isWakeWordEnabled() && SR_SUPPORTED && user && (
             <ErrorBoundary name="HeyHufi" fallback={null}>
               <HeyHufi
-                enabled={heyHufiEnabled && !recording && !transcribing && !responding && !isTtsSpeaking && !isVoiceSpeaking}
+                // Consent (USER_STORAGE_KEYS.HEY_HUFI) wird NICHT mehr hier geprüft —
+                // das ist jetzt strukturell im useMicArbiter (canAcquire) verankert,
+                // ein Ort statt zweier konkurrierender Wahrheiten. `enabled` hier
+                // drückt nur noch aus, ob HeyHufi gerade lauschen SOLLTE (Busy-States).
+                enabled={!recording && !transcribing && !responding && !isTtsSpeaking && !isVoiceSpeaking}
                 isSpeaking={isTtsSpeaking || isVoiceSpeaking}
                 onWakeWord={activateHufi}
               />

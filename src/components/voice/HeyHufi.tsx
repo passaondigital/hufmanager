@@ -1,10 +1,14 @@
 import { useRef, useCallback, useEffect } from "react";
+import { useMicArbiter } from "@/hooks/useMicArbiter";
+import { isWakeWordEnabled } from "@/config/featureFlags";
 
 interface HeyHufiProps {
   onWakeWord: () => void;
   enabled?: boolean;
   isSpeaking?: boolean;
 }
+
+const WAKEWORD: "wakeword" = "wakeword";
 
 const SR =
   typeof window !== "undefined"
@@ -38,6 +42,14 @@ const MIN_HEALTHY_SESSION_MS = 1500;
 const MAX_CONSECUTIVE_FAILURES = 3;
 
 export function HeyHufi({ onWakeWord, enabled = true, isSpeaking }: HeyHufiProps) {
+  // `acquire`/`release` direkt destrukturiert statt des ganzen `arbiter`-
+  // Objekts: die beiden sind stabile Funktionsreferenzen (siehe
+  // useMicArbiter.tsx), das Objekt drumherum wechselt aber bei jedem
+  // Zustandswechsel des Arbiters. Effekte unten hängen an `acquire`/
+  // `release`, damit sie NICHT bei jedem Arbiter-Zustandswechsel neu
+  // laufen (das würde sonst z.B. nach einem Wake-Word-Release sofort
+  // wieder ein Reacquire auslösen, bevor useVoiceCapture zum Zug kommt).
+  const { acquire, release } = useMicArbiter();
   const recRef = useRef<SpeechRecognition | null>(null);
   const runningRef = useRef(false);
   const onWakeWordRef = useRef(onWakeWord);
@@ -45,6 +57,15 @@ export function HeyHufi({ onWakeWord, enabled = true, isSpeaking }: HeyHufiProps
   const lastTriggerRef = useRef<number>(0);
   const startedAtRef = useRef(0);
   const failCountRef = useRef(0);
+  // Hält der Arbiter das Mikrofon aktuell tatsächlich FÜR UNS?
+  const heldRef = useRef(false);
+  // Löst die `confirmed`-Promise für den laufenden release() aus, sobald
+  // `onend` WIRKLICH feuert — die primäre Freigabe-Bestätigung des Arbiters.
+  const endResolveRef = useRef<(() => void) | null>(null);
+  // Schützt gegen ein verspätet auflösendes acquire(), nachdem `enabled`
+  // zwischenzeitlich schon wieder auf false gewechselt ist.
+  const acquireTokenRef = useRef(0);
+  const mountedRef = useRef(true);
 
   // Keep ref in sync so recognition callbacks never have stale closures
   useEffect(() => {
@@ -54,6 +75,40 @@ export function HeyHufi({ onWakeWord, enabled = true, isSpeaking }: HeyHufiProps
   useEffect(() => {
     isSpeakingRef.current = isSpeaking ?? false;
   }, [isSpeaking]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  // Stoppt die laufende Recognition-Session und gibt das Mikrofon über den
+  // Arbiter frei — erst wenn `onend` WIRKLICH gefeuert hat (primäre
+  // Bestätigung), spätestens nach dem arbiter-internen Sicherheits-Timeout.
+  // Das ist die einzige Stelle, an der HeyHufi das Mikrofon wieder hergibt —
+  // auch beim Wake-Word-Treffer selbst (siehe rec.onresult unten), nicht nur
+  // beim Deaktivieren, damit der Arbiter IMMER weiß, wenn "wakeword" frei ist.
+  const stopRecognitionAndRelease = useCallback(() => {
+    runningRef.current = false;
+    if (!heldRef.current) return; // hatten wir gar nicht (z.B. SR fehlt, oder Flag aus)
+    heldRef.current = false;
+
+    const confirmed = new Promise<void>((resolve) => {
+      if (recRef.current) {
+        endResolveRef.current = resolve;
+        try {
+          recRef.current.stop();
+        } catch {
+          resolve();
+        }
+      } else {
+        resolve(); // keine laufende Session mehr -> sofort "beendet"
+      }
+    });
+    recRef.current = null;
+    release(WAKEWORD, { confirmed });
+  }, [release]);
 
   const startRecognition = useCallback(() => {
     if (!SR || recRef.current) return;
@@ -80,8 +135,13 @@ export function HeyHufi({ onWakeWord, enabled = true, isSpeaking }: HeyHufiProps
       if (WAKE_RE.test(transcript) || STANDALONE_RE.test(transcript)) {
         lastTriggerRef.current = now;
         onWakeWordRef.current();
-        // Stop to clear accumulated buffer; onend will auto-restart
-        try { recRef.current?.stop(); } catch { /* ignore */ }
+        // Wake-Word erkannt → Mikrofon SAUBER über den Arbiter freigeben
+        // (nicht nur roh stoppen). Ein roher recRef.current.stop() würde
+        // onend intern ohne Freigabe neu starten lassen (runningRef bliebe
+        // true) — der Arbiter erführe nie vom Release, und useVoiceCapture
+        // müsste beim anschließenden acquire("capture") bis zum
+        // Sicherheits-Timeout warten, statt den Übergang direkt zu bekommen.
+        stopRecognitionAndRelease();
       }
     };
 
@@ -109,6 +169,11 @@ export function HeyHufi({ onWakeWord, enabled = true, isSpeaking }: HeyHufiProps
 
     rec.onend = () => {
       recRef.current = null;
+      // Primäre Freigabe-Bestätigung für einen laufenden release() — siehe
+      // stopRecognitionAndRelease(). Muss VOR einem eventuellen Neustart
+      // aufgelöst werden, da der Arbiter genau darauf wartet.
+      endResolveRef.current?.();
+      endResolveRef.current = null;
       if (registerEndAndShouldRetry()) {
         const delay = Math.min(300 * 2 ** failCountRef.current, 5000);
         setTimeout(() => {
@@ -119,6 +184,8 @@ export function HeyHufi({ onWakeWord, enabled = true, isSpeaking }: HeyHufiProps
 
     rec.onerror = (ev: SpeechRecognitionErrorEvent) => {
       recRef.current = null;
+      endResolveRef.current?.();
+      endResolveRef.current = null;
       if (ev.error === "not-allowed") {
         // Mikrofon verweigert — still beenden, kein Crash
         runningRef.current = false;
@@ -140,25 +207,45 @@ export function HeyHufi({ onWakeWord, enabled = true, isSpeaking }: HeyHufiProps
       recRef.current = null;
       runningRef.current = false;
     }
-  }, []);
-
-  const stopRecognition = useCallback(() => {
-    runningRef.current = false;
-    recRef.current?.stop();
-    recRef.current = null;
-  }, []);
+  }, [stopRecognitionAndRelease]);
 
   useEffect(() => {
-    if (enabled && SR) {
+    // Der Feature-Flag wird hier zusätzlich zum `enabled`-Prop geprüft, nicht
+    // nur vom Aufrufer vorausgesetzt: eine Instanz ohne explizit gesetztes
+    // `enabled` (Default `true`, z.B. in CockpitReady) darf NIE lauschen,
+    // solange `wakeWordEnabled` global aus ist (außer im Test-Override, siehe
+    // isWakeWordEnabled() in featureFlags.ts — ?wakeword=test).
+    const shouldRun = enabled && isWakeWordEnabled() && !!SR;
+    const token = ++acquireTokenRef.current;
+
+    if (shouldRun) {
       failCountRef.current = 0;
-      startRecognition();
+      acquire(WAKEWORD).then(
+        () => {
+          if (!mountedRef.current || acquireTokenRef.current !== token) {
+            // Inzwischen deaktiviert/unmounted, bevor die Übergabe durchkam —
+            // das gerade übergebene Mikrofon sofort wieder freigeben, statt
+            // es ungenutzt zu halten (es wurde ja nie wirklich gestartet).
+            release(WAKEWORD, { confirmed: Promise.resolve() });
+            return;
+          }
+          heldRef.current = true;
+          startRecognition();
+        },
+        () => {
+          // Verweigert — z.B. weil der Arbiter kein Consent-Signal
+          // (USER_STORAGE_KEYS.HEY_HUFI) findet. Still bleiben, kein Crash;
+          // kein Retry, da sich ohne Consent-Änderung nichts ändern würde.
+        },
+      );
     } else {
-      stopRecognition();
+      stopRecognitionAndRelease();
     }
+
     return () => {
-      stopRecognition();
+      stopRecognitionAndRelease();
     };
-  }, [enabled, startRecognition, stopRecognition]);
+  }, [enabled, acquire, release, startRecognition, stopRecognitionAndRelease]);
 
   return null;
 }

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useMicArbiter } from "@/hooks/useMicArbiter";
 
 const WHISPER_ENDPOINT = "/api/local-ai/transcribe";
 
@@ -38,6 +39,11 @@ function pickMimeType(): string {
 }
 
 export function useVoiceCapture(): UseVoiceCapture {
+  // Nur `acquire`/`release` destrukturiert (stabile Funktionsreferenzen, siehe
+  // useMicArbiter.tsx) statt des ganzen Arbiter-Objekts, damit Callbacks
+  // unten nicht bei jedem Arbiter-Zustandswechsel neu erzeugt werden.
+  const { acquire, release } = useMicArbiter();
+
   const isSupported =
     typeof navigator !== "undefined" &&
     !!navigator.mediaDevices?.getUserMedia &&
@@ -69,7 +75,14 @@ export function useVoiceCapture(): UseVoiceCapture {
     streamRef.current = null;
     recorderRef.current = null;
     chunksRef.current = [];
-  }, []);
+    // MediaStreamTrack.stop() ist synchron — das Mikrofon ist an dieser
+    // Stelle bereits wirklich frei, daher `confirmed` sofort aufgelöst
+    // (kein Warten auf ein externes Event nötig, anders als bei
+    // SpeechRecognition in HeyHufi.tsx). No-Op, falls wir "capture" gar
+    // nicht hielten (z.B. releaseStream() nach einem gescheiterten
+    // getUserMedia-Versuch).
+    release("capture", { confirmed: Promise.resolve() });
+  }, [release]);
 
   const reset = useCallback(() => {
     setTranscript(null);
@@ -208,10 +221,17 @@ export function useVoiceCapture(): UseVoiceCapture {
     cancelledRef.current = false;
     setHasVAD(false);
 
+    // Wartet ggf., bis HeyHufi "wakeword" wirklich freigegeben hat (siehe
+    // stopRecognitionAndRelease() in HeyHufi.tsx) — serialisiert durch den
+    // Arbiter, kein fester Timing-Puffer. "capture" ist nie consent-gated,
+    // löst also nie ab (siehe canAcquire in useMicArbiter.tsx).
+    await acquire("capture");
+
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (err: unknown) {
+      releaseStream();
       const name = (err as { name?: string })?.name;
       setError(name === "NotAllowedError" || name === "PermissionDeniedError"
         ? "microphone_denied"
@@ -304,7 +324,7 @@ export function useVoiceCapture(): UseVoiceCapture {
     });
 
     return true;
-  }, [isSupported, isRecording, isProcessing, releaseStream, transcribe]);
+  }, [isSupported, isRecording, isProcessing, acquire, releaseStream, transcribe]);
 
   const cancel = useCallback(() => {
     stopVAD();
@@ -328,8 +348,13 @@ export function useVoiceCapture(): UseVoiceCapture {
         try { rec.stop(); } catch { /* noop */ }
       }
       streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+      // Direkter Track-Stop reicht dem Browser, aber der Arbiter muss beim
+      // Unmount ebenfalls informiert werden — sonst bleibt "capture" als
+      // Halter stehen und blockiert HeyHufi für immer.
+      release("capture", { confirmed: Promise.resolve() });
     };
-  }, []);
+  }, [release]);
 
   return {
     isRecording,
