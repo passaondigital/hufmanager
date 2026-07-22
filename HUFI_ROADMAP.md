@@ -531,6 +531,36 @@ Bestätigung statt Timing-Puffer vergibt) — als eigener Task mit
 Kern-Learning in `HUFI_TODO.md` dokumentiert. Reaktivierung dann: Flag
 auf `true`, keine weiteren Schritte nötig.
 
+### ✅ Schritt 20: useMicArbiter gebaut, Test-Zugang, wartet auf Gerätetest (22.07.2026)
+
+Der in Schritt 19 zurückgestellte `useMicArbiter` (siehe `HUFI_TODO.md`) ist
+jetzt gebaut: `src/hooks/micArbiterCore.ts` (framework-unabhängige
+Kernlogik — Promise-Mutex, echte `onend`-Bestätigung statt Timing-Puffer,
+Sicherheits-Timeouts gegen Deadlock) + `src/hooks/useMicArbiter.tsx`
+(React-Context, Provider in `App.tsx`). `HeyHufi.tsx` und
+`useVoiceCapture.ts` laufen vollständig darüber; das Consent-Gating
+(`USER_STORAGE_KEYS.HEY_HUFI`) ist strukturell in den Arbiter gezogen
+(`canAcquire`) — der `enabled`-Prop in `MobileShell.tsx` ist keine zweite,
+konkurrierende Wahrheit mehr.
+
+Beim Bau zwei zusätzliche Lücken gefunden und mitgefixt: der
+Wake-Word-Treffer stoppte die Recognition bisher roh (ohne Arbiter-Release),
+was den anschließenden Aufnahme-Übergang bis zum Sicherheits-Timeout
+blockiert hätte; und `useVoiceCapture`s Unmount-Cleanup gab das Mikrofon nur
+roh frei, ohne den Arbiter zu informieren.
+
+**Test-Zugang, NICHT für alle Nutzer scharf:** `wakeWordEnabled` in
+`featureFlags.ts` bleibt `false`. `?wakeword=test` in der URL setzt einen
+`sessionStorage`-Override (`initWakeWordTestOverride()` in `main.tsx`) —
+gilt nur für die aktuelle Browser-Session, kein Effekt für andere
+Nutzer/Sessions. Das Consent-Gating im Arbiter greift unverändert — der
+Toggle in den Einstellungen muss weiterhin aktiv bestätigt werden.
+
+**Reaktivierung für alle erst nach bestandenem Gerätetest** (echtes
+Android/ChromeOS — das Kollisionsverhalten reproduziert sich auf
+Desktop-Chrome nicht zuverlässig): `wakeWordEnabled` auf `true`. Details
+siehe `HUFI_TODO.md`.
+
 ## AUSFALL 19.07.2026: WEISSER SCREEN + FIX (deploy.sh)
 **Was passierte:** hufiapp.de zeigte weißen Screen, Konsole:
 `Uncaught Error: supabaseUrl is required`.

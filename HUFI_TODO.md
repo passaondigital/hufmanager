@@ -2,9 +2,45 @@
 
 Offene Punkte aus laufenden Sessions. Nächste Session: zuerst hier lesen.
 
-## Hey Hufi — zentraler Mic-State-Manager (useMicArbiter), geparkt (18.07.2026)
+## Hey Hufi — zentraler Mic-State-Manager (useMicArbiter), gebaut (22.07.2026), wartet auf Gerätetest
 
-**Kontext:** Hey Hufi (Wake-Word, `HeyHufi.tsx`) ist seit diesem Datum hinter
+**Update 22.07.2026:** `useMicArbiter` ist fertig gebaut und verkabelt —
+`src/hooks/micArbiterCore.ts` (framework-unabhängige Kernlogik, Promise-Mutex,
+Sicherheits-Timeouts) + `src/hooks/useMicArbiter.tsx` (React-Context-Wrapper,
+Provider in `App.tsx`). `HeyHufi.tsx` und `useVoiceCapture.ts` laufen
+vollständig über den Arbiter (`acquire`/`release`, echte `onend`-Bestätigung
+statt Timing-Puffer). Consent-Gating (`USER_STORAGE_KEYS.HEY_HUFI`) ist
+strukturell in den Arbiter gezogen (`canAcquire` in `useMicArbiter.tsx`) —
+keine zweite Wahrheit mehr über einen Boolean-Prop in `MobileShell.tsx`.
+Zusätzlich beim Bau gefunden und mitgefixt: der Wake-Word-Treffer in
+`HeyHufi.tsx` rief bisher `recRef.current.stop()` roh auf (Kommentar "onend
+will auto-restart") statt über den Arbiter freizugeben — das hätte
+`useVoiceCapture`s `acquire("capture")` bis zum 6s-Sicherheits-Timeout
+blockiert. Jetzt geht der Wake-Word→Aufnahme-Übergang komplett über
+`stopRecognitionAndRelease()`. Ebenso ergänzt: `useVoiceCapture`s
+Unmount-Cleanup gab das Mikrofon vorher nur roh frei, ohne den Arbiter zu
+informieren.
+
+**Test-Zugang (NICHT für alle Nutzer scharf):** `wakeWordEnabled` in
+`featureFlags.ts` bleibt `false`. URL-Parameter `?wakeword=test` setzt
+`initWakeWordTestOverride()` (aufgerufen in `main.tsx`, vor dem Render)
+einen `sessionStorage`-Override — gilt nur für die aktuelle Browser-Session
+(Tab schließen = weg), kein Effekt für andere Nutzer/Sessions.
+`isWakeWordEnabled()` (statt der rohen Flag-Prüfung) wird jetzt überall
+gelesen: `HeyHufi.tsx`, `MobileShell.tsx`, `KiSettingsCard.tsx`. Das
+Consent-Gating im Arbiter (`canAcquire`) ist davon unabhängig — der
+Test-Override schaltet nur den Pfad sichtbar/nutzbar frei, ersetzt aber
+NICHT die aktive Zustimmung über den Toggle in den Einstellungen.
+
+**Reaktivierung erst nach bestandenem Gerätetest** (echtes Android/ChromeOS,
+Kollisionsverhalten reproduziert sich auf Desktop-Chrome nicht zuverlässig):
+`wakeWordEnabled` in `featureFlags.ts` auf `true` setzen. Bis dahin: NICHT
+scharf schalten.
+
+---
+
+**Ursprünglicher Befund (18.07.2026), zur Historie erhalten:** Hey Hufi
+(Wake-Word, `HeyHufi.tsx`) war seit diesem Datum hinter
 `featureFlags.ts` → `wakeWordEnabled` (default `false`) deaktiviert, weil
 `webkitSpeechRecognition` (Wake-Word-Listener) und `MediaRecorder`
 (eigentliche Sprachaufnahme, `useVoiceCapture.ts`) um dasselbe Mikrofon
