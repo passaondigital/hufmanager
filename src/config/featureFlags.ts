@@ -64,3 +64,36 @@ export type FeatureFlagKey = keyof typeof FEATURE_FLAGS;
 export function isFeatureEnabled(key: FeatureFlagKey): boolean {
   return FEATURE_FLAGS[key].enabled;
 }
+
+// Gezielter Test-Zugang für "Hey Hufi", OHNE `wakeWordEnabled` für alle
+// Nutzer scharf zu schalten (siehe HUFI_TODO.md — Reaktivierung erst nach
+// bestandenem Gerätetest auf echtem Android/ChromeOS). `?wakeword=test` in
+// der URL schaltet den Wake-Word-Pfad NUR für die aktuelle Browser-Session
+// frei (sessionStorage, nicht localStorage — verschwindet beim Schließen
+// des Tabs, kein dauerhafter Zustand). Das Consent-Gating im
+// useMicArbiter (canAcquire) ist davon komplett unberührt: der Toggle in
+// KiSettingsCard muss weiterhin aktiv bestätigt werden, der Override
+// schaltet nur sichtbar/nutzbar frei, ersetzt aber keine Zustimmung.
+const WAKEWORD_TEST_OVERRIDE_KEY = "hufi_wakeword_test_override";
+
+export function initWakeWordTestOverride(): void {
+  if (typeof window === "undefined") return;
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("wakeword") === "test") {
+    try {
+      sessionStorage.setItem(WAKEWORD_TEST_OVERRIDE_KEY, "1");
+    } catch {
+      /* sessionStorage kann in restriktiven Kontexten fehlen — dann bleibt es beim Normalzustand */
+    }
+  }
+}
+
+export function isWakeWordEnabled(): boolean {
+  if (FEATURE_FLAGS.wakeWordEnabled.enabled) return true;
+  if (typeof window === "undefined") return false;
+  try {
+    return sessionStorage.getItem(WAKEWORD_TEST_OVERRIDE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
