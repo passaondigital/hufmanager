@@ -513,7 +513,7 @@ async function executeTool(
             .from("horses")
             .select("id, name, eqid, owner_id, profiles!owner_id(full_name, readable_id)")
             .ilike("name", q)
-            .eq("deleted_at", null)
+            .is("deleted_at", null)
             .limit(8);
           (data ?? []).forEach((r: Record<string,unknown>) => {
             const owner = r.profiles as Record<string,unknown> | null;
