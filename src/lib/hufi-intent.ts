@@ -111,11 +111,14 @@ function extractClientName(message: string, memory: HufiMemory[]): string | unde
 
 function extractAction(message: string): string {
   const lower = message.toLowerCase();
+  // Lösch-/Storno-Verben ZUERST prüfen: "Terminlöschen" enthält auch "termin"
+  // und würde sonst faelschlich als create_appointment erkannt werden (das
+  // Substantiv gewinnt gegen das Verb) -- siehe AGENT_ANALYSE.md Punkt 1.
+  if (lower.includes("lösche") || lower.includes("storniere")) return "delete";
   if (lower.includes("rechnung")) return "create_invoice";
   if (lower.includes("termin")) return "create_appointment";
   if (lower.includes("erinnerung") || lower.includes("erinnere")) return "set_reminder";
   if (lower.includes("sende") || lower.includes("nachricht")) return "send_message";
-  if (lower.includes("lösche") || lower.includes("storniere")) return "delete";
   return "generic_action";
 }
 

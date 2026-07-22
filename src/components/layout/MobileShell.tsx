@@ -31,7 +31,7 @@ import { detectIntent, type HufiIntent } from "@/lib/hufi-intent";
 import { matchScenario } from "@/lib/hufi-scenarios";
 import { runNavAction, type ActionOutcome, type ActionRole } from "@/lib/hufi-nav-actions";
 import {
-  intentActionToTaskType, taskTypeLabel, taskTypeIcon,
+  intentActionToTaskType, taskTypeLabel, taskTypeIcon, type AgentTaskType,
 } from "@/lib/hufi-agent-tasks";
 import { HeyHufi } from "@/components/voice/HeyHufi";
 import { isWakeWordEnabled } from "@/config/featureFlags";
@@ -1128,6 +1128,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
     let explanation = fallbackExplanation;
 
     // KI-Plan über zentralen Agenten holen
+    let pendingConfirmation: Awaited<ReturnType<typeof askHufiAgent>>["pendingConfirmation"];
     try {
       const agentHistory = messages.slice(-4).map((m) => ({
         role: (m.role === "user" ? "user" : "assistant") as "user" | "assistant",
@@ -1144,6 +1145,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
         clientTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         clientLocation: _lat && _lon ? { lat: parseFloat(_lat), lon: parseFloat(_lon) } : undefined,
       });
+      pendingConfirmation = resp.pendingConfirmation;
       if (resp.actionPlan?.taskType) {
         taskType    = resp.actionPlan.taskType;
         payload     = resp.actionPlan.payload;
@@ -1151,6 +1153,27 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
       }
     } catch (e) {
       console.warn("[Hufi] Action-Plan Fallback auf Keywords:", e);
+    }
+
+    // Claude hat über echtes Tool-Use bereits einen Bestätigungs-Task
+    // server-seitig angelegt (hufi_task_queue, siehe callClaudeWithTools in
+    // hufi-agent/index.ts) -- diesen anzeigen statt zusätzlich per
+    // Keyword-Fallback einen zweiten, eigenständigen Task zu erzeugen (sonst
+    // zwei parallele Tasks für dieselbe Aktion, siehe AGENT_ANALYSE.md).
+    if (pendingConfirmation) {
+      const { taskId, stepId, taskType: pendingType, description } = pendingConfirmation;
+      const icon  = taskTypeIcon(pendingType as AgentTaskType);
+      const label = taskTypeLabel(pendingType as AgentTaskType);
+      addMsg({
+        role: "ai",
+        text: `${icon} ${label}\n\n${description}`,
+        ts: Date.now(),
+        actions: [
+          { label: "✓ Bestätigen", actionKey: `task_approve:${taskId}:${stepId}` },
+          { label: "✗ Ablehnen",   actionKey: `task_reject:${taskId}` },
+        ],
+      });
+      return;
     }
 
     const task  = await createActionTask(user.id, taskType, payload, explanation, text, sessionId.current);
@@ -1528,6 +1551,24 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
         clientTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         clientLocation: lat_ && lon_ ? { lat: parseFloat(lat_), lon: parseFloat(lon_) } : undefined,
       });
+      // Mutierendes Tool wollte ausführen -> NICHT automatisch, echte
+      // Bestätigung anfordern (dieselbe UI/Queue wie agent_action, siehe
+      // AGENT_ANALYSE.md Etappe 1, Sicherheits-Check).
+      if (resp.pendingConfirmation) {
+        const { taskId, stepId, taskType, description } = resp.pendingConfirmation;
+        const icon  = taskTypeIcon(taskType as AgentTaskType);
+        const label = taskTypeLabel(taskType as AgentTaskType);
+        addMsg({
+          role: "ai",
+          text: `${icon} ${label}\n\n${description}`,
+          ts: Date.now() + 1,
+          actions: [
+            { label: "✓ Bestätigen", actionKey: `task_approve:${taskId}:${stepId}` },
+            { label: "✗ Ablehnen",   actionKey: `task_reject:${taskId}` },
+          ],
+        });
+        return;
+      }
       addMsg({ role: "ai", text: resp.answer, ts: Date.now() + 1 });
       learnFromInteraction(user.id, cleaned, resp.answer, "confirmed", sessionId.current);
       void observeInteraction(cleaned, resp.answer, user.id);

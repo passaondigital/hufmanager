@@ -9,6 +9,7 @@ import type { HufiAction } from "./hufi-actions";
 
 export type AgentTaskType =
   | "create_appointment"
+  | "update_appointment"
   | "create_invoice"
   | "send_message"
   | "set_reminder"
@@ -23,6 +24,7 @@ export type AgentTaskType =
 export function taskTypeLabel(type: AgentTaskType): string {
   switch (type) {
     case "create_appointment": return "Termin anlegen";
+    case "update_appointment": return "Termin ändern";
     case "create_invoice":     return "Rechnung erstellen";
     case "send_message":       return "Nachricht senden";
     case "set_reminder":       return "Erinnerung setzen";
@@ -37,6 +39,7 @@ export function taskTypeLabel(type: AgentTaskType): string {
 export function taskTypeIcon(type: AgentTaskType): string {
   switch (type) {
     case "create_appointment": return "📅";
+    case "update_appointment": return "📅";
     case "create_invoice":     return "🧾";
     case "send_message":       return "💬";
     case "set_reminder":       return "🔔";
@@ -67,13 +70,18 @@ export function intentActionToTaskType(action: string): AgentTaskType {
 export function taskTypeToActionType(type: AgentTaskType): HufiAction["type"] {
   switch (type) {
     case "create_appointment": return "create_appointment";
+    case "update_appointment": return "update_appointment";
     case "create_invoice":     return "send_invoice";
     case "send_message":       return "notify_client";
     case "set_reminder":       return "remind_dsgvo";
     case "create_note":        return "create_note";
     case "set_price_group":    return "set_price_group";
     case "add_expense":        return "add_expense";
-    case "delete":             return "remind_dsgvo";
+    // "delete" heißt heute konkret: Termin stornieren (kein echtes DELETE,
+    // siehe AGENT_ANALYSE.md Etappe 1, Entscheidung B). Andere Lösch-Ziele
+    // (Rechnung, Notiz) sind hier bewusst nicht abgedeckt -- das ACTION_KW
+    // "lösche"/"storniere" wird aktuell nur für Termine ausgeführt.
+    case "delete":             return "cancel_appointment";
     case "generic_action":     return "remind_dsgvo";
   }
 }

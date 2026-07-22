@@ -36,6 +36,18 @@ interface ActionPlan {
   confirmText: string;
 }
 
+interface PendingConfirmation {
+  taskId: string;
+  stepId: string;
+  taskType: string;
+  description: string;
+}
+
+interface CallToolsResult {
+  text: string;
+  pendingConfirmation?: PendingConfirmation;
+}
+
 // ── System Prompt ──────────────────────────────────────────────────────────────
 
 const HUFI_BASE = `Du bist Hufi — proaktiver digitaler Assistent für Hufpfleger und Pferdehalter im HufManager.
@@ -313,6 +325,124 @@ const HUFI_TOOLS = [
     },
   },
 ];
+
+// ── Bestätigungspflicht für mutierende Tools ──────────────────────────────────
+// Siehe AGENT_ANALYSE.md, Etappe 1: callClaudeWithTools führte mutierende
+// Tools bisher SOFORT und OHNE jede Rückfrage aus, sobald Claude sich dafür
+// entschied — egal ob Chat oder (künftig) Voice. Ab hier gilt: jeder Tool-Use
+// eines Tools aus MUTATING_TOOLS wird NICHT ausgeführt, sondern erzeugt einen
+// Eintrag in hufi_task_queue (dieselbe Tabelle/UI wie der bestehende
+// agent_action-Bestätigungsfluss, siehe hufi-task-engine.ts) und wartet auf
+// echte Nutzer-Bestätigung über den ✓-Button. Lesende Tools sind ausgenommen.
+const MUTATING_TOOLS = new Set([
+  "create_appointment", "update_appointment", "cancel_appointment",
+  "create_invoice", "create_note", "create_horse", "create_contact",
+  "add_expense", "send_notification",
+]);
+
+// Tools, für die bereits ein Ausführungspfad existiert (client-seitig über
+// executeHufiAction, siehe hufi-actions.ts) — Name → AgentTaskType. Fehlt ein
+// Tool hier (create_horse, create_contact), wird es NICHT ausgeführt, auch
+// nicht nach Bestätigung — Claude bekommt stattdessen sofort eine Absage,
+// damit nichts still hängen bleibt (siehe executeTool-Aufrufstelle unten).
+// taskType: AgentTaskType-Wert für die Client-Anzeige (Label/Icon, siehe
+// hufi-agent-tasks.ts). actionType: HufiAction["type"] -- was executeHufiAction
+// nach Bestätigung wirklich ausführt (siehe hufi-actions.ts). Beide Werte
+// bewusst dupliziert statt importiert -- die Edge Function läuft in Deno,
+// nicht im selben Bundle wie src/lib.
+const EXECUTABLE_MUTATING_TOOLS: Record<string, { taskType: string; actionType: string }> = {
+  create_appointment: { taskType: "create_appointment", actionType: "create_appointment" },
+  update_appointment: { taskType: "update_appointment", actionType: "update_appointment" },
+  cancel_appointment: { taskType: "delete",             actionType: "cancel_appointment" },
+  create_invoice:     { taskType: "create_invoice",     actionType: "send_invoice" },
+  create_note:        { taskType: "create_note",        actionType: "create_note" },
+  add_expense:        { taskType: "add_expense",        actionType: "add_expense" },
+  send_notification:  { taskType: "send_message",       actionType: "notify_client" },
+};
+
+// Wandelt das rohe Tool-Input in die Payload-Form um, die die bestehenden
+// executeHufiAction-Handler (hufi-actions.ts) erwarten -- reine Feld-Umbenennung,
+// keine neue Geschäftslogik.
+function toActionPayload(toolName: string, input: Record<string, unknown>): Record<string, unknown> {
+  switch (toolName) {
+    case "send_notification":
+      return { client_id: input.user_id, message: input.message };
+    default:
+      return input;
+  }
+}
+
+async function lookupHorseName(supabaseAdmin: ReturnType<typeof createClient>, horseId: string): Promise<string | null> {
+  if (!horseId) return null;
+  const { data } = await supabaseAdmin.from("horses").select("name").eq("id", horseId).maybeSingle();
+  return (data as { name?: string } | null)?.name ?? null;
+}
+
+async function lookupAppointmentInfo(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  appointmentId: string,
+): Promise<{ date: string | null; horseName: string | null } | null> {
+  if (!appointmentId) return null;
+  const { data } = await supabaseAdmin
+    .from("appointments")
+    .select("date, horses(name)")
+    .eq("id", appointmentId)
+    .maybeSingle();
+  if (!data) return null;
+  const row = data as { date?: string; horses?: { name?: string } | { name?: string }[] | null };
+  const h = Array.isArray(row.horses) ? row.horses[0] : row.horses;
+  return { date: row.date ?? null, horseName: h?.name ?? null };
+}
+
+// Baut den konkreten, für den Nutzer verständlichen Bestätigungstext --
+// "Termin für Gray am 27.07. stornieren?", nicht "Aktion ausführen?".
+async function describeToolCall(
+  toolName: string,
+  input: Record<string, unknown>,
+  supabaseAdmin: ReturnType<typeof createClient>,
+): Promise<string> {
+  switch (toolName) {
+    case "create_appointment": {
+      const horseName = input.horse_id ? await lookupHorseName(supabaseAdmin, String(input.horse_id)) : null;
+      const timeStr = input.time ? ` um ${input.time}` : "";
+      return `Neuen Termin${horseName ? ` für ${horseName}` : ""} am ${input.date ?? "?"}${timeStr} anlegen?`;
+    }
+    case "update_appointment": {
+      const info = await lookupAppointmentInfo(supabaseAdmin, String(input.appointment_id ?? ""));
+      const changes: string[] = [];
+      if (input.date) changes.push(`neues Datum ${input.date}`);
+      if (input.time) changes.push(`neue Uhrzeit ${input.time}`);
+      if (input.status) changes.push(`Status "${input.status}"`);
+      if (input.notes) changes.push("neue Notiz");
+      const what = changes.length > 0 ? changes.join(", ") : "Änderungen";
+      return `Termin${info?.horseName ? ` für ${info.horseName}` : ""}${info?.date ? ` am ${info.date}` : ""}: ${what} übernehmen?`;
+    }
+    case "cancel_appointment": {
+      const info = await lookupAppointmentInfo(supabaseAdmin, String(input.appointment_id ?? ""));
+      const notify = input.notify_client ? " (Kunde wird benachrichtigt)" : "";
+      return `Termin${info?.horseName ? ` für ${info.horseName}` : ""}${info?.date ? ` am ${info.date}` : ""} stornieren?${notify}`;
+    }
+    case "create_invoice": {
+      const items = Array.isArray(input.line_items) ? input.line_items as Array<Record<string, unknown>> : [];
+      const total = items.length > 0
+        ? items.reduce((s, i) => s + Number(i.quantity ?? 1) * Number(i.unit_price ?? 0), 0)
+        : Number(input.amount ?? 0);
+      return `Rechnung über ${total.toFixed(2)}€ anlegen?`;
+    }
+    case "create_note":
+      return `Notiz${input.horse_name ? ` für ${input.horse_name}` : ""} speichern: "${String(input.note_text ?? "").slice(0, 80)}"?`;
+    case "create_horse":
+      return `Neues Pferd "${input.name ?? "?"}" anlegen?`;
+    case "create_contact":
+      return `Neuen Kunden "${input.full_name ?? "?"}" anlegen?`;
+    case "add_expense":
+      return `Ausgabe über ${input.amount ?? "?"}€ (${input.description ?? "?"}) erfassen?`;
+    case "send_notification":
+      return `Nachricht an Kunde senden: "${String(input.message ?? "").slice(0, 80)}"?`;
+    default:
+      return `Aktion "${toolName}" ausführen?`;
+  }
+}
 
 // ── Wetter-Fetch (wttr.in, kein API-Key) ─────────────────────────────────────
 
@@ -1089,7 +1219,8 @@ async function callClaudeWithTools(
   supabaseServiceKey: string,
   voiceMode: boolean,
   professionType: string | null = null,
-): Promise<string> {
+  originalText: string = "",
+): Promise<CallToolsResult> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 55_000);
 
@@ -1130,7 +1261,7 @@ async function callClaudeWithTools(
       // Kein Tool-Call → finale Antwort
       if (json.stop_reason === "end_turn" || !json.content.some(b => b.type === "tool_use")) {
         const text = json.content.find(b => b.type === "text")?.text ?? "";
-        return text;
+        return { text };
       }
 
       // Tool-Calls ausführen
@@ -1139,6 +1270,71 @@ async function callClaudeWithTools(
 
       for (const block of toolUseBlocks) {
         if (!block.name || !block.id) continue;
+
+        // ── Mutierendes Tool: NICHT ausführen, sondern Bestätigung anfordern ──
+        // (siehe AGENT_ANALYSE.md Etappe 1 -- Sicherheits-Check). Der
+        // Claude-Kontext für diese Runde endet hier bewusst: die Ausführung
+        // hängt jetzt an einer echten, potenziell erst Minuten später
+        // erfolgenden Nutzer-Bestätigung (hufi-task-engine.ts: confirmStep),
+        // das lässt sich nicht in derselben Anfrage zu Ende führen.
+        if (MUTATING_TOOLS.has(block.name)) {
+          const exec = EXECUTABLE_MUTATING_TOOLS[block.name];
+          if (!exec) {
+            // create_horse / create_contact: (noch) kein Ausführungspfad.
+            // Klare Absage statt stillem Hängenbleiben.
+            toolResults.push({
+              type: "tool_result",
+              tool_use_id: block.id,
+              content: `Diese Aktion ("${block.name}") kann ich im Chat noch nicht direkt ausführen. Bitte den Nutzer bitten, das manuell in der App anzulegen.`,
+            });
+            continue;
+          }
+
+          const description = await describeToolCall(block.name, block.input ?? {}, supabaseAdmin);
+          const stepId = crypto.randomUUID();
+          const { data: taskRow, error: taskErr } = await supabaseAdmin
+            .from("hufi_task_queue")
+            .insert({
+              user_id: providerId,
+              title: description,
+              description,
+              trigger_phrase: originalText.slice(0, 200),
+              status: "awaiting_confirm",
+              priority: 5,
+              steps: [{
+                id: stepId,
+                tool: "execute_agent_action",
+                description,
+                params: {
+                  actionType: exec.actionType,
+                  payload: toActionPayload(block.name, block.input ?? {}),
+                  explanation: description,
+                },
+                status: "pending",
+                requires_confirm: true,
+              }],
+              current_step: 0,
+              context: { sessionId: null, taskType: exec.taskType },
+            })
+            .select("id")
+            .single();
+
+          if (taskErr || !taskRow) {
+            console.error(`[hufi-agent] Bestätigungs-Task konnte nicht angelegt werden:`, taskErr?.message);
+            return { text: `Ich wollte "${description}" ausführen, konnte aber keine Bestätigung vorbereiten. Bitte im Kalender/in den Rechnungen manuell prüfen.` };
+          }
+
+          return {
+            text: description,
+            pendingConfirmation: {
+              taskId: (taskRow as { id: string }).id,
+              stepId,
+              taskType: exec.taskType,
+              description,
+            },
+          };
+        }
+
         console.log(`[hufi-agent] Tool: ${block.name}`, JSON.stringify(block.input).slice(0, 100));
         const result = await executeTool(
           block.name,
@@ -1178,7 +1374,7 @@ async function callClaudeWithTools(
       signal: ctrl.signal,
     });
     const finalJson = await finalRes.json() as { content?: Array<{ type: string; text?: string }> };
-    return finalJson.content?.find(b => b.type === "text")?.text ?? "Ich konnte die Anfrage nicht vollständig verarbeiten.";
+    return { text: finalJson.content?.find(b => b.type === "text")?.text ?? "Ich konnte die Anfrage nicht vollständig verarbeiten." };
 
   } finally {
     clearTimeout(timer);
@@ -1311,15 +1507,18 @@ serve(async (req) => {
   const OLLAMA_SECRET = Deno.env.get("OLLAMA_PROXY_SECRET") ?? "";
 
   let rawAnswer = "";
+  let pendingConfirmation: PendingConfirmation | undefined;
   let source: "claude" | "ollama" = "claude";
 
   if (ANTHROPIC_KEY) {
     try {
-      rawAnswer = await callClaudeWithTools(
+      const result = await callClaudeWithTools(
         systemPrompt, messages, ANTHROPIC_KEY, model,
         user.id, supabaseAdmin, supabaseUrl, supabaseServiceKey, voiceMode,
-        ctx.professionType,
+        ctx.professionType, text,
       );
+      rawAnswer = result.text;
+      pendingConfirmation = result.pendingConfirmation;
       source = "claude";
     } catch (e) {
       console.error(`[hufi-agent][${requestId}] Claude Fehler:`, e);
@@ -1353,13 +1552,13 @@ serve(async (req) => {
       if (cleaned.startsWith("{")) actionPlan = JSON.parse(cleaned) as ActionPlan;
     } catch { /* kein valides JSON */ }
     return new Response(
-      JSON.stringify({ ok: true, answer: actionPlan?.confirmText ?? rawAnswer, spokenText: actionPlan?.explanation ?? rawAnswer, source, actionPlan }),
+      JSON.stringify({ ok: true, answer: actionPlan?.confirmText ?? rawAnswer, spokenText: actionPlan?.explanation ?? rawAnswer, source, actionPlan, pendingConfirmation }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 
   return new Response(
-    JSON.stringify({ ok: true, answer: rawAnswer, spokenText: rawAnswer, source }),
+    JSON.stringify({ ok: true, answer: rawAnswer, spokenText: rawAnswer, source, pendingConfirmation }),
     { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );
 });

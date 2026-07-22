@@ -8,6 +8,8 @@ import { extractLineItems } from "./hufi-tool-definitions";
 export interface HufiAction {
   type:
     | "create_appointment"
+    | "update_appointment"
+    | "cancel_appointment"
     | "send_invoice"
     | "notify_client"
     | "create_note"
@@ -115,6 +117,8 @@ export async function executeHufiAction(
 
   switch (action.type) {
     case "create_appointment":  return _createAppointment(action.payload, userId);
+    case "update_appointment":  return _updateAppointment(action.payload, userId);
+    case "cancel_appointment":  return _cancelAppointment(action.payload, userId);
     case "send_invoice":        return _createInvoice(action.payload, userId);
     case "notify_client":       return _notifyClient(action.payload, userId);
     case "create_note":         return _createNote(action.payload, userId);
@@ -150,6 +154,102 @@ async function _createAppointment(
     };
   } catch (err) {
     return { success: false, message: `Termin konnte nicht angelegt werden: ${(err as Error).message}` };
+  }
+}
+
+// Aendert Datum/Uhrzeit/Status/Notiz eines bestehenden Termins. Bewusst
+// zwingend bestaetigungspflichtig (siehe AGENT_ANALYSE.md Etappe 1,
+// Sicherheits-Check): ein "Update" kann via status-Feld faktisch eine
+// Stornierung sein und darf die cancel_appointment-Sperre nicht umgehen.
+async function _updateAppointment(
+  payload: Record<string, unknown>,
+  userId: string,
+): Promise<ActionResult> {
+  try {
+    const appointmentId = payload.appointment_id as string | undefined;
+    if (!appointmentId) {
+      return { success: false, message: "Keine Termin-ID angegeben." };
+    }
+    const updates: Record<string, unknown> = {};
+    if (payload.date)   updates.date   = payload.date;
+    if (payload.time)   updates.time   = payload.time;
+    if (payload.status) updates.status = payload.status;
+    if (payload.notes)  updates.notes  = payload.notes;
+    if (Object.keys(updates).length === 0) {
+      return { success: false, message: "Keine Änderungen angegeben." };
+    }
+
+    const { error } = await supabase
+      .from("appointments")
+      .update(updates)
+      .eq("id", appointmentId)
+      .eq("provider_id", userId);
+    if (error) throw error;
+
+    return {
+      success: true,
+      message: `✅ Termin aktualisiert: ${JSON.stringify(updates)}`,
+      data: { appointment_id: appointmentId },
+    };
+  } catch (err) {
+    return { success: false, message: `Termin konnte nicht geändert werden: ${(err as Error).message}` };
+  }
+}
+
+// Storniert einen Termin (status: "cancelled") -- KEIN echtes DELETE. Ein
+// stornierter Termin bleibt nachvollziehbar/wiederherstellbar; bei einem
+// Assistenten, der sich verhören kann, ist das absichtlich (siehe
+// AGENT_ANALYSE.md, Etappe 1, Entscheidung B).
+async function _cancelAppointment(
+  payload: Record<string, unknown>,
+  userId: string,
+): Promise<ActionResult> {
+  try {
+    const appointmentId = payload.appointment_id as string | undefined;
+    let targetId = appointmentId;
+    let targetDate: string | undefined;
+
+    if (!targetId) {
+      const horseName = payload.horse_name as string | undefined;
+      if (!horseName) {
+        return { success: false, message: "Ich weiß nicht genau, welcher Termin gemeint ist. Bitte Pferd oder Datum nennen." };
+      }
+      const today = format(new Date(), "yyyy-MM-dd");
+      const { data: candidates, error: searchErr } = await supabase
+        .from("appointments")
+        .select("id, date, time, status, horses(name)")
+        .eq("provider_id", userId)
+        .in("status", ["scheduled", "planned", "confirmed"])
+        .gte("date", today)
+        .order("date", { ascending: true })
+        .limit(20);
+      if (searchErr) throw searchErr;
+
+      const match = (candidates ?? []).find((a) => {
+        const horse = (Array.isArray(a.horses) ? a.horses[0] : a.horses) as { name?: string } | null;
+        return horse?.name?.toLowerCase().includes(horseName.toLowerCase());
+      });
+      if (!match) {
+        return { success: false, message: `Kein anstehender Termin für "${horseName}" gefunden. Bitte im Kalender prüfen.` };
+      }
+      targetId = (match as { id: string }).id;
+      targetDate = (match as { date: string }).date;
+    }
+
+    const { error } = await supabase
+      .from("appointments")
+      .update({ status: "cancelled" })
+      .eq("id", targetId)
+      .eq("provider_id", userId);
+    if (error) throw error;
+
+    return {
+      success: true,
+      message: `✅ Termin${targetDate ? ` am ${targetDate}` : ""} storniert.`,
+      data: { appointment_id: targetId },
+    };
+  } catch (err) {
+    return { success: false, message: `Termin konnte nicht storniert werden: ${(err as Error).message}` };
   }
 }
 

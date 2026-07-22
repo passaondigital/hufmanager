@@ -12,6 +12,17 @@ export interface HufiActionPlan {
   confirmText: string;
 }
 
+// Wird gesetzt, wenn Claude ein mutierendes Tool aufrufen wollte (z.B.
+// cancel_appointment) -- die Ausführung wartet auf echte Nutzer-Bestätigung
+// über hufi_task_queue (siehe hufi-task-engine.ts: confirmStep), nicht
+// automatisch. Siehe AGENT_ANALYSE.md Etappe 1, Sicherheits-Check.
+export interface HufiPendingConfirmation {
+  taskId: string;
+  stepId: string;
+  taskType: string;
+  description: string;
+}
+
 export interface HufiAgentResponse {
   ok: boolean;
   answer: string;
@@ -19,6 +30,7 @@ export interface HufiAgentResponse {
   source: "claude" | "ollama" | "none";
   error?: string;
   actionPlan?: HufiActionPlan;
+  pendingConfirmation?: HufiPendingConfirmation;
 }
 
 export async function askHufiAgent(params: {
