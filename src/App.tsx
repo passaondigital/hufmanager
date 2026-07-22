@@ -14,6 +14,7 @@ import { FLAVOR_CONFIG } from "@/config/appFlavor";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PasswordRecoveryRedirect } from "@/components/auth/PasswordRecoveryRedirect";
 import { CockpitFullscreenProvider } from "@/components/day-cockpit/CockpitFullscreenContext";
+import { MicArbiterProvider } from "@/hooks/useMicArbiter";
 import { AuthLoadingScreen } from "@/components/auth/AuthLoadingScreen";
 import { ProfileGuardianScreen } from "@/components/auth/ProfileGuardianScreen";
 import { createIDBPersister } from "@/lib/offline/persister";
@@ -475,6 +476,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
   return (
     <SubscriptionProvider>
       <CockpitFullscreenProvider>
+      <MicArbiterProvider>
       <TourProvider>
       <TooltipProvider>
         <Toaster />
@@ -706,6 +708,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
         </PasswordRecoveryRedirect>
       </TooltipProvider>
       </TourProvider>
+      </MicArbiterProvider>
       </CockpitFullscreenProvider>
     </SubscriptionProvider>
   );
