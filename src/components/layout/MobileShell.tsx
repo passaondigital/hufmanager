@@ -49,6 +49,7 @@ import { DayRouteCard } from "@/components/route/DayRouteCard";
 import { HufiOnboardingChat } from "@/components/onboarding/HufiOnboardingChat";
 import { detectOnboardingType, markOnboardingComplete } from "@/lib/hufi-onboarding-detector";
 import { updateHufiMemory, deleteLastLearnedMemory, hydrateUserSettingsFromDB } from "@/lib/hufi-brain";
+import { checkFachGuard, FACH_GUARD_RESPONSES } from "@/lib/hufi-fach-guard";
 import {
   HufiFirstRunConsent,
   hasCompletedFirstRun,
@@ -1247,6 +1248,27 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
     const STOP_PHRASES = /\b(stop|stopp|danke|tschüss|beenden|aufhören|genug|schluss)\b/i;
     if (voiceLoopRef.current && STOP_PHRASES.test(cleaned)) {
       stopVoiceLoop();
+      return;
+    }
+
+    // ── Fach-Guard: MUSS vor jeder anderen Vorprüfung laufen ───────────────────
+    // (Skill-Match, TASK_TEMPLATES, detectIntent/agent_action) — sonst kann ein
+    // clientseitiger Kurzschluss (z.B. TASK_TEMPLATES-Trigger /abrechnen/i für
+    // "Muss ich mit Umsatzsteuer abrechnen?") eine echte Aktion auslösen, bevor
+    // der Server-Guard die Nachricht je sieht. Siehe hufi-fach-guard.ts.
+    // Ausnahme: ein echter Notfall (checkHorseWelfare severity "emergency", z.B.
+    // "blutet stark") hat Vorrang vor dem Guard-Verweistext — dafür gibt es
+    // weiter unten die dringlichere 🚨-Notfall-Antwort mit Tierarzt-Finder.
+    const guardCategory = checkFachGuard(cleaned);
+    const isRealEmergency = checkHorseWelfare(cleaned)?.severity === "emergency";
+    if (guardCategory && !isRealEmergency) {
+      addMsg({ role: "user", text: cleaned, ts: Date.now() });
+      addMsg({
+        role: "ai",
+        text: FACH_GUARD_RESPONSES[guardCategory],
+        ts: Date.now() + 1,
+        disclaimerCategory: guardCategory,
+      });
       return;
     }
 
