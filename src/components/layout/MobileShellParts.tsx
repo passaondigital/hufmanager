@@ -52,7 +52,16 @@ export interface ChatMessage {
   searchSuggestions?: import("@/lib/hufi-search").SearchSuggestion[];
   senderId?: string;
   hufiTask?: HufiTask;
+  // A3: Fach-Hinweis-Badge ("Allgemeine Information — ersetzt keine
+  // tierärztliche Untersuchung"), gesetzt wenn hufi-agent eine Fachaussage
+  // (Medizin/Recht) liefert — siehe fach-guard.ts.
+  disclaimerCategory?: "medical" | "legal";
 }
+
+const DISCLAIMER_TEXT: Record<"medical" | "legal", string> = {
+  medical: "Allgemeine Information — ersetzt keine tierärztliche Untersuchung.",
+  legal: "Allgemeine Information — ersetzt keine Rechts- oder Steuerberatung.",
+};
 
 // ── Voice Section (always visible, replaces floating banner) ─────────────────
 // Zeigt eine stille Wave im Idle-Zustand. Wird aktiv bei Aufnahme/Sprechen.
@@ -415,6 +424,12 @@ export function MobileShellMessages({
             <div style={{ fontSize: 14, color: msg.role === "user" ? "#FFFFFF" : "#1A1A1A", lineHeight: 1.5, whiteSpace: "pre-line" }}>
               {msg.text}
             </div>
+
+            {msg.disclaimerCategory && (
+              <div style={{ marginTop: 6, fontSize: 11, color: "#9CA3AF", lineHeight: 1.4 }}>
+                {DISCLAIMER_TEXT[msg.disclaimerCategory]}
+              </div>
+            )}
 
             {msg.actions && msg.actions.length > 0 && (
               <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 6 }}>

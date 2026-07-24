@@ -27,10 +27,14 @@ export interface HufiAgentResponse {
   ok: boolean;
   answer: string;
   spokenText: string;
-  source: "claude" | "ollama" | "none";
+  source: "claude" | "ollama" | "guard" | "none";
   error?: string;
   actionPlan?: HufiActionPlan;
   pendingConfirmation?: HufiPendingConfirmation;
+  // A3: gesetzt wenn die Antwort eine Fach-Verweis-Antwort ist (Guard hat
+  // gegriffen) ODER eine allgemeine Fachaussage enthält (Medizin/Recht),
+  // ohne blockiert zu sein — steuert den Hinweis-Badge in der Chat-Bubble.
+  disclaimerCategory?: "medical" | "legal";
 }
 
 export async function askHufiAgent(params: {

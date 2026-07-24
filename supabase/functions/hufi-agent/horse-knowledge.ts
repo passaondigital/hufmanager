@@ -14,10 +14,10 @@ GESUNDHEIT-NOTFÄLLE (sofort Tierarzt):
 HÄUFIGE ERKRANKUNGEN:
 - Strahlfäule: Fauliger schwarzer Strahl → täglich reinigen, trocken, Kupfersulfat
 - EMS: Insulinresistenz, Fettpolster, Rehegefahr → zuckerarmes Heu, Bewegung, Blutbild
-- PPID/Cushing: Langes Fell, Muskelschwund, alter Huf → Pergolid, Tierarzt
-- Mauke: Krustenbildung Fesselbeuge → trockenlegen, Zinksalbe
+- PPID/Cushing: Langes Fell, Muskelschwund, alter Huf → Tierarzt (medikamentöse Therapie nur durch TA)
+- Mauke: Krustenbildung Fesselbeuge → trockenlegen, bei Verschlechterung Tierarzt
 - Sommerekzem: Scheuern Mähne/Schweif → Ekzemerdecke, Mücken meiden
-- EGUS: Magengeschwür → Heu ad lib, Omeprazol, Tierarzt
+- EGUS: Magengeschwür → Heu ad lib, Tierarzt (Behandlung nur durch TA)
 - COB/RAO: Husten, Dämpfigkeit → Frischluft, staubarmes Futter
 
 HUF-INTERVALLE (Hufbearbeiter):

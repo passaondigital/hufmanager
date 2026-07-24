@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getHorseKnowledgeForRole } from "./horse-knowledge.ts";
+import { checkFachGuard, detectFachTopic, FACH_GUARD_RESPONSES, type FachGuardCategory } from "./fach-guard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -61,7 +62,9 @@ Kernregeln:
 - Voice-Modus: max 2 Sätze, kein Markdown, Zahlen ausschreiben.
 - Chat-Modus: max 6 Sätze, Aufzählungen erlaubt.
 - Notfall (Kolik, Nageltritt, Lahmheit, Hufrehe, Fieber): sofort Tierarzt empfehlen.
-- NIEMALS tierärztliche Diagnose ersetzen.
+- NIEMALS tierärztliche Diagnose ersetzen. NIEMALS Medikamente, Dosierungen oder Behandlungen empfehlen — an den Tierarzt verweisen.
+- NIEMALS Rechts- oder Steuerberatung geben (Verträge, Kündigungen, Steuerpflichten, Abrechnungsvorgaben) — an Steuerberater/Anwalt verweisen.
+- Es gibt aktuell KEINE hinterlegte Wissensdatenbank und KEINE geprüften Quellen (RAG folgt später als eigenes Projekt). Bei Fachfragen (Pferdegesundheit, Recht, Steuer) NIE so tun, als wäre das belegtes Fachwissen — als allgemeine Information kennzeichnen, zurückhaltend antworten, im Zweifel an die Fachperson verweisen statt zu raten.
 
 Tool-Nutzung:
 - search_entity → immer wenn Name genannt wird und ID unbekannt
@@ -1448,6 +1451,28 @@ serve(async (req) => {
   const { text, voiceMode = false, history = [], route, mode = "chat", clientTimestamp, clientTimezone, clientLocation } = body;
   if (!text?.trim()) return jsonErr("Kein Text", 400);
 
+  // ── A1: Serverseitiger Fach-Guard (Medizin/Recht) ──────────────────────────
+  // Greift VOR dem Claude-Call, kann vom Client nicht umgangen werden.
+  // Siehe fach-guard.ts für Abgrenzungslogik (Dokumentation/Lookup vs. Frage).
+  const guardCategory = checkFachGuard(text.trim());
+  if (guardCategory) {
+    const guardAnswer = FACH_GUARD_RESPONSES[guardCategory];
+    console.log(`[hufi-agent] id=${requestId} guard=${guardCategory}`);
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        answer: guardAnswer,
+        spokenText: guardAnswer,
+        source: "guard",
+        disclaimerCategory: guardCategory,
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
+  // A3: nicht-blockierende Fachthema-Erkennung für den Hinweis-Badge im Chat
+  // (z.B. bei "Was ist EGUS?" — durchgelassen, aber gekennzeichnet).
+  const fachTopic: FachGuardCategory | null = detectFachTopic(text.trim());
+
   // ── Lokale Zeit aus Client-Timestamp + Zeitzone ────────────────────────────
   const ts = clientTimestamp ? new Date(clientTimestamp) : new Date();
   const tz = clientTimezone ?? "Europe/Berlin";
@@ -1552,13 +1577,13 @@ serve(async (req) => {
       if (cleaned.startsWith("{")) actionPlan = JSON.parse(cleaned) as ActionPlan;
     } catch { /* kein valides JSON */ }
     return new Response(
-      JSON.stringify({ ok: true, answer: actionPlan?.confirmText ?? rawAnswer, spokenText: actionPlan?.explanation ?? rawAnswer, source, actionPlan, pendingConfirmation }),
+      JSON.stringify({ ok: true, answer: actionPlan?.confirmText ?? rawAnswer, spokenText: actionPlan?.explanation ?? rawAnswer, source, actionPlan, pendingConfirmation, disclaimerCategory: fachTopic }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 
   return new Response(
-    JSON.stringify({ ok: true, answer: rawAnswer, spokenText: rawAnswer, source, pendingConfirmation }),
+    JSON.stringify({ ok: true, answer: rawAnswer, spokenText: rawAnswer, source, pendingConfirmation, disclaimerCategory: fachTopic }),
     { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );
 });

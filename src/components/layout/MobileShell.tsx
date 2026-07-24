@@ -1569,7 +1569,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
         });
         return;
       }
-      addMsg({ role: "ai", text: resp.answer, ts: Date.now() + 1 });
+      addMsg({ role: "ai", text: resp.answer, ts: Date.now() + 1, disclaimerCategory: resp.disclaimerCategory });
       learnFromInteraction(user.id, cleaned, resp.answer, "confirmed", sessionId.current);
       void observeInteraction(cleaned, resp.answer, user.id);
     } catch (err) {
