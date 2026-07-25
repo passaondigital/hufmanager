@@ -27,14 +27,18 @@ const MEDICAL_STRONG_PATTERNS: RegExp[] = [
 
 // Symptom-Wörter — lösen NUR zusammen mit einer Beratungsfrage aus (siehe unten),
 // damit reine Dokumentation ("Wandhebelung", "leichte Lahmheit notiert") nicht blockiert wird.
+// Enthält bewusst nicht nur akute Symptome (lahmt, blutet), sondern auch konkrete
+// Befund-/Pathologie-Begriffe (Wandhebelung, Hufrehe, Hufabszess) -- Fragen nach
+// deren Schweregrad/Behandlung sind genauso Beratung wie "was hat mein Pferd?".
 const SYMPTOM_WORDS = [
   "lahmt", "hinkt", "humpelt", "geschwollen", "schwellung", "fieber",
   "wunde", "blutet", "hustet", "husten", "frisst nicht", "appetitlosigkeit",
   "atmet schwer", "zittert", "koliksymptom", "schmerzen", "schmerzt",
   "durchfall", "kotwasser", "apathisch", "teilnahmslos",
+  "wandhebelung", "hufrehe", "hufabszess", "sohlengeschwür",
 ];
 
-const MEDICAL_QUESTION_CONTEXT = /\b(was (soll ich |kann ich |mach(e)? ich )?(jetzt )?tun|was mach ich|wie behandel|muss ich (zum |einen )?tierarzt|brauche ich (einen )?tierarzt|ist das (schlimm|gefährlich)|wie schlimm ist das|was würdest du (tun|empfehlen|raten)|soll ich (mir )?sorgen machen|wie geht es (jetzt |dann )?weiter)\b/i;
+const MEDICAL_QUESTION_CONTEXT = /\b(was (soll ich |kann ich |mach(e)? ich )?(jetzt )?tun|was mach ich|wie behandel|muss ich (zum |einen )?tierarzt|brauche ich (einen )?tierarzt|ist (das|es|d(as|er|ie)\s+\S+|\S+)\s*(schlimm|gefährlich)|wie schlimm ist (das|es|d(as|er|ie)\s+\S+|\S+)|was würdest du (tun|empfehlen|raten)|soll ich (mir )?sorgen machen|wie geht es (jetzt |dann )?weiter)\b/i;
 
 // Recht/Steuer: Fachbegriff + Beratungsfrage (oder "?") → Guard greift.
 // "steuer" allein triggert auch über umsatzsteuer/einkommensteuer/gewerbesteuer (Teilstring).

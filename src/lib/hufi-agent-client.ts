@@ -5,13 +5,6 @@ export interface HufiAgentMessage {
   content: string;
 }
 
-export interface HufiActionPlan {
-  taskType: string;
-  payload: Record<string, unknown>;
-  explanation: string;
-  confirmText: string;
-}
-
 // Wird gesetzt, wenn Claude ein mutierendes Tool aufrufen wollte (z.B.
 // cancel_appointment) -- die Ausführung wartet auf echte Nutzer-Bestätigung
 // über hufi_task_queue (siehe hufi-task-engine.ts: confirmStep), nicht
@@ -29,7 +22,6 @@ export interface HufiAgentResponse {
   spokenText: string;
   source: "claude" | "ollama" | "guard" | "none";
   error?: string;
-  actionPlan?: HufiActionPlan;
   pendingConfirmation?: HufiPendingConfirmation;
   // A3: gesetzt wenn die Antwort eine Fach-Verweis-Antwort ist (Guard hat
   // gegriffen) ODER eine allgemeine Fachaussage enthält (Medizin/Recht),
@@ -42,7 +34,6 @@ export async function askHufiAgent(params: {
   voiceMode?: boolean;
   history?: HufiAgentMessage[];
   route?: string;
-  mode?: "chat" | "action";
   clientTimestamp?: string;
   clientTimezone?: string;
   clientLocation?: { lat: number; lon: number };
@@ -70,7 +61,6 @@ export async function askHufiAgent(params: {
           voiceMode: params.voiceMode ?? false,
           history: params.history ?? [],
           route: params.route,
-          mode: params.mode ?? "chat",
           clientTimestamp: params.clientTimestamp ?? new Date().toISOString(),
           clientTimezone: params.clientTimezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
           clientLocation: params.clientLocation,

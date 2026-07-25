@@ -24,17 +24,9 @@ interface RequestBody {
   voiceMode?: boolean;
   history?: Message[];
   route?: string;
-  mode?: "chat" | "action";
   clientTimestamp?: string;
   clientTimezone?: string;
   clientLocation?: { lat: number; lon: number };
-}
-
-interface ActionPlan {
-  taskType: string;
-  payload: Record<string, unknown>;
-  explanation: string;
-  confirmText: string;
 }
 
 interface PendingConfirmation {
@@ -1448,7 +1440,7 @@ serve(async (req) => {
   try { body = await req.json() as RequestBody; }
   catch { return jsonErr("Ungültige Anfrage", 400); }
 
-  const { text, voiceMode = false, history = [], route, mode = "chat", clientTimestamp, clientTimezone, clientLocation } = body;
+  const { text, voiceMode = false, history = [], route, clientTimestamp, clientTimezone, clientLocation } = body;
   if (!text?.trim()) return jsonErr("Kein Text", 400);
 
   // ── A1: Serverseitiger Fach-Guard (Medizin/Recht) ──────────────────────────
@@ -1560,25 +1552,12 @@ serve(async (req) => {
   }
 
   const dur = Date.now() - t0;
-  console.log(`[hufi-agent] id=${requestId} model=${model} source=${source} mode=${mode} voice=${voiceMode} dur=${dur}ms`);
+  console.log(`[hufi-agent] id=${requestId} model=${model} source=${source} voice=${voiceMode} dur=${dur}ms`);
 
   if (!rawAnswer?.trim()) {
     return new Response(
       JSON.stringify({ ok: false, error: "Ich erreiche Hufi gerade nicht. Bitte gleich nochmal versuchen.", source: "none" }),
       { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
-  }
-
-  // Legacy Action-Modus (Rückwärtskompatibilität mit action mode)
-  if (mode === "action") {
-    let actionPlan: ActionPlan | null = null;
-    try {
-      const cleaned = rawAnswer.replace(/```json?/g, "").replace(/```/g, "").trim();
-      if (cleaned.startsWith("{")) actionPlan = JSON.parse(cleaned) as ActionPlan;
-    } catch { /* kein valides JSON */ }
-    return new Response(
-      JSON.stringify({ ok: true, answer: actionPlan?.confirmText ?? rawAnswer, spokenText: actionPlan?.explanation ?? rawAnswer, source, actionPlan, pendingConfirmation, disclaimerCategory: fachTopic }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 

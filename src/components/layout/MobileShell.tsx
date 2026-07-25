@@ -1124,11 +1124,14 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
       ? `Erinnerung setzen${horse ? ` ${horse}` : ""}.`
       : `Aufgabe: ${text.slice(0, 100)}`;
 
-    let taskType  = defaultTaskType;
-    let payload   = fallbackPayload;
-    let explanation = fallbackExplanation;
+    const taskType  = defaultTaskType;
+    const payload   = fallbackPayload;
+    const explanation = fallbackExplanation;
 
-    // KI-Plan über zentralen Agenten holen
+    // Echte Aktion + Parameter kommen vom Modell über echtes Tool-Calling
+    // (callClaudeWithTools in hufi-agent/index.ts) -- der Keyword-Plan oben
+    // ist nur noch der Notfall-Fallback, falls Claude kein mutierendes Tool
+    // aufruft (z.B. bei Rückfragen statt einer Aktion).
     let pendingConfirmation: Awaited<ReturnType<typeof askHufiAgent>>["pendingConfirmation"];
     try {
       const agentHistory = messages.slice(-4).map((m) => ({
@@ -1142,18 +1145,12 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
         voiceMode: false,
         history: agentHistory,
         route: window.location.pathname,
-        mode: "action",
         clientTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         clientLocation: _lat && _lon ? { lat: parseFloat(_lat), lon: parseFloat(_lon) } : undefined,
       });
       pendingConfirmation = resp.pendingConfirmation;
-      if (resp.actionPlan?.taskType) {
-        taskType    = resp.actionPlan.taskType;
-        payload     = resp.actionPlan.payload;
-        explanation = resp.actionPlan.explanation;
-      }
     } catch (e) {
-      console.warn("[Hufi] Action-Plan Fallback auf Keywords:", e);
+      console.warn("[Hufi] Tool-Use fehlgeschlagen, Fallback auf Keywords:", e);
     }
 
     // Claude hat über echtes Tool-Use bereits einen Bestätigungs-Task
