@@ -145,7 +145,9 @@ async function _createAppointment(
       time: payload.time ?? null,
       service_type: payload.service_type ?? "Hufpflege",
       notes: payload.notes ?? null,
-      status: "scheduled",
+      // status bewusst weggelassen -- DB-Default ist 'planned' (Migration
+      // 20260301155912). "scheduled" existiert nur als Altbestand und wird
+      // vom trg_validate_appointment-Trigger beim Insert abgelehnt.
     });
     if (error) throw error;
     return {

@@ -125,11 +125,11 @@ const HUFI_TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        date_from: { type: "string", description: "Von-Datum YYYY-MM-DD (Standard: heute)" },
-        date_to:   { type: "string", description: "Bis-Datum YYYY-MM-DD (Standard: 14 Tage)" },
+        date_from: { type: "string", description: "Von-Datum YYYY-MM-DD (Standard: 14 Tage zurück)" },
+        date_to:   { type: "string", description: "Bis-Datum YYYY-MM-DD (Standard: 14 Tage voraus)" },
         horse_id:  { type: "string", description: "Nur Termine dieses Pferdes" },
         client_id: { type: "string", description: "Nur Termine dieses Kunden" },
-        status:    { type: "string", description: "Filter: scheduled|confirmed|completed|cancelled|all (Standard: all)" },
+        status:    { type: "string", description: "Filter: planned|pending|confirmed|completed|cancelled|no_show|requested|all (Standard: all)" },
         limit:     { type: "number", description: "Max Ergebnisse (Standard: 30)" },
       },
     },
@@ -211,7 +211,7 @@ const HUFI_TOOLS = [
         appointment_id: { type: "string", description: "UUID des Termins" },
         date:           { type: "string", description: "Neues Datum YYYY-MM-DD (optional)" },
         time:           { type: "string", description: "Neue Uhrzeit HH:MM (optional)" },
-        status:         { type: "string", description: "scheduled|confirmed|completed|cancelled" },
+        status:         { type: "string", description: "planned|pending|confirmed|completed|cancelled|no_show|requested" },
         notes:          { type: "string", description: "Neue oder ergänzte Notiz" },
       },
       required: ["appointment_id"],
@@ -537,7 +537,11 @@ async function executeTool(
 
       // ── get_appointments ──────────────────────────────────────────────────
       case "get_appointments": {
-        const from  = String(input.date_from ?? today);
+        // Default-Fenster bewusst 14 Tage rückwirkend statt nur "heute" --
+        // sonst findet Claude bei cancel/update ohne explizites Datum keine
+        // apt_id für kürzlich vergangene Termine und ruft das Tool gar nicht
+        // erst auf (fällt dann auf den simplen Keyword-Fallback zurück).
+        const from  = String(input.date_from ?? new Date(Date.now() - 14 * 86_400_000).toISOString().slice(0, 10));
         const to    = String(input.date_to   ?? new Date(Date.now() + 14 * 86_400_000).toISOString().slice(0, 10));
         const limit = Number(input.limit ?? 30);
         const status = String(input.status ?? "all");
@@ -733,7 +737,8 @@ async function executeTool(
             service_type: input.service_type ? String(input.service_type) : professionProfile.serviceLabel,
             notes:        input.notes       ? String(input.notes) : null,
             duration:     input.duration    ? Number(input.duration) : professionProfile.appointmentDuration,
-            status:       "scheduled",
+            // status bewusst weggelassen -- DB-Default ist 'planned'; "scheduled"
+            // wird vom trg_validate_appointment-Trigger beim Insert abgelehnt.
           })
           .select("id")
           .single();
