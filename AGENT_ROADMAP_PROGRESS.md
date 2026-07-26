@@ -67,8 +67,9 @@ Vorhaben 1 in der App bestätigt ist.
 
 ## Vorhaben 2 — Etappe 4: Briefing-Systeme konsolidieren
 
-**Status: gebaut, wartet auf App-Test durch Pascal. NICHT deployed (Freigabe
-erst nach bestätigtem App-Test von Vorhaben 1, wie vereinbart).**
+**Status: DEPLOYED (Commit dc5bc153, Frontend auf Prod, Smoke-Test bestanden
+2026-07-26). Reine Frontend-Änderung, Edge Function unverändert. Wartet auf
+App-Test durch Pascal.**
 
 Betroffene Dateien:
 - `src/lib/hufai-proactive.ts` — Briefing-Duplikat entfernt (`BriefingPayload`,
