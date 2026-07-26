@@ -22,9 +22,6 @@ import {
   observeInteraction, matchSkills, learnFromSession,
   getPendingSkillSuggestion, confirmSkill, processSkillFeedback,
 } from "@/lib/hufi-learning-engine";
-import {
-  fetchBusinessContext, type BusinessContext,
-} from "@/lib/hufi-business-context";
 import { buildShortSpokenGreeting, type HufiPresenceLabel } from "@/lib/hufi-runtime";
 import { extractBefundFromTranscript, formatBefundForChat } from "@/lib/autoflow-service";
 import { detectIntent, type HufiIntent } from "@/lib/hufi-intent";
@@ -76,18 +73,13 @@ import {
 } from "@/lib/hufi-brain";
 import { ProactiveBriefing } from "@/components/voice/ProactiveBriefing";
 import { HufiWeatherWidget } from "@/components/weather/HufiWeatherWidget";
-import {
-  shouldShowBriefing,
-  fetchWeatherContext,
-  buildBriefingPayload,
-  type BriefingPayload,
-  type WeatherContext,
-} from "@/lib/hufai-proactive";
+import { fetchWeatherContext, type WeatherContext } from "@/lib/hufai-proactive";
 import {
   getCurrentBriefingTime,
   hasBriefingShownToday,
   markBriefingShown,
   buildDailyBriefing,
+  type BriefingPayload,
 } from "@/lib/hufi-briefing";
 
 export function MobileShell() {
@@ -129,7 +121,6 @@ export function MobileShell() {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const sessionId = useRef<string>(crypto.randomUUID());
   const greetingSetRef = useRef(false);
-  const bizCtxRef = useRef<BusinessContext | null>(null);
   const shownAlertsRef = useRef<Set<string>>(new Set());
   const skillSuggestionShownRef = useRef(false);
   const migrationCheckedRef = useRef(false);
@@ -421,37 +412,27 @@ export function MobileShell() {
     if (!consented) return; // DSGVO modal is shown separately
 
     try {
-      const [ctx] = await Promise.all([
-        fetchHufiContext(userId, role ?? null),
-        fetchBusinessContext(userId)
-          .then((biz) => { bizCtxRef.current = biz; })
-          .catch(() => {}),
-      ]);
+      const ctx = await fetchHufiContext(userId, role ?? null);
       if (!ctx.user.name && user?.email) {
         const raw = user.email.split("@")[0].split(/[._+]/)[0];
         ctx.user.name = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
       }
       setHufiCtx(ctx);
 
-      if (shouldShowBriefing()) {
-        fetchWeatherContext().then((weather) => {
-          const briefing = buildBriefingPayload(ctx, weather, bizCtxRef.current);
-          // Nur zeigen wenn relevanter Inhalt — wenn nur Greeting, still halten
-          if (briefing.lines.length > 1) {
-            setProactiveBriefing(briefing);
-          }
-        });
-      }
-
-      // Time-slot briefing (morning/midday/evening) — shown once per slot per day
+      // Time-slot briefing (morning/midday/evening) — shown once per slot per day.
+      // Einzige Briefing-Quelle (kalendertag-gebunden) seit Etappe 4, siehe
+      // AGENT_ANALYSE.md -- das frühere 4h-TTL-Duplikat (hufai-proactive.ts) ist
+      // entfernt.
       const briefingTime = getCurrentBriefingTime();
       if (briefingTime && userId && !hasBriefingShownToday(userId, briefingTime)) {
         markBriefingShown(userId, briefingTime);
-        const timeBriefing = buildDailyBriefing(ctx, briefingTime, null);
-        // Nur zeigen wenn relevanter Inhalt — wenn nichts los ist, still halten
-        if (timeBriefing.totalItems > 0) {
-          setProactiveBriefing((prev) => prev ?? timeBriefing);
-        }
+        fetchWeatherContext().then((weather) => {
+          const timeBriefing = buildDailyBriefing(ctx, briefingTime, weather);
+          // Nur zeigen wenn relevanter Inhalt — wenn nichts los ist, still halten
+          if (timeBriefing.totalItems > 0) {
+            setProactiveBriefing(timeBriefing);
+          }
+        });
       }
 
       // TTS greeting — opt-in only, fires on first user gesture

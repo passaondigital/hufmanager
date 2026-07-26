@@ -3,24 +3,31 @@ import { useNavigate } from "react-router-dom";
 import { X, Volume2, CalendarDays, Receipt, CloudSun, Lightbulb } from "lucide-react";
 import { useHufiTTS } from "@/hooks/useHufiTTS";
 import { useAuth } from "@/hooks/useAuth";
-import { markBriefingShown, type BriefingPayload } from "@/lib/hufai-proactive";
+import type { BriefingPayload, BriefingSection } from "@/lib/hufi-briefing";
 
 interface Props {
   payload: BriefingPayload;
   onDismiss: () => void;
 }
 
-const LINE_ICONS = [CalendarDays, Receipt, CloudSun, Lightbulb];
+const SECTION_ICONS: Record<BriefingSection["type"], typeof CalendarDays> = {
+  appointments: CalendarDays,
+  route: CalendarDays,
+  weather: CloudSun,
+  invoices: Receipt,
+  horses: Lightbulb,
+  leads: Lightbulb,
+};
 
 export function ProactiveBriefing({ payload, onDismiss }: Props) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { speak, cancel, isSupported } = useHufiTTS(user?.id ?? "");
 
-  useEffect(() => {
-    markBriefingShown();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
+  // Once-per-Tag-Markierung passiert bereits in MobileShell.tsx, bevor der
+  // Payload gebaut wird -- ein zweiter Aufruf hier war Teil der State-
+  // Kollision zwischen den beiden früheren Briefing-Systemen (siehe
+  // AGENT_ANALYSE.md Etappe 4).
   useEffect(() => {
     return () => { cancel(); };
   }, [cancel]);
@@ -83,7 +90,7 @@ export function ProactiveBriefing({ payload, onDismiss }: Props) {
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
             {isSupported && (
               <button
-                onClick={() => speak(payload.text)}
+                onClick={() => speak([payload.greeting, ...payload.sections.map((s) => s.spoken)].join(" "))}
                 style={{
                   width: 30, height: 30, borderRadius: 8,
                   background: "transparent", border: "none",
@@ -110,28 +117,35 @@ export function ProactiveBriefing({ payload, onDismiss }: Props) {
           </div>
         </div>
 
-        {/* Lines */}
+        {/* Greeting + Sections */}
         <div style={{ padding: "10px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
-          {payload.lines.map((line, i) => {
-            const Icon = LINE_ICONS[i] ?? Lightbulb;
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+            <div style={{
+              width: 24, height: 24, borderRadius: 6, flexShrink: 0,
+              background: "rgba(249,115,22,0.08)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              marginTop: 1,
+            }}>
+              <CalendarDays size={12} style={{ color: "#F97316" }} />
+            </div>
+            <p style={{ fontSize: 13, color: "#111827", fontWeight: 600, lineHeight: 1.45, margin: 0 }}>
+              {payload.greeting}
+            </p>
+          </div>
+          {payload.sections.map((section, i) => {
+            const Icon = SECTION_ICONS[section.type] ?? Lightbulb;
             return (
               <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                 <div style={{
                   width: 24, height: 24, borderRadius: 6, flexShrink: 0,
-                  background: i === 0 ? "rgba(249,115,22,0.08)" : "#F9FAFB",
+                  background: "#F9FAFB",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   marginTop: 1,
                 }}>
-                  <Icon size={12} style={{ color: i === 0 ? "#F97316" : "#6B7280" }} />
+                  <Icon size={12} style={{ color: "#6B7280" }} />
                 </div>
-                <p style={{
-                  fontSize: 13,
-                  color: i === 0 ? "#111827" : "#4B5563",
-                  fontWeight: i === 0 ? 600 : 400,
-                  lineHeight: 1.45,
-                  margin: 0,
-                }}>
-                  {line}
+                <p style={{ fontSize: 13, color: "#4B5563", fontWeight: 400, lineHeight: 1.45, margin: 0 }}>
+                  {section.content}
                 </p>
               </div>
             );
@@ -139,12 +153,12 @@ export function ProactiveBriefing({ payload, onDismiss }: Props) {
         </div>
 
         {/* Actions */}
-        {payload.actions.length > 0 && (
+        {payload.sections.some((s) => s.action) && (
           <div style={{ padding: "8px 16px 14px", display: "flex", gap: 8, flexWrap: "wrap" as const }}>
-            {payload.actions.map((action) => (
+            {payload.sections.filter((s) => s.action).map((section) => (
               <button
-                key={action.route}
-                onClick={() => handleAction(action.route)}
+                key={section.action!.route}
+                onClick={() => handleAction(section.action!.route)}
                 style={{
                   padding: "7px 14px",
                   borderRadius: 20,
@@ -156,7 +170,7 @@ export function ProactiveBriefing({ payload, onDismiss }: Props) {
                   cursor: "pointer",
                 }}
               >
-                {action.label}
+                {section.action!.label}
               </button>
             ))}
           </div>
