@@ -12,7 +12,7 @@ import { useViewMode } from "@/hooks/useViewMode";
 import { useHufiTTS } from "@/hooks/useHufiTTS";
 import { useVoiceCapture, type VoiceErrorCode } from "@/hooks/useVoiceCapture";
 import { streamWithHufAI, ChatMessage as AIChatMessage } from "@/lib/ai-routing";
-import { askHufiAgent } from "@/lib/hufi-agent-client";
+import { askHufiAgent, type ConversationFocus } from "@/lib/hufi-agent-client";
 import { } from "@/lib/hufi-tool-definitions";
 import {
   detectAndCreateTask, executeNextStep, confirmStep, cancelTask, createActionTask,
@@ -99,6 +99,13 @@ export function MobileShell() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const messagesRef = useRef<ChatMessage[]>([]);
   useEffect(() => { messagesRef.current = messages; }, [messages]);
+  // Kurzzeitkontext "worüber reden wir gerade" (Etappe 3, siehe AGENT_ANALYSE.md) --
+  // lebt neben messages, wird pro Turn an die Edge Function mitgeschickt und von
+  // dort aktualisiert zurückgegeben, damit Folge-Äußerungen ("und leg einen neuen
+  // an") ohne erneutes Nachfragen auf dasselbe Pferd/denselben Kunden bezogen werden.
+  const [conversationFocus, setConversationFocus] = useState<ConversationFocus>({});
+  const conversationFocusRef = useRef<ConversationFocus>({});
+  useEffect(() => { conversationFocusRef.current = conversationFocus; }, [conversationFocus]);
   const userIdRef = useRef<string | undefined>(undefined);
   useEffect(() => { userIdRef.current = user?.id; }, [user?.id]);
   const [showDsgvoModal, setShowDsgvoModal] = useState(false);
@@ -1147,8 +1154,10 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
         route: window.location.pathname,
         clientTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         clientLocation: _lat && _lon ? { lat: parseFloat(_lat), lon: parseFloat(_lon) } : undefined,
+        conversationFocus: conversationFocusRef.current,
       });
       pendingConfirmation = resp.pendingConfirmation;
+      if (resp.conversationFocus) setConversationFocus(resp.conversationFocus);
     } catch (e) {
       console.warn("[Hufi] Tool-Use fehlgeschlagen, Fallback auf Keywords:", e);
     }
@@ -1410,18 +1419,11 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
     addMsg({ role: "user", text: cleaned, ts: Date.now() });
     const intent = detectIntent(cleaned, !!user, hufiCtx?.memory ?? []);
 
-    // ── Korrektur-Flow ──────────────────────────────────────────────────────────
-    if (intent.intent === "correction") {
-      addMsg({
-        role: "ai",
-        text: "Entschuldigung — was soll ich anders machen?",
-        ts: Date.now() + 1,
-      });
-      setResponding(false);
-      setHufiPresenceState("bereit");
-      setActiveIntent(null);
-      return;
-    }
+    // "correction" (z.B. "Nein, ich meinte X") wird bewusst NICHT mehr hier
+    // mit einer statischen Rückfrage abgefangen (das war eine Sackgasse ohne
+    // Bezug zum Gesprächsfokus, siehe AGENT_ANALYSE.md Etappe 3) -- läuft
+    // stattdessen unten durch die normale Pipeline, die den erhaltenen
+    // conversationFocus mitschickt und die Korrektur darauf beziehen kann.
 
     // ── Scenario Quick-Match (lokal, kein AI-Call) ──────────────────────────────
     if (user?.id) {
@@ -1569,7 +1571,9 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
         clientTimestamp: new Date().toISOString(),
         clientTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         clientLocation: lat_ && lon_ ? { lat: parseFloat(lat_), lon: parseFloat(lon_) } : undefined,
+        conversationFocus: conversationFocusRef.current,
       });
+      if (resp.conversationFocus) setConversationFocus(resp.conversationFocus);
       // Mutierendes Tool wollte ausführen -> NICHT automatisch, echte
       // Bestätigung anfordern (dieselbe UI/Queue wie agent_action, siehe
       // AGENT_ANALYSE.md Etappe 1, Sicherheits-Check).

@@ -5,6 +5,17 @@ export interface HufiAgentMessage {
   content: string;
 }
 
+// Kurzzeitkontext "worüber reden wir gerade" (Etappe 3, siehe AGENT_ANALYSE.md).
+// Rundtrip: wird pro Anfrage mitgeschickt, kommt aus der Edge Function aktualisiert
+// zurück und soll unverändert im gleichen State wie die Chat-Historie liegen.
+export interface ConversationFocus {
+  horseId?: string;
+  horseName?: string;
+  clientId?: string;
+  clientName?: string;
+  pendingClarification?: string;
+}
+
 // Wird gesetzt, wenn Claude ein mutierendes Tool aufrufen wollte (z.B.
 // cancel_appointment) -- die Ausführung wartet auf echte Nutzer-Bestätigung
 // über hufi_task_queue (siehe hufi-task-engine.ts: confirmStep), nicht
@@ -27,6 +38,7 @@ export interface HufiAgentResponse {
   // gegriffen) ODER eine allgemeine Fachaussage enthält (Medizin/Recht),
   // ohne blockiert zu sein — steuert den Hinweis-Badge in der Chat-Bubble.
   disclaimerCategory?: "medical" | "legal";
+  conversationFocus?: ConversationFocus;
 }
 
 export async function askHufiAgent(params: {
@@ -37,6 +49,7 @@ export async function askHufiAgent(params: {
   clientTimestamp?: string;
   clientTimezone?: string;
   clientLocation?: { lat: number; lon: number };
+  conversationFocus?: ConversationFocus;
 }): Promise<HufiAgentResponse> {
   const {
     data: { session },
@@ -64,6 +77,7 @@ export async function askHufiAgent(params: {
           clientTimestamp: params.clientTimestamp ?? new Date().toISOString(),
           clientTimezone: params.clientTimezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
           clientLocation: params.clientLocation,
+          conversationFocus: params.conversationFocus,
         }),
       },
     );

@@ -19,6 +19,18 @@ const MAX_TOOLS_ROUNDS = 4; // max Tool-Use-Runden pro Anfrage
 interface Message { role: "user" | "assistant"; content: string | ContentBlock[]; }
 interface ContentBlock { type: string; [k: string]: unknown; }
 
+// Kurzzeitkontext "worüber reden wir gerade" (Etappe 3, siehe AGENT_ANALYSE.md).
+// Rundtrip: Client schickt den zuletzt bekannten Fokus mit, die Edge Function
+// aktualisiert ihn während des Tool-Use-Loops und gibt ihn zurück; der Client
+// persistiert ihn im selben State wie die Chat-Historie.
+interface ConversationFocus {
+  horseId?: string;
+  horseName?: string;
+  clientId?: string;
+  clientName?: string;
+  pendingClarification?: string;
+}
+
 interface RequestBody {
   text: string;
   voiceMode?: boolean;
@@ -27,6 +39,7 @@ interface RequestBody {
   clientTimestamp?: string;
   clientTimezone?: string;
   clientLocation?: { lat: number; lon: number };
+  conversationFocus?: ConversationFocus;
 }
 
 interface PendingConfirmation {
@@ -39,6 +52,7 @@ interface PendingConfirmation {
 interface CallToolsResult {
   text: string;
   pendingConfirmation?: PendingConfirmation;
+  focus?: ConversationFocus;
 }
 
 // ── System Prompt ──────────────────────────────────────────────────────────────
@@ -373,20 +387,56 @@ async function lookupHorseName(supabaseAdmin: ReturnType<typeof createClient>, h
   return (data as { name?: string } | null)?.name ?? null;
 }
 
+async function lookupClientName(supabaseAdmin: ReturnType<typeof createClient>, clientId: string): Promise<string | null> {
+  if (!clientId) return null;
+  const { data } = await supabaseAdmin.from("profiles").select("full_name").eq("id", clientId).maybeSingle();
+  return (data as { full_name?: string } | null)?.full_name ?? null;
+}
+
 async function lookupAppointmentInfo(
   supabaseAdmin: ReturnType<typeof createClient>,
   appointmentId: string,
-): Promise<{ date: string | null; horseName: string | null } | null> {
+): Promise<{ date: string | null; horseId: string | null; horseName: string | null } | null> {
   if (!appointmentId) return null;
   const { data } = await supabaseAdmin
     .from("appointments")
-    .select("date, horses(name)")
+    .select("date, horse_id, horses(name)")
     .eq("id", appointmentId)
     .maybeSingle();
   if (!data) return null;
-  const row = data as { date?: string; horses?: { name?: string } | { name?: string }[] | null };
+  const row = data as { date?: string; horse_id?: string; horses?: { name?: string } | { name?: string }[] | null };
   const h = Array.isArray(row.horses) ? row.horses[0] : row.horses;
-  return { date: row.date ?? null, horseName: h?.name ?? null };
+  return { date: row.date ?? null, horseId: row.horse_id ?? null, horseName: h?.name ?? null };
+}
+
+// Aktualisiert den Kurzzeitkontext aus einem Tool-Aufruf -- entweder direkt aus
+// bereits aufgelösten IDs im Input (Claude kennt sie schon aus dieser Runde),
+// oder für appointment_id-basierte Tools per Nachschlag der zugehörigen Pferde-ID.
+async function updateFocusFromToolCall(
+  focus: ConversationFocus,
+  toolName: string,
+  input: Record<string, unknown>,
+  supabaseAdmin: ReturnType<typeof createClient>,
+): Promise<void> {
+  const horseId = typeof input.horse_id === "string" ? input.horse_id : undefined;
+  const clientId = typeof input.client_id === "string" ? input.client_id : undefined;
+  const appointmentId = typeof input.appointment_id === "string" ? input.appointment_id : undefined;
+
+  if (horseId) {
+    focus.horseId = horseId;
+    focus.horseName = (await lookupHorseName(supabaseAdmin, horseId)) ?? focus.horseName;
+  }
+  if (clientId) {
+    focus.clientId = clientId;
+    focus.clientName = (await lookupClientName(supabaseAdmin, clientId)) ?? focus.clientName;
+  }
+  if (!horseId && appointmentId && (toolName === "update_appointment" || toolName === "cancel_appointment")) {
+    const info = await lookupAppointmentInfo(supabaseAdmin, appointmentId);
+    if (info?.horseId) {
+      focus.horseId = info.horseId;
+      focus.horseName = info.horseName ?? focus.horseName;
+    }
+  }
 }
 
 // Baut den konkreten, für den Nutzer verständlichen Bestätigungstext --
@@ -1220,9 +1270,12 @@ async function callClaudeWithTools(
   voiceMode: boolean,
   professionType: string | null = null,
   originalText: string = "",
+  incomingFocus: ConversationFocus = {},
 ): Promise<CallToolsResult> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 55_000);
+  const focus: ConversationFocus = { ...incomingFocus };
+  delete focus.pendingClarification; // wird pro Runde neu bestimmt, siehe unten
 
   try {
     let currentMessages = [...messages];
@@ -1261,7 +1314,13 @@ async function callClaudeWithTools(
       // Kein Tool-Call → finale Antwort
       if (json.stop_reason === "end_turn" || !json.content.some(b => b.type === "tool_use")) {
         const text = json.content.find(b => b.type === "text")?.text ?? "";
-        return { text };
+        // Heuristik: endet die Antwort mit "?", hat Hufi vermutlich eine
+        // Rückfrage gestellt (z.B. mehrere search_entity-Treffer) -- diese
+        // im Fokus merken, damit die nächste Nutzer-Antwort ohne erneutes
+        // Nachfragen darauf bezogen werden kann (siehe AGENT_ANALYSE.md
+        // Etappe 3, Punkt "Kein Zustand für offene Klärungsfrage").
+        if (text.trim().endsWith("?")) focus.pendingClarification = text.trim();
+        return { text, focus };
       }
 
       // Tool-Calls ausführen
@@ -1290,6 +1349,7 @@ async function callClaudeWithTools(
             continue;
           }
 
+          await updateFocusFromToolCall(focus, block.name, block.input ?? {}, supabaseAdmin);
           const description = await describeToolCall(block.name, block.input ?? {}, supabaseAdmin);
           const stepId = crypto.randomUUID();
           const { data: taskRow, error: taskErr } = await supabaseAdmin
@@ -1321,7 +1381,7 @@ async function callClaudeWithTools(
 
           if (taskErr || !taskRow) {
             console.error(`[hufi-agent] Bestätigungs-Task konnte nicht angelegt werden:`, taskErr?.message);
-            return { text: `Ich wollte "${description}" ausführen, konnte aber keine Bestätigung vorbereiten. Bitte im Kalender/in den Rechnungen manuell prüfen.` };
+            return { text: `Ich wollte "${description}" ausführen, konnte aber keine Bestätigung vorbereiten. Bitte im Kalender/in den Rechnungen manuell prüfen.`, focus };
           }
 
           return {
@@ -1332,9 +1392,11 @@ async function callClaudeWithTools(
               taskType: exec.taskType,
               description,
             },
+            focus,
           };
         }
 
+        await updateFocusFromToolCall(focus, block.name, block.input ?? {}, supabaseAdmin);
         console.log(`[hufi-agent] Tool: ${block.name}`, JSON.stringify(block.input).slice(0, 100));
         const result = await executeTool(
           block.name,
@@ -1345,6 +1407,25 @@ async function callClaudeWithTools(
           supabaseServiceKey,
           professionType,
         );
+        // search_entity liefert selbst neue IDs (Claude kannte sie vor dem
+        // Aufruf noch nicht) -- bei genau einem eindeutigen Treffer den Fokus
+        // direkt aus dem Ergebnis setzen statt erst auf den nächsten Tool-Call
+        // zu warten, der diese ID verwendet.
+        if (block.name === "search_entity") {
+          try {
+            const parsed = JSON.parse(result) as { count?: number; results?: Array<Record<string, unknown>> };
+            if (parsed.count === 1 && parsed.results?.[0]) {
+              const hit = parsed.results[0];
+              if (hit.type === "horse") {
+                focus.horseId = String(hit.id);
+                focus.horseName = String(hit.name ?? focus.horseName ?? "");
+              } else if (hit.type === "client") {
+                focus.clientId = String(hit.id);
+                focus.clientName = String(hit.name ?? focus.clientName ?? "");
+              }
+            }
+          } catch { /* kein JSON (z.B. "Keine Treffer für ...") -- ignorieren */ }
+        }
         console.log(`[hufi-agent] Tool result (${block.name}): ${result.slice(0, 100)}`);
         toolResults.push({
           type: "tool_result",
@@ -1374,7 +1455,7 @@ async function callClaudeWithTools(
       signal: ctrl.signal,
     });
     const finalJson = await finalRes.json() as { content?: Array<{ type: string; text?: string }> };
-    return { text: finalJson.content?.find(b => b.type === "text")?.text ?? "Ich konnte die Anfrage nicht vollständig verarbeiten." };
+    return { text: finalJson.content?.find(b => b.type === "text")?.text ?? "Ich konnte die Anfrage nicht vollständig verarbeiten.", focus };
 
   } finally {
     clearTimeout(timer);
@@ -1445,7 +1526,7 @@ serve(async (req) => {
   try { body = await req.json() as RequestBody; }
   catch { return jsonErr("Ungültige Anfrage", 400); }
 
-  const { text, voiceMode = false, history = [], route, clientTimestamp, clientTimezone, clientLocation } = body;
+  const { text, voiceMode = false, history = [], route, clientTimestamp, clientTimezone, clientLocation, conversationFocus } = body;
   if (!text?.trim()) return jsonErr("Kein Text", 400);
 
   // ── A1: Serverseitiger Fach-Guard (Medizin/Recht) ──────────────────────────
@@ -1462,6 +1543,7 @@ serve(async (req) => {
         spokenText: guardAnswer,
         source: "guard",
         disclaimerCategory: guardCategory,
+        conversationFocus: body.conversationFocus,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
@@ -1507,6 +1589,17 @@ serve(async (req) => {
     ? buildProfessionBlock(ctx.professionType)
     : "";
 
+  // Kurzzeitkontext aus der Vorrunde -- verhindert, dass Hufi bei
+  // Folge-Äußerungen ("und leg einen neuen an") erneut nach Pferd/Kunde
+  // fragt, obwohl er schon genannt wurde (siehe AGENT_ANALYSE.md Etappe 3).
+  const focusLines: string[] = [];
+  if (conversationFocus?.horseId) focusLines.push(`- Zuletzt besprochenes Pferd: ${conversationFocus.horseName ?? "?"} (horse_id: ${conversationFocus.horseId})`);
+  if (conversationFocus?.clientId) focusLines.push(`- Zuletzt besprochener Kunde: ${conversationFocus.clientName ?? "?"} (client_id: ${conversationFocus.clientId})`);
+  if (conversationFocus?.pendingClarification) focusLines.push(`- Du hattest offen gefragt: "${conversationFocus.pendingClarification}" — falls die neue Nachricht das beantwortet, nutze das direkt statt erneut zu fragen.`);
+  const focusBlock = focusLines.length > 0
+    ? `GESPRÄCHSFOKUS (aus der letzten Runde):\n${focusLines.join("\n")}\nWenn sich der Nutzer unspezifisch bezieht ("ihn", "sie", "den Termin", "einen neuen") ohne einen neuen Namen zu nennen, ist weiterhin diese Entität gemeint — nicht erneut nachfragen.`
+    : null;
+
   const systemPrompt = [
     HUFI_BASE,
     roleInstr,
@@ -1515,6 +1608,7 @@ serve(async (req) => {
     `Aktuelle Zeit: ${localTimeStr}`,
     weather ? `Aktuelles Wetter: ${weather}` : null,
     contextBlock,
+    focusBlock,
     !voiceMode ? "WICHTIG: Für Detaildaten (Pferdeakte, voller Kalender, Rechnungen) nutze die bereitgestellten Tools. Für Namen-Auflösung IMMER search_entity aufrufen." : "",
   ].filter(Boolean).join("\n\n");
 
@@ -1530,6 +1624,7 @@ serve(async (req) => {
 
   let rawAnswer = "";
   let pendingConfirmation: PendingConfirmation | undefined;
+  let resultFocus: ConversationFocus | undefined = conversationFocus;
   let source: "claude" | "ollama" = "claude";
 
   if (ANTHROPIC_KEY) {
@@ -1537,10 +1632,11 @@ serve(async (req) => {
       const result = await callClaudeWithTools(
         systemPrompt, messages, ANTHROPIC_KEY, model,
         user.id, supabaseAdmin, supabaseUrl, supabaseServiceKey, voiceMode,
-        ctx.professionType, text,
+        ctx.professionType, text, conversationFocus ?? {},
       );
       rawAnswer = result.text;
       pendingConfirmation = result.pendingConfirmation;
+      resultFocus = result.focus ?? resultFocus;
       source = "claude";
     } catch (e) {
       console.error(`[hufi-agent][${requestId}] Claude Fehler:`, e);
@@ -1567,7 +1663,7 @@ serve(async (req) => {
   }
 
   return new Response(
-    JSON.stringify({ ok: true, answer: rawAnswer, spokenText: rawAnswer, source, pendingConfirmation, disclaimerCategory: fachTopic }),
+    JSON.stringify({ ok: true, answer: rawAnswer, spokenText: rawAnswer, source, pendingConfirmation, disclaimerCategory: fachTopic, conversationFocus: resultFocus }),
     { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );
 });
