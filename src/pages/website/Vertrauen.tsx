@@ -204,7 +204,7 @@ const Vertrauen = () => (
               </span>
               <p className="text-white/50 text-sm flex-1">{s.description}</p>
               <a href={s.link} target="_blank" rel="noopener noreferrer" className="mt-4">
-                <Button variant="outline" size="sm" className="w-full border-white/10 text-white hover:bg-white/5 gap-2">
+                <Button variant="outline" size="sm" className="w-full bg-transparent border-white/10 text-white hover:bg-white/5 gap-2">
                   Jetzt live prüfen <ExternalLink className="w-4 h-4" />
                 </Button>
               </a>
@@ -276,7 +276,7 @@ const Vertrauen = () => (
           <p className="text-white/50 text-sm max-w-lg mx-auto mb-6">
             Hufi führt ein vollständiges, strukturiertes Verarbeitungsverzeichnis aller personenbezogenen Daten gemäß Art. 30 DSGVO. Behörden können dieses auf Anfrage einsehen.
           </p>
-          <Button variant="outline" size="sm" className="border-white/10 text-white hover:bg-white/5 gap-2" asChild>
+          <Button variant="outline" size="sm" className="bg-transparent border-white/10 text-white hover:bg-white/5 gap-2" asChild>
             <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Anfrage Verarbeitungsverzeichnis Art. 30")}`}>
               <Mail className="w-4 h-4" /> Verzeichnis anfordern
             </a>
@@ -431,13 +431,13 @@ const Vertrauen = () => (
             </div>
           </div>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Button variant="outline" size="sm" className="border-white/10 text-white hover:bg-white/5" asChild>
+            <Button variant="outline" size="sm" className="bg-transparent border-white/10 text-white hover:bg-white/5" asChild>
               <Link to="/impressum">Impressum</Link>
             </Button>
-            <Button variant="outline" size="sm" className="border-white/10 text-white hover:bg-white/5" asChild>
+            <Button variant="outline" size="sm" className="bg-transparent border-white/10 text-white hover:bg-white/5" asChild>
               <Link to="/datenschutz">Datenschutzerklärung</Link>
             </Button>
-            <Button variant="outline" size="sm" className="border-white/10 text-white hover:bg-white/5" asChild>
+            <Button variant="outline" size="sm" className="bg-transparent border-white/10 text-white hover:bg-white/5" asChild>
               <Link to="/agb">AGB</Link>
             </Button>
           </div>

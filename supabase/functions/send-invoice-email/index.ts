@@ -93,7 +93,7 @@ const handler = async (req: Request): Promise<Response> => {
       html: string;
       attachments?: { filename: string; content: Uint8Array }[];
     } = {
-      from: `${businessName} <onboarding@resend.dev>`,
+      from: `${businessName} <info@hufmanager.de>`,
       to: [recipient_email],
       subject: `Rechnung ${invoice_number || ""}`.trim() + ` von ${businessName}`,
       html: `

@@ -136,7 +136,11 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.hash-password]
-verify_jwt = false
+# 27.07.2026 (F-18): war ohne Login erreichbar — kostenloser PBKDF2-Rechendienst
+# auf Pascals Rechnung und Verifikations-Orakel für erbeutete Hashes.
+# Alle 6 Aufrufer (PferdeakteTresor, VaultTab, HorseTransferWizard/-Receive)
+# laufen im eingeloggten Zustand, Login ist also keine Einschränkung.
+verify_jwt = true
 
 [functions.generate-werbemittel]
 verify_jwt = true

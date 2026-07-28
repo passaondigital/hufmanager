@@ -126,25 +126,33 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { to, subject, html, type, template, variables } = body;
+    const { to, template, variables } = body;
 
-    let finalSubject = subject;
-    let finalHtml = html;
-
-    // If using a template
-    if (template && TEMPLATES[template]) {
-      const tmpl = TEMPLATES[template];
-      const vars = variables || {};
-      finalSubject = tmpl.subject(vars);
-      finalHtml = tmpl.html(vars);
-    }
-
-    if (!to || !finalSubject || !finalHtml) {
-      return new Response(JSON.stringify({ error: 'Missing required fields: to, subject, html (or template + variables)' }), {
+    // Diese Function läuft mit verify_jwt = false, weil der einzige Aufrufer
+    // die öffentliche Newsletter-Anmeldung auf /pferdeakte ist (nicht
+    // eingeloggt). Deshalb darf hier KEIN frei wählbarer subject/html mehr
+    // rein: sonst ist der Endpunkt ein offenes Mail-Relay, mit dem sich von
+    // der verifizierten Absenderadresse noreply@hufmanager.de beliebige
+    // Phishing-Mails verschicken lassen. Nur noch bekannte Templates,
+    // Variablen HTML-escaped.
+    if (!to || !template || !TEMPLATES[template]) {
+      return new Response(JSON.stringify({ error: 'Missing or unknown template' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    const vars: Record<string, string> = {};
+    for (const [k, v] of Object.entries(variables || {})) {
+      vars[k] = String(v ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#039;')
+        .slice(0, 500);
+    }
+
+    const tmpl = TEMPLATES[template];
+    const finalSubject = tmpl.subject(vars);
+    const finalHtml = tmpl.html(vars);
 
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',

@@ -67,7 +67,7 @@ const LatestBlogPosts = () => {
               ))}
             </div>
             <div className="text-center mt-12">
-              <Button variant="outline" asChild className="border-white/20 text-white hover:bg-white/10">
+              <Button variant="outline" asChild className="bg-transparent border-white/20 text-white hover:bg-white/10">
                 <Link to="/blog">Alle Artikel ansehen<ArrowRight className="ml-2 h-4 w-4" /></Link>
               </Button>
             </div>

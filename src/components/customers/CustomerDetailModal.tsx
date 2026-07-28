@@ -62,7 +62,11 @@ import {
   UserCheck,
   Briefcase,
   Tags,
+  PauseCircle,
+  PlayCircle,
+  LogOut,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { ProviderHorseEditSheet } from "@/components/customers/ProviderHorseEditSheet";
 import { ClientInvoicesSection } from "@/components/invoices/ClientInvoicesSection";
 import { ClientDocumentsTab } from "@/components/customers/ClientDocumentsTab";
@@ -162,8 +166,10 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
     staleTime: 60_000,
   });
 
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEndCareConfirm, setShowEndCareConfirm] = useState(false);
   const [horseToDelete, setHorseToDelete] = useState<Horse | null>(null);
   const [horseToEditId, setHorseToEditId] = useState<string | null>(null);
   const [contactData, setContactData] = useState<{ is_business: boolean; vat_id: string } | null>(null);
@@ -310,6 +316,104 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
     onError: (err: any) => {
       console.error("Customer update error:", err);
       toast({ title: "Fehler beim Speichern", description: err?.message || "Unbekannter Fehler", variant: "destructive" });
+    },
+  });
+
+  // ─── Betreuungsverhältnis ────────────────────────────────────────────────
+  // Der Zugriff eines Hufbearbeiters auf einen Kunden hängt an access_grants.
+  // Bei "Geisterkarteikarten" (vom Provider selbst angelegt, nie eingeloggt)
+  // gibt es keinen Grant — dort ist die Verbindung profiles.created_by_provider_id.
+  const { data: careGrant } = useQuery({
+    queryKey: ["care-grant", customer?.id, user?.id],
+    enabled: !!customer?.id && !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("access_grants")
+        .select("id, status, is_active, granted_at, revoked_at")
+        .eq("client_id", customer!.id)
+        .eq("provider_id", user!.id)
+        .order("granted_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const isPaused = careGrant?.status === "paused";
+  const careEnded = careGrant ? careGrant.is_active === false : false;
+
+  // Betreuung beenden: kappt NUR den eigenen Zugriff und archiviert die
+  // Karteikarte. Profil und Pferde der Kundin bleiben unangetastet — sie
+  // gehören ihr, nicht dem Hufbearbeiter. Vergangene Termine und Rechnungen
+  // bleiben ebenfalls (Aufbewahrungspflicht).
+  const endCare = useMutation({
+    mutationFn: async () => {
+      if (!customer || !user) throw new Error("Nicht angemeldet");
+
+      if (careGrant) {
+        const { error } = await supabase
+          .from("access_grants")
+          .update({ is_active: false, status: "ended", revoked_at: new Date().toISOString() })
+          .eq("id", careGrant.id);
+        if (error) throw error;
+      }
+
+      // Zukünftige Termine absagen — die stehen sonst als Karteileichen im
+      // Kalender. Vergangene bleiben unberührt.
+      if (horses.length > 0) {
+        const today = new Date().toISOString().split("T")[0];
+        await supabase
+          .from("appointments")
+          .update({ status: "cancelled" })
+          .eq("provider_id", user.id)
+          .gte("date", today)
+          .not("status", "in", "(cancelled,completed)")
+          .in("horse_id", horses.map((h) => h.id));
+      }
+
+      const { error: archErr } = await supabase
+        .from("profiles")
+        .update({ lifecycle_status: "archive" })
+        .eq("id", customer.id);
+      if (archErr) throw archErr;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["provider-clients"] });
+      queryClient.invalidateQueries({ queryKey: ["provider-horses"] });
+      queryClient.invalidateQueries({ queryKey: ["care-grant"] });
+      toast({
+        title: "Betreuung beendet",
+        description: "Zugriff aufgehoben, Karteikarte archiviert. Rechnungen und vergangene Termine bleiben erhalten.",
+      });
+      setShowEndCareConfirm(false);
+      onClose();
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : "Unbekannter Fehler";
+      toast({ title: "Fehler", description: msg, variant: "destructive" });
+    },
+  });
+
+  // Pause ist bewusst nur ein Zustandsmerker: der Zugriff bleibt bestehen,
+  // die Kundin verschwindet nur aus der aktiven Liste. Wer den Zugriff
+  // wirklich kappen will, beendet die Betreuung.
+  const togglePause = useMutation({
+    mutationFn: async () => {
+      if (!careGrant) throw new Error("Für diese Karteikarte gibt es keine Betreuungs-Verknüpfung");
+      const { error } = await supabase
+        .from("access_grants")
+        .update({ status: isPaused ? "active" : "paused" })
+        .eq("id", careGrant.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["care-grant"] });
+      queryClient.invalidateQueries({ queryKey: ["provider-clients"] });
+      toast({ title: isPaused ? "Betreuung fortgesetzt" : "Betreuung pausiert" });
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : "Unbekannter Fehler";
+      toast({ title: "Fehler", description: msg, variant: "destructive" });
     },
   });
 
@@ -939,20 +1043,88 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
             </Tabs>
           </div>
 
-          <DialogFooter className="flex justify-between">
-            <Button
-              variant="destructive"
-              onClick={() => setShowDeleteConfirm(true)}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Kunde löschen
-            </Button>
+          <DialogFooter className="flex flex-wrap justify-between gap-2">
+            <div className="flex flex-wrap gap-2">
+              {!careEnded && (
+                <Button variant="outline" onClick={() => setShowEndCareConfirm(true)}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Betreuung beenden
+                </Button>
+              )}
+              {careGrant && !careEnded && (
+                <Button
+                  variant="outline"
+                  onClick={() => togglePause.mutate()}
+                  disabled={togglePause.isPending}
+                >
+                  {isPaused ? (
+                    <><PlayCircle className="h-4 w-4 mr-2" />Fortsetzen</>
+                  ) : (
+                    <><PauseCircle className="h-4 w-4 mr-2" />Pausieren</>
+                  )}
+                </Button>
+              )}
+              {/* Löschen entfernt die Karteikarte samt Pferden. Das ist nur
+                  zulässig, solange die Karteikarte nie von einem echten
+                  Menschen übernommen wurde — sonst löscht ein Dienstleister
+                  die Daten seines Kunden. */}
+              {customer.has_logged_in ? (
+                <Button
+                  variant="ghost"
+                  disabled
+                  title={'Diese Kundin hat ein eigenes Hufi-Konto — ihre Daten gehören ihr. Nutze „Betreuung beenden".'}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Löschen nicht möglich
+                </Button>
+              ) : (
+                <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Kunde löschen
+                </Button>
+              )}
+            </div>
             <Button variant="outline" onClick={onClose}>
               Schließen
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Betreuung beenden */}
+      <AlertDialog open={showEndCareConfirm} onOpenChange={setShowEndCareConfirm}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Betreuung beenden?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  Du betreust <strong className="text-foreground">{customer.full_name}</strong> ab sofort nicht mehr.
+                </p>
+                <div className="bg-muted/60 rounded-lg p-3 space-y-2 text-sm">
+                  <p className="font-medium text-foreground">Was passiert:</p>
+                  <ul className="list-disc pl-4 space-y-1 text-muted-foreground">
+                    <li>Dein Zugriff auf die Pferdeakten endet</li>
+                    <li>Zukünftige Termine werden abgesagt</li>
+                    <li>Die Karteikarte wandert ins Archiv</li>
+                    <li>Rechnungen und vergangene Termine bleiben bei dir</li>
+                  </ul>
+                </div>
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-sm text-muted-foreground">
+                  Konto und Pferde der Kundin bleiben unberührt — die gehören ihr.
+                  Ihr könnt die Betreuung jederzeit wieder aufnehmen.
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction onClick={() => endCare.mutate()} disabled={endCare.isPending}>
+              Betreuung beenden
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
@@ -981,10 +1153,10 @@ export function CustomerDetailModal({ customer, horses, open, onClose, onAddHors
                   Die ID #{customer.readable_id} wird für 30 Tage gesperrt.
                 </p>
                 <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-sm">
-                  <p className="text-foreground font-medium mb-1">💡 Alternativen zum Löschen:</p>
+                  <p className="text-foreground font-medium mb-1">💡 Meistens die bessere Wahl:</p>
                   <ul className="list-disc pl-4 space-y-1 text-muted-foreground">
-                    <li><strong>Archivieren:</strong> Kundenstatus auf „Inaktiv" setzen</li>
-                    <li><strong>Übergeben:</strong> Kunde an Kollegen übertragen (per #PID oder E-Mail)</li>
+                    <li><strong>Betreuung beenden:</strong> beendet nur euer Verhältnis, archiviert die Karteikarte und lässt die Daten der Kundin unangetastet</li>
+                    <li><strong>Pausieren:</strong> wenn die Kundin nur eine Weile aussetzt</li>
                   </ul>
                 </div>
               </div>

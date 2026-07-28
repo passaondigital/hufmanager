@@ -131,6 +131,23 @@ const PLAN_FEATURE_MAP: Record<string, Record<string, string>> = {
   },
 };
 
+// ─── CopeCart-Ereignisse (Doku IPN_CopeCart_v_1.6.7, "IPN Events") ──────────
+// Die bisherigen Namen (order_created, payment_completed, purchase, sale …)
+// gibt es bei CopeCart nicht — damit landete jeder echte Kauf im default-Zweig.
+const PAYMENT_EVENTS = [
+  "payment.made",                 // erfolgreiche Zahlung
+  "payment.trial",                // Zahlung nach Ablauf der Testphase
+  "payment.recurring.upcoming",   // 2. und jede weitere Abo-Zahlung
+];
+const CANCELLATION_EVENTS = [
+  "payment.recurring.cancelled",  // Käufer hat gekündigt
+  "payment.refunded",             // Rückerstattung
+  "payment.charged_back",         // Rückbuchung durch Bank/Kreditkarte
+];
+const FAILURE_EVENTS = ["payment.failed"];
+// payment.pending wird bewusst nicht behandelt: noch nicht verarbeitet,
+// weder freischalten noch sperren.
+
 function getPlanFromProductId(productId: string): string {
   return PRODUCT_PLAN_MAP[productId] || 'pro';
 }
@@ -258,7 +275,7 @@ async function sendBhsWelcomeEmail(
 
   try {
     await resend.emails.send({
-      from: "Barhufservice Schmid <onboarding@resend.dev>",
+      from: "Barhufservice Schmid <info@hufmanager.de>",
       to: [to],
       subject: `🐴 Ihr BHS Balance Abo für ${horseName} ist aktiv`,
       text: plainText,
@@ -298,6 +315,20 @@ function escapeHtml(str: string | null | undefined): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+// HMAC-SHA256 über den Roh-Body, Base64 — exakt das, was CopeCart im Header
+// 'X-Copecart-Signature' mitschickt (Doku IPN_CopeCart_v_1.6.7, "IPN Call":
+// Base64.strict_encode64(OpenSSL::HMAC.digest('sha256', secret, message))).
+async function hmacSha256Base64(secret: string, message: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
+  );
+  const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, encoder.encode(message)));
+  let binary = "";
+  for (const b of sig) binary += String.fromCharCode(b);
+  return btoa(binary);
 }
 
 // Constant-time string comparison to prevent timing attacks
@@ -348,7 +379,7 @@ async function sendPaymentConfirmationEmail(
 
   try {
     await resend.emails.send({
-      from: `HufManager <onboarding@resend.dev>`,
+      from: `HufManager <info@hufmanager.de>`,
       to: [to],
       subject,
       html: `
@@ -482,6 +513,17 @@ async function sendPaymentPushNotification(
   }
 }
 
+// CopeCart wertet eine IPN NUR als zugestellt, wenn der Antwort-Body exakt
+// "OK" ist (Doku, Abschnitt "IPN failures"). Alles andere gilt als Fehlschlag
+// und wird 10× über 3 Stunden wiederholt. Bisher antwortete der Webhook mit
+// JSON — jede Meldung wäre also neunmal zusätzlich gekommen.
+function okResponse(): Response {
+  return new Response("OK", {
+    status: 200,
+    headers: { "Content-Type": "text/plain", ...corsHeaders },
+  });
+}
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("Copecart webhook received");
 
@@ -491,31 +533,47 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Parse the webhook payload
-    const payload = await req.json();
-    console.log("Webhook payload received:", JSON.stringify(payload, null, 2));
+    // ─── Signaturprüfung nach CopeCart-Spec ────────────────────────────────
+    // CopeCart schickt kein Passwort im Body, sondern eine HMAC-SHA256-
+    // Signatur über den Roh-Body im Header 'X-Copecart-Signature'. Der alte
+    // Code las payload.password — dieses Feld gibt es nicht, deshalb endete
+    // JEDE echte IPN in einem 401.
+    // Wichtig: req.text() vor JSON.parse. Über einen re-serialisierten Body
+    // stimmt die Signatur nicht (Reihenfolge/Formatierung ändern sich).
+    const rawBody = await req.text();
+    const receivedSignature = req.headers.get("x-copecart-signature") ?? "";
+    const sharedSecret = Deno.env.get("COPECART_IPN_PASSWORD");
 
-    // Verify IPN password
-    const expectedPassword = Deno.env.get("COPECART_IPN_PASSWORD");
-    const receivedPassword = payload.password || payload.ipn_password || payload.secret;
-    
-    if (!expectedPassword) {
+    if (!sharedSecret) {
       console.error("COPECART_IPN_PASSWORD not configured");
-      return new Response(JSON.stringify({ error: "Server configuration error" }), {
+      return new Response("Server configuration error", {
         status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: { "Content-Type": "text/plain", ...corsHeaders },
       });
     }
 
-    if (!constantTimeCompare(receivedPassword || '', expectedPassword)) {
-      console.error("Invalid IPN password received");
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+    const expectedSignature = await hmacSha256Base64(sharedSecret, rawBody);
+
+    if (!constantTimeCompare(receivedSignature, expectedSignature)) {
+      // Diagnose OHNE Klartext: nur welche Header und Felder ankamen, keine
+      // Werte. Reicht, um bei einem echten (Test-)Kauf zu sehen, ob die
+      // Feldnamen stimmen — ohne Käuferdaten oder Secrets ins Log zu schreiben.
+      let bodyKeys: string[] = [];
+      try { bodyKeys = Object.keys(JSON.parse(rawBody) ?? {}); } catch { /* kein JSON */ }
+      console.error("[copecart] Signatur ungültig.", JSON.stringify({
+        signatur_header_da: receivedSignature !== "",
+        header: [...req.headers.keys()],
+        body_felder: bodyKeys,
+        body_laenge: rawBody.length,
+      }));
+      return new Response("Unauthorized", {
         status: 401,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: { "Content-Type": "text/plain", ...corsHeaders },
       });
     }
 
-    console.log("IPN password verified successfully");
+    const payload = JSON.parse(rawBody);
+    console.log("[copecart] Signatur gültig | Felder:", Object.keys(payload).join(","));
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -532,17 +590,33 @@ const handler = async (req: Request): Promise<Response> => {
     // Initialize Resend for email notifications
     const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
-    // Copecart IPN fields - try multiple possible field names
-    const eventType = payload.event || payload.type || payload.event_type;
-    const customerEmail = (payload.customer?.email || payload.email || payload.buyer?.email || payload.buyer_email || "").toLowerCase().trim();
-    const customerName = payload.customer?.name || payload.buyer?.name || payload.buyer_name || payload.name || "";
-    const subscriptionId = payload.subscription_id || payload.id || payload.order_id;
-    const productId = payload.product_id || payload.product?.id || "";
-    
-    // Check for custom field (invoice ID for payment links)
-    const customField = payload.custom || payload.custom_field || payload.metadata?.custom || "";
-    
-    console.log("[copecart] Event:", eventType, "| Product:", productId, "| Email:", customerEmail, "| Custom:", customField);
+    // ─── Feldnamen laut Doku, Abschnitt "IPN Parameters" ───────────────────
+    // Vorher wurden die Namen geraten (payload.email, payload.buyer.name,
+    // payload.amount …). Echte Namen zuerst, alte als Fallback.
+    const eventType = payload.event_type || payload.event || payload.type;
+    const customerEmail = (payload.buyer_email || payload.email || "").toLowerCase().trim();
+    const customerName = [payload.buyer_firstname, payload.buyer_lastname]
+      .filter(Boolean).join(" ").trim() || payload.buyer_name || "";
+    // order_id bleibt über alle Zahlungen eines Abos gleich → Abo-Kennung.
+    const subscriptionId = payload.order_id || payload.subscription_id;
+    // transaction_id ist pro Zahlung eindeutig → Schlüssel gegen Doppelbuchung
+    // bei den 10 Wiederholungen, die CopeCart bei Fehlschlag schickt.
+    const transactionId = payload.transaction_id || payload.order_id;
+    const productId = payload.product_id || "";
+    // Testbestellungen: payment_status ist dann test_paid / test_trial /
+    // test_successed_refunded (Doku, "IPN Parameters"). Die Freischaltung soll
+    // laufen — sonst könnte man nichts prüfen —, aber Umsatzlog und
+    // Admin-Rechnung dürfen keine erfundenen Einnahmen in die Bücher schreiben.
+    const isTestOrder = typeof payload.payment_status === "string"
+      && payload.payment_status.startsWith("test");
+    // Gezahlter Betrag dieser Position.
+    const paidAmountRaw = payload.line_item_amount ?? payload.first_payment ?? payload.amount;
+    const paidAmount = typeof paidAmountRaw === "string" ? parseFloat(paidAmountRaw) : paidAmountRaw;
+    // Freies Verkäuferfeld heißt bei CopeCart 'metadata' (String) — dort liegt
+    // bei Rechnungs-Zahlungen die Rechnungs-UUID.
+    const customField = (typeof payload.metadata === "string" ? payload.metadata : "") || payload.custom || "";
+
+    console.log("[copecart] Event:", eventType, "| Produkt:", productId, "| Betrag:", paidAmount, "| metadata gesetzt:", !!customField);
 
     // Check if this is an invoice payment (custom field contains invoice ID)
     const isInvoicePayment = customField && customField.length > 10; // UUID length check
@@ -573,18 +647,23 @@ const handler = async (req: Request): Promise<Response> => {
         console.log("[copecart] Invoice found:", invoice.invoice_number);
         
         // Check if it's a successful payment event
-        const isSuccessfulPayment = [
-          "order_created",
-          "order.created",
-          "subscription_payment_succeeded",
-          "subscription.payment.succeeded",
-          "payment_completed",
-          "payment.completed",
-          "purchase",
-          "sale",
-        ].includes(eventType);
+        const isSuccessfulPayment = PAYMENT_EVENTS.includes(eventType);
         
         if (isSuccessfulPayment) {
+          // Betragsabgleich. Der Feldname line_item_amount ist aus der Doku
+          // belegt, deshalb ein echter Riegel: ohne ihn würde ein falsch
+          // konfigurierter Checkout (5€-Guthabenprodukt mit Rechnungs-UUID
+          // in metadata) eine 500€-Rechnung tilgen.
+          if (typeof paidAmount !== "number" || Number.isNaN(paidAmount)) {
+            console.error("[copecart] Kein Betrag im Payload — Rechnung NICHT als bezahlt markiert:", invoice.invoice_number);
+            return okResponse();
+          }
+          if (paidAmount + 0.01 < Number(invoice.total_amount)) {
+            console.error("[copecart] BETRAGS-ABWEICHUNG bei Rechnung", invoice.invoice_number,
+              "— erwartet:", invoice.total_amount, "gezahlt:", paidAmount, "→ NICHT als bezahlt markiert");
+            return okResponse();
+          }
+
           // Update invoice status to paid
           const { error: updateError } = await supabase
             .from("invoices")
@@ -684,15 +763,7 @@ const handler = async (req: Request): Promise<Response> => {
         }
         
         // Return success for invoice payment processing
-        return new Response(JSON.stringify({ 
-          success: true, 
-          message: "Invoice payment processed",
-          invoiceId: invoice.id,
-          invoiceNumber: invoice.invoice_number,
-        }), {
-          status: 200,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        });
+        return okResponse();
       } else {
         console.log("[copecart] Invoice not found for ID:", customField);
       }
@@ -728,34 +799,9 @@ const handler = async (req: Request): Promise<Response> => {
     const vaultMeta = getVaultProductMeta(productId);
 
     // Handle payment/order events - these are when we should create users
-    const isPaymentEvent = [
-      "order_created",
-      "order.created",
-      "subscription_payment_succeeded",
-      "subscription.payment.succeeded",
-      "payment_completed",
-      "payment.completed",
-      "purchase",
-      "sale",
-    ].includes(eventType);
-
-    const isCancellationEvent = [
-      "subscription_cancelled",
-      "subscription.cancelled",
-      "subscription.canceled",
-      "subscription_expired",
-      "subscription.expired",
-      "refund_created",
-      "refund.created",
-      "refund",
-    ].includes(eventType);
-
-    const isPaymentFailureEvent = [
-      "payment_failed",
-      "payment.failed",
-      "subscription_payment_failed",
-      "subscription.payment.failed",
-    ].includes(eventType);
+    const isPaymentEvent = PAYMENT_EVENTS.includes(eventType);
+    const isCancellationEvent = CANCELLATION_EVENTS.includes(eventType);
+    const isPaymentFailureEvent = FAILURE_EVENTS.includes(eventType);
 
     // ─── VAULT PRODUCT BRANCH ──────────────────────────────────────────────
     // Standalone Tresor subscription. Touches only the vault_* columns and
@@ -766,14 +812,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (vaultMeta) {
       if (!profile) {
         console.warn("[copecart][vault] No profile found for vault purchase:", customerEmail, "| Product:", productId);
-        return new Response(JSON.stringify({
-          success: true,
-          warning: "Vault product purchased but no matching user account found",
-          email: customerEmail,
-        }), {
-          status: 200,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        });
+        return okResponse();
       }
 
       let vaultUpdate: {
@@ -796,10 +835,7 @@ const handler = async (req: Request): Promise<Response> => {
         vaultUpdate = { vault_plan_status: "cancelled" };
       } else {
         console.log("[copecart][vault] Unhandled event type for vault product:", eventType);
-        return new Response(JSON.stringify({ success: true, message: "Event type not handled" }), {
-          status: 200,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        });
+        return okResponse();
       }
 
       const { error: vaultErr } = await supabase
@@ -816,16 +852,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       console.log("[copecart][vault] Profile updated:", profile.id, vaultUpdate);
-      return new Response(JSON.stringify({
-        success: true,
-        scope: "vault",
-        plan: vaultMeta.plan,
-        cycle: vaultMeta.cycle,
-        status: vaultUpdate.vault_plan_status ?? null,
-      }), {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      return okResponse();
     }
 
     // ─── VOICE-GUTHABEN BRANCH ──────────────────────────────────────────────
@@ -836,28 +863,18 @@ const handler = async (req: Request): Promise<Response> => {
     if (voiceCreditAmount !== null) {
       if (!profile) {
         console.warn("[copecart][voice-credit] No profile found:", customerEmail, "| Product:", productId);
-        return new Response(JSON.stringify({
-          success: true,
-          warning: "Voice-Guthaben gekauft, aber kein passender Account gefunden",
-          email: customerEmail,
-        }), {
-          status: 200,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        });
+        return okResponse();
       }
 
       if (!isPaymentEvent) {
         console.log("[copecart][voice-credit] Unhandled event type for credit product:", eventType);
-        return new Response(JSON.stringify({ success: true, message: "Event type not handled" }), {
-          status: 200,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        });
+        return okResponse();
       }
 
       const { error: creditErr } = await supabase.rpc("add_purchased_voice_credits", {
         p_user_id: profile.id,
         p_amount_cents: voiceCreditAmount,
-        p_copecart_order_id: subscriptionId ?? null,
+        p_copecart_order_id: transactionId ?? null,  // pro Zahlung eindeutig → schützt vor den 10 Retries
         p_description: `Guthaben-Kauf (${(voiceCreditAmount / 100).toFixed(2)}€)`,
       });
 
@@ -870,14 +887,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       console.log("[copecart][voice-credit] Gutgeschrieben:", profile.id, voiceCreditAmount, "Cent");
-      return new Response(JSON.stringify({
-        success: true,
-        scope: "voice_credit",
-        amount_cents: voiceCreditAmount,
-      }), {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      return okResponse();
     }
 
     // ─── BHS BALANCE BRANCH ──────────────────────────────────────────────────
@@ -937,19 +947,13 @@ const handler = async (req: Request): Promise<Response> => {
             }).catch((e) => console.error("[copecart][bhs] Provider push failed:", e));
           }
         }
-        return new Response(JSON.stringify({ success: true, scope: "bhs_balance", action: "cancelled" }), {
-          status: 200,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        });
+        return okResponse();
       }
 
       // Nur Kaufereignisse weiter verarbeiten
       if (!isPaymentEvent) {
         console.log("[copecart][bhs] Unhandled event type:", eventType);
-        return new Response(JSON.stringify({ success: true, message: "Event type not handled" }), {
-          status: 200,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        });
+        return okResponse();
       }
 
       // 1. Client-Account: vorhanden oder neu anlegen
@@ -1093,19 +1097,18 @@ const handler = async (req: Request): Promise<Response> => {
         }),
       }).catch((e) => console.error("[copecart][bhs] Provider push failed:", e));
 
-      return new Response(JSON.stringify({
-        success: true,
-        scope: "bhs_balance",
-        clientId,
-        horseId: horse.id,
-        eqid,
-        variant: bhsMeta.variant,
-      }), {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      return okResponse();
     }
     // ─── Ende BHS BALANCE BRANCH ─────────────────────────────────────────────
+
+    // Unbekannte Produkt-ID bei einem Zahlungsevent: NICHT stillschweigend
+    // "pro" vergeben. getPlanFromProductId() defaultet auf "pro" — damit
+    // würde jedes künftige CopeCart-Produkt dem Käufer einen vollen
+    // Provider-Zugang schenken. Kündigungen/Refunds laufen bewusst weiter.
+    if (isPaymentEvent && !(productId !== "" && productId in PRODUCT_PLAN_MAP)) {
+      console.error("[copecart] Zahlung für UNBEKANNTE Produkt-ID — kein Plan vergeben:", productId, customerEmail);
+      return okResponse();
+    }
 
     // If user doesn't exist and this is a payment event, create the user
     if (!profile && isPaymentEvent) {
@@ -1202,27 +1205,14 @@ const handler = async (req: Request): Promise<Response> => {
 
         console.log("[copecart] New provider account created and configured successfully");
 
-        return new Response(JSON.stringify({
-          success: true,
-          message: "New provider account created",
-          userId: userId,
-        }), {
-          status: 200,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        });
+        return okResponse();
       }
     }
 
     // If still no profile found after creation attempt, acknowledge but don't fail
     if (!profile && !isPaymentEvent) {
       console.log("[copecart] No matching user found for non-payment event");
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: "No matching user found, webhook acknowledged" 
-      }), {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      return okResponse();
     }
 
     // Existing user - update their subscription
@@ -1236,74 +1226,35 @@ const handler = async (req: Request): Promise<Response> => {
         copecart_subscription_id?: string;
       } = {};
 
-      // Handle different event types
-      switch (eventType) {
-        case "order_created":
-        case "order.created":
-        case "subscription_payment_succeeded":
-        case "subscription.payment.succeeded":
-        case "payment_completed":
-        case "payment.completed":
-        case "purchase":
-        case "sale":
-          console.log("Processing successful payment/order");
-          updateData = {
-            subscription_status: "active",
-            subscription_plan: subscriptionPlan,
-            plan_override: planOverride,
-            copecart_subscription_id: subscriptionId,
-          };
-          break;
-
-        case "subscription_cancelled":
-        case "subscription.cancelled":
-        case "subscription.canceled":
-          console.log("Processing subscription cancellation");
-          updateData = {
-            subscription_status: "cancelled",
-          };
-          break;
-
-        case "payment_failed":
-        case "payment.failed":
-        case "subscription_payment_failed":
-        case "subscription.payment.failed":
-          console.log("Processing failed payment");
-          updateData = {
-            subscription_status: "past_due",
-          };
-          break;
-
-        case "subscription_expired":
-        case "subscription.expired":
-          console.log("Processing subscription expiration");
-          updateData = {
-            subscription_status: "cancelled",
-            subscription_plan: "starter",
-            plan_override: null,
-          };
-          break;
-
-        case "refund_created":
-        case "refund.created":
-        case "refund":
-          console.log("Processing refund");
-          updateData = {
-            subscription_status: "cancelled",
-            subscription_plan: "starter",
-            plan_override: null,
-          };
-          break;
-
-        default:
-          console.log("Unknown event type, logging but not processing:", eventType);
-          return new Response(JSON.stringify({ 
-            success: true, 
-            message: "Event type not handled" 
-          }), {
-            status: 200,
-            headers: { "Content-Type": "application/json", ...corsHeaders },
-          });
+      // Ereignis-Zuordnung über die zentralen Listen (echte CopeCart-Namen).
+      // Vorher ein switch auf erfundene Namen — jeder Kauf fiel in default.
+      if (isPaymentEvent) {
+        console.log("[copecart] Zahlung erfolgreich:", eventType);
+        updateData = {
+          subscription_status: "active",
+          subscription_plan: subscriptionPlan,
+          plan_override: planOverride,
+          copecart_subscription_id: subscriptionId,
+        };
+      } else if (isPaymentFailureEvent) {
+        console.log("[copecart] Zahlung fehlgeschlagen:", eventType);
+        updateData = { subscription_status: "past_due" };
+      } else if (eventType === "payment.recurring.cancelled") {
+        // Kündigung: Zugang läuft bis Periodenende weiter, deshalb nur den
+        // Status setzen und den Plan NICHT herunterstufen.
+        console.log("[copecart] Kündigung:", eventType);
+        updateData = { subscription_status: "cancelled" };
+      } else if (isCancellationEvent) {
+        // Rückerstattung/Rückbuchung: Geld ist zurück, Zugang endet sofort.
+        console.log("[copecart] Rückerstattung/Rückbuchung:", eventType);
+        updateData = {
+          subscription_status: "cancelled",
+          subscription_plan: "starter",
+          plan_override: null,
+        };
+      } else {
+        console.log("[copecart] Ereignis nicht behandelt:", eventType);
+        return okResponse();
       }
 
       // Update the user's subscription status
@@ -1338,9 +1289,16 @@ const handler = async (req: Request): Promise<Response> => {
           }
         }
 
+        if (isTestOrder) {
+          console.log("[copecart] TESTBESTELLUNG erkannt (payment_status:", payload.payment_status,
+            ") — Freischaltung ausgeführt, aber kein Umsatzlog und keine Admin-Rechnung.");
+          return okResponse();
+        }
+
         // Log to admin_revenue_log
-        const amount = payload.amount || payload.total || payload.price || 0;
-        const parsedAmount = typeof amount === "string" ? parseFloat(amount) : amount;
+        // line_item_amount statt geratener Feldnamen — sonst stand hier
+        // immer 0, und es wurde nie eine admin_invoice erzeugt.
+        const parsedAmount = typeof paidAmount === "number" && !Number.isNaN(paidAmount) ? paidAmount : 0;
         const { error: logError } = await supabase
           .from("admin_revenue_log")
           .insert({
@@ -1438,10 +1396,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
-    });
+    return okResponse();
   } catch (error: any) {
     console.error("[copecart] Error:", error?.message || error);
     return new Response(JSON.stringify({ error: "Webhook processing failed" }), {

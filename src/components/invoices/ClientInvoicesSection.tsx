@@ -21,13 +21,22 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { FileText, Download, Eye, Trash2, MoreVertical, Plus, Loader2, MessageCircle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { FileText, Download, Eye, Trash2, MoreVertical, Plus, Loader2, MessageCircle, Mail } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
 import { CreateInvoiceModal } from "./CreateInvoiceModal";
 import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
-import { useCommunicationMode } from "@/hooks/useCommunicationMode";
 import { openWhatsApp, waTextInvoice } from "@/lib/whatsappTemplates";
 
 interface Invoice {
@@ -62,13 +71,15 @@ interface ClientInvoicesSectionProps {
 
 export function ClientInvoicesSection({ clientId, clientName, horses = [] }: ClientInvoicesSectionProps) {
   const { user } = useAuth();
-  const { isWhatsApp } = useCommunicationMode();
   const queryClient = useQueryClient();
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [preSelectedHorseId, setPreSelectedHorseId] = useState<string | null>(null);
   const [generatingPdfFor, setGeneratingPdfFor] = useState<string | null>(null);
   const [clientProfile, setClientProfile] = useState<ClientProfile | null>(null);
+  const [emailInvoice, setEmailInvoice] = useState<Invoice | null>(null);
+  const [emailAddress, setEmailAddress] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   // Fetch client profile for PDF generation
   const { data: invoices = [], isLoading } = useQuery({
@@ -189,6 +200,113 @@ export function ClientInvoicesSection({ clientId, clientName, horses = [] }: Cli
     }
   };
 
+  // Blob → Base64 ohne Data-URL-Präfix. Chunkweise, weil String.fromCharCode
+  // bei einem mehrseitigen PDF sonst den Argument-Stack sprengt.
+  const blobToBase64 = async (blob: Blob): Promise<string> => {
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    let binary = "";
+    const CHUNK = 8192;
+    for (let i = 0; i < bytes.length; i += CHUNK) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+    }
+    return btoa(binary);
+  };
+
+  const openEmailDialog = (invoice: Invoice) => {
+    setEmailAddress(clientProfile?.email || "");
+    setEmailInvoice(invoice);
+  };
+
+  const handleSendEmail = async () => {
+    if (!emailInvoice || !user) return;
+    const address = emailAddress.trim();
+    if (!address.includes("@")) {
+      toast({ title: "Bitte eine gültige E-Mail-Adresse eingeben", variant: "destructive" });
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      const blob = await generateInvoicePdf(emailInvoice, clientProfile, user.id);
+      const pdfBase64 = blob ? await blobToBase64(blob) : undefined;
+
+      const { data: settings } = await supabase
+        .from("business_settings")
+        .select("business_name, owner_name, email")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      // Feldnamen bewusst in snake_case: die Edge Function liest
+      // recipient_email/invoice_id. ClientInvoices.tsx schickte hier
+      // camelCase — deshalb ist dieser Versand bisher immer mit
+      // "Missing required fields" abgebrochen.
+      const { error } = await supabase.functions.invoke("send-invoice-email", {
+        body: {
+          invoice_id: emailInvoice.id,
+          recipient_email: address,
+          recipient_name: clientProfile?.full_name || clientName || "Kunde",
+          invoice_number: emailInvoice.invoice_number || "",
+          total_amount: emailInvoice.total_amount,
+          provider_name: settings?.business_name || settings?.owner_name || "Ihr Hufbearbeiter",
+          provider_email: settings?.email || undefined,
+          pdf_base64: pdfBase64,
+        },
+      });
+      if (error) throw error;
+
+      // Neu eingegebene Adresse beim Kunden hinterlegen, damit sie beim
+      // nächsten Mal schon drinsteht.
+      if (address !== (clientProfile?.email || "")) {
+        await supabase.from("profiles").update({ email: address }).eq("id", clientId);
+        setClientProfile((p) => (p ? { ...p, email: address } : p));
+      }
+
+      toast({ title: "Rechnung versendet", description: `Per E-Mail an ${address}` });
+      setEmailInvoice(null);
+    } catch (err) {
+      console.error("Invoice email failed:", err);
+      toast({ title: "Versand fehlgeschlagen", description: "Bitte später erneut versuchen.", variant: "destructive" });
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
+  // WhatsApp: das PDF selbst mitschicken, statt nur anzukündigen, dass es
+  // eine Rechnung gibt. Läuft über die native Teilen-Funktion des Geräts
+  // (dasselbe Muster wie in HufCamGalleryReport.tsx) — kein Datei-Upload,
+  // kein öffentlicher Link nötig. Auf dem Desktop gibt es das nicht, dort
+  // bleibt es beim bisherigen Textweg.
+  const handleSendWhatsApp = async (invoice: Invoice) => {
+    const amount = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2 }).format(invoice.total_amount);
+    const dueDate = invoice.due_date ? format(new Date(invoice.due_date), "dd.MM.yyyy", { locale: de }) : undefined;
+    const text = waTextInvoice(clientName || "", invoice.invoice_number || "–", `${amount}€`, dueDate);
+
+    const blob = await handleGeneratePdf(invoice);
+    if (blob) {
+      const file = new File(
+        [blob],
+        `Rechnung_${invoice.invoice_number || invoice.id.slice(0, 8)}.pdf`,
+        { type: "application/pdf" },
+      );
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], text });
+          return;
+        } catch (err) {
+          // Abbruch durch den Nutzer ist kein Fehler — dann nichts weiter tun.
+          if ((err as Error)?.name === "AbortError") return;
+          console.error("Share failed:", err);
+        }
+      }
+    }
+
+    if (clientProfile?.phone) {
+      openWhatsApp(clientProfile.phone, text);
+    } else {
+      toast({ title: "Keine Handynummer hinterlegt", variant: "destructive" });
+    }
+  };
+
   const handleCreateForHorse = (horseId: string) => {
     setPreSelectedHorseId(horseId);
     setShowCreateModal(true);
@@ -286,19 +404,21 @@ export function ClientInvoicesSection({ clientId, clientName, horses = [] }: Cli
                           <Download className="h-4 w-4 mr-2" />
                           Herunterladen
                         </DropdownMenuItem>
-                        {isWhatsApp && clientProfile?.phone && (
-                          <DropdownMenuItem onClick={() => {
-                            const amount = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2 }).format(invoice.total_amount);
-                            const dueDate = invoice.due_date ? format(new Date(invoice.due_date), "dd.MM.yyyy", { locale: de }) : undefined;
-                            openWhatsApp(
-                              clientProfile.phone!,
-                              waTextInvoice(clientName || "", invoice.invoice_number || "–", `${amount}€`, dueDate)
-                            );
-                          }}>
-                            <MessageCircle className="h-4 w-4 mr-2 text-green-500" />
-                            Per WhatsApp senden
-                          </DropdownMenuItem>
-                        )}
+                        <DropdownMenuItem onClick={() => openEmailDialog(invoice)}>
+                          <Mail className="h-4 w-4 mr-2" />
+                          <span className="flex flex-col">
+                            <span>Per E-Mail senden</span>
+                            {!clientProfile?.email && (
+                              <span className="text-xs text-muted-foreground">
+                                Keine Adresse hinterlegt — eintragen
+                              </span>
+                            )}
+                          </span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleSendWhatsApp(invoice)}>
+                          <MessageCircle className="h-4 w-4 mr-2 text-green-500" />
+                          Per WhatsApp senden
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => setInvoiceToDelete(invoice)}
                           className="text-destructive focus:text-destructive"
@@ -351,6 +471,47 @@ export function ClientInvoicesSection({ clientId, clientName, horses = [] }: Cli
         preSelectedClientId={clientId}
         preSelectedHorseId={preSelectedHorseId}
       />
+
+      {/* Rechnung per E-Mail senden */}
+      <Dialog open={!!emailInvoice} onOpenChange={(open) => !open && setEmailInvoice(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rechnung per E-Mail senden</DialogTitle>
+            <DialogDescription>
+              {emailInvoice?.invoice_number
+                ? `Rechnung ${emailInvoice.invoice_number} über ${formatCurrency(emailInvoice.total_amount)} — als PDF im Anhang.`
+                : "Die Rechnung wird als PDF angehängt."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <Label htmlFor="invoice-email">E-Mail-Adresse des Kunden</Label>
+            <Input
+              id="invoice-email"
+              type="email"
+              autoComplete="email"
+              placeholder="kunde@beispiel.de"
+              value={emailAddress}
+              onChange={(e) => setEmailAddress(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              {clientProfile?.email
+                ? "Wird beim Kunden gespeichert, wenn du sie änderst."
+                : "Beim Kunden ist keine Adresse hinterlegt — die hier wird gespeichert."}
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEmailInvoice(null)} disabled={sendingEmail}>
+              Abbrechen
+            </Button>
+            <Button onClick={handleSendEmail} disabled={sendingEmail}>
+              {sendingEmail && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Senden
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

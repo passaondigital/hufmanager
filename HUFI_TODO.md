@@ -2,6 +2,201 @@
 
 Offene Punkte aus laufenden Sessions. Nächste Session: zuerst hier lesen.
 
+## ✅ ERLEDIGT 27.07.2026 — Sicherheits-Fixes sind auf Prod
+
+Begründungen je Punkt: `AUDIT_REPORT.md`, Phase 1A + 1B.
+
+- ✅ **SQL-Migration** `20260727120000_close_anon_secdef_leaks.sql` von Pascal
+  im Supabase-SQL-Editor ausgeführt ("Success, no rows returned"). Damit
+  geschlossen: F-1 (Pferdedaten ohne Login), F-2 (Nutzerverzeichnis ohne
+  Login), F-3 (Rollen-Enumeration), F-4 (`provider_id IS NULL`-Schlupfloch),
+  F-14 (doppelte Guthaben-Gutschrift). Die 3 herrenlosen
+  `feedbacks`-Zeilen wurden gelöscht (Entscheidung Pascal).
+- ✅ `send-email` deployed (v27) — offenes Mail-Relay zu. Gegenprobe live:
+  Freitext-Mail → `400 Missing or unknown template`.
+- ✅ `send-invoice-email` deployed (v120) — Absender jetzt `info@hufmanager.de`
+  statt `onboarding@resend.dev`.
+- ✅ `copecart-webhook` deployed (v157) — unbekannte Produkt-ID vergibt keinen
+  Pro-Zugang mehr, IPN-Passwort nicht mehr im Log und nicht mehr in
+  `admin_revenue_log.raw_payload`. Gegenprobe: `401` ohne Passwort.
+- ✅ `hash-password` deployed (v35) mit `verify_jwt = true`. Gegenprobe:
+  `401 Missing authorization header`.
+- ✅ `create-demo-stallbetreiber-user` gelöscht. Gegenprobe: `404`.
+
+### ⚠️ Noch offen aus diesem Block
+
+- ✅ **IPN-Passwort rotiert** (27.07.2026 abends): bei CopeCart geändert und
+  als Supabase-Secret `COPECART_IPN_PASSWORD` neu gesetzt. Verifiziert: der
+  Webhook antwortet auf ein falsches Passwort mit `401` — bei fehlendem
+  Secret käme laut Code `500 Server configuration error`, das Secret ist also
+  gesetzt und nicht leer. **Noch nicht verifiziert:** ob CopeCart und
+  Supabase denselben Wert haben. Das zeigt erst ein echter Kauf oder ein
+  Test-IPN aus dem CopeCart-Dashboard.
+- **`hufiapp.de` bei Resend verifizieren** — nur `hufmanager.de` ist
+  verifiziert, alle Mails gehen weiter von dort raus.
+- **IPN-URL im CopeCart-Dashboard prüfen** (alle 4 Produkte). Ohne sie wird
+  bezahlt, aber in der App passiert nichts.
+- **Trial-Cron prüfen:** `SELECT jobname, schedule, active FROM cron.job;`
+- `copecart.com/affiliate/hufmanager` ist 404 (verlinkt in
+  `GeldVerdienen.tsx:25`, `Hufrente.tsx:336`) — richtige URL nötig.
+
+## ✅ 28.07.2026 00:36 — CopeCart-Zahlungsweg funktioniert (erstmals verifiziert)
+
+Fix deployed (v159) und mit einer **Testbestellung** über CopeCarts
+Verkäufer-Testmodus ("Testbestellungen erlauben" am Produkt) verifiziert:
+Bestell-ID `A6KN7eaf`, Produkt `0a0921ba`, 9,95 € netto / 11,84 € brutto.
+Ergebnis: Signatur akzeptiert, `payment.made` erkannt, Konto steht in der
+App auf "Profi Paket — Aktiv". Die Kette CopeCart → Webhook → Freischaltung
+ist damit zum ersten Mal durchgängig.
+
+**Testmodus-Guard verifiziert:** Abfrage auf `admin_revenue_log` und
+`admin_invoices` der letzten 2 Stunden → "no rows returned". Die
+Testbestellung hat also freigeschaltet, ohne eine erfundene Einnahme in die
+Bücher zu schreiben. Buchhaltung sauber.
+
+**Ebenfalls offen:** Fehler `42501 permission denied for table users`, in den
+Logs zeitgleich mit der Bestellung (00:36:29). Herkunft ungeklärt — die App
+fragt `auth.users` nirgends direkt ab, ein Zusammenhang mit der Migration von
+heute ist nicht erkennbar, aber auch nicht ausgeschlossen. Braucht die
+umliegenden Logzeilen.
+
+## 🔴 ERLEDIGT 27.07.2026 — Der CopeCart-Webhook passte nicht zur echten IPN-Spec
+
+Quelle: offizielle Doku `IPN_CopeCart_v_1.6.7_.pdf`
+(https://s3.eu-central-1.amazonaws.com/shared.copecart.com/IPN_CopeCart_v_1.6.7_.pdf,
+verlinkt aus dem Intercom-Artikel 9055020). Ausgewertet 27.07.2026.
+
+**Befund: `supabase/functions/copecart-webhook/index.ts` kann eine echte
+CopeCart-Benachrichtigung nicht verarbeiten. Kein Kauf wäre je in der App
+angekommen.** Fünf unabhängige Fehler:
+
+1. **Authentifizierung komplett falsch.** Der Code liest `payload.password /
+   ipn_password / secret` aus dem Body. CopeCart schickt kein solches Feld,
+   sondern eine **HMAC-SHA256-Signatur im Header `X-Copecart-Signature`**
+   (Base64 von HMAC-SHA256 über den ROH-Body mit dem Shared Secret).
+   → `receivedPassword` ist immer undefined → **jede echte IPN endet in 401.**
+   Für den Fix: `await req.text()` statt `await req.json()`, sonst stimmt die
+   Signatur über den re-serialisierten Body nicht.
+
+2. **Event-Namen existieren nicht.** Der Code prüft auf `order_created`,
+   `payment_completed`, `purchase`, `sale`, `subscription_cancelled` …
+   CopeCart kennt nur: `payment.made`, `payment.trial`, `payment.failed`,
+   `payment.pending`, `payment.refunded`, `payment.charged_back`,
+   `payment.recurring.cancelled`, `payment.recurring.upcoming`.
+   Der Feldname `event_type` stimmt immerhin. → Selbst mit korrekter Auth
+   landet jeder Kauf im `default:`-Zweig ("Event type not handled").
+
+3. **Betragsfeld falsch.** Code rät `amount ?? total ?? price`. Echt heißt es
+   `line_item_amount` (bzw. `first_payment`,
+   `transaction_amount_per_product[].amount`). → `parsedAmount = 0`, keine
+   `admin_invoices`-Zeile, Umsatzlog mit 0 €. Damit ist auch F-16
+   entscheidbar: der Betragsabgleich kann ein harter Guard werden statt nur
+   einer Warnung.
+
+4. **Käufername falsch.** Code sucht `customer.name / buyer.name / buyer_name`.
+   Echt: `buyer_firstname` + `buyer_lastname`. (`buyer_email`, `product_id`,
+   `order_id`, `transaction_id` stimmen dagegen.)
+
+5. **Antwortformat falsch.** CopeCart wertet eine IPN nur als erfolgreich,
+   wenn der Body exakt `OK` ist (Großbuchstaben, ohne Anführungszeichen).
+   Der Webhook antwortet JSON. → CopeCart wiederholt **10× über 3 Stunden**.
+   Die Doppelbuchungs-Absicherung aus der Migration (F-14) ist damit keine
+   Vorsichtsmaßnahme, sondern Pflicht.
+
+**Rechnungs-Zahlungen:** der Code liest das Kundenfeld als
+`payload.custom / custom_field / metadata.custom`. CopeCart hat ein Feld
+`metadata` (String, vom Verkäufer gesetzt) — `metadata.custom` greift ins
+Leere. Beim Fix auf `payload.metadata` umstellen und im CopeCart-Produkt die
+Rechnungs-UUID dort hinterlegen.
+
+**Fix gebaut 27.07.2026, NICHT deployed** (liegt uncommittet in
+`supabase/functions/copecart-webhook/index.ts`):
+- Signaturprüfung über `X-Copecart-Signature` (HMAC-SHA256/Base64 über den
+  ROH-Body, `req.text()` vor `JSON.parse`). Die Base64-HMAC-Berechnung wurde
+  gegen die Ruby/PHP-Referenz aus der Doku gegengerechnet — identisch.
+- Zentrale Listen `PAYMENT_EVENTS` / `CANCELLATION_EVENTS` / `FAILURE_EVENTS`
+  mit den echten Namen; `switch` durch if/else ersetzt.
+- Feldnamen: `buyer_email`, `buyer_firstname`+`buyer_lastname`, `order_id`
+  (Abo-Kennung), `transaction_id` (Idempotenz), `line_item_amount`, `metadata`.
+- Alle Erfolgsantworten über `okResponse()` → Body exakt `OK`.
+- Betragsabgleich bei Rechnungs-Zahlungen ist jetzt ein echter Riegel.
+- Bei ungültiger Signatur wird eine Diagnose geloggt, die NUR Header- und
+  Feld-NAMEN enthält, keine Werte — damit lässt sich an einem einzigen echten
+  Aufruf ablesen, ob die Zuordnung stimmt, ohne Käuferdaten zu protokollieren.
+
+**Verifikation ohne Testkauf:** Die Doku listet bei `payment_method` den Wert
+`test` "(for the vendor only)" und bei `payment_status` die Werte `test_paid`,
+`test_trial`, `test_successed_refunded`. CopeCart hat also einen Testmodus für
+den Verkäufer — damit lässt sich ein echter IPN-Aufruf ohne Geld auslösen.
+Im CopeCart-Dashboard nach "Testkauf"/"Testzahlung"/"Testmodus" suchen.
+
+**Achtung beim Deploy:** Ab diesem Deploy weist der Webhook alles ab, was
+nicht korrekt signiert ist. Das Secret in Supabase (`COPECART_IPN_PASSWORD`)
+MUSS identisch mit dem IPN-Secret bei CopeCart sein — vorher war es egal,
+weil es ohnehin nie benutzt wurde.
+
+---
+
+## 🟡 Rechnungsversand + Betreuungsverhältnis — gebaut 27.07.2026, NICHT deployed
+
+Frontend-Änderungen im Arbeitsverzeichnis, warten auf `./deploy.sh` (Pascal).
+
+**Rechnungsversand** (`ClientInvoicesSection.tsx`, `ClientInvoices.tsx`)
+- Es gab auf der Provider-Seite überhaupt keinen Weg, eine Rechnung zu
+  verschicken — nur PDF ansehen/herunterladen. WhatsApp verschickte einen
+  reinen Ankündigungstext ohne Rechnung.
+- Neu: „Per E-Mail senden" (PDF im Anhang, Adress-Dialog mit Speichern beim
+  Kunden) + „Per WhatsApp senden" über `navigator.share` mit der PDF-Datei
+  (Muster aus `HufCamGalleryReport.tsx`, kein Bucket/kein Upload nötig).
+- **Bug gefixt:** `ClientInvoices.tsx` rief `send-invoice-email` mit
+  camelCase auf (`recipientEmail`), die Function liest snake_case
+  (`recipient_email`) → der Versand ist seit jeher mit "Missing required
+  fields" abgebrochen. Diese Funktion hat nie eine Mail verschickt.
+
+**Betreuungsverhältnis** (`CustomerDetailModal.tsx`)
+- **Kritisch war:** `delete_client_cascade` soft-löscht Profil UND Pferde der
+  Kundin — ein Dienstleister löschte damit die Daten seines Kunden, auch bei
+  echten registrierten Nutzern. Der Dialog nannte „Archivieren"/„Übergeben"
+  als Alternativen, die es nicht gab.
+- Neu: „Betreuung beenden" (kappt nur den eigenen access_grant, sagt
+  zukünftige Termine ab, archiviert die Karteikarte — Profil und Pferde der
+  Kundin bleiben unangetastet), „Pausieren/Fortsetzen" (`status='paused'`,
+  Zugriff bleibt), und „Kunde löschen" ist bei `has_logged_in = true`
+  gesperrt.
+- **Noch offen (Schritt B):** Einwilligungs-Flow. Entscheidung Pascal:
+  Mittelweg — Betreuung startet sofort mit Grunddaten (`can_view_basic`),
+  Gesundheitsdaten (`can_view_medical`) erst nach Freigabe des Besitzers,
+  Frist 7 Tage. Annahme mangels Vorgabe: nach Ablauf verfällt nur die
+  Medical-Anfrage, die Betreuung läuft mit Grunddaten weiter.
+  Ebenfalls offen: Betreuungs-Historie am Pferd („betreut von X von–bis"),
+  Übergabe an Kollegen an `HorseTransferWizard` anschließen.
+- Datenmodell kann das fast alles schon: `access_grants` hat `granted_at`,
+  `revoked_at`, `status`, `valid_until`; `horse_partner_access` zusätzlich
+  `owner_approved` + `owner_approved_at`. Keine neuen Tabellen nötig.
+- **DB-seitiger Schutz fehlt noch:** `delete_client_cascade` selbst prüft
+  nicht, ob der Client ein echter Nutzer ist. Die Sperre sitzt bisher nur im
+  Frontend. Gehört in eine eigene Migration.
+
+**Passwort-Reset kaputt** (offen, keine Codeänderung)
+- Erst `403 otp_expired`, dann im Firefox „Beschädigter Inhalt" → der Token
+  war beim zweiten Mal gültig, die Weiterleitung lief ins Leere.
+- Geprüft und in Ordnung: Auslieferung von `hufiapp.de/reset-password`
+  (nginx, gzip sauber), Supabase-Verify-Endpunkt, Site URL = `https://hufiapp.de`.
+- **Nächster Schritt:** Authentication → URL Configuration → **Redirect URLs**
+  prüfen, muss `https://hufiapp.de/**` enthalten.
+- Falls das passt: Mail von Klick-Link auf 6-stelligen Code umstellen
+  (Mailanbieter verbrauchen Einmal-Links beim Sicherheits-Scan).
+
+---
+
+## ⏸️ Keine neuen Features, bis Jan Buch antwortet
+
+Mail ging am 27.07.2026 raus („Was hat dich aufhören lassen?"). Bis dahin nur
+Sicherheit und offensichtlich Kaputtes. Hintergrund: 0 zahlende Kunden,
+13 von 22 Providern waren nur am Registrierungstag da.
+
+---
+
 ## Hey Hufi — zentraler Mic-State-Manager (useMicArbiter), gebaut (22.07.2026), wartet auf Gerätetest
 
 **Update 22.07.2026:** `useMicArbiter` ist fertig gebaut und verkabelt —
@@ -511,3 +706,41 @@ Flags stehen auf `enabled: false`. Nicht verwechseln mit `/botschafter/login`,
 `/botschafter/warten` und `/ref/:code` — die SIND live und erreichbar und sind
 nicht Teil des Flags. Beim Fertigstellen: Flag auf `true`, appMap.ts-Reifegrad
 entsprechend auf `live` aktualisieren.
+
+## Offen nach Session 27.07.2026 — Sicherheit + Nutzungs-Realität
+
+**Warten auf Jan Buch (27.07.2026):** Mail an janhbuch@web.de raus, eine Frage:
+"Was hat dich aufhören lassen?". Er hatte am 10.06. an einem Tag 6 Pferde und
+26 Termine eingetragen und ist nie wiedergekommen. 13 von 22 Providern haben
+Registrierungsdatum = letzter Login — der Abbruch passiert am ersten Tag.
+**Vor der Antwort keine neuen Features bauen.**
+
+**RLS-Audit Prod abgeschlossen, nichts gefixt** (siehe `AUDIT_REPORT.md`,
+"Phase 1A: RLS Prod"). Alles wartet auf Pascals Freigabe, nach Priorität:
+1. `search_horse_by_readable_id` — ohne Login abrufbar, gibt Pferdename +
+   owner_id heraus. Auth-Prüfung ergänzen, EXECUTE für anon entziehen.
+2. `search_profiles_universal`, `search_profile_by_readable_id`,
+   `get_user_role`, `is_admin` — EXECUTE für anon entziehen.
+   Fachlich zu klären: Ist das öffentliche Profilverzeichnis gewollt?
+   `is_discoverable` steht per Spalten-Default auf true (72 von 72).
+3. `OR (provider_id IS NULL)` aus UPDATE/DELETE von `services`, `offers`,
+   `feedbacks` entfernen. Vorher die 3 verwaisten `feedbacks`-Zeilen zuordnen.
+4. `OR (provider_id IS NULL)` aus dem `invoices`-INSERT-CHECK entfernen.
+5. `profiles`-INSERT-Policy um Zeilenbezug ergänzen (created_by_provider_id).
+
+**Trial-Automatik läuft nicht:** 12 von 13 abgelaufenen Trials stehen weiter
+auf `trialing`, ältester seit 31.12.2025. Kein Kaufmoment für niemanden.
+
+**`.claude/settings.local.json`:** enthielt im Klartext das DB-Passwort und
+einen Supabase-Management-Token. Datei ist gitignored und war nie in Git.
+Aufgeräumt am 28.07.2026: die Regeln mit Geheimnissen ersatzlos gestrichen
+(CLI und psql lesen ihre Zugangsdaten selbst aus `~/.supabase/access-token`
+bzw. `~/.pgpass`). Passwort und alle fünf gefundenen Token werden von Pascal
+im Dashboard neu vergeben. Keine Zugangsdaten mehr in dieser Datei.
+
+**Claude-Code-Konfiguration neu angelegt** (27.07.2026): `CLAUDE.md`,
+`.claude/settings.json` (Permissions + Hook), `.claude/commands/audit-rls.md`,
+`.claude/agents/auditor.md`, `.claude/hooks/block-prod-write.sh` (getestet:
+blockiert Schreib-SQL gegen Prod und Secret-Zugriffe). Noch offen: die
+Commands `audit-daten.md`, `audit-luecken.md`, `audit-code.md` — dafür fehlen
+die Phasen-Prompts.

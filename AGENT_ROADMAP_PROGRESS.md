@@ -105,7 +105,52 @@ Wetter-Sektion jetzt bei Regen/Frost am Morgen?
 
 ## Vorhaben 3 — Kalender-Daten-Scan (read-only Audit)
 
-**Status: offen, noch nicht begonnen.**
+**Status: ABGESCHLOSSEN (2026-07-26). Reines Lesen — keine Code-Änderung,
+kein Deploy.** Datenscan via `supabase db query --linked` gegen Prod
+`vnschgjxkzzwzefqlrji` (238 Zeilen in `appointments`, Stand heute).
+Code-Scan: `supabase/functions/hufi-agent/index.ts` (Tool-Definitionen +
+Handler für `get_appointments`/`get_client_overview`/`create_appointment`/
+`update_appointment`/`cancel_appointment`) + `AppointmentFormModal.tsx`
+(primärer Erstellungspfad).
+
+**Befund 1 — `client_id` ist in 238/238 Zeilen `NULL`.** Ursache: Der
+Haupt-Erstellungspfad `AppointmentFormModal.tsx:578-598` setzt beim Insert
+nur `horse_id`, nie `client_id` (wird stattdessen implizit über
+`horses.owner_id` aufgelöst). FK zeigt korrekt auf `profiles.id`, das
+Feld wird nur nie befüllt.
+**Konsequenz für Vorhaben 4:** Folgende Agent-Pfade laufen für JEDEN
+bestehenden Termin ins Leere, weil `client_id` fehlt:
+- `get_appointments({client_id})`-Filter → immer 0 Treffer
+- `get_client_overview()`-Terminliste (`.eq("client_id", clientId)`,
+  index.ts:701) → immer leer, obwohl der Kunde Termine hat
+- `cancel_appointment`'s Kunden-Push (`notify_client && aptData.client_id`,
+  index.ts:830) → wird nie ausgelöst, `client_id` ist immer falsy
+- Tool-Doku sagt "`client_id` Pflicht wenn bekannt" (index.ts:204) — in
+  der Praxis für Alt-Termine nie bekannt
+
+**Befund 2 — Status-Wildwuchs `planned` vs. `scheduled`.**
+153× `planned`, 81× `scheduled`, 2× `confirmed`, 1× `completed`,
+1× `cancelled`. `AppointmentFormModal.tsx:514-522` normalisiert
+`"scheduled"` explizit zu `"planned"` beim Insert — die 81 `scheduled`-
+Zeilen stammen also aus einem anderen/älteren Schreibpfad, der diese
+Normalisierung nicht durchläuft. `get_appointments`'/`update_appointment`'s
+Status-Filter (index.ts:146,228) listet `scheduled` nicht mal als
+gültigen Wert — ein `status: "planned"`-Filter übersieht 34% der echten
+Termine, ein `status: "scheduled"`-Filter die übrigen 66%.
+
+**Befund 3 — 8 Dubletten-Termine am 2026-01-04 09:00** (Notfall,
+Horse-ID `87fc31d3…`), im Sekundenabstand angelegt — Test-/Klick-Spam,
+kein Code-Bug. Erwähnenswert, weil "Hey Hufi" bei einer Kalenderabfrage
+zu diesem Datum 8 statt 1 Termin zurückgeben würde.
+Weitere Duplikat-Cluster (je 2×, andere Horse-IDs/Daten) gleicher Art,
+keine Datenintegritätsverletzung (keine verwaisten `horse_id`/`provider_id`,
+0 Treffer bei beiden Joins).
+
+**Kein Fix in diesem Vorhaben** — Vorhaben 3 war bewusst nur Audit. Vor
+Vorhaben 4 (Hey Hufi scharf) sollte mindestens Befund 1+2 berücksichtigt
+werden (entweder Datenmigration `client_id` nachtragen + Status
+vereinheitlichen, oder Agent-Code robust gegen beide Zustände machen).
+Empfehlung liegt bei Pascal, nichts davon wurde umgesetzt.
 
 ## Vorhaben 4 — Hey Hufi scharfschalten
 

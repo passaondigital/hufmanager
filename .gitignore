@@ -33,3 +33,9 @@ dist-ssr
 # Never commit these; they are local to whichever machine ran `supabase link`.
 supabase/.temp/*
 !supabase/.temp/.gitkeep
+
+# Claude Code Arbeitsdateien — enthalten lokale Tokens, nie committen
+.claude/
+
+# TypeScript-Build-Zwischenstände
+*.tsbuildinfo
