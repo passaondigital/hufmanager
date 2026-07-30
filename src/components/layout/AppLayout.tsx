@@ -10,15 +10,8 @@ export const AppLayout = () => {
     >
       <AppTopBar />
 
-      <main
-        className="flex-1 w-full max-w-md px-4"
-        style={{
-          // 56px TopBar + env(safe-area-inset-top) oben
-          paddingTop: "calc(3.5rem + env(safe-area-inset-top, 0px) + 8px)",
-          // 68px BottomNav + env(safe-area-inset-bottom) unten
-          paddingBottom: "calc(4.25rem + env(safe-area-inset-bottom, 0px) + 8px)",
-        }}
-      >
+      {/* Abstaende kommen aus --hufi-header-h / --hufi-nav-h (src/index.css) */}
+      <main className="flex-1 w-full max-w-md px-4 pt-app-header pb-bottom-nav">
         <Outlet />
       </main>
 

@@ -13,6 +13,16 @@ export default {
       },
     },
     extend: {
+      // Ebenen-Leiter — Werte stehen in src/index.css, Begruendung dort.
+      zIndex: {
+        bar:    "var(--z-bar)",
+        fab:    "var(--z-fab)",
+        mode:   "var(--z-mode)",
+        dialog: "var(--z-dialog)",
+        menu:   "var(--z-menu)",
+        tour:   "var(--z-tour)",
+        toast:  "var(--z-toast)",
+      },
       fontFamily: {
         sans: ['Outfit', 'system-ui', 'sans-serif'],
       },

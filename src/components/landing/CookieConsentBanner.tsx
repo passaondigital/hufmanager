@@ -43,7 +43,7 @@ export function CookieConsentBanner({ primaryColor }: CookieConsentBannerProps) 
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[9999] p-4 animate-in slide-in-from-bottom-4 duration-500">
+    <div className="fixed bottom-0 left-0 right-0 z-toast p-4 animate-in slide-in-from-bottom-4 duration-500">
       <div className="max-w-2xl mx-auto bg-card border border-border rounded-xl shadow-2xl p-5">
         <div className="flex items-start gap-3 mb-4">
           <Cookie className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />

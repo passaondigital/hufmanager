@@ -60,7 +60,7 @@ export default function Kalkulator() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-background/95 backdrop-blur sticky top-0 z-30">
+      <header className="border-b bg-background/95 backdrop-blur sticky top-0 z-bar">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <span className="font-bold text-lg">Barhufserviceschmid</span>
           <a href="/datenschutz" className="text-xs text-muted-foreground hover:underline">Datenschutz</a>

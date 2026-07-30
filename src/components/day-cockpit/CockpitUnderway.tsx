@@ -227,7 +227,7 @@ export function CockpitUnderway({
   const isArrived = activeAppointment?.status === "in_progress";
 
   return (
-    <div className="fixed inset-0 z-[9999] flex flex-col" style={{ background: "#111111" }}>
+    <div className="fixed inset-0 z-mode flex flex-col" style={{ background: "#111111" }}>
       {/* Offline strip */}
       {!isOnline && (
         <div className="flex items-center gap-2 px-4 py-1.5 text-xs font-medium" style={{ background: "#dc2626", color: "#fff" }}>

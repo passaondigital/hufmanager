@@ -17,7 +17,7 @@ export function HelpCenterFAB({ currentRoute }: HelpCenterFABProps) {
         onClick={() => setIsOpen(true)}
         size="icon"
         className={cn(
-          "fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full shadow-lg",
+          "fixed bottom-6 right-6 z-fab h-14 w-14 rounded-full shadow-lg",
           "bg-primary hover:bg-primary/90 text-primary-foreground",
           "transition-transform hover:scale-110 active:scale-95"
         )}

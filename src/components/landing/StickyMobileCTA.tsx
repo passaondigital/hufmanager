@@ -34,7 +34,7 @@ export function StickyMobileCTA({ primaryColor, onBooking, whatsappNumber, provi
     : null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-3 bg-background/95 backdrop-blur-sm border-t border-border safe-area-bottom">
+    <div className="fixed bottom-0 left-0 right-0 z-bar p-3 bg-background/95 backdrop-blur-sm border-t border-border safe-area-bottom">
       <div className="flex gap-2 max-w-lg mx-auto">
         {whatsappUrl && (
           <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex-1">

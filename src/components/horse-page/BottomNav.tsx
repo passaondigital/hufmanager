@@ -28,7 +28,7 @@ export function BottomNav() {
       {/* Logout confirmation overlay */}
       {showLogout && (
         <div
-          className="fixed inset-0 z-[60] flex items-end justify-center"
+          className="fixed inset-0 z-dialog flex items-end justify-center"
           style={{ background: "rgba(0,0,0,0.5)" }}
           onClick={() => setShowLogout(false)}
         >
@@ -60,7 +60,7 @@ export function BottomNav() {
       )}
 
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around"
+        className="fixed bottom-0 left-0 right-0 z-bar flex items-center justify-around"
         style={{
           background: "var(--hp-bg)",
           borderTop: "0.5px solid var(--hp-border)",

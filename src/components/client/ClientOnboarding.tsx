@@ -35,7 +35,7 @@ export function ClientOnboarding({ onComplete }: ClientOnboardingProps) {
   const isInfoStep = step < infoScreens.length;
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col items-center justify-center p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-mode bg-background flex flex-col items-center justify-center p-6 overflow-y-auto">
       {/* Progress dots */}
       <div className="flex gap-2 mb-8">
         {Array.from({ length: TOTAL_STEPS }).map((_, i) => (

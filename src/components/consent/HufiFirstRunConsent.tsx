@@ -223,7 +223,7 @@ export function HufiFirstRunConsent({ onComplete, userId = "" }: Props) {
         position: "fixed",
         inset: 0,
         background: "rgba(0,0,0,0.55)",
-        zIndex: 500,
+        zIndex: "var(--z-mode)",
         display: "flex",
         alignItems: "flex-end",
         backdropFilter: "blur(3px)",

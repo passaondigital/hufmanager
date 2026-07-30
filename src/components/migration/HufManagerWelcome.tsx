@@ -26,7 +26,7 @@ export function HufManagerWelcome({ userId, onContinue }: Props) {
 
   return (
     <div style={{
-      position: "fixed", inset: 0, zIndex: 9999,
+      position: "fixed", inset: 0, zIndex: "var(--z-mode)",
       background: "rgba(0,0,0,0.65)",
       display: "flex", alignItems: "flex-end", justifyContent: "center",
     }}>

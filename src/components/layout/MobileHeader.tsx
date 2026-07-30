@@ -8,7 +8,7 @@ export function MobileHeader() {
 
   return (
     <header 
-      className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-xl border-b border-slate-100 flex items-center justify-between px-6 h-18"
+      className="sticky top-0 z-bar w-full bg-white/90 backdrop-blur-xl border-b border-slate-100 flex items-center justify-between px-6 h-18"
       style={{ paddingTop: "var(--sat, 0px)" }}
     >
       <div className="flex items-center gap-4">

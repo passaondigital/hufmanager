@@ -15,7 +15,7 @@ export function DemoStickyBannerContent() {
     <>
       {!isDismissed ? (
         <div className={cn(
-          "fixed bottom-0 left-0 right-0 z-50",
+          "fixed bottom-0 left-0 right-0 z-bar",
           "bg-card",
           "border-t border-border"
         )}>
@@ -56,7 +56,7 @@ export function DemoStickyBannerContent() {
       ) : (
         <Button
           onClick={() => setIsPricingOpen(true)}
-          className="fixed bottom-4 right-4 z-50 shadow-lg gap-2"
+          className="fixed bottom-4 right-4 z-fab shadow-lg gap-2"
           size="sm"
         >
           <Gem className="h-4 w-4" />

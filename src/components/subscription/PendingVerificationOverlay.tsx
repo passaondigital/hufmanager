@@ -32,7 +32,7 @@ export function PendingVerificationOverlay() {
 
   if (status === "pending_verification") {
     return (
-      <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-mode bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
         <div className="max-w-sm text-center space-y-4">
           <div className="w-16 h-16 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center mx-auto">
             <Clock className="h-8 w-8 text-yellow-600" />
@@ -53,7 +53,7 @@ export function PendingVerificationOverlay() {
 
   if (status === "verification_rejected") {
     return (
-      <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-mode bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
         <div className="max-w-sm text-center space-y-4">
           <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto">
             <Clock className="h-8 w-8 text-red-600" />

@@ -197,7 +197,7 @@ export function AppSidebar({ appName, userDisplayName, navigationConfig, mobile 
   return (
     <aside className={cn(
       "w-64 h-screen bg-sidebar flex flex-col transition-all duration-300 border-r border-sidebar-border",
-      !mobile && "fixed left-0 top-0 z-40"
+      !mobile && "fixed left-0 top-0 z-bar"
     )}>
       {/* Logo Header */}
       <div className="h-16 flex items-center px-4 border-b border-sidebar-border shrink-0">

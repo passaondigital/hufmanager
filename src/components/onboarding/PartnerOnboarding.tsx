@@ -115,7 +115,7 @@ export function PartnerOnboarding({ onComplete }: PartnerOnboardingProps) {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-mode bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="flex gap-1.5 mb-6 px-4">
           {[0, 1, 2, 3].map((i) => (

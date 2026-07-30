@@ -47,7 +47,7 @@ export function ProactiveBriefing({ payload, onDismiss }: Props) {
         transform: "translateX(-50%)",
         width: "100%",
         maxWidth: 430,
-        zIndex: 45,
+        zIndex: "var(--z-fab)",
         padding: "0 12px",
         pointerEvents: "none",
       }}

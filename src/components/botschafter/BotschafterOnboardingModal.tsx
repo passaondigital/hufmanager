@@ -32,7 +32,7 @@ export function BotschafterOnboardingModal({ bid, referralCode, botschafterId, o
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60">
+    <div className="fixed inset-0 z-dialog flex items-center justify-center bg-black/60">
       <div className="bg-background rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
         {/* Progress bar */}
         <div className="p-4 pb-0">

@@ -361,7 +361,7 @@ export function TabDokumente({ horseId, hoofPhotos, documents, onRefresh }: TabD
       {/* Photo Lightbox */}
       {selectedPhoto && (
         <div 
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          className="fixed inset-0 z-dialog bg-black/90 flex items-center justify-center p-4"
           onClick={() => setSelectedPhoto(null)}
         >
           <Button 

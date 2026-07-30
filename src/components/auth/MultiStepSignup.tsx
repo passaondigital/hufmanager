@@ -186,7 +186,7 @@ export function MultiStepSignup({ onComplete, onCancel, loading, inviteCode }: M
 
   if (showWelcome) {
     return (
-      <div className="fixed inset-0 z-50 bg-background flex items-center justify-center p-6">
+      <div className="fixed inset-0 z-mode bg-background flex items-center justify-center p-6">
         <ConfettiEffect duration={4000} />
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}

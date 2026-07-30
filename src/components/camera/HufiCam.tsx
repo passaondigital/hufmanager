@@ -15,7 +15,7 @@ const styles = {
   overlay: {
     position: "fixed" as const,
     inset: 0,
-    zIndex: 50,
+    zIndex: "var(--z-mode)",
     background: "#000",
     display: "flex",
     flexDirection: "column" as const,

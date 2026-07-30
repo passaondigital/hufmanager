@@ -41,7 +41,7 @@ export function SetupCompleteScreen({
   return (
     <>
       <ConfettiEffect />
-      <div className="fixed inset-0 z-50 bg-background flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-mode bg-background flex items-center justify-center p-4">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}

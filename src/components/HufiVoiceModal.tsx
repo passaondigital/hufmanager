@@ -129,7 +129,7 @@ export function HufiVoiceModal({ open, onClose, onTranscript }: Props) {
         style={{
           position: "fixed",
           inset: 0,
-          zIndex: 200,
+          zIndex: "var(--z-dialog)",
           background: "#FFFFFF",
           display: "flex",
           flexDirection: "column",

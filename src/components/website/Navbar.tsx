@@ -8,7 +8,7 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-lg border-b border-white/10">
+    <header className="fixed top-0 left-0 right-0 z-bar bg-black/80 backdrop-blur-lg border-b border-white/10">
       <div className="container">
         <div className="flex items-center justify-between h-16">
           <a href="/" className="flex items-center gap-2">

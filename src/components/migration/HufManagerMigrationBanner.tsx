@@ -16,7 +16,7 @@ export function HufManagerMigrationBanner({ onStartTour, onSkip }: Props) {
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 9999,
+        zIndex: "var(--z-toast)",
         background: "rgba(0,0,0,0.6)",
         display: "flex",
         alignItems: "flex-end",

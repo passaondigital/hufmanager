@@ -64,7 +64,7 @@ export function HufiNewUserOnboarding({ userId, onComplete }: Props) {
 
   return (
     <div style={{
-      position: "fixed", inset: 0, zIndex: 9999,
+      position: "fixed", inset: 0, zIndex: "var(--z-mode)",
       background: "#FFFFFF",
       display: "flex", flexDirection: "column",
       maxWidth: 430, margin: "0 auto",

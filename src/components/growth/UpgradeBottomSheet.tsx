@@ -28,7 +28,7 @@ export function UpgradeBottomSheet({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/40"
+            className="fixed inset-0 z-dialog bg-black/40"
             onClick={onClose}
           />
           {/* Sheet */}
@@ -37,7 +37,7 @@ export function UpgradeBottomSheet({
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border rounded-t-2xl p-6 pb-8 max-w-lg mx-auto"
+            className="fixed bottom-0 left-0 right-0 z-dialog bg-card border-t border-border rounded-t-2xl p-6 pb-8 max-w-lg mx-auto"
           >
             {/* Handle */}
             <div className="w-10 h-1 bg-muted rounded-full mx-auto mb-5" />

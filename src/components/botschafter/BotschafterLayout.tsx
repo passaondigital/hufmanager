@@ -45,7 +45,7 @@ export function BotschafterLayout() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#0a0700", color: "#fafaf9" }}>
       {/* Desktop Header */}
-      <header className="sticky top-0 z-50 border-b h-14 flex items-center px-4 md:px-6" style={{ backgroundColor: "#111108", borderColor: "#2a2a1f" }}>
+      <header className="sticky top-0 z-bar border-b h-14 flex items-center px-4 md:px-6" style={{ backgroundColor: "#111108", borderColor: "#2a2a1f" }}>
         <button className="md:hidden mr-3" onClick={() => setSidebarOpen(!sidebarOpen)}>
           {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
@@ -66,7 +66,7 @@ export function BotschafterLayout() {
       <div className="flex">
         {/* Sidebar - Desktop */}
         <aside className={cn(
-          "fixed md:sticky top-14 left-0 z-40 h-[calc(100vh-3.5rem)] w-56 border-r flex flex-col transition-transform md:translate-x-0",
+          "fixed md:sticky top-14 left-0 z-bar h-[calc(100vh-3.5rem)] w-56 border-r flex flex-col transition-transform md:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )} style={{ backgroundColor: "#111108", borderColor: "#2a2a1f" }}>
           <nav className="flex-1 py-3 space-y-0.5 px-2 overflow-y-auto">
@@ -120,7 +120,7 @@ export function BotschafterLayout() {
       </div>
 
       {/* Mobile Bottom Tabs */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t flex" style={{ backgroundColor: "#111108", borderColor: "#2a2a1f" }}>
+      <nav className="fixed bottom-0 left-0 right-0 z-bar md:hidden border-t flex" style={{ backgroundColor: "#111108", borderColor: "#2a2a1f" }}>
         {MOBILE_TABS.map(tab => (
           <Link
             key={tab.path}

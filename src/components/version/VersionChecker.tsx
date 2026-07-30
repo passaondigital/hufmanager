@@ -111,7 +111,7 @@ export function VersionChecker() {
   // FORCED UPDATE - Full screen blocking modal
   if (isForced) {
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/95 backdrop-blur-md">
+      <div className="fixed inset-0 z-dialog flex items-center justify-center p-4 bg-background/95 backdrop-blur-md">
         <div className="w-full max-w-md text-center">
           {/* Animated Icon */}
           <div className="relative mx-auto w-24 h-24 mb-8">
@@ -163,7 +163,7 @@ export function VersionChecker() {
 
   // SOFT UPDATE - Bottom banner/toast
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 pointer-events-none">
+    <div className="fixed bottom-0 left-0 right-0 z-toast p-4 pointer-events-none">
       <div className="max-w-md mx-auto pointer-events-auto">
         <div className="bg-card border border-primary/30 rounded-xl p-4 shadow-2xl shadow-primary/10 flex items-center gap-4">
           {/* Icon */}

@@ -33,7 +33,7 @@ export function TrialPaywall() {
   if (dismissed || !profile || (profile as any).account_status !== "expired") return null;
 
   return (
-    <div className="fixed bottom-0 inset-x-0 z-40 px-3 pb-3 pointer-events-none">
+    <div className="fixed bottom-0 inset-x-0 z-bar px-3 pb-3 pointer-events-none">
       <div className="pointer-events-auto mx-auto max-w-2xl rounded-xl border bg-background/95 backdrop-blur shadow-lg px-4 py-3 flex items-center gap-3">
         <Sparkles className="h-5 w-5 text-primary shrink-0" />
         <p className="text-sm text-foreground flex-1 leading-snug">

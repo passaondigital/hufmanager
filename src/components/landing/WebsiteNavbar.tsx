@@ -29,7 +29,7 @@ export const WebsiteNavbar = ({ slug, businessName, logoUrl, primaryColor, activ
   const isActive = (href: string) => location.pathname === href;
 
   return (
-    <header className={cn("w-full z-50 bg-background/95 backdrop-blur-sm border-b", sticky && "sticky top-0")}>
+    <header className={cn("w-full z-bar bg-background/95 backdrop-blur-sm border-b", sticky && "sticky top-0")}>
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo / Name */}
         <Link to={`/p/${slug}`} className="flex items-center gap-2">

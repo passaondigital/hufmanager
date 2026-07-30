@@ -4,6 +4,29 @@
 
 @layer base {
   :root {
+    /* ── Ebenen-Leiter ────────────────────────────────────────────
+       Verbindlich fuer ALLES, was sich ueber Inhalt legt. Neue
+       Bauteile nehmen eine dieser Stufen — keine freien Zahlen mehr.
+       Nutzung: z-bar, z-fab, z-mode, z-dialog, z-menu, z-tour, z-toast.
+
+       ACHTUNG Reihenfolge: Menues liegen UEBER Dialogen. Ein Auswahl-
+       Menue wird in Dialogen benutzt und wuerde sonst dahinter
+       verschwinden (dafuer stand vorher der Notnagel z-[100] im
+       Select). Wer das dreht, macht jedes Formular im Dialog kaputt. */
+    --z-bar:    40;   /* feste Leisten: Kopfzeile, untere Nav, Sidebar   */
+    --z-fab:    45;   /* schwebende Knoepfe und ihre Panels              */
+    --z-mode:   55;   /* Vollbild-Modi: Arbeitsmodus, Onboarding-Screens */
+    --z-dialog: 60;   /* Dialoge, Sheets, Overlays                       */
+    --z-menu:   70;   /* Dropdowns, Select, Popover, Tooltip             */
+    --z-tour:   75;   /* Tour-Spotlight, erklaert auch offene Dialoge    */
+    --z-toast:  80;   /* Meldungen und Cookie-Banner, immer erreichbar   */
+
+    /* ── Feste Leisten: Hoehen ────────────────────────────────────
+       Damit rechnen Seiteninhalt und schwebende Knoepfe. Aendert sich
+       die Leiste, verschiebt sich alles andere automatisch mit. */
+    --hufi-nav-h:    68px;  /* MobileBottomNav, ohne Geraete-Sicherheitsabstand */
+    --hufi-header-h: 56px;  /* AppTopBar, ohne Geraete-Sicherheitsabstand       */
+
     /* ── Core ─────────────────────────────────────────────────── */
     --background: 210 40% 98%;      /* #F8FAFC = slate-50 */
     --foreground: 20 14.3% 4.1%;
@@ -221,3 +244,9 @@ a {
   60%  { box-shadow: 0 0 0 7px rgba(249,115,22,0); }
   100% { box-shadow: 0 0 0 0 rgba(249,115,22,0); }
 }
+
+/* ── Abstand zu den festen Leisten ────────────────────────────────
+   Statt in jeder Datei env(safe-area-inset-*) neu zu tippen. */
+.above-bottom-nav { bottom: calc(var(--hufi-nav-h) + env(safe-area-inset-bottom, 0px) + 1rem); }
+.pt-app-header    { padding-top: calc(var(--hufi-header-h) + env(safe-area-inset-top, 0px) + 8px); }
+.pb-bottom-nav    { padding-bottom: calc(var(--hufi-nav-h) + env(safe-area-inset-bottom, 0px) + 8px); }

@@ -44,7 +44,7 @@ export function KiHinweisModal({ open, userId, onConsent, onDecline }: Props) {
 
   return (
     <div style={{
-      position: "fixed", inset: 0, zIndex: 500,
+      position: "fixed", inset: 0, zIndex: "var(--z-dialog)",
       background: "rgba(0,0,0,0.65)",
       display: "flex", alignItems: "flex-end", justifyContent: "center",
     }}>

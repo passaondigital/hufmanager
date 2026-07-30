@@ -418,7 +418,7 @@ export function FeedbackWidget({ className }: FeedbackWidgetProps) {
   if (isRecording) {
     return (
       <div 
-        className="fixed top-4 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground px-4 py-2 rounded-full shadow-lg z-[100] flex items-center gap-3"
+        className="fixed top-4 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground px-4 py-2 rounded-full shadow-lg z-toast flex items-center gap-3"
       >
         <Circle className="h-3 w-3 fill-current animate-pulse" />
         <span className="font-medium">Aufnahme läuft: {formatTime(recordingTime)}</span>
@@ -444,7 +444,7 @@ export function FeedbackWidget({ className }: FeedbackWidgetProps) {
       <Button
         data-feedback-widget
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-40 md:bottom-20 right-4 h-12 w-12 rounded-full shadow-lg z-40 bg-destructive hover:bg-destructive/90 ${className}`}
+        className={`fixed bottom-40 md:bottom-20 right-4 h-12 w-12 rounded-full shadow-lg z-fab bg-destructive hover:bg-destructive/90 ${className}`}
         size="icon"
         title="Problem melden"
       >
@@ -491,7 +491,7 @@ export function FeedbackWidget({ className }: FeedbackWidgetProps) {
       {step === "capturing" && (
         <div 
           data-feedback-widget
-          className="fixed inset-0 bg-background/50 z-[100] flex items-center justify-center"
+          className="fixed inset-0 bg-background/50 z-dialog flex items-center justify-center"
           style={{ visibility: 'hidden' }}
         >
           <div className="bg-card p-6 rounded-lg shadow-xl flex flex-col items-center gap-4">

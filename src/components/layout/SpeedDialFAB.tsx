@@ -92,13 +92,13 @@ export function SpeedDialFAB() {
       {/* Backdrop when open */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/20 z-40"
+          className="fixed inset-0 bg-black/20 z-fab"
           onClick={handleClose}
         />
       )}
 
       {/* Speed Dial Container */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col-reverse items-end gap-2">
+      <div className="fixed bottom-6 right-6 z-fab flex flex-col-reverse items-end gap-2">
         {/* Speed Dial Items */}
         {isOpen && mainItems.map((item) => (
           <div

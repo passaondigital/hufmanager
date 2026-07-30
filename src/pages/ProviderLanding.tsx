@@ -438,7 +438,7 @@ const ProviderLanding = () => {
       )}
 
       {!isSubPage && (
-        <div className="fixed top-4 right-4 z-50">
+        <div className="fixed top-4 right-4 z-fab">
           <IntakeStatusBadge status={intakeStatus} />
         </div>
       )}

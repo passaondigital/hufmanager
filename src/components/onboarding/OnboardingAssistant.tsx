@@ -171,7 +171,7 @@ export function OnboardingAssistant({ onComplete }: OnboardingAssistantProps) {
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="fixed bottom-6 right-6 z-50"
+        className="fixed bottom-6 right-6 z-fab"
       >
         <Button
           onClick={() => setMinimized(false)}
@@ -195,7 +195,7 @@ export function OnboardingAssistant({ onComplete }: OnboardingAssistantProps) {
         initial={{ opacity: 0, x: 40 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 40 }}
-        className="fixed bottom-6 right-6 z-50 w-[380px] max-h-[85vh] overflow-hidden rounded-2xl border bg-card shadow-2xl flex flex-col"
+        className="fixed bottom-6 right-6 z-fab w-[380px] max-h-[85vh] overflow-hidden rounded-2xl border bg-card shadow-2xl flex flex-col"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/50">

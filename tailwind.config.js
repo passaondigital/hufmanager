@@ -5,6 +5,18 @@ const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      // Ebenen-Leiter — Werte + Begruendung in src/index.css.
+      // ACHTUNG: DIESE Datei ist die aktive Tailwind-Konfiguration
+      // (Tailwind laedt .js vor .ts). tailwind.config.ts wird ignoriert.
+      zIndex: {
+        bar:    "var(--z-bar)",
+        fab:    "var(--z-fab)",
+        mode:   "var(--z-mode)",
+        dialog: "var(--z-dialog)",
+        menu:   "var(--z-menu)",
+        tour:   "var(--z-tour)",
+        toast:  "var(--z-toast)",
+      },
       colors: {
         border: "hsl(30 10% 90%)",
         background: "#FFFFFF",

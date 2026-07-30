@@ -169,7 +169,7 @@ export default function PferdeakteLanding() {
 function StickyNav({ scrolled }: { scrolled: boolean }) {
   return (
     <nav
-      className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white"
+      className="fixed top-0 left-0 right-0 z-bar transition-all duration-300 bg-white"
       style={{ boxShadow: scrolled ? "0 1px 12px rgba(0,0,0,.08)" : "none" }}
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 md:px-12 h-16">

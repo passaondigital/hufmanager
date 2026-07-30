@@ -118,7 +118,7 @@ export function SpotlightTour({ steps, isOpen, onClose, onComplete }: SpotlightT
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[9999]" ref={overlayRef}>
+      <div className="fixed inset-0 z-tour" ref={overlayRef}>
         {/* Overlay with spotlight hole */}
         <svg className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'auto' }}>
           <defs>

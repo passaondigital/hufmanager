@@ -52,7 +52,7 @@ export function WhatsAppFAB({ userId }: WhatsAppFABProps) {
   return (
     <Button
       onClick={handleClick}
-      className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-xl bg-green-500 hover:bg-green-600 z-50"
+      className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-xl bg-green-500 hover:bg-green-600 z-fab"
       size="icon"
     >
       <MessageCircle className="h-6 w-6 text-white" />

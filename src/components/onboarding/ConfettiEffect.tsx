@@ -44,7 +44,7 @@ export function ConfettiEffect({ duration = 4000 }: { duration?: number }) {
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-[100] overflow-hidden">
+    <div className="fixed inset-0 pointer-events-none z-toast overflow-hidden">
       {particles.map((p) => (
         <motion.div
           key={p.id}

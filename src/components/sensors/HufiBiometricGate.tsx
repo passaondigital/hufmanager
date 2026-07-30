@@ -25,7 +25,7 @@ const styles = {
   backdrop: {
     position: "fixed" as const,
     inset: 0,
-    zIndex: 40,
+    zIndex: "var(--z-mode)",
     background: "rgba(0,0,0,0.5)",
     display: "flex",
     alignItems: "flex-end",

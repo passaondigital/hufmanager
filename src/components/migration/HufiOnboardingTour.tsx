@@ -76,7 +76,7 @@ function SpotlightRing({ cfg }: { cfg: SpotlightConfig }) {
     boxShadow: "0 0 0 6px rgba(249,115,22,0.2), 0 0 24px rgba(249,115,22,0.4)",
     animation: "pulseRing 1.4s ease-in-out infinite",
     pointerEvents: "none",
-    zIndex: 10001,
+    zIndex: "var(--z-tour)",
     ...(cfg.top !== undefined && { top: cfg.top }),
     ...(cfg.bottom !== undefined && { bottom: cfg.bottom }),
     ...(cfg.left !== undefined && {
@@ -110,7 +110,7 @@ export function HufiOnboardingTour({ onComplete }: Props) {
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 10000,
+        zIndex: "var(--z-tour)",
         background: "rgba(0,0,0,0.75)",
         display: "flex",
         flexDirection: "column",

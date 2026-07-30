@@ -305,7 +305,7 @@ export default function BotschafterAuth() {
   return (
     <div className="min-h-screen bg-[#f9fafb] font-sans" style={{ color: "#0a0a0a" }}>
       {/* Nav */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-zinc-100">
+      <nav className="sticky top-0 z-bar bg-white border-b border-zinc-100">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 md:px-12 h-16">
           <Link to="/pferdeakte" className="text-sm font-medium hover:text-[#f97316] transition-colors" style={{ color: "#6b7280" }}>
             ← Zur Pferdeakte

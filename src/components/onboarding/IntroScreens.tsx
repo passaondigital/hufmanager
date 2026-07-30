@@ -46,7 +46,7 @@ export function IntroScreens({ onComplete }: IntroScreensProps) {
   const screen = screens[current];
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col items-center justify-center p-6">
+    <div className="fixed inset-0 z-mode bg-background flex flex-col items-center justify-center p-6">
       {/* Progress Dots */}
       <div className="flex items-center gap-2 mb-8">
         {screens.map((_, i) => (

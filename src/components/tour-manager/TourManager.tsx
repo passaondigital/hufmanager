@@ -57,7 +57,7 @@ function BottomToastWarning({ count }: { count: number }) {
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 100, opacity: 0 }}
-      className="fixed bottom-20 left-4 right-4 z-[500] flex justify-center pointer-events-none"
+      className="fixed bottom-20 left-4 right-4 z-tour flex justify-center pointer-events-none"
     >
       <div className="bg-destructive/95 text-destructive-foreground px-4 py-2.5 rounded-xl text-sm flex items-center gap-3 shadow-xl max-w-md pointer-events-auto backdrop-blur-sm">
         <AlertCircle className="h-4 w-4 flex-shrink-0" />
@@ -723,7 +723,7 @@ export function TourManager() {
           }
         }}
         className={cn(
-          "fixed z-[900]",
+          "fixed z-tour",
           "bottom-0 left-0 right-0",
           isPanelCollapsed ? "max-h-14" : "max-h-[45vh]",
           // Desktop: left sidebar

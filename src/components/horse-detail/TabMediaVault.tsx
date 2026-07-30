@@ -499,7 +499,7 @@ function MediaLightbox({ media, onClose }: { media: MediaAsset; onClose: () => v
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-black/90 flex flex-col"
+      className="fixed inset-0 z-dialog bg-black/90 flex flex-col"
       onClick={onClose}
     >
       <div className="flex items-center justify-between p-4">

@@ -527,7 +527,7 @@ export default function Docs() {
   return (
     <div className="min-h-screen bg-background print:bg-white">
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 print:static print:border-none">
+      <header className="sticky top-0 z-bar border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 print:static print:border-none">
         <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <Link to="/" className="shrink-0">

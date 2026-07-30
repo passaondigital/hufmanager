@@ -22,7 +22,7 @@ export function ClientBottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-30 bg-background/90 backdrop-blur-xl border-t border-border/50"
+      className="fixed bottom-0 left-0 right-0 z-bar bg-background/90 backdrop-blur-xl border-t border-border/50"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       <div className="flex items-center justify-around h-14 max-w-lg mx-auto">

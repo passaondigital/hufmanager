@@ -124,7 +124,7 @@ const PreviewLanding = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Preview Banner - sticky, not dismissible */}
-      <div className="sticky top-0 z-50 border-b-2 border-primary bg-card px-4 py-3">
+      <div className="sticky top-0 z-bar border-b-2 border-primary bg-card px-4 py-3">
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 min-w-0">
             <span className="text-lg shrink-0">👁</span>
@@ -166,7 +166,7 @@ const PreviewLanding = () => {
 
       {/* Feedback Widget Overlay */}
       {isFeedback && feedbackOpen && !feedbackSent && (
-        <div className="fixed bottom-4 right-4 z-50 w-80 bg-card border border-border rounded-xl shadow-2xl p-5 space-y-4">
+        <div className="fixed bottom-4 right-4 z-fab w-80 bg-card border border-border rounded-xl shadow-2xl p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold">💬 Wie findest du diese Seite?</h3>
             <button onClick={() => setFeedbackOpen(false)} className="text-muted-foreground hover:text-foreground text-lg">×</button>
@@ -231,7 +231,7 @@ const PreviewLanding = () => {
       )}
 
       {/* Powered by footer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur border-t border-border py-2 text-center z-40">
+      <div className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur border-t border-border py-2 text-center z-bar">
         <p className="text-[10px] text-muted-foreground">
           Powered by{" "}
           <a href="/website" className="text-primary hover:underline font-medium">

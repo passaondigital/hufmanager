@@ -384,7 +384,7 @@ export default function MissionControl() {
   return (
     <div className="min-h-screen bg-background">
       {/* Modern Header */}
-      <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-30">
+      <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-bar">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">

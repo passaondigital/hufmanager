@@ -52,7 +52,7 @@ export function PWAInstallPrompt() {
   // iOS / Mac Safari Instructions Modal
   if (showIOSInstructions && (isIOS || isMacSafari)) {
     return (
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="fixed inset-0 z-dialog flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
         <div className="w-full max-w-md bg-card border border-border rounded-2xl p-6 shadow-2xl animate-in slide-in-from-bottom-4">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -146,7 +146,7 @@ export function PWAInstallPrompt() {
   // Mobile Banner (for iOS or Android with prompt)
   if (deviceType === 'mobile') {
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-gradient-to-t from-background via-background to-transparent">
+      <div className="fixed bottom-0 left-0 right-0 z-dialog p-4 bg-gradient-to-t from-background via-background to-transparent">
         <div className="bg-card border border-border rounded-2xl p-4 shadow-2xl flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
             <Download className="h-6 w-6 text-primary" />
@@ -179,7 +179,7 @@ export function PWAInstallPrompt() {
   // Mac Safari: show desktop banner with install instructions
   if (isMacSafari) {
     return (
-      <div className="fixed bottom-4 right-4 z-50 max-w-sm">
+      <div className="fixed bottom-4 right-4 z-fab max-w-sm">
         <div className="bg-card border border-border rounded-xl p-4 shadow-2xl">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -225,7 +225,7 @@ export function PWAInstallPrompt() {
 
   // Desktop/Tablet Banner
   return (
-    <div className="fixed bottom-4 right-4 z-50 max-w-sm">
+    <div className="fixed bottom-4 right-4 z-fab max-w-sm">
       <div className="bg-card border border-border rounded-xl p-4 shadow-2xl">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">

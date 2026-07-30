@@ -219,7 +219,7 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
   // ──────── WELCOME SCREEN ────────
   if (phase === 'welcome') {
     return (
-      <div className="fixed inset-0 z-50 bg-background flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-mode bg-background flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -478,7 +478,7 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
   const isLastStep = currentStep === totalSteps - 1;
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex items-start justify-center p-4 overflow-y-auto pb-24">
+    <div className="fixed inset-0 z-mode bg-background flex items-start justify-center p-4 overflow-y-auto pb-24">
       <div className="w-full max-w-md my-auto">
         {/* Progress Bar */}
         <div className="mb-6">

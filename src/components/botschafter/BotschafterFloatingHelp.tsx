@@ -45,7 +45,7 @@ export function BotschafterFloatingHelp() {
       {/* Floating Button */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 w-[52px] h-[52px] rounded-full bg-orange-500 hover:bg-orange-600 text-white shadow-lg flex items-center justify-center transition-transform hover:scale-105"
+        className="fixed bottom-6 right-6 z-fab w-[52px] h-[52px] rounded-full bg-orange-500 hover:bg-orange-600 text-white shadow-lg flex items-center justify-center transition-transform hover:scale-105"
         aria-label="Hilfe"
       >
         <HelpCircle className="w-6 h-6" />
@@ -53,7 +53,7 @@ export function BotschafterFloatingHelp() {
 
       {/* Drawer overlay */}
       {open && (
-        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 z-dialog flex justify-end" onClick={() => setOpen(false)}>
           <div className="absolute inset-0 bg-black/30" />
           <div
             className="relative w-[320px] max-w-full h-full bg-background shadow-xl animate-in slide-in-from-right overflow-y-auto"

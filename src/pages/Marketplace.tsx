@@ -202,7 +202,7 @@ export default function Marketplace() {
 
       {/* Cart Bar */}
       {cart.length > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-card border rounded-2xl shadow-lg p-4 flex items-center gap-4 z-50">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-card border rounded-2xl shadow-lg p-4 flex items-center gap-4 z-fab">
           <ShoppingCart className="h-5 w-5 text-primary" />
           <span className="text-sm font-medium">
             {cart.reduce((s, c) => s + c.quantity, 0)} Artikel · {totalNet.toFixed(2)}€

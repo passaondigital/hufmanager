@@ -107,7 +107,7 @@ export function AddRoutineSheet({ open, onClose, editRoutine, userId, onSaved }:
       <div
         onClick={onClose}
         style={{
-          position: "fixed", inset: 0, zIndex: 60,
+          position: "fixed", inset: 0, zIndex: "var(--z-dialog)",
           background: "rgba(0,0,0,0.4)",
           backdropFilter: "blur(4px)",
         }}
@@ -118,7 +118,7 @@ export function AddRoutineSheet({ open, onClose, editRoutine, userId, onSaved }:
         position: "fixed", bottom: 0, left: "50%",
         transform: "translateX(-50%)",
         width: "100%", maxWidth: 480,
-        zIndex: 61,
+        zIndex: "var(--z-dialog)",
         background: "#FFFFFF",
         borderRadius: "20px 20px 0 0",
         padding: "20px 20px calc(env(safe-area-inset-bottom, 0px) + 20px)",
