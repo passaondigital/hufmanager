@@ -19,7 +19,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-dialog bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className,
     )}
     {...props}
@@ -37,7 +37,7 @@ const DialogContent = React.forwardRef<
       ref={ref}
       className={cn(
         // Base: mobile-first fullscreen-like experience
-        "fixed left-[50%] top-[50%] z-50 grid w-[95vw] translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200",
+        "fixed left-[50%] top-[50%] z-dialog grid w-[95vw] translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200",
         // Mobile: larger touch targets, prevent iOS zoom (min 16px font)
         "p-4 rounded-lg",
         // Desktop: comfortable padding
@@ -52,7 +52,11 @@ const DialogContent = React.forwardRef<
       )}
       {...props}
     >
-      {children}
+      {/* Der Rahmen selbst scrollt bewusst NICHT: sonst wandert der absolut
+          positionierte Schliessen-Knopf mit dem Inhalt aus dem Bild. */}
+      <div className="flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto">
+        {children}
+      </div>
       <DialogPrimitive.Close className="absolute right-3 top-3 sm:right-4 sm:top-4 rounded-sm opacity-70 ring-offset-background transition-opacity data-[state=open]:bg-accent data-[state=open]:text-muted-foreground hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none z-10 p-1">
         <X className="h-5 w-5 sm:h-4 sm:w-4" />
         <span className="sr-only">Close</span>
@@ -63,7 +67,15 @@ const DialogContent = React.forwardRef<
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex flex-col space-y-1.5 text-center sm:text-left", className)} {...props} />
+  <div
+    className={cn(
+      "flex flex-col space-y-1.5 text-center sm:text-left",
+      // Bleibt beim Scrollen oben stehen
+      "sticky top-0 z-10 bg-background pb-2 flex-shrink-0",
+      className,
+    )}
+    {...props}
+  />
 );
 DialogHeader.displayName = "DialogHeader";
 
@@ -73,7 +85,7 @@ const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
       // Sticky footer pattern for modals
       "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-2",
       // Ensure it stays at bottom with proper spacing
-      "pt-4 mt-auto flex-shrink-0 border-t bg-background",
+      "pt-4 mt-auto flex-shrink-0 border-t bg-background sticky bottom-0 z-10",
       className
     )} 
     {...props} 
