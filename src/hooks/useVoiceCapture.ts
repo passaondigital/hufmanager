@@ -9,6 +9,10 @@ const SILENCE_THRESHOLD = 0.012; // RMS-Amplitude: darunter = Stille
 const SILENCE_DURATION  = 1200;  // ms Stille → Auto-Stop (schnell)
 const SPEECH_REQUIRED   = 300;   // ms Sprechen bevor Stille-Timer startet
 const MAX_DURATION      = 15_000; // 15 s Hard-Limit
+// Freihand-Modus: kein Auto-Stopp bei Stille, der Nutzer redet in Ruhe zu Ende
+// und drückt selbst auf Stopp. 3 Minuten sind nur die Notbremse gegen eine
+// Aufnahme, die in der Tasche weiterläuft.
+const HANDS_FREE_MAX    = 180_000;
 
 export type VoiceErrorCode =
   | "microphone_denied"
@@ -25,7 +29,7 @@ export interface UseVoiceCapture {
   error: VoiceErrorCode | null;
   isSupported: boolean;
   hasVAD: boolean;
-  startRecording: () => Promise<boolean>;
+  startRecording: (opts?: { handsFree?: boolean }) => Promise<boolean>;
   stopRecording: () => void;
   cancel: () => void;
   reset: () => void;
@@ -209,7 +213,8 @@ export function useVoiceCapture(): UseVoiceCapture {
     }
   }, [releaseStream]);
 
-  const startRecording = useCallback(async (): Promise<boolean> => {
+  const startRecording = useCallback(async (opts?: { handsFree?: boolean }): Promise<boolean> => {
+    const handsFree = opts?.handsFree === true;
     if (!isSupported) {
       setError("microphone_missing");
       return false;
@@ -315,13 +320,20 @@ export function useVoiceCapture(): UseVoiceCapture {
     recorderRef.current = recorder;
     setIsRecording(true);
 
-    // VAD starten — stoppt Aufnahme automatisch bei Stille
-    startVAD(stream, () => {
+    const stopRecorder = () => {
       const rec = recorderRef.current;
       if (rec && rec.state !== "inactive") {
         try { rec.stop(); } catch { /* noop */ }
       }
-    });
+    };
+
+    if (handsFree) {
+      // Kein VAD: Stille beendet die Aufnahme nicht. Nur die Notbremse läuft.
+      maxTimerRef.current = setTimeout(stopRecorder, HANDS_FREE_MAX);
+    } else {
+      // VAD starten — stoppt Aufnahme automatisch bei Stille
+      startVAD(stream, stopRecorder);
+    }
 
     return true;
   }, [isSupported, isRecording, isProcessing, acquire, releaseStream, transcribe]);

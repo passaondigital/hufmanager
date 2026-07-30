@@ -69,12 +69,13 @@ function CompactView({ data }: { data: WeatherContext }) {
         display: "inline-flex",
         alignItems: "center",
         gap: 4,
-        fontSize: 14,
-        fontWeight: 600,
-        color: "#374151",
+        // Leiser als der Name im Kopf: Nebeninfo, kein Blickfang.
+        fontSize: 12,
+        fontWeight: 500,
+        color: "#9CA3AF",
       }}
     >
-      <span style={{ fontSize: 18 }}>{wmoToIcon(data.todayCode)}</span>
+      <span style={{ fontSize: 14 }}>{wmoToIcon(data.todayCode)}</span>
       <span>{Math.round(data.tempMax)}°C</span>
     </span>
   );

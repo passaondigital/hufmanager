@@ -85,6 +85,7 @@ const ManagementKommunikation = lazy(() => import("@/pages/management/Management
 const ManagementWebsite       = lazy(() => import("@/pages/management/ManagementWebsite"));
 const ImportCenter  = lazy(() => import("@/pages/ImportCenter"));
 const Support       = lazy(() => import("@/pages/Support"));
+const Hilfe         = lazy(() => import("@/pages/Hilfe"));
 
 // Client (Pferdebesitzer)
 const ClientAppLayout     = lazy(() => import("@/components/client/ClientAppLayout").then(m => ({ default: m.ClientAppLayout })));
@@ -615,6 +616,8 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
 
               {/* Support */}
               <Route path="/support" element={<Support />} />
+              {/* Hilfe.tsx war gebaut, aber nie geroutet — das Menü braucht sie. */}
+              <Route path="/hilfe"   element={<Hilfe />} />
             </Route>
 
             {/* ── CLIENT (PFERDEBESITZER) ────────────────────────────── */}

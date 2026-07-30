@@ -455,7 +455,7 @@ export default function HilfePage() {
             Frag Hufi — unser KI-Assistent kennt das gesamte System und hilft dir sofort weiter.
           </p>
           <p className="text-xs text-muted-foreground">
-            Tippe auf das <span className="text-primary">✨</span> Symbol unten rechts.
+            Tippe unten in der Mitte auf das <span className="text-primary">Mikrofon</span>.
           </p>
         </CardContent>
       </Card>

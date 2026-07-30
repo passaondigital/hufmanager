@@ -2,6 +2,133 @@
 
 Offene Punkte aus laufenden Sessions. Nächste Session: zuerst hier lesen.
 
+## 🔧 Etappe 1B gebaut, NICHT deployed (30.07.2026) — Build grün
+
+Entscheidungen Pascal, alle fünf Punkte umgesetzt. Deploy macht Pascal mit
+`./deploy.sh`.
+
+1. **Slot-Konfiguration ersatzlos gelöscht, Mic-Knopf in die Mitte.**
+   `MobileBottomNav.tsx` neu: Kalender · Pferde · **[MIC 76px]** · Kunden ·
+   Rechnungen. Kein Gedrückthalten, kein Picker, kein `hufmanager_nav4_*`
+   in localStorage mehr. **Kein Home-Tab** — der Mic-Knopf führt selbst auf
+   den Assistenten-Screen. Ist man schon dort, feuert er das Fenster-Event
+   `hufi:mic` (`HUFI_MIC_EVENT`), auf das `MobileShell` hört und die
+   Aufnahme startet bzw. sendet. Client-Leiste zeigte zweimal „Pferde"
+   (l2 und r1 beide auf `/client-horses`) — jetzt eindeutig.
+2. **Schlankes Menü, links oben.** Neu `HufiMenu.tsx`: Profil,
+   Einstellungen, Voice-Guthaben, Abo, Hilfe & FAQ, Rechtliches, Impressum,
+   Datenschutz, Abmelden. Auf dem Assistenten-Screen steht es **links**, wo
+   vorher der Hufi-Knopf saß — der ist entfallen, weil der Mic-Knopf unten
+   die Aufnahme startet. Glocke bleibt rechts, Wetter und Guthaben wurden
+   leiser gestellt (grau statt orange, kleiner als der Name). Auf den
+   Unterseiten (`AppTopBar.tsx`) ersetzt das Menü das alte 2-Punkt-Dropdown
+   und bleibt rechts neben der Glocke — links ist dort der Zurück-Knopf.
+   `/hilfe` ist jetzt geroutet (34 echte FAQ-Antworten, war nie erreichbar);
+   die Idle-Karte zeigt auf `/hilfe` statt auf die dünne `/support`-Seite.
+   Archiv/Steuer/Import/Website bleiben im ManagementHub.
+3. **Freihand-Modus.** `useVoiceCapture.startRecording({ handsFree: true })`
+   startet ohne VAD, nur mit 3-Minuten-Notbremse. Vom Nutzer selbst
+   gestartete Aufnahmen laufen im Freihand-Modus; Follow-up und Voice-Loop
+   bleiben unverändert auf VAD. Im Overlay gibt es jetzt einen echten
+   **Stopp-Knopf** (beenden + senden) neben Verwerfen — vorher konnte man
+   nur abbrechen oder stillschweigen.
+4. **Voice-Guthaben liegt an der Ausgabe, nicht an der Eingabe** (geprüft):
+   Aufnahme und Whisper laufen lokal, es gibt keine Guthaben-Sperre vor der
+   Aufnahme und es wird keine gebaut. Bei 402 von `hufi-tts` fällt
+   `useHufiTTS` bereits auf Piper zurück — der Rückfall war schon da, nichts
+   zu bauen. Geändert: Hinweis jetzt **einmal pro Sitzung** (vorher alle 5
+   Minuten) mit neuem Text („Premium-Stimme aufgebraucht…"), und der
+   Guthaben-Chip wird auch bei `monthly_base_cents = 0` rot.
+5. **„Hey Hufi" bleibt aus.** `wakeWordEnabled` unverändert `false`,
+   Testzugang weiter über `?wakeword=test`. Dafür verspricht die UI es nicht
+   mehr: Presence-Chip sagt „tippen zum sprechen", das Eingabefeld „Frag
+   Hufi…", solange das Flag aus ist.
+
+**Noch offen / bewusst nicht angefasst:** Keine automatisierte Prüfung für
+den Freihand-Pfad: MediaRecorder und AudioContext bräuchten Mocks, das ist
+Playwright-Arbeit (Etappe 5, siehe unten — Playwright ist NICHT installiert).
+`/support` bleibt bestehen und dünn; ihr „Chat starten" zielt weiter auf
+einen FAB, der nirgends gerendert wird.
+
+## 🪜 Etappe 2 — Ebenen-Leiter (30.07.2026, eigener Commit, NICHT deployed)
+
+Die Leiter steht in `src/index.css` (`--z-bar` 40 < `--z-fab` 45 <
+`--z-mode` 55 < `--z-dialog` 60 < `--z-menu` 70 < `--z-tour` 75 <
+`--z-toast` 80) und als Tailwind-Klassen in **`tailwind.config.js`** — nur
+diese Datei ist aktiv, `tailwind.config.ts` wird von Tailwind ignoriert.
+88 Dateien umgestellt, dazu die Höhen `--hufi-nav-h` / `--hufi-header-h`
+und die Hilfsklassen `pt-app-header`, `pb-bottom-nav`, `above-bottom-nav`.
+
+**Bewusst festgelegte Reihenfolge der drei früheren `z-9999`-Kollisionen:**
+Tages-Cockpit `z-mode` (55, Dialoge liegen also darüber) < Tour-Spotlight
+`z-tour` (75, erklärt auch offene Dialoge) < Cookie-Banner `z-toast` (80,
+muss immer erreichbar bleiben — DSGVO). Menüs liegen absichtlich ÜBER
+Dialogen (70 > 60), sonst verschwindet jede Auswahlliste in einem Formular
+hinter dem Dialog.
+
+**Prüfung:** `npm run check:layers` (`scripts/check-layers.mjs`) — prüft
+Vollständigkeit und Reihenfolge der Stufen, die Tailwind-Klassen und ob
+irgendwo noch ein `fixed`-Element eine freie Zahl ≥ 40 benutzt. Läuft ohne
+Browser und ohne Login, Stand 30.07. grün. Bewusst ausgenommen (eigene
+Stapelkontexte mit lokalen Zahlen): `tour-manager/` (Leaflet-Panes),
+`camera/HufiCam.tsx`, `office/canvas/`, `day-cockpit/CockpitUnderway.tsx`,
+`ui/navigation-menu.tsx`.
+
+**Was diese Prüfung NICHT kann:** sehen, ob etwas optisch hinter etwas
+anderem liegt. Playwright ist in diesem Projekt nicht installiert (kein
+`@playwright/test`, keine Config) — die Layoutprüfung aus Etappe 5 ist nie
+gebaut worden. Bis dahin gilt die Klickliste unten.
+
+## ✅ Klickliste nach dem Deploy (Reihenfolge nach Risiko)
+
+1. `/home`: Mic-Knopf unten Mitte antippen → Overlay „Hufi hört zu",
+   **Stopp** sendet, **Verwerfen** wirft weg. Ganz neu verkabelt.
+2. Von `/kalender` aus Mic antippen → landet auf `/home`, ohne aufzunehmen;
+   zweiter Tipp startet die Aufnahme.
+3. Auf `/home` Tastatur öffnen und tippen → Eingabezeile und Senden-Knopf
+   bleiben erreichbar, der Mic-Knopf verdeckt sie nicht.
+4. Auswahlmenü INNERHALB eines Dialogs (z.B. Pferd wählen beim Termin) →
+   Liste liegt über dem Dialog, nicht dahinter. Riskanteste Ebenen-Regel.
+5. Langer Dialog (Kunde anlegen, Rechnung) → Kopf und Fuß kleben, Speichern
+   erreichbar, X sichtbar.
+6. Arbeitsmodus/Tages-Cockpit starten und darin einen Dialog öffnen →
+   Dialog liegt über dem Cockpit.
+7. Tour/Spotlight starten → liegt über allem außer Meldungen. Auf der
+   Website: Cookie-Banner liegt über allem.
+8. FABs prüfen: Mein Office und Termin-Schnellzugriff → Knopf liegt über
+   der unteren Leiste, nicht darunter.
+9. Menü links oben: alle acht Punkte öffnen wirklich eine Seite, `/hilfe`
+   zeigt FAQ, Abmelden funktioniert.
+10. Voice-Guthaben leer → Hufi antwortet mit Piper-Stimme, Hinweis kommt
+    genau einmal, Chip im Kopf ist rot.
+
+## 🔧 UI-Sanierung — Etappe 1 gebaut, NICHT deployed (28.07.2026)
+
+5 Dateien geändert, `vite build` läuft durch, Deploy macht Pascal selbst
+mit `./deploy.sh`:
+- `ui/dialog.tsx` — Inhalt scrollt, Kopf + Fuß kleben, X bleibt sichtbar
+  (betraf 126 Dialoge, deren unterer Teil samt Speichern-Knopf unerreichbar war)
+- `ui/select.tsx` — `max-w-[calc(100vw-2rem)]` + `collisionPadding={16}`
+- `MobileBottomNav.tsx` — Safe-Area kommt zur Höhe dazu statt abgezogen
+- `MeinOffice.tsx` + `QuickAddAppointmentFAB.tsx` — FABs über die untere Leiste
+
+**Noch offen (Etappen 2–5, freigegeben, noch nicht gebaut):**
+2. Ebenen-Leiter (z-index-System 40/45/60/70/80 + benannte Leistenhöhen in
+   `index.css`), ~60 Fundstellen umstellen; 3 Kollisionen auf `z-9999`
+   (SpotlightTour, CookieConsentBanner, CockpitUnderway) brauchen eine
+   bewusste Reihenfolge
+3. 89 Tippflächen < 44px (Start: `WeekCalendarContent.tsx`, 7 Stück);
+   doppeltes Meldungssystem (`ui/toaster` + `sonner`) auf eines reduzieren;
+   `ui/popover.tsx` `bg-white` → Theme-Farbe
+4. "Betreuung wieder aufnehmen" — Versprechen aus dem Bestätigungsdialog
+   (`CustomerDetailModal.tsx:1115`) hat keinen Knopf; beendete Verknüpfungen
+   fallen aus der Kundenliste (`Kunden.tsx:191-196`)
+5. Playwright-Layoutprüfung (320/360/768px) fest ins Projekt + in CLAUDE.md
+
+**Toter Code, bewusst nicht angefasst:** `SpeedDialFAB`, `HelpCenterFAB`,
+`OnboardingAssistant`, `client/WhatsAppFAB`, `horse-detail/FeedbackFAB`,
+`feedback/FeedbackWidget` werden nirgends gerendert.
+
 ## ✅ ERLEDIGT 27.07.2026 — Sicherheits-Fixes sind auf Prod
 
 Begründungen je Punkt: `AUDIT_REPORT.md`, Phase 1A + 1B.

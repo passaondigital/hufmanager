@@ -68,13 +68,15 @@ export function sanitizeForSpeech(input: string): string {
 // Piper TTS: lokaler Server auf demselben VPS (via Nginx-Proxy)
 const PIPER_TTS_URL = "/api/local-tts";
 
-// Nur einmal alle 5 Minuten anzeigen — sonst spammt jede weitere Hufi-Antwort den Toast
-let lastCreditsExhaustedToast = 0;
+// EINMAL pro Sitzung (Entscheidung 30.07.2026). Das Guthaben zahlt nur die
+// Premium-Stimme, nicht das Zuhören: bei 0 wird nichts blockiert und nichts
+// abgeschnitten — Hufi antwortet weiter, nur mit der Piper-Stimme (Fallback in
+// speakWithCloud unten). Der Hinweis darf deshalb dezent bleiben.
+let creditsExhaustedNotified = false;
 function notifyCreditsExhausted() {
-  const now = Date.now();
-  if (now - lastCreditsExhaustedToast < 5 * 60 * 1000) return;
-  lastCreditsExhaustedToast = now;
-  toast.info("Dein Voice-Guthaben ist aufgebraucht. Lade auf für Premium-Stimme.", {
+  if (creditsExhaustedNotified) return;
+  creditsExhaustedNotified = true;
+  toast.info("Premium-Stimme aufgebraucht. Hufi antwortet mit der Standard-Stimme.", {
     action: { label: "Aufladen", onClick: () => { window.location.href = "/management/guthaben"; } },
   });
 }

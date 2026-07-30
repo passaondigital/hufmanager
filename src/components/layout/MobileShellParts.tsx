@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { Loader2, X, CalendarPlus, Receipt, MessageSquare, Send, Camera, Mic } from "lucide-react";
+import { Loader2, X, Square, CalendarPlus, Receipt, MessageSquare, Send, Camera, Mic } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { HufiVoiceWave } from "@/components/voice/HufiVoiceWave";
 import { HufiOrb } from "@/components/voice/HufiOrb";
@@ -9,6 +9,7 @@ import type { HufiSearchResult } from "@/lib/hufi-search";
 import type { HufiIntent } from "@/lib/hufi-intent";
 import type { HufiTask } from "@/lib/hufi-task-engine";
 import { useHufiVoiceCredits, formatMinSec } from "@/hooks/useHufiVoiceCredits";
+import { isWakeWordEnabled } from "@/config/featureFlags";
 
 // ── Voice-Guthaben-Badge (Header) ─────────────────────────────────────────────
 
@@ -19,13 +20,15 @@ export function HufiVoiceCreditBadge({ onClick }: { onClick: () => void }) {
     <button
       onClick={onClick}
       title="Voice-Guthaben"
+      // Leiser als der Name: im Normalfall grau und ohne Rahmen, farbig wird
+      // der Chip erst, wenn das Guthaben knapp oder leer ist.
       style={{
         height: 28, borderRadius: 8, flexShrink: 0,
-        background: isLow ? "rgba(239,68,68,0.08)" : "rgba(249,115,22,0.06)",
-        border: `1px solid ${isLow ? "rgba(239,68,68,0.3)" : "rgba(249,115,22,0.18)"}`,
-        color: isLow ? "#EF4444" : "#F97316",
+        background: isLow ? "rgba(239,68,68,0.08)" : "transparent",
+        border: `1px solid ${isLow ? "rgba(239,68,68,0.3)" : "transparent"}`,
+        color: isLow ? "#EF4444" : "#9CA3AF",
         cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
-        padding: "0 8px", fontSize: 11, fontWeight: 700, fontFamily: "inherit",
+        padding: "0 6px", fontSize: 11, fontWeight: isLow ? 700 : 500, fontFamily: "inherit",
       }}
     >
       <Mic size={11} />
@@ -71,7 +74,9 @@ interface VoiceSectionProps {
   transcribing: boolean;
   isVoiceSpeaking: boolean;
   responding: boolean;
+  handsFree: boolean;      // Freihand: Stille beendet die Aufnahme nicht
   onMicPress: () => void;  // start/stop recording
+  onStop: () => void;      // Aufnahme beenden UND senden
   onCancel: () => void;
 }
 
@@ -80,7 +85,9 @@ export function MobileShellVoiceSection({
   transcribing,
   isVoiceSpeaking,
   responding,
+  handsFree,
   onMicPress,
+  onStop,
   onCancel,
 }: VoiceSectionProps) {
   // Overlay nur bei aktiver Voice-Session — nicht bei normalen Text-Antworten
@@ -105,7 +112,7 @@ export function MobileShellVoiceSection({
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 200,
+        zIndex: "var(--z-dialog)",
         background: "rgba(0,0,0,0.55)",
         backdropFilter: "blur(6px)",
         display: "flex",
@@ -140,25 +147,49 @@ export function MobileShellVoiceSection({
 
       {/* Hint-Text bei Aufnahme */}
       {recording && (
-        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", letterSpacing: "0.04em" }}>
-          Aufnahme stoppt automatisch
+        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", letterSpacing: "0.04em", textAlign: "center", maxWidth: 260, lineHeight: 1.5 }}>
+          {handsFree
+            ? "Rede in Ruhe zu Ende. Stopp sendet."
+            : "Aufnahme stoppt automatisch"}
         </span>
       )}
 
-      {/* Abbrechen-Button */}
-      <button
-        onClick={onCancel}
-        aria-label="Abbrechen"
-        style={{
-          width: 48, height: 48, borderRadius: "50%",
-          background: "rgba(255,255,255,0.12)",
-          border: "1.5px solid rgba(255,255,255,0.25)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          cursor: "pointer", color: "#FFFFFF",
-        }}
-      >
-        <X size={20} />
-      </button>
+      {/* Stopp = beenden und senden. Der große Knopf, weil es der normale
+          Abschluss ist — Verwerfen bleibt der kleine daneben. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+        {recording && (
+          <button
+            onClick={onStop}
+            aria-label="Aufnahme beenden und senden"
+            style={{
+              minHeight: 60, borderRadius: 30, padding: "0 32px",
+              background: "#F97316", border: "none",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+              cursor: "pointer", color: "#FFFFFF",
+              fontSize: 16, fontWeight: 700, fontFamily: "inherit",
+              boxShadow: "0 8px 26px rgba(249,115,22,0.44)",
+            }}
+          >
+            <Square size={16} fill="currentColor" />
+            Stopp
+          </button>
+        )}
+
+        {/* Verwerfen */}
+        <button
+          onClick={onCancel}
+          aria-label="Verwerfen"
+          style={{
+            width: 48, height: 48, borderRadius: "50%",
+            background: "rgba(255,255,255,0.12)",
+            border: "1.5px solid rgba(255,255,255,0.25)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", color: "#FFFFFF", flexShrink: 0,
+          }}
+        >
+          <X size={20} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -207,7 +238,7 @@ export function MobileShellInputBar({
       display: "flex",
       alignItems: "center",
       gap: 8,
-      zIndex: 40,
+      zIndex: "var(--z-bar)",
     }}>
       {kiConsent === "denied" ? (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
@@ -250,7 +281,7 @@ export function MobileShellInputBar({
             value={inputText}
             onChange={(e) => onInputChange(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !responding && onSend()}
-            placeholder="Frag Hufi oder sag Hey Hufi…"
+            placeholder={isWakeWordEnabled() ? "Frag Hufi oder sag Hey Hufi…" : "Frag Hufi…"}
             style={{
               flex: 1, height: 40, background: "#F4F4F6",
               border: "1px solid rgba(0,0,0,0.06)", borderRadius: 20,
@@ -367,7 +398,7 @@ export function MobileShellMessages({
               { label: "Nächster Termin", route: "/kalender" },
               { label: "Offene Rechnungen", route: "/rechnungen" },
               { label: "Heute planen", route: "/kalender" },
-              { label: "FAQ & Hilfe", route: "/support" },
+              { label: "FAQ & Hilfe", route: "/hilfe" },
             ].map((q) => (
               <button
                 key={q.label}

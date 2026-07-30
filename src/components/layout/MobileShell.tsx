@@ -7,7 +7,8 @@ import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { MobileShellVoiceSection, MobileShellInputBar, MobileShellMessages, HufiVoiceCreditBadge, type ChatAction, type ChatMessage } from "./MobileShellParts";
 import { toast } from "sonner";
-import { MobileBottomNav } from "./MobileBottomNav";
+import { MobileBottomNav, HUFI_MIC_EVENT } from "./MobileBottomNav";
+import { HufiMenu } from "./HufiMenu";
 import { useViewMode } from "@/hooks/useViewMode";
 import { useHufiTTS } from "@/hooks/useHufiTTS";
 import { useVoiceCapture, type VoiceErrorCode } from "@/hooks/useVoiceCapture";
@@ -139,6 +140,8 @@ export function MobileShell() {
   const voiceSessionRef = useRef<{ active: boolean; texts: string[] } | null>(null);
   // State-based flag so the "Hufi spricht…" banner actually re-renders.
   const [isVoiceSpeaking, setIsVoiceSpeaking] = useState(false);
+  // Freihand: läuft die aktuelle Aufnahme ohne Stille-Auto-Stopp?
+  const [handsFree, setHandsFree] = useState(false);
 
   // Voice-Loop (Jarvis-Modus): kontinuierlich zuhören bis STOP-Phrase
   const [voiceLoopActive, setVoiceLoopActive] = useState(false);
@@ -660,12 +663,17 @@ export function MobileShell() {
     }
   }
 
+  // Vom Nutzer selbst gestartete Aufnahme = Freihand-Modus: kein Auto-Stopp bei
+  // Stille, beendet wird per Stopp-Knopf (Notbremse nach 3 Minuten steckt im
+  // Hook). Der Follow-up-Modus unten bleibt bewusst auf VAD.
   async function startRecording() {
     setHufiPresenceState("hört zu");
+    setHandsFree(true);
     voiceSessionRef.current = { active: true, texts: [] };
-    const started = await voice.startRecording();
+    const started = await voice.startRecording({ handsFree: true });
     if (!started) {
       voiceSessionRef.current = null;
+      setHandsFree(false);
       setHufiPresenceState("bereit");
     }
   }
@@ -691,12 +699,14 @@ export function MobileShell() {
 
   function stopRecording() {
     setHufiPresenceState("transkribiert");
+    setHandsFree(false);
     voice.stopRecording();
   }
 
   function cancelRecording() {
     if (followUpTimerRef.current) { clearTimeout(followUpTimerRef.current); followUpTimerRef.current = null; }
     voiceSessionRef.current = null;
+    setHandsFree(false);
     setHufiPresenceState("bereit");
     voice.cancel();
   }
@@ -707,6 +717,7 @@ export function MobileShell() {
     followUpRoundRef.current = 0;
     voiceSessionRef.current = { active: true, texts: [] };
     setHufiPresenceState("hört zu");
+    setHandsFree(false); // Voice-Loop bleibt auf VAD
     void voice.startRecording();
   }
 
@@ -742,10 +753,26 @@ export function MobileShell() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Mic-Knopf aus der unteren Leiste: Antippen startet die Aufnahme sofort im
+  // Freihand-Modus, nochmal Antippen sendet. Bewusst OHNE das gesprochene
+  // "Ja, ich höre zu." von activateHufi — das kostet bei jedem Tippen eine
+  // Sekunde Guthaben und verzögert den Start. Die Ansage bleibt dem Wake-Word.
+  useEffect(() => {
+    function onMicEvent() {
+      if (voice.isRecording) { stopRecording(); return; }
+      if (transcribing || responding || isTtsSpeaking || isVoiceSpeaking) return;
+      void startRecording();
+    }
+    window.addEventListener(HUFI_MIC_EVENT, onMicEvent);
+    return () => window.removeEventListener(HUFI_MIC_EVENT, onMicEvent);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voice.isRecording, transcribing, responding, isTtsSpeaking, isVoiceSpeaking]);
+
   // VAD Auto-Stop: wenn recording von true → false wechselt (ohne manuellen Stop)
   const prevRecordingRef = useRef(false);
   useEffect(() => {
     if (prevRecordingRef.current && !voice.isRecording) {
+      setHandsFree(false);
       if (voiceSessionRef.current?.active) {
         setHufiPresenceState("transkribiert");
       }
@@ -1710,7 +1737,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
         <HufiOnboardingTour onComplete={handleTourComplete} />
       )}
       {!showFirstRunConsent && !showDsgvoModal && showOnboardingChat && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "#FFFFFF", overflowY: "auto" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: "var(--z-mode)", background: "#FFFFFF", overflowY: "auto" }}>
           <HufiOnboardingChat
             userId={user?.id ?? ""}
             onComplete={() => setShowOnboardingChat(false)}
@@ -1745,13 +1772,15 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
           maxWidth: "100vw",
           boxSizing: "border-box",
         }}>
-          {/* Logo + Titel + Presence-State — tippbar zum Aktivieren */}
-          <button
-            onClick={activateHufi}
-            title="Hufi aktivieren"
+          {/* Menü — links, die am besten erreichbare Ecke für den seltenen Weg;
+              der frühere Hufi-Knopf hier ist entfallen, weil der Mic-Knopf in
+              der unteren Leiste die Aufnahme startet. */}
+          <HufiMenu />
+
+          {/* Logo + Titel + Presence-State — reine Anzeige, kein Knopf mehr */}
+          <div
             style={{
               display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, overflow: "hidden",
-              background: "transparent", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit",
               textAlign: "left",
             }}
           >
@@ -1786,14 +1815,19 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
                 )}
                 {pendingSpokenGreeting
                   ? <span style={{ color: "#F97316", animation: "pulse-rec 1.5s ease-out infinite" }}>tippen zum hören</span>
-                  : hufiPresenceState === "bereit" && SR_SUPPORTED
-                  ? <span style={{ color: "#9CA3AF" }}>tippen oder hey hufi</span>
+                  : hufiPresenceState === "bereit"
+                  ? <span style={{ color: "#9CA3AF" }}>
+                      {/* "hey hufi" nur versprechen, wenn das Wake-Word wirklich
+                          scharf ist — sonst wartet der Nutzer auf etwas, das
+                          nicht zuhört. */}
+                      {SR_SUPPORTED && isWakeWordEnabled() ? "tippen oder hey hufi" : "tippen zum sprechen"}
+                    </span>
                   : hufiPresenceState}
               </div>
             </div>
-          </button>
+          </div>
 
-          {/* Kompakte Aktions-Chips rechts — nur das Wichtigste */}
+          {/* Wetter und Guthaben bleiben, aber leiser als der Name */}
           <HufiWeatherWidget compact={true} />
 
           {/* Hey Hufi — hinter Feature-Flag (Mikrofon-Kollision, siehe HUFI_TODO.md)
@@ -1929,7 +1963,9 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
           transcribing={transcribing}
           isVoiceSpeaking={isVoiceSpeaking}
           responding={responding}
+          handsFree={handsFree}
           onMicPress={recording ? stopRecording : startRecording}
+          onStop={stopRecording}
           onCancel={cancelRecording}
         />
 
@@ -1948,14 +1984,14 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
 
       {/* Communication Draft */}
       {pendingDraft && (
-        <div style={{ position: "fixed", bottom: 80, left: 0, right: 0, zIndex: 200, padding: "0 12px" }}>
+        <div style={{ position: "fixed", bottom: 80, left: 0, right: 0, zIndex: "var(--z-fab)", padding: "0 12px" }}>
           <DraftMessageCard draft={pendingDraft} onDismiss={() => setPendingDraft(null)} />
         </div>
       )}
 
       {/* Day Route Card */}
       {pendingRoute && (
-        <div style={{ position: "fixed", bottom: 80, left: 0, right: 0, zIndex: 200, padding: "0 12px" }}>
+        <div style={{ position: "fixed", bottom: 80, left: 0, right: 0, zIndex: "var(--z-fab)", padding: "0 12px" }}>
           <DayRouteCard stops={pendingRoute} onDismiss={() => setPendingRoute(null)} />
         </div>
       )}

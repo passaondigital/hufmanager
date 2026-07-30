@@ -55,7 +55,10 @@ export function useHufiVoiceCredits() {
   const percentRemaining = monthlyBaseCents > 0
     ? Math.round((monthlyBalanceCents / monthlyBaseCents) * 100)
     : (totalAvailableCents > 0 ? 100 : 0);
-  const isLow = monthlyBaseCents > 0 && percentRemaining < 20 && purchasedUsableCents === 0;
+  // Leer ist immer "low" — auch bei monthly_base_cents = 0, sonst bleibt der
+  // Chip im Kopf grau, obwohl gar nichts mehr da ist.
+  const isLow = totalAvailableCents === 0
+    || (monthlyBaseCents > 0 && percentRemaining < 20 && purchasedUsableCents === 0);
 
   return {
     data,

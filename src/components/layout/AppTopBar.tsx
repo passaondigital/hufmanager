@@ -1,21 +1,11 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, LogOut, Settings } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
-import { useLogout } from "@/hooks/useLogout";
-import { useState } from "react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { HufiMenu } from "./HufiMenu";
 
 export const AppTopBar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const logout = useLogout();
-  const [loggingOut, setLoggingOut] = useState(false);
 
   const isHome = location.pathname === "/home" ||
     location.pathname === "/client-home" ||
@@ -37,7 +27,7 @@ export const AppTopBar = () => {
 
   return (
     <header
-      className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md z-40 flex flex-col"
+      className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md z-bar flex flex-col"
       style={{
         paddingTop: "env(safe-area-inset-top, 0px)",
         background: "rgba(255,255,255,0.92)",
@@ -71,34 +61,7 @@ export const AppTopBar = () => {
         {/* Right: actions */}
         <div className="flex items-center gap-1">
           <NotificationBell className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-xl active:scale-90 transition-all" />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="flex items-center justify-center h-9 w-9 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100 active:scale-90 transition-all"
-                aria-label="Menü"
-              >
-                <Settings className="h-5 w-5" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onClick={() => navigate("/management")}>
-                <Settings className="h-4 w-4 mr-2" />
-                Einstellungen
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                disabled={loggingOut}
-                onClick={async () => {
-                  setLoggingOut(true);
-                  await logout();
-                }}
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                {loggingOut ? "Abmelden…" : "Abmelden"}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <HufiMenu className="rounded-xl hover:text-gray-900 hover:bg-gray-100 active:scale-90 transition-all" />
         </div>
       </div>
     </header>
