@@ -337,3 +337,5 @@ export function PartnerAppLayout() {
     </div>
   );
 }
+
+export default PartnerAppLayout;
