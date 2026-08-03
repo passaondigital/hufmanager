@@ -336,7 +336,19 @@
   .hufi-anim-glow,
   .hufi-anim-spin,
   .hufi-anim-blink,
-  .hufi-wave-bar-premium {
+  .hufi-wave-bar-premium,
+  /* Voice-Overlay + Cockpit nutzen diese Klassen fuer ihre Animationen
+     (MobileShellVoiceSection: .animate-spin/.hfw-bar, Header/Cockpit:
+     .rec-pulse/.pulse-dot/.wave-bar) -- bisher nicht von dieser Regel erfasst. */
+  .animate-spin,
+  .hfw-bar,
+  .hfw-pulse,
+  .hfw-dot-1,
+  .hfw-dot-2,
+  .hfw-dot-3,
+  .rec-pulse,
+  .pulse-dot,
+  .wave-bar {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;

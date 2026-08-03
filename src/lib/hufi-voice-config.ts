@@ -153,6 +153,10 @@ function persistVoiceToDB(userId: string) {
   );
 }
 
-export function getAllVoices(): HufiVoice[] {
+export function getAllVoices(role?: string | null): HufiVoice[] {
+  // TEMP: B2C-Sperre — Pferdebesitzer sehen nur die offene Piper-Stimme
+  // und die Browser-Stimme, keine kostenpflichtigen ElevenLabs-Stimmen
+  // (Produktentscheidung 2026-08-02, siehe hufi_b2c_b2b_strategy-Memory).
+  if (role === "client") return [HUFI_VOICE_PIPER, HUFI_VOICE_BROWSER];
   return [HUFI_VOICE_PIPER, ...HUFI_VOICES, HUFI_VOICE_BROWSER];
 }

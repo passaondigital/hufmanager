@@ -147,6 +147,21 @@ const WebsiteHome = lazy(() => import("@/pages/website/WebsiteHome"));
 // DSGVO: Memory-Viewer (Auskunft/Löschung dessen, was Hufi gespeichert hat)
 const HufiMemoryPage = lazy(() => import("@/pages/HufiMemoryPage"));
 
+// Isolierter Premium-Design-Prototyp (nicht verlinkt, kein Ersatz fürs Cockpit)
+const HufiPremiumLab = lazy(() => import("@/components/assistant-lab/HufiPremiumLab"));
+
+// Isolierte Entwicklungsroute für echte Pferdesuche + Observation-Proposal-Flow
+// (noch ohne Speicherung, siehe docs/hufi-observation-phase-1-contracts.md).
+// Bewusst NICHT in /hufi-lab (Abschnitt oben) integriert — der Premium-Lab
+// arbeitet mit Mock-Daten, dieser Flow mit echten, RLS-gebundenen Daten und
+// braucht deshalb eine echte Anmeldung. Nicht in die Hauptnavigation
+// aufgenommen, kein Link von dort.
+const ObservationProposalLab = lazy(() =>
+  import("@/features/hufi-observation/proposal-flow").then((m) => ({
+    default: m.ObservationProposalLab,
+  })),
+);
+
 // Subdomain-Routing (Portal, Vet, Marketplace – nur auf Subdomains aktiv)
 const PortalLogin       = lazy(() => import("@/pages/portal/PortalLogin"));
 const MarketplacePublic = lazy(() => import("@/pages/portal/MarketplacePublic"));
@@ -451,7 +466,7 @@ function App() {
     >
       <ErrorBoundary name="App">
         <ThemeProvider defaultTheme={FLAVOR_CONFIG.defaultTheme}>
-          <BrowserRouter>
+          <BrowserRouter basename={import.meta.env.BASE_URL}>
             <PferdeakteRouteGuard>
               <AuthProvider>
                 <AppContent queryClient={queryClient} />
@@ -523,6 +538,15 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/bewertung/:providerId" element={<SubmitReview />} />
             <Route path="/preview/:token"       element={<PreviewLanding />} />
             <Route path="/widget/:slug/:type"   element={<WidgetPage />} />
+            <Route path="/hufi-lab"             element={<HufiPremiumLab />} />
+            <Route
+              path="/hufi-observation-lab"
+              element={
+                <ProtectedRoute allowedRoles={["provider", "employee", "admin"]}>
+                  <ObservationProposalLab />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Rechtliches (zwingend erreichbar) */}
             <Route path="/impressum"   element={<WebsiteImpressum />} />

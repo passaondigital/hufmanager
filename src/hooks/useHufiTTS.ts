@@ -81,7 +81,7 @@ function notifyCreditsExhausted() {
   });
 }
 
-export function useHufiTTS(userId = ""): UseHufiTTS {
+export function useHufiTTS(userId = "", role?: string | null): UseHufiTTS {
   const synthRef = useRef<SpeechSynthesis | null>(
     typeof window !== "undefined" && "speechSynthesis" in window
       ? window.speechSynthesis
@@ -348,7 +348,10 @@ export function useHufiTTS(userId = ""): UseHufiTTS {
       stopPlayback(false);
 
       const voiceId = getSelectedVoiceId(userId);
-      if (voiceId && voiceId !== "browser" && voiceId !== "piper") {
+      // TEMP: B2C-Sperre — Pferdebesitzer bekommen nur die offene
+      // Piper-Stimme, keine ElevenLabs-Stimmen (siehe hufi-tts Edge
+      // Function, gleiche Produktentscheidung 2026-08-02).
+      if (voiceId && voiceId !== "browser" && voiceId !== "piper" && role !== "client") {
         await speakWithCloud(cleaned, voiceId, requestId, onEnd, fastMode ? "eleven_turbo_v2_5" : undefined);
         return true;
       }
@@ -362,7 +365,7 @@ export function useHufiTTS(userId = ""): UseHufiTTS {
       await speakWithPiper(cleaned, requestId, onEnd);
       return true;
     },
-    [speakWithCloud, speakWithPiper, stopPlayback]
+    [speakWithCloud, speakWithPiper, stopPlayback, role]
   );
 
   useEffect(() => {

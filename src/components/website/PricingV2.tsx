@@ -1,5 +1,6 @@
-import { Check, Users, Mic, Sparkles, ChevronDown } from "lucide-react";
+import { Check, Users, Mic, Sparkles, ChevronDown, HardDrive } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ADD_ON_STORAGE_PLANS } from "@/lib/hufi-storage-plans";
 
 const includedFeatures = [
   "Terminkalender & smarte Tourenplanung",
@@ -64,7 +65,7 @@ const PricingV2 = () => (
               <span className="text-white/40 text-base">/Monat</span>
             </div>
             <p className="text-white/40 text-sm">
-              statt regulär <span className="line-through">19,95€</span>/Monat — Preis bleibt für dich, solange du dabei bleibst
+              statt regulär <span className="line-through">29,95€</span>/Monat — Preis bleibt für dich, solange du dabei bleibst
             </p>
           </div>
 
@@ -84,6 +85,47 @@ const PricingV2 = () => (
               <a href="/auth">14 Tage kostenlos testen</a>
             </Button>
             <p className="text-white/30 text-xs">Keine Kreditkarte nötig · Monatlich kündbar · Kein Vertrag</p>
+          </div>
+
+          {/* Speicher — Produktbestandteil, technische Ablage folgt schrittweise */}
+          <div className="mt-6 pt-5 border-t border-white/10 max-w-xl mx-auto">
+            <div className="flex items-start gap-2.5">
+              <HardDrive className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-white/80 text-sm font-medium">
+                  5 GB Dokumenten- und Bildspeicher pro Nutzer inklusive
+                </p>
+                <p className="text-white/40 text-xs mt-1 leading-relaxed">
+                  Die dauerhafte Ablage für Pferdeakten, Bilder und Dokumente wird schrittweise freigeschaltet.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mehr Speicher bei Bedarf — Zusatzpakete in Vorbereitung, kein Checkout */}
+        <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.02] p-6 md:p-8">
+          <div className="flex items-start gap-3 mb-5">
+            <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
+              <HardDrive className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-white font-semibold text-sm mb-1">Mehr Speicher bei Bedarf</h3>
+              <p className="text-white/50 text-sm leading-relaxed">
+                Zusätzliche Speicherpakete für mehr Fotos, Dokumente und Pferdeakten — die genauen Konditionen
+                legen wir fest, sobald die Ablage freigeschaltet ist.
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {ADD_ON_STORAGE_PLANS.map((plan) => (
+              <div key={plan.planId} className="rounded-xl border border-white/10 bg-white/[0.02] p-4 text-center">
+                <p className="text-white font-extrabold text-xl">{plan.displayLabel}</p>
+                <span className="inline-block mt-2 px-2 py-0.5 rounded-full border border-white/10 text-white/40 text-[10px] uppercase tracking-wider">
+                  In Vorbereitung
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 

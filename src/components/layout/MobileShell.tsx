@@ -82,6 +82,20 @@ import {
   buildDailyBriefing,
   type BriefingPayload,
 } from "@/lib/hufi-briefing";
+import { HufiAssistantCockpit } from "@/components/assistant/HufiAssistantCockpit";
+
+// Presence-Untertitel im Header: auf sehr schmalen Displays (< 400px, siehe
+// .hufi-subtitle-short/-long unten) reicht der Platz neben Logo, Wetter,
+// Guthaben und Glocke nicht für die volle Phrase ("TIPPEN ZUM SP…" wurde
+// mitten im Wort abgeschnitten) -- kurze, vollständige Fassung statt Crop.
+function SubtitleText({ long, short }: { long: string; short: string }) {
+  return (
+    <>
+      <span className="hufi-subtitle-long">{long}</span>
+      <span className="hufi-subtitle-short">{short}</span>
+    </>
+  );
+}
 
 export function MobileShell() {
   const { user, role } = useAuth();
@@ -113,6 +127,9 @@ export function MobileShell() {
   const [hufiPresenceState, setHufiPresenceState] = useState<HufiPresenceLabel>("bereit");
   const [hufiCtx, setHufiCtx] = useState<HufiContext | null>(null);
   const [proactiveBriefing, setProactiveBriefing] = useState<BriefingPayload | null>(null);
+  // Letztes gebautes Briefing merken, damit das Cockpit es nach dem Schließen
+  // erneut öffnen kann, ohne buildDailyBriefing/fetchWeatherContext erneut anzustoßen.
+  const lastBriefingRef = useRef<BriefingPayload | null>(null);
   const [searching, setSearching] = useState(false);
   const [activeIntent, setActiveIntent] = useState<HufiIntent | null>(null);
   const [showKiModal, setShowKiModal] = useState(false);
@@ -131,7 +148,7 @@ export function MobileShell() {
   const today = format(new Date(), "yyyy-MM-dd");
 
   // Hufi Voice — Phase 1: spoken greeting + Phase 2: push-to-talk voice loop.
-  const { speak: hufiSpeak, isSupported: ttsSupported, isSpeaking: isTtsSpeaking } = useHufiTTS(user?.id ?? "");
+  const { speak: hufiSpeak, isSupported: ttsSupported, isSpeaking: isTtsSpeaking } = useHufiTTS(user?.id ?? "", role);
   const [pendingSpokenGreeting, setPendingSpokenGreeting] = useState<string | null>(null);
   const lastGreetingTextRef = useRef<string>("");
   const voice = useVoiceCapture();
@@ -433,6 +450,7 @@ export function MobileShell() {
           const timeBriefing = buildDailyBriefing(ctx, briefingTime, weather);
           // Nur zeigen wenn relevanter Inhalt — wenn nichts los ist, still halten
           if (timeBriefing.totalItems > 0) {
+            lastBriefingRef.current = timeBriefing;
             setProactiveBriefing(timeBriefing);
           }
         });
@@ -1687,6 +1705,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
   }
 
   const horse = nextAppt ? (Array.isArray(nextAppt.horses) ? nextAppt.horses[0] : nextAppt.horses) : null;
+  const apptClient = nextAppt ? (Array.isArray(nextAppt.client) ? nextAppt.client[0] : nextAppt.client) : null;
   const isToday = nextAppt?.date === today;
 
   // Derive the orb state from the current voice/processing states
@@ -1700,6 +1719,14 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
   const dateLabel = nextAppt
     ? isToday ? "Heute" : format(new Date(nextAppt.date + "T00:00:00"), "EEE d. MMM", { locale: de })
     : null;
+  const nextApptMinutesAway = nextAppt?.time && isToday
+    ? Math.round((new Date(`${today}T${nextAppt.time}`).getTime() - Date.now()) / 60000)
+    : null;
+
+  function handlePrepareDay() {
+    const payload = proactiveBriefing ?? lastBriefingRef.current;
+    if (payload) setProactiveBriefing(payload);
+  }
 
   return (
     <>
@@ -1804,31 +1831,45 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
                 textTransform: "uppercase" as const,
                 color: hufiPresenceState === "bereit" ? "#9CA3AF" : "#F97316",
                 display: "flex", alignItems: "center", gap: 3, marginTop: 1,
-                whiteSpace: "nowrap",
+                minWidth: 0,
               }}>
                 {(hufiPresenceState === "hört zu" || hufiPresenceState === "transkribiert" || hufiPresenceState === "denkt" || hufiPresenceState === "führt aus" || hufiPresenceState === "spricht") && (
                   <div style={{
                     width: 5, height: 5, borderRadius: "50%",
                     background: "currentColor",
                     animation: "pulse-rec 1s ease-out infinite",
+                    flexShrink: 0,
                   }} />
                 )}
-                {pendingSpokenGreeting
-                  ? <span style={{ color: "#F97316", animation: "pulse-rec 1.5s ease-out infinite" }}>tippen zum hören</span>
-                  : hufiPresenceState === "bereit"
-                  ? <span style={{ color: "#9CA3AF" }}>
-                      {/* "hey hufi" nur versprechen, wenn das Wake-Word wirklich
-                          scharf ist — sonst wartet der Nutzer auf etwas, das
-                          nicht zuhört. */}
-                      {SR_SUPPORTED && isWakeWordEnabled() ? "tippen oder hey hufi" : "tippen zum sprechen"}
-                    </span>
-                  : hufiPresenceState}
+                {/* Auf schmalen Displays wurde dieser Text hart abgeschnitten
+                    ("TIPPEN ZUM SPRI…" ohne Auslassungspunkte) -- jetzt mit
+                    echtem Ellipsis statt Pixel-Crop. */}
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>
+                  {pendingSpokenGreeting
+                    ? <span style={{ color: "#F97316", animation: "pulse-rec 1.5s ease-out infinite" }}>
+                        <SubtitleText long="tippen zum hören" short="zum hören" />
+                      </span>
+                    : hufiPresenceState === "bereit"
+                    ? <span style={{ color: "#9CA3AF" }}>
+                        {/* "hey hufi" nur versprechen, wenn das Wake-Word wirklich
+                            scharf ist — sonst wartet der Nutzer auf etwas, das
+                            nicht zuhört. */}
+                        {SR_SUPPORTED && isWakeWordEnabled()
+                          ? <SubtitleText long="tippen oder hey hufi" short="oder hey hufi" />
+                          : <SubtitleText long="tippen zum sprechen" short="zum sprechen" />}
+                      </span>
+                    : hufiPresenceState}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Wetter und Guthaben bleiben, aber leiser als der Name */}
-          <HufiWeatherWidget compact={true} />
+          {/* Wetter und Guthaben bleiben, aber leiser als der Name.
+              flexShrink:0, damit auf schmalen Displays der Titel/Untertitel
+              schrumpft (mit Ellipsis) statt dieser kleinen Icons. */}
+          <div style={{ flexShrink: 0 }}>
+            <HufiWeatherWidget compact={true} />
+          </div>
 
           {/* Hey Hufi — hinter Feature-Flag (Mikrofon-Kollision, siehe HUFI_TODO.md)
               UND an die Nutzer-Zustimmung aus den Einstellungen gebunden. Eigene
@@ -1849,9 +1890,15 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
             </ErrorBoundary>
           )}
 
-          {user && <HufiVoiceCreditBadge onClick={() => navigate("/management/guthaben")} />}
+          {user && (
+            <div style={{ flexShrink: 0 }}>
+              <HufiVoiceCreditBadge onClick={() => navigate("/management/guthaben")} />
+            </div>
+          )}
 
-          <NotificationBell className="text-gray-500 hover:text-gray-800 hover:bg-gray-100" />
+          <div style={{ flexShrink: 0 }}>
+            <NotificationBell className="text-gray-500 hover:text-gray-800 hover:bg-gray-100" />
+          </div>
 
         </div>
 
@@ -1865,7 +1912,11 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
             WebkitOverflowScrolling: "touch",
             overscrollBehavior: "contain",
             padding: "20px 16px",
-            paddingBottom: "calc(200px + env(safe-area-inset-bottom, 0px))",
+            // Eingabezeile (~64px) + der zentrale Bottom-Obstruction-Wert
+            // (Leiste inkl. Mic-Überstand, siehe --hufi-bottom-obstruction-h
+            // in index.css) -- dieselbe Quelle wie .pb-bottom-nav auf den
+            // Unterseiten, damit sich beide Werte nie wieder auseinanderlaufen.
+            paddingBottom: "calc(64px + var(--hufi-bottom-obstruction-h) + env(safe-area-inset-bottom, 0px))",
             display: "flex",
             flexDirection: "column",
             gap: 14,
@@ -1891,39 +1942,63 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
               alt=""
             />
           </div>
-          {/* Next appointment — schmale Zeile, kein großer Block (UI-Aufräumen, 17.07.2026) */}
-          {nextAppt && horse && (
-            <button
-              onClick={() => navigate("/kalender")}
-              className="msg-in"
-              style={{
-                background: "rgba(249,115,22,0.06)",
-                border: "1px solid rgba(249,115,22,0.15)",
-                borderRadius: 12,
-                padding: "7px 12px",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                cursor: "pointer",
-                width: "100%",
-                textAlign: "left",
-              }}
-            >
-              <span style={{ fontSize: 13, flexShrink: 0 }}>🐴</span>
-              <span style={{ fontSize: 12, color: "#1A1A1A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: 1, minWidth: 0 }}>
-                <span style={{ fontWeight: 700 }}>{(horse as { name?: string }).name}</span>
-                {" · "}{dateLabel}{nextAppt.time ? `, ${nextAppt.time.slice(0, 5)} Uhr` : ""}
-              </span>
-              {isToday && (
-                <span style={{
-                  background: "#F97316", color: "#FFFFFF", borderRadius: 20,
-                  padding: "2px 8px", fontSize: 9, fontWeight: 700,
-                  letterSpacing: ".06em", textTransform: "uppercase" as const, flexShrink: 0,
-                }}>
-                  Heute
+          {/* Cockpit ersetzt die alte "Bereit."-Karte, solange noch kein Chat läuft --
+              Termin + Tageskontext liegen hier zusammengeführt in einem Block statt
+              als separates Banner + vier Standardbuttons. */}
+          {messages.length === 0 && !searching && !responding && !transcribing ? (
+            <HufiAssistantCockpit
+              state={orbState}
+              userName={hufiCtx?.user.name ?? null}
+              nextAppointment={nextAppt ? {
+                horseName: (horse as { name?: string } | null)?.name ?? null,
+                clientName: (apptClient as { full_name?: string } | null)?.full_name ?? null,
+                dateLabel,
+                time: nextAppt.time,
+                isToday,
+                minutesAway: nextApptMinutesAway,
+              } : null}
+              todayAppointments={hufiCtx?.todayAppointments.length ?? 0}
+              unpaidInvoices={hufiCtx?.unpaidInvoices ?? 0}
+              openLeads={hufiCtx?.openLeads ?? 0}
+              canPrepareDay={!!(proactiveBriefing ?? lastBriefingRef.current)}
+              onPrepareDay={handlePrepareDay}
+              onNavigate={navigate}
+            />
+          ) : (
+            /* Next appointment — schmale Zeile, kein großer Block (UI-Aufräumen, 17.07.2026) */
+            nextAppt && horse && (
+              <button
+                onClick={() => navigate("/kalender")}
+                className="msg-in"
+                style={{
+                  background: "rgba(249,115,22,0.06)",
+                  border: "1px solid rgba(249,115,22,0.15)",
+                  borderRadius: 12,
+                  padding: "7px 12px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  cursor: "pointer",
+                  width: "100%",
+                  textAlign: "left",
+                }}
+              >
+                <span style={{ fontSize: 13, flexShrink: 0 }}>🐴</span>
+                <span style={{ fontSize: 12, color: "#1A1A1A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: 1, minWidth: 0 }}>
+                  <span style={{ fontWeight: 700 }}>{(horse as { name?: string }).name}</span>
+                  {" · "}{dateLabel}{nextAppt.time ? `, ${nextAppt.time.slice(0, 5)} Uhr` : ""}
                 </span>
-              )}
-            </button>
+                {isToday && (
+                  <span style={{
+                    background: "#F97316", color: "#FFFFFF", borderRadius: 20,
+                    padding: "2px 8px", fontSize: 9, fontWeight: 700,
+                    letterSpacing: ".06em", textTransform: "uppercase" as const, flexShrink: 0,
+                  }}>
+                    Heute
+                  </span>
+                )}
+              </button>
+            )
           )}
 
           <MobileShellMessages
@@ -1934,8 +2009,6 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
             activeIntent={activeIntent}
             onMsgAction={handleMsgAction}
             onDismissPrompt={(ts) => setMessages((prev) => prev.map((m) => m.ts === ts ? { ...m, actionPrompt: false } : m))}
-            showIdleCard={messages.length === 0}
-            pendingGreeting={!!pendingSpokenGreeting}
             onTaskConfirm={async (taskId, stepId) => {
               if (!user?.id) return;
               const updated = await confirmStep(taskId, stepId, user.id);

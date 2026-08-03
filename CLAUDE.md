@@ -27,6 +27,8 @@ Auth: Bearer <Token aus ~/.supabase/access-token>
 - Edge Functions: separat über die Supabase-CLI
 - Niemals direkt auf dem Server Dateien editieren, nie von Hand rsyncen
 - HTTP 200 ist KEIN gültiger Erfolgs-Check nach einem Deploy
+- Vor jedem Deploy Richtung PROD (echte Kundendaten): security-review laufen
+  lassen, bevor deployt wird — vom Nutzer am 2026-08-02 als Standard bestätigt.
 
 ## Bekannte Fallen
 - `appointments.status` ist freier Text ohne CHECK-Constraint. "Offen" kann

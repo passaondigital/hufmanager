@@ -26,6 +26,12 @@
        die Leiste, verschiebt sich alles andere automatisch mit. */
     --hufi-nav-h:    68px;  /* MobileBottomNav, ohne Geraete-Sicherheitsabstand */
     --hufi-header-h: 56px;  /* AppTopBar, ohne Geraete-Sicherheitsabstand       */
+    /* Der zentrale Mic-Knopf ragt bewusst ueber die Leiste hinaus (siehe
+       MobileBottomNav.tsx: bottom:8 + 76px Durchmesser in einer 68px hohen
+       Leiste = 16px Ueberstand). Seiteninhalt muss DAS raeumen, nicht nur
+       die flache Leistenhoehe -- sonst verdeckt der Mic-Knopf den letzten
+       sichtbaren Inhalt (Kalender/Rechnungen/Anfragen, 01.08.2026 gefunden). */
+    --hufi-bottom-obstruction-h: 84px;
 
     /* ── Core ─────────────────────────────────────────────────── */
     --background: 210 40% 98%;      /* #F8FAFC = slate-50 */
@@ -247,6 +253,20 @@ a {
 
 /* ── Abstand zu den festen Leisten ────────────────────────────────
    Statt in jeder Datei env(safe-area-inset-*) neu zu tippen. */
-.above-bottom-nav { bottom: calc(var(--hufi-nav-h) + env(safe-area-inset-bottom, 0px) + 1rem); }
+.above-bottom-nav { bottom: calc(var(--hufi-bottom-obstruction-h) + env(safe-area-inset-bottom, 0px) + 1rem); }
 .pt-app-header    { padding-top: calc(var(--hufi-header-h) + env(safe-area-inset-top, 0px) + 8px); }
-.pb-bottom-nav    { padding-bottom: calc(var(--hufi-nav-h) + env(safe-area-inset-bottom, 0px) + 8px); }
+.pb-bottom-nav    { padding-bottom: calc(var(--hufi-bottom-obstruction-h) + env(safe-area-inset-bottom, 0px) + 8px); }
+
+/* ── MobileShell-Header: kurze/lange Untertitel-Fassung ────────────
+   Der Assistenten-Header (Logo + Wetter + Guthaben + Glocke) lässt auf
+   schmalen Displays kaum Platz für den Presence-Text -- unter 400px die
+   kurze, vollständige Fassung statt eines mitten im Wort abgeschnittenen
+   Textes ("TIPPEN ZUM SP…", 01.08.2026 gefunden). Reine Fensterbreite ist
+   hier zulässig: der Shell-Container ist auf max. 430px begrenzt, darunter
+   entspricht Fensterbreite = Containerbreite. */
+.hufi-subtitle-long  { display: inline; }
+.hufi-subtitle-short { display: none; }
+@media (max-width: 399px) {
+  .hufi-subtitle-long  { display: none; }
+  .hufi-subtitle-short { display: inline; }
+}

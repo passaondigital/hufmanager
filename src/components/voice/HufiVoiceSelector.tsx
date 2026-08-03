@@ -98,8 +98,8 @@ export async function previewVoice(
   }
 }
 
-export function HufiVoiceSelector({ userId = "" }: { userId?: string }) {
-  const voices = getAllVoices();
+export function HufiVoiceSelector({ userId = "", role }: { userId?: string; role?: string | null }) {
+  const voices = getAllVoices(role);
   const [selectedId, setSelectedId] = useState<string>(() => getSelectedVoiceId(userId) ?? "browser");
   const [model, setModel] = useState(() => getSelectedModel(userId));
   const [playing, setPlaying] = useState<string | null>(null);
@@ -151,6 +151,12 @@ export function HufiVoiceSelector({ userId = "" }: { userId?: string }) {
         <Play size={11} style={{ display: "inline", verticalAlign: "middle" }} />{" "}
         zum Probehören.
       </p>
+
+      {role === "client" && (
+        <p style={{ fontSize: 11.5, color: "#9CA3AF", background: "#F9FAFB", border: "1px solid #E5E7EB", borderRadius: 10, padding: "8px 12px", margin: "0 0 12px", lineHeight: 1.5 }}>
+          Weitere Stimmen sind aktuell nur für Profi-Konten verfügbar.
+        </p>
+      )}
 
       {/* Aktuell ausgewählt */}
       <div style={{
@@ -297,47 +303,52 @@ export function HufiVoiceSelector({ userId = "" }: { userId?: string }) {
         })}
       </div>
 
-      {/* Modell-Auswahl (ausklappbar) */}
-      <button
-        onClick={() => setShowModels((s) => !s)}
-        style={{
-          width: "100%", marginTop: 12,
-          background: "transparent", border: "1px solid #E5E7EB",
-          borderRadius: 10, padding: "10px 14px",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          cursor: "pointer", fontFamily: "inherit",
-        }}
-      >
-        <span style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>
-          Qualitätsstufe: {MODELS.find((m) => m.id === model)?.label ?? model}
-        </span>
-        {showModels ? <ChevronUp size={16} color="#9CA3AF" /> : <ChevronDown size={16} color="#9CA3AF" />}
-      </button>
+      {/* Modell-Auswahl gilt nur für ElevenLabs-Stimmen — für Client-Rolle
+          nicht relevant, da diese Stimmen aktuell gar nicht wählbar sind. */}
+      {role !== "client" && (
+        <>
+          <button
+            onClick={() => setShowModels((s) => !s)}
+            style={{
+              width: "100%", marginTop: 12,
+              background: "transparent", border: "1px solid #E5E7EB",
+              borderRadius: 10, padding: "10px 14px",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              cursor: "pointer", fontFamily: "inherit",
+            }}
+          >
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>
+              Qualitätsstufe: {MODELS.find((m) => m.id === model)?.label ?? model}
+            </span>
+            {showModels ? <ChevronUp size={16} color="#9CA3AF" /> : <ChevronDown size={16} color="#9CA3AF" />}
+          </button>
 
-      {showModels && (
-        <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 6 }}>
-          {MODELS.map((m) => (
-            <button
-              key={m.id}
-              onClick={() => { handleModelChange(m.id); setShowModels(false); }}
-              style={{
-                textAlign: "left", background: model === m.id ? "#FFF7ED" : "#F9FAFB",
-                border: `1.5px solid ${model === m.id ? "#F97316" : "#E5E7EB"}`,
-                borderRadius: 10, padding: "10px 14px",
-                cursor: "pointer", fontFamily: "inherit",
-              }}
-            >
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#1A1A1A" }}>{m.label}</div>
-              <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>{m.desc}</div>
-            </button>
-          ))}
-        </div>
+          {showModels && (
+            <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 6 }}>
+              {MODELS.map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => { handleModelChange(m.id); setShowModels(false); }}
+                  style={{
+                    textAlign: "left", background: model === m.id ? "#FFF7ED" : "#F9FAFB",
+                    border: `1.5px solid ${model === m.id ? "#F97316" : "#E5E7EB"}`,
+                    borderRadius: 10, padding: "10px 14px",
+                    cursor: "pointer", fontFamily: "inherit",
+                  }}
+                >
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1A1A1A" }}>{m.label}</div>
+                  <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>{m.desc}</div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <p style={{ fontSize: 11, color: "#9CA3AF", marginTop: 10, lineHeight: 1.5 }}>
+            ElevenLabs-Stimmen erfordern eine aktive Internetverbindung.
+            Wenn keine Verbindung besteht, wechselt Hufi automatisch zur Browser-Stimme.
+          </p>
+        </>
       )}
-
-      <p style={{ fontSize: 11, color: "#9CA3AF", marginTop: 10, lineHeight: 1.5 }}>
-        ElevenLabs-Stimmen erfordern eine aktive Internetverbindung.
-        Wenn keine Verbindung besteht, wechselt Hufi automatisch zur Browser-Stimme.
-      </p>
     </div>
   );
 }

@@ -29,7 +29,7 @@ export default function ManagementHub() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { canInstall, isInstalled, isIOS, promptInstall } = usePWAInstall();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const logout = useLogout();
 
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
@@ -217,7 +217,7 @@ export default function ManagementHub() {
 
       {/* Berechtigungen & Hufi — inline Einstellungsbereich */}
       <div className="px-1">
-        <HufiPermissionsSettings userId={user?.id ?? ""} />
+        <HufiPermissionsSettings userId={user?.id ?? ""} role={role} />
       </div>
 
       {/* Abmelden */}

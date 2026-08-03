@@ -76,7 +76,14 @@ export function MobileBottomNav() {
         }}
       >
         <tab.Icon size={active ? 21 : 20} strokeWidth={active ? 2.5 : 1.8} />
-        <span style={{ fontSize: 10, fontWeight: active ? 700 : 400, lineHeight: 1, letterSpacing: "0.01em" }}>
+        {/* "Rechnungen" wurde auf 360px-Displays rechts abgeschnitten -- die
+            4 Tabs teilen sich die Breite neben dem 96px breiten Mic-Bereich,
+            das laesst pro Tab wenig Platz. Ellipsis statt hartem Ueberlauf. */}
+        <span style={{
+          fontSize: 10, fontWeight: active ? 700 : 400, lineHeight: 1, letterSpacing: "0.01em",
+          width: "100%", textAlign: "center",
+          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+        }}>
           {tab.label}
         </span>
       </button>
