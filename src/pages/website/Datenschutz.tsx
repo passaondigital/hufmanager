@@ -1,6 +1,20 @@
 import Navbar from "@/components/website/Navbar";
 import FooterNew from "@/components/website/FooterNew";
 
+/*
+ * ⚠️ eRecht24-GENERAT — LIZENZ AUSGELAUFEN.
+ * Der Grundtext dieser Seite stammt aus dem eRecht24-Datenschutz-Generator
+ * (vgl. Footer "Quelle: e-recht24.de" + Affiliate-Baustein). Die eRecht24-
+ * Mitgliedschaft ist abgelaufen — die Weiterverwendung/Bearbeitung der Vorlage
+ * ist damit lizenzrechtlich nicht mehr gedeckt.
+ *
+ * TODO: Datenschutztext über einen frei lizenzierten Generator NEU aufsetzen,
+ *       z. B. https://datenschutz-generator.de (Dr. Schwenke, freie Lizenz).
+ *       Vollständige Faktenbasis / Neuaufbau-Vorlage: docs/datenschutz-faktenbasis.md
+ *
+ * Bis dahin: die hier enthaltenen technischen Korrekturen (Abschnitt 8, Hosting,
+ * neue Anschrift) sind ein TECHNISCHER ENTWURF, keine juristische Endfassung.
+ */
 const Datenschutz = () => (
   <div className="min-h-screen bg-black">
     <Navbar />
@@ -31,24 +45,29 @@ const Datenschutz = () => (
             <p className="mb-4">Hierzu sowie zu weiteren Fragen zum Thema Datenschutz können Sie sich jederzeit an uns wenden.</p>
           </div>
 
+          {/*
+            TECHNISCHER ENTWURF — juristische Endfassung via eRecht24 ausstehend.
+            Stand auf Basis von docs/datenschutz-faktenbasis.md (14.06.2026).
+            Reale Infrastruktur: Hostinger VPS (Nginx, EU) + Supabase. ALL-INKL & Vercel
+            werden NICHT mehr genutzt und wurden entfernt, damit der Text die Realität abbildet.
+          */}
           {/* 2 */}
           <div>
             <h2 className="text-2xl font-semibold mb-4">2. Hosting</h2>
-            <p className="mb-4">Wir hosten die Inhalte unserer Website bei folgenden Anbietern:</p>
+            <p className="mb-4">Wir hosten die Inhalte unserer Website und die zugehörige Server-Infrastruktur bei folgenden Anbietern:</p>
 
-            <h3 className="text-xl font-semibold mb-2">All-Inkl</h3>
-            <p className="mb-4">Anbieter ist die ALL-INKL.COM - Neue Medien Münnich, Inh. René Münnich, Hauptstraße 68, 02742 Friedersdorf (nachfolgend All-Inkl). Details entnehmen Sie der Datenschutzerklärung von All-Inkl: <a href="https://all-inkl.com/datenschutzinformationen/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://all-inkl.com/datenschutzinformationen/</a></p>
-            <p className="mb-4">Die Verwendung von All-Inkl erfolgt auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO. Wir haben ein berechtigtes Interesse an einer möglichst zuverlässigen Darstellung unserer Website. Sofern eine entsprechende Einwilligung abgefragt wurde, erfolgt die Verarbeitung ausschließlich auf Grundlage von Art. 6 Abs. 1 lit. a DSGVO und § 25 Abs. 1 TDDDG. Die Einwilligung ist jederzeit widerrufbar.</p>
+            <h3 className="text-xl font-semibold mb-2">Hostinger (VPS)</h3>
+            <p className="mb-4">Die Website sowie die ergänzende Server-Infrastruktur (u.&nbsp;a. Reverse-Proxy und selbst gehostete Verarbeitungsdienste, siehe Abschnitt 8) werden auf einem virtuellen Server (VPS) der Hostinger International Ltd., 61 Lordou Vironos Street, 6023 Larnaca, Zypern, betrieben. Die Server stehen innerhalb der EU. Beim Aufruf der Website werden technische Zugriffsdaten (u.&nbsp;a. IP-Adresse, Browsertyp, Betriebssystem, Uhrzeit des Zugriffs) in Server-Logs verarbeitet. Details entnehmen Sie der Datenschutzerklärung von Hostinger: <a href="https://www.hostinger.de/datenschutzrichtlinie" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://www.hostinger.de/datenschutzrichtlinie</a></p>
+            <p className="mb-4">Die Verwendung von Hostinger erfolgt auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO. Wir haben ein berechtigtes Interesse an einer möglichst zuverlässigen Darstellung und Bereitstellung unserer Website und App. Sofern eine entsprechende Einwilligung abgefragt wurde, erfolgt die Verarbeitung ausschließlich auf Grundlage von Art. 6 Abs. 1 lit. a DSGVO und § 25 Abs. 1 TDDDG. Die Einwilligung ist jederzeit widerrufbar.</p>
 
             <h4 className="text-lg font-semibold mb-2">Auftragsverarbeitung</h4>
-            <p className="mb-4">Wir haben einen Vertrag über Auftragsverarbeitung (AVV) zur Nutzung des oben genannten Dienstes geschlossen. Hierbei handelt es sich um einen datenschutzrechtlich vorgeschriebenen Vertrag, der gewährleistet, dass dieser die personenbezogenen Daten unserer Websitebesucher nur nach unseren Weisungen und unter Einhaltung der DSGVO verarbeitet.</p>
+            <p className="mb-4">Wir haben einen Vertrag über Auftragsverarbeitung (AVV) zur Nutzung der oben genannten Dienste geschlossen. Hierbei handelt es sich um einen datenschutzrechtlich vorgeschriebenen Vertrag, der gewährleistet, dass diese die personenbezogenen Daten unserer Websitebesucher nur nach unseren Weisungen und unter Einhaltung der DSGVO verarbeiten.</p>
 
             <h3 className="text-xl font-semibold mb-2">Externes Hosting</h3>
             <p className="mb-4">Diese Website wird extern gehostet. Die personenbezogenen Daten, die auf dieser Website erfasst werden, werden auf den Servern des Hosters / der Hoster gespeichert. Hierbei kann es sich v.&nbsp;a. um IP-Adressen, Kontaktanfragen, Meta- und Kommunikationsdaten, Vertragsdaten, Kontaktdaten, Namen, Websitezugriffe und sonstige Daten, die über eine Website generiert werden, handeln.</p>
             <p className="mb-4">Wir setzen folgende(n) Hoster ein:</p>
-            <p className="mb-2"><strong>ALL-INKL.COM – Neue Medien Münnich</strong><br />Inh. René Münnich, Hauptstraße 68, 02742 Friedersdorf, Deutschland</p>
-            <p className="mb-2"><strong>Supabase Inc.</strong><br />970 Trestle Glen Rd, Oakland, CA 94610, USA</p>
-            <p className="mb-4"><strong>Vercel Inc.</strong><br />340 S Lemon Ave #4133, Walnut, CA 91789, USA</p>
+            <p className="mb-2"><strong>Hostinger International Ltd.</strong><br />61 Lordou Vironos Street, 6023 Larnaca, Zypern<br />Betrieb des virtuellen Servers (VPS); die Server stehen innerhalb der EU.</p>
+            <p className="mb-2"><strong>Supabase Inc.</strong> (Anbieter)<br />970 Trestle Glen Rd, Oakland, CA 94610, USA<br />Die Speicherung und Verarbeitung der App-Daten erfolgt in der Europäischen Union (Rechenzentrum Frankfurt, AWS eu-central-1). Mit Supabase besteht ein Auftragsverarbeitungsvertrag (AVV); für die Übermittlung an das US-Mutterunternehmen gelten die EU-Standardvertragsklauseln (SCC).</p>
           </div>
 
           {/* 3 */}
@@ -118,6 +137,43 @@ const Datenschutz = () => (
 
             <h3 className="text-xl font-semibold mb-2">eRecht24 Affiliate-Programm</h3>
             <p className="mb-4">Wir nehmen am Affiliate-Programm von eRecht24 GmbH &amp; Co KG, Lietzenburger Str. 94, 10719 Berlin teil. Wenn Sie auf einen eRecht24-Affiliate-Link klicken, werden Sie zunächst an den Zahlungsdienstleister Digistore24 weitergeleitet, der mithilfe einer Wiedererkennungstechnologie vermerkt, dass Sie über unsere Website zu den eRecht24-Angeboten gelangt sind.</p>
+          </div>
+
+          {/*
+            TECHNISCHER ENTWURF (Abschnitt 8) — juristische Endfassung via eRecht24 ausstehend.
+            Quelle: docs/datenschutz-faktenbasis.md (14.06.2026).
+            Listet die in der Hufi-App aktiv genutzten Drittdienste (Auftragsverarbeiter)
+            sowie die self-hosted Sprachverarbeitung. AVV/SCC für die US-Dienste sind noch
+            zu beschaffen bzw. zu verlinken (siehe Faktenbasis Abschnitt E).
+          */}
+          {/* 8 */}
+          <div>
+            <h2 className="text-2xl font-semibold mb-4">8. Datenverarbeitung in der Hufi-App</h2>
+            <p className="mb-4">Innerhalb der Anwendung (App-Bereich nach dem Login) setzen wir zur Bereitstellung einzelner Funktionen die folgenden externen Dienste als Auftragsverarbeiter ein. Es werden jeweils nur die für die Funktion erforderlichen Daten übermittelt (Grundsatz der Datenminimierung, Art. 5 Abs. 1 lit. c DSGVO). Der KI-Assistent (Anthropic, Claude) ist bereits in Abschnitt 4 beschrieben.</p>
+
+            <h3 className="text-xl font-semibold mb-2">Selbst gehostete Sprachverarbeitung (keine Drittübermittlung)</h3>
+            <p className="mb-4">Die Spracherkennung (Whisper), die Sprachausgabe (Piper) sowie ergänzende KI-Sprachmodelle (Ollama) werden ausschließlich auf unseren eigenen Servern innerhalb der EU betrieben. Sprachaufnahmen werden für die Transkription <strong>nicht an Dritte übermittelt</strong>, sondern unmittelbar auf der eigenen Infrastruktur verarbeitet. Rechtsgrundlage: Art. 6 Abs. 1 lit. b und f DSGVO.</p>
+
+            <h3 className="text-xl font-semibold mb-2">ElevenLabs (Sprachausgabe)</h3>
+            <p className="mb-4"><strong>Anbieter:</strong> ElevenLabs Inc. (USA).<br /><strong>Verarbeitete Daten:</strong> der zur Sprachausgabe (Text-to-Speech) bestimmte Antworttext. Dieser <strong>kann personenbezogene Daten enthalten</strong> (z.&nbsp;B. Kunden- oder Pferdenamen), sofern sie Bestandteil der vorgelesenen Antwort sind.<br /><strong>Zweck:</strong> Vorlesen von Assistenz-Antworten.<br /><strong>Hinweis:</strong> Sprachaufnahmen (Spracherkennung) werden <strong>nicht</strong> an ElevenLabs übermittelt – diese erfolgt self-hosted (siehe oben). Rechtsgrundlage: Art. 6 Abs. 1 lit. b und f DSGVO; für die Übermittlung in die USA gelten EU-Standardvertragsklauseln (SCC).</p>
+
+            <h3 className="text-xl font-semibold mb-2">Wetterdienst (wttr.in)</h3>
+            <p className="mb-4"><strong>Anbieter:</strong> wttr.in (quelloffener Dienst).<br /><strong>Verarbeitete Daten:</strong> ein <strong>grober Standort auf Stadtebene</strong> (auf etwa 11&nbsp;km gerundete Koordinaten). Die exakten GPS-Koordinaten werden zum Schutz Ihrer Privatsphäre <strong>bewusst nicht</strong> übermittelt.<br /><strong>Zweck:</strong> Wetterkontext für die Tagesplanung.<br /><strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. f DSGVO.</p>
+
+            <h3 className="text-xl font-semibold mb-2">OpenRouteService (Routenoptimierung)</h3>
+            <p className="mb-4"><strong>Anbieter:</strong> HeiGIT gGmbH, Heidelberg, Deutschland.<br /><strong>Verarbeitete Daten:</strong> Adressen bzw. Koordinaten der anzufahrenden Termine.<br /><strong>Zweck:</strong> Berechnung und Optimierung der Tagesroute.<br /><strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. b und f DSGVO. EU-Anbieter.</p>
+
+            <h3 className="text-xl font-semibold mb-2">OpenStreetMap / Nominatim (Geocoding)</h3>
+            <p className="mb-4"><strong>Anbieter:</strong> OpenStreetMap Foundation (EU/UK).<br /><strong>Verarbeitete Daten:</strong> Kunden-Adressen.<br /><strong>Zweck:</strong> Umwandlung von Adressen in Geokoordinaten (Geocoding) als Grundlage für Karten- und Routenfunktionen.<br /><strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. f DSGVO.</p>
+
+            <h3 className="text-xl font-semibold mb-2">Tankerkönig (Spritpreise)</h3>
+            <p className="mb-4"><strong>Anbieter:</strong> Tankerkönig (creativecommons.tankerkoenig.de), Deutschland.<br /><strong>Verarbeitete Daten:</strong> Standortkoordinaten zur Umkreissuche.<br /><strong>Zweck:</strong> Anzeige aktueller Kraftstoffpreise in der Nähe bzw. entlang der Route zur Reisekostenkalkulation.<br /><strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. f DSGVO. EU-Anbieter.</p>
+
+            <h3 className="text-xl font-semibold mb-2">Resend (E-Mail-Versand)</h3>
+            <p className="mb-4"><strong>Anbieter:</strong> Resend Inc. (USA).<br /><strong>Verarbeitete Daten:</strong> E-Mail-Adressen der Empfänger sowie die Inhalte der versendeten Nachrichten (z.&nbsp;B. Rechnungen, Benachrichtigungen).<br /><strong>Zweck:</strong> transaktionaler E-Mail-Versand.<br /><strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. b DSGVO; für die Übermittlung in die USA gelten EU-Standardvertragsklauseln (SCC).</p>
+
+            <h3 className="text-xl font-semibold mb-2">Ihre in der App gespeicherten Daten einsehen &amp; löschen</h3>
+            <p className="mb-4">Der KI-Assistent „Hufi" speichert zur Personalisierung bestimmte Informationen über Sie und Ihren Betrieb. Sie können diese gespeicherten Inhalte jederzeit in der App unter <strong>Einstellungen → KI</strong> bzw. direkt unter <strong>„/hufi/memory"</strong> einsehen und löschen (Art. 15 und Art. 17 DSGVO).</p>
           </div>
 
           <div className="pt-4 text-sm border-t border-white/10 flex flex-col gap-2">

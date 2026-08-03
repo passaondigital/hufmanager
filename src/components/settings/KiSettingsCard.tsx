@@ -8,6 +8,7 @@ import { useKiSettings } from "@/hooks/useKiSettings";
 import { useHufiTTS } from "@/hooks/useHufiTTS";
 import { toast } from "sonner";
 import { ulget, ulset, ulremove, USER_STORAGE_KEYS } from "@/lib/user-storage";
+import { Link } from "react-router-dom";
 
 export function KiSettingsCard({ userId = "" }: { userId?: string }) {
   const { kiEnabled, isLoading, setKiEnabled, isToggling } = useKiSettings();
@@ -203,6 +204,9 @@ export function KiSettingsCard({ userId = "" }: { userId?: string }) {
             <p>
               Du kannst KI-Features jederzeit deaktivieren. Bereits gespeicherte Ergebnisse bleiben erhalten.
             </p>
+            <Button asChild variant="outline" size="sm" className="mt-2 h-8 text-xs">
+              <Link to="/hufi/memory">Was Hufi über dich gespeichert hat — ansehen &amp; löschen</Link>
+            </Button>
           </div>
         </div>
       </CardContent>

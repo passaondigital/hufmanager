@@ -224,8 +224,12 @@ const HUFI_TOOLS = [
 
 async function fetchWeather(lat: number, lon: number): Promise<string | null> {
   try {
+    // DSGVO/Datenminimierung: nur grobe Region an den externen Wetterdienst senden,
+    // niemals die exakten GPS-Koordinaten. 1 Nachkommastelle ≈ Stadtebene (~11 km).
+    const coarseLat = Math.round(lat * 10) / 10;
+    const coarseLon = Math.round(lon * 10) / 10;
     const res = await fetch(
-      `https://wttr.in/${lat},${lon}?format=j1`,
+      `https://wttr.in/${coarseLat},${coarseLon}?format=j1`,
       { headers: { "User-Agent": "HufManager/2.5" }, signal: AbortSignal.timeout(3000) },
     );
     if (!res.ok) return null;
@@ -579,7 +583,7 @@ async function loadLightContext(userId: string, supabase: ReturnType<typeof crea
   const in7   = new Date(Date.now() +  7 * 86_400_000).toISOString().slice(0, 10);
 
   const [profileRes, apptTodayRes, invoiceRes, memoryRes, bhsSubsRes] = await Promise.allSettled([
-    supabase.from("profiles").select("full_name, user_type").eq("id", userId).single(),
+    supabase.from("profiles").select("full_name, user_type, profession_type").eq("id", userId).single(),
     supabase.from("appointments")
       .select("id,date,time,status,horse_id,client_id,horses(id,name,eqid),client:profiles!client_id(id,full_name,readable_id)")
       .eq("provider_id", userId).gte("date", today).lte("date", in7)
@@ -610,7 +614,80 @@ async function loadLightContext(userId: string, supabase: ReturnType<typeof crea
   interface BhsSubRow { interval_weeks: number; zone: number; monthly_price: number; status: string; next_service_date: string | null; horses: unknown; }
   const bhsSubs: BhsSubRow[] = bhsSubsRes.status === "fulfilled" && bhsSubsRes.value.data ? (bhsSubsRes.value.data as BhsSubRow[]) : [];
 
-  return { userName: profile?.full_name as string|null ?? null, userType: profile?.user_type as string|null ?? null, appts, unpaidCount, memories, bhsSubs };
+  return { userName: profile?.full_name as string|null ?? null, userType: profile?.user_type as string|null ?? null, professionType: profile?.profession_type as string|null ?? null, appts, unpaidCount, memories, bhsSubs };
+}
+
+// ── Berufsprofile: Leistungen / Materialien / Workflow pro Beruf ───────────────
+// Server-seitiges Pendant zu src/lib/profession-config.ts + PROFESSION_5A.
+const PROFESSION_PROFILES: Record<string, { label: string; services: string; materials: string; workflow: string }> = {
+  hoof_care: {
+    label: "Hufbearbeiter / Hufpfleger",
+    services: "Barhufe/Natürliche Hufpflege, Beschlag (Eisen), Klebebeschlag (Composite), Hufschutz, Trachtenkeil, Spezialbeschlag",
+    materials: "Klemmplatten (E4/E6/E8), UV-Kleber, Glasfaser-Patches, Hufeisen (Stahl/Alu), Nägel, Laschen, Hufschuhe, Hufversiegelung, Hufmesser, Hufbalsam",
+    workflow: "1.AUFNAHME: Pferd/Kunde anlegen, Erstbefund · 2.ANGEBOT: Leistungspaket (Natur/Beschlag/Klebe) · 3.AUFTRAG: Termin, Tour-Route · 4.ABRECHNUNG: Rechnung aus Termin+Materialien · 5.ANALYSE: Huf-Entwicklung, Wirtschaftlichkeit",
+  },
+  farrier: {
+    label: "Hufschmied / Beschlagschmied",
+    services: "Handgeschmiedeter Beschlag, Ortho-Beschlag, Eisen zurichten, Nageln, Klebebeschlag",
+    materials: "Roheisen, Schmiedekohle, Borax, Hufeisen-Rohlinge, Nägel (E-Nägel), Stollen, Herzstollen",
+    workflow: "1.AUFNAHME: Pferd, Klauenformular · 2.ANGEBOT: Standard/Ortho/Sport · 3.AUFTRAG: Schmiedebesuch · 4.ABRECHNUNG: Eisen+Arbeit · 5.ANALYSE: Beschlags-Intervalle",
+  },
+  osteopath: {
+    label: "Osteopath / Tierheilpraktiker",
+    services: "Osteopathische Behandlung, Cranio-Sacrale Therapie, Faszienmobilisation, Wirbelsäulenbehandlung",
+    materials: "Therapieöl, Handtücher, Dokumentationsformulare",
+    workflow: "1.AUFNAHME: Anamnese · 2.ANGEBOT: Therapieplan · 3.AUFTRAG: Behandlungstermin · 4.ABRECHNUNG: Behandlung · 5.ANALYSE: Therapieerfolg",
+  },
+  physiotherapist: {
+    label: "Physiotherapeut",
+    services: "Physiotherapie, Magnetfeldtherapie, Laser, Massage, Kinesiotaping",
+    materials: "Tape, Elektroden, Lasergerät, Massageöl",
+    workflow: "1.AUFNAHME: Befundaufnahme · 2.ANGEBOT: Therapieplan · 3.AUFTRAG: Behandlung · 4.ABRECHNUNG: Therapieleistung · 5.ANALYSE: Fortschritt",
+  },
+  saddler: {
+    label: "Sattler",
+    services: "Sattelanpassung, Sattelreparatur, Neupolsterung, Lederarbeit, Gurte",
+    materials: "Leder, Wolle, Schaumstoff, Nähgarn, Schnallen, Klett, Lederöl",
+    workflow: "1.AUFNAHME: Rücken-Scan · 2.ANGEBOT: Anpassungs-/Neuanfertigung · 3.AUFTRAG: Werkstatt/Hausbesuch · 4.ABRECHNUNG: Material+Arbeit · 5.ANALYSE: Auftragsverlauf",
+  },
+  vet_mobile: {
+    label: "Mobiler Tierarzt",
+    services: "Impfung, Blutentnahme, Sedierung, Wundversorgung, Zahnbehandlung (Equine), Ultraschall",
+    materials: "Impfstoffe, Spritzen, Kanülen, Sedativa, Antibiotika, Verbandsmaterial",
+    workflow: "1.AUFNAHME: Patientenakte · 2.ANGEBOT: Behandlungsplan · 3.AUFTRAG: Hausbesuch · 4.ABRECHNUNG: Behandlung+Medikamente · 5.ANALYSE: Bestandsführung, GOT-Abrechnung",
+  },
+  dentist: {
+    label: "Equine Dentist / Pferdezahnarzt",
+    services: "Zahnkontrolle, Raspen, Hakenzähne, Wolfszähne, Sedierung",
+    materials: "Raspeln, Mundspülungen, Sedativa",
+    workflow: "1.AUFNAHME: Gebiss-Foto · 2.ANGEBOT: Jahresplan · 3.AUFTRAG: Behandlungstermin · 4.ABRECHNUNG: Leistung+Sedierung · 5.ANALYSE: Zahnentwicklung",
+  },
+  riding_instructor: {
+    label: "Reitlehrer / Trainer",
+    services: "Einzel-Reitstunde, Gruppenunterricht, Turniervorbereitung, Longier-Stunde",
+    materials: "Longe, Kappzaum, Seitenzügel",
+    workflow: "1.AUFNAHME: Reit-Niveau · 2.ANGEBOT: Kurspakete · 3.AUFTRAG: Stundenplan · 4.ABRECHNUNG: Stunden/Pakete · 5.ANALYSE: Schüler-Fortschritt",
+  },
+  massage: {
+    label: "Pferde-Masseur/in",
+    services: "Klassische Massage, Lymphdrainage, Faszientechniken, Dehnung",
+    materials: "Massageöl, Handtücher, Faszienrolle",
+    workflow: "1.AUFNAHME: Spannungsbefund · 2.ANGEBOT: Behandlungspaket · 3.AUFTRAG: Termin · 4.ABRECHNUNG: Behandlung · 5.ANALYSE: Verlauf",
+  },
+};
+
+function buildProfessionBlock(professionType: string | null): string {
+  const prof = professionType ? PROFESSION_PROFILES[professionType] : null;
+  if (!prof) return "";
+  return [
+    "=== BERUFSPROFIL ===",
+    `Beruf des Nutzers: ${prof.label}`,
+    `Typische Leistungen: ${prof.services}`,
+    `Typische Materialien: ${prof.materials}`,
+    `Workflow: ${prof.workflow}`,
+    "WICHTIG: Richte Vorschläge, Terminologie und Leistungs-/Materialnamen an diesem Beruf aus. Verwende NICHT huf-spezifische Begriffe (Beschlag, Hufeisen), wenn der Beruf ein anderer ist.",
+    "=== ENDE BERUFSPROFIL ===",
+  ].join("\n");
 }
 
 function buildLightContextBlock(ctx: Awaited<ReturnType<typeof loadLightContext>>, voiceMode: boolean, route?: string): string {
@@ -851,7 +928,7 @@ serve(async (req) => {
   const [ctxResult, weatherStr] = await Promise.allSettled([
     loadLightContext(user.id, supabase).catch((e) => {
       console.warn(`[hufi-agent][${requestId}] Kontext-Fehler:`, e);
-      return { userName: null, userType: null, appts: [], unpaidCount: 0, memories: [], bhsSubs: [] };
+      return { userName: null, userType: null, professionType: null, appts: [], unpaidCount: 0, memories: [], bhsSubs: [] };
     }),
     clientLocation?.lat && clientLocation?.lon
       ? fetchWeather(clientLocation.lat, clientLocation.lon)
@@ -860,17 +937,22 @@ serve(async (req) => {
 
   const ctx = ctxResult.status === "fulfilled"
     ? ctxResult.value
-    : { userName: null, userType: null, appts: [], unpaidCount: 0, memories: [], bhsSubs: [] };
+    : { userName: null, userType: null, professionType: null, appts: [], unpaidCount: 0, memories: [], bhsSubs: [] };
   const weather = weatherStr.status === "fulfilled" ? weatherStr.value : null;
 
   const contextBlock = buildLightContextBlock(ctx, voiceMode, route);
   const roleInstr = ROLE_INSTRUCTIONS[ctx.userType ?? ""] ?? "";
   const horseKnowledge = getHorseKnowledgeForRole(ctx.userType);
+  // Berufsprofil nur für Dienstleister/Angestellte (nicht für Pferdebesitzer/Partner).
+  const professionBlock = (ctx.userType === "provider" || ctx.userType === "employee")
+    ? buildProfessionBlock(ctx.professionType)
+    : "";
 
   const systemPrompt = [
     HUFI_BASE,
     roleInstr,
     horseKnowledge,
+    professionBlock || null,
     `Aktuelle Zeit: ${localTimeStr}`,
     weather ? `Aktuelles Wetter: ${weather}` : null,
     contextBlock,

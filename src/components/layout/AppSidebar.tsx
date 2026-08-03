@@ -64,6 +64,8 @@ import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfessionConfig } from "@/hooks/useProfessionConfig";
+import { professionHasFeature } from "@/lib/profession-config";
 import {
   Collapsible,
   CollapsibleContent,
@@ -131,6 +133,9 @@ interface SubMenuItem {
   badge?: number;
   description?: string;
   isBeta?: boolean;
+  // Berufsspezifisches Feature-Gate (siehe profession-config.ts). Ohne featureKey
+  // ist der Eintrag universell und immer sichtbar.
+  featureKey?: string;
 }
 
 interface MainMenuItem {
@@ -153,7 +158,11 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
   const { data: unreadMessagesCount = 0 } = useUnreadMessagesCount();
   const { role, user } = useAuth();
   const { isFeatureVisible } = useSubscription();
-  
+  const profession = useProfessionConfig();
+  // Universelle Einträge (ohne featureKey) immer zeigen; berufsspezifische nur,
+  // wenn der Beruf das Feature freischaltet.
+  const hasFeature = (key?: string) => !key || professionHasFeature(profession, key);
+
   const isAdmin = role === "admin";
   const canSeeAboMatrix = user?.email && STEALTH_EMAILS.includes(user.email);
   const { isPro } = useSubscription();
@@ -190,7 +199,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       subItems: [
         { title: "Kunden", url: "/kunden", icon: Users, description: "#kid verwalten" },
         { title: "Pferde", url: "/pferde", icon: UserPlus, description: "#eqid verwalten" },
-        { title: "BHS Balance", url: "/bhs-balance", icon: Repeat2, description: "Pro-Pferd Abo-Cockpit" },
+        { title: "BHS Balance", url: "/bhs-balance", icon: Repeat2, description: "Pro-Pferd Abo-Cockpit", featureKey: "bhs" },
       ]
     },
     { 
@@ -200,8 +209,8 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       subItems: [
         { title: "Kalender", url: "/kalender", icon: Calendar, description: "Termine planen" },
         { title: "Tages-Cockpit", url: "/tour", icon: Calendar, description: "Tour · Zeit · km · Sprit" },
-        { title: "HufCam Pro", url: "/work-mode?tab=hufcam", icon: Camera, description: "Foto-Dokumentation" },
-        { title: "Hufanalyse", url: "/work-mode?tab=analyse", icon: FileCheck, description: "LTZ-Analyse-Bögen" },
+        { title: "HufCam Pro", url: "/work-mode?tab=hufcam", icon: Camera, description: "Foto-Dokumentation", featureKey: "hufcam" },
+        { title: "Hufanalyse", url: "/work-mode?tab=analyse", icon: FileCheck, description: "LTZ-Analyse-Bögen", featureKey: "analyse" },
         { title: "Feedback", url: "/auffassen/feedback", icon: Star, description: "Bewertungen sammeln" },
       ]
     },
@@ -221,16 +230,17 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
   ];
 
   // Erweiterungen - Addon modules (locked based on feature flags)
+  // featureKey gated berufsspezifisch (siehe profession-config.ts); ohne featureKey universell.
   const addonItems = [
     { title: "Hufi Business", icon: DollarSign, locked: false, url: "/business" },
     { title: "Kundenapp", icon: Smartphone, locked: !isPro, url: "/kunden", proLock: true },
     { title: "Mein Office", icon: FileText, locked: !isFeatureVisible('module_office'), url: "/mein-office" },
-    { title: "Lager", icon: Warehouse, locked: !isFeatureVisible('beta_features'), url: "/lager" },
+    { title: "Lager", icon: Warehouse, locked: !isFeatureVisible('beta_features'), url: "/lager", featureKey: "lager" },
     { title: "Mitarbeiter", icon: UsersRound, locked: !isFeatureVisible('module_team'), url: "/team" },
-    { title: "Hufi Connect", icon: Link2, locked: !isFeatureVisible('module_network'), url: "/hufi-connect" },
+    { title: "Hufi Connect", icon: Link2, locked: !isFeatureVisible('module_network'), url: "/hufi-connect", featureKey: "connect" },
     { title: "AutoFlow", icon: Zap, locked: false, url: "/autoflow" },
     { title: "E-Mail Marketing", icon: Mail, locked: false, url: "/email-marketing" },
-  ];
+  ].filter((item) => hasFeature((item as { featureKey?: string }).featureKey));
 
   // Check if a submenu contains the active route
   const isMenuActive = (item: MainMenuItem) => {
@@ -344,7 +354,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         </CollapsibleTrigger>
         {!collapsed && (
           <CollapsibleContent className="space-y-1 pt-1">
-            {item.subItems.map((sub) => (
+            {item.subItems.filter((sub) => hasFeature(sub.featureKey)).map((sub) => (
               <SubNavItem key={sub.url} item={sub} />
             ))}
           </CollapsibleContent>
@@ -431,6 +441,16 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       </div>
 
       <ScrollArea className="flex-1 py-4">
+        {/* Berufs-Identität */}
+        {!collapsed && (
+          <div className="px-3 mb-3">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/5 border border-primary/10">
+              <span className="text-base leading-none">{profession.emoji}</span>
+              <span className="text-sm font-medium text-sidebar-foreground/80 truncate">{profession.label}</span>
+            </div>
+          </div>
+        )}
+
         {/* Dashboard Quick Access */}
         <div className="px-3 mb-2">
           <NavLink
