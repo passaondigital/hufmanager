@@ -21,8 +21,8 @@ const SECTION_ICONS: Record<BriefingSection["type"], typeof CalendarDays> = {
 
 export function ProactiveBriefing({ payload, onDismiss }: Props) {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { speak, cancel, isSupported } = useHufiTTS(user?.id ?? "");
+  const { user, role } = useAuth();
+  const { speak, cancel, isSupported } = useHufiTTS(user?.id ?? "", role);
 
   // Once-per-Tag-Markierung passiert bereits in MobileShell.tsx, bevor der
   // Payload gebaut wird -- ein zweiter Aufruf hier war Teil der State-

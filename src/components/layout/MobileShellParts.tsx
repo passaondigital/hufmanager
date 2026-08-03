@@ -10,6 +10,7 @@ import type { HufiIntent } from "@/lib/hufi-intent";
 import type { HufiTask } from "@/lib/hufi-task-engine";
 import { useHufiVoiceCredits, formatMinSec } from "@/hooks/useHufiVoiceCredits";
 import { isWakeWordEnabled } from "@/config/featureFlags";
+import { HufiMarkdown } from "@/components/HufiMarkdown";
 
 // ── Voice-Guthaben-Badge (Header) ─────────────────────────────────────────────
 
@@ -337,8 +338,6 @@ interface MessagesProps {
   activeIntent: HufiIntent | null;
   onMsgAction: (actionKey: string, msg: ChatMessage) => void;
   onDismissPrompt: (ts: number) => void;
-  showIdleCard?: boolean;
-  pendingGreeting?: boolean;
   onTaskConfirm?: (taskId: string, stepId: string) => void;
   onTaskCancel?: (taskId: string) => void;
 }
@@ -351,8 +350,6 @@ export function MobileShellMessages({
   activeIntent,
   onMsgAction,
   onDismissPrompt,
-  showIdleCard,
-  pendingGreeting,
   onTaskConfirm,
   onTaskCancel,
 }: MessagesProps) {
@@ -360,70 +357,6 @@ export function MobileShellMessages({
 
   return (
     <>
-      {/* Idle-Card — kein ChatMessage, nur wenn Chat leer und ruhig */}
-      {showIdleCard && messages.length === 0 && !searching && !responding && !transcribing && (
-        <div style={{
-          display: "flex", flexDirection: "column", alignItems: "center",
-          padding: "32px 16px 8px", gap: 16, textAlign: "center",
-        }}>
-          {/* Hufi Pferd */}
-          <img
-            src="/hufi-splash.webp"
-            alt=""
-            style={{ width: 64, height: 64, objectFit: "contain", opacity: 0.9 }}
-          />
-
-          {/* Wave im Ruhemodus */}
-          <HufiVoiceWave
-            color="#F97316"
-            barCount={7}
-            height={28}
-            paused={true}
-          />
-
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#1A1A1A", letterSpacing: "-0.02em", lineHeight: 1, marginTop: -4 }}>
-            Bereit.
-          </div>
-          <div style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.6, maxWidth: 220 }}>
-            {pendingGreeting ? (
-              <>Tippe auf <span style={{ color: "#F97316", fontWeight: 600 }}>„Hören"</span> — Hufi begrüßt dich.</>
-            ) : (
-              <>Sag mir, was du erledigen möchtest.</>
-            )}
-          </div>
-
-          {/* Schnellziele */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%", maxWidth: 300, marginTop: 4 }}>
-            {[
-              { label: "Nächster Termin", route: "/kalender" },
-              { label: "Offene Rechnungen", route: "/rechnungen" },
-              { label: "Heute planen", route: "/kalender" },
-              { label: "FAQ & Hilfe", route: "/hilfe" },
-            ].map((q) => (
-              <button
-                key={q.label}
-                onClick={() => navigate(q.route)}
-                style={{
-                  background: "rgba(249,115,22,0.06)",
-                  border: "1px solid rgba(249,115,22,0.18)",
-                  borderRadius: 14,
-                  padding: "13px 16px",
-                  minHeight: 44,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "#F97316",
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                  textAlign: "center",
-                  width: "100%",
-                }}
-              >
-                {q.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
       {messages.map((msg) => (
         <div
           key={msg.ts.toString()}
@@ -452,8 +385,8 @@ export function MobileShellMessages({
               ? "0 4px 16px rgba(249,115,22,0.22)"
               : "0 2px 8px rgba(0,0,0,0.04)",
           }}>
-            <div style={{ fontSize: 14, color: msg.role === "user" ? "#FFFFFF" : "#1A1A1A", lineHeight: 1.5, whiteSpace: "pre-line" }}>
-              {msg.text}
+            <div style={{ fontSize: 14, color: msg.role === "user" ? "#FFFFFF" : "#1A1A1A", lineHeight: 1.5, overflowWrap: "break-word", wordBreak: "break-word" }}>
+              <HufiMarkdown text={msg.text} />
             </div>
 
             {msg.disclaimerCategory && (

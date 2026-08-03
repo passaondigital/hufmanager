@@ -109,7 +109,7 @@ const ROWS: SettingRow[] = [
   },
 ];
 
-export function HufiPermissionsSettings({ userId = "" }: { userId?: string }) {
+export function HufiPermissionsSettings({ userId = "", role }: { userId?: string; role?: string | null }) {
   const [statuses, setStatuses] = useState<Record<string, PermStatus | boolean>>({});
   const [requesting, setRequesting] = useState<string | null>(null);
 
@@ -197,7 +197,7 @@ export function HufiPermissionsSettings({ userId = "" }: { userId?: string }) {
   return (
     <div style={{ padding: "0 0 24px" }}>
       {/* ── Stimmen-Auswahl ── */}
-      <HufiVoiceSelector userId={userId} />
+      <HufiVoiceSelector userId={userId} role={role} />
 
       <div style={{ height: 1, background: "#F0F0F0", margin: "20px 0 18px" }} />
 

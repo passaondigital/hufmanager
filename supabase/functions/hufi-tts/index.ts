@@ -45,6 +45,22 @@ serve(async (req) => {
       });
     }
 
+    // TEMP: B2C-Sperre für Premium-Sprachausgabe (Produktentscheidung
+    // 2026-08-02, siehe hufi_b2c_b2b_strategy-Memory) — Pferdebesitzer
+    // bekommen nur die offene Piper-Stimme, keine ElevenLabs-Stimmen, bis
+    // eine endgültige Entscheidung getroffen ist. Entfernen sobald final.
+    const { data: roleRow } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (roleRow?.role === "client") {
+      return new Response(
+        JSON.stringify({ error: "Premium-Sprachausgabe ist für Pferdebesitzer-Konten aktuell nicht verfügbar", code: "b2c_premium_voice_locked" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     // ── Request-Body ───────────────────────────────────────────────────────
     const { text, voice_id, model_id = "eleven_multilingual_v2" } = await req.json();
 
