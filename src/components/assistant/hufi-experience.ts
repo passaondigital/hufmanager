@@ -1,4 +1,5 @@
 import type { HufiPhase, SurfaceMode } from "@/components/assistant-lab/HufiAssistantState";
+import { momentHintLabel, type HufiMomentType } from "@/lib/hufi-moment";
 
 // Reale Content-Varianten für HufiAssistantExperience -- Pendant zu
 // ContentView aus HufiScenarios.ts, aber ohne MOCK_*-Daten. Jede Variante
@@ -7,6 +8,7 @@ export type RealContentView =
   | null
   | { kind: "transcript"; text: string; active: boolean }
   | { kind: "answer"; text: string }
+  | { kind: "hint"; text: string }
   | { kind: "questioning"; text: string }
   | {
       kind: "confirming";
@@ -39,6 +41,10 @@ export interface HufiExperienceInputs {
   confirmationOutcome: { success: boolean; message: string } | null;
   micError: string | null;
   agentError: string | null;
+  // Rein lokaler, sicherer UI-Hinweis für die kurze Wartezeit auf die echte
+  // Antwort -- siehe hufi-moment.ts. Entscheidet nichts, wird von jeder
+  // echten Antwort/Rückfrage/Bestätigung sofort verdrängt (Prioritäten oben).
+  momentHint: HufiMomentType | null;
   taskIcon: (taskType: string) => string;
   taskLabel: (taskType: string) => string;
   onConfirm: () => void;
@@ -53,7 +59,7 @@ export function deriveHufiExperience(input: HufiExperienceInputs): HufiExperienc
   const {
     orbState, justWoke, liveTranscript, pendingClarification, answerVisible, lastAnswerText,
     isTtsSpeaking, activeConfirmation, confirming, confirmationOutcome, micError, agentError,
-    taskIcon, taskLabel, onConfirm, onReject,
+    momentHint, taskIcon, taskLabel, onConfirm, onReject,
   } = input;
 
   // Höchste Priorität: sichtbare, echte Fehler -- Hufi darf nie stillschweigend
@@ -124,7 +130,11 @@ export function deriveHufiExperience(input: HufiExperienceInputs): HufiExperienc
   }
 
   if (orbState === "thinking") {
-    return { phase: "understanding", mode: "conversation", content: null };
+    return {
+      phase: "understanding",
+      mode: "conversation",
+      content: momentHint ? { kind: "hint", text: momentHintLabel(momentHint) } : null,
+    };
   }
 
   if (justWoke) {

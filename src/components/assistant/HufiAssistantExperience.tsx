@@ -15,6 +15,7 @@ import { HufiSuccessState } from "@/components/assistant-lab/HufiSuccessState";
 import { HUFI_PHASE_META, timeSalutation } from "@/components/assistant-lab/HufiAssistantState";
 import { HufiOrganicOrb } from "./HufiOrganicOrb";
 import type { HufiExperienceUi } from "./hufi-experience";
+import { HUFI_ENTRY_PROMPTS } from "@/lib/hufi-copy";
 import "@/components/assistant-lab/hufi-lab.css";
 
 // Verstehen/Verarbeiten laufen laut den offiziellen Screen-Referenzen
@@ -43,6 +44,10 @@ export function HufiAssistantExperience({ ui, userName, insight, onWakeTap, onIn
   const { user } = useAuth();
   const { theme } = useTheme();
   const firstName = userName?.trim() ? userName.trim().split(" ")[0] : null;
+
+  // Einmal pro Mount ausgewählt (nicht bei jedem Render neu), damit der
+  // Text nicht während des Lesens wechselt.
+  const [entryPrompt] = useState(() => HUFI_ENTRY_PROMPTS[Math.floor(Math.random() * HUFI_ENTRY_PROMPTS.length)]);
 
   const [inputValue, setInputValue] = useState("");
   const submitInput = () => {
@@ -85,6 +90,7 @@ export function HufiAssistantExperience({ ui, userName, insight, onWakeTap, onIn
             {timeSalutation()}{firstName ? `, ${firstName}` : ""}.
           </h1>
           <p style={{ margin: "6px 0 0", fontSize: 13.5, lineHeight: 1.5, color: "var(--hlab-fg-60)" }}>{insight}</p>
+          <p style={{ margin: "10px 0 0", fontSize: 13, lineHeight: 1.5, color: "var(--hlab-fg-40)", fontStyle: "italic" }}>{entryPrompt}</p>
         </>
       );
     }
@@ -93,6 +99,9 @@ export function HufiAssistantExperience({ ui, userName, insight, onWakeTap, onIn
     }
     if (content?.kind === "answer") {
       return <HufiTranscript text={content.text} active={false} label="Hufi sagt" />;
+    }
+    if (content?.kind === "hint") {
+      return <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: "var(--hlab-fg-60)", fontStyle: "italic" }}>{content.text}</p>;
     }
     const meta = HUFI_PHASE_META[phase];
     return (
@@ -106,7 +115,7 @@ export function HufiAssistantExperience({ ui, userName, insight, onWakeTap, onIn
   };
 
   const renderContent = () => {
-    if (!content || content.kind === "transcript" || content.kind === "answer") return null;
+    if (!content || content.kind === "transcript" || content.kind === "answer" || content.kind === "hint") return null;
     switch (content.kind) {
       case "questioning":
         return <HufiQuestion text={content.text} />;
@@ -204,7 +213,7 @@ export function HufiAssistantExperience({ ui, userName, insight, onWakeTap, onIn
             </div>
           )}
 
-          {content && content.kind !== "transcript" && content.kind !== "answer" && (
+          {content && content.kind !== "transcript" && content.kind !== "answer" && content.kind !== "hint" && (
             <div
               className="hlab-content-wrap hlab-foreground-interactive"
               style={{ width: "100%", maxWidth: 340, display: "flex", flexDirection: "column", gap: 10, overflowY: "auto" }}

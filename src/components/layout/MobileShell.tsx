@@ -85,6 +85,7 @@ import {
 import { HufiAssistantCockpit } from "@/components/assistant/HufiAssistantCockpit";
 import { HufiAssistantExperience } from "@/components/assistant/HufiAssistantExperience";
 import { deriveHufiExperience } from "@/components/assistant/hufi-experience";
+import { detectMomentHint, type HufiMomentType } from "@/lib/hufi-moment";
 
 // Presence-Untertitel im Header: auf sehr schmalen Displays (< 400px, siehe
 // .hufi-subtitle-short/-long unten) reicht der Platz neben Logo, Wetter,
@@ -127,6 +128,7 @@ export function MobileShell() {
   const [lastAnswerText, setLastAnswerText] = useState<string | null>(null);
   const [answerVisible, setAnswerVisible] = useState(false);
   const [agentError, setAgentError] = useState<string | null>(null);
+  const [momentHint, setMomentHint] = useState<HufiMomentType | null>(null);
   function triggerWake() {
     setJustWoke(true);
     // Eine neue echte Interaktion beginnt -- veraltete Bestätigungs-/Fehler-/
@@ -134,6 +136,7 @@ export function MobileShell() {
     // bleiben in einem alten Zustand, keine Doppel-Bestätigung möglich).
     setAnswerVisible(false);
     setAgentError(null);
+    setMomentHint(null);
     window.setTimeout(() => setJustWoke(false), 500);
   }
   // Dieselben echten Funktionen (confirmStep/cancelTask) wie in
@@ -1354,6 +1357,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
     const cleaned = stripWakeWord(text);
     if (!cleaned) return;
     triggerWake();
+    if (useExperiencePreview) setMomentHint(detectMomentHint(cleaned));
 
     // Voice-Loop: Stop-Phrase erkennen
     const STOP_PHRASES = /\b(stop|stopp|danke|tschüss|beenden|aufhören|genug|schluss)\b/i;
@@ -1877,6 +1881,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
           confirmationOutcome,
           micError,
           agentError,
+          momentHint,
           taskIcon: (t) => taskTypeIcon(t as AgentTaskType),
           taskLabel: (t) => taskTypeLabel(t as AgentTaskType),
           onConfirm: () => void experienceConfirm(),
