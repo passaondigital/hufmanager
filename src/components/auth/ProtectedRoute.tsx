@@ -75,10 +75,14 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     return <RouteLoader />;
   }
 
-  // Check for payment issues (only for providers)
+  // Zahlungsproblem bei laufendem Abo → Sperre (nur Provider)
   if (role === "provider" && status === "past_due") {
-    return <PaymentBlockedScreen />;
+    return <PaymentBlockedScreen variant="past_due" />;
   }
+  // Trial-Ablauf blockt NICHT: er wird über account_status='expired' als
+  // nicht-blockierender TrialPaywall-Banner gezeigt, Starter-Limits greifen
+  // automatisch. subscription_status='cancelled' bleibt echten Kündigungen
+  // vorbehalten und wird hier bewusst nicht (mehr) als Trial-Ablauf behandelt.
 
   // Check if user has allowed role
   if (allowedRoles && role && !allowedRoles.includes(role)) {

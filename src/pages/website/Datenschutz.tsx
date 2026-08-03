@@ -58,9 +58,8 @@ const Datenschutz = () => (
             <p className="mb-4">Die verantwortliche Stelle für die Datenverarbeitung auf dieser Website ist:</p>
             <p className="mb-4">
               Herr Pascal Schmid<br />
-              c/o Postflex #10643<br />
-              Emsdettener Str. 10<br />
-              48268 Greven<br />
+              Hauptstraße 19<br />
+              54426 Talling<br />
               <a href="https://hufiapp.de" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">www.hufiapp.de</a><br />
               <a href="mailto:kontakt@hufiapp.de" className="text-primary hover:underline">kontakt@hufiapp.de</a><br />
               Telefon: 015209007017<br />

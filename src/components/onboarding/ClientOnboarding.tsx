@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { FLAVOR_CONFIG } from "@/config/appFlavor";
 import { toast } from "sonner";
 
 interface ClientOnboardingProps {
@@ -62,7 +63,7 @@ export function ClientOnboarding({ onComplete }: ClientOnboardingProps) {
         <Sparkles className="h-10 w-10 text-primary" />
       </div>
       <h2 className="text-2xl font-bold text-foreground">
-        Willkommen bei HufManager!
+        Willkommen bei {FLAVOR_CONFIG.appName}!
       </h2>
       <p className="text-muted-foreground max-w-sm mx-auto">
         Hier hast du alles zu deinem Pferd im Blick.

@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { lazy } from "react";
 import { Navigate } from "react-router-dom";
 import { getPostLoginPath } from "@/lib/portal-user-detect";
+import { ACTIVE_FLAVOR } from "@/config/appFlavor";
 
 const WebsiteHome = lazy(() => import("@/pages/website/WebsiteHome"));
 
@@ -17,25 +18,24 @@ function isPWAStandalone(): boolean {
 
 const Index = () => {
   const { user, role, loading } = useAuth();
-  const hostname = window.location.hostname;
 
-  // hufmanager.de = statische Landing/Salespage (eigener Nginx-Block)
-  // app.hufmanager.de = die App → hier landen, direkt zur Auth/App
-  // hufiapp.de leitet per Nginx auf hufmanager.de weiter → kommt nie hier an
+  // Noch am Laden → nichts zeigen (AuthLoadingScreen in App.tsx übernimmt)
+  if (loading) return null;
 
-  // app.hufmanager.de → auth flow
-  // If logged in, redirect to role-specific home
-  if (!loading && user && role) {
+  // Eingeloggt → rollenspezifische Startseite
+  if (user && role) {
     return <Navigate to={getPostLoginPath(role, user.email)} replace />;
   }
 
-  // Not logged in on app subdomain → redirect to auth
-  if (!loading && !user) {
-    return <Navigate to="/auth" replace />;
+  // Nicht eingeloggt:
+  // - hufiapp.de im Browser → hochwertige Landingpage als Einstieg
+  // - installierte PWA (Homescreen) oder hufmanager-Flavor (app.hufmanager.de
+  //   ist die App-Subdomain, Salespage liegt auf hufmanager.de) → direkt zur Anmeldung
+  if (ACTIVE_FLAVOR === "hufiapp" && !isPWAStandalone()) {
+    return <WebsiteHome />;
   }
 
-  // Still loading → show nothing (AuthLoadingScreen in App.tsx handles this)
-  return null;
+  return <Navigate to="/auth" replace />;
 };
 
 export default Index;

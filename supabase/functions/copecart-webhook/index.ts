@@ -1120,10 +1120,24 @@ const handler = async (req: Request): Promise<Response> => {
           console.error("[copecart] Error creating business settings:", bsError.message);
         }
 
+        // Auto-provision feature_statuses — same logic as for existing users below
+        const featureMapNew = PLAN_FEATURE_MAP[subscriptionPlan];
+        if (featureMapNew) {
+          const { error: featureErrorNew } = await supabase
+            .from("profiles")
+            .update({ feature_statuses: featureMapNew })
+            .eq("id", userId);
+          if (featureErrorNew) {
+            console.error("[copecart] Feature flags update failed for new user:", featureErrorNew.message);
+          } else {
+            console.log("[copecart] Feature flags auto-provisioned for new user, plan:", subscriptionPlan);
+          }
+        }
+
         console.log("[copecart] New provider account created and configured successfully");
-        
-        return new Response(JSON.stringify({ 
-          success: true, 
+
+        return new Response(JSON.stringify({
+          success: true,
           message: "New provider account created",
           userId: userId,
         }), {

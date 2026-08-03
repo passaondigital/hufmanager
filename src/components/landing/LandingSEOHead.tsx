@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { FLAVOR_CONFIG } from "@/config/appFlavor";
 
 interface LandingSEOHeadProps {
   settings: {
@@ -164,7 +165,7 @@ export const LandingSEOHead = ({ settings, currentPage }: LandingSEOHeadProps) =
     }
 
     return () => {
-      document.title = "Hufi";
+      document.title = FLAVOR_CONFIG.appName;
       const ldScript = document.querySelector("#landing-jsonld");
       if (ldScript) ldScript.remove();
     };

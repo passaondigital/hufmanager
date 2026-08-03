@@ -43,7 +43,7 @@ export interface AdminInvoiceData {
 const DEFAULT_ISSUER: IssuerData = {
   name: "Pascal Christian Schmid",
   company: "Hufi",
-  address: "Pascal Schmid c/o Postflex #10643, Emsdettener Str. 10, 48268 Greven",
+  address: "Pascal Schmid, Hauptstraße 19, 54426 Talling",
   email: "kontakt@hufiapp.de",
   phone: "0152 0900 7017",
   iban: "DE66 2020 2080 0002 8383 704",

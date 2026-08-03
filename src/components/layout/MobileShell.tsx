@@ -192,7 +192,24 @@ export function MobileShell() {
     setHeyHufiEnabled(SR_SUPPORTED && ulget(user.id, USER_STORAGE_KEYS.HEY_HUFI) === "1");
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── First-run consent gate (HufiApp-Onboarding, im HufManager deaktiviert) ──
+  // ── Standort einmalig täglich holen (nur mit KI-Consent) ─────────────────
+  useEffect(() => {
+    if (!user?.id || !navigator.geolocation) return;
+    if (ulget(user.id, USER_STORAGE_KEYS.KI_CONSENT) !== "granted") return;
+    const today = new Date().toISOString().slice(0, 10);
+    if (ulget(user.id, "hufi_last_geo_date") === today) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        ulset(user.id, USER_STORAGE_KEYS.USER_LAT, String(pos.coords.latitude));
+        ulset(user.id, USER_STORAGE_KEYS.USER_LON, String(pos.coords.longitude));
+        ulset(user.id, "hufi_last_geo_date", today);
+      },
+      () => {},
+      { timeout: 5000, maximumAge: 3_600_000 },
+    );
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── First-run consent gate (overrides legacy DSGVO modal for new users) ────
   useEffect(() => {
     if (!user?.id) return;
     if (!hasCompletedFirstRun(user.id)) {
@@ -1037,12 +1054,16 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
         role: (m.role === "user" ? "user" : "assistant") as "user" | "assistant",
         content: m.text,
       }));
+      const _lat = ulget(user?.id ?? "", USER_STORAGE_KEYS.USER_LAT);
+      const _lon = ulget(user?.id ?? "", USER_STORAGE_KEYS.USER_LON);
       const resp = await askHufiAgent({
         text,
         voiceMode: false,
         history: agentHistory,
         route: window.location.pathname,
         mode: "action",
+        clientTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        clientLocation: _lat && _lon ? { lat: parseFloat(_lat), lon: parseFloat(_lon) } : undefined,
       });
       if (resp.actionPlan?.taskType) {
         taskType    = resp.actionPlan.taskType;
@@ -1416,12 +1437,16 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
           role: (m.role === "user" ? "user" : "assistant") as "user" | "assistant",
           content: m.text,
         }));
+      const lat_ = ulget(user?.id ?? "", USER_STORAGE_KEYS.USER_LAT);
+      const lon_ = ulget(user?.id ?? "", USER_STORAGE_KEYS.USER_LON);
       const resp = await askHufiAgent({
         text: cleaned,
         voiceMode,
         history: agentHistory,
         route: window.location.pathname,
         clientTimestamp: new Date().toISOString(),
+        clientTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        clientLocation: lat_ && lon_ ? { lat: parseFloat(lat_), lon: parseFloat(lon_) } : undefined,
       });
       addMsg({ role: "ai", text: resp.answer, ts: Date.now() + 1 });
       learnFromInteraction(user.id, cleaned, resp.answer, "confirmed", sessionId.current);

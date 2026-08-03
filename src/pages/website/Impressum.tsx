@@ -12,9 +12,8 @@ const Impressum = () => (
             <p>
               Pascal Schmid<br />
               Barhufserviceschmid<br />
-              Emsdettener Str. 10<br />
-              c/o Postflex #10643<br />
-              48268 Greven
+              Hauptstraße 19<br />
+              54426 Talling
             </p>
           </div>
 
@@ -46,9 +45,8 @@ const Impressum = () => (
             <h2 className="text-xl font-semibold text-white mb-2">Redaktionell verantwortlich</h2>
             <p>
               Pascal Schmid<br />
-              c/o Postflex #10643<br />
-              Emsdettener Str. 10<br />
-              48268 Greven
+              Hauptstraße 19<br />
+              54426 Talling
             </p>
           </div>
 

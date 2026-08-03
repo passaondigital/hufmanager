@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FLAVOR_CONFIG } from "@/config/appFlavor";
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronRight, ChevronLeft, MapPin, Bell, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -141,8 +142,8 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
     <div key="welcome" className="text-center space-y-6">
       <div className="relative mx-auto w-32 h-32">
         <img 
-          src="/hufmanager-logo.png"
-          alt="HufManager"
+          src={FLAVOR_CONFIG.logo}
+          alt={FLAVOR_CONFIG.appName}
           className="w-full h-full object-contain"
         />
         <motion.div
@@ -156,7 +157,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
       </div>
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-foreground">
-          Willkommen bei HufManager!
+          Willkommen bei {FLAVOR_CONFIG.appName}!
         </h2>
         <p className="text-muted-foreground text-lg">
           Dein digitales Büro ist bereit.
@@ -314,8 +315,8 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
     <div key="welcome" className="text-center space-y-6">
       <div className="relative mx-auto w-32 h-32">
         <img 
-          src="/hufmanager-logo.png"
-          alt="HufManager"
+          src={FLAVOR_CONFIG.logo}
+          alt={FLAVOR_CONFIG.appName}
           className="w-full h-full object-contain"
         />
         <motion.div
@@ -329,7 +330,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
       </div>
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-foreground">
-          Willkommen bei HufManager!
+          Willkommen bei {FLAVOR_CONFIG.appName}!
         </h2>
         <p className="text-muted-foreground text-lg">
           Die Daten deines Pferdes – immer griffbereit.
