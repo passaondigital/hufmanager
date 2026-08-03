@@ -49,8 +49,11 @@ const HINT_PATTERNS: Array<{ type: HufiMomentType; re: RegExp }> = [
   { type: "appointment",   re: /\btermin/i },
   { type: "horse",         re: /\b(ich (bin|steh|stehe)\s+(bei|an))\b/i },
   { type: "customer",      re: /\b(kunde|kundin|frau \w+|herr \w+|gesprochen mit)\b/i },
-  { type: "agreement",     re: /\b(vereinbart|abgemacht|besprochen)\b/i },
+  // Vor "agreement" geprüft: "was hatten wir vereinbart"/"wo war das" sind
+  // explizite Rückfragen an die Erinnerung (search_memory-Tool), nicht nur
+  // die allgemeinere Kategorie "eine Vereinbarung wurde erwähnt".
   { type: "search_memory", re: /\b(wo war|wie war|was hatten wir|haben wir)\b/i },
+  { type: "agreement",     re: /\b(vereinbart|abgemacht|besprochen)\b/i },
   { type: "uncertainty",   re: /\b(ich glaube|ich dachte|müsste eigentlich)\b/i },
   { type: "risk_question", re: /\bwas (ist,? )?wenn\b/i },
   { type: "general_overwhelm", re: /\b(weiß (gerade )?nicht,? wo|alles so kompliziert|hätte ich nur)\b/i },

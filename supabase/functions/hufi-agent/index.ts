@@ -78,6 +78,7 @@ Tool-Nutzung:
 - get_horse_record → bei Pferdeakte-Anfragen
 - get_client_overview → bei Kunden-Anfragen
 - send_notification → wenn Benachrichtigung erwünscht
+- search_memory → bei "was hatten wir vereinbart"/"wo war das noch mal"/"haben wir das schon gemacht" — IMMER aufrufen statt zu raten oder zu behaupten, dich zu erinnern
 - create/update/cancel_appointment → bei Termin-Actions (nach Bestätigung)
 - create_invoice → wenn eine Rechnung erstellt werden soll (nach Bestätigung)
 - create_note → wenn eine Beobachtung/ein Befund zu einem Pferd/Kunden notiert werden soll
@@ -282,6 +283,18 @@ const HUFI_TOOLS = [
         date_to:    { type: "string", description: "Bis-Datum YYYY-MM-DD" },
         limit:      { type: "number", description: "Max Ergebnisse (Standard: 20)" },
       },
+    },
+  },
+  {
+    name: "search_memory",
+    description: "Durchsucht gespeicherte Notizen/Beobachtungen/Präferenzen dieses Nutzers (hufi_memory) nach einem Suchbegriff — für Fragen wie 'was hatten wir vereinbart', 'wo war das noch mal', 'haben wir das schon gemacht'. Nur eigene Daten des angemeldeten Nutzers, nie fremde.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Suchbegriff, z.B. Kunden- oder Pferdename, Stichwort aus der Notiz" },
+        limit: { type: "number", description: "Max Ergebnisse (Standard: 8)" },
+      },
+      required: ["query"],
     },
   },
   {
@@ -822,6 +835,45 @@ async function executeTool(
           out += `Rechnungen (${invs.length}):\n`;
           invs.slice(0, 5).forEach((i) => { out += `  ${i.invoice_number ?? "?"} ${i.total_amount}€ ${i.payment_status}\n`; });
         }
+        return out;
+      }
+
+      // ── search_memory ────────────────────────────────────────────────────
+      // Liest ausschließlich hufi_memory-Zeilen des angemeldeten providerId --
+      // dieselbe Tabelle, die create_note bereits beschreibt und die auch der
+      // automatische Kontext-Block (oben, memoryRes) liest. Service-Role wie
+      // die übrigen Tools hier, aber explizit auf providerId eingeschränkt --
+      // nie auf einen von Claude gelieferten user_id-Wert, um Cross-User-
+      // Zugriff strukturell auszuschließen.
+      case "search_memory": {
+        const limit = Math.min(Number(input.limit ?? 8), 20);
+        // value ist jsonb -- PostgREST ilike lässt sich darauf nicht sicher
+        // anwenden, daher Filterung nur über key (enthält bei create_note
+        // bereits Pferde-/Kundenname, siehe dortige Key-Erzeugung) plus
+        // client-seitiger Nachfilter über den Freitext in value.note_text.
+        const { data: rawData, error } = await supabaseAdmin
+          .from("hufi_memory")
+          .select("category,key,value,last_updated")
+          .eq("user_id", providerId)
+          .order("last_updated", { ascending: false })
+          .limit(50);
+        const needle = String(input.query ?? "").toLowerCase();
+        const data = (rawData ?? [])
+          .filter((row) => {
+            const v = row.value as Record<string, unknown> | null;
+            const text = `${row.key} ${v?.note_text ?? ""} ${v?.horse_name ?? ""} ${v?.client_name ?? ""}`.toLowerCase();
+            return text.includes(needle);
+          })
+          .slice(0, limit);
+        if (error || !data || data.length === 0) {
+          return `Dazu nichts in den gespeicherten Notizen/Präferenzen gefunden.`;
+        }
+        let out = `GEFUNDENE EINTRÄGE (${data.length}):\n`;
+        data.forEach((row) => {
+          const v = row.value as Record<string, unknown> | null;
+          const text = v?.note_text ?? JSON.stringify(v ?? {});
+          out += `  [${row.category}] ${row.last_updated?.toString().slice(0, 10)}: ${text}\n`;
+        });
         return out;
       }
 
