@@ -1,4 +1,5 @@
 import { CalendarClock, ChevronRight, Receipt, Users2, Sparkles } from "lucide-react";
+import { HufiVoiceWave } from "@/components/voice/HufiVoiceWave";
 
 export type CockpitState = "idle" | "recording" | "transcribing" | "thinking" | "speaking";
 
@@ -115,8 +116,11 @@ export function HufiAssistantCockpit({
             </p>
           </>
         ) : (
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#F97316", animation: prefersReducedMotion ? "none" : "pulse-rec 1s ease-out infinite", flexShrink: 0 }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Echte, in der App bereits produktiv genutzte Wave-Komponente
+                (dieselbe wie in MobileShellVoiceSection) statt des früheren
+                reinen Pulse-Dots -- reagiert auf denselben CockpitState. */}
+            <HufiVoiceWave barCount={5} height={18} paused={prefersReducedMotion} />
             <h1 style={{ margin: 0, fontSize: 22, lineHeight: 1.2, letterSpacing: "-0.03em", color: "#171717", fontWeight: 800 }}>
               {STATE_LABEL[state]}
             </h1>

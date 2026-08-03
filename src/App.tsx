@@ -466,7 +466,7 @@ function App() {
     >
       <ErrorBoundary name="App">
         <ThemeProvider defaultTheme={FLAVOR_CONFIG.defaultTheme}>
-          <BrowserRouter>
+          <BrowserRouter basename={import.meta.env.BASE_URL}>
             <PferdeakteRouteGuard>
               <AuthProvider>
                 <AppContent queryClient={queryClient} />
