@@ -13,7 +13,7 @@ import { useViewMode } from "@/hooks/useViewMode";
 import { useHufiTTS } from "@/hooks/useHufiTTS";
 import { useVoiceCapture, type VoiceErrorCode } from "@/hooks/useVoiceCapture";
 import { streamWithHufAI, ChatMessage as AIChatMessage } from "@/lib/ai-routing";
-import { askHufiAgent, type ConversationFocus } from "@/lib/hufi-agent-client";
+import { askHufiAgent, type ConversationFocus, type HufiPendingConfirmation } from "@/lib/hufi-agent-client";
 import { } from "@/lib/hufi-tool-definitions";
 import {
   detectAndCreateTask, executeNextStep, confirmStep, cancelTask, createActionTask,
@@ -83,6 +83,8 @@ import {
   type BriefingPayload,
 } from "@/lib/hufi-briefing";
 import { HufiAssistantCockpit } from "@/components/assistant/HufiAssistantCockpit";
+import { HufiAssistantExperience } from "@/components/assistant/HufiAssistantExperience";
+import { deriveHufiExperience } from "@/components/assistant/hufi-experience";
 
 // Presence-Untertitel im Header: auf sehr schmalen Displays (< 400px, siehe
 // .hufi-subtitle-short/-long unten) reicht der Platz neben Logo, Wetter,
@@ -113,6 +115,55 @@ export function MobileShell() {
   const [conversationFocus, setConversationFocus] = useState<ConversationFocus>({});
   const conversationFocusRef = useRef<ConversationFocus>({});
   useEffect(() => { conversationFocusRef.current = conversationFocus; }, [conversationFocus]);
+
+  // ── HufiAssistantExperience (Preview) ─────────────────────────────────────
+  // Reine Sichtbarmachung bereits vorhandener echter Zwischenzustände als
+  // State, damit eine Präsentationskomponente darauf reagieren kann -- keine
+  // neue Logik, dieselben Übergänge wie im bestehenden Chat-/Task-Flow.
+  const [activeConfirmation, setActiveConfirmation] = useState<HufiPendingConfirmation | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [confirmationOutcome, setConfirmationOutcome] = useState<{ success: boolean; message: string } | null>(null);
+  const [justWoke, setJustWoke] = useState(false);
+  const [lastAnswerText, setLastAnswerText] = useState<string | null>(null);
+  function triggerWake() {
+    setJustWoke(true);
+    window.setTimeout(() => setJustWoke(false), 500);
+  }
+  // Dieselben echten Funktionen (confirmStep/cancelTask) wie in
+  // handleMsgAction's task_approve/task_reject-Zweigen, nur ohne die dortige
+  // Chat-Bubble-Textmutation -- auf der Experience-Oberfläche gibt es keine
+  // zugehörige Chat-Nachricht, die aktualisiert werden müsste.
+  async function experienceConfirm() {
+    if (!activeConfirmation || !user?.id) return;
+    const { taskId, stepId } = activeConfirmation;
+    setActiveConfirmation(null);
+    setConfirming(true);
+    let result = { success: false, message: "Fehler beim Ausführen." };
+    try {
+      const updated = await confirmStep(taskId, stepId, user.id);
+      const step = updated?.steps.find((s) => s.id === stepId);
+      const stepResult = step?.result as { success?: boolean; message?: string } | undefined;
+      result = {
+        success: !!stepResult?.success,
+        message: stepResult?.message ?? step?.error ?? (step?.status === "done" ? "Erledigt." : "Fehler beim Ausführen."),
+      };
+    } catch (err) {
+      result = { success: false, message: (err as Error)?.message ?? "Fehler beim Ausführen." };
+    }
+    setConfirming(false);
+    setConfirmationOutcome(result);
+    window.setTimeout(() => setConfirmationOutcome((c) => (c === result ? null : c)), 2600);
+  }
+  async function experienceReject() {
+    if (!activeConfirmation || !user?.id) return;
+    const { taskId } = activeConfirmation;
+    setActiveConfirmation(null);
+    await cancelTask(taskId, user.id);
+  }
+  function experienceInterrupt() {
+    if (recording) { stopRecording(); return; }
+    if (activeConfirmation) { void experienceReject(); }
+  }
   const userIdRef = useRef<string | undefined>(undefined);
   useEffect(() => { userIdRef.current = user?.id; }, [user?.id]);
   const [showDsgvoModal, setShowDsgvoModal] = useState(false);
@@ -928,6 +979,7 @@ export function MobileShell() {
     }
     // Post-stream: broadcast & voice session tracking
     const complete: ChatMessage = { role: "ai", text: fullText, ts };
+    setLastAnswerText(fullText);
     broadcast(complete);
     if (voiceSessionRef.current?.active && fullText) {
       voiceSessionRef.current.texts.push(fullText);
@@ -940,6 +992,8 @@ export function MobileShell() {
     // (Einzelaktionen laufen als Ein-Schritt-Task über hufi_task_queue — actionKey: task_approve:<taskId>:<stepId>)
     if (key.startsWith("task_approve:") && user?.id) {
       const [taskId, stepId] = key.slice("task_approve:".length).split(":");
+      setActiveConfirmation(null);
+      setConfirming(true);
       setMessages((prev) => prev.map((m) =>
         m.ts === msg.ts ? { ...m, actions: undefined, text: m.text + "\n\n⏳ Wird ausgeführt…" } : m
       ));
@@ -955,6 +1009,9 @@ export function MobileShell() {
       } catch (err) {
         result = { success: false, message: (err as Error)?.message ?? "Fehler beim Ausführen." };
       }
+      setConfirming(false);
+      setConfirmationOutcome(result);
+      window.setTimeout(() => setConfirmationOutcome((c) => (c === result ? null : c)), 2600);
       setMessages((prev) => prev.map((m) =>
         m.ts === msg.ts
           ? { ...m, text: m.text.replace("\n\n⏳ Wird ausgeführt…", `\n\n${result.success ? "✅" : "❌"} ${result.message}`) }
@@ -968,6 +1025,7 @@ export function MobileShell() {
     // ── Agent Task: Ablehnen ──────────────────────────────────────────────────
     if (key.startsWith("task_reject:") && user?.id) {
       const [taskId] = key.slice("task_reject:".length).split(":");
+      setActiveConfirmation(null);
       await cancelTask(taskId, user.id);
       setMessages((prev) => prev.map((m) =>
         m.ts === msg.ts ? { ...m, actions: undefined, text: m.text + "\n\n✖ Abgebrochen." } : m
@@ -1197,6 +1255,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
       const { taskId, stepId, taskType: pendingType, description } = pendingConfirmation;
       const icon  = taskTypeIcon(pendingType as AgentTaskType);
       const label = taskTypeLabel(pendingType as AgentTaskType);
+      setActiveConfirmation(pendingConfirmation);
       addMsg({
         role: "ai",
         text: `${icon} ${label}\n\n${description}`,
@@ -1275,6 +1334,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
   async function processChatMessage(text: string, voiceMode = false) {
     const cleaned = stripWakeWord(text);
     if (!cleaned) return;
+    triggerWake();
 
     // Voice-Loop: Stop-Phrase erkennen
     const STOP_PHRASES = /\b(stop|stopp|danke|tschüss|beenden|aufhören|genug|schluss)\b/i;
@@ -1607,6 +1667,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
         const { taskId, stepId, taskType, description } = resp.pendingConfirmation;
         const icon  = taskTypeIcon(taskType as AgentTaskType);
         const label = taskTypeLabel(taskType as AgentTaskType);
+        setActiveConfirmation(resp.pendingConfirmation);
         addMsg({
           role: "ai",
           text: `${icon} ${label}\n\n${description}`,
@@ -1618,6 +1679,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
         });
         return;
       }
+      setLastAnswerText(resp.answer);
       addMsg({ role: "ai", text: resp.answer, ts: Date.now() + 1, disclaimerCategory: resp.disclaimerCategory });
       learnFromInteraction(user.id, cleaned, resp.answer, "confirmed", sessionId.current);
       void observeInteraction(cleaned, resp.answer, user.id);
@@ -1722,6 +1784,29 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
   const nextApptMinutesAway = nextAppt?.time && isToday
     ? Math.round((new Date(`${today}T${nextAppt.time}`).getTime() - Date.now()) / 60000)
     : null;
+
+  // Preview-Umschalter: nur "/home?experience=wave" zeigt HufiAssistantExperience
+  // statt HufiAssistantCockpit -- Standardverhalten bleibt unverändert.
+  const experienceParam = new URLSearchParams(window.location.search).get("experience");
+
+  // Dieselbe Prioritäts-Logik wie in HufiAssistantCockpit.tsx (nächster
+  // Termin > offene Rechnungen > Anfragen > ruhiger Tag), hier separat
+  // berechnet, da HufiAssistantExperience nur den fertigen Satz statt der
+  // Einzelwerte braucht.
+  const experienceInsight = (() => {
+    const mins = nextApptMinutesAway;
+    if (isToday && nextAppt && typeof mins === "number" && mins >= 0 && mins <= 180) {
+      const when = mins < 1 ? "gleich" : mins < 60 ? `in ${mins} Min.` : `in ${Math.round(mins / 60)} Std.`;
+      return `Dein nächster Termin beginnt ${when}.`;
+    }
+    const unpaid = hufiCtx?.unpaidInvoices ?? 0;
+    if (unpaid > 0) return `${unpaid} ${unpaid === 1 ? "Rechnung braucht" : "Rechnungen brauchen"} Aufmerksamkeit.`;
+    const leads = hufiCtx?.openLeads ?? 0;
+    if (leads > 0) return `${leads} neue ${leads === 1 ? "Anfrage wartet" : "Anfragen warten"} auf dich.`;
+    const today_ = hufiCtx?.todayAppointments.length ?? 0;
+    if (today_ > 0) return `${today_} ${today_ === 1 ? "Termin" : "Termine"} heute.`;
+    return "Ruhiger Tag — nichts Dringendes offen.";
+  })();
 
   function handlePrepareDay() {
     const payload = proactiveBriefing ?? lastBriefingRef.current;
@@ -1946,6 +2031,28 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
               Termin + Tageskontext liegen hier zusammengeführt in einem Block statt
               als separates Banner + vier Standardbuttons. */}
           {messages.length === 0 && !searching && !responding && !transcribing ? (
+            experienceParam === "wave" ? (
+              <HufiAssistantExperience
+                ui={deriveHufiExperience({
+                  orbState,
+                  justWoke,
+                  liveTranscript: voice.transcript ?? "",
+                  pendingClarification: conversationFocus.pendingClarification,
+                  lastAnswerText,
+                  activeConfirmation,
+                  confirming,
+                  confirmationOutcome,
+                  taskIcon: (t) => taskTypeIcon(t as AgentTaskType),
+                  taskLabel: (t) => taskTypeLabel(t as AgentTaskType),
+                  onConfirm: () => void experienceConfirm(),
+                  onReject: () => void experienceReject(),
+                })}
+                userName={hufiCtx?.user.name ?? null}
+                insight={experienceInsight}
+                onWakeTap={recording ? stopRecording : startRecording}
+                onInterrupt={experienceInterrupt}
+              />
+            ) : (
             <HufiAssistantCockpit
               state={orbState}
               userName={hufiCtx?.user.name ?? null}
@@ -1964,6 +2071,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
               onPrepareDay={handlePrepareDay}
               onNavigate={navigate}
             />
+            )
           ) : (
             /* Next appointment — schmale Zeile, kein großer Block (UI-Aufräumen, 17.07.2026) */
             nextAppt && horse && (
