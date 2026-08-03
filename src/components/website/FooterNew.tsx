@@ -16,7 +16,7 @@ const FooterNew = () => (
   <>
     {/* Trust Badges Bar */}
     <div className="py-6 bg-zinc-900/80 border-t border-white/5">
-      <div className="container">
+      <div className="w-full max-w-[1400px] mx-auto px-5 sm:px-8 lg:px-16">
         <div className="flex flex-wrap items-center justify-center gap-6">
           {trustBadges.map((b) => (
             <div key={b.label} className="flex items-center gap-2 text-white/40 text-xs font-medium">
@@ -31,7 +31,7 @@ const FooterNew = () => (
 
     {/* Footer */}
     <footer className="py-12 bg-zinc-900 border-t border-white/10">
-      <div className="container">
+      <div className="w-full max-w-[1400px] mx-auto px-5 sm:px-8 lg:px-16">
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-3 gap-8 items-start">
             {/* Brand */}

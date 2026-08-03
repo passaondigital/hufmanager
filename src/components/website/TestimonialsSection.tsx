@@ -2,7 +2,7 @@ import { MessageCircle } from "lucide-react";
 
 const TestimonialsSection = () => (
   <section className="py-20 md:py-28 bg-black">
-    <div className="container">
+    <div className="hufi-container-wide">
       <div className="max-w-2xl mx-auto text-center">
         <span className="text-[#F5970A] font-bold text-sm uppercase tracking-widest">Stimmen aus der Praxis</span>
         <h2 className="font-sans text-3xl md:text-4xl lg:text-5xl font-extrabold text-white mt-4 mb-6">
