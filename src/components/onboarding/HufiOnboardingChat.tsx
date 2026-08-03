@@ -5,6 +5,7 @@ import { getProfessionDiscovery, buildValuePitch } from "@/lib/profession-discov
 import { updateHufiMemory } from "@/lib/hufi-brain";
 import { HUFI_VOICES, setSelectedVoice, DEFAULT_MODEL, type HufiVoice } from "@/lib/hufi-voice-config";
 import { previewVoice } from "@/components/voice/HufiVoiceSelector";
+import { HUFI_CORE_MESSAGE } from "@/lib/hufi-copy";
 
 interface HufiOnboardingChatProps {
   userId: string;
@@ -529,11 +530,14 @@ export function HufiOnboardingChat({ userId, onComplete }: HufiOnboardingChatPro
 
           {step === 6 && (
             <div style={fadeInStyle}>
+              <p style={{ fontSize: "13px", color: "#374151", lineHeight: 1.5, margin: "0 0 10px" }}>
+                {HUFI_CORE_MESSAGE}
+              </p>
               <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "12px" }}>
                 {[
-                  "Sag „Hey Hufi“ oder tippe in das Textfeld",
-                  "Probier: „Zeig mir meine Termine“",
-                  "Oder tippe auf einen der Quick-Buttons",
+                  "„Hufi, ich sitze gerade an der Buchhaltung.“",
+                  "„Hufi, ich glaube, da war noch eine Rechnung offen.“",
+                  "„Ich weiß gerade nicht, wo ich anfangen soll.“",
                 ].map((hint) => (
                   <div key={hint} style={{ fontSize: "12.5px", color: "#6B7280", display: "flex", alignItems: "center", gap: "6px" }}>
                     <span style={{ color: "#F97316" }}>•</span> {hint}

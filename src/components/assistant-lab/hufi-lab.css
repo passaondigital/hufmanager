@@ -710,6 +710,23 @@
 }
 .hlab-proactive-action:hover { background: rgba(36,29,23,0.1); }
 
+/* ── Organische Hufi-Präsenz (HufiOrganicOrb, Light-Idle) ─────────────
+   Ruhige, subtile Bewegung: sehr langsame Rotation der Ringe + sanftes
+   Atmen des Mittelpunkts -- keine schnelle/auffällige Animation. */
+@keyframes hufi-orb-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes hufi-orb-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.08); }
+}
+.hufi-orb-rings { animation: hufi-orb-rotate 26s linear infinite; }
+.hufi-orb-core  { animation: hufi-orb-breathe 3.2s ease-in-out infinite; transform-origin: 50px 50px; }
+@media (prefers-reduced-motion: reduce) {
+  .hufi-orb-rings, .hufi-orb-core { animation: none; }
+}
+
 /* ── Neutrales Platzhalterbild in der Pferde-Auswahl ────────────────── */
 .hlab-horse-avatar {
   flex-shrink: 0;
