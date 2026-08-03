@@ -1,11 +1,15 @@
-import type { HufiAction } from "./hufi-actions";
+import { supabase } from "@/integrations/supabase/client";
+import { executeHufiAction, type HufiAction, type ActionResult } from "./hufi-actions";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 //
 // Einzelaktionen, die der Agent vorschlägt (z.B. "Rechnung erstellen"), laufen
 // seit der Konsolidierung als Ein-Schritt-Task über hufi_task_queue
 // (siehe hufi-task-engine.ts: createActionTask / execute_agent_action).
-// Dieses Modul enthält nur noch die reinen Typ-/Label-Mappings.
+//
+// createAgentTask/approveAndExecuteTask/rejectTask/AgentTask unten sind eine
+// Kompatibilitätsschicht für den älteren agent_tasks-Bestätigungsflow in
+// MobileShell.tsx, der weiterhin gegen diese API läuft.
 
 export type AgentTaskType =
   | "create_appointment"
@@ -76,4 +80,107 @@ export function taskTypeToActionType(type: AgentTaskType): HufiAction["type"] {
     case "delete":             return "remind_dsgvo";
     case "generic_action":     return "remind_dsgvo";
   }
+}
+
+// ── Kompatibilitätsschicht (agent_tasks) für MobileShell.tsx ──────────────────
+
+export type AgentTaskStatus =
+  | "suggested"
+  | "approved"
+  | "executing"
+  | "executed"
+  | "rejected"
+  | "failed";
+
+export interface AgentTask {
+  id: string;
+  user_id: string;
+  session_id: string | null;
+  type: AgentTaskType;
+  status: AgentTaskStatus;
+  payload: Record<string, unknown>;
+  explanation: string | null;
+  user_message: string | null;
+  result: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+  executed_at: string | null;
+}
+
+export async function createAgentTask(
+  userId: string,
+  type: AgentTaskType,
+  payload: Record<string, unknown>,
+  explanation: string,
+  userMessage: string,
+  sessionId?: string,
+): Promise<AgentTask | null> {
+  const { data, error } = await supabase
+    .from("agent_tasks")
+    .insert({
+      user_id: userId,
+      session_id: sessionId ?? null,
+      type,
+      status: "suggested",
+      payload,
+      explanation,
+      user_message: userMessage,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("[agent-tasks] createAgentTask failed:", error.message);
+    return null;
+  }
+  return data as AgentTask;
+}
+
+export async function rejectTask(taskId: string): Promise<void> {
+  await supabase
+    .from("agent_tasks")
+    .update({ status: "rejected" })
+    .eq("id", taskId);
+}
+
+// Approve + execute in one call — status transitions through approved → executing → executed|failed
+export async function approveAndExecuteTask(
+  task: AgentTask,
+  userId: string,
+): Promise<ActionResult> {
+  await supabase
+    .from("agent_tasks")
+    .update({ status: "approved" })
+    .eq("id", task.id);
+
+  await supabase
+    .from("agent_tasks")
+    .update({ status: "executing" })
+    .eq("id", task.id);
+
+  const action: HufiAction = {
+    type: taskTypeToActionType(task.type),
+    payload: task.payload,
+    requiresConfirmation: false, // already confirmed by user
+    dsgvoRelevant: task.type === "send_message" || task.type === "create_invoice",
+    explanation: task.explanation ?? "",
+  };
+
+  let result: ActionResult;
+  try {
+    result = await executeHufiAction(action, userId);
+  } catch (err) {
+    result = { success: false, message: (err as Error).message };
+  }
+
+  await supabase
+    .from("agent_tasks")
+    .update({
+      status: result.success ? "executed" : "failed",
+      result: { success: result.success, message: result.message, data: result.data ?? null },
+      executed_at: new Date().toISOString(),
+    })
+    .eq("id", task.id);
+
+  return result;
 }
