@@ -116,16 +116,20 @@ export function HufiAssistantCockpit({
             </p>
           </>
         ) : (
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {/* Echte, in der App bereits produktiv genutzte Wave-Komponente
-                (dieselbe wie in MobileShellVoiceSection) statt des früheren
-                reinen Pulse-Dots -- reagiert auf denselben CockpitState. */}
-            <HufiVoiceWave barCount={5} height={18} paused={prefersReducedMotion} />
-            <h1 style={{ margin: 0, fontSize: 22, lineHeight: 1.2, letterSpacing: "-0.03em", color: "#171717", fontWeight: 800 }}>
-              {STATE_LABEL[state]}
-            </h1>
-          </div>
+          <h1 style={{ margin: 0, fontSize: 22, lineHeight: 1.2, letterSpacing: "-0.03em", color: "#171717", fontWeight: 800 }}>
+            {STATE_LABEL[state]}
+          </h1>
         )}
+      </div>
+
+      {/* Hufi-Wave -- echte, in der App bereits produktiv genutzte
+          Sprachvisualisierung (dieselbe Komponente wie in
+          MobileShellVoiceSection), zentral im sonst leeren Hauptbereich des
+          Cockpits. idle = ruhige/gedämpfte Variante (paused-Prop der
+          Komponente selbst, keine neue Animation), recording/transcribing/
+          thinking/speaking = volle Bewegung. */}
+      <div style={{ display: "flex", justifyContent: "center", padding: "6px 0" }}>
+        <HufiVoiceWave barCount={9} height={56} paused={state === "idle" || prefersReducedMotion} />
       </div>
 
       {/* Nächster Termin -- die wichtigste Information als einzelner Block */}
