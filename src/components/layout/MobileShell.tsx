@@ -1785,9 +1785,10 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
     ? Math.round((new Date(`${today}T${nextAppt.time}`).getTime() - Date.now()) / 60000)
     : null;
 
-  // Preview-Umschalter: nur "/home?experience=wave" zeigt HufiAssistantExperience
-  // statt HufiAssistantCockpit -- Standardverhalten bleibt unverändert.
-  const experienceParam = new URLSearchParams(window.location.search).get("experience");
+  // Preview-Umschalter: Build-Time-Flag statt Query-Parameter/Route --
+  // wird beim Build eingebrannt, kein Laufzeitzustand, der verloren gehen
+  // kann. "/home" ohne dieses Flag bleibt unverändert.
+  const useExperiencePreview = import.meta.env.VITE_HUFI_EXPERIENCE_PREVIEW === "true";
 
   // Dieselbe Prioritäts-Logik wie in HufiAssistantCockpit.tsx (nächster
   // Termin > offene Rechnungen > Anfragen > ruhiger Tag), hier separat
@@ -1811,6 +1812,35 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
   function handlePrepareDay() {
     const payload = proactiveBriefing ?? lastBriefingRef.current;
     if (payload) setProactiveBriefing(payload);
+  }
+
+  // Preview-Modus übernimmt die komplette sichtbare Fläche -- keine alte
+  // MobileShell-Chrome (Header/BottomNav/Eingabedock/Mikrofonbutton/430px-
+  // Karte) darunter. Auth/echte Daten/Voice/Bestätigungsflow kommen weiter
+  // aus dieser Komponente, nur als Props/Callbacks.
+  if (useExperiencePreview) {
+    return (
+      <HufiAssistantExperience
+        ui={deriveHufiExperience({
+          orbState,
+          justWoke,
+          liveTranscript: voice.transcript ?? "",
+          pendingClarification: conversationFocus.pendingClarification,
+          lastAnswerText,
+          activeConfirmation,
+          confirming,
+          confirmationOutcome,
+          taskIcon: (t) => taskTypeIcon(t as AgentTaskType),
+          taskLabel: (t) => taskTypeLabel(t as AgentTaskType),
+          onConfirm: () => void experienceConfirm(),
+          onReject: () => void experienceReject(),
+        })}
+        userName={hufiCtx?.user.name ?? null}
+        insight={experienceInsight}
+        onWakeTap={recording ? stopRecording : startRecording}
+        onInterrupt={experienceInterrupt}
+      />
+    );
   }
 
   return (
@@ -2031,28 +2061,6 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
               Termin + Tageskontext liegen hier zusammengeführt in einem Block statt
               als separates Banner + vier Standardbuttons. */}
           {messages.length === 0 && !searching && !responding && !transcribing ? (
-            experienceParam === "wave" ? (
-              <HufiAssistantExperience
-                ui={deriveHufiExperience({
-                  orbState,
-                  justWoke,
-                  liveTranscript: voice.transcript ?? "",
-                  pendingClarification: conversationFocus.pendingClarification,
-                  lastAnswerText,
-                  activeConfirmation,
-                  confirming,
-                  confirmationOutcome,
-                  taskIcon: (t) => taskTypeIcon(t as AgentTaskType),
-                  taskLabel: (t) => taskTypeLabel(t as AgentTaskType),
-                  onConfirm: () => void experienceConfirm(),
-                  onReject: () => void experienceReject(),
-                })}
-                userName={hufiCtx?.user.name ?? null}
-                insight={experienceInsight}
-                onWakeTap={recording ? stopRecording : startRecording}
-                onInterrupt={experienceInterrupt}
-              />
-            ) : (
             <HufiAssistantCockpit
               state={orbState}
               userName={hufiCtx?.user.name ?? null}
@@ -2071,7 +2079,6 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
               onPrepareDay={handlePrepareDay}
               onNavigate={navigate}
             />
-            )
           ) : (
             /* Next appointment — schmale Zeile, kein großer Block (UI-Aufräumen, 17.07.2026) */
             nextAppt && horse && (

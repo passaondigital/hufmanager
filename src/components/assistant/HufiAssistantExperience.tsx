@@ -1,20 +1,33 @@
+import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles } from "lucide-react";
+import { X, Sparkles, Camera, Image, FileText, ShieldAlert } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/components/ThemeProvider";
+import { loadSavedConsent } from "@/components/consent/HufiFirstRunConsent";
+import { HMCamModal } from "@/components/hufcam";
+import { HufiMenu } from "@/components/layout/HufiMenu";
+import { INCLUDED_STORAGE_PLAN } from "@/lib/hufi-storage-plans";
 import { HufiWave } from "@/components/assistant-lab/HufiWave";
 import { HufiTranscript } from "@/components/assistant-lab/HufiTranscript";
 import { HufiQuestion } from "@/components/assistant-lab/HufiQuestion";
 import { HufiConfirmation } from "@/components/assistant-lab/HufiConfirmation";
 import { HufiSuccessState } from "@/components/assistant-lab/HufiSuccessState";
 import { HUFI_PHASE_META, timeSalutation } from "@/components/assistant-lab/HufiAssistantState";
+import { HufiOrganicOrb } from "./HufiOrganicOrb";
 import type { HufiExperienceUi } from "./hufi-experience";
 import "@/components/assistant-lab/hufi-lab.css";
 
-// Echte Variante von HufiPremiumLab: dieselben Visuals (HufiWave, Phasen-
-// Layout, hufi-lab.css), aber `ui` kommt aus deriveHufiExperience() in
-// hufi-experience.ts -- abgeleitet aus echtem MobileShell-State, keine
-// Szenarien, keine MOCK_*-Daten. Bewusst ohne Kamera-/Bild-/Dokument-
-// Schnellaktionen und Speicher-Dialog der Lab-Fassung (eigener, hier nicht
-// wiederverdrahteter Funktionsumfang) -- reiner Kernloop dieser Runde.
+// Verstehen/Verarbeiten laufen laut den offiziellen Screen-Referenzen
+// violett-blau statt orange -- Farbe direkt aus der Referenz abgetastet
+// (RGB 100,93,235). /hufi-lab selbst bleibt unverändert.
+const UNDERSTANDING_PROCESSING_COLOR = "#6459EB";
+
+// Vollständige, referenzgetreue Hufi-Oberfläche (siehe "hufi neu.png" /
+// "hufi neu dark.png"). Übernimmt bei aktivem Preview-Flag die komplette
+// sichtbare /home-Fläche -- keine alte MobileShell-Chrome (Header/
+// BottomNav/Eingabedock/Mikrofonbutton) darunter. `ui` kommt aus
+// deriveHufiExperience(), ausschließlich echter Live-State, keine
+// Szenarien, keine MOCK_*-Daten.
 export interface HufiAssistantExperienceProps {
   ui: HufiExperienceUi;
   userName?: string | null;
@@ -25,7 +38,33 @@ export interface HufiAssistantExperienceProps {
 
 export function HufiAssistantExperience({ ui, userName, insight, onWakeTap, onInterrupt }: HufiAssistantExperienceProps) {
   const { phase, mode, content } = ui;
+  const { user } = useAuth();
+  const { theme } = useTheme();
   const firstName = userName?.trim() ? userName.trim().split(" ")[0] : null;
+
+  const [consentNotice, setConsentNotice] = useState<string | null>(null);
+  const [camOpen, setCamOpen] = useState(false);
+  // Bild/Dokument haben ab /home aktuell keinen echten Verarbeitungspfad
+  // (der einzige existierende Weg dafür ist /hufi-observation-lab, das laut
+  // Vorgabe kein zulässiges Ziel mehr ist) -- daher bewusst deaktiviert
+  // statt simuliert, siehe Abschlussbericht.
+  const imageDocumentAvailable = false;
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const documentInputRef = useRef<HTMLInputElement>(null);
+
+  const checkCameraConsent = (): boolean => {
+    const consent = loadSavedConsent(user?.id ?? "");
+    if (consent?.camera !== "granted") {
+      setConsentNotice("Kamera-Zugriff ist nicht freigegeben. Das lässt sich unter Einstellungen → Berechtigungen ändern.");
+      return false;
+    }
+    setConsentNotice(null);
+    return true;
+  };
+  // HM-CAM führt die echte Aufnahme bereits selbst durch (Consent + Foto-
+  // Erfassung); onComplete feuert erst, wenn wirklich Fotos aufgenommen
+  // wurden -- kein weiterer simulierter Schritt nötig.
+  const handleCamComplete = () => setCamOpen(false);
 
   const renderHeadline = () => {
     if (phase === "dormant") {
@@ -81,12 +120,27 @@ export function HufiAssistantExperience({ ui, userName, insight, onWakeTap, onIn
     }
   };
 
+  const showOrganicOrb = phase === "dormant" && theme === "light";
+
   return (
-    <div className="hlab-root" data-mode={mode}>
+    <div className="hlab-root" data-mode={mode} data-theme={theme} data-hufi-experience="true">
       <div className="hlab-noise" />
       <div className="hlab-scrim" />
 
       <div className="hlab-foreground hufi-safe-top hufi-safe-bottom hufi-safe-left hufi-safe-right">
+        <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px 0 20px", flexShrink: 0 }}>
+          <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--hlab-fg)" }}>
+            Hufi
+          </span>
+          <div className="hlab-foreground-interactive" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: "var(--hlab-fg-40)" }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: phase === "error" ? "#8B908C" : "var(--hufi-orange)", flexShrink: 0 }} />
+              {phase === "error" ? "Keine Verbindung" : new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+            </span>
+            <HufiMenu className="hlab-focusable" />
+          </div>
+        </header>
+
         <main
           style={{
             flex: 1,
@@ -99,7 +153,17 @@ export function HufiAssistantExperience({ ui, userName, insight, onWakeTap, onIn
             minHeight: 0,
           }}
         >
-          <HufiWave phase={phase} mode={mode} onTap={onWakeTap} settled={false} />
+          {showOrganicOrb ? (
+            <HufiOrganicOrb onTap={onWakeTap} />
+          ) : (
+            <HufiWave
+              phase={phase}
+              mode={mode}
+              onTap={onWakeTap}
+              settled={false}
+              colorOverrides={{ understanding: UNDERSTANDING_PROCESSING_COLOR, executing: UNDERSTANDING_PROCESSING_COLOR }}
+            />
+          )}
 
           <div aria-live="polite" style={{ textAlign: "center", maxWidth: 340, minHeight: 40 }}>
             <AnimatePresence mode="wait">
@@ -145,6 +209,50 @@ export function HufiAssistantExperience({ ui, userName, insight, onWakeTap, onIn
             </button>
           )}
         </main>
+
+        <HMCamModal open={camOpen} onOpenChange={setCamOpen} mode="provider" onComplete={handleCamComplete} />
+
+        {mode === "ambient" && (
+          <div className="hlab-foreground-interactive hlab-quick-actions-footer">
+            <input ref={imageInputRef} type="file" accept="image/*" style={{ display: "none" }} disabled />
+            <input ref={documentInputRef} type="file" accept="image/*,.pdf" style={{ display: "none" }} disabled />
+
+            {consentNotice && (
+              <div role="alert" style={{ display: "flex", alignItems: "flex-start", gap: 6, maxWidth: 300, padding: "8px 10px", borderRadius: 10, background: "rgba(148,148,142,0.08)", border: "1px solid rgba(148,148,142,0.2)" }}>
+                <ShieldAlert size={13} style={{ flexShrink: 0, marginTop: 1, color: "var(--hlab-fg-40)" }} aria-hidden="true" />
+                <span style={{ fontSize: 11, lineHeight: 1.4, color: "var(--hlab-fg-60)" }}>{consentNotice}</span>
+              </div>
+            )}
+
+            <div className="hlab-quick-actions">
+              <button type="button" className="hlab-quick-action hlab-focusable" aria-label="Ohne zu sprechen ein Foto aufnehmen (HM-CAM)" onClick={() => checkCameraConsent() && setCamOpen(true)}>
+                <span className="hlab-quick-action-circle"><Camera size={15} aria-hidden="true" /></span>
+                <span className="hlab-quick-action-label">Kamera</span>
+              </button>
+              <button type="button" disabled={!imageDocumentAvailable} aria-disabled={!imageDocumentAvailable} className="hlab-quick-action hlab-focusable" aria-label="Bild aus der Galerie hochladen (noch nicht verfügbar)" style={{ opacity: imageDocumentAvailable ? 1 : 0.4, cursor: imageDocumentAvailable ? "pointer" : "not-allowed" }}>
+                <span className="hlab-quick-action-circle"><Image size={15} aria-hidden="true" /></span>
+                <span className="hlab-quick-action-label">Bild</span>
+              </button>
+              <button type="button" disabled={!imageDocumentAvailable} aria-disabled={!imageDocumentAvailable} className="hlab-quick-action hlab-focusable" aria-label="Dokument hochladen (noch nicht verfügbar)" style={{ opacity: imageDocumentAvailable ? 1 : 0.4, cursor: imageDocumentAvailable ? "pointer" : "not-allowed" }}>
+                <span className="hlab-quick-action-circle"><FileText size={15} aria-hidden="true" /></span>
+                <span className="hlab-quick-action-label">Dokument</span>
+              </button>
+            </div>
+
+            {/* Reales Speicher-Entitlement (INCLUDED_STORAGE_PLAN, live) --
+                kein erfundener Verbrauch, kein Demo-Dialog. */}
+            <div
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 6, minHeight: 36,
+                padding: "6px 14px", borderRadius: 999, border: "1px solid var(--hlab-fg-30)",
+              }}
+            >
+              <span style={{ fontSize: 11.5, fontWeight: 600, color: "var(--hlab-fg-40)" }}>
+                {INCLUDED_STORAGE_PLAN.displayLabel} Speicher inklusive
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
