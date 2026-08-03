@@ -17,7 +17,7 @@ const MODELS = [
   { id: "eleven_turbo_v2_5",      label: "Turbo v2.5",      desc: "Ultra-schnell · Für Live-Dialog" },
 ];
 
-async function previewVoice(
+export async function previewVoice(
   voice: HufiVoice,
   model: string,
   onStart: () => void,

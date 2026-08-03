@@ -24,8 +24,6 @@ function ImportTabFallback() {
 }
 
 const ImportCenter = () => {
-  const { user } = useAuth();
-
   return (
     <div className="space-y-6 animate-fade-in">
       <div>

@@ -236,7 +236,7 @@ serve(async (req: Request): Promise<Response> => {
 </html>`;
 
     await resend.emails.send({
-      from: "HufManager <info@hufiapp.de>",
+      from: "HufManager <info@hufmanager.de>",
       to: [email],
       subject: `🐴 ${safeProviderName} lädt dich zur HufManager Kunden-App ein`,
       html: emailHtml,

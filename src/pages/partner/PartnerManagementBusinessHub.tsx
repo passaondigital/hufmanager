@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Receipt, Globe, MessageSquare, CreditCard, FileText } from "lucide-react";
+import { ArrowLeft, Receipt, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
 import { Badge } from "@/components/ui/badge";
@@ -46,27 +46,6 @@ export default function PartnerManagementBusinessHub() {
             ) : undefined
           }
           onClick={() => navigate("/partner-management/abo")}
-        />
-        <Tile
-          icon={<FileText className="w-10 h-10 text-primary" />}
-          title="Rechtliches"
-          description="AGB, Datenschutz, Impressum, Widerrufsbelehrung"
-          onClick={() => navigate("/partner-management/rechtliches")}
-        />
-      </TileCategory>
-
-      <TileCategory title="Außenauftritt & Kommunikation">
-        <Tile
-          icon={<Globe className="w-10 h-10 text-primary" />}
-          title="Öffentliches Profil"
-          description="Sichtbar für Pferdebesitzer, Beschreibung, Fotos, Leistungen"
-          onClick={() => navigate("/partner-management/oeffentlich")}
-        />
-        <Tile
-          icon={<MessageSquare className="w-10 h-10 text-primary" />}
-          title="Kommunikation"
-          description="Vorlagen, Benachrichtigungen, E-Mail, Push"
-          onClick={() => navigate("/partner-management/kommunikation")}
         />
       </TileCategory>
     </div>

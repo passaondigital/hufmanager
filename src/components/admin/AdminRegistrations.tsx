@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2, Search, RefreshCw, UserPlus, Users } from "lucide-react";
+import { Loader2, Search, RefreshCw, UserPlus, Users, Smartphone } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 
@@ -18,6 +18,11 @@ interface Registration {
   role: string | null;
   has_logged_in: boolean | null;
   readable_id: string | null;
+  signup_app: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  signup_referrer: string | null;
 }
 
 const ROLE_CONFIG: Record<string, { label: string; color: string }> = {
@@ -28,12 +33,33 @@ const ROLE_CONFIG: Record<string, { label: string; color: string }> = {
   admin: { label: "Admin", color: "bg-red-500/20 text-red-400 border-red-500/30" },
 };
 
+const APP_CONFIG: Record<string, { label: string; color: string }> = {
+  hufiapp: { label: "Hufi", color: "bg-teal-500/20 text-teal-400 border-teal-500/30" },
+  hufmanager: { label: "HufManager", color: "bg-indigo-500/20 text-indigo-400 border-indigo-500/30" },
+};
+
+/** Menschlich lesbare Herkunft ableiten: UTM > Referrer-Host > Direkt. */
+function describeSource(reg: Registration): string {
+  if (reg.utm_source) {
+    return reg.utm_campaign ? `${reg.utm_source} · ${reg.utm_campaign}` : reg.utm_source;
+  }
+  if (reg.signup_referrer) {
+    try {
+      return new URL(reg.signup_referrer).hostname.replace(/^www\./, "");
+    } catch {
+      return reg.signup_referrer;
+    }
+  }
+  return "Direkt / unbekannt";
+}
+
 export function AdminRegistrations() {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
-  const [stats, setStats] = useState({ total: 0, thisMonth: 0, thisWeek: 0, today: 0 });
+  const [appFilter, setAppFilter] = useState<string>("all");
+  const [stats, setStats] = useState({ total: 0, thisMonth: 0, thisWeek: 0, today: 0, hufi: 0, hufmanager: 0 });
 
   useEffect(() => {
     loadRegistrations();
@@ -45,7 +71,7 @@ export function AdminRegistrations() {
       // Get profiles with their roles
       const { data: profiles, error } = await supabase
         .from("profiles")
-        .select("id, email, full_name, created_at, has_logged_in, readable_id, role")
+        .select("id, email, full_name, created_at, has_logged_in, readable_id, role, signup_app, utm_source, utm_medium, utm_campaign, signup_referrer")
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(500);
@@ -87,6 +113,8 @@ export function AdminRegistrations() {
         thisMonth: regs.filter(r => new Date(r.created_at) >= startOfMonth).length,
         thisWeek: regs.filter(r => new Date(r.created_at) >= startOfWeek).length,
         today: regs.filter(r => new Date(r.created_at) >= startOfDay).length,
+        hufi: regs.filter(r => r.signup_app === "hufiapp").length,
+        hufmanager: regs.filter(r => r.signup_app === "hufmanager").length,
       });
     } catch (err) {
       console.error("Error loading registrations:", err);
@@ -101,7 +129,8 @@ export function AdminRegistrations() {
       r.full_name?.toLowerCase().includes(search.toLowerCase()) ||
       r.readable_id?.toLowerCase().includes(search.toLowerCase());
     const matchesRole = roleFilter === "all" || r.role === roleFilter;
-    return matchesSearch && matchesRole;
+    const matchesApp = appFilter === "all" || r.signup_app === appFilter;
+    return matchesSearch && matchesRole && matchesApp;
   });
 
   return (
@@ -121,12 +150,14 @@ export function AdminRegistrations() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
           { label: "Gesamt", value: stats.total, icon: Users },
           { label: "Diesen Monat", value: stats.thisMonth, icon: UserPlus },
           { label: "Diese Woche", value: stats.thisWeek, icon: UserPlus },
           { label: "Heute", value: stats.today, icon: UserPlus },
+          { label: "über Hufi", value: stats.hufi, icon: Smartphone },
+          { label: "über HufManager", value: stats.hufmanager, icon: Smartphone },
         ].map(s => (
           <Card key={s.label}>
             <CardContent className="p-4 flex items-center gap-3">
@@ -166,6 +197,16 @@ export function AdminRegistrations() {
             <SelectItem value="admin">Admin</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={appFilter} onValueChange={setAppFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Alle Apps" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Alle Apps</SelectItem>
+            <SelectItem value="hufiapp">Hufi</SelectItem>
+            <SelectItem value="hufmanager">HufManager</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Table */}
@@ -183,6 +224,8 @@ export function AdminRegistrations() {
                   <TableHead>Name</TableHead>
                   <TableHead>E-Mail</TableHead>
                   <TableHead>Rolle</TableHead>
+                  <TableHead>App</TableHead>
+                  <TableHead>Herkunft</TableHead>
                   <TableHead>ID</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
@@ -190,13 +233,14 @@ export function AdminRegistrations() {
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                       Keine Registrierungen gefunden
                     </TableCell>
                   </TableRow>
                 ) : (
                   filtered.map((reg) => {
                     const roleConfig = reg.role ? ROLE_CONFIG[reg.role] : null;
+                    const appConfig = reg.signup_app ? APP_CONFIG[reg.signup_app] : null;
                     return (
                       <TableRow key={reg.id}>
                         <TableCell className="whitespace-nowrap text-sm">
@@ -214,6 +258,20 @@ export function AdminRegistrations() {
                               Keine Rolle
                             </Badge>
                           )}
+                        </TableCell>
+                        <TableCell>
+                          {appConfig ? (
+                            <Badge variant="outline" className={appConfig.color}>
+                              {appConfig.label}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-muted-foreground">
+                              –
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground max-w-[180px] truncate">
+                          {describeSource(reg)}
                         </TableCell>
                         <TableCell className="text-xs font-mono text-muted-foreground">
                           {reg.readable_id || "–"}

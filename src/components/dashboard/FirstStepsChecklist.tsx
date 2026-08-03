@@ -164,7 +164,7 @@ export function FirstStepsChecklist() {
       description: "Standard-Service anlegen (z.B. Ausschneiden)",
       icon: Package,
       completed: checklistState.firstService,
-      action: () => navigate("/angebote"),
+      action: () => navigate("/mein-angebot"),
       actionLabel: "Anlegen",
     },
     {

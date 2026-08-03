@@ -20,13 +20,18 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader || !authHeader.includes("service_role")) {
-      // Basic check – real validation via Supabase client
-    }
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const authHeader = req.headers.get("Authorization");
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.replace("Bearer ", "") : null;
+    if (token !== serviceKey) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabase = createClient(supabaseUrl, serviceKey);
 
     // Get all sent invoices that are overdue
@@ -115,7 +120,7 @@ Deno.serve(async (req) => {
                   method: "POST",
                   headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
                   body: JSON.stringify({
-                    from: "HufManager <noreply@hufiapp.de>",
+                    from: "HufManager <noreply@hufmanager.de>",
                     to: [CC_EMAIL],
                     subject: `🚨 2. Mahnung – ${invoice.invoice_number} (${invoice.provider_name})`,
                     html: `<p>Die 2. Mahnung für Rechnung <strong>${invoice.invoice_number}</strong> (${invoice.provider_name}) wurde erstellt.</p><p>${daysOverdue} Tage überfällig. Betrag: ${invoice.total}€</p>`,

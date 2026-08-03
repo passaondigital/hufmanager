@@ -12,7 +12,7 @@ import { WiderrufsausschlussCheckbox } from "@/components/consent/Widerrufsaussc
 import { logConsent } from "@/lib/consent";
 
 const PRO_CHECKOUT_URL =
-  "https://www.copecart.com/products/1996da6f/checkout?utm_source=app&utm_medium=feature-lock&utm_campaign=pro-gate";
+  "https://www.copecart.com/products/0a0921ba/checkout?utm_source=app&utm_medium=feature-lock&utm_campaign=pro-gate";
 
 interface ProGateDialogProps {
   open: boolean;
@@ -54,10 +54,10 @@ export function ProGateDialog({
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
               <Sparkles className="h-5 w-5 text-primary" />
             </div>
-            <DialogTitle>HufManager Pro</DialogTitle>
+            <DialogTitle>Hufi Early Bird</DialogTitle>
           </div>
           <DialogDescription>
-            {featureName} ist in HufManager Pro enthalten.
+            {featureName} ist im Hufi Early Bird enthalten.
           </DialogDescription>
         </DialogHeader>
 
@@ -86,7 +86,7 @@ export function ProGateDialog({
           />
 
           <Button onClick={handleUpgrade} className="w-full gap-2 min-h-[48px] font-semibold">
-            Jetzt auf Pro upgraden
+            Jetzt Early Bird sichern
             <ArrowRight className="h-4 w-4" />
           </Button>
 

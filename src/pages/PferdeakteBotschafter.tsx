@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronDown, Mail, Loader2, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
+import { getAttribution } from "@/lib/attribution";
 
 function generateRef(): string {
   return Math.random().toString(36).substring(2, 10).toUpperCase();
@@ -106,6 +107,7 @@ export default function PferdeakteBotschafter() {
         data: {
           full_name: `${form.first_name} ${form.last_name}`,
           role: "client",
+          ...getAttribution(),
         },
       },
     });

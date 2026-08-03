@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useClientMode, type ClientMode } from "@/hooks/useClientMode";
 import { toast } from "sonner";
 import { VerificationDocuments } from "./VerificationDocuments";
+import { FEATURE_FLAGS } from "@/config/featureFlags";
 
 interface ClientModeSettingsProps {
   variant?: "onboarding" | "settings";
@@ -15,8 +16,12 @@ interface ClientModeSettingsProps {
 
 const MODES: { mode: ClientMode; icon: typeof Home; badge?: string; trialInfo?: string }[] = [
   { mode: "private", icon: Home },
-  { mode: "stall", icon: Warehouse, badge: "90 Tage kostenlos", trialInfo: "Teste alle Stallbetreiber-Features 90 Tage lang kostenlos. Danach ist eine Verifizierung erforderlich." },
-  { mode: "commercial", icon: Building2, badge: "90 Tage kostenlos", trialInfo: "Teste alle Gewerbe-Features 90 Tage lang kostenlos. Danach ist eine Verifizierung erforderlich." },
+  ...(FEATURE_FLAGS.stallbetreiberRolle.enabled
+    ? [
+        { mode: "stall" as ClientMode, icon: Warehouse, badge: "90 Tage kostenlos", trialInfo: "Teste alle Stallbetreiber-Features 90 Tage lang kostenlos. Danach ist eine Verifizierung erforderlich." },
+        { mode: "commercial" as ClientMode, icon: Building2, badge: "90 Tage kostenlos", trialInfo: "Teste alle Gewerbe-Features 90 Tage lang kostenlos. Danach ist eine Verifizierung erforderlich." },
+      ]
+    : []),
 ];
 
 export function ClientModeSettings({ variant = "settings", onComplete }: ClientModeSettingsProps) {

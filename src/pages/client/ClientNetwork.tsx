@@ -78,7 +78,7 @@ export default function ClientNetwork() {
             Verbinde dich mit Stallbetreibern, Reitfreunden und Geschäftspartnern
           </p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" disabled title="Bald verfügbar">
           <UserPlus className="h-4 w-4" />
           Einladen
         </Button>
@@ -117,11 +117,11 @@ export default function ClientNetwork() {
                   über HM Connect oder lade sie per E-Mail ein.
                 </p>
                 <div className="flex gap-2 justify-center mt-4">
-                  <Button className="gap-2">
+                  <Button className="gap-2" disabled title="Bald verfügbar">
                     <Link2 className="h-4 w-4" />
                     HM Connect
                   </Button>
-                  <Button variant="outline" className="gap-2">
+                  <Button variant="outline" className="gap-2" disabled title="Bald verfügbar">
                     <UserPlus className="h-4 w-4" />
                     Per E-Mail einladen
                   </Button>
@@ -143,7 +143,7 @@ export default function ClientNetwork() {
                       {CONNECTION_TYPES.find((t) => t.value === conn.connection_type)?.label || "Verbindung"}
                     </p>
                   </div>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" disabled title="Bald verfügbar">
                     <MessageSquare className="h-4 w-4" />
                   </Button>
                 </CardContent>
@@ -213,7 +213,7 @@ export default function ClientNetwork() {
               </p>
               <div className="grid grid-cols-2 gap-2 max-w-sm mx-auto">
                 {CONNECTION_TYPES.map((type) => (
-                  <Button key={type.value} variant="outline" className="gap-2 h-auto py-3 flex-col">
+                  <Button key={type.value} variant="outline" className="gap-2 h-auto py-3 flex-col" disabled title="Bald verfügbar">
                     <type.icon className="h-5 w-5 text-primary" />
                     <span className="text-xs">{type.label}</span>
                   </Button>

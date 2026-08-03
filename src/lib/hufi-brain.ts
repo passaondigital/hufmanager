@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { ulset } from "@/lib/user-storage";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -77,10 +78,6 @@ export async function fetchHufiContext(
   role: string | null,
 ): Promise<HufiContext> {
   const today = format(new Date(), "yyyy-MM-dd");
-  const eightWeeksAgo = format(
-    new Date(Date.now() - 56 * 24 * 60 * 60 * 1000),
-    "yyyy-MM-dd",
-  );
 
   const db = supabase as unknown as Record<string, (...args: unknown[]) => unknown>;
   const from = (table: string) => (db.from as (t: string) => ReturnType<typeof supabase.from>)(table);
@@ -98,7 +95,7 @@ export async function fetchHufiContext(
   ] = await Promise.allSettled([
     supabase
       .from("profiles")
-      .select("full_name, user_type")
+      .select("full_name, role")
       .eq("id", userId)
       .single(),
     supabase
@@ -120,12 +117,11 @@ export async function fetchHufiContext(
       .neq("payment_status", "paid"),
     supabase
       .from("appointments")
-      .select("horse_id, date, horses(id, name)")
+      .select("horse_id, date, horses(id, name, shoeing_interval)")
       .eq("provider_id", userId)
       .eq("status", "completed")
-      .lt("date", eightWeeksAgo)
       .order("date", { ascending: false })
-      .limit(60),
+      .limit(100),
     from("hufi_memory")
       .select("*")
       .eq("user_id", userId)
@@ -140,14 +136,12 @@ export async function fetchHufiContext(
       .select("*", { count: "exact", head: true })
       .eq("provider_id", userId)
       .in("order_status", ["pending", "open", "in_progress"]),
-    from("hufi_permissions")
-      .select("*")
-      .or(`grantor_id.eq.${userId},grantee_id.eq.${userId}`)
-      .is("revoked_at", null),
+    // Tabelle hufi_permissions existiert nicht in Prod — deaktiviert bis Cross-User-Feature ausgerollt wird
+    Promise.resolve({ data: null }),
   ]);
 
   const profile =
-    profileRes.status === "fulfilled" ? (profileRes.value as { data: { full_name: string; user_type: string } | null }).data : null;
+    profileRes.status === "fulfilled" ? (profileRes.value as { data: { full_name: string; role: string } | null }).data : null;
   const rawAppts =
     todayApptRes.status === "fulfilled" ? ((todayApptRes.value as { data: unknown[] | null }).data ?? []) : [];
   const leadsCount =
@@ -169,22 +163,26 @@ export async function fetchHufiContext(
       ? ((permissionsRes.value as { data: unknown[] | null }).data ?? [])
       : [];
 
-  // Deduplicate overdue horses by horse_id
+  // Deduplicate by horse_id (jeweils letzter Termin), dann Überfälligkeit pro Pferd nach
+  // individuellem shoeing_interval prüfen (statt fixem 8-Wochen-Pauschalwert für alle Pferde).
   const seen = new Set<string>();
   const overdueHorses: HufiHorse[] = [];
   for (const raw of completedAppts as Array<{ horse_id: string; date: string; horses: unknown }>) {
     if (seen.has(raw.horse_id) || overdueHorses.length >= 5) continue;
     seen.add(raw.horse_id);
-    const name =
-      Array.isArray(raw.horses)
-        ? (raw.horses[0] as { name?: string })?.name
-        : (raw.horses as { name?: string } | null)?.name;
+    const h = Array.isArray(raw.horses)
+      ? (raw.horses[0] as { name?: string; shoeing_interval?: number | null } | undefined)
+      : (raw.horses as { name?: string; shoeing_interval?: number | null } | null);
+    const name = h?.name;
     if (!name) continue;
+    const intervalDays = h?.shoeing_interval ? h.shoeing_interval * 7 : 56;
+    const daysSince = Math.floor((Date.now() - new Date(raw.date).getTime()) / (24 * 60 * 60 * 1000));
+    if (daysSince < intervalDays - 7) continue;
     overdueHorses.push({
       id: raw.horse_id,
       name,
       last_appointment_date: raw.date,
-      weeks_overdue: Math.floor((Date.now() - new Date(raw.date).getTime()) / (7 * 24 * 60 * 60 * 1000)),
+      weeks_overdue: Math.floor(daysSince / 7),
     });
   }
 
@@ -209,7 +207,7 @@ export async function fetchHufiContext(
         ? profile.full_name.split(" ")[0]  // Nur Vorname für Begrüßung
         : null,
       role,
-      userType: (profile?.user_type as "pro" | "owner" | null) ?? null,
+      userType: (profile?.role as "pro" | "owner" | null) ?? null,
     },
     todayAppointments,
     openLeads: leadsCount,
@@ -576,6 +574,53 @@ export async function logDsgvoConsent(
     { granted, purpose, timestamp: new Date().toISOString(), version: "1.0" },
     "manual",
   );
+}
+
+// ── User-Settings-Hydration (Onboarding/Voice/KI-Consent/GPS-Consent) ─────────
+// Diese Werte liegen primär in localStorage (Fast Path), werden aber zusätzlich
+// in hufi_memory gespiegelt, damit sie ein neues Gerät / Inkognito-Fenster /
+// Clear-Storage überleben. Diese Funktion holt sie beim Login einmal aus der DB
+// zurück in den localStorage-Cache, damit alle bestehenden synchronen Reads
+// (ulget, localStorage.getItem) unverändert weiterfunktionieren.
+const HYDRATION_SESSION_KEY_PREFIX = "hufi_settings_hydrated_";
+
+export async function hydrateUserSettingsFromDB(userId: string): Promise<void> {
+  if (!userId) return;
+  const sessionFlag = `${HYDRATION_SESSION_KEY_PREFIX}${userId}`;
+  if (sessionStorage.getItem(sessionFlag)) return;
+
+  try {
+    const from = (table: string) =>
+      (supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }).from(table);
+
+    const { data } = (await from("hufi_memory")
+      .select("category, key, value")
+      .eq("user_id", userId)
+      .in("category", ["permission", "preference"])) as {
+      data: Array<{ category: string; key: string; value: Record<string, unknown> }> | null;
+    };
+
+    for (const row of data ?? []) {
+      if (row.category === "permission" && row.key === "first_run_completed" && row.value?.completed) {
+        ulset(userId, "hufi_firstrun_consent_v1", JSON.stringify(row.value.choices ?? { dsgvo: true, ai: true }));
+      }
+      if (row.category === "permission" && row.key === "ki_consent" && typeof row.value?.granted === "boolean") {
+        ulset(userId, "hufi_ki_consent", row.value.granted ? "granted" : "denied");
+      }
+      if (row.category === "permission" && row.key === "gps_tracking_consent" && typeof row.value?.granted === "boolean") {
+        localStorage.setItem("hufi_gps_consent", row.value.granted ? "1" : "0");
+      }
+      if (row.category === "preference" && row.key === "voice") {
+        if (typeof row.value?.id === "string") ulset(userId, "hufi_elevenlabs_voice_id", row.value.id);
+        if (typeof row.value?.name === "string") ulset(userId, "hufi_elevenlabs_voice_name", row.value.name);
+        if (typeof row.value?.model === "string") ulset(userId, "hufi_elevenlabs_model", row.value.model);
+      }
+    }
+  } catch {
+    // hufi_memory nicht erreichbar — lokaler Cache bleibt einzige Quelle
+  } finally {
+    sessionStorage.setItem(sessionFlag, "1");
+  }
 }
 
 // ── LAYER 2: ROLLEN-INTELLIGENZ ───────────────────────────────────────────────

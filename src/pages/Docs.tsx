@@ -636,8 +636,6 @@ export default function Docs() {
           <div className="flex items-center gap-4">
             <Link to="/datenschutz" className="hover:text-foreground">Datenschutz</Link>
             <Link to="/impressum" className="hover:text-foreground">Impressum</Link>
-            <Link to="/vertrauen" className="hover:text-foreground">Vertrauen & Sicherheit</Link>
-            <Link to="/status" className="hover:text-foreground">Systemstatus</Link>
           </div>
         </div>
       </footer>

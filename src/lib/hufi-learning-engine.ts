@@ -218,6 +218,22 @@ export async function matchSkills(
   return null;
 }
 
+// Neuester vorgeschlagener, noch unbestätigter Skill — für die Skill-Feedback-UI im Chat.
+// Skills, die 3x abgelehnt wurden, bleiben endgültig inaktiv und tauchen hier nicht mehr auf.
+export async function getPendingSkillSuggestion(userId: string): Promise<HufiSkill | null> {
+  const { data } = await supabase
+    .from("hufi_skills")
+    .select()
+    .eq("user_id", userId)
+    .eq("active", false)
+    .not("suggested_at", "is", null)
+    .lt("times_rejected", 3)
+    .order("suggested_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return (data as unknown as HufiSkill) ?? null;
+}
+
 export async function confirmSkill(skillId: string, userId: string): Promise<void> {
   const { data } = await supabase
     .from("hufi_skills")

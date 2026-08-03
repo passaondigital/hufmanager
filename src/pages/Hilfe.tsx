@@ -166,14 +166,14 @@ const FAQ_DATA: FAQCategory[] = [
     items: [
       {
         question: 'Welcher Plan passt zu mir?',
-        answer: 'Der Starter-Plan reicht für Einzelkämpfer (bis 10 Pferde). Ab 75 Pferden brauchst du Pro. Mit Mitarbeitern brauchst du Duo oder Team.',
-        navigateTo: '/abo-matrix',
-        navigateLabel: 'Pläne vergleichen',
+        answer: 'Hufi hat aktuell ein Angebot: das Early Bird Paket für 9,95 € / Monat — voller Zugang zu allen Features, unabhängig von Pferde-Anzahl oder Team-Größe.',
+        navigateTo: '/settings/abo',
+        navigateLabel: 'Zur Abo-Übersicht',
       },
       {
         question: 'Wie upgrade ich meinen Plan?',
-        answer: 'Unter Abo-Übersicht siehst du alle Optionen und kannst direkt upgraden.',
-        navigateTo: '/abo-matrix',
+        answer: 'Unter Abo-Übersicht siehst du deinen aktuellen Status und kannst direkt upgraden.',
+        navigateTo: '/settings/abo',
         navigateLabel: 'Zur Abo-Übersicht',
       },
     ],

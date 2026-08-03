@@ -2,6 +2,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { executeHufiAction, type HufiAction, type ActionResult } from "./hufi-actions";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+//
+// Einzelaktionen, die der Agent vorschlägt (z.B. "Rechnung erstellen"), laufen
+// seit der Konsolidierung als Ein-Schritt-Task über hufi_task_queue
+// (siehe hufi-task-engine.ts: createActionTask / execute_agent_action).
+//
+// createAgentTask/approveAndExecuteTask/rejectTask/AgentTask unten sind eine
+// Kompatibilitätsschicht für den älteren agent_tasks-Bestätigungsflow in
+// MobileShell.tsx, der weiterhin gegen diese API läuft.
 
 export type AgentTaskType =
   | "create_appointment"
@@ -13,29 +21,6 @@ export type AgentTaskType =
   | "add_expense"
   | "delete"
   | "generic_action";
-
-export type AgentTaskStatus =
-  | "suggested"
-  | "approved"
-  | "executing"
-  | "executed"
-  | "rejected"
-  | "failed";
-
-export interface AgentTask {
-  id: string;
-  user_id: string;
-  session_id: string | null;
-  type: AgentTaskType;
-  status: AgentTaskStatus;
-  payload: Record<string, unknown>;
-  explanation: string | null;
-  user_message: string | null;
-  result: Record<string, unknown> | null;
-  created_at: string;
-  updated_at: string;
-  executed_at: string | null;
-}
 
 // ── Human-readable labels ─────────────────────────────────────────────────────
 
@@ -83,7 +68,7 @@ export function intentActionToTaskType(action: string): AgentTaskType {
 }
 
 // Map AgentTaskType → HufiAction.type for executeHufiAction
-function taskTypeToActionType(type: AgentTaskType): HufiAction["type"] {
+export function taskTypeToActionType(type: AgentTaskType): HufiAction["type"] {
   switch (type) {
     case "create_appointment": return "create_appointment";
     case "create_invoice":     return "send_invoice";
@@ -97,7 +82,30 @@ function taskTypeToActionType(type: AgentTaskType): HufiAction["type"] {
   }
 }
 
-// ── CRUD ──────────────────────────────────────────────────────────────────────
+// ── Kompatibilitätsschicht (agent_tasks) für MobileShell.tsx ──────────────────
+
+export type AgentTaskStatus =
+  | "suggested"
+  | "approved"
+  | "executing"
+  | "executed"
+  | "rejected"
+  | "failed";
+
+export interface AgentTask {
+  id: string;
+  user_id: string;
+  session_id: string | null;
+  type: AgentTaskType;
+  status: AgentTaskStatus;
+  payload: Record<string, unknown>;
+  explanation: string | null;
+  user_message: string | null;
+  result: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+  executed_at: string | null;
+}
 
 export async function createAgentTask(
   userId: string,
@@ -128,19 +136,6 @@ export async function createAgentTask(
   return data as AgentTask;
 }
 
-export async function getPendingTasks(userId: string): Promise<AgentTask[]> {
-  const { data, error } = await supabase
-    .from("agent_tasks")
-    .select("*")
-    .eq("user_id", userId)
-    .in("status", ["suggested", "approved", "executing"])
-    .order("created_at", { ascending: false })
-    .limit(10);
-
-  if (error) return [];
-  return (data ?? []) as AgentTask[];
-}
-
 export async function rejectTask(taskId: string): Promise<void> {
   await supabase
     .from("agent_tasks")
@@ -153,13 +148,11 @@ export async function approveAndExecuteTask(
   task: AgentTask,
   userId: string,
 ): Promise<ActionResult> {
-  // Mark approved
   await supabase
     .from("agent_tasks")
     .update({ status: "approved" })
     .eq("id", task.id);
 
-  // Mark executing
   await supabase
     .from("agent_tasks")
     .update({ status: "executing" })
@@ -180,7 +173,6 @@ export async function approveAndExecuteTask(
     result = { success: false, message: (err as Error).message };
   }
 
-  // Persist result
   await supabase
     .from("agent_tasks")
     .update({

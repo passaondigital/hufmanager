@@ -1,14 +1,11 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { User, Briefcase, Mic } from "lucide-react";
+import { User, Briefcase } from "lucide-react";
 import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
 
 const TAB_REDIRECTS: Record<string, string> = {
   profil: "/partner-management/profil",
-  oeffentlich: "/partner-management/oeffentlich",
-  kommunikation: "/partner-management/kommunikation",
   abo: "/partner-management/abo",
-  rechtliches: "/partner-management/rechtliches",
   steuer: "/partner-management/steuer",
 };
 
@@ -43,15 +40,6 @@ export default function PartnerManagementHub() {
           description="Steuer, MwSt, Profil, Abo, Rechnungen, Kommunikation, AGB, Datenschutz, Impressum, Preisanzeige"
           onClick={() => navigate("/partner-management/business")}
           colSpan
-        />
-      </TileCategory>
-
-      <TileCategory title="Hufi">
-        <Tile
-          icon={<Mic className="w-10 h-10 text-primary" />}
-          title="Botschafter werden"
-          description="Provision verdienen, Empfehlungslinks, Statistiken, Auszahlungen, Werbemittel"
-          onClick={() => navigate("/partner-management/botschafter")}
         />
       </TileCategory>
     </div>

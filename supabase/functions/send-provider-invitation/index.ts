@@ -256,7 +256,7 @@ serve(async (req: Request): Promise<Response> => {
     // Send invitation email via Resend
     console.log("Sending provider invitation email via Resend to:", email);
     const emailResponse = await resend.emails.send({
-      from: "HufManager <info@hufiapp.de>",
+      from: "HufManager <info@hufmanager.de>",
       to: [email],
       subject: `🐴 Willkommen bei HufManager – Dein Account ist bereit!`,
       html: emailHtml,

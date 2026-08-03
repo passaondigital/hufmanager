@@ -113,7 +113,7 @@ const Analyse = () => {
               <SelectItem value={String(currentYear - 2)}>{currentYear - 2}</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2" disabled title="Bald verfügbar">
             <Download className="h-4 w-4" />
             Export
           </Button>
