@@ -125,8 +125,15 @@ export function MobileShell() {
   const [confirmationOutcome, setConfirmationOutcome] = useState<{ success: boolean; message: string } | null>(null);
   const [justWoke, setJustWoke] = useState(false);
   const [lastAnswerText, setLastAnswerText] = useState<string | null>(null);
+  const [answerVisible, setAnswerVisible] = useState(false);
+  const [agentError, setAgentError] = useState<string | null>(null);
   function triggerWake() {
     setJustWoke(true);
+    // Eine neue echte Interaktion beginnt -- veraltete Bestätigungs-/Fehler-/
+    // Antwort-Anzeigen der vorherigen Runde nicht weiter zeigen (kein Hängen-
+    // bleiben in einem alten Zustand, keine Doppel-Bestätigung möglich).
+    setAnswerVisible(false);
+    setAgentError(null);
     window.setTimeout(() => setJustWoke(false), 500);
   }
   // Dieselben echten Funktionen (confirmStep/cancelTask) wie in
@@ -161,6 +168,8 @@ export function MobileShell() {
     await cancelTask(taskId, user.id);
   }
   function experienceInterrupt() {
+    setAnswerVisible(false);
+    setAgentError(null);
     if (recording) { stopRecording(); return; }
     if (activeConfirmation) { void experienceReject(); }
   }
@@ -980,6 +989,11 @@ export function MobileShell() {
     // Post-stream: broadcast & voice session tracking
     const complete: ChatMessage = { role: "ai", text: fullText, ts };
     setLastAnswerText(fullText);
+    if (useExperiencePreview && fullText) {
+      setAnswerVisible(true);
+      window.setTimeout(() => setAnswerVisible(false), 9000);
+      void hufiSpeak(fullText);
+    }
     broadcast(complete);
     if (voiceSessionRef.current?.active && fullText) {
       voiceSessionRef.current.texts.push(fullText);
@@ -1282,6 +1296,11 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
     }
 
     const stepId = task.steps[0]?.id ?? "";
+    // Zweiter realer Task-Erzeugungspfad (Keyword-Fallback statt Claude-
+    // Tool-Use) -- dieselbe Sichtbarmachung wie oben, sonst bleibt die
+    // Experience für diese Fälle stumm, obwohl die echte Bestätigung im
+    // Chat bereits existiert.
+    setActiveConfirmation({ taskId: task.id, stepId, taskType, description: explanation });
     addMsg({
       role: "ai",
       text: `${icon} ${label}\n\n${explanation}`,
@@ -1680,6 +1699,11 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
         return;
       }
       setLastAnswerText(resp.answer);
+      if (useExperiencePreview && resp.answer) {
+        setAnswerVisible(true);
+        window.setTimeout(() => setAnswerVisible(false), 9000);
+        void hufiSpeak(resp.answer);
+      }
       addMsg({ role: "ai", text: resp.answer, ts: Date.now() + 1, disclaimerCategory: resp.disclaimerCategory });
       learnFromInteraction(user.id, cleaned, resp.answer, "confirmed", sessionId.current);
       void observeInteraction(cleaned, resp.answer, user.id);
@@ -1703,6 +1727,10 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
           : `Anfrage fehlgeschlagen. Bitte erneut versuchen.${import.meta.env.DEV ? ` (${e?.message})` : ""}`;
       }
       addMsg({ role: "ai", text: userText, ts: Date.now() });
+      if (useExperiencePreview) {
+        setAgentError(userText);
+        window.setTimeout(() => setAgentError((c) => (c === userText ? null : c)), 7000);
+      }
     } finally {
       setResponding(false);
       setActiveIntent(null);
@@ -1814,6 +1842,21 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
     if (payload) setProactiveBriefing(payload);
   }
 
+  // Echter Mikrofonfehler, verständlich formatiert (dieselbe Funktion wie
+  // der bestehende Toast-Pfad) -- für die Experience zusätzlich sichtbar,
+  // nicht nur als Toast.
+  const micError = voice.error ? voiceErrorMessage(voice.error) : null;
+
+  // Text-Eingabe der Experience nutzt denselben echten Handler wie die
+  // bestehende Eingabezeile (processChatMessage) -- keine zweite
+  // Agentenimplementierung, keine Doppel-Requests während eine Anfrage
+  // bereits läuft.
+  function experienceSubmitText(text: string) {
+    const trimmed = text.trim();
+    if (!trimmed || responding || transcribing || recording) return;
+    void processChatMessage(trimmed);
+  }
+
   // Preview-Modus übernimmt die komplette sichtbare Fläche -- keine alte
   // MobileShell-Chrome (Header/BottomNav/Eingabedock/Mikrofonbutton/430px-
   // Karte) darunter. Auth/echte Daten/Voice/Bestätigungsflow kommen weiter
@@ -1826,10 +1869,14 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
           justWoke,
           liveTranscript: voice.transcript ?? "",
           pendingClarification: conversationFocus.pendingClarification,
+          answerVisible,
           lastAnswerText,
+          isTtsSpeaking: isTtsSpeaking || isVoiceSpeaking,
           activeConfirmation,
           confirming,
           confirmationOutcome,
+          micError,
+          agentError,
           taskIcon: (t) => taskTypeIcon(t as AgentTaskType),
           taskLabel: (t) => taskTypeLabel(t as AgentTaskType),
           onConfirm: () => void experienceConfirm(),
@@ -1839,6 +1886,8 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
         insight={experienceInsight}
         onWakeTap={recording ? stopRecording : startRecording}
         onInterrupt={experienceInterrupt}
+        onSubmitText={experienceSubmitText}
+        canSubmit={!responding && !transcribing && !recording}
       />
     );
   }

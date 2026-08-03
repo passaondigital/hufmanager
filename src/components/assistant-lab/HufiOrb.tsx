@@ -24,6 +24,7 @@ const DRIFT_BOUNDS: Record<
   questioning:   { x: 4, y: 3,             minDelay: 3200, maxDelay: 5200, duration: 2.8, tensionRot: 1,   tensionScale: 0.012 },
   confirming:    { x: 9, y: 3,             minDelay: 2600, maxDelay: 5200, duration: 2.6, tensionRot: 1.2, tensionScale: 0.01 },
   executing:     { x: 1, y: 1,             minDelay: 60000, maxDelay: 60000, duration: 0.4, tensionRot: 0.5, tensionScale: 0.01 },
+  speaking:      { x: 2, y: 2,             minDelay: 900,  maxDelay: 1500, duration: 0.9, tensionRot: 1,   tensionScale: 0.012 },
   success:       { x: 1, y: 1,             minDelay: 60000, maxDelay: 60000, duration: 0.3, tensionRot: 0, tensionScale: 0 },
   error:       { x: 0, y: 0, biasY: 8,   minDelay: 60000, maxDelay: 60000, duration: 1.2, tensionRot: 0, tensionScale: 0 },
   return:      { x: 5, y: 4,             minDelay: 3000, maxDelay: 5500, duration: 3,   tensionRot: 1.5, tensionScale: 0.015 },

@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles, Camera, Image, FileText, ShieldAlert } from "lucide-react";
+import { X, Sparkles, Camera, Image, FileText, ShieldAlert, Send, AlertCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/components/ThemeProvider";
 import { loadSavedConsent } from "@/components/consent/HufiFirstRunConsent";
@@ -34,13 +34,24 @@ export interface HufiAssistantExperienceProps {
   insight: string;
   onWakeTap: () => void;
   onInterrupt: () => void;
+  onSubmitText: (text: string) => void;
+  canSubmit: boolean;
 }
 
-export function HufiAssistantExperience({ ui, userName, insight, onWakeTap, onInterrupt }: HufiAssistantExperienceProps) {
+export function HufiAssistantExperience({ ui, userName, insight, onWakeTap, onInterrupt, onSubmitText, canSubmit }: HufiAssistantExperienceProps) {
   const { phase, mode, content } = ui;
   const { user } = useAuth();
   const { theme } = useTheme();
   const firstName = userName?.trim() ? userName.trim().split(" ")[0] : null;
+
+  const [inputValue, setInputValue] = useState("");
+  const submitInput = () => {
+    if (!canSubmit) return;
+    const text = inputValue.trim();
+    if (!text) return;
+    setInputValue("");
+    onSubmitText(text);
+  };
 
   const [consentNotice, setConsentNotice] = useState<string | null>(null);
   const [camOpen, setCamOpen] = useState(false);
@@ -114,7 +125,12 @@ export function HufiAssistantExperience({ ui, userName, insight, onWakeTap, onIn
       case "success":
         return <HufiSuccessState text={content.text} />;
       case "error":
-        return <HufiSuccessState text={content.text} />;
+        return (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, textAlign: "center" }}>
+            <AlertCircle size={16} style={{ color: "#EF4444", flexShrink: 0 }} aria-hidden="true" />
+            <p style={{ margin: 0, fontSize: 14.5, fontWeight: 650, color: "var(--hlab-fg)" }}>{content.text}</p>
+          </div>
+        );
       default:
         return null;
     }
@@ -208,6 +224,40 @@ export function HufiAssistantExperience({ ui, userName, insight, onWakeTap, onIn
               Abbrechen
             </button>
           )}
+
+          {/* Echte Texteingabe -- derselbe Handler (processChatMessage) wie
+              Sprache, immer nutzbar (auch wenn Mikrofon blockiert ist). */}
+          <div className="hlab-foreground-interactive" style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", maxWidth: 340, marginTop: 4 }}>
+            <input
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") submitInput(); }}
+              placeholder="An Hufi schreiben…"
+              aria-label="Nachricht an Hufi"
+              disabled={!canSubmit}
+              style={{
+                flex: 1, minHeight: 40, borderRadius: 20, border: "1px solid var(--hlab-fg-30)",
+                background: "transparent", color: "var(--hlab-fg)", padding: "0 14px", fontSize: 14,
+                fontFamily: "inherit", outline: "none",
+              }}
+            />
+            <button
+              type="button"
+              onClick={submitInput}
+              disabled={!canSubmit || !inputValue.trim()}
+              aria-label="Senden"
+              className="hlab-focusable"
+              style={{
+                width: 40, height: 40, borderRadius: "50%", flexShrink: 0, border: "none",
+                background: "var(--hufi-orange)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: canSubmit && inputValue.trim() ? "pointer" : "not-allowed",
+                opacity: canSubmit && inputValue.trim() ? 1 : 0.5,
+              }}
+            >
+              <Send size={16} aria-hidden="true" />
+            </button>
+          </div>
         </main>
 
         <HMCamModal open={camOpen} onOpenChange={setCamOpen} mode="provider" onComplete={handleCamComplete} />

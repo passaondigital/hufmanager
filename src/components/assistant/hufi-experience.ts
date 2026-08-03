@@ -31,10 +31,14 @@ export interface HufiExperienceInputs {
   justWoke: boolean;
   liveTranscript: string;
   pendingClarification: string | undefined;
+  answerVisible: boolean;
   lastAnswerText: string | null;
+  isTtsSpeaking: boolean;
   activeConfirmation: { taskId: string; stepId: string; taskType: string; description: string } | null;
   confirming: boolean;
   confirmationOutcome: { success: boolean; message: string } | null;
+  micError: string | null;
+  agentError: string | null;
   taskIcon: (taskType: string) => string;
   taskLabel: (taskType: string) => string;
   onConfirm: () => void;
@@ -43,15 +47,20 @@ export interface HufiExperienceInputs {
 
 // Reine Ableitung: kein eigener State, keine neue Business-Logik -- bildet
 // nur bereits vorhandene echte Zwischenzustände aus MobileShell.tsx auf das
-// zehnstufige Phasenmodell aus HufiPremiumLab ab. Priorität von oben nach
-// unten, da mehrere Signale gleichzeitig wahr sein können (z.B. orbState
-// bleibt "thinking" während schon ein Ergebnis vorliegt).
+// elfstufige Phasenmodell (HufiPhase + "speaking") ab. Priorität von oben
+// nach unten, da mehrere Signale gleichzeitig wahr sein können.
 export function deriveHufiExperience(input: HufiExperienceInputs): HufiExperienceUi {
   const {
-    orbState, justWoke, liveTranscript, pendingClarification, lastAnswerText,
-    activeConfirmation, confirming, confirmationOutcome, taskIcon, taskLabel,
-    onConfirm, onReject,
+    orbState, justWoke, liveTranscript, pendingClarification, answerVisible, lastAnswerText,
+    isTtsSpeaking, activeConfirmation, confirming, confirmationOutcome, micError, agentError,
+    taskIcon, taskLabel, onConfirm, onReject,
   } = input;
+
+  // Höchste Priorität: sichtbare, echte Fehler -- Hufi darf nie stillschweigend
+  // "Erfolg" zeigen, wenn etwas real fehlgeschlagen ist.
+  if (agentError) {
+    return { phase: "error", mode: "conversation", content: { kind: "error", text: agentError } };
+  }
 
   if (confirmationOutcome) {
     return confirmationOutcome.success
@@ -91,6 +100,21 @@ export function deriveHufiExperience(input: HufiExperienceInputs): HufiExperienc
     };
   }
 
+  if (micError) {
+    return { phase: "error", mode: "conversation", content: { kind: "error", text: micError } };
+  }
+
+  // Echte Antwort ist da (unabhängig davon, ob TTS gerade tatsächlich läuft
+  // oder fehlgeschlagen ist) -- der Text bleibt sichtbar, "speaking" nur als
+  // Zusatzhinweis, solange die Wiedergabe wirklich läuft.
+  if (answerVisible && lastAnswerText) {
+    return {
+      phase: isTtsSpeaking ? "speaking" : "understanding",
+      mode: "conversation",
+      content: { kind: "answer", text: lastAnswerText },
+    };
+  }
+
   if (orbState === "transcribing") {
     return {
       phase: "understanding",
@@ -101,14 +125,6 @@ export function deriveHufiExperience(input: HufiExperienceInputs): HufiExperienc
 
   if (orbState === "thinking") {
     return { phase: "understanding", mode: "conversation", content: null };
-  }
-
-  if (orbState === "speaking") {
-    return {
-      phase: "understanding",
-      mode: "conversation",
-      content: lastAnswerText ? { kind: "answer", text: lastAnswerText } : null,
-    };
   }
 
   if (justWoke) {
