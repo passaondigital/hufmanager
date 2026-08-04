@@ -5,9 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   // x-correlation-id fehlte hier -- derselbe CORS-Bug wie in hufi-agent:
   // die echte POST-Anfrage (ElevenLabs-Aufruf) wurde vom Browser nach dem
-  // Preflight blockiert, kein Server-Log entstand. useHufiTTS fiel dadurch
-  // in speakWithCloud's catch-Block und kaskadierte auf Piper/Browser-TTS --
-  // Root-Cause der falschen, fremd klingenden Stimme.
+  // Preflight blockiert, kein Server-Log entstand. Die Anfrage erreicht mit
+  // diesem Header die ElevenLabs-Ausgabe vollständig.
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-correlation-id",
 };
 
@@ -62,22 +61,6 @@ serve(async (req) => {
       });
     }
 
-    // TEMP: B2C-Sperre für Premium-Sprachausgabe (Produktentscheidung
-    // 2026-08-02, siehe hufi_b2c_b2b_strategy-Memory) — Pferdebesitzer
-    // bekommen nur die offene Piper-Stimme, keine ElevenLabs-Stimmen, bis
-    // eine endgültige Entscheidung getroffen ist. Entfernen sobald final.
-    const { data: roleRow } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (roleRow?.role === "client") {
-      return new Response(
-        JSON.stringify({ error: "Premium-Sprachausgabe ist für Pferdebesitzer-Konten aktuell nicht verfügbar", code: "b2c_premium_voice_locked" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
     // ── Request-Body ───────────────────────────────────────────────────────
     const { text, voice_id, model_id = "eleven_multilingual_v2" } = await req.json();
 
@@ -110,9 +93,8 @@ serve(async (req) => {
 
     // ── Voice-Guthaben prüfen (separat vom KI-Text-Credit-System) ────────────
     // Bewusst VOR dem ElevenLabs-Call, um bei leerem Guthaben keine unnötigen
-    // API-Kosten zu verursachen. Der Client (useHufiTTS) wechselt bei einem
-    // Fehler NICHT mehr automatisch zu Piper/Browser (P0 TTS-Fix Abschnitt 2)
-    // -- er zeigt nur noch "Sprachausgabe gerade nicht verfügbar".
+    // API-Kosten zu verursachen. Bei einem Fehler wird keine Ersatzstimme
+    // verwendet; die Textantwort bleibt sichtbar.
     const { data: credits } = await supabase.rpc("get_hufi_voice_credits", { p_user_id: user.id });
     const purchasedUsable = credits?.purchased_expires_at && new Date(credits.purchased_expires_at) < new Date()
       ? 0
@@ -136,16 +118,20 @@ serve(async (req) => {
       });
     }
 
-    const ttsResponse = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voice_id)}`,
-      {
+    const elevenController = new AbortController();
+    const elevenTimeout = setTimeout(() => elevenController.abort(), 15_000);
+    let ttsResponse: Response;
+    try {
+      ttsResponse = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voice_id)}`,
+        {
         method: "POST",
         headers: {
           "xi-api-key": apiKey,
           "Content-Type": "application/json",
           "Accept": "audio/mpeg",
         },
-        body: JSON.stringify({
+          body: JSON.stringify({
           text,
           model_id,
           voice_settings: {
@@ -154,16 +140,24 @@ serve(async (req) => {
             style: 0.0,
             use_speaker_boost: true,
           },
-        }),
-      }
-    );
+          }),
+          signal: elevenController.signal,
+        }
+      );
+    } catch (error) {
+      const code = error instanceof Error && error.name === "AbortError" ? "upstream_timeout" : "upstream_unreachable";
+      console.error(`[hufi-tts][${requestId}] provider=elevenlabs voice=${shortVoiceId(voice_id)} model=${model_id} dur=${Date.now() - t0}ms outcome=${code}`);
+      return new Response(JSON.stringify({ error: "Die ausgewählte Hufi-Stimme ist gerade nicht verfügbar.", code }), {
+        status: 504,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    } finally {
+      clearTimeout(elevenTimeout);
+    }
 
     if (!ttsResponse.ok) {
       const errText = await ttsResponse.text();
-      console.error(
-        `[hufi-tts][${requestId}] provider=elevenlabs voice=${shortVoiceId(voice_id)} model=${model_id} status=${ttsResponse.status} dur=${Date.now() - t0}ms outcome=error`,
-        errText,
-      );
+      console.error(`[hufi-tts][${requestId}] provider=elevenlabs voice=${shortVoiceId(voice_id)} model=${model_id} status=${ttsResponse.status} dur=${Date.now() - t0}ms outcome=error`);
       let detail = "";
       try {
         const parsed = JSON.parse(errText);
@@ -180,8 +174,23 @@ serve(async (req) => {
       });
     }
 
-    // Audio als Stream direkt weiterleiten
+    const upstreamContentType = ttsResponse.headers.get("content-type") ?? "";
+    if (!upstreamContentType.toLowerCase().startsWith("audio/")) {
+      console.error(`[hufi-tts][${requestId}] provider=elevenlabs voice=${shortVoiceId(voice_id)} model=${model_id} status=${ttsResponse.status} contentType=${upstreamContentType || "missing"} dur=${Date.now() - t0}ms outcome=invalid_content_type`);
+      return new Response(JSON.stringify({ error: "Die ausgewählte Hufi-Stimme ist gerade nicht verfügbar.", code: "invalid_audio_response" }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const audioBuffer = await ttsResponse.arrayBuffer();
+    if (audioBuffer.byteLength === 0) {
+      console.error(`[hufi-tts][${requestId}] provider=elevenlabs voice=${shortVoiceId(voice_id)} model=${model_id} status=${ttsResponse.status} dur=${Date.now() - t0}ms outcome=empty_audio`);
+      return new Response(JSON.stringify({ error: "Die ausgewählte Hufi-Stimme ist gerade nicht verfügbar.", code: "empty_audio_response" }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // ── Verbrauch verbuchen ────────────────────────────────────────────────
     // Echte Audiodauer wird nicht dekodiert (kein MP3-Parser im Edge-Runtime) —

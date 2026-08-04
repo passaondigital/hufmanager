@@ -24,45 +24,6 @@ export async function previewVoice(
   onEnd: () => void,
   onError: (msg: string) => void
 ) {
-  // Browser TTS
-  if (voice.id === "browser") {
-    if (!("speechSynthesis" in window)) { onError("Keine Browser-Stimme verfügbar."); return; }
-    onStart();
-    const utt = new SpeechSynthesisUtterance(voice.previewText);
-    utt.lang = "de-DE";
-    const voices = window.speechSynthesis.getVoices();
-    const de = voices.find((v) => v.lang.startsWith("de"));
-    if (de) utt.voice = de;
-    utt.onend = onEnd;
-    utt.onerror = () => { onEnd(); onError("Browser-TTS Fehler."); };
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utt);
-    return;
-  }
-
-  // Piper TTS (lokaler VPS-Server)
-  if (voice.id === "piper") {
-    onStart();
-    try {
-      const resp = await fetch("/api/local-tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: voice.previewText }),
-      });
-      if (!resp.ok) throw new Error(`Piper TTS Fehler (${resp.status})`);
-      const blob = await resp.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audio.onended = () => { onEnd(); URL.revokeObjectURL(url); };
-      audio.onerror = () => { onEnd(); URL.revokeObjectURL(url); onError("Audio konnte nicht abgespielt werden."); };
-      await audio.play();
-    } catch (e) {
-      onEnd();
-      onError(e instanceof Error ? e.message : "Piper TTS fehlgeschlagen");
-    }
-    return;
-  }
-
   // ElevenLabs TTS
   onStart();
   try {
@@ -86,7 +47,10 @@ export async function previewVoice(
       throw new Error(errBody.error ?? `ElevenLabs Fehler (${resp.status})`);
     }
 
+    const contentType = resp.headers.get("content-type") ?? "";
+    if (!contentType.toLowerCase().startsWith("audio/")) throw new Error("Ungültige Audio-Antwort");
     const blob = await resp.blob();
+    if (blob.size === 0) throw new Error("Leere Audio-Antwort");
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
     audio.onended = () => { onEnd(); URL.revokeObjectURL(url); };
@@ -100,7 +64,7 @@ export async function previewVoice(
 
 export function HufiVoiceSelector({ userId = "", role }: { userId?: string; role?: string | null }) {
   const voices = getAllVoices(role);
-  const [selectedId, setSelectedId] = useState<string>(() => getSelectedVoiceId(userId) ?? "browser");
+  const [selectedId, setSelectedId] = useState<string>(() => getSelectedVoiceId(userId) ?? voices[0]?.id ?? "");
   const [model, setModel] = useState(() => getSelectedModel(userId));
   const [playing, setPlaying] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -120,7 +84,6 @@ export function HufiVoiceSelector({ userId = "", role }: { userId?: string; role
 
   const handlePreview = useCallback(async (voice: HufiVoice) => {
     if (playing) {
-      window.speechSynthesis?.cancel();
       stopRef.current?.();
       setPlaying(null);
       return;
@@ -151,12 +114,6 @@ export function HufiVoiceSelector({ userId = "", role }: { userId?: string; role
         <Play size={11} style={{ display: "inline", verticalAlign: "middle" }} />{" "}
         zum Probehören.
       </p>
-
-      {role === "client" && (
-        <p style={{ fontSize: 11.5, color: "#9CA3AF", background: "#F9FAFB", border: "1px solid #E5E7EB", borderRadius: 10, padding: "8px 12px", margin: "0 0 12px", lineHeight: 1.5 }}>
-          Weitere Stimmen sind aktuell nur für Profi-Konten verfügbar.
-        </p>
-      )}
 
       {/* Aktuell ausgewählt */}
       <div style={{
@@ -205,17 +162,16 @@ export function HufiVoiceSelector({ userId = "", role }: { userId?: string; role
         {voices.map((voice) => {
           const isSelected = selectedId === voice.id;
           const isPlaying = playing === voice.id;
-          const isBrowser = voice.id === "browser";
           return (
             <div
               key={voice.id}
               style={{
-                background: isBrowser ? "#F9FAFB" : isSelected ? "#FFF7ED" : "#F9FAFB",
+                background: isSelected ? "#FFF7ED" : "#F9FAFB",
                 border: `1.5px solid ${isSelected ? "#F97316" : "#E5E7EB"}`,
                 borderRadius: 14, padding: "12px 14px",
                 display: "flex", alignItems: "center", gap: 12,
                 transition: "border-color .15s, background .15s",
-                opacity: isBrowser ? 0.55 : 1,
+                opacity: 1,
               }}
             >
               {/* Auswahl-Kreis */}
@@ -275,7 +231,7 @@ export function HufiVoiceSelector({ userId = "", role }: { userId?: string; role
                   )}
                 </div>
                 <div style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.4, marginTop: 3 }}>
-                  {isBrowser ? "Nur wenn keine andere Stimme verfügbar." : voice.description}
+                  {voice.description}
                 </div>
               </button>
 
@@ -303,10 +259,7 @@ export function HufiVoiceSelector({ userId = "", role }: { userId?: string; role
         })}
       </div>
 
-      {/* Modell-Auswahl gilt nur für ElevenLabs-Stimmen — für Client-Rolle
-          nicht relevant, da diese Stimmen aktuell gar nicht wählbar sind. */}
-      {role !== "client" && (
-        <>
+      <>
           <button
             onClick={() => setShowModels((s) => !s)}
             style={{
@@ -344,11 +297,9 @@ export function HufiVoiceSelector({ userId = "", role }: { userId?: string; role
           )}
 
           <p style={{ fontSize: 11, color: "#9CA3AF", marginTop: 10, lineHeight: 1.5 }}>
-            ElevenLabs-Stimmen erfordern eine aktive Internetverbindung.
-            Wenn keine Verbindung besteht, wechselt Hufi automatisch zur Browser-Stimme.
+            ElevenLabs-Stimmen erfordern eine aktive Internetverbindung. Bei einem Fehler bleibt Hufis Textantwort sichtbar.
           </p>
-        </>
-      )}
+      </>
     </div>
   );
 }

@@ -96,7 +96,6 @@ export function HufiOnboardingChat({ userId, onComplete }: HufiOnboardingChatPro
 
   async function handleVoicePreview(voice: HufiVoice) {
     if (playingVoiceId) {
-      window.speechSynthesis?.cancel();
       setPlayingVoiceId(null);
       return;
     }

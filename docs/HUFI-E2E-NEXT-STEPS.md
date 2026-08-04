@@ -21,3 +21,8 @@ Angemeldet in der Preview (`https://preview.hufiapp.de/home`) eine normale Hufi-
 ## Prüfeinheit 2026-08-04
 - `npm run build` bestanden.
 - Der authentifizierte Preview-Nachweis bleibt offen, da in dieser Workspace-Session kein zulässiger Preview-Login und kein Basic-Auth-Zugang vorliegt.
+
+## TTS-P0 2026-08-04
+- Browser-TTS, Piper und der Client-Rollen-Piper-Sonderweg sind aus Hufis normaler Sprachausgabe entfernt. Es bleiben gespeicherte gültige ElevenLabs-Hufi-Voice oder offizielle Hufi-Standardvoice; bei Fehler bleibt Text sichtbar.
+- `hufi-tts` wurde lokal gehärtet (Timeout, Audio-MIME-Type, Bytegröße, maskierte Diagnostik), aber nicht deployt: Das Supabase-CLI hat keinen Access Token. Preview wurde daher nicht aktualisiert.
+- Nächster Schritt: Nur `hufi-tts` mit autorisiertem CLI deployen, Boot-/Auth-Smoke-Test ausführen, Preview über den vorhandenen Release-Weg aktualisieren und dann die definierte Hörprobe durchführen.

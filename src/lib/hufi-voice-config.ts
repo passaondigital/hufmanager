@@ -25,15 +25,6 @@ export interface HufiVoice {
   isCustom?: boolean;
 }
 
-export const HUFI_VOICE_BROWSER: HufiVoice = {
-  id: "browser",
-  name: "Browser-Stimme",
-  description: "Kostenlos, immer verfügbar. Klingt synthetisch, aber zuverlässig.",
-  gender: "neutral",
-  style: "Standard",
-  previewText: "Guten Morgen! Ich bin Hufi, dein Assistent.",
-};
-
 // ─── ElevenLabs Stimmen ───────────────────────────────────────────────────────
 // Voice-IDs direkt von https://elevenlabs.io/voice-library eintragen.
 // Die "recommended"-Stimme wird im Selector zuerst angezeigt.
@@ -83,16 +74,6 @@ export const HUFI_VOICES: HufiVoice[] = [
   },
 ];
 
-// Piper: lokale Open-Source TTS Stimme — Offline-Fallback, wenn keine Internetverbindung besteht.
-export const HUFI_VOICE_PIPER: HufiVoice = {
-  id: "piper",
-  name: "Hufi Stimme lokal",
-  description: "Natürliche deutsche Stimme, direkt auf dem Server. Kein Internet nötig, schnell, kostenlos.",
-  gender: "männlich",
-  style: "Natürlich",
-  previewText: "Guten Morgen! Ich bin Hufi, dein Assistent für alles rund ums Pferd.",
-};
-
 export const STORAGE_KEY_VOICE_ID = "hufi_elevenlabs_voice_id";
 export const STORAGE_KEY_VOICE_NAME = "hufi_elevenlabs_voice_name";
 export const STORAGE_KEY_MODEL = "hufi_elevenlabs_model";
@@ -105,7 +86,6 @@ import { updateHufiMemory } from "@/lib/hufi-brain";
 export function getSelectedVoiceId(userId = ""): string | null {
   const id = ulget(userId, STORAGE_KEY_VOICE_ID);
   if (!id) return null;
-  if (id === "browser" || id === "piper") return id;
   if (HUFI_VOICES.some((v) => v.id === id)) return id;
   ulremove(userId, STORAGE_KEY_VOICE_ID);
   ulremove(userId, STORAGE_KEY_VOICE_NAME);
@@ -113,17 +93,12 @@ export function getSelectedVoiceId(userId = ""): string | null {
 }
 
 export function getSelectedVoiceName(userId = ""): string {
-  return ulget(userId, STORAGE_KEY_VOICE_NAME) ?? "Browser-Stimme";
+  return ulget(userId, STORAGE_KEY_VOICE_NAME) ?? (HUFI_VOICES.find((voice) => voice.recommended) ?? HUFI_VOICES[0])?.name ?? "Hufi-Stimme";
 }
 
 export function setSelectedVoice(voice: HufiVoice, userId = "") {
-  if (voice.id === "browser") {
-    ulremove(userId, STORAGE_KEY_VOICE_ID);
-    ulremove(userId, STORAGE_KEY_VOICE_NAME);
-  } else {
-    ulset(userId, STORAGE_KEY_VOICE_ID, voice.id);
-    ulset(userId, STORAGE_KEY_VOICE_NAME, voice.name);
-  }
+  ulset(userId, STORAGE_KEY_VOICE_ID, voice.id);
+  ulset(userId, STORAGE_KEY_VOICE_NAME, voice.name);
   persistVoiceToDB(userId);
 }
 
@@ -145,18 +120,14 @@ function persistVoiceToDB(userId: string) {
     "preference",
     "voice",
     {
-      id: ulget(userId, STORAGE_KEY_VOICE_ID) ?? "browser",
-      name: ulget(userId, STORAGE_KEY_VOICE_NAME) ?? "Browser-Stimme",
+      id: ulget(userId, STORAGE_KEY_VOICE_ID) ?? null,
+      name: ulget(userId, STORAGE_KEY_VOICE_NAME) ?? "Hufi-Stimme",
       model: ulget(userId, STORAGE_KEY_MODEL) ?? DEFAULT_MODEL,
     },
     "manual",
   );
 }
 
-export function getAllVoices(role?: string | null): HufiVoice[] {
-  // TEMP: B2C-Sperre — Pferdebesitzer sehen nur die offene Piper-Stimme
-  // und die Browser-Stimme, keine kostenpflichtigen ElevenLabs-Stimmen
-  // (Produktentscheidung 2026-08-02, siehe hufi_b2c_b2b_strategy-Memory).
-  if (role === "client") return [HUFI_VOICE_PIPER, HUFI_VOICE_BROWSER];
-  return [HUFI_VOICE_PIPER, ...HUFI_VOICES, HUFI_VOICE_BROWSER];
+export function getAllVoices(_role?: string | null): HufiVoice[] {
+  return HUFI_VOICES;
 }
