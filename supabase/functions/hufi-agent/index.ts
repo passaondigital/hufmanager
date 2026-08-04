@@ -9,7 +9,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const MODEL_SMART  = "claude-sonnet-4-6";
+const MODEL_SMART  = "claude-sonnet-5";
 const MODEL_FAST   = "claude-haiku-4-5-20251001";
 const MAX_HISTORY  = 8;
 const MAX_TOOLS_ROUNDS = 4; // max Tool-Use-Runden pro Anfrage
