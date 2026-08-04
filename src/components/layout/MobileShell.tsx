@@ -84,7 +84,7 @@ import {
 } from "@/lib/hufi-briefing";
 import { HufiAssistantCockpit } from "@/components/assistant/HufiAssistantCockpit";
 import { HufiAssistantExperience } from "@/components/assistant/HufiAssistantExperience";
-import { deriveHufiExperience } from "@/components/assistant/hufi-experience";
+import { deriveHufiExperience, type HufiUiError } from "@/components/assistant/hufi-experience";
 import { detectMomentHint, type HufiMomentType } from "@/lib/hufi-moment";
 
 // Presence-Untertitel im Header: auf sehr schmalen Displays (< 400px, siehe
@@ -127,8 +127,21 @@ export function MobileShell() {
   const [justWoke, setJustWoke] = useState(false);
   const [lastAnswerText, setLastAnswerText] = useState<string | null>(null);
   const [answerVisible, setAnswerVisible] = useState(false);
-  const [agentError, setAgentError] = useState<string | null>(null);
+  const [agentError, setAgentError] = useState<HufiUiError | null>(null);
   const [momentHint, setMomentHint] = useState<HufiMomentType | null>(null);
+  // Persistierter Mikro-/Transkriptionsfehler für die Experience-UI --
+  // unabhängig von voice.reset() (siehe voice.error-Effekt unten), der den
+  // Hook-State sofort nach dem Toast leert. Ohne diese Kopie würde der
+  // Fehler in der Vollbild-Experience nur für einen Render aufblitzen.
+  const [voiceUiError, setVoiceUiError] = useState<HufiUiError | null>(null);
+  // Echter, zeitbasierter Warte-Hinweis während hufi-agent antwortet (P0
+  // Abschnitt 5) -- keine erfundenen Fortschrittsschritte, nur ein Lebenszeichen.
+  const [waitHint, setWaitHint] = useState<string | null>(null);
+  // Sichtbares, echtes Transkript -- eigener State statt direkt voice.transcript,
+  // weil der Verarbeitungs-Effekt unten voice.reset() aufruft, sobald der Text
+  // übernommen wurde (verhindert doppelte Verarbeitung bei Re-Render). Ohne
+  // diese Kopie würde das erkannte Transkript nie sichtbar, siehe P0 Abschnitt 4.
+  const [displayedTranscript, setDisplayedTranscript] = useState<string | null>(null);
   function triggerWake() {
     setJustWoke(true);
     // Eine neue echte Interaktion beginnt -- veraltete Bestätigungs-/Fehler-/
@@ -444,6 +457,7 @@ export function MobileShell() {
         if (SR_SUPPORTED && !voice.isRecording && !voice.isProcessing && !isTtsSpeaking) {
           setTimeout(() => {
             voiceSessionRef.current = { active: true, texts: [] };
+            setDisplayedTranscript(null);
             void voice.startRecording();
             setHufiPresenceState("hört zu");
           }, 800);
@@ -750,6 +764,7 @@ export function MobileShell() {
   async function startRecording() {
     setHufiPresenceState("hört zu");
     setHandsFree(true);
+    setDisplayedTranscript(null);
     voiceSessionRef.current = { active: true, texts: [] };
     const started = await voice.startRecording({ handsFree: true });
     if (!started) {
@@ -797,6 +812,7 @@ export function MobileShell() {
     setVoiceLoopActive(true);
     followUpRoundRef.current = 0;
     voiceSessionRef.current = { active: true, texts: [] };
+    setDisplayedTranscript(null);
     setHufiPresenceState("hört zu");
     setHandsFree(false); // Voice-Loop bleibt auf VAD
     void voice.startRecording();
@@ -865,11 +881,19 @@ export function MobileShell() {
   useEffect(() => {
     if (!voice.error) return;
     const msg = voiceErrorMessage(voice.error);
+    const category: HufiUiError["category"] =
+      voice.error === "microphone_denied" || voice.error === "microphone_missing" || voice.error === "recording_failed"
+        ? "mic"
+        : "transcription";
     console.info(`[voice-capture] error: ${voice.error}`);
     if (voice.error === "empty_transcript") {
       void hufiSpeak(msg, undefined, true);
     } else {
       toast.error(msg);
+    }
+    if (useExperiencePreview) {
+      setVoiceUiError({ text: msg, category });
+      window.setTimeout(() => setVoiceUiError((c) => (c?.text === msg ? null : c)), 7000);
     }
     voiceSessionRef.current = null;
     setHufiPresenceState("bereit");
@@ -882,6 +906,9 @@ export function MobileShell() {
   useEffect(() => {
     if (!voice.transcript) return;
     const text = voice.transcript;
+    // Sichtbar halten, bevor der Hook-State geleert wird -- siehe
+    // displayedTranscript-Deklaration oben (P0 Abschnitt 4).
+    setDisplayedTranscript(text);
     voice.reset();
     if (!user?.id) return;
 
@@ -940,6 +967,7 @@ export function MobileShell() {
           if (loopShouldContinue && !voice.isRecording && !voice.isProcessing && !responding) {
             if (!voiceLoopRef.current) followUpRoundRef.current++;
             voiceSessionRef.current = { active: true, texts: [] };
+            setDisplayedTranscript(null);
             void voice.startRecording();
             setHufiPresenceState("hört zu");
           } else if (!voiceLoopRef.current) {
@@ -1561,6 +1589,10 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
     setActiveIntent(intent.intent);
     setResponding(true);
     setHufiPresenceState(intent.intent === "navigation" ? "führt aus" : "denkt");
+    // Echte, zeitbasierte Lebenszeichen statt Schweigen während hufi-agent
+    // antwortet (P0 Abschnitt 5) -- keine erfundenen Fortschrittsschritte.
+    const waitTimer2s = window.setTimeout(() => setWaitHint("Ich schaue nach."), 2000);
+    const waitTimer5s = window.setTimeout(() => setWaitHint("Ich brauche gerade einen Moment länger."), 5000);
     try {
       if (intent.intent === "emergency") {
         const welfare = checkHorseWelfare(cleaned);
@@ -1715,27 +1747,44 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
       const e = err as Error;
       console.error("[Hufi] processChatMessage Fehler:", e?.message ?? e);
       let userText: string;
+      // Konkrete Fehlerkategorie statt pauschal "Keine Verbindung" (P0
+      // Abschnitt 5) -- "agent" nur für echte Erreichbarkeitsprobleme,
+      // "action" für Anfragen, die den Agenten erreicht haben, aber aus
+      // fachlichem Grund abgelehnt wurden (Guthaben, Login).
+      let category: HufiUiError["category"];
       if (e?.message?.includes("Kein KI-Guthaben")) {
         userText = voiceMode
           ? "Dein KI-Guthaben ist erschöpft."
           : "Dein KI-Guthaben ist aufgebraucht. Bitte lade es in den Einstellungen auf.";
+        category = "action";
       } else if (e?.message?.includes("Nicht angemeldet") || e?.message?.includes("401")) {
         userText = "Dafür musst du angemeldet sein.";
+        category = "action";
+      } else if (e?.message?.includes("Zeitüberschreitung")) {
+        userText = voiceMode
+          ? "Hufi antwortet gerade nicht. Bitte gleich nochmal."
+          : "Hufi-Agent antwortet nicht (Zeitüberschreitung). Bitte erneut versuchen.";
+        category = "agent";
       } else if (e?.message?.includes("Ollama") || e?.message?.includes("fetch") || e?.message?.includes("nicht erreichbar")) {
         userText = voiceMode
           ? "Verbindung kurz unterbrochen. Bitte gleich nochmal."
           : "Verbindung fehlgeschlagen. Bitte erneut versuchen.";
+        category = "agent";
       } else {
         userText = voiceMode
           ? "Ich konnte deine Anfrage nicht verarbeiten. Bitte erneut versuchen."
           : `Anfrage fehlgeschlagen. Bitte erneut versuchen.${import.meta.env.DEV ? ` (${e?.message})` : ""}`;
+        category = "unknown";
       }
       addMsg({ role: "ai", text: userText, ts: Date.now() });
       if (useExperiencePreview) {
-        setAgentError(userText);
-        window.setTimeout(() => setAgentError((c) => (c === userText ? null : c)), 7000);
+        setAgentError({ text: userText, category });
+        window.setTimeout(() => setAgentError((c) => (c?.text === userText ? null : c)), 7000);
       }
     } finally {
+      window.clearTimeout(waitTimer2s);
+      window.clearTimeout(waitTimer5s);
+      setWaitHint(null);
       setResponding(false);
       setActiveIntent(null);
       setHufiPresenceState("bereit");
@@ -1817,10 +1866,11 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
     ? Math.round((new Date(`${today}T${nextAppt.time}`).getTime() - Date.now()) / 60000)
     : null;
 
-  // Preview-Umschalter: Build-Time-Flag statt Query-Parameter/Route --
-  // wird beim Build eingebrannt, kein Laufzeitzustand, der verloren gehen
-  // kann. "/home" ohne dieses Flag bleibt unverändert.
-  const useExperiencePreview = import.meta.env.VITE_HUFI_EXPERIENCE_PREVIEW === "true";
+  // Produktionsstandard: HufiAssistantExperience ist die offizielle /home-
+  // Oberfläche. VITE_HUFI_LEGACY_HOME bleibt als unsichtbarer, rein
+  // build-seitiger Notfall-Rollback auf die alte MobileShell-Chrome erhalten
+  // -- kein UI-Schalter, kein Query-Parameter, wird beim Build eingebrannt.
+  const useExperiencePreview = import.meta.env.VITE_HUFI_LEGACY_HOME !== "true";
 
   // Dieselbe Prioritäts-Logik wie in HufiAssistantCockpit.tsx (nächster
   // Termin > offene Rechnungen > Anfragen > ruhiger Tag), hier separat
@@ -1846,11 +1896,6 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
     if (payload) setProactiveBriefing(payload);
   }
 
-  // Echter Mikrofonfehler, verständlich formatiert (dieselbe Funktion wie
-  // der bestehende Toast-Pfad) -- für die Experience zusätzlich sichtbar,
-  // nicht nur als Toast.
-  const micError = voice.error ? voiceErrorMessage(voice.error) : null;
-
   // Text-Eingabe der Experience nutzt denselben echten Handler wie die
   // bestehende Eingabezeile (processChatMessage) -- keine zweite
   // Agentenimplementierung, keine Doppel-Requests während eine Anfrage
@@ -1871,7 +1916,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
         ui={deriveHufiExperience({
           orbState,
           justWoke,
-          liveTranscript: voice.transcript ?? "",
+          liveTranscript: displayedTranscript ?? "",
           pendingClarification: conversationFocus.pendingClarification,
           answerVisible,
           lastAnswerText,
@@ -1879,9 +1924,10 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
           activeConfirmation,
           confirming,
           confirmationOutcome,
-          micError,
+          micError: voiceUiError,
           agentError,
           momentHint,
+          waitHint,
           taskIcon: (t) => taskTypeIcon(t as AgentTaskType),
           taskLabel: (t) => taskTypeLabel(t as AgentTaskType),
           onConfirm: () => void experienceConfirm(),

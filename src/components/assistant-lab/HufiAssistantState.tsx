@@ -23,6 +23,7 @@ export type HufiPhase =
   | "dormant"
   | "wake"
   | "listening"
+  | "transcribing"
   | "understanding"
   | "questioning"
   | "confirming"
@@ -36,6 +37,7 @@ export const HUFI_PHASE_ORDER: HufiPhase[] = [
   "dormant",
   "wake",
   "listening",
+  "transcribing",
   "understanding",
   "questioning",
   "confirming",
@@ -56,7 +58,12 @@ export const HUFI_PHASE_META: Record<HufiPhase, HufiPhaseMeta> = {
   dormant: { label: "", hint: "", devLabel: "Ambient", Icon: Moon, mode: "ambient" },
   wake: { label: "Ja, Pascal?", hint: "", devLabel: "Wake Word", Icon: Sparkles, mode: "conversation" },
   listening: { label: "Hufi hört zu", hint: "Sprich einfach — Hufi versteht.", devLabel: "Listening", Icon: Mic, mode: "immersive" },
-  understanding: { label: "Hufi hat verstanden", hint: "Das ist erkannt worden.", devLabel: "Understanding", Icon: BrainCircuit, mode: "immersive" },
+  // Zwischen "listening" (Mikrofon läuft) und "understanding" (Agent
+  // verarbeitet): Aufnahme ist zu Ende, die Transkription läuft noch --
+  // vorher lief das fälschlich unter "understanding", weshalb "Hufi hat
+  // verstanden" erschien, bevor überhaupt ein Transkript existierte.
+  transcribing: { label: "Hufi verarbeitet die Aufnahme", hint: "Einen Moment.", devLabel: "Transcribing", Icon: Loader2, mode: "immersive" },
+  understanding: { label: "Hufi hat verstanden", hint: "Hufi denkt nach.", devLabel: "Understanding", Icon: BrainCircuit, mode: "immersive" },
   questioning: { label: "Eine Rückfrage", hint: "Bitte auswählen.", devLabel: "Question", Icon: HelpCircle, mode: "conversation" },
   confirming: { label: "Bereit zur Bestätigung", hint: "Bitte kurz prüfen.", devLabel: "Confirmation", Icon: ClipboardCheck, mode: "conversation" },
   executing: { label: "Wird ausgeführt", hint: "Einen Moment.", devLabel: "Executing", Icon: Loader2, mode: "conversation" },

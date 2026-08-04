@@ -1,6 +1,17 @@
 import type { HufiPhase, SurfaceMode } from "@/components/assistant-lab/HufiAssistantState";
 import { momentHintLabel, type HufiMomentType } from "@/lib/hufi-moment";
 
+// Fehlerkategorie, damit Hufi nicht jeden Fehler pauschal als "Keine
+// Verbindung" darstellt (P0-Vorgabe). "mic"/"transcription" kommen aus
+// useVoiceCapture, "agent"/"action" aus askHufiAgent bzw. der
+// Task-Bestätigung, "tts" aus der Sprachausgabe.
+export type HufiErrorCategory = "mic" | "transcription" | "agent" | "action" | "tts" | "unknown";
+
+export interface HufiUiError {
+  text: string;
+  category: HufiErrorCategory;
+}
+
 // Reale Content-Varianten für HufiAssistantExperience -- Pendant zu
 // ContentView aus HufiScenarios.ts, aber ohne MOCK_*-Daten. Jede Variante
 // wird ausschließlich aus echtem Live-State (MobileShell.tsx) befüllt.
@@ -20,7 +31,7 @@ export type RealContentView =
     }
   | { kind: "executing" }
   | { kind: "success"; text: string }
-  | { kind: "error"; text: string };
+  | { kind: "error"; text: string; category: HufiErrorCategory };
 
 export interface HufiExperienceUi {
   phase: HufiPhase;
@@ -39,12 +50,17 @@ export interface HufiExperienceInputs {
   activeConfirmation: { taskId: string; stepId: string; taskType: string; description: string } | null;
   confirming: boolean;
   confirmationOutcome: { success: boolean; message: string } | null;
-  micError: string | null;
-  agentError: string | null;
+  micError: HufiUiError | null;
+  agentError: HufiUiError | null;
   // Rein lokaler, sicherer UI-Hinweis für die kurze Wartezeit auf die echte
   // Antwort -- siehe hufi-moment.ts. Entscheidet nichts, wird von jeder
   // echten Antwort/Rückfrage/Bestätigung sofort verdrängt (Prioritäten oben).
   momentHint: HufiMomentType | null;
+  // Echter, zeitbasierter Warte-Hinweis ("Ich schaue nach." / "Ich brauche
+  // gerade einen Moment länger.") -- kein erfundener Fortschritt, nur ein
+  // Signal, dass Hufi noch lebt, solange die echte Antwort auf sich warten
+  // lässt. Niedrigere Priorität als momentHint (fachlich konkreter).
+  waitHint: string | null;
   taskIcon: (taskType: string) => string;
   taskLabel: (taskType: string) => string;
   onConfirm: () => void;
@@ -53,25 +69,25 @@ export interface HufiExperienceInputs {
 
 // Reine Ableitung: kein eigener State, keine neue Business-Logik -- bildet
 // nur bereits vorhandene echte Zwischenzustände aus MobileShell.tsx auf das
-// elfstufige Phasenmodell (HufiPhase + "speaking") ab. Priorität von oben
-// nach unten, da mehrere Signale gleichzeitig wahr sein können.
+// Phasenmodell (HufiPhase + "speaking") ab. Priorität von oben nach unten,
+// da mehrere Signale gleichzeitig wahr sein können.
 export function deriveHufiExperience(input: HufiExperienceInputs): HufiExperienceUi {
   const {
     orbState, justWoke, liveTranscript, pendingClarification, answerVisible, lastAnswerText,
     isTtsSpeaking, activeConfirmation, confirming, confirmationOutcome, micError, agentError,
-    momentHint, taskIcon, taskLabel, onConfirm, onReject,
+    momentHint, waitHint, taskIcon, taskLabel, onConfirm, onReject,
   } = input;
 
   // Höchste Priorität: sichtbare, echte Fehler -- Hufi darf nie stillschweigend
   // "Erfolg" zeigen, wenn etwas real fehlgeschlagen ist.
   if (agentError) {
-    return { phase: "error", mode: "conversation", content: { kind: "error", text: agentError } };
+    return { phase: "error", mode: "conversation", content: { kind: "error", text: agentError.text, category: agentError.category } };
   }
 
   if (confirmationOutcome) {
     return confirmationOutcome.success
       ? { phase: "success", mode: "conversation", content: { kind: "success", text: confirmationOutcome.message } }
-      : { phase: "error", mode: "conversation", content: { kind: "error", text: confirmationOutcome.message } };
+      : { phase: "error", mode: "conversation", content: { kind: "error", text: confirmationOutcome.message, category: "action" } };
   }
 
   if (confirming) {
@@ -107,7 +123,7 @@ export function deriveHufiExperience(input: HufiExperienceInputs): HufiExperienc
   }
 
   if (micError) {
-    return { phase: "error", mode: "conversation", content: { kind: "error", text: micError } };
+    return { phase: "error", mode: "conversation", content: { kind: "error", text: micError.text, category: micError.category } };
   }
 
   // Echte Antwort ist da (unabhängig davon, ob TTS gerade tatsächlich läuft
@@ -121,9 +137,12 @@ export function deriveHufiExperience(input: HufiExperienceInputs): HufiExperienc
     };
   }
 
+  // Aufnahme ist zu Ende, das Audio wird noch transkribiert -- eigene Phase,
+  // damit "Hufi hat verstanden" nicht erscheint, bevor überhaupt ein
+  // Transkript existiert (P0-Ursache).
   if (orbState === "transcribing") {
     return {
-      phase: "understanding",
+      phase: "transcribing",
       mode: "immersive",
       content: liveTranscript ? { kind: "transcript", text: liveTranscript, active: false } : null,
     };
@@ -133,7 +152,11 @@ export function deriveHufiExperience(input: HufiExperienceInputs): HufiExperienc
     return {
       phase: "understanding",
       mode: "conversation",
-      content: momentHint ? { kind: "hint", text: momentHintLabel(momentHint) } : null,
+      content: momentHint
+        ? { kind: "hint", text: momentHintLabel(momentHint) }
+        : waitHint
+          ? { kind: "hint", text: waitHint }
+          : null,
     };
   }
 

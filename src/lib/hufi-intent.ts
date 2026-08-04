@@ -191,10 +191,15 @@ const TARGET_MATCHERS: TargetMatcher[] = [
     build: () => ({ kind: "cockpit" }),
     patterns: [/\bcockpit\b/, /\btages.?cockpit\b/, /\barbeits.?tag\b/],
   },
+  // Profil (eigene Route, spezifischer als der Management-Hub)
+  {
+    build: () => ({ kind: "profile" }),
+    patterns: [/\bprofil\b/, /\bmein\s+(profil|account|konto)\b/],
+  },
   // Management Hub
   {
     build: () => ({ kind: "management" }),
-    patterns: [/\bmanagement\b/, /\bprofil\b/, /\bmein\s+(profil|account|konto)\b/],
+    patterns: [/\bmanagement\b/],
   },
   // Team
   {
@@ -220,6 +225,21 @@ const TARGET_MATCHERS: TargetMatcher[] = [
   {
     build: () => ({ kind: "chat" }),
     patterns: [/\bchat\b/, /\bnachrichten\b/, /\bnachricht\b/],
+  },
+  // Hilfe / FAQ
+  {
+    build: () => ({ kind: "help" }),
+    patterns: [/\bhilfe\b/, /\bfaq\b/, /\bhilfe.?center\b/, /\bsupport\b/],
+  },
+  // Voice-Guthaben
+  {
+    build: () => ({ kind: "voice_credits" }),
+    patterns: [/\bvoice.?guthaben\b/, /\bsprach.?guthaben\b/, /\bguthaben\b/],
+  },
+  // Abo
+  {
+    build: () => ({ kind: "subscription" }),
+    patterns: [/\babo\b/, /\babonnement\b/, /\bmein\s+paket\b/],
   },
   // Horses list (must come BEFORE the wildcard horse matcher)
   {
@@ -282,7 +302,7 @@ export function detectNavigationTarget(message: string): NavTarget | null {
 
   // 2b. Single horse by name. Skip if the message contains a generic
   //     target-keyword that we already covered above.
-  const STOPWORDS = /\b(kalender|termine?|rechnungen?|kunden|anfragen?|leads?|einstellungen?|tour|tageskockpit|profil|settings|pferde\b)\b/;
+  const STOPWORDS = /\b(kalender|termine?|rechnungen?|kunden|anfragen?|leads?|einstellungen?|tour|tageskockpit|profil|settings|pferde\b|hilfe|faq|guthaben|abo|abonnement)\b/;
   if (STOPWORDS.test(lower)) return null;
 
   for (const re of HORSE_OPEN_PATTERNS) {

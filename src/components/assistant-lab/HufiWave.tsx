@@ -33,6 +33,7 @@ interface HufiWaveProps {
 const PHASE_COLOR: Partial<Record<HufiPhase, string>> = {
   wake: "#F97316",
   listening: "#F97316",
+  transcribing: "#F97316",
   understanding: "#EA580C",
   questioning: "#FDBA74",
   confirming: "#F97316",

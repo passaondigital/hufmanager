@@ -39,7 +39,11 @@ export type NavActionId =
   | "open_lager"
   | "open_hufanalyse"
   | "open_analyse"
-  | "open_chat";
+  | "open_chat"
+  | "open_profile"
+  | "open_help"
+  | "open_voice_credits"
+  | "open_subscription";
 
 export interface NavEntity {
   type: "horse" | "customer" | "appointment";
@@ -111,6 +115,12 @@ function routeFor(action: NavActionId, role: ActionRole, horseId?: string): stri
       if (role === "client") return "/client-chat";
       if (role === "employee") return "/employee/chat";
       return "/chat";
+    // Dieselben Routen wie HufiMenu.tsx (siehe dort) — bisher nur per
+    // Tippen erreichbar, hier erstmals echt per Sprache verkabelt.
+    case "open_profile": return "/management/profil";
+    case "open_help": return "/hilfe";
+    case "open_voice_credits": return "/management/guthaben";
+    case "open_subscription": return "/management/abo";
   }
 }
 
@@ -241,6 +251,18 @@ export function buildOpenAnalyse(role: ActionRole): ResolvedNavAction {
 }
 export function buildOpenChat(role: ActionRole): ResolvedNavAction {
   return makeAction("open_chat", role, "Chat geöffnet.", "Chat");
+}
+export function buildOpenProfile(role: ActionRole): ResolvedNavAction {
+  return makeAction("open_profile", role, "Ich öffne dein Profil.", "Profil geöffnet");
+}
+export function buildOpenHelp(role: ActionRole): ResolvedNavAction {
+  return makeAction("open_help", role, "Ich öffne die Hilfe.", "Hilfe geöffnet");
+}
+export function buildOpenVoiceCredits(role: ActionRole): ResolvedNavAction {
+  return makeAction("open_voice_credits", role, "Ich öffne dein Voice-Guthaben.", "Voice-Guthaben geöffnet");
+}
+export function buildOpenSubscription(role: ActionRole): ResolvedNavAction {
+  return makeAction("open_subscription", role, "Ich öffne dein Abo.", "Abo geöffnet");
 }
 
 export async function buildOpenHorse(
@@ -386,7 +408,11 @@ export type NavTarget =
   | { kind: "lager" }
   | { kind: "hufanalyse" }
   | { kind: "analyse" }
-  | { kind: "chat" };
+  | { kind: "chat" }
+  | { kind: "profile" }
+  | { kind: "help" }
+  | { kind: "voice_credits" }
+  | { kind: "subscription" };
 
 export async function runNavAction(
   target: NavTarget,
@@ -422,5 +448,9 @@ export async function runNavAction(
     case "hufanalyse":  return { kind: "ok", action: buildOpenHufanalyse(ctx.role) };
     case "analyse":     return { kind: "ok", action: buildOpenAnalyse(ctx.role) };
     case "chat":        return { kind: "ok", action: buildOpenChat(ctx.role) };
+    case "profile":         return { kind: "ok", action: buildOpenProfile(ctx.role) };
+    case "help":            return { kind: "ok", action: buildOpenHelp(ctx.role) };
+    case "voice_credits":   return { kind: "ok", action: buildOpenVoiceCredits(ctx.role) };
+    case "subscription":    return { kind: "ok", action: buildOpenSubscription(ctx.role) };
   }
 }

@@ -18,6 +18,19 @@ import type { HufiExperienceUi } from "./hufi-experience";
 import { HUFI_ENTRY_PROMPTS } from "@/lib/hufi-copy";
 import "@/components/assistant-lab/hufi-lab.css";
 
+// Nicht jeder Fehler ist "keine Verbindung" -- P0-Vorgabe. Der Status-Punkt
+// oben zeigt die echte Ursache, abgeleitet aus content.category statt eines
+// pauschalen Textes. Fallback nur, falls (theoretisch) kein Error-Content
+// mitkommt, obwohl phase==="error" ist.
+const ERROR_HEADER_LABEL: Record<string, string> = {
+  mic: "Mikrofonproblem",
+  transcription: "Spracherkennung gestört",
+  agent: "Hufi-Agent nicht erreichbar",
+  action: "Aktion fehlgeschlagen",
+  tts: "Sprachausgabe gestört",
+  unknown: "Kurz gestört",
+};
+
 // Verstehen/Verarbeiten laufen laut den offiziellen Screen-Referenzen
 // violett-blau statt orange -- Farbe direkt aus der Referenz abgetastet
 // (RGB 100,93,235). /hufi-lab selbst bleibt unverändert.
@@ -160,7 +173,9 @@ export function HufiAssistantExperience({ ui, userName, insight, onWakeTap, onIn
           <div className="hlab-foreground-interactive" style={{ display: "flex", alignItems: "center", gap: 4 }}>
             <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: "var(--hlab-fg-40)" }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: phase === "error" ? "#8B908C" : "var(--hufi-orange)", flexShrink: 0 }} />
-              {phase === "error" ? "Keine Verbindung" : new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+              {phase === "error"
+                ? ERROR_HEADER_LABEL[content?.kind === "error" ? content.category : "unknown"]
+                : new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
             </span>
             <HufiMenu className="hlab-focusable" />
           </div>

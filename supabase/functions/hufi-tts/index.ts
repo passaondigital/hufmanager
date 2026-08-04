@@ -21,6 +21,12 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Eigene correlationId je TTS-Anfrage (P0 Abschnitt 1) -- nur technische
+  // Phasen/Dauer werden geloggt, nie der Text selbst oder Audiodaten.
+  const requestId = req.headers.get("X-Correlation-Id") || crypto.randomUUID().slice(0, 8);
+  const t0 = Date.now();
+  console.log(`[hufi-tts][${requestId}] TTS-Anfrage gestartet`);
+
   try {
     // ── Auth ───────────────────────────────────────────────────────────────
     const authHeader = req.headers.get("Authorization");
@@ -140,7 +146,7 @@ serve(async (req) => {
 
     if (!ttsResponse.ok) {
       const errText = await ttsResponse.text();
-      console.error("[hufi-tts] ElevenLabs error:", ttsResponse.status, errText);
+      console.error(`[hufi-tts][${requestId}] ElevenLabs error nach ${Date.now() - t0}ms:`, ttsResponse.status, errText);
       let detail = "";
       try {
         const parsed = JSON.parse(errText);
@@ -170,8 +176,9 @@ serve(async (req) => {
       p_seconds: estimatedSeconds,
       p_description: `TTS (${model_id})`,
     });
-    if (consumeError) console.error("[hufi-tts] Guthaben-Verbuchung fehlgeschlagen:", consumeError);
+    if (consumeError) console.error(`[hufi-tts][${requestId}] Guthaben-Verbuchung fehlgeschlagen:`, consumeError);
 
+    console.log(`[hufi-tts][${requestId}] TTS-Antwort erfolgreich: ${Date.now() - t0}ms, ${audioBuffer.byteLength} bytes`);
     return new Response(audioBuffer, {
       status: 200,
       headers: {
@@ -181,7 +188,7 @@ serve(async (req) => {
       },
     });
   } catch (e) {
-    console.error("[hufi-tts] error:", e);
+    console.error(`[hufi-tts][${requestId}] error nach ${Date.now() - t0}ms:`, e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unbekannter Fehler" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

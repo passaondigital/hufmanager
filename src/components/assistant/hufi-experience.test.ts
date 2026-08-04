@@ -16,6 +16,7 @@ function baseInput(overrides: Partial<HufiExperienceInputs> = {}): HufiExperienc
     micError: null,
     agentError: null,
     momentHint: null,
+    waitHint: null,
     taskIcon: () => "🧾",
     taskLabel: () => "Rechnung erstellen",
     onConfirm: vi.fn(),
@@ -41,6 +42,18 @@ describe("deriveHufiExperience", () => {
   it("zeigt wake statt listening direkt nach dem Mikrofonstart", () => {
     const ui = deriveHufiExperience(baseInput({ orbState: "recording", justWoke: true }));
     expect(ui.phase).toBe("wake");
+  });
+
+  it("P0-Fix: transcribing ist eine eigene Phase, kein verfruehtes 'verstanden'", () => {
+    const ui = deriveHufiExperience(baseInput({ orbState: "transcribing" }));
+    expect(ui.phase).toBe("transcribing");
+    expect(ui.content).toBeNull();
+  });
+
+  it("transcribing zeigt das echte Transkript, sobald es da ist", () => {
+    const ui = deriveHufiExperience(baseInput({ orbState: "transcribing", liveTranscript: "Wie viele Termine habe ich heute?" }));
+    expect(ui.phase).toBe("transcribing");
+    expect(ui.content).toEqual({ kind: "transcript", text: "Wie viele Termine habe ich heute?", active: false });
   });
 
   it("Root-Cause-Fix: Antwort bleibt sichtbar, auch wenn TTS nicht laeuft", () => {
@@ -92,30 +105,42 @@ describe("deriveHufiExperience", () => {
     expect(ui.content).toEqual({ kind: "success", text: "Rechnung erstellt." });
   });
 
-  it("echter Fehler zeigt error, kein falscher Erfolg", () => {
+  it("echter Fehler zeigt error mit Kategorie 'action', kein falscher Erfolg", () => {
     const ui = deriveHufiExperience(baseInput({ confirmationOutcome: { success: false, message: "Netzwerkfehler." } }));
     expect(ui.phase).toBe("error");
-    expect(ui.content).toEqual({ kind: "error", text: "Netzwerkfehler." });
+    expect(ui.content).toEqual({ kind: "error", text: "Netzwerkfehler.", category: "action" });
   });
 
   it("agentError hat oberste Prioritaet -- kein falscher Erfolg trotz gleichzeitigem Success-State", () => {
     const ui = deriveHufiExperience(baseInput({
-      agentError: "Verbindung fehlgeschlagen.",
+      agentError: { text: "Verbindung fehlgeschlagen.", category: "agent" },
       confirmationOutcome: { success: true, message: "sollte nicht erscheinen" },
     }));
     expect(ui.phase).toBe("error");
-    expect(ui.content).toEqual({ kind: "error", text: "Verbindung fehlgeschlagen." });
+    expect(ui.content).toEqual({ kind: "error", text: "Verbindung fehlgeschlagen.", category: "agent" });
   });
 
-  it("Mikrofonfehler wird sichtbar, wenn kein wichtigerer Zustand aktiv ist", () => {
-    const ui = deriveHufiExperience(baseInput({ micError: "Kein Mikrofonzugriff." }));
+  it("Mikrofonfehler wird sichtbar, mit eigener Kategorie statt 'Keine Verbindung'", () => {
+    const ui = deriveHufiExperience(baseInput({ micError: { text: "Kein Mikrofonzugriff.", category: "mic" } }));
     expect(ui.phase).toBe("error");
-    expect(ui.content).toEqual({ kind: "error", text: "Kein Mikrofonzugriff." });
+    expect(ui.content).toEqual({ kind: "error", text: "Kein Mikrofonzugriff.", category: "mic" });
   });
 
   it("momentHint erscheint nur waehrend echtem Warten (thinking), nie als erfundene Antwort", () => {
     const ui = deriveHufiExperience(baseInput({ orbState: "thinking", momentHint: "invoice" }));
     expect(ui.phase).toBe("understanding");
     expect(ui.content?.kind).toBe("hint");
+  });
+
+  it("waitHint erscheint als Fallback, wenn kein fachlicher momentHint da ist", () => {
+    const ui = deriveHufiExperience(baseInput({ orbState: "thinking", waitHint: "Ich schaue nach." }));
+    expect(ui.phase).toBe("understanding");
+    expect(ui.content).toEqual({ kind: "hint", text: "Ich schaue nach." });
+  });
+
+  it("momentHint hat Vorrang vor waitHint", () => {
+    const ui = deriveHufiExperience(baseInput({ orbState: "thinking", momentHint: "invoice", waitHint: "Ich schaue nach." }));
+    expect(ui.content?.kind).toBe("hint");
+    if (ui.content?.kind === "hint") expect(ui.content.text).not.toBe("Ich schaue nach.");
   });
 });

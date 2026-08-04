@@ -41,6 +41,11 @@ export interface HufiAgentResponse {
   conversationFocus?: ConversationFocus;
 }
 
+// Kontrollierter Timeout für die Agentenanfrage (P0 Abschnitt 5/1) -- ohne
+// das hing die UI bei einer hängenden Edge Function unbegrenzt in
+// "responding", ohne dass je ein Fehler oder Timeout sichtbar wurde.
+const AGENT_TIMEOUT_MS = 25_000;
+
 export async function askHufiAgent(params: {
   text: string;
   voiceMode?: boolean;
@@ -51,11 +56,19 @@ export async function askHufiAgent(params: {
   clientLocation?: { lat: number; lon: number };
   conversationFocus?: ConversationFocus;
 }): Promise<HufiAgentResponse> {
+  // Eine correlationId pro Anfrage -- dieselbe ID läuft als Header in die
+  // Edge Function mit, damit sich ein Vorfall über Client- und
+  // Server-Logs hinweg an einer Stelle zusammensetzen lässt (P0 Abschnitt 1).
+  // Keine sensiblen Inhalte im Log, nur technische Phasen + Dauer.
+  const correlationId = crypto.randomUUID();
+  const t0 = performance.now();
+
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
   if (!session?.access_token) {
+    console.info(`[hufi-agent][${correlationId}] abgebrochen: nicht angemeldet`);
     throw new Error("Nicht angemeldet");
   }
 
@@ -68,6 +81,7 @@ export async function askHufiAgent(params: {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
+          "X-Correlation-Id": correlationId,
         },
         body: JSON.stringify({
           text: params.text,
@@ -78,10 +92,19 @@ export async function askHufiAgent(params: {
           clientTimezone: params.clientTimezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
           clientLocation: params.clientLocation,
           conversationFocus: params.conversationFocus,
+          correlationId,
         }),
+        signal: AbortSignal.timeout(AGENT_TIMEOUT_MS),
       },
     );
   } catch (fetchErr) {
+    const name = (fetchErr as Error)?.name;
+    const durationMs = Math.round(performance.now() - t0);
+    if (name === "TimeoutError" || name === "AbortError") {
+      console.warn(`[hufi-agent][${correlationId}] Zeitüberschreitung nach ${durationMs}ms`);
+      throw new Error(`Zeitüberschreitung nach ${AGENT_TIMEOUT_MS}ms`);
+    }
+    console.warn(`[hufi-agent][${correlationId}] nicht erreichbar nach ${durationMs}ms:`, name);
     throw new Error(`Hufi-Agent nicht erreichbar: ${(fetchErr as Error).message}`);
   }
 
@@ -89,8 +112,12 @@ export async function askHufiAgent(params: {
   try {
     json = await res.json() as HufiAgentResponse;
   } catch {
+    console.warn(`[hufi-agent][${correlationId}] Statuscode ${res.status}, ungültige Antwort`);
     throw new Error(`Hufi-Agent ${res.status}: Ungültige Antwort`);
   }
+
+  const durationMs = Math.round(performance.now() - t0);
+  console.info(`[hufi-agent][${correlationId}] Statuscode ${res.status}, ${durationMs}ms, source=${json?.source ?? "?"}`);
 
   if (!res.ok || !json?.ok) {
     throw new Error(json?.error ?? `Hufi-Agent ${res.status}`);

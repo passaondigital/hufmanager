@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getHorseKnowledgeForRole } from "./horse-knowledge.ts";
 import { checkFachGuard, detectFachTopic, FACH_GUARD_RESPONSES, type FachGuardCategory } from "./fach-guard.ts";
+import { buildCapabilitySummary } from "./capability-registry.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,6 +14,10 @@ const MODEL_SMART  = "claude-sonnet-5";
 const MODEL_FAST   = "claude-haiku-4-5-20251001";
 const MAX_HISTORY  = 8;
 const MAX_TOOLS_ROUNDS = 4; // max Tool-Use-Runden pro Anfrage
+
+// Einmal pro Deno-Isolate berechnet, nicht pro Anfrage -- die Registry ist
+// statisch (siehe capability-registry.ts).
+const CAPABILITY_SUMMARY = buildCapabilitySummary();
 
 // ── Typen ──────────────────────────────────────────────────────────────────────
 
@@ -40,6 +45,7 @@ interface RequestBody {
   clientTimezone?: string;
   clientLocation?: { lat: number; lon: number };
   conversationFocus?: ConversationFocus;
+  correlationId?: string;
 }
 
 interface PendingConfirmation {
@@ -1422,6 +1428,7 @@ async function callClaudeWithTools(
   professionType: string | null = null,
   originalText: string = "",
   incomingFocus: ConversationFocus = {},
+  correlationId: string = "?",
 ): Promise<CallToolsResult> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 55_000);
@@ -1548,7 +1555,8 @@ async function callClaudeWithTools(
         }
 
         await updateFocusFromToolCall(focus, block.name, block.input ?? {}, supabaseAdmin);
-        console.log(`[hufi-agent] Tool: ${block.name}`, JSON.stringify(block.input).slice(0, 100));
+        console.log(`[hufi-agent][${correlationId}] Tool-Aufruf gestartet: ${block.name}`);
+        const toolT0 = Date.now();
         const result = await executeTool(
           block.name,
           block.input ?? {},
@@ -1558,6 +1566,7 @@ async function callClaudeWithTools(
           supabaseServiceKey,
           professionType,
         );
+        console.log(`[hufi-agent][${correlationId}] Tool-Aufruf beendet: ${block.name} (${Date.now() - toolT0}ms)`);
         // search_entity liefert selbst neue IDs (Claude kannte sie vor dem
         // Aufruf noch nicht) -- bei genau einem eindeutigen Treffer den Fokus
         // direkt aus dem Ergebnis setzen statt erst auf den nächsten Tool-Call
@@ -1652,7 +1661,6 @@ function selectModel(text: string, voiceMode: boolean): string {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  const requestId = crypto.randomUUID().slice(0, 8);
   const t0 = Date.now();
 
   const authHeader = req.headers.get("Authorization");
@@ -1677,8 +1685,15 @@ serve(async (req) => {
   try { body = await req.json() as RequestBody; }
   catch { return jsonErr("Ungültige Anfrage", 400); }
 
-  const { text, voiceMode = false, history = [], route, clientTimestamp, clientTimezone, clientLocation, conversationFocus } = body;
+  const { text, voiceMode = false, history = [], route, clientTimestamp, clientTimezone, clientLocation, conversationFocus, correlationId: bodyCorrelationId } = body;
   if (!text?.trim()) return jsonErr("Kein Text", 400);
+
+  // Dieselbe correlationId, die der Client erzeugt hat (Header bevorzugt,
+  // Body als Rückfalloption) -- damit lässt sich ein Vorfall über Client-
+  // und Server-Logs hinweg an einer Stelle nachvollziehen (P0 Abschnitt 1).
+  // Nur technische Phasen/Dauer werden geloggt, keine Anfrageinhalte.
+  const requestId = req.headers.get("X-Correlation-Id") || bodyCorrelationId || crypto.randomUUID().slice(0, 8);
+  console.log(`[hufi-agent][${requestId}] Agentenanfrage gestartet voice=${voiceMode} textLen=${text.trim().length}`);
 
   // ── A1: Serverseitiger Fach-Guard (Medizin/Recht) ──────────────────────────
   // Greift VOR dem Claude-Call, kann vom Client nicht umgangen werden.
@@ -1753,6 +1768,7 @@ serve(async (req) => {
 
   const systemPrompt = [
     HUFI_BASE,
+    CAPABILITY_SUMMARY,
     roleInstr,
     horseKnowledge,
     professionBlock || null,
@@ -1780,15 +1796,17 @@ serve(async (req) => {
 
   if (ANTHROPIC_KEY) {
     try {
+      console.log(`[hufi-agent][${requestId}] Claude-Anfrage gestartet model=${model}`);
       const result = await callClaudeWithTools(
         systemPrompt, messages, ANTHROPIC_KEY, model,
         user.id, supabaseAdmin, supabaseUrl, supabaseServiceKey, voiceMode,
-        ctx.professionType, text, conversationFocus ?? {},
+        ctx.professionType, text, conversationFocus ?? {}, requestId,
       );
       rawAnswer = result.text;
       pendingConfirmation = result.pendingConfirmation;
       resultFocus = result.focus ?? resultFocus;
       source = "claude";
+      console.log(`[hufi-agent][${requestId}] Claude-Antwort erhalten`);
     } catch (e) {
       console.error(`[hufi-agent][${requestId}] Claude Fehler:`, e);
     }

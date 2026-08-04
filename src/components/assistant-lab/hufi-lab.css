@@ -404,6 +404,7 @@
    Verlangsamung) — spürbar ruhig, aber nicht deaktiviert. ──────────── */
 .hlab-wave-wrap[data-state="wake"]          { --hlab-wave-amp: 1.12; }
 .hlab-wave-wrap[data-state="listening"]     { --hlab-wave-amp: 1.15; }
+.hlab-wave-wrap[data-state="transcribing"]  { --hlab-wave-amp: 0.95; }
 .hlab-wave-wrap[data-state="understanding"] { --hlab-wave-amp: 0.82; }
 .hlab-wave-wrap[data-state="questioning"]   { --hlab-wave-amp: 1.05; }
 .hlab-wave-wrap[data-state="confirming"]    { --hlab-wave-amp: 0.7; }
