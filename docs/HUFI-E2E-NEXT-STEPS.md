@@ -26,3 +26,8 @@ Angemeldet in der Preview (`https://preview.hufiapp.de/home`) eine normale Hufi-
 - Browser-TTS, Piper und der Client-Rollen-Piper-Sonderweg sind aus Hufis normaler Sprachausgabe entfernt. Es bleiben gespeicherte gültige ElevenLabs-Hufi-Voice oder offizielle Hufi-Standardvoice; bei Fehler bleibt Text sichtbar.
 - `hufi-tts` wurde lokal gehärtet (Timeout, Audio-MIME-Type, Bytegröße, maskierte Diagnostik), aber nicht deployt: Das Supabase-CLI hat keinen Access Token. Preview wurde daher nicht aktualisiert.
 - Nächster Schritt: Nur `hufi-tts` mit autorisiertem CLI deployen, Boot-/Auth-Smoke-Test ausführen, Preview über den vorhandenen Release-Weg aktualisieren und dann die definierte Hörprobe durchführen.
+
+## Hufi-Agent-503 2026-08-04
+- Smartphone-Evidenz: `hufi-agent` Version 32 POST 503 trotz erfolgreichem OPTIONS; `hufi-tts` Version 13 POST 200, Premiumstimme hörbar. TTS ist nicht mehr der P0.
+- `voiceMode` erreicht den Agenten und wählt den Fast-Pfad. Der bisherige Code verwirft den Anthropic-Fehlertyp vor dem generischen 503.
+- Lokaler Fix klassifiziert Providerfehler, protokolliert nur technische Daten und bietet einen einmaligen Modell-Fallback bei `anthropic_model_not_found`. Deploy steht aus; danach ist eine minimale Smartphone-Preview-Anfrage mit Logabgleich nötig.

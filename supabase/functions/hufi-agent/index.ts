@@ -15,8 +15,11 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const MODEL_SMART  = "claude-sonnet-5";
-const MODEL_FAST   = "claude-haiku-4-5-20251001";
+// Runtime-Konfiguration hat Vorrang. Die Defaults sind offizielle Messages-API-
+// Kennungen; ein model_not_found wechselt genau einmal auf MODEL_FALLBACK.
+const MODEL_SMART = Deno.env.get("ANTHROPIC_MODEL_SMART") ?? "claude-sonnet-4-20250514";
+const MODEL_FAST = Deno.env.get("ANTHROPIC_MODEL_FAST") ?? "claude-3-5-haiku-20241022";
+const MODEL_FALLBACK = Deno.env.get("ANTHROPIC_MODEL_FALLBACK") ?? "claude-3-5-haiku-20241022";
 const MAX_HISTORY  = 8;
 const MAX_TOOLS_ROUNDS = 4; // max Tool-Use-Runden pro Anfrage
 
@@ -28,6 +31,43 @@ const CAPABILITY_SUMMARY = buildCapabilitySummary();
 
 interface Message { role: "user" | "assistant"; content: string | ContentBlock[]; }
 interface ContentBlock { type: string; [k: string]: unknown; }
+
+type ProviderErrorCode =
+  | "anthropic_not_configured"
+  | "anthropic_auth_failed"
+  | "anthropic_model_not_found"
+  | "anthropic_rate_limited"
+  | "anthropic_credit_exhausted"
+  | "anthropic_bad_request"
+  | "anthropic_timeout"
+  | "anthropic_upstream_error"
+  | "empty_provider_response"
+  | "ollama_unavailable"
+  | "all_providers_failed";
+
+class ProviderError extends Error {
+  constructor(readonly code: ProviderErrorCode) {
+    super(code);
+  }
+}
+
+async function throwAnthropicError(response: Response): Promise<never> {
+  const body = await response.json().catch(() => ({})) as { error?: { type?: string; message?: string } };
+  const type = body.error?.type ?? "";
+  const message = body.error?.message?.toLowerCase() ?? "";
+  const code: ProviderErrorCode = response.status === 401 || response.status === 403
+    ? "anthropic_auth_failed"
+    : response.status === 404 || type === "not_found_error" || message.includes("model") && message.includes("not found")
+      ? "anthropic_model_not_found"
+      : response.status === 429
+        ? "anthropic_rate_limited"
+        : response.status === 402 || message.includes("credit") || message.includes("billing")
+          ? "anthropic_credit_exhausted"
+          : response.status === 400
+            ? "anthropic_bad_request"
+            : "anthropic_upstream_error";
+  throw new ProviderError(code);
+}
 
 // Kurzzeitkontext "worüber reden wir gerade" (Etappe 3, siehe AGENT_ANALYSE.md).
 // Rundtrip: Client schickt den zuletzt bekannten Fokus mit, die Edge Function
@@ -1465,8 +1505,7 @@ async function callClaudeWithTools(
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({})) as { error?: { message?: string } };
-        throw new Error(`Claude ${res.status}: ${err.error?.message ?? res.statusText}`);
+        await throwAnthropicError(res);
       }
 
       const json = await res.json() as {
@@ -1619,9 +1658,16 @@ async function callClaudeWithTools(
       }),
       signal: ctrl.signal,
     });
+    if (!finalRes.ok) await throwAnthropicError(finalRes);
     const finalJson = await finalRes.json() as { content?: Array<{ type: string; text?: string }> };
-    return { text: finalJson.content?.find(b => b.type === "text")?.text ?? "Ich konnte die Anfrage nicht vollständig verarbeiten.", focus };
+    const text = finalJson.content?.find(b => b.type === "text")?.text?.trim() ?? "";
+    if (!text) throw new ProviderError("empty_provider_response");
+    return { text, focus };
 
+  } catch (error) {
+    if (error instanceof ProviderError) throw error;
+    if (error instanceof Error && error.name === "AbortError") throw new ProviderError("anthropic_timeout");
+    throw new ProviderError("anthropic_upstream_error");
   } finally {
     clearTimeout(timer);
   }
@@ -1789,7 +1835,7 @@ serve(async (req) => {
     { role: "user", content: text.trim() },
   ];
 
-  const model = selectModel(text, voiceMode);
+  const requestedModel = selectModel(text, voiceMode);
   const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY");
   const OLLAMA_PROXY  = Deno.env.get("OLLAMA_PROXY_URL") ?? "";
   const OLLAMA_SECRET = Deno.env.get("OLLAMA_PROXY_SECRET") ?? "";
@@ -1798,12 +1844,16 @@ serve(async (req) => {
   let pendingConfirmation: PendingConfirmation | undefined;
   let resultFocus: ConversationFocus | undefined = conversationFocus;
   let source: "claude" | "ollama" = "claude";
+  let selectedModel = requestedModel;
+  let providerErrorCode: ProviderErrorCode | undefined;
+  let fallbackAttempted = false;
+  let fallbackStatus = "not_attempted";
 
   if (ANTHROPIC_KEY) {
     try {
-      console.log(`[hufi-agent][${requestId}] Claude-Anfrage gestartet model=${model}`);
+      console.log(`[hufi-agent][${requestId}] provider=anthropic voice=${voiceMode} model=${selectedModel} fallbackAttempted=false`);
       const result = await callClaudeWithTools(
-        systemPrompt, messages, ANTHROPIC_KEY, model,
+        systemPrompt, messages, ANTHROPIC_KEY, selectedModel,
         user.id, supabaseAdmin, supabaseUrl, supabaseServiceKey, voiceMode,
         ctx.professionType, text, conversationFocus ?? {}, requestId,
       );
@@ -1811,28 +1861,59 @@ serve(async (req) => {
       pendingConfirmation = result.pendingConfirmation;
       resultFocus = result.focus ?? resultFocus;
       source = "claude";
-      console.log(`[hufi-agent][${requestId}] Claude-Antwort erhalten`);
-    } catch (e) {
-      console.error(`[hufi-agent][${requestId}] Claude Fehler:`, e);
+      console.log(`[hufi-agent][${requestId}] provider=anthropic status=success model=${selectedModel}`);
+    } catch (error) {
+      providerErrorCode = error instanceof ProviderError ? error.code : "anthropic_upstream_error";
+      console.error(`[hufi-agent][${requestId}] provider=anthropic status=failed code=${providerErrorCode} model=${selectedModel}`);
+      if (providerErrorCode === "anthropic_model_not_found" && selectedModel !== MODEL_FALLBACK) {
+        fallbackAttempted = true;
+        selectedModel = MODEL_FALLBACK;
+        try {
+          console.log(`[hufi-agent][${requestId}] provider=anthropic fallbackAttempted=true model=${selectedModel}`);
+          const result = await callClaudeWithTools(
+            systemPrompt, messages, ANTHROPIC_KEY, selectedModel,
+            user.id, supabaseAdmin, supabaseUrl, supabaseServiceKey, voiceMode,
+            ctx.professionType, text, conversationFocus ?? {}, requestId,
+          );
+          rawAnswer = result.text;
+          pendingConfirmation = result.pendingConfirmation;
+          resultFocus = result.focus ?? resultFocus;
+          source = "claude";
+          fallbackStatus = "success";
+          providerErrorCode = undefined;
+          console.log(`[hufi-agent][${requestId}] provider=anthropic fallbackStatus=success model=${selectedModel}`);
+        } catch (fallbackError) {
+          providerErrorCode = fallbackError instanceof ProviderError ? fallbackError.code : "anthropic_upstream_error";
+          fallbackStatus = `failed:${providerErrorCode}`;
+          console.error(`[hufi-agent][${requestId}] provider=anthropic fallbackStatus=${fallbackStatus} model=${selectedModel}`);
+        }
+      }
     }
+  } else {
+    providerErrorCode = "anthropic_not_configured";
+    console.error(`[hufi-agent][${requestId}] provider=anthropic status=skipped code=${providerErrorCode}`);
   }
 
   if (!rawAnswer?.trim() && OLLAMA_PROXY) {
     try {
       rawAnswer = await callOllama(systemPrompt, messages, OLLAMA_PROXY, OLLAMA_SECRET);
+      if (!rawAnswer.trim()) throw new ProviderError("ollama_unavailable");
       source = "ollama";
-    } catch (e) {
-      console.error(`[hufi-agent][${requestId}] Ollama Fehler:`, e);
+      console.log(`[hufi-agent][${requestId}] provider=ollama status=success`);
+    } catch {
+      providerErrorCode = providerErrorCode ?? "ollama_unavailable";
+      console.error(`[hufi-agent][${requestId}] provider=ollama status=failed code=ollama_unavailable`);
     }
   }
 
   const dur = Date.now() - t0;
-  console.log(`[hufi-agent] id=${requestId} model=${model} source=${source} voice=${voiceMode} dur=${dur}ms`);
+  console.log(`[hufi-agent][${requestId}] voice=${voiceMode} model=${selectedModel} source=${source} providerCode=${providerErrorCode ?? "none"} fallbackAttempted=${fallbackAttempted} fallbackStatus=${fallbackStatus} dur=${dur}ms`);
 
   if (!rawAnswer?.trim()) {
+    const errorCode = providerErrorCode ?? "all_providers_failed";
     return new Response(
-      JSON.stringify({ ok: false, error: "Ich erreiche Hufi gerade nicht. Bitte gleich nochmal versuchen.", source: "none" }),
-      { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      JSON.stringify({ ok: false, error: "Ich erreiche Hufi gerade nicht. Bitte gleich nochmal versuchen.", errorCode, source: "none" }),
+      { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json", "X-Hufi-Error-Code": errorCode } },
     );
   }
 
