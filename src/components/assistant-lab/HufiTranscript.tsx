@@ -1,9 +1,10 @@
 interface HufiTranscriptProps {
   text: string;
   active?: boolean;
+  label?: string;
 }
 
-export function HufiTranscript({ text, active }: HufiTranscriptProps) {
+export function HufiTranscript({ text, active, label = "Du sagst" }: HufiTranscriptProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "center" }}>
       <span
@@ -15,7 +16,7 @@ export function HufiTranscript({ text, active }: HufiTranscriptProps) {
           color: "rgba(245,239,230,0.4)",
         }}
       >
-        Du sagst
+        {label}
       </span>
       <p style={{ margin: 0, fontSize: 15, lineHeight: 1.5, color: "#F5EFE6", fontWeight: 550 }}>
         {text}

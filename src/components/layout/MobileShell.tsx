@@ -13,7 +13,7 @@ import { useViewMode } from "@/hooks/useViewMode";
 import { useHufiTTS } from "@/hooks/useHufiTTS";
 import { useVoiceCapture, type VoiceErrorCode } from "@/hooks/useVoiceCapture";
 import { streamWithHufAI, ChatMessage as AIChatMessage } from "@/lib/ai-routing";
-import { askHufiAgent, type ConversationFocus } from "@/lib/hufi-agent-client";
+import { askHufiAgent, type ConversationFocus, type HufiPendingConfirmation } from "@/lib/hufi-agent-client";
 import { } from "@/lib/hufi-tool-definitions";
 import {
   detectAndCreateTask, executeNextStep, confirmStep, cancelTask, createActionTask,
@@ -83,6 +83,9 @@ import {
   type BriefingPayload,
 } from "@/lib/hufi-briefing";
 import { HufiAssistantCockpit } from "@/components/assistant/HufiAssistantCockpit";
+import { HufiAssistantExperience } from "@/components/assistant/HufiAssistantExperience";
+import { deriveHufiExperience, type HufiUiError } from "@/components/assistant/hufi-experience";
+import { detectMomentHint, type HufiMomentType } from "@/lib/hufi-moment";
 
 // Presence-Untertitel im Header: auf sehr schmalen Displays (< 400px, siehe
 // .hufi-subtitle-short/-long unten) reicht der Platz neben Logo, Wetter,
@@ -113,6 +116,79 @@ export function MobileShell() {
   const [conversationFocus, setConversationFocus] = useState<ConversationFocus>({});
   const conversationFocusRef = useRef<ConversationFocus>({});
   useEffect(() => { conversationFocusRef.current = conversationFocus; }, [conversationFocus]);
+
+  // ── HufiAssistantExperience (Preview) ─────────────────────────────────────
+  // Reine Sichtbarmachung bereits vorhandener echter Zwischenzustände als
+  // State, damit eine Präsentationskomponente darauf reagieren kann -- keine
+  // neue Logik, dieselben Übergänge wie im bestehenden Chat-/Task-Flow.
+  const [activeConfirmation, setActiveConfirmation] = useState<HufiPendingConfirmation | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [confirmationOutcome, setConfirmationOutcome] = useState<{ success: boolean; message: string } | null>(null);
+  const [justWoke, setJustWoke] = useState(false);
+  const [lastAnswerText, setLastAnswerText] = useState<string | null>(null);
+  const [answerVisible, setAnswerVisible] = useState(false);
+  const [agentError, setAgentError] = useState<HufiUiError | null>(null);
+  const [momentHint, setMomentHint] = useState<HufiMomentType | null>(null);
+  // Persistierter Mikro-/Transkriptionsfehler für die Experience-UI --
+  // unabhängig von voice.reset() (siehe voice.error-Effekt unten), der den
+  // Hook-State sofort nach dem Toast leert. Ohne diese Kopie würde der
+  // Fehler in der Vollbild-Experience nur für einen Render aufblitzen.
+  const [voiceUiError, setVoiceUiError] = useState<HufiUiError | null>(null);
+  // Echter, zeitbasierter Warte-Hinweis während hufi-agent antwortet (P0
+  // Abschnitt 5) -- keine erfundenen Fortschrittsschritte, nur ein Lebenszeichen.
+  const [waitHint, setWaitHint] = useState<string | null>(null);
+  // Sichtbares, echtes Transkript -- eigener State statt direkt voice.transcript,
+  // weil der Verarbeitungs-Effekt unten voice.reset() aufruft, sobald der Text
+  // übernommen wurde (verhindert doppelte Verarbeitung bei Re-Render). Ohne
+  // diese Kopie würde das erkannte Transkript nie sichtbar, siehe P0 Abschnitt 4.
+  const [displayedTranscript, setDisplayedTranscript] = useState<string | null>(null);
+  function triggerWake() {
+    setJustWoke(true);
+    // Eine neue echte Interaktion beginnt -- veraltete Bestätigungs-/Fehler-/
+    // Antwort-Anzeigen der vorherigen Runde nicht weiter zeigen (kein Hängen-
+    // bleiben in einem alten Zustand, keine Doppel-Bestätigung möglich).
+    setAnswerVisible(false);
+    setAgentError(null);
+    setMomentHint(null);
+    window.setTimeout(() => setJustWoke(false), 500);
+  }
+  // Dieselben echten Funktionen (confirmStep/cancelTask) wie in
+  // handleMsgAction's task_approve/task_reject-Zweigen, nur ohne die dortige
+  // Chat-Bubble-Textmutation -- auf der Experience-Oberfläche gibt es keine
+  // zugehörige Chat-Nachricht, die aktualisiert werden müsste.
+  async function experienceConfirm() {
+    if (!activeConfirmation || !user?.id) return;
+    const { taskId, stepId } = activeConfirmation;
+    setActiveConfirmation(null);
+    setConfirming(true);
+    let result = { success: false, message: "Fehler beim Ausführen." };
+    try {
+      const updated = await confirmStep(taskId, stepId, user.id);
+      const step = updated?.steps.find((s) => s.id === stepId);
+      const stepResult = step?.result as { success?: boolean; message?: string } | undefined;
+      result = {
+        success: !!stepResult?.success,
+        message: stepResult?.message ?? step?.error ?? (step?.status === "done" ? "Erledigt." : "Fehler beim Ausführen."),
+      };
+    } catch (err) {
+      result = { success: false, message: (err as Error)?.message ?? "Fehler beim Ausführen." };
+    }
+    setConfirming(false);
+    setConfirmationOutcome(result);
+    window.setTimeout(() => setConfirmationOutcome((c) => (c === result ? null : c)), 2600);
+  }
+  async function experienceReject() {
+    if (!activeConfirmation || !user?.id) return;
+    const { taskId } = activeConfirmation;
+    setActiveConfirmation(null);
+    await cancelTask(taskId, user.id);
+  }
+  function experienceInterrupt() {
+    setAnswerVisible(false);
+    setAgentError(null);
+    if (recording) { stopRecording(); return; }
+    if (activeConfirmation) { void experienceReject(); }
+  }
   const userIdRef = useRef<string | undefined>(undefined);
   useEffect(() => { userIdRef.current = user?.id; }, [user?.id]);
   const [showDsgvoModal, setShowDsgvoModal] = useState(false);
@@ -381,6 +457,7 @@ export function MobileShell() {
         if (SR_SUPPORTED && !voice.isRecording && !voice.isProcessing && !isTtsSpeaking) {
           setTimeout(() => {
             voiceSessionRef.current = { active: true, texts: [] };
+            setDisplayedTranscript(null);
             void voice.startRecording();
             setHufiPresenceState("hört zu");
           }, 800);
@@ -687,6 +764,7 @@ export function MobileShell() {
   async function startRecording() {
     setHufiPresenceState("hört zu");
     setHandsFree(true);
+    setDisplayedTranscript(null);
     voiceSessionRef.current = { active: true, texts: [] };
     const started = await voice.startRecording({ handsFree: true });
     if (!started) {
@@ -734,6 +812,7 @@ export function MobileShell() {
     setVoiceLoopActive(true);
     followUpRoundRef.current = 0;
     voiceSessionRef.current = { active: true, texts: [] };
+    setDisplayedTranscript(null);
     setHufiPresenceState("hört zu");
     setHandsFree(false); // Voice-Loop bleibt auf VAD
     void voice.startRecording();
@@ -802,11 +881,19 @@ export function MobileShell() {
   useEffect(() => {
     if (!voice.error) return;
     const msg = voiceErrorMessage(voice.error);
+    const category: HufiUiError["category"] =
+      voice.error === "microphone_denied" || voice.error === "microphone_missing" || voice.error === "recording_failed"
+        ? "mic"
+        : "transcription";
     console.info(`[voice-capture] error: ${voice.error}`);
     if (voice.error === "empty_transcript") {
       void hufiSpeak(msg, undefined, true);
     } else {
       toast.error(msg);
+    }
+    if (useExperiencePreview) {
+      setVoiceUiError({ text: msg, category });
+      window.setTimeout(() => setVoiceUiError((c) => (c?.text === msg ? null : c)), 7000);
     }
     voiceSessionRef.current = null;
     setHufiPresenceState("bereit");
@@ -819,6 +906,9 @@ export function MobileShell() {
   useEffect(() => {
     if (!voice.transcript) return;
     const text = voice.transcript;
+    // Sichtbar halten, bevor der Hook-State geleert wird -- siehe
+    // displayedTranscript-Deklaration oben (P0 Abschnitt 4).
+    setDisplayedTranscript(text);
     voice.reset();
     if (!user?.id) return;
 
@@ -877,6 +967,7 @@ export function MobileShell() {
           if (loopShouldContinue && !voice.isRecording && !voice.isProcessing && !responding) {
             if (!voiceLoopRef.current) followUpRoundRef.current++;
             voiceSessionRef.current = { active: true, texts: [] };
+            setDisplayedTranscript(null);
             void voice.startRecording();
             setHufiPresenceState("hört zu");
           } else if (!voiceLoopRef.current) {
@@ -928,6 +1019,12 @@ export function MobileShell() {
     }
     // Post-stream: broadcast & voice session tracking
     const complete: ChatMessage = { role: "ai", text: fullText, ts };
+    setLastAnswerText(fullText);
+    if (useExperiencePreview && fullText) {
+      setAnswerVisible(true);
+      window.setTimeout(() => setAnswerVisible(false), 9000);
+      void hufiSpeak(fullText);
+    }
     broadcast(complete);
     if (voiceSessionRef.current?.active && fullText) {
       voiceSessionRef.current.texts.push(fullText);
@@ -940,6 +1037,8 @@ export function MobileShell() {
     // (Einzelaktionen laufen als Ein-Schritt-Task über hufi_task_queue — actionKey: task_approve:<taskId>:<stepId>)
     if (key.startsWith("task_approve:") && user?.id) {
       const [taskId, stepId] = key.slice("task_approve:".length).split(":");
+      setActiveConfirmation(null);
+      setConfirming(true);
       setMessages((prev) => prev.map((m) =>
         m.ts === msg.ts ? { ...m, actions: undefined, text: m.text + "\n\n⏳ Wird ausgeführt…" } : m
       ));
@@ -955,6 +1054,9 @@ export function MobileShell() {
       } catch (err) {
         result = { success: false, message: (err as Error)?.message ?? "Fehler beim Ausführen." };
       }
+      setConfirming(false);
+      setConfirmationOutcome(result);
+      window.setTimeout(() => setConfirmationOutcome((c) => (c === result ? null : c)), 2600);
       setMessages((prev) => prev.map((m) =>
         m.ts === msg.ts
           ? { ...m, text: m.text.replace("\n\n⏳ Wird ausgeführt…", `\n\n${result.success ? "✅" : "❌"} ${result.message}`) }
@@ -968,6 +1070,7 @@ export function MobileShell() {
     // ── Agent Task: Ablehnen ──────────────────────────────────────────────────
     if (key.startsWith("task_reject:") && user?.id) {
       const [taskId] = key.slice("task_reject:".length).split(":");
+      setActiveConfirmation(null);
       await cancelTask(taskId, user.id);
       setMessages((prev) => prev.map((m) =>
         m.ts === msg.ts ? { ...m, actions: undefined, text: m.text + "\n\n✖ Abgebrochen." } : m
@@ -1197,6 +1300,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
       const { taskId, stepId, taskType: pendingType, description } = pendingConfirmation;
       const icon  = taskTypeIcon(pendingType as AgentTaskType);
       const label = taskTypeLabel(pendingType as AgentTaskType);
+      setActiveConfirmation(pendingConfirmation);
       addMsg({
         role: "ai",
         text: `${icon} ${label}\n\n${description}`,
@@ -1223,6 +1327,11 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
     }
 
     const stepId = task.steps[0]?.id ?? "";
+    // Zweiter realer Task-Erzeugungspfad (Keyword-Fallback statt Claude-
+    // Tool-Use) -- dieselbe Sichtbarmachung wie oben, sonst bleibt die
+    // Experience für diese Fälle stumm, obwohl die echte Bestätigung im
+    // Chat bereits existiert.
+    setActiveConfirmation({ taskId: task.id, stepId, taskType, description: explanation });
     addMsg({
       role: "ai",
       text: `${icon} ${label}\n\n${explanation}`,
@@ -1275,6 +1384,8 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
   async function processChatMessage(text: string, voiceMode = false) {
     const cleaned = stripWakeWord(text);
     if (!cleaned) return;
+    triggerWake();
+    if (useExperiencePreview) setMomentHint(detectMomentHint(cleaned));
 
     // Voice-Loop: Stop-Phrase erkennen
     const STOP_PHRASES = /\b(stop|stopp|danke|tschüss|beenden|aufhören|genug|schluss)\b/i;
@@ -1478,6 +1589,10 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
     setActiveIntent(intent.intent);
     setResponding(true);
     setHufiPresenceState(intent.intent === "navigation" ? "führt aus" : "denkt");
+    // Echte, zeitbasierte Lebenszeichen statt Schweigen während hufi-agent
+    // antwortet (P0 Abschnitt 5) -- keine erfundenen Fortschrittsschritte.
+    const waitTimer2s = window.setTimeout(() => setWaitHint("Ich schaue nach."), 2000);
+    const waitTimer5s = window.setTimeout(() => setWaitHint("Ich brauche gerade einen Moment länger."), 5000);
     try {
       if (intent.intent === "emergency") {
         const welfare = checkHorseWelfare(cleaned);
@@ -1607,6 +1722,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
         const { taskId, stepId, taskType, description } = resp.pendingConfirmation;
         const icon  = taskTypeIcon(taskType as AgentTaskType);
         const label = taskTypeLabel(taskType as AgentTaskType);
+        setActiveConfirmation(resp.pendingConfirmation);
         addMsg({
           role: "ai",
           text: `${icon} ${label}\n\n${description}`,
@@ -1618,6 +1734,12 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
         });
         return;
       }
+      setLastAnswerText(resp.answer);
+      if (useExperiencePreview && resp.answer) {
+        setAnswerVisible(true);
+        window.setTimeout(() => setAnswerVisible(false), 9000);
+        void hufiSpeak(resp.answer);
+      }
       addMsg({ role: "ai", text: resp.answer, ts: Date.now() + 1, disclaimerCategory: resp.disclaimerCategory });
       learnFromInteraction(user.id, cleaned, resp.answer, "confirmed", sessionId.current);
       void observeInteraction(cleaned, resp.answer, user.id);
@@ -1625,23 +1747,44 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
       const e = err as Error;
       console.error("[Hufi] processChatMessage Fehler:", e?.message ?? e);
       let userText: string;
+      // Konkrete Fehlerkategorie statt pauschal "Keine Verbindung" (P0
+      // Abschnitt 5) -- "agent" nur für echte Erreichbarkeitsprobleme,
+      // "action" für Anfragen, die den Agenten erreicht haben, aber aus
+      // fachlichem Grund abgelehnt wurden (Guthaben, Login).
+      let category: HufiUiError["category"];
       if (e?.message?.includes("Kein KI-Guthaben")) {
         userText = voiceMode
           ? "Dein KI-Guthaben ist erschöpft."
           : "Dein KI-Guthaben ist aufgebraucht. Bitte lade es in den Einstellungen auf.";
+        category = "action";
       } else if (e?.message?.includes("Nicht angemeldet") || e?.message?.includes("401")) {
         userText = "Dafür musst du angemeldet sein.";
+        category = "action";
+      } else if (e?.message?.includes("Zeitüberschreitung")) {
+        userText = voiceMode
+          ? "Hufi antwortet gerade nicht. Bitte gleich nochmal."
+          : "Hufi-Agent antwortet nicht (Zeitüberschreitung). Bitte erneut versuchen.";
+        category = "agent";
       } else if (e?.message?.includes("Ollama") || e?.message?.includes("fetch") || e?.message?.includes("nicht erreichbar")) {
         userText = voiceMode
           ? "Verbindung kurz unterbrochen. Bitte gleich nochmal."
           : "Verbindung fehlgeschlagen. Bitte erneut versuchen.";
+        category = "agent";
       } else {
         userText = voiceMode
           ? "Ich konnte deine Anfrage nicht verarbeiten. Bitte erneut versuchen."
           : `Anfrage fehlgeschlagen. Bitte erneut versuchen.${import.meta.env.DEV ? ` (${e?.message})` : ""}`;
+        category = "unknown";
       }
       addMsg({ role: "ai", text: userText, ts: Date.now() });
+      if (useExperiencePreview) {
+        setAgentError({ text: userText, category });
+        window.setTimeout(() => setAgentError((c) => (c?.text === userText ? null : c)), 7000);
+      }
     } finally {
+      window.clearTimeout(waitTimer2s);
+      window.clearTimeout(waitTimer5s);
+      setWaitHint(null);
       setResponding(false);
       setActiveIntent(null);
       setHufiPresenceState("bereit");
@@ -1723,9 +1866,81 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
     ? Math.round((new Date(`${today}T${nextAppt.time}`).getTime() - Date.now()) / 60000)
     : null;
 
+  // Produktionsstandard: HufiAssistantExperience ist die offizielle /home-
+  // Oberfläche. VITE_HUFI_LEGACY_HOME bleibt als unsichtbarer, rein
+  // build-seitiger Notfall-Rollback auf die alte MobileShell-Chrome erhalten
+  // -- kein UI-Schalter, kein Query-Parameter, wird beim Build eingebrannt.
+  const useExperiencePreview = import.meta.env.VITE_HUFI_LEGACY_HOME !== "true";
+
+  // Dieselbe Prioritäts-Logik wie in HufiAssistantCockpit.tsx (nächster
+  // Termin > offene Rechnungen > Anfragen > ruhiger Tag), hier separat
+  // berechnet, da HufiAssistantExperience nur den fertigen Satz statt der
+  // Einzelwerte braucht.
+  const experienceInsight = (() => {
+    const mins = nextApptMinutesAway;
+    if (isToday && nextAppt && typeof mins === "number" && mins >= 0 && mins <= 180) {
+      const when = mins < 1 ? "gleich" : mins < 60 ? `in ${mins} Min.` : `in ${Math.round(mins / 60)} Std.`;
+      return `Dein nächster Termin beginnt ${when}.`;
+    }
+    const unpaid = hufiCtx?.unpaidInvoices ?? 0;
+    if (unpaid > 0) return `${unpaid} ${unpaid === 1 ? "Rechnung braucht" : "Rechnungen brauchen"} Aufmerksamkeit.`;
+    const leads = hufiCtx?.openLeads ?? 0;
+    if (leads > 0) return `${leads} neue ${leads === 1 ? "Anfrage wartet" : "Anfragen warten"} auf dich.`;
+    const today_ = hufiCtx?.todayAppointments.length ?? 0;
+    if (today_ > 0) return `${today_} ${today_ === 1 ? "Termin" : "Termine"} heute.`;
+    return "Ruhiger Tag — nichts Dringendes offen.";
+  })();
+
   function handlePrepareDay() {
     const payload = proactiveBriefing ?? lastBriefingRef.current;
     if (payload) setProactiveBriefing(payload);
+  }
+
+  // Text-Eingabe der Experience nutzt denselben echten Handler wie die
+  // bestehende Eingabezeile (processChatMessage) -- keine zweite
+  // Agentenimplementierung, keine Doppel-Requests während eine Anfrage
+  // bereits läuft.
+  function experienceSubmitText(text: string) {
+    const trimmed = text.trim();
+    if (!trimmed || responding || transcribing || recording) return;
+    void processChatMessage(trimmed);
+  }
+
+  // Preview-Modus übernimmt die komplette sichtbare Fläche -- keine alte
+  // MobileShell-Chrome (Header/BottomNav/Eingabedock/Mikrofonbutton/430px-
+  // Karte) darunter. Auth/echte Daten/Voice/Bestätigungsflow kommen weiter
+  // aus dieser Komponente, nur als Props/Callbacks.
+  if (useExperiencePreview) {
+    return (
+      <HufiAssistantExperience
+        ui={deriveHufiExperience({
+          orbState,
+          justWoke,
+          liveTranscript: displayedTranscript ?? "",
+          pendingClarification: conversationFocus.pendingClarification,
+          answerVisible,
+          lastAnswerText,
+          isTtsSpeaking: isTtsSpeaking || isVoiceSpeaking,
+          activeConfirmation,
+          confirming,
+          confirmationOutcome,
+          micError: voiceUiError,
+          agentError,
+          momentHint,
+          waitHint,
+          taskIcon: (t) => taskTypeIcon(t as AgentTaskType),
+          taskLabel: (t) => taskTypeLabel(t as AgentTaskType),
+          onConfirm: () => void experienceConfirm(),
+          onReject: () => void experienceReject(),
+        })}
+        userName={hufiCtx?.user.name ?? null}
+        insight={experienceInsight}
+        onWakeTap={recording ? stopRecording : startRecording}
+        onInterrupt={experienceInterrupt}
+        onSubmitText={experienceSubmitText}
+        canSubmit={!responding && !transcribing && !recording}
+      />
+    );
   }
 
   return (

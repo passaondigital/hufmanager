@@ -7,6 +7,13 @@ import { VitePWA } from "vite-plugin-pwa";
 // Default hufmanager hält den HufManager-Build unverändert).
 const APP_FLAVOR = process.env.VITE_APP_FLAVOR === "hufiapp" ? "hufiapp" : "hufmanager";
 
+// Preview-Build der Hufi-Experience: ein zuvor auf dem Gerät installierter
+// Service Worker cached den alten App-Stand unabhängig von Server-Cache-
+// Headern (Precache greift vor dem Netzwerk). selfDestroying ersetzt jeden
+// aktiven SW durch einen, der sich selbst deregistriert und seine Caches
+// löscht -- betrifft ausschließlich diesen Build, Produktion unverändert.
+const IS_EXPERIENCE_PREVIEW = process.env.VITE_HUFI_EXPERIENCE_PREVIEW === "true";
+
 const PWA_ICONS_HUFIAPP = [
   { src: "/hufi-icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
   { src: "/hufi-icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
@@ -80,6 +87,7 @@ export default defineConfig(({ mode }) => ({
     },
     VitePWA({
       registerType: "autoUpdate",
+      selfDestroying: IS_EXPERIENCE_PREVIEW,
       includeAssets: ["favicon.ico", "robots.txt", "hufi-logo.svg", "apple-touch-icon.png"],
       workbox: {
         // Limit auf 6 MB erhöht für große Bundles

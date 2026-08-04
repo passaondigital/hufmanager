@@ -10,6 +10,12 @@ interface HufiWaveProps {
   // Transkript-Schritt `active: false` ist (siehe HufiScenarios.ts) —
   // keine eigene Phase, nur ein UI-Hinweis, dass Hufi gerade verarbeitet.
   settled?: boolean;
+  // Optionale Farb-Overrides je Phase. Default (undefined) lässt /hufi-lab
+  // unverändert (reines Orange + gedämpftes Rot bei error). Wird von
+  // HufiAssistantExperience gesetzt, um Verstehen/Verarbeiten violett-blau
+  // darzustellen -- offizielle Zielvorgabe laut Screen-Referenzen, siehe
+  // dortiger Kommentar.
+  colorOverrides?: Partial<Record<HufiPhase, string>>;
 }
 
 // Übernimmt die echte, in der App bereits produktiv genutzte Wave-
@@ -27,6 +33,7 @@ interface HufiWaveProps {
 const PHASE_COLOR: Partial<Record<HufiPhase, string>> = {
   wake: "#F97316",
   listening: "#F97316",
+  transcribing: "#F97316",
   understanding: "#EA580C",
   questioning: "#FDBA74",
   confirming: "#F97316",
@@ -38,7 +45,7 @@ const PHASE_COLOR: Partial<Record<HufiPhase, string>> = {
 const PAUSED_PHASES = new Set<HufiPhase>(["dormant", "return", "error"]);
 const IDLE_PHASES = new Set<HufiPhase>(["dormant", "return"]);
 
-export function HufiWave({ phase, mode, onTap, settled }: HufiWaveProps) {
+export function HufiWave({ phase, mode, onTap, settled, colorOverrides }: HufiWaveProps) {
   const { theme } = useTheme();
   const interactive = phase === "dormant";
   // Ruhezustand ist bewusst nicht neutral-grau, sondern immer orange
@@ -49,7 +56,9 @@ export function HufiWave({ phase, mode, onTap, settled }: HufiWaveProps) {
   const idleColor = theme === "dark" ? "#FDBA74" : "#F97316";
   // "settled" (Transkript hat sich beruhigt, siehe Prop-Kommentar) liest
   // sich farblich wie "understanding" — beides ist Hufi beim Verarbeiten.
-  const color = settled ? "#EA580C" : IDLE_PHASES.has(phase) ? idleColor : (PHASE_COLOR[phase] ?? "#F97316");
+  const color = settled
+    ? (colorOverrides?.understanding ?? "#EA580C")
+    : IDLE_PHASES.has(phase) ? idleColor : (colorOverrides?.[phase] ?? PHASE_COLOR[phase] ?? "#F97316");
   const paused = PAUSED_PHASES.has(phase);
   const barCount = mode === "ambient" ? 7 : 9;
 

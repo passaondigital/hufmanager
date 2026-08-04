@@ -8,7 +8,7 @@ const VOICE_THRESHOLD   = 0.018; // RMS-Amplitude: darüber = Sprechen
 const SILENCE_THRESHOLD = 0.012; // RMS-Amplitude: darunter = Stille
 const SILENCE_DURATION  = 1200;  // ms Stille → Auto-Stop (schnell)
 const SPEECH_REQUIRED   = 300;   // ms Sprechen bevor Stille-Timer startet
-const MAX_DURATION      = 15_000; // 15 s Hard-Limit
+const MAX_DURATION      = 30_000; // 30 s Hard-Limit (P0-Vorgabe)
 // Freihand-Modus: kein Auto-Stopp bei Stille, der Nutzer redet in Ruhe zu Ende
 // und drückt selbst auf Stopp. 3 Minuten sind nur die Notbremse gegen eine
 // Aufnahme, die in der Tasche weiterläuft.
@@ -172,6 +172,10 @@ export function useVoiceCapture(): UseVoiceCapture {
   }
 
   const transcribe = useCallback(async (blob: Blob): Promise<string> => {
+    // Nur technische Metadaten loggen (Format/Größe/Dauer), nie Audioinhalt
+    // oder Transkripttext (P0 Abschnitt 1).
+    console.info(`[voice-capture] Transkription gestartet: format=${blob.type} bytes=${blob.size}`);
+    const t0 = performance.now();
     const form = new FormData();
     form.append("file", blob, `recording.${(blob.type.split("/")[1] ?? "webm").split(";")[0]}`);
     let res: Response;
@@ -183,21 +187,28 @@ export function useVoiceCapture(): UseVoiceCapture {
       });
     } catch (err) {
       const name = (err as Error)?.name;
-      if (name === "TimeoutError" || name === "AbortError") throw new Error("transcription_unavailable");
-      console.warn("[voice-capture] transcription endpoint unreachable", err);
+      const durationMs = Math.round(performance.now() - t0);
+      if (name === "TimeoutError" || name === "AbortError") {
+        console.warn(`[voice-capture] Transkription fehlgeschlagen: Zeitüberschreitung nach ${durationMs}ms`);
+        throw new Error("transcription_unavailable");
+      }
+      console.warn(`[voice-capture] Transkription fehlgeschlagen: Endpunkt nicht erreichbar nach ${durationMs}ms`, err);
       throw new Error("transcription_unavailable");
     }
     if (!res.ok) {
-      console.warn(`[voice-capture] transcription failed: HTTP ${res.status}`);
+      console.warn(`[voice-capture] Transkription fehlgeschlagen: HTTP ${res.status} nach ${Math.round(performance.now() - t0)}ms`);
       throw new Error("transcription_failed");
     }
     let json: { text?: string } = {};
     try {
       json = await res.json();
     } catch {
+      console.warn("[voice-capture] Transkription fehlgeschlagen: ungültige Antwort");
       throw new Error("transcription_failed");
     }
-    return (json.text ?? "").trim();
+    const text = (json.text ?? "").trim();
+    console.info(`[voice-capture] Transkription erfolgreich: ${Math.round(performance.now() - t0)}ms, ${text.length} Zeichen`);
+    return text;
   }, []);
 
   const stopRecording = useCallback(() => {
@@ -270,6 +281,7 @@ export function useVoiceCapture(): UseVoiceCapture {
     recorder.onstop = async () => {
       releaseStream();
       setIsRecording(false);
+      console.info(`[voice-capture] Aufnahme beendet: ${Math.round(performance.now() - recordingStartedAt)}ms, chunks=${chunks.length}`);
 
       if (cancelledRef.current) {
         cancelledRef.current = false;
@@ -319,6 +331,8 @@ export function useVoiceCapture(): UseVoiceCapture {
 
     recorderRef.current = recorder;
     setIsRecording(true);
+    console.info(`[voice-capture] Aufnahme gestartet: handsFree=${handsFree} mime=${mime || "default"}`);
+    const recordingStartedAt = performance.now();
 
     const stopRecorder = () => {
       const rec = recorderRef.current;
