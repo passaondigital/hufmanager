@@ -1,0 +1,4 @@
+import { describe, expect, it } from "vitest";
+import { clearTextDraft, readTextDraft, saveTextDraft } from "./textDrafts";
+function createStorage() { const values = new Map<string, string>(); return { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) }; }
+describe("text drafts", () => { it("persists, restores and clears a scoped draft", () => { const storage = createStorage(); expect(saveTextDraft("assistant", "Hallo Hufi", storage, new Date("2026-08-04T12:00:00.000Z"))).toBe(true); expect(readTextDraft("assistant", storage)).toEqual({ text: "Hallo Hufi", updatedAt: "2026-08-04T12:00:00.000Z" }); expect(clearTextDraft("assistant", storage)).toBe(true); expect(readTextDraft("assistant", storage)).toBeUndefined(); }); });
