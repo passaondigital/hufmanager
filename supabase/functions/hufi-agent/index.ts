@@ -15,8 +15,9 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Runtime-Konfiguration hat Vorrang. Die Defaults sind offizielle Messages-API-
-// Kennungen; ein model_not_found wechselt genau einmal auf MODEL_FALLBACK.
+// Runtime-Konfiguration hat Vorrang. Die Defaults sind nicht gegen den
+// projektspezifischen API-Zugang validiert; ein model_not_found wechselt genau
+// einmal auf MODEL_FALLBACK und wird technisch protokolliert.
 const MODEL_SMART = Deno.env.get("ANTHROPIC_MODEL_SMART") ?? "claude-sonnet-4-20250514";
 const MODEL_FAST = Deno.env.get("ANTHROPIC_MODEL_FAST") ?? "claude-3-5-haiku-20241022";
 const MODEL_FALLBACK = Deno.env.get("ANTHROPIC_MODEL_FALLBACK") ?? "claude-3-5-haiku-20241022";
@@ -1476,7 +1477,9 @@ async function callClaudeWithTools(
   correlationId: string = "?",
 ): Promise<CallToolsResult> {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 55_000);
+  // Unter dem Clientbudget bleiben, damit eine späte Providerantwort nicht
+  // clientseitig verworfen wird, obwohl die Function noch arbeitet.
+  const timer = setTimeout(() => ctrl.abort(), 20_000);
   const focus: ConversationFocus = { ...incomingFocus };
   delete focus.pendingClarification; // wird pro Runde neu bestimmt, siehe unten
 
@@ -1515,13 +1518,14 @@ async function callClaudeWithTools(
 
       // Kein Tool-Call → finale Antwort
       if (json.stop_reason === "end_turn" || !json.content.some(b => b.type === "tool_use")) {
-        const text = json.content.find(b => b.type === "text")?.text ?? "";
+        const text = json.content.find(b => b.type === "text")?.text?.trim() ?? "";
+        if (!text) throw new ProviderError("empty_provider_response");
         // Heuristik: endet die Antwort mit "?", hat Hufi vermutlich eine
         // Rückfrage gestellt (z.B. mehrere search_entity-Treffer) -- diese
         // im Fokus merken, damit die nächste Nutzer-Antwort ohne erneutes
         // Nachfragen darauf bezogen werden kann (siehe AGENT_ANALYSE.md
         // Etappe 3, Punkt "Kein Zustand für offene Klärungsfrage").
-        if (text.trim().endsWith("?")) focus.pendingClarification = text.trim();
+        if (text.endsWith("?")) focus.pendingClarification = text;
         return { text, focus };
       }
 
@@ -1845,7 +1849,9 @@ serve(async (req) => {
   let resultFocus: ConversationFocus | undefined = conversationFocus;
   let source: "claude" | "ollama" = "claude";
   let selectedModel = requestedModel;
-  let providerErrorCode: ProviderErrorCode | undefined;
+  let primaryProviderErrorCode: ProviderErrorCode | undefined;
+  let ollamaAttempted = false;
+  let ollamaStatus = "not_attempted";
   let fallbackAttempted = false;
   let fallbackStatus = "not_attempted";
 
@@ -1863,9 +1869,9 @@ serve(async (req) => {
       source = "claude";
       console.log(`[hufi-agent][${requestId}] provider=anthropic status=success model=${selectedModel}`);
     } catch (error) {
-      providerErrorCode = error instanceof ProviderError ? error.code : "anthropic_upstream_error";
-      console.error(`[hufi-agent][${requestId}] provider=anthropic status=failed code=${providerErrorCode} model=${selectedModel}`);
-      if (providerErrorCode === "anthropic_model_not_found" && selectedModel !== MODEL_FALLBACK) {
+      primaryProviderErrorCode = error instanceof ProviderError ? error.code : "anthropic_upstream_error";
+      console.error(`[hufi-agent][${requestId}] provider=anthropic status=failed code=${primaryProviderErrorCode} model=${selectedModel}`);
+      if (primaryProviderErrorCode === "anthropic_model_not_found" && selectedModel !== MODEL_FALLBACK) {
         fallbackAttempted = true;
         selectedModel = MODEL_FALLBACK;
         try {
@@ -1880,39 +1886,46 @@ serve(async (req) => {
           resultFocus = result.focus ?? resultFocus;
           source = "claude";
           fallbackStatus = "success";
-          providerErrorCode = undefined;
+          primaryProviderErrorCode = undefined;
           console.log(`[hufi-agent][${requestId}] provider=anthropic fallbackStatus=success model=${selectedModel}`);
         } catch (fallbackError) {
-          providerErrorCode = fallbackError instanceof ProviderError ? fallbackError.code : "anthropic_upstream_error";
-          fallbackStatus = `failed:${providerErrorCode}`;
+          primaryProviderErrorCode = fallbackError instanceof ProviderError ? fallbackError.code : "anthropic_upstream_error";
+          fallbackStatus = `failed:${primaryProviderErrorCode}`;
           console.error(`[hufi-agent][${requestId}] provider=anthropic fallbackStatus=${fallbackStatus} model=${selectedModel}`);
         }
       }
     }
   } else {
-    providerErrorCode = "anthropic_not_configured";
-    console.error(`[hufi-agent][${requestId}] provider=anthropic status=skipped code=${providerErrorCode}`);
+    primaryProviderErrorCode = "anthropic_not_configured";
+    console.error(`[hufi-agent][${requestId}] provider=anthropic status=skipped code=${primaryProviderErrorCode}`);
   }
 
   if (!rawAnswer?.trim() && OLLAMA_PROXY) {
+    ollamaAttempted = true;
     try {
       rawAnswer = await callOllama(systemPrompt, messages, OLLAMA_PROXY, OLLAMA_SECRET);
       if (!rawAnswer.trim()) throw new ProviderError("ollama_unavailable");
       source = "ollama";
+      ollamaStatus = "success";
       console.log(`[hufi-agent][${requestId}] provider=ollama status=success`);
     } catch {
-      providerErrorCode = providerErrorCode ?? "ollama_unavailable";
+      ollamaStatus = "failed:ollama_unavailable";
       console.error(`[hufi-agent][${requestId}] provider=ollama status=failed code=ollama_unavailable`);
     }
   }
 
   const dur = Date.now() - t0;
-  console.log(`[hufi-agent][${requestId}] voice=${voiceMode} model=${selectedModel} source=${source} providerCode=${providerErrorCode ?? "none"} fallbackAttempted=${fallbackAttempted} fallbackStatus=${fallbackStatus} dur=${dur}ms`);
+  const finalErrorCode: ProviderErrorCode | undefined = rawAnswer.trim()
+    ? undefined
+    : ollamaAttempted && ollamaStatus !== "success"
+      ? "all_providers_failed"
+      : primaryProviderErrorCode ?? "all_providers_failed";
+  console.log(`[hufi-agent][${requestId}] voice=${voiceMode} model=${selectedModel} source=${source} primaryProviderCode=${primaryProviderErrorCode ?? "none"} finalCode=${finalErrorCode ?? "none"} fallbackAttempted=${fallbackAttempted} fallbackStatus=${fallbackStatus} ollamaStatus=${ollamaStatus} dur=${dur}ms`);
 
   if (!rawAnswer?.trim()) {
-    const errorCode = providerErrorCode ?? "all_providers_failed";
+    const errorCode = finalErrorCode ?? "all_providers_failed";
     return new Response(
-      JSON.stringify({ ok: false, error: "Ich erreiche Hufi gerade nicht. Bitte gleich nochmal versuchen.", errorCode, source: "none" }),
+      JSON.stringify({ ok: false, error: "Ich erreiche Hufi gerade nicht. Bitte gleich nochmal versuchen.", errorCode, primaryProviderErrorCode, model: selectedModel, fallbackAttempted, fallbackStatus, ollamaStatus, source: "none" }),
       { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json", "X-Hufi-Error-Code": errorCode } },
     );
   }
