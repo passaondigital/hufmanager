@@ -1,6 +1,6 @@
 # Hufi E2E — Nacht-Checkpoint
 
-Stand: hufi-agent Version 29, Branch `feature/hufi-assistant-experience-preview`.
+Stand: hufi-agent Version 29, Branch `feature/hufi-assistant-experience-preview`. Letzte lokale Build-Prüfung: 2026-08-04 bestanden.
 
 ## Erledigt
 - `hufi-agent` Version 29 ist ACTIVE (Supabase Projekt `vnschgjxkzzwzefqlrji`).
@@ -17,3 +17,7 @@ Stand: hufi-agent Version 29, Branch `feature/hufi-assistant-experience-preview`
 
 ## Erster Schritt morgen
 Angemeldet in der Preview (`https://preview.hufiapp.de/home`) eine normale Hufi-Frage stellen, danach `hufi-agent`-Logs (Supabase, Projekt `vnschgjxkzzwzefqlrji`) für den Testzeitraum auswerten und mit dem tatsächlichen UI-Ergebnis abgleichen.
+
+## Prüfeinheit 2026-08-04
+- `npm run build` bestanden.
+- Der authentifizierte Preview-Nachweis bleibt offen, da in dieser Workspace-Session kein zulässiger Preview-Login und kein Basic-Auth-Zugang vorliegt.
