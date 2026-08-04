@@ -31,3 +31,4 @@ Angemeldet in der Preview (`https://preview.hufiapp.de/home`) eine normale Hufi-
 - Smartphone-Evidenz: `hufi-agent` Version 32 POST 503 trotz erfolgreichem OPTIONS; `hufi-tts` Version 13 POST 200, Premiumstimme hörbar. TTS ist nicht mehr der P0.
 - `voiceMode` erreicht den Agenten und wählt den Fast-Pfad. Der bisherige Code verwirft den Anthropic-Fehlertyp vor dem generischen 503.
 - Lokaler Fix klassifiziert Providerfehler, protokolliert nur technische Daten und bietet einen einmaligen Modell-Fallback bei `anthropic_model_not_found`. Deploy steht aus; danach ist eine minimale Smartphone-Preview-Anfrage mit Logabgleich nötig.
+- Der gemeinsame Client-Textweg unterscheidet jetzt Auth, Netzwerk, Timeout, Function- und HTTP-Fehler. Ein Function-503 wird nicht mehr als „Kurz keine Verbindung“ angezeigt. Vor dem Voice-Retest muss eine eingetippte Preview-Frage eine sichtbare Textantwort liefern.

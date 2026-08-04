@@ -25,6 +25,7 @@ import "@/components/assistant-lab/hufi-lab.css";
 const ERROR_HEADER_LABEL: Record<string, string> = {
   mic: "Mikrofonproblem",
   transcription: "Spracherkennung gestört",
+  network: "Keine Netzwerkverbindung",
   agent: "Hufi-Agent nicht erreichbar",
   action: "Aktion fehlgeschlagen",
   tts: "Sprachausgabe gestört",

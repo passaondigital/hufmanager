@@ -33,12 +33,27 @@ export interface HufiAgentResponse {
   spokenText: string;
   source: "claude" | "ollama" | "guard" | "none";
   error?: string;
+  errorCode?: string;
   pendingConfirmation?: HufiPendingConfirmation;
   // A3: gesetzt wenn die Antwort eine Fach-Verweis-Antwort ist (Guard hat
   // gegriffen) ODER eine allgemeine Fachaussage enthält (Medizin/Recht),
   // ohne blockiert zu sein — steuert den Hinweis-Badge in der Chat-Bubble.
   disclaimerCategory?: "medical" | "legal";
   conversationFocus?: ConversationFocus;
+}
+
+export type HufiAgentClientErrorKind = "auth" | "network" | "timeout" | "http" | "function" | "invalid_response";
+
+export class HufiAgentClientError extends Error {
+  constructor(
+    message: string,
+    readonly kind: HufiAgentClientErrorKind,
+    readonly status?: number,
+    readonly errorCode?: string,
+  ) {
+    super(message);
+    this.name = "HufiAgentClientError";
+  }
 }
 
 // Kontrollierter Timeout für die Agentenanfrage (P0 Abschnitt 5/1) -- ohne
@@ -69,7 +84,7 @@ export async function askHufiAgent(params: {
 
   if (!session?.access_token) {
     console.info(`[hufi-agent][${correlationId}] abgebrochen: nicht angemeldet`);
-    throw new Error("Nicht angemeldet");
+    throw new HufiAgentClientError("Nicht angemeldet", "auth", 401);
   }
 
   let res: Response;
@@ -102,10 +117,10 @@ export async function askHufiAgent(params: {
     const durationMs = Math.round(performance.now() - t0);
     if (name === "TimeoutError" || name === "AbortError") {
       console.warn(`[hufi-agent][${correlationId}] Zeitüberschreitung nach ${durationMs}ms`);
-      throw new Error(`Zeitüberschreitung nach ${AGENT_TIMEOUT_MS}ms`);
+      throw new HufiAgentClientError("Hufi-Agent antwortet nicht rechtzeitig.", "timeout");
     }
     console.warn(`[hufi-agent][${correlationId}] nicht erreichbar nach ${durationMs}ms:`, name);
-    throw new Error(`Hufi-Agent nicht erreichbar: ${(fetchErr as Error).message}`);
+    throw new HufiAgentClientError("Keine Netzwerkverbindung zum Hufi-Agent.", "network");
   }
 
   let json: HufiAgentResponse | null = null;
@@ -113,14 +128,19 @@ export async function askHufiAgent(params: {
     json = await res.json() as HufiAgentResponse;
   } catch {
     console.warn(`[hufi-agent][${correlationId}] Statuscode ${res.status}, ungültige Antwort`);
-    throw new Error(`Hufi-Agent ${res.status}: Ungültige Antwort`);
+    throw new HufiAgentClientError(`Ungültige Antwort vom Hufi-Agent (HTTP ${res.status}).`, "invalid_response", res.status);
   }
 
   const durationMs = Math.round(performance.now() - t0);
-  console.info(`[hufi-agent][${correlationId}] Statuscode ${res.status}, ${durationMs}ms, source=${json?.source ?? "?"}`);
+  console.info(`[hufi-agent][${correlationId}] Statuscode ${res.status}, ${durationMs}ms, source=${json?.source ?? "?"}, errorCode=${json?.errorCode ?? "none"}`);
 
   if (!res.ok || !json?.ok) {
-    throw new Error(json?.error ?? `Hufi-Agent ${res.status}`);
+    throw new HufiAgentClientError(
+      json?.error ?? `Hufi-Agent ${res.status}`,
+      json?.errorCode ? "function" : "http",
+      res.status,
+      json?.errorCode,
+    );
   }
 
   return json;

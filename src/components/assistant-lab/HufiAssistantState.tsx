@@ -63,13 +63,13 @@ export const HUFI_PHASE_META: Record<HufiPhase, HufiPhaseMeta> = {
   // vorher lief das fälschlich unter "understanding", weshalb "Hufi hat
   // verstanden" erschien, bevor überhaupt ein Transkript existierte.
   transcribing: { label: "Hufi verarbeitet die Aufnahme", hint: "Einen Moment.", devLabel: "Transcribing", Icon: Loader2, mode: "immersive" },
-  understanding: { label: "Hufi hat verstanden", hint: "Hufi denkt nach.", devLabel: "Understanding", Icon: BrainCircuit, mode: "immersive" },
+  understanding: { label: "Hufi denkt nach", hint: "Einen Moment.", devLabel: "Understanding", Icon: BrainCircuit, mode: "immersive" },
   questioning: { label: "Eine Rückfrage", hint: "Bitte auswählen.", devLabel: "Question", Icon: HelpCircle, mode: "conversation" },
   confirming: { label: "Bereit zur Bestätigung", hint: "Bitte kurz prüfen.", devLabel: "Confirmation", Icon: ClipboardCheck, mode: "conversation" },
   executing: { label: "Wird ausgeführt", hint: "Einen Moment.", devLabel: "Executing", Icon: Loader2, mode: "conversation" },
   speaking: { label: "Hufi antwortet", hint: "", devLabel: "Speaking", Icon: Volume2, mode: "conversation" },
   success: { label: "Erledigt", hint: "", devLabel: "Success", Icon: Check, mode: "conversation" },
-  error: { label: "Kurz keine Verbindung", hint: "Hufi meldet sich, sobald es wieder geht.", devLabel: "Offline", Icon: WifiOff, mode: "conversation" },
+  error: { label: "Hufi braucht Hilfe", hint: "Die genaue Ursache wird angezeigt.", devLabel: "Error", Icon: WifiOff, mode: "conversation" },
   return: { label: "", hint: "", devLabel: "Return", Icon: Moon, mode: "ambient" },
 };
 

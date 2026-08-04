@@ -19,6 +19,9 @@ Stand: 2026-08-04 (Terra, Hufi-Agent-503-P0)
 - Fix-Kandidat: `hufi-agent` klassifiziert jetzt Anthropic-/Ollama-Fehler, loggt nur technische Daten (Request-ID, voiceMode, Modell, Status, Code, Dauer, Fallbackstatus), gibt einen nicht sensiblen `errorCode` zurück und versucht bei `anthropic_model_not_found` einmalig `ANTHROPIC_MODEL_FALLBACK`.
 - Modellkonfiguration: `ANTHROPIC_MODEL_FAST`, `ANTHROPIC_MODEL_SMART` und `ANTHROPIC_MODEL_FALLBACK` sind Runtime-Secrets mit offiziellen Messages-API-Defaults. Beim Voice-Test wird der Fast-Wert verwendet.
 - Lokaler direkter Anthropic-Smoke-Test ist nicht möglich, weil hier kein `ANTHROPIC_API_KEY` verfügbar ist. Kein Schlüssel wurde ausgegeben. Der Connector-Deploy und ein minimaler Live-Smoke-Test liefern danach den konkreten Fehlercode.
+- Textweg-Fix (noch nicht deployt): `askHufiAgent` erhält und protokolliert `errorCode`; es unterscheidet Auth, echten Fetch-Netzwerkfehler, Timeout, Function-Fehler, HTTP-Fehler und ungültige Responses. `MobileShell` zeigt Function-/Provider-503 als Agentfehler, nicht als Netzwerkfehler. Nur ein tatsächlich fehlgeschlagener Browser-Fetch wird als „Keine Netzwerkverbindung“ bezeichnet.
+- Die Denkphase zeigt „Hufi denkt nach“ statt der nicht belegten Formulierung „Hufi hat verstanden“. Die echte Transkriptanzeige bleibt an ein vorhandenes Transkript gebunden.
+- Lokal geprüft: 17 relevante Experience-Tests bestanden, TypeScript fehlerfrei, Produktions-Build bestanden. Der Agent-/Client-Fix ist nur auf dem Feature-Branch, nicht in Production.
 
 ## Deploy-/Hörproben-Status
 
@@ -28,4 +31,4 @@ Stand: 2026-08-04 (Terra, Hufi-Agent-503-P0)
 
 ## Nächste Einheit
 
-Über den Supabase-Connector ausschließlich `hufi-agent` deployen. Danach vom Smartphone eine minimale Hufi-Anfrage stellen und per Correlation-ID den `errorCode`, das Fast-Modell und einen eventuellen Fallback abgleichen.
+Über den Supabase-Connector ausschließlich `hufi-agent` deployen und den Preview-Frontend-Stand aktualisieren. Danach genau eine eingetippte Smartphone-Anfrage stellen und per Correlation-ID HTTP-Status, `errorCode`, Modell und Fallback abgleichen; erst nach sichtbarer Textantwort die nächste Voice-Prüfung durchführen.

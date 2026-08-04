@@ -5,7 +5,7 @@ import { momentHintLabel, type HufiMomentType } from "@/lib/hufi-moment";
 // Verbindung" darstellt (P0-Vorgabe). "mic"/"transcription" kommen aus
 // useVoiceCapture, "agent"/"action" aus askHufiAgent bzw. der
 // Task-Bestätigung, "tts" aus der Sprachausgabe.
-export type HufiErrorCategory = "mic" | "transcription" | "agent" | "action" | "tts" | "unknown";
+export type HufiErrorCategory = "mic" | "transcription" | "network" | "agent" | "action" | "tts" | "unknown";
 
 export interface HufiUiError {
   text: string;

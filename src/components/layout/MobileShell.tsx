@@ -13,7 +13,7 @@ import { useViewMode } from "@/hooks/useViewMode";
 import { useHufiTTS } from "@/hooks/useHufiTTS";
 import { useVoiceCapture, type VoiceErrorCode } from "@/hooks/useVoiceCapture";
 import { streamWithHufAI, ChatMessage as AIChatMessage } from "@/lib/ai-routing";
-import { askHufiAgent, type ConversationFocus, type HufiPendingConfirmation } from "@/lib/hufi-agent-client";
+import { askHufiAgent, HufiAgentClientError, type ConversationFocus, type HufiPendingConfirmation } from "@/lib/hufi-agent-client";
 import { } from "@/lib/hufi-tool-definitions";
 import {
   detectAndCreateTask, executeNextStep, confirmStep, cancelTask, createActionTask,
@@ -1760,14 +1760,30 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
       void observeInteraction(cleaned, resp.answer, user.id);
     } catch (err) {
       const e = err as Error;
-      console.error("[Hufi] processChatMessage Fehler:", e?.message ?? e);
+      const agentError = err instanceof HufiAgentClientError ? err : null;
+      console.error(`[Hufi] processChatMessage Fehler kind=${agentError?.kind ?? "unknown"} status=${agentError?.status ?? "none"} code=${agentError?.errorCode ?? "none"}`);
       let userText: string;
       // Konkrete Fehlerkategorie statt pauschal "Keine Verbindung" (P0
       // Abschnitt 5) -- "agent" nur für echte Erreichbarkeitsprobleme,
       // "action" für Anfragen, die den Agenten erreicht haben, aber aus
       // fachlichem Grund abgelehnt wurden (Guthaben, Login).
       let category: HufiUiError["category"];
-      if (e?.message?.includes("Kein KI-Guthaben")) {
+      if (agentError?.kind === "auth") {
+        userText = "Dafür musst du angemeldet sein.";
+        category = "action";
+      } else if (agentError?.kind === "network") {
+        userText = "Keine Netzwerkverbindung zum Hufi-Agent. Bitte prüfe deine Verbindung und versuche es erneut.";
+        category = "network";
+      } else if (agentError?.kind === "timeout") {
+        userText = "Hufi-Agent antwortet gerade nicht rechtzeitig. Bitte gleich nochmal versuchen.";
+        category = "agent";
+      } else if (agentError?.kind === "function") {
+        userText = "Hufis Antwortdienst ist gerade nicht verfügbar. Bitte gleich nochmal versuchen.";
+        category = "agent";
+      } else if (agentError?.kind === "http" || agentError?.kind === "invalid_response") {
+        userText = "Hufi hat eine technische Antwort erhalten, die nicht verarbeitet werden konnte. Bitte gleich nochmal versuchen.";
+        category = "agent";
+      } else if (e?.message?.includes("Kein KI-Guthaben")) {
         userText = voiceMode
           ? "Dein KI-Guthaben ist erschöpft."
           : "Dein KI-Guthaben ist aufgebraucht. Bitte lade es in den Einstellungen auf.";
