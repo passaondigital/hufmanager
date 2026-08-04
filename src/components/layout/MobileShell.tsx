@@ -974,7 +974,9 @@ export function MobileShell() {
             setVoiceLoopActive(false);
           }
         }, 800);
-      }, /* fastMode */ true);
+      }, /* fastMode */ true, () => {
+        if (useExperiencePreview) toast.info("Meine Sprachausgabe ist gerade nicht verfügbar.");
+      });
     })();
   }, [voice.transcript]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1738,7 +1740,20 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
       if (useExperiencePreview && resp.answer) {
         setAnswerVisible(true);
         window.setTimeout(() => setAnswerVisible(false), 9000);
-        void hufiSpeak(resp.answer);
+        // Nur für Text-Eingaben von hier aus sprechen -- bei voiceMode=true
+        // übernimmt der bestehende Voice-Loop-Pfad weiter unten (nach
+        // processChatMessage) das Sprechen inkl. Follow-up-Scheduling. Ohne
+        // dieses !voiceMode wären das zwei echte hufi-tts-Aufrufe für
+        // dieselbe Antwort (P0 Abschnitt 8: "genau ein TTS-Aufruf pro
+        // Antwort").
+        if (!voiceMode) {
+          // Text bleibt in jedem Fall sichtbar (answerVisible bleibt gesetzt) --
+          // TTS-Fehler zeigen nur einen zusätzlichen, nicht-blockierenden
+          // Hinweis, keine Ersatzstimme (P0 TTS-Fix Abschnitt 2/7).
+          void hufiSpeak(resp.answer, undefined, false, () => {
+            toast.info("Meine Sprachausgabe ist gerade nicht verfügbar.");
+          });
+        }
       }
       addMsg({ role: "ai", text: resp.answer, ts: Date.now() + 1, disclaimerCategory: resp.disclaimerCategory });
       learnFromInteraction(user.id, cleaned, resp.answer, "confirmed", sessionId.current);

@@ -1,14 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getSelectedVoiceId, getSelectedModel } from "@/lib/hufi-voice-config";
+import { getSelectedVoiceId, getSelectedModel, HUFI_VOICES } from "@/lib/hufi-voice-config";
 import { toast } from "sonner";
 
 interface UseHufiTTS {
-  speak: (text: string, onEnd?: () => void, fastMode?: boolean) => boolean;
+  // onError feuert genau dann, wenn der EINE gewählte Provider fehlschlägt --
+  // es gibt danach keinen stillen Wechsel zu einem anderen Provider mehr
+  // (P0: "ElevenLabs Premium oder keine Sprachausgabe"). Der Aufrufer zeigt
+  // damit "Meine Sprachausgabe ist gerade nicht verfügbar." an, der Text
+  // bleibt unabhängig davon sichtbar.
+  speak: (text: string, onEnd?: () => void, fastMode?: boolean, onError?: () => void) => boolean;
   cancel: () => void;
   isSupported: boolean;
   isSpeaking: boolean;
   isCloudVoice: boolean;
+}
+
+// Nur zum Loggen -- volle Voice-ID gilt als sensibel genug, um sie nicht im
+// Klartext in der Konsole stehen zu lassen (P0 Abschnitt 3).
+function shortVoiceId(id: string): string {
+  return id.length > 8 ? `${id.slice(0, 8)}…` : id;
 }
 
 // Deutsche Abkürzungen für TTS-Aussprache
@@ -68,15 +79,14 @@ export function sanitizeForSpeech(input: string): string {
 // Piper TTS: lokaler Server auf demselben VPS (via Nginx-Proxy)
 const PIPER_TTS_URL = "/api/local-tts";
 
-// EINMAL pro Sitzung (Entscheidung 30.07.2026). Das Guthaben zahlt nur die
-// Premium-Stimme, nicht das Zuhören: bei 0 wird nichts blockiert und nichts
-// abgeschnitten — Hufi antwortet weiter, nur mit der Piper-Stimme (Fallback in
-// speakWithCloud unten). Der Hinweis darf deshalb dezent bleiben.
+// EINMAL pro Sitzung (Entscheidung 30.07.2026, Text angepasst P0: kein
+// stiller Wechsel zu Piper mehr bei aufgebrauchtem Guthaben -- "ElevenLabs
+// Premium oder keine Sprachausgabe" statt einer unangekündigten Ersatzstimme).
 let creditsExhaustedNotified = false;
 function notifyCreditsExhausted() {
   if (creditsExhaustedNotified) return;
   creditsExhaustedNotified = true;
-  toast.info("Premium-Stimme aufgebraucht. Hufi antwortet mit der Standard-Stimme.", {
+  toast.info("Premium-Stimme aufgebraucht. Sprachausgabe pausiert, bis aufgeladen wird.", {
     action: { label: "Aufladen", onClick: () => { window.location.href = "/management/guthaben"; } },
   });
 }
@@ -139,11 +149,14 @@ export function useHufiTTS(userId = "", role?: string | null): UseHufiTTS {
     stopPlayback(true);
   }, [stopPlayback]);
 
-  /* ── Tier 3: Browser TTS (immer verfügbar, synthetisch) ── */
+  /* ── Browser-TTS: NUR wenn der Nutzer "Browser-Stimme" ausdrücklich in den
+     Einstellungen gewählt hat (P0 Abschnitt 2) -- niemals als stiller
+     Ersatz für einen anderen Provider. ── */
   const speakWithBrowser = useCallback(
-    (cleaned: string, requestId: number, onEnd?: () => void): boolean => {
+    (cleaned: string, requestId: number, onEnd?: () => void, onError?: () => void): boolean => {
       const synth = synthRef.current;
       if (!synth || !cleaned) {
+        onError?.();
         onEnd?.();
         return false;
       }
@@ -166,6 +179,7 @@ export function useHufiTTS(userId = "", role?: string | null): UseHufiTTS {
       utt.onerror = () => {
         if (requestId !== requestIdRef.current) return;
         setIsSpeaking(false);
+        onError?.();
         onEnd?.();
       };
       synth.speak(utt);
@@ -174,9 +188,12 @@ export function useHufiTTS(userId = "", role?: string | null): UseHufiTTS {
     []
   );
 
-  /* ── Tier 2: Piper TTS (lokal auf VPS, natürlich klingende DE-Stimme) ── */
+  /* ── Piper-TTS: NUR wenn der Nutzer "Hufi Stimme lokal" ausdrücklich
+     gewählt hat, oder für B2C-Konten (bestehende, unveränderte Produkt-
+     entscheidung). Bei Fehler kein Wechsel zu einem anderen Provider mehr
+     (P0 Abschnitt 2) -- onError statt stillem speakWithBrowser-Aufruf. ── */
   const speakWithPiper = useCallback(
-    async (text: string, requestId: number, onEnd?: () => void): Promise<boolean> => {
+    async (text: string, requestId: number, onEnd?: () => void, onError?: () => void): Promise<boolean> => {
       // Safari < 16.4 kennt kein AbortSignal.timeout() → manueller Controller
       const controller = new AbortController();
       currentAbortRef.current = controller;
@@ -218,38 +235,45 @@ export function useHufiTTS(userId = "", role?: string | null): UseHufiTTS {
           currentAudioRef.current = null;
           URL.revokeObjectURL(url);
           currentObjectUrlRef.current = null;
-          speakWithBrowser(text, requestId, onEnd);
+          onError?.();
+          onEnd?.();
         };
 
         try {
           await audio.play();
         } catch (playErr: unknown) {
           if (requestId !== requestIdRef.current) return false;
-          // iOS: NotAllowedError ohne vorherige User-Geste → Browser-Fallback
+          // Autoplay vom Browser blockiert (z.B. iOS ohne vorherige
+          // User-Geste) -- sichtbar behandeln, kein stiller Providerwechsel.
+          console.warn("[hufi-tts] Piper play() blockiert:", (playErr as Error)?.name);
           currentAudioRef.current = null;
           URL.revokeObjectURL(url);
           currentObjectUrlRef.current = null;
           setIsSpeaking(false);
-          return speakWithBrowser(text, requestId, onEnd);
+          onError?.();
+          return false;
         }
         return true;
       } catch (e) {
         clearTimeout(timer);
         if (requestId !== requestIdRef.current) return false;
         if ((e as Error)?.name === "AbortError") return false;
-        console.warn("[hufi-tts] Piper TTS nicht erreichbar, Fallback auf Browser:", e);
-        return speakWithBrowser(text, requestId, onEnd);
+        console.warn("[hufi-tts] Piper TTS nicht erreichbar:", e);
+        onError?.();
+        return false;
       } finally {
         if (currentAbortRef.current === controller) currentAbortRef.current = null;
       }
     },
-    [speakWithBrowser]
+    []
   );
 
-  /* ── Tier 1: ElevenLabs Cloud TTS (beste Qualität, kostenpflichtig) ── */
+  /* ── ElevenLabs Cloud TTS -- der Standard für Hufi. Bei Fehler (Timeout,
+     Guthaben, ungültige Voice, Netzwerk, Autoplay) KEIN Wechsel zu Piper
+     oder Browser mehr, nur noch onError (P0 Abschnitt 2/3): "ElevenLabs
+     Premium oder keine Sprachausgabe". ── */
   const speakWithCloud = useCallback(
-    async (text: string, voiceId: string, requestId: number, onEnd?: () => void, modelParam?: string): Promise<boolean> => {
-      // Muss außerhalb des try-Blocks stehen, damit catch unten darauf zugreifen kann.
+    async (text: string, voiceId: string, requestId: number, onEnd?: () => void, onError?: () => void, modelParam?: string): Promise<boolean> => {
       let timedOut = false;
       try {
         const {
@@ -264,13 +288,11 @@ export function useHufiTTS(userId = "", role?: string | null): UseHufiTTS {
         const model = modelParam ?? getSelectedModel(userId);
         const controller = new AbortController();
         currentAbortRef.current = controller;
-        // Kontrollierter Timeout (P0 Abschnitt 5) -- ohne das hing "speaking"
-        // bei einer hängenden ElevenLabs-Antwort unbegrenzt, statt auf Piper
-        // zurückzufallen. Eigenes Flag, weil ein Abort durch DIESEN Timer
-        // (→ Piper-Fallback) von einem Abort durch echten Nutzer-Abbruch
-        // (→ kein Fallback, siehe catch unten) unterschieden werden muss.
+        // Kontrollierter Timeout (P0 Abschnitt 5).
         const timer = setTimeout(() => { timedOut = true; controller.abort(); }, 15_000);
         const ttsCorrelationId = crypto.randomUUID();
+        console.info(`[hufi-tts][${ttsCorrelationId}] Anfrage gestartet: provider=elevenlabs voice=${shortVoiceId(voiceId)} model=${model}`);
+        const ttsT0 = performance.now();
         const resp = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hufi-tts`,
           {
@@ -294,6 +316,7 @@ export function useHufiTTS(userId = "", role?: string | null): UseHufiTTS {
         if (!resp.ok) throw new Error(`ElevenLabs TTS ${resp.status}`);
 
         const blob = await resp.blob();
+        console.info(`[hufi-tts][${ttsCorrelationId}] Antwort erfolgreich: ${Math.round(performance.now() - ttsT0)}ms, contentType=${resp.headers.get("content-type")}, bytes=${blob.size}`);
         if (requestId !== requestIdRef.current) return false;
         const url = URL.createObjectURL(blob);
         currentObjectUrlRef.current = url;
@@ -317,6 +340,7 @@ export function useHufiTTS(userId = "", role?: string | null): UseHufiTTS {
           currentAudioRef.current = null;
           URL.revokeObjectURL(url);
           currentObjectUrlRef.current = null;
+          onError?.();
           onEnd?.();
         };
 
@@ -324,30 +348,40 @@ export function useHufiTTS(userId = "", role?: string | null): UseHufiTTS {
           await audio.play();
         } catch (playErr: unknown) {
           if (requestId !== requestIdRef.current) return false;
-          // iOS: NotAllowedError ohne vorherige User-Geste → Piper-Fallback
+          // Autoplay vom Browser blockiert -- sichtbar behandeln, kein
+          // stiller Providerwechsel.
+          console.warn("[hufi-tts] ElevenLabs play() blockiert:", (playErr as Error)?.name);
           currentAudioRef.current = null;
           URL.revokeObjectURL(url);
           currentObjectUrlRef.current = null;
           setIsSpeaking(false);
           setIsCloudVoice(false);
-          return speakWithPiper(text, requestId, onEnd);
+          onError?.();
+          return false;
         }
         return true;
       } catch (e) {
         if (requestId !== requestIdRef.current) return false;
         if ((e as Error)?.name === "AbortError" && !timedOut) return false;
-        console.warn("[hufi-tts] ElevenLabs fehlgeschlagen, Fallback auf Piper:", timedOut ? "Zeitüberschreitung" : e);
+        console.warn("[hufi-tts] ElevenLabs fehlgeschlagen:", timedOut ? "Zeitüberschreitung" : e);
         setIsSpeaking(false);
         setIsCloudVoice(false);
-        return speakWithPiper(text, requestId, onEnd);
+        onError?.();
+        return false;
       }
     },
-    [speakWithPiper]
+    []
   );
 
-  /* ── Haupt-Speak Funktion: ElevenLabs → Piper → Browser ── */
+  /* ── Haupt-Speak-Funktion: GENAU EIN Provider pro Aufruf, kein Kaskadieren
+     mehr (P0 Abschnitt 1/2/3). Priorität:
+       1. gespeicherte, gültige Premium-Voice-ID des Nutzers (ElevenLabs)
+       2. explizit gewähltes "piper" oder "browser"
+       3. ohne jede Auswahl: zentrale Hufi-Premium-Standardstimme
+          (B2C-Konten weiterhin auf Piper begrenzt, bestehende Regel)
+     Schlägt der gewählte Provider fehl: onError, keine Ersatzstimme. ── */
   const speak = useCallback(
-    async (text: string, onEnd?: () => void, fastMode = false): Promise<boolean> => {
+    (text: string, onEnd?: () => void, fastMode = false, onError?: () => void): boolean => {
       const cleaned = sanitizeForSpeech(text);
       if (!cleaned) {
         onEnd?.();
@@ -358,33 +392,44 @@ export function useHufiTTS(userId = "", role?: string | null): UseHufiTTS {
       requestIdRef.current = requestId;
       stopPlayback(false);
 
-      const voiceId = getSelectedVoiceId(userId);
+      const storedVoiceId = getSelectedVoiceId(userId);
       const ttsT0 = performance.now();
       const wrappedOnEnd = () => {
         console.info(`[hufi-tts] TTS beendet: ${Math.round(performance.now() - ttsT0)}ms`);
         onEnd?.();
       };
-      // TEMP: B2C-Sperre — Pferdebesitzer bekommen nur die offene
-      // Piper-Stimme, keine ElevenLabs-Stimmen (siehe hufi-tts Edge
-      // Function, gleiche Produktentscheidung 2026-08-02).
-      if (voiceId && voiceId !== "browser" && voiceId !== "piper" && role !== "client") {
-        console.info(`[hufi-tts] TTS gestartet: tier=cloud chars=${cleaned.length}`);
-        await speakWithCloud(cleaned, voiceId, requestId, wrappedOnEnd, fastMode ? "eleven_turbo_v2_5" : undefined);
+
+      if (storedVoiceId === "browser") {
+        console.info(`[hufi-tts] TTS gestartet: tier=browser (ausdrücklich gewählt) chars=${cleaned.length}`);
+        speakWithBrowser(cleaned, requestId, wrappedOnEnd, onError);
         return true;
       }
 
-      if (voiceId === "piper") {
+      if (storedVoiceId === "piper" || role === "client") {
         console.info(`[hufi-tts] TTS gestartet: tier=piper chars=${cleaned.length}`);
-        await speakWithPiper(cleaned, requestId, wrappedOnEnd);
+        void speakWithPiper(cleaned, requestId, wrappedOnEnd, onError);
         return true;
       }
 
-      // Kein Cloud-Voice gesetzt → Piper versuchen (natürlichere Stimme als Browser)
-      console.info(`[hufi-tts] TTS gestartet: tier=piper chars=${cleaned.length}`);
-      await speakWithPiper(cleaned, requestId, wrappedOnEnd);
+      // ElevenLabs: gespeicherte Premium-Voice-ID, sonst die zentrale
+      // Hufi-Standardstimme (nie automatisch Piper/Browser).
+      const voiceId = (storedVoiceId && HUFI_VOICES.some((v) => v.id === storedVoiceId))
+        ? storedVoiceId
+        : (HUFI_VOICES.find((v) => v.recommended) ?? HUFI_VOICES[0])?.id;
+
+      if (!voiceId) {
+        // Keine Premium-Stimme im Projekt konfiguriert -- ehrlich keine
+        // Sprachausgabe statt eines stillen Ersatzes.
+        onError?.();
+        onEnd?.();
+        return false;
+      }
+
+      console.info(`[hufi-tts] TTS gestartet: tier=cloud chars=${cleaned.length}`);
+      void speakWithCloud(cleaned, voiceId, requestId, wrappedOnEnd, onError, fastMode ? "eleven_turbo_v2_5" : undefined);
       return true;
     },
-    [speakWithCloud, speakWithPiper, stopPlayback, role]
+    [speakWithCloud, speakWithPiper, speakWithBrowser, stopPlayback, role]
   );
 
   useEffect(() => {

@@ -6,7 +6,12 @@ import { buildCapabilitySummary } from "./capability-registry.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  // x-correlation-id fehlte hier -- der Browser blockiert die echte POST-
+  // Anfrage nach einem Preflight, wenn ein selbst gesetzter Header nicht in
+  // dieser Liste steht (CORS), OHNE dass irgendein Server-Log entsteht (der
+  // Request verlässt den Browser nie). Root-Cause für "Hufi-Agent nicht
+  // erreichbar", nachdem correlationId-Logging eingeführt wurde.
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-correlation-id",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 

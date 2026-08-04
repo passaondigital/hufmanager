@@ -3,7 +3,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  // x-correlation-id fehlte hier -- derselbe CORS-Bug wie in hufi-agent:
+  // die echte POST-Anfrage (ElevenLabs-Aufruf) wurde vom Browser nach dem
+  // Preflight blockiert, kein Server-Log entstand. useHufiTTS fiel dadurch
+  // in speakWithCloud's catch-Block und kaskadierte auf Piper/Browser-TTS --
+  // Root-Cause der falschen, fremd klingenden Stimme.
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-correlation-id",
 };
 
 // Maximale Textlänge pro Anfrage (Zeichen) — schützt vor API-Missbrauch
@@ -15,6 +20,12 @@ const ALLOWED_MODELS = new Set([
   "eleven_flash_v2_5",
   "eleven_turbo_v2_5",
 ]);
+
+// Nur zum Loggen -- volle Voice-ID gilt als sensibel genug, um sie nicht im
+// Klartext in Logs stehen zu lassen (P0 TTS-Fix Abschnitt 3/4).
+function shortVoiceId(id: string): string {
+  return id.length > 8 ? `${id.slice(0, 8)}…` : id;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -99,14 +110,16 @@ serve(async (req) => {
 
     // ── Voice-Guthaben prüfen (separat vom KI-Text-Credit-System) ────────────
     // Bewusst VOR dem ElevenLabs-Call, um bei leerem Guthaben keine unnötigen
-    // API-Kosten zu verursachen — Client fällt bei jedem Fehler automatisch
-    // auf Piper zurück (useHufiTTS.speakWithCloud), NIE auf die Browser-Stimme.
+    // API-Kosten zu verursachen. Der Client (useHufiTTS) wechselt bei einem
+    // Fehler NICHT mehr automatisch zu Piper/Browser (P0 TTS-Fix Abschnitt 2)
+    // -- er zeigt nur noch "Sprachausgabe gerade nicht verfügbar".
     const { data: credits } = await supabase.rpc("get_hufi_voice_credits", { p_user_id: user.id });
     const purchasedUsable = credits?.purchased_expires_at && new Date(credits.purchased_expires_at) < new Date()
       ? 0
       : (credits?.purchased_balance_cents ?? 0);
     const availableCents = (credits?.monthly_balance_cents ?? 0) + purchasedUsable;
     if (availableCents <= 0) {
+      console.log(`[hufi-tts][${requestId}] provider=elevenlabs voice=${shortVoiceId(voice_id)} model=${model_id} status=402 dur=${Date.now() - t0}ms outcome=credits_exhausted`);
       return new Response(
         JSON.stringify({ error: "Voice-Guthaben aufgebraucht", code: "credits_exhausted" }),
         { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -116,6 +129,7 @@ serve(async (req) => {
     // ── ElevenLabs TTS ─────────────────────────────────────────────────────
     const apiKey = Deno.env.get("ELEVENLABS_API_KEY");
     if (!apiKey) {
+      console.error(`[hufi-tts][${requestId}] provider=elevenlabs status=503 dur=${Date.now() - t0}ms outcome=not_configured`);
       return new Response(JSON.stringify({ error: "ElevenLabs nicht konfiguriert" }), {
         status: 503,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -146,7 +160,10 @@ serve(async (req) => {
 
     if (!ttsResponse.ok) {
       const errText = await ttsResponse.text();
-      console.error(`[hufi-tts][${requestId}] ElevenLabs error nach ${Date.now() - t0}ms:`, ttsResponse.status, errText);
+      console.error(
+        `[hufi-tts][${requestId}] provider=elevenlabs voice=${shortVoiceId(voice_id)} model=${model_id} status=${ttsResponse.status} dur=${Date.now() - t0}ms outcome=error`,
+        errText,
+      );
       let detail = "";
       try {
         const parsed = JSON.parse(errText);
@@ -178,7 +195,9 @@ serve(async (req) => {
     });
     if (consumeError) console.error(`[hufi-tts][${requestId}] Guthaben-Verbuchung fehlgeschlagen:`, consumeError);
 
-    console.log(`[hufi-tts][${requestId}] TTS-Antwort erfolgreich: ${Date.now() - t0}ms, ${audioBuffer.byteLength} bytes`);
+    console.log(
+      `[hufi-tts][${requestId}] provider=elevenlabs voice=${shortVoiceId(voice_id)} model=${model_id} status=${ttsResponse.status} contentType=${ttsResponse.headers.get("content-type")} bytes=${audioBuffer.byteLength} dur=${Date.now() - t0}ms outcome=success`,
+    );
     return new Response(audioBuffer, {
       status: 200,
       headers: {
