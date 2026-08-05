@@ -1,8 +1,9 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles, Camera, Image, FileText, ShieldAlert, Send, AlertCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/components/ThemeProvider";
+import { useTextDraft } from "@/hooks/offline/useTextDraft";
 import { loadSavedConsent } from "@/components/consent/HufiFirstRunConsent";
 import { HMCamModal } from "@/components/hufcam";
 import { HufiMenu } from "@/components/layout/HufiMenu";
@@ -66,11 +67,42 @@ export function HufiAssistantExperience({ ui, userName, insight, onWakeTap, onIn
   const [entryPrompt] = useState(() => HUFI_ENTRY_PROMPTS[Math.floor(Math.random() * HUFI_ENTRY_PROMPTS.length)]);
 
   const [inputValue, setInputValue] = useState("");
+
+  // Nutzerisolierter Offline-Textentwurf (Priorität 4): pro Nutzer-ID
+  // gescoped, nie geräteglobal. Ohne echten Nutzer wird nichts persistiert.
+  const draftScope = user?.id ? `assistant-input:${user.id}` : "anon";
+  const { draft, save: saveDraft, clear: clearDraft } = useTextDraft(draftScope);
+  const [draftBannerDismissed, setDraftBannerDismissed] = useState(false);
+  const showDraftBanner = Boolean(user?.id && draft && !inputValue.trim() && !draftBannerDismissed);
+
+  // Debounced Save beim Tippen -- kein Schreibzugriff pro Tastendruck.
+  useEffect(() => {
+    if (!user?.id) return;
+    const text = inputValue.trim();
+    if (!text) return;
+    const timer = window.setTimeout(() => saveDraft(inputValue), 400);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inputValue, user?.id]);
+
+  const handleRestoreDraft = () => {
+    if (draft) setInputValue(draft.text);
+    setDraftBannerDismissed(true);
+  };
+  const handleDiscardDraft = () => {
+    clearDraft();
+    setDraftBannerDismissed(true);
+  };
+
   const submitInput = () => {
     if (!canSubmit) return;
     const text = inputValue.trim();
     if (!text) return;
     setInputValue("");
+    // Lokaler Entwurf ist unabhängig vom späteren Agent-Ergebnis erledigt --
+    // der Text wurde erfolgreich abgeschickt, das ist die relevante Grenze.
+    if (user?.id) clearDraft();
+    setDraftBannerDismissed(false);
     onSubmitText(text);
   };
 
@@ -250,6 +282,30 @@ export function HufiAssistantExperience({ ui, userName, insight, onWakeTap, onIn
               <X size={13} aria-hidden="true" />
               Abbrechen
             </button>
+          )}
+
+          {/* Lokaler Offline-Textentwurf: nur sichtbar mit aktivem Nutzer,
+              vorhandenem Entwurf und leerem Eingabefeld. Kein automatisches
+              Befüllen -- der Nutzer entscheidet aktiv. */}
+          {showDraftBanner && (
+            <div
+              className="hlab-foreground-interactive"
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
+                width: "100%", maxWidth: 340, padding: "8px 12px", borderRadius: 12,
+                border: "1px solid var(--hlab-fg-30)", fontSize: 12.5,
+              }}
+            >
+              <span style={{ color: "var(--hlab-fg-60)" }}>Entwurf gefunden</span>
+              <div style={{ display: "flex", gap: 12 }}>
+                <button type="button" onClick={handleDiscardDraft} className="hlab-focusable" style={{ background: "transparent", border: "none", padding: 0, color: "var(--hlab-fg-40)", fontSize: 12.5, cursor: "pointer" }}>
+                  Verwerfen
+                </button>
+                <button type="button" onClick={handleRestoreDraft} className="hlab-focusable" style={{ background: "transparent", border: "none", padding: 0, color: "var(--hufi-orange)", fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>
+                  Wiederherstellen
+                </button>
+              </div>
+            </div>
           )}
 
           {/* Echte Texteingabe -- derselbe Handler (processChatMessage) wie
