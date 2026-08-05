@@ -20,7 +20,7 @@ Stand: 2026-08-04. Diese Grundlage verändert weder Produktion noch Navigation o
 
 - `useConnectionState` kapselt die Browser-Events mit `useSyncExternalStore`. Es liefert ausschließlich `online` oder `offline`; HTTP-, Auth-, Timeout- und Providerfehler bleiben getrennte Zustände.
 - `textDrafts` und `useTextDraft` bewahren bewusst gespeicherte Texte lokal pro übergebenem Scope. Sie senden nichts und begrenzen den Inhalt auf 20.000 Zeichen.
-- `audioDraftStore` speichert einen fertigen Audio-Blob mit minimaler technischer Metadatenstruktur in IndexedDB. Es führt absichtlich weder Upload noch Transkription noch Retry aus.
+- `audioDraftStore` speichert einen fertigen Audio-Blob mit minimaler technischer Metadatenstruktur in IndexedDB. Es führt absichtlich weder Upload noch Transkription noch Retry aus. `save`/`get`/`list`/`remove` verlangen zwingend einen `AudioDraftScope` (`{ userId, orgId? }`); ein leerer oder nur aus Leerzeichen bestehender `userId` wird abgelehnt. Der tatsächliche IndexedDB-Key enthält keine Klardaten, sondern einen SHA-256-Hash des Scopes (`hufi-audio-draft:<scopeHash>:<draftId>`). `list` liefert ausschließlich Drafts des exakt übergebenen Scopes; `get`/`remove` unter einem fremden Scope treffen keinen bestehenden Key und sind dadurch automatisch folgenlos. Alte Drafts aus dem früheren globalen Schlüsselformat (ohne Scope-Hash) werden von der neuen API nicht mehr gefunden.
 
 ## Ehrlich offline möglich
 
