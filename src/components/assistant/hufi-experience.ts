@@ -4,8 +4,11 @@ import { momentHintLabel, type HufiMomentType } from "@/lib/hufi-moment";
 // Fehlerkategorie, damit Hufi nicht jeden Fehler pauschal als "Keine
 // Verbindung" darstellt (P0-Vorgabe). "mic"/"transcription" kommen aus
 // useVoiceCapture, "agent"/"action" aus askHufiAgent bzw. der
-// Task-Bestätigung, "tts" aus der Sprachausgabe.
-export type HufiErrorCategory = "mic" | "transcription" | "network" | "agent" | "action" | "tts" | "unknown";
+// Task-Bestätigung, "tts" aus der Sprachausgabe. "billing" und "provider"
+// kommen aus dem klassifizierten hufi-agent errorCode (siehe
+// hufi-agent-error-messages.ts) -- ein erschöpftes KI-Guthaben oder ein
+// gestörter Provider sind KEIN "Hufi-Agent nicht erreichbar".
+export type HufiErrorCategory = "mic" | "transcription" | "network" | "agent" | "action" | "tts" | "unknown" | "billing" | "provider";
 
 export interface HufiUiError {
   text: string;

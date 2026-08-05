@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+export { HufiAgentClientError, type HufiAgentClientErrorKind } from "@/lib/hufi-agent-client-error";
 
 export interface HufiAgentMessage {
   role: "user" | "assistant";
@@ -40,20 +41,6 @@ export interface HufiAgentResponse {
   // ohne blockiert zu sein — steuert den Hinweis-Badge in der Chat-Bubble.
   disclaimerCategory?: "medical" | "legal";
   conversationFocus?: ConversationFocus;
-}
-
-export type HufiAgentClientErrorKind = "auth" | "network" | "timeout" | "http" | "function" | "invalid_response";
-
-export class HufiAgentClientError extends Error {
-  constructor(
-    message: string,
-    readonly kind: HufiAgentClientErrorKind,
-    readonly status?: number,
-    readonly errorCode?: string,
-  ) {
-    super(message);
-    this.name = "HufiAgentClientError";
-  }
 }
 
 // Kontrollierter Timeout für die Agentenanfrage (P0 Abschnitt 5/1) -- ohne

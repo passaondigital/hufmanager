@@ -14,6 +14,7 @@ import { useHufiTTS } from "@/hooks/useHufiTTS";
 import { useVoiceCapture, type VoiceErrorCode } from "@/hooks/useVoiceCapture";
 import { streamWithHufAI, ChatMessage as AIChatMessage } from "@/lib/ai-routing";
 import { askHufiAgent, HufiAgentClientError, type ConversationFocus, type HufiPendingConfirmation } from "@/lib/hufi-agent-client";
+import { classifyHufiAgentError } from "@/lib/hufi-agent-error-messages";
 import { } from "@/lib/hufi-tool-definitions";
 import {
   detectAndCreateTask, executeNextStep, confirmStep, cancelTask, createActionTask,
@@ -1759,54 +1760,15 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
       learnFromInteraction(user.id, cleaned, resp.answer, "confirmed", sessionId.current);
       void observeInteraction(cleaned, resp.answer, user.id);
     } catch (err) {
-      const e = err as Error;
       const agentError = err instanceof HufiAgentClientError ? err : null;
       console.error(`[Hufi] processChatMessage Fehler kind=${agentError?.kind ?? "unknown"} status=${agentError?.status ?? "none"} code=${agentError?.errorCode ?? "none"}`);
-      let userText: string;
       // Konkrete Fehlerkategorie statt pauschal "Keine Verbindung" (P0
-      // Abschnitt 5) -- "agent" nur für echte Erreichbarkeitsprobleme,
-      // "action" für Anfragen, die den Agenten erreicht haben, aber aus
-      // fachlichem Grund abgelehnt wurden (Guthaben, Login).
-      let category: HufiUiError["category"];
-      if (agentError?.kind === "auth") {
-        userText = "Dafür musst du angemeldet sein.";
-        category = "action";
-      } else if (agentError?.kind === "network") {
-        userText = "Keine Netzwerkverbindung zum Hufi-Agent. Bitte prüfe deine Verbindung und versuche es erneut.";
-        category = "network";
-      } else if (agentError?.kind === "timeout") {
-        userText = "Hufi-Agent antwortet gerade nicht rechtzeitig. Bitte gleich nochmal versuchen.";
-        category = "agent";
-      } else if (agentError?.kind === "function") {
-        userText = "Hufis Antwortdienst ist gerade nicht verfügbar. Bitte gleich nochmal versuchen.";
-        category = "agent";
-      } else if (agentError?.kind === "http" || agentError?.kind === "invalid_response") {
-        userText = "Hufi hat eine technische Antwort erhalten, die nicht verarbeitet werden konnte. Bitte gleich nochmal versuchen.";
-        category = "agent";
-      } else if (e?.message?.includes("Kein KI-Guthaben")) {
-        userText = voiceMode
-          ? "Dein KI-Guthaben ist erschöpft."
-          : "Dein KI-Guthaben ist aufgebraucht. Bitte lade es in den Einstellungen auf.";
-        category = "action";
-      } else if (e?.message?.includes("Nicht angemeldet") || e?.message?.includes("401")) {
-        userText = "Dafür musst du angemeldet sein.";
-        category = "action";
-      } else if (e?.message?.includes("Zeitüberschreitung")) {
-        userText = voiceMode
-          ? "Hufi antwortet gerade nicht. Bitte gleich nochmal."
-          : "Hufi-Agent antwortet nicht (Zeitüberschreitung). Bitte erneut versuchen.";
-        category = "agent";
-      } else if (e?.message?.includes("Ollama") || e?.message?.includes("fetch") || e?.message?.includes("nicht erreichbar")) {
-        userText = voiceMode
-          ? "Verbindung kurz unterbrochen. Bitte gleich nochmal."
-          : "Verbindung fehlgeschlagen. Bitte erneut versuchen.";
-        category = "agent";
-      } else {
-        userText = voiceMode
-          ? "Ich konnte deine Anfrage nicht verarbeiten. Bitte erneut versuchen."
-          : `Anfrage fehlgeschlagen. Bitte erneut versuchen.${import.meta.env.DEV ? ` (${e?.message})` : ""}`;
-        category = "unknown";
-      }
+      // Abschnitt 5) -- "billing"/"provider" für vom Backend klassifizierte
+      // Anthropic-Fehler (Guthaben, Auth, Rate-Limit, Modell, Timeout), damit
+      // ein erschöpftes KI-Guthaben nie als "Hufi-Agent nicht erreichbar"
+      // erscheint. Reine Ableitung, testbar ohne echten API-Call (siehe
+      // hufi-agent-error-messages.ts).
+      const { category, text: userText } = classifyHufiAgentError(err, { voiceMode });
       addMsg({ role: "ai", text: userText, ts: Date.now() });
       if (useExperiencePreview) {
         setAgentError({ text: userText, category });

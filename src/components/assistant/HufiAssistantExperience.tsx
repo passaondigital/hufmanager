@@ -30,6 +30,8 @@ const ERROR_HEADER_LABEL: Record<string, string> = {
   action: "Aktion fehlgeschlagen",
   tts: "Sprachausgabe gestört",
   unknown: "Kurz gestört",
+  billing: "Kein KI-Guthaben",
+  provider: "KI-Dienst gestört",
 };
 
 // Verstehen/Verarbeiten laufen laut den offiziellen Screen-Referenzen
