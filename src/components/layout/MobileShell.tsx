@@ -86,6 +86,7 @@ import {
 import { HufiAssistantCockpit } from "@/components/assistant/HufiAssistantCockpit";
 import { HufiAssistantExperience } from "@/components/assistant/HufiAssistantExperience";
 import { deriveHufiExperience, type HufiUiError } from "@/components/assistant/hufi-experience";
+import { HufiSwipeWorkspacePreview } from "@/components/workspace/HufiSwipeWorkspace";
 import { detectMomentHint, type HufiMomentType } from "@/lib/hufi-moment";
 
 // Presence-Untertitel im Header: auf sehr schmalen Displays (< 400px, siehe
@@ -1905,34 +1906,39 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
   // aus dieser Komponente, nur als Props/Callbacks.
   if (useExperiencePreview) {
     return (
-      <HufiAssistantExperience
-        ui={deriveHufiExperience({
-          orbState,
-          justWoke,
-          liveTranscript: displayedTranscript ?? "",
-          pendingClarification: conversationFocus.pendingClarification,
-          answerVisible,
-          lastAnswerText,
-          isTtsSpeaking: isTtsSpeaking || isVoiceSpeaking,
-          activeConfirmation,
-          confirming,
-          confirmationOutcome,
-          micError: voiceUiError,
-          agentError,
-          momentHint,
-          waitHint,
-          taskIcon: (t) => taskTypeIcon(t as AgentTaskType),
-          taskLabel: (t) => taskTypeLabel(t as AgentTaskType),
-          onConfirm: () => void experienceConfirm(),
-          onReject: () => void experienceReject(),
-        })}
-        userName={hufiCtx?.user.name ?? null}
-        insight={experienceInsight}
-        onWakeTap={recording ? stopRecording : startRecording}
-        onInterrupt={experienceInterrupt}
-        onSubmitText={experienceSubmitText}
-        canSubmit={!responding && !transcribing && !recording}
-      />
+      <>
+        <HufiAssistantExperience
+          ui={deriveHufiExperience({
+            orbState,
+            justWoke,
+            liveTranscript: displayedTranscript ?? "",
+            pendingClarification: conversationFocus.pendingClarification,
+            answerVisible,
+            lastAnswerText,
+            isTtsSpeaking: isTtsSpeaking || isVoiceSpeaking,
+            activeConfirmation,
+            confirming,
+            confirmationOutcome,
+            micError: voiceUiError,
+            agentError,
+            momentHint,
+            waitHint,
+            taskIcon: (t) => taskTypeIcon(t as AgentTaskType),
+            taskLabel: (t) => taskTypeLabel(t as AgentTaskType),
+            onConfirm: () => void experienceConfirm(),
+            onReject: () => void experienceReject(),
+          })}
+          userName={hufiCtx?.user.name ?? null}
+          insight={experienceInsight}
+          onWakeTap={recording ? stopRecording : startRecording}
+          onInterrupt={experienceInterrupt}
+          onSubmitText={experienceSubmitText}
+          canSubmit={!responding && !transcribing && !recording}
+        />
+        {/* Isolierte, standardmäßig ausgeschaltete Wisch-Fläche (VITE_HUFI_SWIPE_WORKSPACE) --
+            eigenes fixed-Overlay, rendert null wenn das Flag aus ist. Keine Route/Chrome-Änderung. */}
+        <HufiSwipeWorkspacePreview />
+      </>
     );
   }
 

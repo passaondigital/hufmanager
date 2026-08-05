@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { BellRing, CalendarDays, Camera, FileText, Horse, ReceiptText, RefreshCw, Users, X } from "lucide-react";
+import { BellRing, CalendarDays, Camera, FileText, Footprints, ReceiptText, RefreshCw, Users, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useWorkspaceSwipe, WORKSPACE_EDGE_PX } from "@/hooks/workspace/useWorkspaceSwipe";
 
@@ -11,7 +11,7 @@ type WorkspaceTile = { label: string; description: string; icon: LucideIcon; rou
 const TILES: WorkspaceTile[] = [
   { label: "Termine", description: "Kalender öffnen", icon: CalendarDays, route: "/kalender", availability: "available" },
   { label: "Kunden", description: "Kundenverwaltung", icon: Users, route: "/kunden", availability: "available" },
-  { label: "Pferde", description: "Pferdeübersicht", icon: Horse, route: "/pferde", availability: "available" },
+  { label: "Pferde", description: "Pferdeübersicht", icon: Footprints, route: "/pferde", availability: "available" },
   { label: "Rechnungen", description: "Rechnungen verwalten", icon: ReceiptText, route: "/rechnungen", availability: "available" },
   { label: "Beobachtung", description: "Beobachtungen", icon: BellRing, route: "/hufi-observation-lab", availability: "available" },
   { label: "Kamera", description: "Kamera ist in Vorbereitung", icon: Camera, availability: "planned" },
@@ -30,7 +30,9 @@ export function HufiSwipeWorkspacePreview() {
         absolutely-positioned children collapses to ~0px width, which silently
         made the edge-swipe gesture unreachable on real devices. */}
     <div aria-hidden="true" className="pointer-events-auto absolute inset-y-0 left-0" style={{ width: WORKSPACE_EDGE_PX }} {...gesture} />
-    <button type="button" className="pointer-events-auto absolute left-3 top-3 min-h-11 rounded-full bg-background/95 px-4 text-sm font-semibold shadow-lg ring-1 ring-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" onClick={open} aria-expanded={isOpen} aria-controls="hufi-swipe-workspace">Workspace öffnen</button>
+    {/* top-16 statt top-3: der Hufi-Experience-Header (Wordmark links, Status+Menü rechts)
+        reicht bis ca. y=54px, ein top-3-Button darunter würde das Wordmark überdecken. */}
+    <button type="button" className="pointer-events-auto absolute left-3 top-16 min-h-11 rounded-full bg-background/95 px-4 text-sm font-semibold shadow-lg ring-1 ring-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" onClick={open} aria-expanded={isOpen} aria-controls="hufi-swipe-workspace">Workspace öffnen</button>
     {isOpen && <div id="hufi-swipe-workspace" className="pointer-events-auto absolute inset-y-0 left-0 w-[min(100vw,28rem)] overflow-y-auto bg-background p-5 shadow-2xl" role="dialog" aria-modal="true" aria-label="Hufi Workspace">
       <div className="mb-6 flex items-center justify-between gap-3"><div><p className="text-sm font-medium text-muted-foreground">Dein Arbeitstag</p><h2 className="text-2xl font-bold tracking-tight">Workspace</h2></div><button type="button" onClick={() => setIsOpen(false)} className="grid size-11 place-items-center rounded-full border border-border" aria-label="Workspace schließen"><X className="size-5" aria-hidden="true" /></button></div>
       <p className="mb-5 text-sm text-muted-foreground">Wische vom linken Rand nach rechts oder nutze diese Schaltfläche. Das Hamburger-Menü bleibt für Profil, Einstellungen, Guthaben, Abo, Hilfe, Rechtliches und Abmelden reserviert.</p>

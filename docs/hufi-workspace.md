@@ -16,4 +16,11 @@ Das Hamburger-Menü erhält keine Workspace-Aufgaben. Seine geplante Verantwortu
 
 ## Lead-Integration
 
-Der Lead importiert `HufiSwipeWorkspacePreview` nur in eine gemeinsam verantwortete Fläche und rendert sie dort. Erst dann den Preview-Flag in der jeweiligen Preview-Umgebung setzen. Vor einer breiteren Aktivierung: Android-Touch-Test mit horizontal scrollbaren Bestandteilen und Fokus-Test mit Tastatur.
+Stand 2026-08-05: in Preview eingehängt. `HufiSwipeWorkspacePreview` wird als Geschwisterelement neben `HufiAssistantExperience` in `MobileShell.tsx` gerendert (Fragment, kein Eingriff in `HufiAssistantExperience.tsx` selbst). `VITE_HUFI_SWIPE_WORKSPACE=true` ist in der lokalen, gitignorten `.env` dieses Repos gesetzt. Produktion (`hufiapp.de`) baut aus einem komplett separaten Repo (`/root/hufmanager_v25/production`) und ist davon strukturell unberührt, nicht nur per Flag.
+
+Kollisionsprüfung gegen den echten `HufiAssistantExperience`-Header (Wordmark links, Status+Hamburger-Menü rechts, Texteingabe zentriert im `<main>`):
+- **Behoben:** Der "Workspace öffnen"-Button saß bei `top-3` im selben vertikalen Bereich (y≈12–56px) wie der Header (y≈10–54px) und überdeckte das "Hufi"-Wordmark. Auf `top-16` verschoben, damit er unterhalb des Headers sitzt. Die Randzone selbst (volle Höhe) ist unverändert.
+- **Kein Konflikt:** Das Hamburger-Menü sitzt rechts, alle Workspace-Elemente links -- keine Überlappungsmöglichkeit unabhängig von der Bildschirmbreite.
+- **Restrisiko, bewusst nicht blind gefixt:** Auf schmalen Viewports (~360px) endet die 24-px-Randzone exakt an der linken Kante der zentrierten Texteingabe (beide nutzen zufällig 24px), ohne Puffer. Keine echte Überlappung, aber auch kein Sicherheitsabstand -- vor einer breiteren Aktivierung mit einem echten schmalen Gerät verifizieren.
+
+Noch offen: echter Android-/Desktop-Browsertest der Preview durch Pascal (kein Zugriff auf Basic-Auth + eingeloggte Session in dieser Session verfügbar). Vor einer breiteren Aktivierung zusätzlich: Fokus-Test mit Tastatur.
