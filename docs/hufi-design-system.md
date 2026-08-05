@@ -13,3 +13,7 @@ Warmer Canvas und Oberflächen, orangefarbener Akzent, semantische Statusfarben;
 ## Preview und Integration
 
 `HufiDesignSystemPreview` ist eine isolierte mobile Story-Komponente. Der Lead kann sie über eine bestehende Preview-only Route einbinden; sie importiert CSS selbst. `MobileShell`, Router, `package.json` und globale CSS bleiben unverändert. Spätere Integration: Kontrast, Screenreader-Kontext und reduzierte Bewegung im jeweiligen Screen prüfen.
+
+## Erster echter Verwendungsort
+
+`HufiSwipeWorkspacePreview` (`src/components/workspace/HufiSwipeWorkspace.tsx`) nutzt seit 2026-08-05 die Primitives (`HufiPanel`, `HufiButton`, `HufiIconButton`, `HufiTile`) statt roher Tailwind-Klassen für Drawer, Buttons und Kacheln -- reines Restyling, keine Funktionsänderung. Erster Einsatz außerhalb der isolierten Story-Komponente.
