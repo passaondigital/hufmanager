@@ -62,8 +62,14 @@ export function HufiMenu({ className }: { className?: string }) {
         side="right"
         className="z-menu flex w-[85vw] max-w-xs flex-col overflow-y-auto p-0"
         overlayClassName="z-menu"
+        // Notch/Punch-Hole oben, Home-Indicator/Gesten-Leiste unten: der Rest
+        // der App federt das ueber hufi-safe-top/-bottom ab (siehe
+        // src/styles/hufi-premium.css), dieses Sheet tat es bisher nicht --
+        // Titel/Close und Abmelden-Button konnten unter der Systemleiste
+        // liegen. Additiv zum bestehenden Padding, nicht ersetzend.
+        closeButtonStyle={{ top: "calc(1rem + env(safe-area-inset-top, 0px))" }}
       >
-        <SheetHeader className="border-b px-4 py-4 text-left">
+        <SheetHeader className="border-b px-4 py-4 text-left" style={{ paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))" }}>
           <SheetTitle>Menü</SheetTitle>
         </SheetHeader>
         <nav className="flex flex-1 flex-col overflow-y-auto p-2">
@@ -79,7 +85,7 @@ export function HufiMenu({ className }: { className?: string }) {
             </button>
           ))}
         </nav>
-        <div className="border-t p-2">
+        <div className="border-t p-2" style={{ paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom, 0px))" }}>
           <button
             type="button"
             disabled={loggingOut}
