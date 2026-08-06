@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { correlationId } from "./correlation-id.ts";
 
 const allowedOrigins = new Set([
   "https://hufiapp.de",
@@ -20,12 +21,10 @@ function corsHeaders(origin: string | null) {
   return headers;
 }
 
-function correlationId(req: Request) { return req.headers.get("x-correlation-id")?.slice(0, 100) || crypto.randomUUID(); }
-
 serve(async (req) => {
   const origin = req.headers.get("origin");
   const cors = corsHeaders(origin);
-  const requestId = correlationId(req);
+  const requestId = correlationId(req.headers.get("x-correlation-id"));
   cors["x-correlation-id"] = requestId;
   if (origin && !allowedOrigins.has(origin)) {
     return new Response(JSON.stringify({ error: "Origin not allowed", requestId }), { status: 403, headers: { ...cors, "Content-Type": "application/json" } });
