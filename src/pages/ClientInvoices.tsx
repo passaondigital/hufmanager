@@ -241,22 +241,9 @@ export default function ClientInvoices() {
 
     setSendingEmailFor(invoice.id);
     try {
-      const providerInfo = invoice.provider_id ? providerInfoMap.get(invoice.provider_id) : null;
-      const providerName = providerInfo?.business_name || providerInfo?.owner_name || "Ihr Hufbearbeiter";
-
-      const { data: { session } } = await supabase.auth.getSession();
-      
       const response = await supabase.functions.invoke("send-invoice-email", {
-        // snake_case ist Pflicht: die Edge Function liest recipient_email /
-        // invoice_id. Vorher stand hier camelCase — der Versand ist damit
-        // immer mit "Missing required fields" fehlgeschlagen.
         body: {
           invoice_id: invoice.id,
-          recipient_email: userProfile.email,
-          recipient_name: userProfile.full_name || "Kunde",
-          invoice_number: invoice.invoice_number || "",
-          total_amount: invoice.total_amount,
-          provider_name: providerName,
         },
       });
 

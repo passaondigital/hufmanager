@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.86.0";
+import {
+  isAcceptedEmailProviderResponse,
+  resolveInvoiceDelivery,
+} from "../_shared/invoice-delivery-contract.mjs";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -12,14 +16,15 @@ const corsHeaders = {
 
 interface SendInvoiceRequest {
   invoice_id: string;
-  recipient_email: string;
-  recipient_name: string;
-  invoice_number: string;
-  total_amount: number;
-  provider_name: string;
-  provider_email?: string;
   pdf_base64?: string; // Base64 encoded PDF
 }
+
+const escapeHtml = (value: string) => value
+  .replaceAll("&", "&amp;")
+  .replaceAll("<", "&lt;")
+  .replaceAll(">", "&gt;")
+  .replaceAll('"', "&quot;")
+  .replaceAll("'", "&#039;");
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight
@@ -52,34 +57,34 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const body: SendInvoiceRequest = await req.json();
-    const { 
-      invoice_id, 
-      recipient_email, 
-      recipient_name, 
-      invoice_number, 
-      total_amount, 
-      provider_name, 
-      provider_email,
-      pdf_base64 
-    } = body;
-
-    if (!recipient_email || !recipient_name) {
+    const { invoice_id, pdf_base64 } = body;
+    if (!invoice_id) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Never trust a browser-supplied invoice id alone: only the invoice's
-    // provider or client may trigger a delivery attempt.
+    // The browser never chooses the recipient or invoice metadata. A provider
+    // may send to their client and a client may request a copy for themselves.
     const { data: invoice, error: invoiceError } = await supabase
       .from("invoices")
-      .select("id, provider_id, client_id")
+      .select("id, provider_id, client_id, invoice_number, total_amount")
       .eq("id", invoice_id)
       .maybeSingle();
-    if (invoiceError || !invoice || (invoice.provider_id !== user.id && invoice.client_id !== user.id)) {
-      return new Response(JSON.stringify({ error: "Invoice not available" }), {
-        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+
+    const { data: clientProfile } = invoice
+      ? await supabase
+        .from("profiles")
+        .select("email, full_name")
+        .eq("id", invoice.client_id)
+        .maybeSingle()
+      : { data: null };
+    const delivery = resolveInvoiceDelivery({ invoice: invoiceError ? null : invoice, actorId: user.id, recipient: clientProfile });
+    if (!delivery.ok) {
+      return new Response(JSON.stringify({ error: delivery.code }), {
+        status: delivery.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -87,16 +92,19 @@ const handler = async (req: Request): Promise<Response> => {
     const formattedAmount = new Intl.NumberFormat("de-DE", {
       style: "currency",
       currency: "EUR",
-    }).format(total_amount);
+    }).format(Number(invoice.total_amount));
 
     // Get provider business settings for additional branding
     const { data: businessSettings } = await supabase
       .from("business_settings")
       .select("business_name, owner_name, email, phone")
-      .eq("user_id", user.id)
+      .eq("user_id", invoice.provider_id)
       .maybeSingle();
 
-    const businessName = provider_name || businessSettings?.business_name || businessSettings?.owner_name || "Ihr Hufbearbeiter";
+    const businessName = businessSettings?.business_name || businessSettings?.owner_name || "Ihr Hufbearbeiter";
+    const safeBusinessName = escapeHtml(businessName);
+    const safeRecipientName = escapeHtml(delivery.recipient.name);
+    const safeInvoiceNumber = escapeHtml(invoice.invoice_number || "-");
     
     // Build email options
     const emailOptions: {
@@ -107,8 +115,8 @@ const handler = async (req: Request): Promise<Response> => {
       attachments?: { filename: string; content: Uint8Array }[];
     } = {
       from: `${businessName} <info@hufmanager.de>`,
-      to: [recipient_email],
-      subject: `Rechnung ${invoice_number || ""}`.trim() + ` von ${businessName}`,
+      to: [delivery.recipient.email],
+      subject: `Rechnung ${invoice.invoice_number || ""}`.trim() + ` von ${businessName}`,
       html: `
         <!DOCTYPE html>
         <html lang="de">
@@ -125,7 +133,7 @@ const handler = async (req: Request): Promise<Response> => {
                   <tr>
                     <td style="background: linear-gradient(135deg, #F47B20 0%, #e06b10 100%); padding: 32px 40px; text-align: center;">
                       <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">
-                        ${businessName}
+                        ${safeBusinessName}
                       </h1>
                     </td>
                   </tr>
@@ -134,11 +142,11 @@ const handler = async (req: Request): Promise<Response> => {
                   <tr>
                     <td style="padding: 40px;">
                       <h2 style="margin: 0 0 16px; color: #111827; font-size: 20px; font-weight: 600;">
-                        Guten Tag ${recipient_name},
+                        Guten Tag ${safeRecipientName},
                       </h2>
                       
                       <p style="margin: 0 0 24px; color: #4b5563; font-size: 16px; line-height: 1.6;">
-                        anbei erhalten Sie Ihre Rechnung <strong style="color: #111827;">${invoice_number || "-"}</strong> 
+                        anbei erhalten Sie Ihre Rechnung <strong style="color: #111827;">${safeInvoiceNumber}</strong>
                         über <strong style="color: #F47B20;">${formattedAmount}</strong>.
                       </p>
                       
@@ -150,7 +158,7 @@ const handler = async (req: Request): Promise<Response> => {
                               <tr>
                                 <td style="padding-bottom: 12px;">
                                   <span style="color: #6b7280; font-size: 14px;">Rechnungsnummer</span><br>
-                                  <span style="color: #111827; font-size: 16px; font-weight: 600;">${invoice_number || "-"}</span>
+                                  <span style="color: #111827; font-size: 16px; font-weight: 600;">${safeInvoiceNumber}</span>
                                 </td>
                                 <td style="padding-bottom: 12px; text-align: right;">
                                   <span style="color: #6b7280; font-size: 14px;">Betrag</span><br>
@@ -186,7 +194,7 @@ const handler = async (req: Request): Promise<Response> => {
                   <tr>
                     <td style="background-color: #f9fafb; padding: 24px 40px; border-top: 1px solid #e5e7eb;">
                       <p style="margin: 0; color: #6b7280; font-size: 12px; text-align: center;">
-                        ${businessName}${businessSettings?.phone ? ` • ${businessSettings.phone}` : ""}${businessSettings?.email ? ` • ${businessSettings.email}` : ""}
+                        ${safeBusinessName}${businessSettings?.phone ? ` • ${escapeHtml(businessSettings.phone)}` : ""}${businessSettings?.email ? ` • ${escapeHtml(businessSettings.email)}` : ""}
                       </p>
                       <p style="margin: 8px 0 0; color: #9ca3af; font-size: 11px; text-align: center;">
                         Diese E-Mail wurde automatisch über HufManager versendet.
@@ -213,7 +221,7 @@ const handler = async (req: Request): Promise<Response> => {
       
       emailOptions.attachments = [
         {
-          filename: `Rechnung_${invoice_number || invoice_id || "Rechnung"}.pdf`,
+          filename: `Rechnung_${invoice.invoice_number || invoice_id || "Rechnung"}.pdf`,
           content: bytes,
         },
       ];
@@ -221,16 +229,16 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email
     const emailResponse = await resend.emails.send(emailOptions);
-    if (emailResponse.error || !emailResponse.data?.id) throw new Error("email-provider-rejected-request");
+    if (!isAcceptedEmailProviderResponse(emailResponse)) throw new Error("email-provider-rejected-request");
 
-    console.log("Invoice email sent successfully:", emailResponse);
+    console.log("[send-invoice-email] delivery accepted", { invoiceId: invoice.id, emailId: emailResponse.data.id });
 
-    return new Response(JSON.stringify({ success: true, emailId: emailResponse.data?.id }), {
+    return new Response(JSON.stringify({ success: true, emailId: emailResponse.data.id, recipient: delivery.recipient.email }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: unknown) {
-    console.error("Error sending invoice email:", error);
+    console.error("[send-invoice-email] delivery failed", { error: error instanceof Error ? error.message : "unknown" });
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return new Response(
       JSON.stringify({ error: errorMessage }),

@@ -219,9 +219,8 @@ export function ClientInvoicesSection({ clientId, clientName, horses = [] }: Cli
 
   const handleSendEmail = async () => {
     if (!emailInvoice || !user) return;
-    const address = emailAddress.trim();
-    if (!address.includes("@")) {
-      toast({ title: "Bitte eine gültige E-Mail-Adresse eingeben", variant: "destructive" });
+    if (!clientProfile?.email) {
+      toast({ title: "Keine E-Mail-Adresse beim Kunden hinterlegt", variant: "destructive" });
       return;
     }
 
@@ -230,38 +229,15 @@ export function ClientInvoicesSection({ clientId, clientName, horses = [] }: Cli
       const blob = await generateInvoicePdf(emailInvoice, clientProfile, user.id);
       const pdfBase64 = blob ? await blobToBase64(blob) : undefined;
 
-      const { data: settings } = await supabase
-        .from("business_settings")
-        .select("business_name, owner_name, email")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      // Feldnamen bewusst in snake_case: die Edge Function liest
-      // recipient_email/invoice_id. ClientInvoices.tsx schickte hier
-      // camelCase — deshalb ist dieser Versand bisher immer mit
-      // "Missing required fields" abgebrochen.
-      const { error } = await supabase.functions.invoke("send-invoice-email", {
+      const { data, error } = await supabase.functions.invoke("send-invoice-email", {
         body: {
           invoice_id: emailInvoice.id,
-          recipient_email: address,
-          recipient_name: clientProfile?.full_name || clientName || "Kunde",
-          invoice_number: emailInvoice.invoice_number || "",
-          total_amount: emailInvoice.total_amount,
-          provider_name: settings?.business_name || settings?.owner_name || "Ihr Hufbearbeiter",
-          provider_email: settings?.email || undefined,
           pdf_base64: pdfBase64,
         },
       });
       if (error) throw error;
 
-      // Neu eingegebene Adresse beim Kunden hinterlegen, damit sie beim
-      // nächsten Mal schon drinsteht.
-      if (address !== (clientProfile?.email || "")) {
-        await supabase.from("profiles").update({ email: address }).eq("id", clientId);
-        setClientProfile((p) => (p ? { ...p, email: address } : p));
-      }
-
-      toast({ title: "Rechnung versendet", description: `Per E-Mail an ${address}` });
+      toast({ title: "Rechnung versendet", description: `Per E-Mail an ${data?.recipient || clientProfile.email}` });
       setEmailInvoice(null);
     } catch (err) {
       console.error("Invoice email failed:", err);
@@ -492,12 +468,12 @@ export function ClientInvoicesSection({ clientId, clientName, horses = [] }: Cli
               autoComplete="email"
               placeholder="kunde@beispiel.de"
               value={emailAddress}
-              onChange={(e) => setEmailAddress(e.target.value)}
+              readOnly
             />
             <p className="text-xs text-muted-foreground">
               {clientProfile?.email
-                ? "Wird beim Kunden gespeichert, wenn du sie änderst."
-                : "Beim Kunden ist keine Adresse hinterlegt — die hier wird gespeichert."}
+                ? "Versand erfolgt ausschließlich an die im Kundenprofil hinterlegte Adresse."
+                : "Bitte zuerst eine E-Mail-Adresse im Kundenprofil hinterlegen."}
             </p>
           </div>
 
