@@ -38,6 +38,19 @@ Auth: Bearer <Token aus ~/.supabase/access-token>
   Typnamen. Vor Änderungen prüfen, welche der beiden aktiv ist.
 - Offene Punkte stehen in `HUFI_TODO.md` — zuerst dort lesen.
 
+<!-- HUFI_DESIGN_SYSTEM_REQUIRED_V1 -->
+## Verbindliches Hufi-Designsystem
+
+Vor jeder Arbeit an UI, UX, Frontend, Webseiten, Marketingflächen, Grafiken oder Markenkommunikation muss gelesen werden:
+
+- docs/design/HUFI_DESIGN_SYSTEM.md
+
+Die dort definierten Tokens, Komponenten, Light-/Dark-Regeln, Markenprinzipien und Governance-Vorgaben sind verbindlich.
+
+Keine neue Farbe, Typografie, Komponente oder visuelle Designsprache darf ohne dokumentierte Begründung außerhalb dieses Systems eingeführt werden.
+
+<!-- /HUFI_DESIGN_SYSTEM_REQUIRED_V1 -->
+
 ## Arbeitsweise mit mir
 - Ich bin Solo-Gründer, wenig Zeit, arbeite meist vom Handy oder Chromebook
   über SSH. Ich bin Handwerker, kein Programmierer — erklär Technik in
