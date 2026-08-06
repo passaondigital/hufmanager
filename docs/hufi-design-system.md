@@ -1,4 +1,8 @@
-# Hufi Designsystem
+# Hufi Designsystem (Kurzfassung, veraltet — siehe docs/design/HUFI_DESIGN_SYSTEM.md)
+
+> **Verbindliche, vollständige Fassung ab 2026-08-06:** `docs/design/HUFI_DESIGN_SYSTEM.md`.
+> Dieses Dokument bleibt als kurzer historischer Stand erhalten (Inhalte wurden
+> übernommen, nicht gelöscht), ist aber nicht mehr die primäre Quelle.
 
 Isolierte Grundlage ohne globale Overrides oder produktive Migration.
 
