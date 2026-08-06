@@ -1,15 +1,37 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+const allowedOrigins = new Set([
+  "https://hufiapp.de",
+  "https://www.hufiapp.de",
+  "https://hufmanager.de",
+  "https://www.hufmanager.de",
+  "https://app.hufmanager.de",
+  "http://localhost:5173",
+]);
+
+function corsHeaders(origin: string | null) {
+  const headers: Record<string, string> = {
+    "Vary": "Origin",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-correlation-id",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+  if (origin && allowedOrigins.has(origin)) headers["Access-Control-Allow-Origin"] = origin;
+  return headers;
+}
+
+function correlationId(req: Request) { return req.headers.get("x-correlation-id")?.slice(0, 100) || crypto.randomUUID(); }
 
 serve(async (req) => {
+  const origin = req.headers.get("origin");
+  const cors = corsHeaders(origin);
+  const requestId = correlationId(req);
+  cors["x-correlation-id"] = requestId;
+  if (origin && !allowedOrigins.has(origin)) {
+    return new Response(JSON.stringify({ error: "Origin not allowed", requestId }), { status: 403, headers: { ...cors, "Content-Type": "application/json" } });
+  }
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: cors });
   }
 
   try {
@@ -18,7 +40,7 @@ serve(async (req) => {
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 401, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
@@ -32,7 +54,7 @@ serve(async (req) => {
     if (authError || !user) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 401, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
@@ -41,7 +63,7 @@ serve(async (req) => {
     if (!ANTHROPIC_KEY) {
       return new Response(
         JSON.stringify({ error: "ANTHROPIC_API_KEY not configured in Supabase Secrets" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
@@ -61,7 +83,7 @@ serve(async (req) => {
     if (isStreaming) {
       return new Response(anthropicResponse.body, {
         status: anthropicResponse.status,
-        headers: { ...corsHeaders, "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
+        headers: { ...cors, "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
       });
     }
 
@@ -69,13 +91,13 @@ serve(async (req) => {
 
     return new Response(JSON.stringify(data), {
       status: anthropicResponse.status,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("anthropic-proxy error:", error);
+    console.error(JSON.stringify({ event: "anthropic-proxy.error", requestId, error: error instanceof Error ? error.name : "unknown" }));
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: "Internal server error", requestId }),
+      { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
     );
   }
 });
