@@ -177,6 +177,36 @@ Aus dem Architektur-Memory; Stand Mai 2026, gilt für die BHS-Domäne:
 - Terminabschluss < 3 Minuten.
 - Tagesplanung < 5 Minuten.
 
+## Plattform-Vision 2026-08-06 (Master-Prompt: Workspaces, Mehrfachrollen, Netzwerk)
+
+> Details, Belege und Risikoeinstufung: `docs/architecture/HUFI_PLATFORM_VISION_GAP_ANALYSIS.md`.
+> Zieldokumente: `docs/AUTHENTICATION.md`, `docs/NETWORK_ARCHITECTURE.md`,
+> `docs/DATABASE.md`, `docs/PLATFORM_ARCHITECTURE.md`, `docs/UX_GUIDELINES.md`.
+
+Reine Analyse-/Doku-Runde, keine Implementierung. Einordnung in die
+bestehende Phasenlogik dieser Roadmap:
+
+- **Bereits Fundament vorhanden, nicht neu zu bauen:** `user_roles`
+  (schema-seitig mehrfachrollenfähig), `horse_partner_access` (granulare
+  Pferde-Freigaben inkl. Audit-Log) — die "neue" Vision ist hier
+  überwiegend Frontend-Nachzug auf bestehendem Schema.
+- **Einzige echte Schema-Migration im gesamten Paket:** Konsolidierung von
+  `access_grants`/`horse_partner_access`/`stall_horse_access`/
+  `employee_horse_access` zu einer Sicht — bereits in
+  `HUFI_CORE_TARGET_ARCHITECTURE.md` als Ziel benannt, weiterhin
+  **ungeplant und ohne Freigabe**, nicht vor eigenem Migrationsplan
+  anfassen.
+- **Reihenfolge-Vorschlag** (folgt der Leitlinie oben: Stabilität →
+  täglicher Nutzen → Kontextsystem → Assistenz → proaktive Intelligenz):
+  1. UX-/Design-Politur nach `docs/design/HUFI_DESIGN_SYSTEM.md` (P1-fähig, geringes Risiko).
+  2. Einheitliches Einladungssystem auf bestehenden Tabellen aufbauen (P1/P2, mittleres Risiko, Plan vor Umsetzung).
+  3. `role` → `roles[]` im Frontend (P2, hohe Reichweite, Plan + Testabdeckung vor Umsetzung).
+  4. Login ohne Rollenwahl / automatisches Öffnen des zuletzt genutzten Bereichs (P2, hohe Sichtbarkeit, vor Live-Schaltung zeigen).
+  5. Access-Tabellen-Konsolidierung (eigenständiges Projekt, zwingend Freigabe vor Start).
+- Nicht in dieser Roadmap-Runde neu terminiert (P0/P1/P2 oben bleiben
+  unverändert gültig) — diese fünf Punkte werden erst einsortiert, wenn
+  Pascal die Reihenfolge bestätigt.
+
 ## Wie diese Datei lebt
 
 - Bei jedem nicht-trivialen Recovery-/Sprint-Schritt prüfen: hat sich

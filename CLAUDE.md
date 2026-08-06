@@ -34,8 +34,12 @@ Auth: Bearer <Token aus ~/.supabase/access-token>
 - `appointments.status` ist freier Text ohne CHECK-Constraint. "Offen" kann
   `scheduled`, `planned` ODER `confirmed` heißen — jede Abfrage auf status
   muss alle drei behandeln.
-- `hufai-proactive.ts` und `hufi-briefing.ts` sind Duplikate mit gleichem
-  Typnamen. Vor Änderungen prüfen, welche der beiden aktiv ist.
+- `hufai-proactive.ts` und `hufi-briefing.ts` haben gleichen Typnamen,
+  sind aber laut Audit vom 2026-08-06 **beide aktiv und live genutzt**
+  (`hufai-proactive.ts` in `MobileShell.tsx`/`HufiWeatherWidget.tsx`,
+  `hufi-briefing.ts` in `ProactiveBriefing.tsx`) — keine tote Kopie, echte
+  Konsolidierungslücke. Vor Änderungen beide Importstellen prüfen, nicht
+  nur eine der beiden Dateien.
 - Offene Punkte stehen in `HUFI_TODO.md` — zuerst dort lesen.
 
 <!-- HUFI_DESIGN_SYSTEM_REQUIRED_V1 -->
