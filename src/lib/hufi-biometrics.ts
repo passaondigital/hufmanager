@@ -20,20 +20,20 @@ function credKey(userId: string): string {
   return `${CRED_KEY_PREFIX}${userId}`;
 }
 
-type CredentialBackup = { id: string; createdAt: string };
-async function restoreCredential(userId: string): Promise<string | null> {
+type CredentialReference = { id: string; createdAt: string };
+async function loadCredentialReference(userId: string): Promise<string | null> {
   const { data, error } = await supabase.from("user_profiles").select("webauthn_credentials").eq("id", userId).single();
   if (error) return null;
-  const credential = Array.isArray(data?.webauthn_credentials) ? data.webauthn_credentials.find((item: CredentialBackup) => typeof item?.id === "string") : null;
+  const credential = Array.isArray(data?.webauthn_credentials) ? data.webauthn_credentials.find((item: CredentialReference) => typeof item?.id === "string") : null;
   if (!credential?.id) return null;
   localStorage.setItem(credKey(userId), credential.id);
   return credential.id;
 }
 
-async function backupCredential(userId: string, credentialId: string) {
+async function synchronizeCredentialReference(userId: string, credentialId: string) {
   const { data, error } = await supabase.from("user_profiles").select("webauthn_credentials").eq("id", userId).single();
   if (error) throw error;
-  const current = Array.isArray(data?.webauthn_credentials) ? data.webauthn_credentials as CredentialBackup[] : [];
+  const current = Array.isArray(data?.webauthn_credentials) ? data.webauthn_credentials as CredentialReference[] : [];
   if (!current.some(item => item.id === credentialId)) current.push({ id: credentialId, createdAt: new Date().toISOString() });
   const { error: updateError } = await supabase.from("user_profiles").update({ webauthn_credentials: current }).eq("id", userId);
   if (updateError) throw updateError;
@@ -107,7 +107,7 @@ export async function registerBiometric(opts: {
     const pkCredential = credential as PublicKeyCredential;
     const credentialId = bufferToBase64url(pkCredential.rawId);
     localStorage.setItem(credKey(opts.userId), credentialId);
-    await backupCredential(opts.userId, credentialId);
+    await synchronizeCredentialReference(opts.userId, credentialId);
 
     return { success: true, credentialId };
   } catch (err: unknown) {
@@ -127,9 +127,9 @@ export async function verifyBiometric(userId: string): Promise<{ success: boolea
     return { success: false, error: "WebAuthn nicht verfügbar" };
   }
 
-  const stored = localStorage.getItem(credKey(userId)) || await restoreCredential(userId);
+  const stored = localStorage.getItem(credKey(userId)) || await loadCredentialReference(userId);
   if (!stored) {
-    return { success: false, error: "Kein Biometrie-Schlüssel registriert" };
+    return { success: false, error: "Kein lokaler oder synchronisierter Credential-Verweis vorhanden. Auf diesem Gerät ist eine neue Passkey-Registrierung erforderlich." };
   }
 
   try {
