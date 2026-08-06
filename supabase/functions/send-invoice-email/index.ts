@@ -70,6 +70,19 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
+    // Never trust a browser-supplied invoice id alone: only the invoice's
+    // provider or client may trigger a delivery attempt.
+    const { data: invoice, error: invoiceError } = await supabase
+      .from("invoices")
+      .select("id, provider_id, client_id")
+      .eq("id", invoice_id)
+      .maybeSingle();
+    if (invoiceError || !invoice || (invoice.provider_id !== user.id && invoice.client_id !== user.id)) {
+      return new Response(JSON.stringify({ error: "Invoice not available" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Format currency
     const formattedAmount = new Intl.NumberFormat("de-DE", {
       style: "currency",
@@ -208,6 +221,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email
     const emailResponse = await resend.emails.send(emailOptions);
+    if (emailResponse.error || !emailResponse.data?.id) throw new Error("email-provider-rejected-request");
 
     console.log("Invoice email sent successfully:", emailResponse);
 
