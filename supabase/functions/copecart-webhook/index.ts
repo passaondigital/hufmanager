@@ -1,6 +1,13 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import {
+  CANCELLATION_EVENTS,
+  constantTimeCompare,
+  FAILURE_EVENTS,
+  hmacSha256Base64,
+  PAYMENT_EVENTS,
+} from "../_shared/copecart-contract.mjs";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -134,17 +141,6 @@ const PLAN_FEATURE_MAP: Record<string, Record<string, string>> = {
 // ─── CopeCart-Ereignisse (Doku IPN_CopeCart_v_1.6.7, "IPN Events") ──────────
 // Die bisherigen Namen (order_created, payment_completed, purchase, sale …)
 // gibt es bei CopeCart nicht — damit landete jeder echte Kauf im default-Zweig.
-const PAYMENT_EVENTS = [
-  "payment.made",                 // erfolgreiche Zahlung
-  "payment.trial",                // Zahlung nach Ablauf der Testphase
-  "payment.recurring.upcoming",   // 2. und jede weitere Abo-Zahlung
-];
-const CANCELLATION_EVENTS = [
-  "payment.recurring.cancelled",  // Käufer hat gekündigt
-  "payment.refunded",             // Rückerstattung
-  "payment.charged_back",         // Rückbuchung durch Bank/Kreditkarte
-];
-const FAILURE_EVENTS = ["payment.failed"];
 // payment.pending wird bewusst nicht behandelt: noch nicht verarbeitet,
 // weder freischalten noch sperren.
 
@@ -315,38 +311,6 @@ function escapeHtml(str: string | null | undefined): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
-}
-
-// HMAC-SHA256 über den Roh-Body, Base64 — exakt das, was CopeCart im Header
-// 'X-Copecart-Signature' mitschickt (Doku IPN_CopeCart_v_1.6.7, "IPN Call":
-// Base64.strict_encode64(OpenSSL::HMAC.digest('sha256', secret, message))).
-async function hmacSha256Base64(secret: string, message: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
-  );
-  const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, encoder.encode(message)));
-  let binary = "";
-  for (const b of sig) binary += String.fromCharCode(b);
-  return btoa(binary);
-}
-
-// Constant-time string comparison to prevent timing attacks
-function constantTimeCompare(a: string, b: string): boolean {
-  const encoder = new TextEncoder();
-  const aBytes = encoder.encode(a);
-  const bBytes = encoder.encode(b);
-  
-  const maxLength = Math.max(aBytes.length, bBytes.length, 1);
-  let result = aBytes.length ^ bBytes.length;
-  
-  for (let i = 0; i < maxLength; i++) {
-    const aByte = i < aBytes.length ? aBytes[i] : 0;
-    const bByte = i < bBytes.length ? bBytes[i] : 0;
-    result |= aByte ^ bByte;
-  }
-  
-  return result === 0;
 }
 
 // Format currency helper
@@ -633,6 +597,7 @@ const handler = async (req: Request): Promise<Response> => {
           total_amount,
           status,
           payment_status,
+          payment_external_id,
           client_id,
           provider_id
         `)
@@ -650,6 +615,11 @@ const handler = async (req: Request): Promise<Response> => {
         const isSuccessfulPayment = PAYMENT_EVENTS.includes(eventType);
         
         if (isSuccessfulPayment) {
+          const invoicePaymentId = transactionId || subscriptionId;
+          if (invoicePaymentId && invoice.payment_external_id === invoicePaymentId) {
+            console.log("[copecart] Duplicate invoice payment acknowledged", { invoiceId: invoice.id, transactionId: invoicePaymentId });
+            return okResponse();
+          }
           // Betragsabgleich. Der Feldname line_item_amount ist aus der Doku
           // belegt, deshalb ein echter Riegel: ohne ihn würde ein falsch
           // konfigurierter Checkout (5€-Guthabenprodukt mit Rechnungs-UUID
@@ -671,7 +641,7 @@ const handler = async (req: Request): Promise<Response> => {
               status: "paid",
               payment_status: "paid",
               paid_at: new Date().toISOString(),
-              payment_external_id: subscriptionId || payload.transaction_id || payload.order_id,
+              payment_external_id: invoicePaymentId,
             })
             .eq("id", invoice.id);
           
@@ -811,7 +781,7 @@ const handler = async (req: Request): Promise<Response> => {
     // log a warning so support can reach out.
     if (vaultMeta) {
       if (!profile) {
-        console.warn("[copecart][vault] No profile found for vault purchase:", customerEmail, "| Product:", productId);
+        console.warn("[copecart][vault] No profile found for vault purchase", { productId });
         return okResponse();
       }
 
@@ -862,7 +832,7 @@ const handler = async (req: Request): Promise<Response> => {
     const voiceCreditAmount = getVoiceCreditAmountCents(productId);
     if (voiceCreditAmount !== null) {
       if (!profile) {
-        console.warn("[copecart][voice-credit] No profile found:", customerEmail, "| Product:", productId);
+        console.warn("[copecart][voice-credit] No profile found", { productId });
         return okResponse();
       }
 
@@ -953,6 +923,34 @@ const handler = async (req: Request): Promise<Response> => {
       // Nur Kaufereignisse weiter verarbeiten
       if (!isPaymentEvent) {
         console.log("[copecart][bhs] Unhandled event type:", eventType);
+        return okResponse();
+      }
+
+      if (!subscriptionId) {
+        console.error("[copecart][bhs] Payment without an order identifier");
+        return new Response(JSON.stringify({ error: "Missing order identifier" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      // CopeCart retries and recurring payments reuse the subscription id.
+      // Once it exists, never create another horse, account or welcome email.
+      const { data: existingBhsSubscription, error: existingBhsError } = await supabase
+        .from("bhs_horse_subscriptions")
+        .select("id")
+        .eq("copecart_subscription_id", subscriptionId)
+        .eq("provider_id", bhsProviderId)
+        .maybeSingle();
+      if (existingBhsError) {
+        console.error("[copecart][bhs] Existing subscription lookup failed:", existingBhsError.message);
+        return new Response(JSON.stringify({ error: "BHS subscription lookup failed" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+      if (existingBhsSubscription) {
+        console.log("[copecart][bhs] Duplicate delivery acknowledged", { subscriptionId });
         return okResponse();
       }
 
@@ -1106,7 +1104,7 @@ const handler = async (req: Request): Promise<Response> => {
     // würde jedes künftige CopeCart-Produkt dem Käufer einen vollen
     // Provider-Zugang schenken. Kündigungen/Refunds laufen bewusst weiter.
     if (isPaymentEvent && !(productId !== "" && productId in PRODUCT_PLAN_MAP)) {
-      console.error("[copecart] Zahlung für UNBEKANNTE Produkt-ID — kein Plan vergeben:", productId, customerEmail);
+      console.error("[copecart] Zahlung für unbekannte Produkt-ID — kein Plan vergeben", { productId });
       return okResponse();
     }
 
@@ -1257,6 +1255,29 @@ const handler = async (req: Request): Promise<Response> => {
         return okResponse();
       }
 
+      // CopeCart retries must not create a second revenue event or admin
+      // invoice. transaction_id is unique per payment; order_id is only the
+      // recurring subscription key.
+      if (!isTestOrder && transactionId) {
+        const { data: processedRevenue, error: processedRevenueError } = await supabase
+          .from("admin_revenue_log")
+          .select("id")
+          .eq("transaction_id", transactionId)
+          .eq("event_type", eventType)
+          .limit(1);
+        if (processedRevenueError) {
+          console.error("[copecart] Replay lookup failed:", processedRevenueError.message);
+          return new Response(JSON.stringify({ error: "Replay lookup failed" }), {
+            status: 500,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
+        }
+        if (processedRevenue && processedRevenue.length > 0) {
+          console.log("[copecart] Duplicate delivery acknowledged", { eventType, transactionId });
+          return okResponse();
+        }
+      }
+
       // Update the user's subscription status
       if (Object.keys(updateData).length > 0) {
         const { error: updateError } = await supabase
@@ -1309,8 +1330,7 @@ const handler = async (req: Request): Promise<Response> => {
             provider_id: profile.id,
             customer_email: customerEmail,
             customer_name: customerName,
-            transaction_id: subscriptionId || payload.transaction_id || null,
-            raw_payload: payload,
+            transaction_id: transactionId || null,
           });
 
         if (logError) {
