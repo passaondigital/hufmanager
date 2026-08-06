@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { BellRing, CalendarDays, Camera, FileText, Footprints, ReceiptText, RefreshCw, Users, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +9,13 @@ import styles from "@/styles/hufi/primitives.module.css";
 import { cn } from "@/lib/utils";
 
 export const isHufiSwipeWorkspaceEnabled = () => import.meta.env.VITE_HUFI_SWIPE_WORKSPACE === "true";
+
+// Additiver, framework-freier Öffnungsweg für andere isolierte Komponenten
+// (z. B. den "Workspace öffnen"-Fehlerhinweis bei Billing-/Providerfehlern
+// in HufiAssistantExperience.tsx). Kein React-Context/Prop-Drilling durch
+// MobileShell nötig -- diese Komponente bleibt ein reines Geschwisterelement,
+// MobileShell selbst bleibt unverändert.
+export const HUFI_OPEN_WORKSPACE_EVENT = "hufi:open-workspace";
 type WorkspaceTile = { label: string; description: string; icon: LucideIcon; route?: string; availability: "available" | "planned" };
 
 // Routes are verified in App.tsx; route-less tiles intentionally remain disabled.
@@ -28,6 +35,13 @@ export function HufiSwipeWorkspacePreview() {
   const navigate = useNavigate();
   const open = useCallback(() => setIsOpen(true), []);
   const gesture = useWorkspaceSwipe(open);
+
+  useEffect(() => {
+    if (!isHufiSwipeWorkspaceEnabled()) return;
+    window.addEventListener(HUFI_OPEN_WORKSPACE_EVENT, open);
+    return () => window.removeEventListener(HUFI_OPEN_WORKSPACE_EVENT, open);
+  }, [open]);
+
   if (!isHufiSwipeWorkspaceEnabled()) return null;
   return <section aria-label="Hufi Workspace Vorschau" className={cn(styles.root, "fixed inset-y-0 left-0 z-50 pointer-events-none")}>
     {/* Real, explicitly-sized hit zone -- a shrink-to-fit fixed box with only

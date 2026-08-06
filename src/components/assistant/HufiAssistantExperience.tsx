@@ -15,6 +15,7 @@ import { HufiConfirmation } from "@/components/assistant-lab/HufiConfirmation";
 import { HufiSuccessState } from "@/components/assistant-lab/HufiSuccessState";
 import { HUFI_PHASE_META, timeSalutation } from "@/components/assistant-lab/HufiAssistantState";
 import { HufiOrganicOrb } from "./HufiOrganicOrb";
+import { HUFI_OPEN_WORKSPACE_EVENT, isHufiSwipeWorkspaceEnabled } from "@/components/workspace/HufiSwipeWorkspace";
 import type { HufiExperienceUi } from "./hufi-experience";
 import { HUFI_ENTRY_PROMPTS } from "@/lib/hufi-copy";
 import "@/components/assistant-lab/hufi-lab.css";
@@ -58,7 +59,7 @@ export interface HufiAssistantExperienceProps {
 
 export function HufiAssistantExperience({ ui, userName, insight, onWakeTap, onInterrupt, onSubmitText, canSubmit }: HufiAssistantExperienceProps) {
   const { phase, mode, content } = ui;
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const { theme } = useTheme();
   const firstName = userName?.trim() ? userName.trim().split(" ")[0] : null;
 
@@ -181,13 +182,64 @@ export function HufiAssistantExperience({ ui, userName, insight, onWakeTap, onIn
         );
       case "success":
         return <HufiSuccessState text={content.text} />;
-      case "error":
+      case "error": {
+        // Billing/Provider sind kein Netzwerk- und kein "Agent nicht
+        // erreichbar"-Fehler (P0-Vorgabe). HufiApp bleibt dabei manuell
+        // bedienbar -- deshalb hier zusätzlich zur bestehenden, getesteten
+        // Kurzmeldung (content.text, siehe hufi-agent-error-messages.ts)
+        // eine ruhige, ehrliche Erklärung mit echten Handlungsoptionen statt
+        // einer reinen Fehlerzeile. Kein neuer Fehlertext ersetzt den
+        // bestehenden, geprüften Klassifizierungstext -- er wird nur um
+        // Kontext und Aktionen ergänzt.
+        if (content.category === "billing" || content.category === "provider") {
+          const canOpenWorkspace = isHufiSwipeWorkspaceEnabled();
+          return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, textAlign: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                <AlertCircle size={16} style={{ color: "#EF4444", flexShrink: 0 }} aria-hidden="true" />
+                <p style={{ margin: 0, fontSize: 14.5, fontWeight: 650, color: "var(--hlab-fg)" }}>Hufi kann gerade nicht antworten</p>
+              </div>
+              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: "var(--hlab-fg-60)" }}>
+                Der verbundene KI-Dienst ist momentan nicht verfügbar. Du kannst HufiApp weiterhin manuell benutzen.
+              </p>
+              {role === "admin" && (
+                <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.4, color: "var(--hlab-fg-40)" }}>
+                  Nur für Admin sichtbar: {content.text}
+                </p>
+              )}
+              <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 10, marginTop: 4 }}>
+                {canOpenWorkspace && (
+                  <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new Event(HUFI_OPEN_WORKSPACE_EVENT))}
+                    className="hlab-focusable"
+                    style={{ background: "transparent", border: "1px solid var(--hlab-fg-30)", borderRadius: 20, padding: "6px 14px", color: "var(--hlab-fg)", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
+                  >
+                    Workspace öffnen
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={onInterrupt}
+                  className="hlab-focusable"
+                  style={{ background: "transparent", border: "1px solid var(--hlab-fg-30)", borderRadius: 20, padding: "6px 14px", color: "var(--hlab-fg)", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
+                >
+                  Später erneut versuchen
+                </button>
+              </div>
+              {showDraftBanner && (
+                <p style={{ margin: 0, fontSize: 11.5, color: "var(--hlab-fg-40)" }}>Deine Eingabe bleibt als Entwurf gespeichert.</p>
+              )}
+            </div>
+          );
+        }
         return (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, textAlign: "center" }}>
             <AlertCircle size={16} style={{ color: "#EF4444", flexShrink: 0 }} aria-hidden="true" />
             <p style={{ margin: 0, fontSize: 14.5, fontWeight: 650, color: "var(--hlab-fg)" }}>{content.text}</p>
           </div>
         );
+      }
       default:
         return null;
     }
