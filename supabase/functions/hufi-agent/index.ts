@@ -545,30 +545,107 @@ function toActionPayload(toolName: string, input: Record<string, unknown>): Reco
   }
 }
 
-async function lookupHorseName(supabaseAdmin: ReturnType<typeof createClient>, horseId: string): Promise<string | null> {
+type HorseAccess = {
+  canViewMedical: boolean;
+  canViewInvoices: boolean;
+  via: "owner" | "access_grant" | "partner" | "employee" | "stall";
+};
+
+// Service Role umgeht RLS. Deshalb wird jede per Tool übergebene Referenz vor
+// dem Lesen auf den authentifizierten Nutzer und einen aktiven, serverseitig
+// ermittelten Beziehungsweg geprüft. IDs aus Client oder LLM sind nur Lookup-
+// Werte, niemals eine Berechtigung.
+async function getHorseAccess(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  userId: string,
+  horseId: string,
+): Promise<HorseAccess | null> {
   if (!horseId) return null;
+  const { data: horse } = await supabaseAdmin
+    .from("horses")
+    .select("id,owner_id")
+    .eq("id", horseId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  const row = horse as { owner_id?: string } | null;
+  if (!row) return null;
+  if (row.owner_id === userId) return { canViewMedical: true, canViewInvoices: true, via: "owner" };
+
+  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date().toISOString();
+  const [grantRes, partnerRes, employeeRes, stallRes] = await Promise.all([
+    supabaseAdmin.from("access_grants")
+      .select("can_view_medical")
+      .eq("provider_id", userId).eq("client_id", row.owner_id).eq("is_active", true).eq("status", "active")
+      .or(`valid_until.is.null,valid_until.gt.${now}`).maybeSingle(),
+    supabaseAdmin.from("horse_partner_access")
+      .select("can_view_medical")
+      .eq("partner_profile_id", userId).eq("horse_id", horseId).eq("is_active", true).eq("status", "active").eq("owner_approved", true)
+      .or(`valid_until.is.null,valid_until.gte.${today}`).maybeSingle(),
+    supabaseAdmin.from("employee_horse_access")
+      .select("id").eq("employee_id", userId).eq("horse_id", horseId).eq("can_view", true).maybeSingle(),
+    supabaseAdmin.from("stall_horse_access")
+      .select("can_view_health_status").eq("stall_owner_id", userId).eq("horse_id", horseId).eq("can_view_basic", true).maybeSingle(),
+  ]);
+
+  if (grantRes.data) return { canViewMedical: Boolean((grantRes.data as { can_view_medical?: boolean }).can_view_medical), canViewInvoices: true, via: "access_grant" };
+  if (partnerRes.data) return { canViewMedical: Boolean((partnerRes.data as { can_view_medical?: boolean }).can_view_medical), canViewInvoices: false, via: "partner" };
+  if (employeeRes.data) return { canViewMedical: false, canViewInvoices: false, via: "employee" };
+  if (stallRes.data) return { canViewMedical: Boolean((stallRes.data as { can_view_health_status?: boolean }).can_view_health_status), canViewInvoices: false, via: "stall" };
+  return null;
+}
+
+async function canAccessClient(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  userId: string,
+  clientId: string,
+): Promise<boolean> {
+  if (!clientId) return false;
+  if (clientId === userId) return true;
+  const now = new Date().toISOString();
+  const { data } = await supabaseAdmin.from("access_grants")
+    .select("id")
+    .eq("provider_id", userId).eq("client_id", clientId).eq("is_active", true).eq("status", "active")
+    .or(`valid_until.is.null,valid_until.gt.${now}`)
+    .maybeSingle();
+  return Boolean(data);
+}
+
+async function lookupHorseName(supabaseAdmin: ReturnType<typeof createClient>, userId: string, horseId: string): Promise<string | null> {
+  if (!horseId) return null;
+  if (!await getHorseAccess(supabaseAdmin, userId, horseId)) return null;
   const { data } = await supabaseAdmin.from("horses").select("name").eq("id", horseId).maybeSingle();
   return (data as { name?: string } | null)?.name ?? null;
 }
 
-async function lookupClientName(supabaseAdmin: ReturnType<typeof createClient>, clientId: string): Promise<string | null> {
+async function lookupClientName(supabaseAdmin: ReturnType<typeof createClient>, userId: string, clientId: string): Promise<string | null> {
   if (!clientId) return null;
+  if (!await canAccessClient(supabaseAdmin, userId, clientId)) return null;
   const { data } = await supabaseAdmin.from("profiles").select("full_name").eq("id", clientId).maybeSingle();
   return (data as { full_name?: string } | null)?.full_name ?? null;
 }
 
 async function lookupAppointmentInfo(
   supabaseAdmin: ReturnType<typeof createClient>,
+  userId: string,
   appointmentId: string,
 ): Promise<{ date: string | null; horseId: string | null; horseName: string | null } | null> {
   if (!appointmentId) return null;
   const { data } = await supabaseAdmin
     .from("appointments")
-    .select("date, horse_id, horses(name)")
+    .select("date, horse_id, provider_id, client_id, data_shared_with_partners, data_shared_with_employees, horses(name)")
     .eq("id", appointmentId)
     .maybeSingle();
   if (!data) return null;
-  const row = data as { date?: string; horse_id?: string; horses?: { name?: string } | { name?: string }[] | null };
+  const row = data as { date?: string; horse_id?: string; provider_id?: string; client_id?: string; data_shared_with_partners?: boolean; data_shared_with_employees?: boolean; horses?: { name?: string } | { name?: string }[] | null };
+  let allowed = row.provider_id === userId || row.client_id === userId;
+  if (!allowed && row.horse_id) {
+    const access = await getHorseAccess(supabaseAdmin, userId, row.horse_id);
+    allowed = access?.via === "access_grant"
+      || (access?.via === "partner" && row.data_shared_with_partners === true)
+      || (access?.via === "employee" && row.data_shared_with_employees === true);
+  }
+  if (!allowed) return null;
   const h = Array.isArray(row.horses) ? row.horses[0] : row.horses;
   return { date: row.date ?? null, horseId: row.horse_id ?? null, horseName: h?.name ?? null };
 }
@@ -581,21 +658,28 @@ async function updateFocusFromToolCall(
   toolName: string,
   input: Record<string, unknown>,
   supabaseAdmin: ReturnType<typeof createClient>,
+  userId: string,
 ): Promise<void> {
   const horseId = typeof input.horse_id === "string" ? input.horse_id : undefined;
   const clientId = typeof input.client_id === "string" ? input.client_id : undefined;
   const appointmentId = typeof input.appointment_id === "string" ? input.appointment_id : undefined;
 
   if (horseId) {
-    focus.horseId = horseId;
-    focus.horseName = (await lookupHorseName(supabaseAdmin, horseId)) ?? focus.horseName;
+    const horseName = await lookupHorseName(supabaseAdmin, userId, horseId);
+    if (horseName) {
+      focus.horseId = horseId;
+      focus.horseName = horseName;
+    }
   }
   if (clientId) {
-    focus.clientId = clientId;
-    focus.clientName = (await lookupClientName(supabaseAdmin, clientId)) ?? focus.clientName;
+    const clientName = await lookupClientName(supabaseAdmin, userId, clientId);
+    if (clientName) {
+      focus.clientId = clientId;
+      focus.clientName = clientName;
+    }
   }
   if (!horseId && appointmentId && (toolName === "update_appointment" || toolName === "cancel_appointment")) {
-    const info = await lookupAppointmentInfo(supabaseAdmin, appointmentId);
+    const info = await lookupAppointmentInfo(supabaseAdmin, userId, appointmentId);
     if (info?.horseId) {
       focus.horseId = info.horseId;
       focus.horseName = info.horseName ?? focus.horseName;
@@ -609,15 +693,16 @@ async function describeToolCall(
   toolName: string,
   input: Record<string, unknown>,
   supabaseAdmin: ReturnType<typeof createClient>,
+  userId: string,
 ): Promise<string> {
   switch (toolName) {
     case "create_appointment": {
-      const horseName = input.horse_id ? await lookupHorseName(supabaseAdmin, String(input.horse_id)) : null;
+      const horseName = input.horse_id ? await lookupHorseName(supabaseAdmin, userId, String(input.horse_id)) : null;
       const timeStr = input.time ? ` um ${input.time}` : "";
       return `Neuen Termin${horseName ? ` für ${horseName}` : ""} am ${input.date ?? "?"}${timeStr} anlegen?`;
     }
     case "update_appointment": {
-      const info = await lookupAppointmentInfo(supabaseAdmin, String(input.appointment_id ?? ""));
+      const info = await lookupAppointmentInfo(supabaseAdmin, userId, String(input.appointment_id ?? ""));
       const changes: string[] = [];
       if (input.date) changes.push(`neues Datum ${input.date}`);
       if (input.time) changes.push(`neue Uhrzeit ${input.time}`);
@@ -627,7 +712,7 @@ async function describeToolCall(
       return `Termin${info?.horseName ? ` für ${info.horseName}` : ""}${info?.date ? ` am ${info.date}` : ""}: ${what} übernehmen?`;
     }
     case "cancel_appointment": {
-      const info = await lookupAppointmentInfo(supabaseAdmin, String(input.appointment_id ?? ""));
+      const info = await lookupAppointmentInfo(supabaseAdmin, userId, String(input.appointment_id ?? ""));
       const notify = input.notify_client ? " (Kunde wird benachrichtigt)" : "";
       return `Termin${info?.horseName ? ` für ${info.horseName}` : ""}${info?.date ? ` am ${info.date}` : ""} stornieren?${notify}`;
     }
@@ -723,26 +808,38 @@ async function executeTool(
             .select("id, name, eqid, owner_id, profiles!owner_id(full_name, readable_id)")
             .ilike("name", q)
             .is("deleted_at", null)
-            .limit(8);
-          (data ?? []).forEach((r: Record<string,unknown>) => {
+            .limit(50);
+          for (const r of (data ?? []) as Record<string, unknown>[]) {
+            if (!await getHorseAccess(supabaseAdmin, providerId, String(r.id))) continue;
             const owner = r.profiles as Record<string,unknown> | null;
             results.push({
               type: "horse", id: r.id, name: r.name, eqid: r.eqid,
               owner_id: r.owner_id, owner_name: owner?.full_name ?? null,
             });
-          });
+            if (results.filter((result) => (result as { type?: string }).type === "horse").length >= 8) break;
+          }
         }
 
         if (type === "partner" || type === "any") {
+          const today = new Date().toISOString().slice(0, 10);
           const { data } = await supabaseAdmin
-            .from("profiles")
-            .select("id, full_name, readable_id, role")
-            .eq("role", "partner")
-            .ilike("full_name", q)
-            .limit(5);
-          (data ?? []).forEach((r: Record<string,unknown>) =>
-            results.push({ type: "partner", id: r.id, name: r.full_name, readable_id: r.readable_id })
-          );
+            .from("horse_partner_access")
+            .select("horse_id, partner_profile_id, profiles!partner_profile_id(id, full_name, readable_id, role)")
+            .not("partner_profile_id", "is", null)
+            .eq("is_active", true)
+            .eq("status", "active")
+            .eq("owner_approved", true)
+            .or(`valid_until.is.null,valid_until.gte.${today}`)
+            .limit(50);
+          const partnerIds = new Set<string>();
+          for (const grant of (data ?? []) as Record<string, unknown>[]) {
+            const partner = grant.profiles as Record<string, unknown> | null;
+            if (!partner || partner.role !== "partner" || !String(partner.full_name ?? "").toLowerCase().includes(String(input.query ?? "").toLowerCase())) continue;
+            if (partnerIds.has(String(partner.id)) || !await getHorseAccess(supabaseAdmin, providerId, String(grant.horse_id))) continue;
+            partnerIds.add(String(partner.id));
+            results.push({ type: "partner", id: partner.id, name: partner.full_name, readable_id: partner.readable_id });
+            if (partnerIds.size >= 5) break;
+          }
         }
 
         if (results.length === 0) return `Keine Treffer für "${input.query}". Bitte anderen Namen versuchen oder Neueingabe.`;
@@ -793,13 +890,18 @@ async function executeTool(
       // ── get_horse_record ──────────────────────────────────────────────────
       case "get_horse_record": {
         const horseId = String(input.horse_id);
+        const access = await getHorseAccess(supabaseAdmin, providerId, horseId);
+        if (!access) return "Kein Zugriff auf diese Pferdeakte.";
 
-        const [horseRes, apptRes, notesRes, invoiceRes] = await Promise.allSettled([
+        const [horseRes, medicalRes, apptRes, notesRes, invoiceRes] = await Promise.allSettled([
           supabaseAdmin
             .from("horses")
-            .select("id,name,eqid,breed,birth_year,gender,color,height_cm,hoof_type,shoeing_interval,special_notes,health_status,owner_id,profiles!owner_id(full_name,readable_id,email)")
+            .select("id,name,eqid,breed,birth_year,gender,color,height_cm,hoof_type,shoeing_interval,owner_id,profiles!owner_id(full_name,readable_id,email)")
             .eq("id", horseId)
             .single(),
+          access.canViewMedical
+            ? supabaseAdmin.from("horses").select("health_status,special_notes").eq("id", horseId).single()
+            : Promise.resolve({ data: null }),
           supabaseAdmin
             .from("appointments")
             .select("id,date,time,status,service_type,notes,provider_id")
@@ -807,22 +909,27 @@ async function executeTool(
             .gte("date", ago12M)
             .order("date", { ascending: false })
             .limit(15),
-          supabaseAdmin
+          access.canViewMedical
+            ? supabaseAdmin
             .from("partner_treatment_notes")
             .select("treatment_date,title,findings,notes,partner_type,partner_id")
             .eq("horse_id", horseId)
             .order("treatment_date", { ascending: false })
-            .limit(10),
-          supabaseAdmin
+            .limit(10)
+            : Promise.resolve({ data: [] }),
+          access.canViewInvoices
+            ? supabaseAdmin
             .from("invoices")
             .select("id,invoice_number,total_amount,payment_status,created_at")
             .eq("horse_id", horseId)
             .order("created_at", { ascending: false })
-            .limit(5),
+            .limit(5)
+            : Promise.resolve({ data: [] }),
         ]);
 
         const horse = horseRes.status === "fulfilled" ? horseRes.value.data as Record<string,unknown> : null;
         if (!horse) return `Pferd mit ID ${horseId} nicht gefunden.`;
+        const medical = medicalRes.status === "fulfilled" ? medicalRes.value.data as Record<string, unknown> | null : null;
         const owner = horse.profiles as Record<string,unknown>|null;
         const appts = (apptRes.status === "fulfilled" ? apptRes.value.data : []) as Record<string,unknown>[];
         const notes = (notesRes.status === "fulfilled" ? notesRes.value.data : []) as Record<string,unknown>[];
@@ -835,8 +942,8 @@ async function executeTool(
         out += `Rasse: ${horse.breed ?? "?"} | Geb: ${horse.birth_year ?? "?"} | ${horse.gender ?? "?"}\n`;
         out += `Höhe: ${horse.height_cm ?? "?"}cm | Huftyp: ${horse.hoof_type ?? "?"} | Intervall: ${horse.shoeing_interval ?? "?"}Wo\n`;
         out += `Besitzer: ${owner?.full_name ?? "?"} (${owner?.readable_id ?? "?"}) | client_id:${horse.owner_id}\n`;
-        if (horse.health_status) out += `Gesundheit: ${horse.health_status}\n`;
-        if (horse.special_notes) out += `Notizen: ${horse.special_notes}\n`;
+        if (medical?.health_status) out += `Gesundheit: ${medical.health_status}\n`;
+        if (medical?.special_notes) out += `Notizen: ${medical.special_notes}\n`;
         out += `Nächster Termin: ${nextAppt ? `${nextAppt.date} ${nextAppt.time ?? ""} | apt_id:${nextAppt.id}` : "keiner geplant"}\n`;
         out += `Letzter Termin: ${lastAppt ? `${lastAppt.date} | ${lastAppt.service_type ?? ""} | apt_id:${lastAppt.id}` : "keiner"}\n`;
 
@@ -858,6 +965,7 @@ async function executeTool(
       // ── get_client_overview ───────────────────────────────────────────────
       case "get_client_overview": {
         const clientId = String(input.client_id);
+        if (!await canAccessClient(supabaseAdmin, providerId, clientId)) return "Kein Zugriff auf diese Kundenübersicht.";
 
         const [profileRes, horsesRes, apptRes, invoiceRes] = await Promise.allSettled([
           supabaseAdmin.from("profiles").select("id,full_name,readable_id,email,phone,created_at").eq("id", clientId).single(),
@@ -1555,8 +1663,8 @@ async function callClaudeWithTools(
             continue;
           }
 
-          await updateFocusFromToolCall(focus, block.name, block.input ?? {}, supabaseAdmin);
-          const description = await describeToolCall(block.name, block.input ?? {}, supabaseAdmin);
+          await updateFocusFromToolCall(focus, block.name, block.input ?? {}, supabaseAdmin, providerId);
+          const description = await describeToolCall(block.name, block.input ?? {}, supabaseAdmin, providerId);
           const stepId = crypto.randomUUID();
           const { data: taskRow, error: taskErr } = await supabaseAdmin
             .from("hufi_task_queue")
@@ -1602,7 +1710,7 @@ async function callClaudeWithTools(
           };
         }
 
-        await updateFocusFromToolCall(focus, block.name, block.input ?? {}, supabaseAdmin);
+        await updateFocusFromToolCall(focus, block.name, block.input ?? {}, supabaseAdmin, providerId);
         console.log(`[hufi-agent][${correlationId}] Tool-Aufruf gestartet: ${block.name}`);
         const toolT0 = Date.now();
         const result = await executeTool(
