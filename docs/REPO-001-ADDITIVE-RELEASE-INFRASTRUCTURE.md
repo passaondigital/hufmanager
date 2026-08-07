@@ -2,14 +2,20 @@
 
 ## Grenze
 
-Diese Infrastruktur erzeugt immutable Release-Verzeichnisse, aber sie schaltet
-keinen Nginx-Webroot um, lädt Nginx nicht neu und deployed nichts. Die
-Produktionsquelle `/root/hufmanager_v25/production` bleibt unverändert.
+Diese Infrastruktur erzeugt Release-Verzeichnisse, die durch die Skripte nie
+überschrieben werden. Ein Release wird zuerst vollständig in einem Staging-
+Verzeichnis erstellt und erst mit einem atomaren `mv` unter seinem finalen
+Namen sichtbar. Dies ist keine Behauptung einer Dateisystem-Immutable-Policy:
+Administratoren könnten Dateien weiterhin manuell ändern. Die Infrastruktur
+schaltet keinen Nginx-Webroot um, lädt Nginx nicht neu und deployed nichts.
+Die Produktionsquelle `/root/hufmanager_v25/production` bleibt unverändert.
 
 ## Ablauf
 
 `scripts/create-isolated-release.sh` verlangt immer `--target-root`. Ohne
-`--apply` ist es ein echter Dry-Run. Mit `--apply` erstellt es ausschließlich
+`--apply` ist es ein echter Dry-Run. Erlaubt sind ausschließlich
+`/var/www/hufiapp` und isolierte `/tmp/repo-001-*`-Testpfade. Mit `--apply`
+prüft es zuerst einen vollständig sauberen Git-Arbeitsbaum, erstellt dann
 `<target-root>/releases/<release-name>` sowie `<target-root>/shared`, baut mit
 `VITE_APP_FLAVOR=hufiapp` und schreibt dort `BUILD_INFO`.
 
@@ -24,9 +30,10 @@ Produktionsquelle `/root/hufmanager_v25/production` bleibt unverändert.
 Es enthält keine Umgebungsvariablen oder Secret-Werte. Vor dem Kopieren wird
 das Artefakt auf Service-Role- und Private-Key-Muster geprüft.
 
-Die Skripte lehnen die eingefrorene Produktionsquelle, den Legacy-Webroot und
-alle unter `/var/www` gefundenen `current`-Webroots ab. Releases werden nie
-überschrieben. `current`/`previous` werden ausschließlich durch die
+Die Zielpfad-Allowlist schließt die eingefrorene Produktionsquelle, Legacy-
+Webroots und alle anderen Verzeichnisse aus. Releases werden nie
+überschrieben; bei Fehlern vor dem finalen `mv` entfernt ein `trap` das
+Staging-Verzeichnis. `current`/`previous` werden ausschließlich durch die
 Testskripte unter einem expliziten `/tmp/...`-Pfad erzeugt; der Rollback setzt
 dort `current` auf `previous` zurück.
 
