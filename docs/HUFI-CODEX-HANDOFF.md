@@ -20,6 +20,7 @@ Stand: 2026-08-04 (Terra, Hufi-Agent-503-P0)
 - Modellkonfiguration: `ANTHROPIC_MODEL_FAST`, `ANTHROPIC_MODEL_SMART` und `ANTHROPIC_MODEL_FALLBACK` sind Runtime-Secrets mit offiziellen Messages-API-Defaults. Beim Voice-Test wird der Fast-Wert verwendet.
 - Lokaler direkter Anthropic-Smoke-Test ist nicht möglich, weil hier kein `ANTHROPIC_API_KEY` verfügbar ist. Kein Schlüssel wurde ausgegeben. Der Connector-Deploy und ein minimaler Live-Smoke-Test liefern danach den konkreten Fehlercode.
 - Textweg-Fix (noch nicht deployt): `askHufiAgent` erhält und protokolliert `errorCode`; es unterscheidet Auth, echten Fetch-Netzwerkfehler, Timeout, Function-Fehler, HTTP-Fehler und ungültige Responses. `MobileShell` zeigt Function-/Provider-503 als Agentfehler, nicht als Netzwerkfehler. Nur ein tatsächlich fehlgeschlagener Browser-Fetch wird als „Keine Netzwerkverbindung“ bezeichnet.
+- P0-Review abgeschlossen: leere Providerantworten werden jetzt als `empty_provider_response` klassifiziert; ein fehlgeschlagener Ollama-Fallback führt nachvollziehbar zu `all_providers_failed`; das Server-Timeout (20 s) liegt unter dem Client-Timeout (25 s). Modell-Defaults sind ausdrücklich nicht gegen den Projektzugang validiert.
 - Die Denkphase zeigt „Hufi denkt nach“ statt der nicht belegten Formulierung „Hufi hat verstanden“. Die echte Transkriptanzeige bleibt an ein vorhandenes Transkript gebunden.
 - Lokal geprüft: 17 relevante Experience-Tests bestanden, TypeScript fehlerfrei, Produktions-Build bestanden. Der Agent-/Client-Fix ist nur auf dem Feature-Branch, nicht in Production.
 
@@ -32,3 +33,8 @@ Stand: 2026-08-04 (Terra, Hufi-Agent-503-P0)
 ## Nächste Einheit
 
 Über den Supabase-Connector ausschließlich `hufi-agent` deployen und den Preview-Frontend-Stand aktualisieren. Danach genau eine eingetippte Smartphone-Anfrage stellen und per Correlation-ID HTTP-Status, `errorCode`, Modell und Fallback abgleichen; erst nach sichtbarer Textantwort die nächste Voice-Prüfung durchführen.
+
+## Team-Integration 2026-08-04
+
+- Isolierte Offline-Grundlage, Hufi-Design-Primitives und Swipe-Workspace sind nach Prüfung in den Feature-Branch integriert. Sie verändern keine bestehende Produktnavigation oder Production.
+- Details zu Branches, Worktrees, Tests, Risiken und späteren Integrationspunkten: `docs/HUFI-TEAM-STATUS-2026-08-04.md`.

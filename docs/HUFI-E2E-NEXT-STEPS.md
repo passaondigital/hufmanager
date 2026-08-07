@@ -32,3 +32,4 @@ Angemeldet in der Preview (`https://preview.hufiapp.de/home`) eine normale Hufi-
 - `voiceMode` erreicht den Agenten und wählt den Fast-Pfad. Der bisherige Code verwirft den Anthropic-Fehlertyp vor dem generischen 503.
 - Lokaler Fix klassifiziert Providerfehler, protokolliert nur technische Daten und bietet einen einmaligen Modell-Fallback bei `anthropic_model_not_found`. Deploy steht aus; danach ist eine minimale Smartphone-Preview-Anfrage mit Logabgleich nötig.
 - Der gemeinsame Client-Textweg unterscheidet jetzt Auth, Netzwerk, Timeout, Function- und HTTP-Fehler. Ein Function-503 wird nicht mehr als „Kurz keine Verbindung“ angezeigt. Vor dem Voice-Retest muss eine eingetippte Preview-Frage eine sichtbare Textantwort liefern.
+- P0-Review ergänzt: `empty_provider_response`, finaler Mehrproviderfehler und Timeout-Budgets sind korrigiert, jedoch noch nicht per Connector deployt. Der reale Provider-`errorCode` bleibt bis zum ersten Preview-Test offen.
