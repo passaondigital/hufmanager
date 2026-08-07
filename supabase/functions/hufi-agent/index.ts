@@ -583,14 +583,23 @@ async function getHorseAccess(
       .eq("partner_profile_id", userId).eq("horse_id", horseId).eq("is_active", true).eq("status", "active").eq("owner_approved", true)
       .or(`valid_until.is.null,valid_until.gte.${today}`).maybeSingle(),
     supabaseAdmin.from("employee_horse_access")
-      .select("id").eq("employee_id", userId).eq("horse_id", horseId).eq("can_view", true).maybeSingle(),
+      .select("provider_id").eq("employee_id", userId).eq("horse_id", horseId).eq("can_view", true).maybeSingle(),
     supabaseAdmin.from("stall_horse_access")
       .select("can_view_health_status").eq("stall_owner_id", userId).eq("horse_id", horseId).eq("can_view_basic", true).maybeSingle(),
   ]);
 
   if (grantRes.data) return { canViewMedical: Boolean((grantRes.data as { can_view_medical?: boolean }).can_view_medical), canViewInvoices: true, via: "access_grant" };
   if (partnerRes.data) return { canViewMedical: Boolean((partnerRes.data as { can_view_medical?: boolean }).can_view_medical), canViewInvoices: false, via: "partner" };
-  if (employeeRes.data) return { canViewMedical: false, canViewInvoices: false, via: "employee" };
+  const employeeAccess = employeeRes.data as { provider_id?: string | null } | null;
+  if (employeeAccess?.provider_id) {
+    const { data: employeeProfile } = await supabaseAdmin.from("employee_profiles")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("provider_id", employeeAccess.provider_id)
+      .in("status", ["active", "sick", "vacation"])
+      .maybeSingle();
+    if (employeeProfile) return { canViewMedical: false, canViewInvoices: false, via: "employee" };
+  }
   if (stallRes.data) return { canViewMedical: Boolean((stallRes.data as { can_view_health_status?: boolean }).can_view_health_status), canViewInvoices: false, via: "stall" };
   return null;
 }
