@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { VitePWA } from "vite-plugin-pwa";
+import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/supabase/vite";
 
 // Marken-Flavor zur Build-Zeit (hufiapp-Build setzt VITE_APP_FLAVOR=hufiapp;
 // Default hufmanager hält den HufManager-Build unverändert).
@@ -36,6 +37,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    mcpPlugin(),
     {
       // index.html-Branding pro Flavor (Titel + Apple-Touch-Icon)
       name: "html-flavor-branding",
