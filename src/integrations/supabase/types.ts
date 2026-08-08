@@ -9714,6 +9714,71 @@ export type Database = {
           },
         ]
       }
+      hufi_followup_suggestions: {
+        Row: {
+          created_at: string
+          horse_id: string
+          id: string
+          last_notified_at: string | null
+          provider_id: string
+          status: string
+          suggested_date: string
+          updated_at: string
+          weeks_overdue: number
+        }
+        Insert: {
+          created_at?: string
+          horse_id: string
+          id?: string
+          last_notified_at?: string | null
+          provider_id: string
+          status?: string
+          suggested_date: string
+          updated_at?: string
+          weeks_overdue: number
+        }
+        Update: {
+          created_at?: string
+          horse_id?: string
+          id?: string
+          last_notified_at?: string | null
+          provider_id?: string
+          status?: string
+          suggested_date?: string
+          updated_at?: string
+          weeks_overdue?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hufi_followup_suggestions_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: true
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufi_followup_suggestions_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: true
+            referencedRelation: "horses_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufi_followup_suggestions_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: true
+            referencedRelation: "horses_medical"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hufi_followup_suggestions_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: true
+            referencedRelation: "safe_horses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hufi_health_conditions: {
         Row: {
           aliases: string[] | null
@@ -10438,6 +10503,72 @@ export type Database = {
           term_de?: string
           term_en?: string | null
           term_latin?: string | null
+        }
+        Relationships: []
+      }
+      hufi_voice_credit_transactions: {
+        Row: {
+          amount_cents: number
+          copecart_order_id: string | null
+          created_at: string
+          description: string | null
+          duration_seconds: number | null
+          id: string
+          source: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          copecart_order_id?: string | null
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          source: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          copecart_order_id?: string | null
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          source?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      hufi_voice_credits: {
+        Row: {
+          monthly_balance_cents: number
+          monthly_base_cents: number
+          monthly_reset_at: string
+          purchased_balance_cents: number
+          purchased_expires_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          monthly_balance_cents?: number
+          monthly_base_cents?: number
+          monthly_reset_at?: string
+          purchased_balance_cents?: number
+          purchased_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          monthly_balance_cents?: number
+          monthly_base_cents?: number
+          monthly_reset_at?: string
+          purchased_balance_cents?: number
+          purchased_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -13909,6 +14040,7 @@ export type Database = {
           is_manually_managed: boolean | null
           is_suspended: boolean | null
           is_verified_business: boolean | null
+          landing_path: string | null
           last_active_at: string | null
           last_name: string | null
           latitude: number | null
@@ -13966,6 +14098,8 @@ export type Database = {
           service_radius_km: number | null
           service_types: string[] | null
           show_cooperation_badges: boolean | null
+          signup_app: string | null
+          signup_referrer: string | null
           specializations: string[] | null
           stable_city: string | null
           stable_latitude: number | null
@@ -13984,6 +14118,11 @@ export type Database = {
           trial_ends_at: string | null
           trial_started_at: string | null
           updated_at: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
           vat_number: string | null
           vault_billing_cycle: string | null
           vault_failed_attempts: number | null
@@ -14067,6 +14206,7 @@ export type Database = {
           is_manually_managed?: boolean | null
           is_suspended?: boolean | null
           is_verified_business?: boolean | null
+          landing_path?: string | null
           last_active_at?: string | null
           last_name?: string | null
           latitude?: number | null
@@ -14124,6 +14264,8 @@ export type Database = {
           service_radius_km?: number | null
           service_types?: string[] | null
           show_cooperation_badges?: boolean | null
+          signup_app?: string | null
+          signup_referrer?: string | null
           specializations?: string[] | null
           stable_city?: string | null
           stable_latitude?: number | null
@@ -14142,6 +14284,11 @@ export type Database = {
           trial_ends_at?: string | null
           trial_started_at?: string | null
           updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
           vat_number?: string | null
           vault_billing_cycle?: string | null
           vault_failed_attempts?: number | null
@@ -14225,6 +14372,7 @@ export type Database = {
           is_manually_managed?: boolean | null
           is_suspended?: boolean | null
           is_verified_business?: boolean | null
+          landing_path?: string | null
           last_active_at?: string | null
           last_name?: string | null
           latitude?: number | null
@@ -14282,6 +14430,8 @@ export type Database = {
           service_radius_km?: number | null
           service_types?: string[] | null
           show_cooperation_badges?: boolean | null
+          signup_app?: string | null
+          signup_referrer?: string | null
           specializations?: string[] | null
           stable_city?: string | null
           stable_latitude?: number | null
@@ -14300,6 +14450,11 @@ export type Database = {
           trial_ends_at?: string | null
           trial_started_at?: string | null
           updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
           vat_number?: string | null
           vault_billing_cycle?: string | null
           vault_failed_attempts?: number | null
@@ -18756,9 +18911,32 @@ export type Database = {
         }
         Returns: undefined
       }
+      add_purchased_voice_credits: {
+        Args: {
+          p_amount_cents: number
+          p_copecart_order_id?: string
+          p_description?: string
+          p_user_id: string
+        }
+        Returns: {
+          monthly_balance_cents: number
+          monthly_base_cents: number
+          monthly_reset_at: string
+          purchased_balance_cents: number
+          purchased_expires_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "hufi_voice_credits"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_repair_user_role: {
         Args: {
-          p_admin_id: string
+          p_admin_id?: string
           p_new_role: string
           p_reason?: string
           p_user_id: string
@@ -18792,6 +18970,10 @@ export type Database = {
         }
         Returns: Json
       }
+      consume_hufi_voice_credit: {
+        Args: { p_description?: string; p_seconds: number; p_user_id: string }
+        Returns: Json
+      }
       create_default_service_presets: {
         Args: { _profession_type: string; _provider_id: string }
         Returns: undefined
@@ -18812,6 +18994,24 @@ export type Database = {
       delete_provider_cascade: {
         Args: { _provider_id: string }
         Returns: undefined
+      }
+      ensure_hufi_voice_credits_current: {
+        Args: { p_user_id: string }
+        Returns: {
+          monthly_balance_cents: number
+          monthly_base_cents: number
+          monthly_reset_at: string
+          purchased_balance_cents: number
+          purchased_expires_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "hufi_voice_credits"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       generate_invoice_number: {
         Args: { p_provider_id: string }
@@ -18878,6 +19078,24 @@ export type Database = {
           medical_history: string
           special_notes: string
         }[]
+      }
+      get_hufi_voice_credits: {
+        Args: { p_user_id: string }
+        Returns: {
+          monthly_balance_cents: number
+          monthly_base_cents: number
+          monthly_reset_at: string
+          purchased_balance_cents: number
+          purchased_expires_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "hufi_voice_credits"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       get_or_assign_provider_for_client: { Args: never; Returns: string }
       get_owner_horse_ids: { Args: { _owner_id: string }; Returns: string[] }
