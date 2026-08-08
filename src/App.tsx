@@ -28,6 +28,7 @@ import Index from "@/pages/Index";
 // ── KERN-PAGES ────────────────────────────────────────────────────────────────
 const NotFound    = lazy(() => import("@/pages/NotFound"));
 const Auth        = lazy(() => import("@/pages/Auth"));
+const OAuthConsent = lazy(() => import("@/pages/OAuthConsent"));
 const AppLayout   = lazy(() => import("@/components/layout/AppLayout").then((m) => ({ default: m.AppLayout })));
 const MobileShell = lazy(() => import("@/components/layout/MobileShell").then((m) => ({ default: m.MobileShell })));
 
@@ -474,6 +475,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
 
             {/* ── AUTH ──────────────────────────────────────────────────── */}
             <Route path="/auth"            element={<Auth />} />
+            <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
             <Route path="/audit"           element={<Auth />} />
             <Route path="/login"           element={<Navigate to="/auth?force=login" replace />} />
             <Route path="/signup"          element={<Navigate to="/auth" replace />} />
