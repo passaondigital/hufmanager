@@ -240,7 +240,7 @@ export default function Auth() {
         </div>
       );
     }
-    if (role === "provider" && needsOnboarding && !isPortalBusinessEmail(user.email) && !isStallbetreiberDemoEmail(user.email)) {
+    if (!redirectTo && role === "provider" && needsOnboarding && !isPortalBusinessEmail(user.email) && !isStallbetreiberDemoEmail(user.email)) {
       return <Navigate to="/welcome" replace />;
     }
 
