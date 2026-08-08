@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.1",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://vnschgjxkzzwzefqlrji.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "hufmanager",
+      "version": "0.1.0",
+      "title": "HufManager"
+    },
+    "tools": [
+      {
+        "name": "list_horses",
+        "title": "Pferde auflisten",
+        "description": "Listet die Pferde auf, auf die der angemeldete Nutzer Zugriff hat. Optional nach Name oder EQID gefiltert.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "search": {
+              "type": "string",
+              "description": "Optionaler Suchbegriff (Pferdename oder EQID)."
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximale Anzahl Ergebnisse (Standard 25, max 100)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_horse",
+        "title": "Pferdedetails abrufen",
+        "description": "Liefert das vollständige Pferdeprofil (Stammdaten, Huf-Infos, Gesundheit) anhand der Pferde-ID oder EQID.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "horse_id": {
+              "type": "string",
+              "description": "UUID des Pferdes."
+            },
+            "eqid": {
+              "type": "string",
+              "description": "Lesbare EQID des Pferdes, falls die UUID unbekannt ist."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_appointments",
+        "title": "Termine auflisten",
+        "description": "Listet Termine des angemeldeten Nutzers in einem Datumsbereich (Standard: ab heute).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string",
+              "description": "Startdatum im Format YYYY-MM-DD. Standard: heute."
+            },
+            "to": {
+              "type": "string",
+              "description": "Enddatum im Format YYYY-MM-DD."
+            },
+            "status": {
+              "type": "string",
+              "description": "Optionaler Status-Filter, z. B. scheduled oder completed."
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximale Anzahl Ergebnisse (Standard 25, max 100)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_invoices",
+        "title": "Rechnungen auflisten",
+        "description": "Listet Rechnungen des angemeldeten Nutzers, optional nach Status gefiltert.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "description": "Status-Filter, z. B. sent, paid oder overdue."
+            },
+            "limit": {
+              "type": "integer",
+              "description": "Maximale Anzahl Ergebnisse (Standard 25, max 100)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
