@@ -29,7 +29,7 @@ const guthabenBedingungen = [
 
 const PricingV2 = () => (
   <section id="pricing" className="py-20 md:py-28 bg-zinc-950">
-    <div className="container">
+    <div className="hufi-container-wide">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">

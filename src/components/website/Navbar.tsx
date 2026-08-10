@@ -9,16 +9,16 @@ const Navbar = () => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-bar bg-black/80 backdrop-blur-lg border-b border-white/10">
-      <div className="container">
+      <div className="w-full max-w-[1400px] mx-auto px-5 sm:px-8 lg:px-16">
         <div className="flex items-center justify-between h-16">
           <a href="/" className="flex items-center gap-2">
             <img src={logo} alt="Hufi Logo" className="h-[66px] w-auto" />
           </a>
 
           <nav className="hidden md:flex items-center gap-8">
-            <a href="/#plattform" className="text-white/60 hover:text-white transition-colors text-sm font-medium">Plattform</a>
+            <a href="/#heute" className="text-white/60 hover:text-white transition-colors text-sm font-medium">Plattform</a>
+            <a href="/#fuer-wen" className="text-white/60 hover:text-white transition-colors text-sm font-medium">Für wen</a>
             <a href="/#pricing" className="text-white/60 hover:text-white transition-colors text-sm font-medium">Preise</a>
-            <a href="/#hufrente" className="text-white/60 hover:text-white transition-colors text-sm font-medium">Über uns</a>
           </nav>
 
           <div className="hidden md:flex items-center gap-4">
@@ -38,9 +38,9 @@ const Navbar = () => {
         {isOpen && (
           <div className="md:hidden py-4 border-t border-white/10">
             <nav className="flex flex-col gap-4">
-              <a href="/#plattform" className="text-white py-2" onClick={() => setIsOpen(false)}>Plattform</a>
+              <a href="/#heute" className="text-white py-2" onClick={() => setIsOpen(false)}>Plattform</a>
+              <a href="/#fuer-wen" className="text-white py-2" onClick={() => setIsOpen(false)}>Für wen</a>
               <a href="/#pricing" className="text-white py-2" onClick={() => setIsOpen(false)}>Preise</a>
-              <a href="/#hufrente" className="text-white py-2" onClick={() => setIsOpen(false)}>Über uns</a>
               <div className="flex flex-col gap-2 pt-4">
                 <Button variant="ghost" className="w-full text-white" asChild>
                   <Link to="/auth?force=login">Login</Link>
