@@ -922,7 +922,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
   async function answerFromKnowledge(text: string) {
     const history: AIChatMessage[] = [
       { role: "system", content: KNOWLEDGE_SYSTEM_PROMPT },
-      ...messages.slice(-4).map((m) => ({ role: m.role === "user" ? "user" : "assistant" as const, content: m.text })),
+      ...messages.slice(-4).map((m) => ({ role: (m.role === "user" ? "user" : "assistant") as "user" | "assistant", content: m.text })),
       { role: "user", content: text },
     ];
     await addStreamingMsg(history, user?.id ?? "anonymous", "hufiai-fast");
@@ -1376,23 +1376,23 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
           if (targetName) {
             const { data: contacts } = await supabase
               .from("contacts")
-              .select("name, phone, email")
-              .eq("user_id", user.id)
-              .ilike("name", `%${targetName}%`)
+              .select("full_name, phone, email")
+              .eq("provider_id", user.id)
+              .ilike("full_name", `%${targetName}%`)
               .limit(1);
             const contact = contacts?.[0];
             if (contact && (contact.phone || contact.email)) {
               const template = generateAppointmentReminder({
-                clientName: contact.name,
+                clientName: contact.full_name,
                 horseName: "deinem Pferd",
                 date: "beim nächsten Termin",
                 senderName: hufiCtx?.user.name ?? undefined,
               });
               const draft = (commIntent === "email" || commIntent === "both") && contact.email
-                ? buildEmailDraft({ email: contact.email, name: contact.name, subject: "Terminbestätigung", body: template })
-                : buildWhatsAppDraft({ phone: contact.phone ?? "", name: contact.name, text: template });
+                ? buildEmailDraft({ email: contact.email, name: contact.full_name, subject: "Terminbestätigung", body: template })
+                : buildWhatsAppDraft({ phone: contact.phone ?? "", name: contact.full_name, text: template });
               setPendingDraft(draft);
-              addMsg({ role: "ai", text: `Ich habe einen Entwurf für ${contact.name} vorbereitet.`, ts: Date.now() + 1 });
+              addMsg({ role: "ai", text: `Ich habe einen Entwurf für ${contact.full_name} vorbereitet.`, ts: Date.now() + 1 });
               setResponding(false);
               setHufiPresenceState("bereit");
               setActiveIntent(null);
