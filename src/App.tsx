@@ -408,12 +408,12 @@ function App() {
       cleanupSync = initSyncManager();
       cleanupImageSync = initImageSyncManager();
     };
-    const id = "requestIdleCallback" in window
+    const id = typeof window.requestIdleCallback === "function"
       ? window.requestIdleCallback(() => { void start(); }, { timeout: 3000 })
       : window.setTimeout(() => { void start(); }, 1500);
     return () => {
       cancelled = true;
-      if ("cancelIdleCallback" in window && typeof id === "number") window.cancelIdleCallback(id);
+      if (typeof window.cancelIdleCallback === "function" && typeof id === "number") window.cancelIdleCallback(id);
       else clearTimeout(id);
       cleanupSync?.();
       cleanupImageSync?.();
