@@ -19,7 +19,7 @@ export function KiSettingsCard({ userId = "" }: { userId?: string }) {
 
   const srSupported =
     typeof window !== "undefined" &&
-    !!(window.SpeechRecognition || (window as any).webkitSpeechRecognition);
+    !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

@@ -143,7 +143,7 @@ export function MobileShell() {
 
   // Phase D: Hey Hufi wake-word opt-in state.
   const SR_SUPPORTED = typeof window !== "undefined" &&
-    !!(window.SpeechRecognition || (window as any).webkitSpeechRecognition);
+    !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
   const [heyHufiEnabled, setHeyHufiEnabled] = useState(false);
 
   // Derived state shorthands for UI/legacy code that referenced `recording` / `transcribing`.
