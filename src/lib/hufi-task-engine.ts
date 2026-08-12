@@ -1,9 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import { executeHufiAction, type HufiAction } from "./hufi-actions";
 import {
-import { db } from "@/lib/supabase-loose";
   type AgentTaskType, taskTypeLabel, taskTypeToActionType,
 } from "./hufi-agent-tasks";
+import { db } from "@/lib/supabase-loose";
 
 export type TaskStatus =
   | "pending" | "running" | "awaiting_confirm" | "done" | "failed" | "cancelled";
